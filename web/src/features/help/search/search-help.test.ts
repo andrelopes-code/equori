@@ -2,6 +2,8 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 import { loadHelpLibrary } from "@/features/help/model/help-library";
 import type { HelpLibrary } from "@/features/help/model/help-library";
+import { catalogEn } from "@/i18n/catalog.en";
+import { catalogPtBR } from "@/i18n/catalog.pt-BR";
 import { hitRanges, searchHelp } from "@/features/help/search/search-help";
 
 let library: HelpLibrary;
@@ -100,6 +102,37 @@ describe("searchHelp", () => {
 
     expect(hit?.excerpt).toMatch(/juros/);
     expect(hit?.excerpt.startsWith("… ")).toBe(true);
+  });
+});
+
+describe("excerpts", () => {
+  it("drops the mark of a list item", async () => {
+    const result = searchHelp(await loadHelpLibrary("pt", "BR"), "fatura");
+    const excerpts = result.groups.flatMap((g) => g.hits).map((h) => h.excerpt);
+
+    expect(excerpts.length).toBeGreaterThan(5);
+    expect(excerpts.filter((e) => /^(… )?- /.test(e))).toEqual([]);
+  });
+});
+
+describe("common searches", () => {
+  it.each([
+    ["pt", catalogPtBR],
+    ["en", catalogEn],
+  ] as const)("each finds a page in %s (HP11)", async (language, catalog) => {
+    const pages = await loadHelpLibrary(language, "US");
+
+    for (const key of [
+      "help.search.common.1",
+      "help.search.common.2",
+      "help.search.common.3",
+      "help.search.common.4",
+    ] as const) {
+      expect(
+        searchHelp(pages, catalog[key]).count,
+        catalog[key],
+      ).toBeGreaterThan(0);
+    }
   });
 });
 

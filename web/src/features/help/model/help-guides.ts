@@ -1,0 +1,62 @@
+// The areas of the app the help index groups its pages by, in the order it shows them.
+export const helpAreas = [
+  "accounts",
+  "cards",
+  "transactions",
+  "portfolio",
+  "planning",
+  "installation",
+] as const;
+
+export type HelpArea = (typeof helpAreas)[number];
+
+export interface HelpGuide {
+  // The block of the index; a page without one has a block of its own there.
+  area?: HelpArea;
+  // The route the action of the page header opens.
+  screen?: string;
+  // Written ids of sections of the troubleshooting page.
+  symptoms?: readonly string[];
+  related?: readonly string[];
+}
+
+// Where each page stands in the app and what surrounds it (help spec, HP7).
+export const helpGuides: Readonly<Record<string, HelpGuide | undefined>> = {
+  "import-statement": {
+    area: "accounts",
+    screen: "/accounts",
+    symptoms: ["transaction-twice", "transaction-missing"],
+    related: ["check-balance"],
+  },
+  "pay-statement": {
+    area: "cards",
+    screen: "/cards",
+    symptoms: ["statement-differs", "transaction-missing"],
+    related: ["statement"],
+  },
+  "check-balance": {
+    area: "accounts",
+    screen: "/accounts",
+    symptoms: ["balance-differs"],
+  },
+  "category-rule": {
+    area: "transactions",
+    screen: "/transactions",
+    related: ["how-money-is-recorded"],
+  },
+  installation: {
+    area: "installation",
+    symptoms: ["second-factor", "backup-late", "copy-late", "not-opening"],
+  },
+  "connect-bank": {
+    area: "accounts",
+    screen: "/accounts",
+    symptoms: ["connection-stalled", "consent-expiring"],
+    related: ["bank-connections"],
+  },
+  statement: { area: "cards", screen: "/cards", related: ["pay-statement"] },
+  portfolio: { area: "portfolio", screen: "/portfolio" },
+  "budget-plan": { area: "planning", screen: "/planning" },
+  "how-money-is-recorded": { area: "transactions" },
+  "bank-connections": { area: "accounts", related: ["connect-bank"] },
+};

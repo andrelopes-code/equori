@@ -2,7 +2,7 @@
 
 Cada entrada nomeia um sintoma como a tela o mostra. Em seguida traz a causa, os passos e a página com mais detalhes.
 
-## Uma conexão aparece como Parada
+## Uma conexão aparece como Parada {#connection-stalled}
 
 O banco não envia dados novos há algumas horas. [Vínculos](/accounts/links) mostra quantas.
 
@@ -11,7 +11,7 @@ O banco não envia dados novos há algumas horas. [Vínculos](/accounts/links) m
 
 Mais: [Conectar um banco](/help/connect-bank).
 
-## Uma conexão aparece como Consentimento a vencer
+## Uma conexão aparece como Consentimento a vencer {#consent-expiring}
 
 A permissão dada ao agregador termina na data que [Vínculos](/accounts/links) mostra. Depois dessa data, a sincronização para.
 
@@ -20,7 +20,7 @@ A permissão dada ao agregador termina na data que [Vínculos](/accounts/links) 
 
 Mais: [Conectar um banco](/help/connect-bank).
 
-## O saldo difere do da instituição
+## O saldo difere do da instituição {#balance-differs}
 
 A comparação achou uma diferença. Falta uma transação, um rendimento não foi registrado ou uma transação está duplicada.
 
@@ -30,7 +30,7 @@ A comparação achou uma diferença. Falta uma transação, um rendimento não f
 
 Mais: [Conferir o saldo de uma conta](/help/check-balance).
 
-## O valor de uma fatura difere do da instituição
+## O valor de uma fatura difere do da instituição {#statement-differs}
 
 A instituição pode ter cobrado uma compra feita perto do fechamento na fatura seguinte.
 
@@ -38,9 +38,11 @@ A instituição pode ter cobrado uma compra feita perto do fechamento na fatura 
 2. Leia as compras que a tela sugere mover e mova as que a instituição cobrou depois.
 3. Se os totais continuarem diferentes, escolha **Dados da instituição** e registre o total que a instituição informa.
 
+![A página da fatura, com o total do ciclo marcado](statement-total "O total do ciclo fica no alto da página da fatura.")
+
 Mais: [A tela da fatura](/help/statement).
 
-## Uma transação aparece duas vezes
+## Uma transação aparece duas vezes {#transaction-twice}
 
 Uma linha de extrato virou uma nova transação, enquanto a mesma compra já estava registrada à mão.
 
@@ -49,7 +51,7 @@ Uma linha de extrato virou uma nova transação, enquanto a mesma compra já est
 
 Importar o mesmo arquivo duas vezes não duplica nada. Mais: [Importar um extrato](/help/import-statement).
 
-## Uma transação não aparece
+## Uma transação não aparece {#transaction-missing}
 
 Três causas são comuns:
 
@@ -59,7 +61,7 @@ Três causas são comuns:
 
 Escolha **Trocar data inicial** na aba **Sincronização** para importar linhas anteriores. Confira a situação da linha na importação. Mais: [Importar um extrato](/help/import-statement).
 
-## O acesso recusa o código do segundo fator
+## O acesso recusa o código do segundo fator {#second-factor}
 
 O app autenticador ou a chave de acesso não está à mão.
 
@@ -67,7 +69,7 @@ O app autenticador ou a chave de acesso não está à mão.
 2. Informe um **Código de recuperação**. Cada código vale uma vez.
 3. Em [Configurações](/settings), painel **Segurança**, escolha **Gerar novos códigos**. Os códigos atuais deixam de valer.
 
-## O último backup diário tem mais de 48 horas
+## O último backup diário tem mais de 48 horas {#backup-late}
 
 O painel **Backup** de [Configurações](/settings) mostra esta mensagem quando o último backup diário está atrasado.
 
@@ -76,7 +78,7 @@ O painel **Backup** de [Configurações](/settings) mostra esta mensagem quando 
 
 Quando o painel diz "Os backups automáticos estão desligados", defina `EQUORI_BACKUP_DIR` no `.env`. Mais: [Instalar e manter o equori](/help/installation).
 
-## A cópia criptografada está atrasada
+## A cópia criptografada está atrasada {#copy-late}
 
 O painel **Backup** de [Configurações](/settings) indica a causa:
 
@@ -86,7 +88,7 @@ O painel **Backup** de [Configurações](/settings) indica a causa:
 
 O próximo backup grava uma nova cópia. Mais: [Instalar e manter o equori](/help/installation).
 
-## O equori não abre no navegador
+## O equori não abre no navegador {#not-opening}
 
 O comando de instalação imprime o endereço no fim. Enquanto não existe usuário, executar o comando de novo imprime o endereço de novo.
 

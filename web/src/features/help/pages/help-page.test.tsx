@@ -1,4 +1,5 @@
 import { screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
@@ -18,7 +19,8 @@ function inRegion(region: string) {
 }
 
 describe("help", () => {
-  it("leads with the walkthrough and lists the other pages by kind", async () => {
+  // Spec 2026-11-17-help-design, HP1: the index follows the reader's questions, not the kinds.
+  it("leads with the walkthrough, then the pages by area, the symptoms and the terms", async () => {
     await renderApp("/help", { fetch: fakeApi(sharedRoutes) });
 
     expect(
@@ -30,15 +32,99 @@ describe("help", () => {
     expect(
       screen.getByRole("link", { name: catalogEn["help.start"] }),
     ).toHaveAttribute("href", "/help/first-month");
+    expect(
+      await screen.findByRole("link", { name: /Add your accounts/ }),
+    ).toHaveAttribute("href", "/help/first-month#1-add-your-accounts");
 
-    const howTo = screen.getByRole("list", {
-      name: catalogEn["help.kind.howto"],
+    const cards = await screen.findByRole("list", {
+      name: catalogEn["help.area.cards"],
     });
-    const link = await within(howTo).findByRole("link", {
-      name: /Pay a statement/,
-    });
+    const link = within(cards).getByRole("link", { name: /Pay a statement/ });
     expect(link).toHaveAttribute("href", "/help/pay-statement");
-    expect(link).toHaveTextContent("A statement gathers the purchases");
+    expect(link).toHaveTextContent(catalogEn["help.media.video"]);
+    expect(link).toHaveTextContent(catalogEn["help.kind.howto.short"]);
+
+    expect(
+      screen.getByRole("link", { name: "A connection reads Stalled" }),
+    ).toHaveAttribute("href", "/help/troubleshooting#connection-stalled");
+    expect(screen.getByRole("link", { name: "Category" })).toHaveAttribute(
+      "href",
+      "/help/glossary#category",
+    );
+  });
+
+  it("searches by the address and draws the first result apart (HP9)", async () => {
+    await renderApp("/help?q=statement", { fetch: fakeApi(sharedRoutes) });
+
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      /^\d+ results for “statement”$/,
+    );
+    expect(screen.getByRole("searchbox")).toHaveValue("statement");
+    // The first page of the index whose title holds the word.
+    const best = await screen.findByRole("link", {
+      name: /^Import a statement/,
+    });
+    expect(best).toHaveAttribute("href", "/help/import-statement");
+    expect(screen.getByRole("link", { name: "Send the file" })).toHaveAttribute(
+      "href",
+      "/help/import-statement#send-the-file",
+    );
+    expect(
+      screen.getByRole("link", { name: /^Pay a statement/ }),
+    ).toHaveAttribute("href", "/help/pay-statement");
+    expect(
+      screen.getByRole("list", { name: catalogEn["help.search.group.terms"] }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Your first month in equori" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("moves through the results and opens one with the keys (HP10)", async () => {
+    const user = userEvent.setup();
+    await renderApp("/help", { fetch: fakeApi(sharedRoutes) });
+    await screen.findByRole("link", { name: "Category" });
+
+    await user.keyboard("/");
+    const field = screen.getByRole("searchbox");
+    expect(document.activeElement).toBe(field);
+
+    await user.keyboard("glossry");
+    await screen.findByRole("status");
+    await user.keyboard("{Enter}");
+
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Glossary" }),
+    ).toBeInTheDocument();
+  });
+
+  it("clears the search with Escape (HP10)", async () => {
+    const user = userEvent.setup();
+    await renderApp("/help?q=statement", { fetch: fakeApi(sharedRoutes) });
+    await screen.findByRole("status");
+
+    await user.click(screen.getByRole("searchbox"));
+    await user.keyboard("{Escape}");
+
+    expect(screen.getByRole("searchbox")).toHaveValue("");
+    expect(
+      await screen.findByRole("heading", {
+        name: "Your first month in equori",
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("answers a search without result with the assistant (HP11)", async () => {
+    await renderApp("/help?q=zzzz", { fetch: fakeApi(sharedRoutes) });
+
+    expect(
+      await screen.findByRole("heading", { name: "No page mentions “zzzz”" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: new RegExp(catalogEn["assistant.ask.title"]),
+      }),
+    ).toHaveTextContent("zzzz");
   });
 
   it("states the page's kind in its header and its lead above the text", async () => {
@@ -62,23 +148,137 @@ describe("help", () => {
     ).toBeInTheDocument();
   });
 
-  it("marks the page on show in the pages beside it, and leads on to its neighbours", async () => {
+  // Spec 2026-11-17-help-design, HP1: the list of every page left the page view; the sections
+  // and the neighbours stay.
+  it("lists the sections of the page and leads on to its neighbours", async () => {
     await renderApp("/help/pay-statement", { fetch: fakeApi(sharedRoutes) });
 
-    const pages = await screen.findByRole("navigation", {
-      name: catalogEn["help.contents"],
+    const sections = await screen.findByRole("navigation", {
+      name: catalogEn["help.toc"],
     });
     expect(
-      await within(pages).findByRole("link", { name: "Pay a statement" }),
-    ).toHaveAttribute("aria-current", "page");
-    // The next page, outside the pages beside it: the pager's.
-    const next = (
-      await screen.findAllByRole("link", { name: "Check an account's balance" })
-    ).filter((link) => !pages.contains(link));
-    expect(next).toHaveLength(1);
-    expect(next[0]).toHaveAttribute("href", "/help/check-balance");
+      await within(sections).findByRole("link", {
+        name: "Record the payment",
+      }),
+    ).toBeInTheDocument();
     expect(
-      screen.getByRole("navigation", { name: catalogEn["help.toc"] }),
+      await screen.findByRole("link", { name: "Check an account's balance" }),
+    ).toHaveAttribute("href", "/help/check-balance");
+    expect(
+      screen.queryByRole("link", { name: "Glossary" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("opens the screen of the task from the header (HP7)", async () => {
+    await renderApp("/help/pay-statement", { fetch: fakeApi(sharedRoutes) });
+
+    expect(
+      await screen.findByRole("link", { name: "Open Cards" }),
+    ).toHaveAttribute("href", "/cards");
+    expect(
+      screen.getByRole("link", { name: catalogEn["help.search.label"] }),
+    ).toHaveAttribute("href", "/help?q=");
+  });
+
+  it("shows the figure of the step chosen, with its count (HP5)", async () => {
+    const user = userEvent.setup();
+    await renderApp("/help/pay-statement", { fetch: fakeApi(sharedRoutes) });
+
+    const step = await screen.findByRole("button", {
+      name: /Choose how much to pay/,
+    });
+    expect(
+      screen.getAllByAltText("The list of cards, with the card to open marked"),
+    ).toHaveLength(2);
+
+    await user.click(step);
+
+    expect(step).toHaveAttribute("aria-current", "step");
+    expect(screen.getByText("Step 3 of 5")).toBeInTheDocument();
+    expect(
+      screen.getAllByAltText(
+        "The payment dialog, with the Valor (Amount) field marked",
+      ),
+    ).toHaveLength(2);
+  });
+
+  it("offers the video of the steps without starting it (HP6)", async () => {
+    const user = userEvent.setup();
+    await renderApp("/help/pay-statement", { fetch: fakeApi(sharedRoutes) });
+
+    await user.click(
+      await screen.findByRole("radio", { name: "Video · 18 s" }),
+    );
+
+    const video = document.querySelector("video");
+    expect(video).toHaveAttribute("preload", "none");
+    expect(video).toHaveAttribute("controls");
+    expect(video).not.toHaveAttribute("autoplay");
+    expect(video?.muted).toBe(true);
+  });
+
+  it("ends a task with its symptoms, the assistant and the related pages (HP16)", async () => {
+    await renderApp("/help/pay-statement", { fetch: fakeApi(sharedRoutes) });
+
+    const symptoms = await screen.findByRole("navigation", {
+      name: catalogEn["help.after.symptoms"],
+    });
+    expect(
+      await within(symptoms).findByRole("link", {
+        name: /A statement amount differs from the institution's/,
+      }),
+    ).toHaveAttribute("href", "/help/troubleshooting#statement-differs");
+    expect(
+      screen.getByRole("button", {
+        name: new RegExp(catalogEn["assistant.ask.title"]),
+      }),
+    ).toBeInTheDocument();
+    const related = screen.getByRole("navigation", {
+      name: catalogEn["help.after.related"],
+    });
+    expect(
+      within(related).getByRole("link", { name: /The statement screen/ }),
+    ).toHaveAttribute("href", "/help/statement");
+  });
+
+  it("draws each symptom as its cause, its steps and its pointer (HP15)", async () => {
+    await renderApp("/help/troubleshooting", { fetch: fakeApi(sharedRoutes) });
+
+    const heading = await screen.findByRole("heading", {
+      level: 2,
+      name: "A statement amount differs from the institution's",
+    });
+    const section = heading.closest("section");
+    if (!(section instanceof HTMLElement)) throw new Error("no section");
+
+    expect(heading).toHaveAttribute("id", "statement-differs");
+    expect(
+      within(section).getByText(catalogEn["help.fix.cause"]),
+    ).toBeInTheDocument();
+    expect(
+      within(section).getByText(catalogEn["help.fix.steps"]),
+    ).toBeInTheDocument();
+    expect(
+      within(section).getByRole("link", { name: "The statement screen" }),
+    ).toHaveAttribute("href", "/help/statement");
+    expect(within(section).queryByText(/^More:/)).not.toBeInTheDocument();
+  });
+
+  it("follows each step with its figure below 1024 px of page (HP5)", async () => {
+    await renderApp("/help/pay-statement", {
+      width: 390,
+      fetch: fakeApi(sharedRoutes),
+    });
+
+    await screen.findByRole("heading", { level: 1, name: "Pay a statement" });
+
+    expect(
+      await screen.findAllByAltText(
+        "The payment dialog, with the account and the date marked",
+      ),
+    ).toHaveLength(2);
+    expect(
+      screen.getByRole("button", { name: "Watch the video · 18 s" }),
     ).toBeInTheDocument();
   });
 
@@ -92,9 +292,7 @@ describe("help", () => {
       }),
     ).toBeInTheDocument();
     // The page's text, apart from the shell's navigation, which links the same screen.
-    const text = [...document.querySelectorAll('[data-ui="markdown"]')].flatMap(
-      (region) => [...region.querySelectorAll("a")],
-    );
+    const text = [...document.querySelectorAll("article a")];
     expect(
       text.find((link) => link.textContent === "Accounts"),
     ).toHaveAttribute("href", "/accounts");

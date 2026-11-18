@@ -141,7 +141,10 @@ function blocksText(blocks: readonly HelpBlock[]): string {
 
       if (block.type === "figure") return block.figure.caption;
 
-      return plainText(block.markdown.replace(/```[^\n]*/g, ""));
+      // A fence and the mark of a list item are syntax, not text.
+      return plainText(
+        block.markdown.replace(/```[^\n]*/g, "").replace(/^\s*[-*]\s+/gm, ""),
+      );
     })
     .join(" ");
 }

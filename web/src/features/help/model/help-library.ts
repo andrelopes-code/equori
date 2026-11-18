@@ -1,5 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 
+import { helpGuides } from "@/features/help/model/help-guides";
+import type { HelpGuide } from "@/features/help/model/help-guides";
 import { helpPages, loadHelpPage } from "@/features/help/model/help-pages";
 import type { HelpPageEntry } from "@/features/help/model/help-pages";
 import { parseHelpPage } from "@/features/help/model/parse-help-page";
@@ -10,7 +12,7 @@ import type {
 } from "@/features/help/model/parse-help-page";
 import type { Language } from "@/i18n/languages";
 
-export interface HelpLibraryPage extends HelpPageEntry {
+export interface HelpLibraryPage extends HelpPageEntry, HelpGuide {
   document: HelpDocument;
 }
 
@@ -38,7 +40,9 @@ export async function loadHelpLibrary(
   return helpPages.flatMap((page, index) => {
     const text = texts[index];
 
-    return text == null ? [] : [{ ...page, document: parseHelpPage(text) }];
+    return text == null
+      ? []
+      : [{ ...page, ...helpGuides[page.id], document: parseHelpPage(text) }];
   });
 }
 

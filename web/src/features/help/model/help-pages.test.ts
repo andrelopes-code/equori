@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
 
+import { helpFigure, helpVideo } from "@/features/help/media/help-media";
+import { helpGuides } from "@/features/help/model/help-guides";
+import {
+  loadHelpLibrary,
+  symptomsOf,
+} from "@/features/help/model/help-library";
 import {
   helpNeighbours,
   helpPages,
@@ -115,4 +121,78 @@ describe("helpNeighbours", () => {
   it("names nothing for an unknown page", () => {
     expect(helpNeighbours("nope")).toEqual({});
   });
+
+  // Spec 2026-11-17-help-design, HP7: the index lists a page under its area.
+  it("gives every page an area, but the walkthrough, the glossary and the symptoms", () => {
+    const without = helpPages.filter(
+      (p) => helpGuides[p.id]?.area === undefined,
+    );
+
+    expect(without.map((p) => p.id)).toEqual([
+      "first-month",
+      "glossary",
+      "troubleshooting",
+    ]);
+  });
+
+  it.each(languages.map((l) => l.language))(
+    "names in %s only symptoms and related pages that exist",
+    async (language) => {
+      const library = await loadHelpLibrary(language, "US");
+      const symptoms = symptomsOf(library).map((s) => s.id);
+
+      expect(symptoms).toHaveLength(10);
+
+      for (const page of helpPages) {
+        const guide = helpGuides[page.id];
+
+        for (const id of guide?.symptoms ?? []) {
+          expect(symptoms, page.id).toContain(id);
+        }
+
+        for (const id of guide?.related ?? []) {
+          expect(
+            helpPages.map((p) => p.id),
+            page.id,
+          ).toContain(id);
+        }
+      }
+    },
+  );
+
+  it.each(languages.map((l) => l.language))(
+    "holds the files of every figure and video a page of %s names",
+    async (language) => {
+      const library = await loadHelpLibrary(language, "US");
+      const blocks = library.flatMap((page) => [
+        ...page.document.intro,
+        ...page.document.sections.flatMap((s) => s.blocks),
+      ]);
+      const figures = blocks.flatMap((block) => {
+        if (block.type === "figure") return [block.figure.id];
+        if (block.type !== "steps") return [];
+
+        return block.steps.flatMap((s) => (s.figure ? [s.figure.id] : []));
+      });
+      const videos = blocks.flatMap((block) =>
+        block.type === "steps" && block.video ? [block.video.id] : [],
+      );
+
+      expect(figures).toContain("pay-amount");
+      expect(videos).toEqual(["pay-statement"]);
+
+      for (const id of figures) {
+        const figure = helpFigure(id);
+
+        expect(figure?.dark, id).toMatch(/\.png/);
+        expect(figure?.light, id).toMatch(/\.png/);
+        expect(figure?.spot, id).toHaveLength(4);
+      }
+
+      for (const id of videos) {
+        expect(helpVideo(id)?.dark, id).toMatch(/\.webm/);
+        expect(helpVideo(id)?.seconds, id).toBeGreaterThan(0);
+      }
+    },
+  );
 });

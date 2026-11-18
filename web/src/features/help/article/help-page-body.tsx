@@ -8,11 +8,11 @@ import {
 } from "@slotted/react/result-state";
 
 import { HelpArticle } from "@/features/help/article/help-article";
-import type { HelpText } from "@/features/help/model/help-pages";
+import type { HelpDocument } from "@/features/help/model/parse-help-page";
 import { useT } from "@/i18n/i18n-provider";
 
 interface HelpPageBodyProps {
-  text: HelpText | null;
+  document: HelpDocument | null;
   missing: boolean;
   failed: boolean;
   page: string;
@@ -21,7 +21,7 @@ interface HelpPageBodyProps {
 
 // The page's text, or what stands in its place when it is missing or failed to load.
 export function HelpPageBody({
-  text,
+  document,
   missing,
   failed,
   page,
@@ -29,10 +29,8 @@ export function HelpPageBody({
 }: HelpPageBodyProps) {
   const t = useT();
 
-  if (text !== null) {
-    return (
-      <HelpArticle lead={text.leadMarkdown} body={text.body} page={page} />
-    );
+  if (document !== null) {
+    return <HelpArticle document={document} page={page} />;
   }
 
   if (missing) {

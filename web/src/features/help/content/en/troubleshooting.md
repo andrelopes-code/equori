@@ -2,7 +2,7 @@
 
 Each entry names a symptom as a screen shows it. It then gives the cause, the steps and the page that holds more.
 
-## A connection reads Stalled
+## A connection reads Stalled {#connection-stalled}
 
 The bank has sent no new data for some hours. [Links](/accounts/links) shows how many.
 
@@ -11,7 +11,7 @@ The bank has sent no new data for some hours. [Links](/accounts/links) shows how
 
 More: [Connect a bank](/help/connect-bank).
 
-## A connection reads Consent expiring
+## A connection reads Consent expiring {#consent-expiring}
 
 The permission given to the aggregator ends on the date [Links](/accounts/links) shows. After that date, syncs stop.
 
@@ -20,7 +20,7 @@ The permission given to the aggregator ends on the date [Links](/accounts/links)
 
 More: [Connect a bank](/help/connect-bank).
 
-## The balance differs from the institution's
+## The balance differs from the institution's {#balance-differs}
 
 The comparison found a difference. A transaction is missing, a yield was not recorded, or a transaction is duplicated.
 
@@ -30,7 +30,7 @@ The comparison found a difference. A transaction is missing, a yield was not rec
 
 More: [Check an account's balance](/help/check-balance).
 
-## A statement amount differs from the institution's
+## A statement amount differs from the institution's {#statement-differs}
 
 The institution may have billed a purchase near the closing date on the next statement.
 
@@ -38,9 +38,11 @@ The institution may have billed a purchase near the closing date on the next sta
 2. Read the purchases the screen suggests moving, and move the ones the institution billed later.
 3. If the totals still differ, choose **Institution's facts** and record the total the institution reports.
 
+![The statement page, with the total of the cycle marked](statement-total "The total of the cycle stands at the top of the statement page.")
+
 More: [The statement screen](/help/statement).
 
-## A transaction appears twice
+## A transaction appears twice {#transaction-twice}
 
 A line of a statement became a new transaction, while the same purchase was already recorded by hand.
 
@@ -49,7 +51,7 @@ A line of a statement became a new transaction, while the same purchase was alre
 
 Importing the same file twice duplicates nothing. More: [Import a statement](/help/import-statement).
 
-## A transaction does not appear
+## A transaction does not appear {#transaction-missing}
 
 Three causes are common:
 
@@ -59,7 +61,7 @@ Three causes are common:
 
 Choose **Change start date** in the tab **Sync** to import earlier lines. Check the state of the line in the import. More: [Import a statement](/help/import-statement).
 
-## The sign-in refuses the code of the second factor
+## The sign-in refuses the code of the second factor {#second-factor}
 
 The authenticator app or the passkey is not at hand.
 
@@ -67,7 +69,7 @@ The authenticator app or the passkey is not at hand.
 2. Enter a **Recovery code**. Each code works once.
 3. In [Settings](/settings), pane **Security**, choose **Generate new codes**. The current codes stop working.
 
-## The last daily backup is more than 48 hours old
+## The last daily backup is more than 48 hours old {#backup-late}
 
 The pane **Backup** of [Settings](/settings) shows this message when the last daily backup is late.
 
@@ -76,7 +78,7 @@ The pane **Backup** of [Settings](/settings) shows this message when the last da
 
 When the pane reads "Automatic backups are off", set `EQUORI_BACKUP_DIR` in `.env`. More: [Install and maintain equori](/help/installation).
 
-## The encrypted copy is late
+## The encrypted copy is late {#copy-late}
 
 The pane **Backup** of [Settings](/settings) names the cause:
 
@@ -86,7 +88,7 @@ The pane **Backup** of [Settings](/settings) names the cause:
 
 The next backup writes a new copy. More: [Install and maintain equori](/help/installation).
 
-## equori does not open in the browser
+## equori does not open in the browser {#not-opening}
 
 The installation command prints the address at its end. While no user exists, running the command again prints the address again.
 

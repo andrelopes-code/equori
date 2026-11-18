@@ -485,6 +485,9 @@ const helpRoute = createRoute({
   staticData: { phone: true },
   getParentRoute: () => authedRoute,
   path: "help",
+  // The query of the help search; an empty one asks the index to focus its field.
+  validateSearch: (search): { q?: string } =>
+    typeof search.q === "string" ? { q: search.q } : {},
   component: HelpIndexPage,
 });
 

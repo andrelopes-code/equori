@@ -1,0 +1,13 @@
+{
+  "figures": {
+    "pay-cards": { "capture": "cards", "spot": [4, 4, 51.5, 53] },
+    "pay-open": { "capture": "statement", "spot": [91.6, 5.25, 7.7, 7.25] },
+    "pay-amount": { "capture": "pay-dialog", "spot": [4.25, 21.5, 91.5, 21] },
+    "pay-account": { "capture": "pay-dialog", "spot": [4.25, 41.5, 91.5, 37] },
+    "pay-confirm": { "capture": "pay-dialog", "spot": [76.1, 84, 18.3, 10.5] },
+    "statement-total": { "capture": "statement", "spot": [32, 16.5, 8.5, 8] }
+  },
+  "videos": {
+    "pay-statement": { "seconds": 18 }
+  }
+}
