@@ -35,6 +35,17 @@ async function fill(category: string, amount: string) {
 }
 
 describe("Budget form", () => {
+  // Help catalog spec, HC3: the form links the page that describes it.
+  it("links its help page from the header", async () => {
+    await renderApp("/planning/budgets/new", { fetch: budgetApi({}) });
+
+    const link = await screen.findByRole("link", {
+      name: catalogEn["help.screen"],
+    });
+
+    expect(link.getAttribute("href")).toBe("/help/create-budget");
+  });
+
   it("creates a budget from the current month and opens it", async () => {
     const sent: unknown[] = [];
     const { router } = await renderApp("/planning/budgets/new", {

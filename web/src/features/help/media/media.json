@@ -383,6 +383,150 @@
       "en": {
         "spot": [55.13, 89.25, 14.27, 8.67]
       }
+    },
+    "schedule-kind": {
+      "pt": {
+        "spot": [19.56, 11.11, 60.83, 12.14]
+      },
+      "en": {
+        "spot": [19.56, 11.11, 60.83, 12.14]
+      }
+    },
+    "schedule-amount": {
+      "pt": {
+        "spot": [19.56, 25.09, 60.83, 26.11]
+      },
+      "en": {
+        "spot": [19.56, 25.09, 60.83, 26.11]
+      }
+    },
+    "schedule-account": {
+      "pt": {
+        "spot": [19.56, 37.01, 60.83, 26.11]
+      },
+      "en": {
+        "spot": [19.56, 37.01, 60.83, 26.11]
+      }
+    },
+    "schedule-recurrence": {
+      "pt": {
+        "spot": [18.83, 10.62, 62.29, 78.73]
+      },
+      "en": {
+        "spot": [18.83, 10.62, 62.29, 78.73]
+      }
+    },
+    "schedule-ends": {
+      "pt": {
+        "spot": [19.56, 63.11, 60.83, 14.58]
+      },
+      "en": {
+        "spot": [19.56, 63.11, 60.83, 14.58]
+      }
+    },
+    "schedule-create": {
+      "pt": {
+        "spot": [53.05, 89.25, 16.35, 8.67]
+      },
+      "en": {
+        "spot": [54.82, 89.25, 14.58, 8.67]
+      }
+    },
+    "budget-category": {
+      "pt": {
+        "spot": [19.56, 11.11, 60.83, 12.14]
+      },
+      "en": {
+        "spot": [19.56, 11.11, 60.83, 12.14]
+      }
+    },
+    "budget-amount": {
+      "pt": {
+        "spot": [19.56, 22.75, 60.83, 12.14]
+      },
+      "en": {
+        "spot": [19.56, 22.75, 60.83, 12.14]
+      }
+    },
+    "budget-month": {
+      "pt": {
+        "spot": [19.56, 34.39, 60.83, 12.14]
+      },
+      "en": {
+        "spot": [19.56, 34.39, 60.83, 12.14]
+      }
+    },
+    "budget-carry": {
+      "pt": {
+        "spot": [19.56, 44.03, 60.83, 11.86]
+      },
+      "en": {
+        "spot": [19.56, 44.03, 60.83, 11.86]
+      }
+    },
+    "budget-create": {
+      "pt": {
+        "spot": [54.82, 89.25, 14.58, 8.67]
+      },
+      "en": {
+        "spot": [56.07, 89.25, 13.33, 8.67]
+      }
+    },
+    "trade-others": {
+      "pt": {
+        "spot": [19.56, 14.21, 60.83, 12.14]
+      },
+      "en": {
+        "spot": [19.56, 14.21, 60.83, 12.14]
+      }
+    },
+    "trade-menu": {
+      "pt": {
+        "spot": [19.56, 2.04, 60.83, 94.02]
+      },
+      "en": {
+        "spot": [19.56, 5.71, 60.83, 88.68]
+      }
+    },
+    "trade-operation": {
+      "pt": {
+        "spot": [19.56, 25.85, 60.83, 24.61]
+      },
+      "en": {
+        "spot": [19.56, 25.85, 60.83, 24.61]
+      }
+    },
+    "trade-investment": {
+      "pt": {
+        "spot": [19.56, 43.96, 60.83, 12.14]
+      },
+      "en": {
+        "spot": [19.56, 43.96, 60.83, 12.14]
+      }
+    },
+    "trade-quantity": {
+      "pt": {
+        "spot": [26.12, 42.82, 47.71, 14.28]
+      },
+      "en": {
+        "spot": [26.12, 42.82, 47.71, 14.28]
+      }
+    },
+    "trade-summary": {
+      "pt": {
+        "spot": [22.47, 14.21, 55, 14.72]
+      },
+      "en": {
+        "spot": [22.47, 14.21, 55, 14.72]
+      }
+    },
+    "trade-save": {
+      "pt": {
+        "spot": [60.76, 89.25, 8.64, 8.67]
+      },
+      "en": {
+        "spot": [61.59, 89.25, 7.81, 8.67]
+      }
     }
   },
   "videos": {
@@ -1945,9 +2089,737 @@
         ],
         "accent": "oklch(0.537962 0.124573 215.224)"
       }
+    },
+    "schedule": {
+      "pt": {
+        "parts": [
+          {
+            "start": 0,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 1,
+            "mark": {
+              "x": 483.75,
+              "y": 76.671875,
+              "width": 584,
+              "height": 72.84375
+            }
+          },
+          {
+            "start": 2.6,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 2,
+            "mark": {
+              "x": 483.75,
+              "y": 160.515625,
+              "width": 584,
+              "height": 156.6875
+            },
+            "point": {
+              "x": 495.75,
+              "y": 172.515625,
+              "width": 560,
+              "height": 48.84375
+            }
+          },
+          {
+            "start": 5.8,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 3,
+            "mark": {
+              "x": 483.75,
+              "y": 412.046875,
+              "width": 584,
+              "height": 156.6875
+            },
+            "point": {
+              "x": 495.75,
+              "y": 444.890625,
+              "width": 560,
+              "height": 28
+            }
+          },
+          {
+            "start": 9,
+            "travel": 0.9,
+            "hold": 0.5,
+            "click": 0.6,
+            "number": 0,
+            "mark": {
+              "x": 1370,
+              "y": 131.25,
+              "width": 541,
+              "height": 86
+            }
+          },
+          {
+            "start": 11,
+            "travel": 0.9,
+            "hold": 0.5,
+            "click": 0.6,
+            "number": 0,
+            "mark": {
+              "x": 483.75,
+              "y": 500.890625,
+              "width": 584,
+              "height": 72.84375
+            }
+          },
+          {
+            "start": 13,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 4,
+            "mark": {
+              "x": 469.75,
+              "y": 584.734375,
+              "width": 598,
+              "height": 472.390625
+            },
+            "point": {
+              "x": 495.75,
+              "y": 772.109375,
+              "width": 560,
+              "height": 48.84375
+            }
+          },
+          {
+            "start": 15.6,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 5,
+            "mark": {
+              "x": 483.75,
+              "y": 969.640625,
+              "width": 584,
+              "height": 87.484375
+            }
+          },
+          {
+            "start": 18.2,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 6,
+            "mark": {
+              "x": 1460.25,
+              "y": 1135.5,
+              "width": 157,
+              "height": 52
+            }
+          }
+        ],
+        "duration": 22.2,
+        "fade": 0.3,
+        "stills": [
+          "schedule/4050b4b0fffa.png",
+          "schedule/4050b4b0fffa.png",
+          "schedule/57df711a2268.png",
+          "schedule/a6a76b4a7029.png",
+          "schedule/80bcb5e47bca.png",
+          "schedule/fd68b296f082.png",
+          "schedule/fd68b296f082.png",
+          "schedule/fd68b296f082.png"
+        ],
+        "accent": "oklch(0.537962 0.124573 215.224)"
+      },
+      "en": {
+        "parts": [
+          {
+            "start": 0,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 1,
+            "mark": {
+              "x": 483.75,
+              "y": 76.671875,
+              "width": 584,
+              "height": 72.84375
+            }
+          },
+          {
+            "start": 2.6,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 2,
+            "mark": {
+              "x": 483.75,
+              "y": 160.515625,
+              "width": 584,
+              "height": 156.6875
+            },
+            "point": {
+              "x": 495.75,
+              "y": 172.515625,
+              "width": 560,
+              "height": 48.84375
+            }
+          },
+          {
+            "start": 5.8,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 3,
+            "mark": {
+              "x": 483.75,
+              "y": 412.046875,
+              "width": 584,
+              "height": 156.6875
+            },
+            "point": {
+              "x": 495.75,
+              "y": 444.890625,
+              "width": 560,
+              "height": 28
+            }
+          },
+          {
+            "start": 9,
+            "travel": 0.9,
+            "hold": 0.5,
+            "click": 0.6,
+            "number": 0,
+            "mark": {
+              "x": 1370,
+              "y": 131.25,
+              "width": 541,
+              "height": 86
+            }
+          },
+          {
+            "start": 11,
+            "travel": 0.9,
+            "hold": 0.5,
+            "click": 0.6,
+            "number": 0,
+            "mark": {
+              "x": 483.75,
+              "y": 500.890625,
+              "width": 584,
+              "height": 72.84375
+            }
+          },
+          {
+            "start": 13,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 4,
+            "mark": {
+              "x": 469.75,
+              "y": 584.734375,
+              "width": 598,
+              "height": 472.390625
+            },
+            "point": {
+              "x": 495.75,
+              "y": 772.109375,
+              "width": 560,
+              "height": 48.84375
+            }
+          },
+          {
+            "start": 15.6,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 5,
+            "mark": {
+              "x": 483.75,
+              "y": 969.640625,
+              "width": 584,
+              "height": 87.484375
+            }
+          },
+          {
+            "start": 18.2,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 6,
+            "mark": {
+              "x": 1477.25,
+              "y": 1135.5,
+              "width": 140,
+              "height": 52
+            }
+          }
+        ],
+        "duration": 22.2,
+        "fade": 0.3,
+        "stills": [
+          "schedule/d90f6d0ca91d.png",
+          "schedule/d90f6d0ca91d.png",
+          "schedule/c7b4cf18f2ca.png",
+          "schedule/530ffe5b8add.png",
+          "schedule/6a3ad26a9858.png",
+          "schedule/c52babd5f4de.png",
+          "schedule/c52babd5f4de.png",
+          "schedule/c52babd5f4de.png"
+        ],
+        "accent": "oklch(0.537962 0.124573 215.224)"
+      }
+    },
+    "create-budget": {
+      "pt": {
+        "parts": [
+          {
+            "start": 0,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 1,
+            "mark": {
+              "x": 483.75,
+              "y": 76.671875,
+              "width": 584,
+              "height": 72.84375
+            }
+          },
+          {
+            "start": 3.2,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 2,
+            "mark": {
+              "x": 483.75,
+              "y": 146.515625,
+              "width": 584,
+              "height": 72.84375
+            }
+          },
+          {
+            "start": 6.4,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 3,
+            "mark": {
+              "x": 483.75,
+              "y": 216.359375,
+              "width": 584,
+              "height": 72.84375
+            }
+          },
+          {
+            "start": 9,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 4,
+            "mark": {
+              "x": 483.75,
+              "y": 286.203125,
+              "width": 584,
+              "height": 71.125
+            },
+            "point": {
+              "x": 495.75,
+              "y": 298.015625,
+              "width": 16,
+              "height": 16
+            }
+          },
+          {
+            "start": 12.2,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 5,
+            "mark": {
+              "x": 1477.25,
+              "y": 1135.5,
+              "width": 140,
+              "height": 52
+            }
+          }
+        ],
+        "duration": 16.2,
+        "fade": 0.3,
+        "stills": [
+          "create-budget/e36db1a7b843.png",
+          "create-budget/86bc64042e4c.png",
+          "create-budget/1c6a49d83f3f.png",
+          "create-budget/1c6a49d83f3f.png",
+          "create-budget/d49932a8c4a2.png"
+        ],
+        "accent": "oklch(0.537962 0.124573 215.224)"
+      },
+      "en": {
+        "parts": [
+          {
+            "start": 0,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 1,
+            "mark": {
+              "x": 483.75,
+              "y": 76.671875,
+              "width": 584,
+              "height": 72.84375
+            }
+          },
+          {
+            "start": 3.2,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 2,
+            "mark": {
+              "x": 483.75,
+              "y": 146.515625,
+              "width": 584,
+              "height": 72.84375
+            }
+          },
+          {
+            "start": 6.4,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 3,
+            "mark": {
+              "x": 483.75,
+              "y": 216.359375,
+              "width": 584,
+              "height": 72.84375
+            }
+          },
+          {
+            "start": 9,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 4,
+            "mark": {
+              "x": 483.75,
+              "y": 286.203125,
+              "width": 584,
+              "height": 71.125
+            },
+            "point": {
+              "x": 495.75,
+              "y": 298.015625,
+              "width": 16,
+              "height": 16
+            }
+          },
+          {
+            "start": 12.2,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 5,
+            "mark": {
+              "x": 1489.25,
+              "y": 1135.5,
+              "width": 128,
+              "height": 52
+            }
+          }
+        ],
+        "duration": 16.2,
+        "fade": 0.3,
+        "stills": [
+          "create-budget/8589ce9656d9.png",
+          "create-budget/f20e06e737aa.png",
+          "create-budget/b6a78ebe432d.png",
+          "create-budget/b6a78ebe432d.png",
+          "create-budget/8295f9330cfd.png"
+        ],
+        "accent": "oklch(0.537962 0.124573 215.224)"
+      }
+    },
+    "buy-investment": {
+      "pt": {
+        "parts": [
+          {
+            "start": 0,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 1,
+            "mark": {
+              "x": 483.75,
+              "y": 95.25,
+              "width": 584,
+              "height": 72.84375
+            },
+            "point": {
+              "x": 811.75,
+              "y": 128.09375,
+              "width": 108.5,
+              "height": 28
+            }
+          },
+          {
+            "start": 3.2,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 2,
+            "mark": {
+              "x": 483.75,
+              "y": 95.25,
+              "width": 584,
+              "height": 564.09375
+            },
+            "point": {
+              "x": 816.25,
+              "y": 164.09375,
+              "width": 215,
+              "height": 56.75
+            }
+          },
+          {
+            "start": 6.4,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 3,
+            "mark": {
+              "x": 483.75,
+              "y": 165.09375,
+              "width": 584,
+              "height": 147.6875
+            }
+          },
+          {
+            "start": 9,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 4,
+            "mark": {
+              "x": 483.75,
+              "y": 309.78125,
+              "width": 584,
+              "height": 72.84375
+            }
+          },
+          {
+            "start": 12.2,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 5,
+            "mark": {
+              "x": 483.75,
+              "y": 503.890625,
+              "width": 458,
+              "height": 85.734375
+            },
+            "point": {
+              "x": 495.75,
+              "y": 515.890625,
+              "width": 210,
+              "height": 48.84375
+            }
+          },
+          {
+            "start": 15.4,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 6,
+            "mark": {
+              "x": 1071.75,
+              "y": 95.25,
+              "width": 528,
+              "height": 88.3125
+            }
+          },
+          {
+            "start": 18,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 7,
+            "mark": {
+              "x": 1534.25,
+              "y": 1135.5,
+              "width": 83,
+              "height": 52
+            }
+          }
+        ],
+        "duration": 22,
+        "fade": 0.3,
+        "stills": [
+          "buy-investment/5559a6c3b771.png",
+          "buy-investment/da6b5b34ad5b.png",
+          "buy-investment/a88672a5a9fe.png",
+          "buy-investment/a88672a5a9fe.png",
+          "buy-investment/454a3c99cd4c.png",
+          "buy-investment/950f8ab1391d.png",
+          "buy-investment/950f8ab1391d.png"
+        ],
+        "accent": "oklch(0.537962 0.124573 215.224)"
+      },
+      "en": {
+        "parts": [
+          {
+            "start": 0,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 1,
+            "mark": {
+              "x": 483.75,
+              "y": 95.25,
+              "width": 584,
+              "height": 72.84375
+            },
+            "point": {
+              "x": 718.75,
+              "y": 128.09375,
+              "width": 104.5,
+              "height": 28
+            }
+          },
+          {
+            "start": 3.2,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 2,
+            "mark": {
+              "x": 483.75,
+              "y": 95.25,
+              "width": 584,
+              "height": 532.09375
+            },
+            "point": {
+              "x": 723.25,
+              "y": 164.09375,
+              "width": 215,
+              "height": 40.75
+            }
+          },
+          {
+            "start": 6.4,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 3,
+            "mark": {
+              "x": 483.75,
+              "y": 165.09375,
+              "width": 584,
+              "height": 147.6875
+            }
+          },
+          {
+            "start": 9,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 4,
+            "mark": {
+              "x": 483.75,
+              "y": 309.78125,
+              "width": 584,
+              "height": 72.84375
+            }
+          },
+          {
+            "start": 12.2,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 5,
+            "mark": {
+              "x": 483.75,
+              "y": 503.890625,
+              "width": 458,
+              "height": 85.734375
+            },
+            "point": {
+              "x": 495.75,
+              "y": 515.890625,
+              "width": 210,
+              "height": 48.84375
+            }
+          },
+          {
+            "start": 15.4,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 6,
+            "mark": {
+              "x": 1071.75,
+              "y": 95.25,
+              "width": 528,
+              "height": 88.3125
+            }
+          },
+          {
+            "start": 18,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 7,
+            "mark": {
+              "x": 1542.25,
+              "y": 1135.5,
+              "width": 75,
+              "height": 52
+            }
+          }
+        ],
+        "duration": 22,
+        "fade": 0.3,
+        "stills": [
+          "buy-investment/dd266dd55898.png",
+          "buy-investment/c3191d6ff0fa.png",
+          "buy-investment/36cad1a09d4c.png",
+          "buy-investment/36cad1a09d4c.png",
+          "buy-investment/9dac8f90dec1.png",
+          "buy-investment/79a7f64902af.png",
+          "buy-investment/79a7f64902af.png"
+        ],
+        "accent": "oklch(0.537962 0.124573 215.224)"
+      }
     }
   },
   "files": {
+    "buy-investment/36cad1a09d4c.png": "36cad1a09d4c0d16597e9822b70d6697e42d5194f126c48028b60ca009da253b",
+    "buy-investment/454a3c99cd4c.png": "454a3c99cd4ccf5fe4678082d02e062ca521fd41bf264f340fa070995784ddd4",
+    "buy-investment/5559a6c3b771.png": "5559a6c3b771f7dee0eca1f542203a5feb33e70727780245af4b5206c53532ee",
+    "buy-investment/79a7f64902af.png": "79a7f64902afc785b814a5df3c49a1a6f41f74ddadf72b6e2f6ffb560cdf8fc2",
+    "buy-investment/950f8ab1391d.png": "950f8ab1391d0ae71c75da34b5dd237a16c75c5b069c3e8e796f06b6b6d6c500",
+    "buy-investment/9dac8f90dec1.png": "9dac8f90dec14fea5be40cee0373e74b7991e1f78fd5b53627105fe17db6691f",
+    "buy-investment/a88672a5a9fe.png": "a88672a5a9fe1acb8170500a63e7c6bc2b65aa0cef75f6b19a543adb0386cbd1",
+    "buy-investment/c3191d6ff0fa.png": "c3191d6ff0fa65d4c63bca6cb6e26ac1a3efd6ddc5f65fd36fea812251c6cc97",
+    "buy-investment/da6b5b34ad5b.png": "da6b5b34ad5b811f6ea1fa03e2d989a36eedb4721b23887b89e5134af01de099",
+    "buy-investment/dd266dd55898.png": "dd266dd5589876ad582775428650505bfc42ead9c0f1d17c0ddd32652b374dc3",
+    "buy-investment/trade-investment.en.dark.png": "1876b6170aa3ed59a954de530750bf8640a8a57b29535d929360e95b193c4df5",
+    "buy-investment/trade-investment.pt.dark.png": "d3a79635bef98411fae42b2e6d76cff3ef885d5467849dec98ff0bc52297f418",
+    "buy-investment/trade-menu.en.dark.png": "626b3c4b80c6589f2583fb5298b0afee08a2e67284edfba30fa9d584f83b7d1d",
+    "buy-investment/trade-menu.pt.dark.png": "ccf5b4cdc7351284e80379d6273557c4f67693834bddd88053aa7db74b1cfd87",
+    "buy-investment/trade-operation.en.dark.png": "df4f98eef543b4fc7f847967d0a45a0e87ff96c6665df367ba0779808fa98078",
+    "buy-investment/trade-operation.pt.dark.png": "83334823694f1e9a98b623a2082a76b61313bac653973b4d14d499f61df5dbad",
+    "buy-investment/trade-others.en.dark.png": "f31dbd0edaf3328371c2974c05cbebe54ece89c4f0422889e1fabeff2ad36c95",
+    "buy-investment/trade-others.pt.dark.png": "88eb5b51849e9963d57a89f49caffb3c973750a320137a7031a128ee68644d7c",
+    "buy-investment/trade-quantity.en.dark.png": "70f42913de0b4611130118c8c51fe550259265d1474fd5e9005da3d206f4ad6e",
+    "buy-investment/trade-quantity.pt.dark.png": "840802608ba08cce77a1def84cd5ea74c25e4fffec8421c1013233d61700e2fb",
+    "buy-investment/trade-save.en.dark.png": "4bc98b241b46c454844ea6b37fab093f1d993fd9b0b8a81b36a162d9aac2fdf5",
+    "buy-investment/trade-save.pt.dark.png": "1d0c3cfc8518a7787acd17277943aa1a6c78cc53531b3ab1a9bed8c76bbf16f1",
+    "buy-investment/trade-summary.en.dark.png": "0bd81d7d2a6e466aa9526bcaa621edddcc4c9996f51218069e5d0a007403d048",
+    "buy-investment/trade-summary.pt.dark.png": "914b457b65dd26526ecb0f85056e76db28047eda8f871459bf3c28b97a864f5f",
     "category-rule/11a54f084cad.png": "11a54f084cad9d1bc0186d881a5ac834e8e2a208a8ba657dbd0b0e2c55a9e50d",
     "category-rule/20945d12558b.png": "20945d12558bf1f771dfd134aeafc82583dd540ef5cd722c53396ba7bded2cd9",
     "category-rule/3b09e5282307.png": "3b09e5282307aff77c36782eb120e60fdb6631a4dd55b3ce877404486d842a9c",
@@ -2018,6 +2890,24 @@
     "correct-transaction/d47f7df4a9e2.png": "d47f7df4a9e292e497823657c1d1219ea8e3ad65c921308bd0fb3d4657040dae",
     "correct-transaction/e7ff71cebedd.png": "e7ff71cebedd02d0a777b354495d0a863ed01da0272143ae4cf941a1e2fab0f4",
     "correct-transaction/e811be77ef41.png": "e811be77ef41d068caced2a230002b697e157e476587063ff44655dc99bf07a1",
+    "create-budget/1c6a49d83f3f.png": "1c6a49d83f3f658b7f8e0470c616926a7827781d43fd8363c1deea4000dca1db",
+    "create-budget/8295f9330cfd.png": "8295f9330cfdec374129d5b837577e321318ba8d527545b6b2bafd21cc44f411",
+    "create-budget/8589ce9656d9.png": "8589ce9656d9a745693baa091009484495da1d5485dc69a4a4e3bcbbfd2d2208",
+    "create-budget/86bc64042e4c.png": "86bc64042e4c132a964560a2d89ee93348e45c1556c63df443245f907abaa340",
+    "create-budget/b6a78ebe432d.png": "b6a78ebe432db0bd3cf0c7378a22c7f54deaaeb8c106e2584d21ef112ec57be7",
+    "create-budget/budget-amount.en.dark.png": "79902cbea2463bb4a9014a9f424dbab4102cf147f59109f0ec14a7452403c071",
+    "create-budget/budget-amount.pt.dark.png": "98c82ada6e73e16308c049c798650de3ef4bc6b0958c87c3f955eb417cadf399",
+    "create-budget/budget-carry.en.dark.png": "7d47b09e0d03f0536bb6ac2b18f3fbcf48adc4e895d751e942412974e9a9be0b",
+    "create-budget/budget-carry.pt.dark.png": "92b5ac50406a3add744c2a57e9373ba7dee0e65611f8a71b54d065806f57871e",
+    "create-budget/budget-category.en.dark.png": "b91261e4c79f998421d930d56323351d691c15d6def66cd11cdd1b3df94747a7",
+    "create-budget/budget-category.pt.dark.png": "144bc4a950a69e5fcd8ea429d4db8097815d3a486fafcef249e09fcf89957f12",
+    "create-budget/budget-create.en.dark.png": "21aab3e9519716389530a408ea635283133a1b391e5da9f3260d69406c8f1ddf",
+    "create-budget/budget-create.pt.dark.png": "071cf7584d2167292589caddd7b7e003010085bc5f96a2ebde90229242cbc297",
+    "create-budget/budget-month.en.dark.png": "a60b61ad0f259fcc01a450552878e1a6c73a27672722a92fd993b2cfdcafb274",
+    "create-budget/budget-month.pt.dark.png": "ffe94f7a22e7557621a034468970b348edcbe4c89c6add04027b9830e4647878",
+    "create-budget/d49932a8c4a2.png": "d49932a8c4a26f3fe6185518af072d99af9f81f742966dc7e95c39f652971475",
+    "create-budget/e36db1a7b843.png": "e36db1a7b84318e27bdf8e78b783b510a0c2cf457c43add5d71332474fdd9481",
+    "create-budget/f20e06e737aa.png": "f20e06e737aa117b997f01b5e5f6d8c68ea0500a0efc44e55d3fec9c38b24b24",
     "import-statement/043a6b80cae8.png": "043a6b80cae80493818a48552328fd85f0300374968f41f49082b82e5cbf17bf",
     "import-statement/05bd61f5aa7f.png": "05bd61f5aa7f40e41f714e22dad14ca4b70f46e9908298254c88be462890be28",
     "import-statement/091ce79e09c1.png": "091ce79e09c15428a9092099113bddd5ae8a5396e21f439183f0eb25e6094f62",
@@ -2102,6 +2992,28 @@
     "record-transaction/entry-save.pt.dark.png": "d8de24801d0377cee4ccf5723247e87bc975d9e5eed250324dd6fc65cfc6b3ea",
     "record-transaction/entry-sheet.en.dark.png": "81895c3c9c29baa1aef145c9685b2f8e1276580c9d41b2f519d42e7863c4058c",
     "record-transaction/entry-sheet.pt.dark.png": "c4b767c488941b6da28b9779b500ccb4cb7eb5b6a7005213ebe28c5488af1d9d",
+    "schedule/4050b4b0fffa.png": "4050b4b0fffa0aa3ea54cff576fc83138678c4c819da01e3871130a70981579a",
+    "schedule/530ffe5b8add.png": "530ffe5b8add12bff2c7705dfae2c77ed460298030b2fe413cd70b28c45e9e1e",
+    "schedule/57df711a2268.png": "57df711a2268807d9cdf225184c89b3241e599b0cfdbb408e7e936214a975358",
+    "schedule/6a3ad26a9858.png": "6a3ad26a98587be1c513e0999a9448c8ce555c14de357e274120ca5e22b22307",
+    "schedule/80bcb5e47bca.png": "80bcb5e47bca5e115ce818125b4c1b75659b8e1f311deda5dbbf4b76d43e225b",
+    "schedule/a6a76b4a7029.png": "a6a76b4a7029860f2d50c658dbb702f5764a18fc031c89bcd3ec00b51ff0837a",
+    "schedule/c52babd5f4de.png": "c52babd5f4def9e4c9698841ee87a8f91a6ba09811ba6d7984ad8cf3b9b4d0fb",
+    "schedule/c7b4cf18f2ca.png": "c7b4cf18f2cadb7876cadf3e7cfa30a44a0157e7495c6fa8b615a549e260e1bf",
+    "schedule/d90f6d0ca91d.png": "d90f6d0ca91dd3e447c607b0b15c63e2527c6934776e58e626bea2e412df8a66",
+    "schedule/fd68b296f082.png": "fd68b296f0820bbce225229f037ea9389313f6d3b0b8356a100d059509874696",
+    "schedule/schedule-account.en.dark.png": "4f83ad03094e79f9d46750a75063eba75e006e383dd744bd6392b3225d29a212",
+    "schedule/schedule-account.pt.dark.png": "8a1126c53f9d88ab24650cf291b77aed712a42bd3477065a5426ca46b0d37ddc",
+    "schedule/schedule-amount.en.dark.png": "a2ea299106d59ccf88659db9bb23ecfcb9c42c26d290c061c04f9628dcf8970c",
+    "schedule/schedule-amount.pt.dark.png": "324b67a781616bbd4432fa6b1d9ed82459a596901f920770ec7030b5b4f964e3",
+    "schedule/schedule-create.en.dark.png": "f2d1fbe77ba29ddc6321dd1ea5bccfdc032ebbb4ea2cbb76ad2842feae999fb8",
+    "schedule/schedule-create.pt.dark.png": "fb84bb9986e40c365714775fb601f38e431314ce35edb7f4d2867b8951bd78d4",
+    "schedule/schedule-ends.en.dark.png": "d7f74aecea5ff9ac9e43993239ba05b06bdbd7eceea0515a00d7a38aa8c63387",
+    "schedule/schedule-ends.pt.dark.png": "46bfafa03a9f59f726f9617c7d363dc68f7604c6df7026272add916196e6d5ab",
+    "schedule/schedule-kind.en.dark.png": "a2ea299106d59ccf88659db9bb23ecfcb9c42c26d290c061c04f9628dcf8970c",
+    "schedule/schedule-kind.pt.dark.png": "324b67a781616bbd4432fa6b1d9ed82459a596901f920770ec7030b5b4f964e3",
+    "schedule/schedule-recurrence.en.dark.png": "8f9229c1336b35f3de5d5147cae0d74c60a17d46e8e3324c5cac08c8f6de2859",
+    "schedule/schedule-recurrence.pt.dark.png": "cd5ef4b78a8b37a0c908e192b09d10d93c7e78d2dc39bef85e55722897f249c0",
     "text-capture/4b45764d62d3.png": "4b45764d62d3319fcfdca4de603d4769cc82e8adfc697bd08ad039640e9bf11d",
     "text-capture/4ec121301cab.png": "4ec121301cabfea13177799fdc98e7af2eb86edeb04f25bdb35ad8f1a9d62a6d",
     "text-capture/55d591eb0509.png": "55d591eb0509b28e442df3a6d75cc1baf13f2acbb52289912a8385b1377f31fa",
@@ -2130,6 +3042,9 @@
     "record-transaction": "d0b1f32142a0b7462f253a55938faa909da649c025aa2e0a8c11b745e513840a",
     "installments": "4773bd8d129e32f2f83abd4ede7a3419c8862cf0a815342ad02f882be332e5ca",
     "text-capture": "323cd5d12feaf0a789392431ea644259b42fa27056f8c030b4478dd70b497944",
-    "correct-transaction": "ae36953da0dd796f4e46b56b9d48c33a0465d1ab758f359da5f5b4a6365553d9"
+    "correct-transaction": "ae36953da0dd796f4e46b56b9d48c33a0465d1ab758f359da5f5b4a6365553d9",
+    "schedule": "1ed7e2f009e2eb33edb0b232e7cacad5c3cedb927321b8ecaf0da54898d5f8a0",
+    "create-budget": "56b8c568a91b9e5c98f729c036baab29fda7c96fb8eaa78e9ce969e52531a196",
+    "buy-investment": "5e1bf05fa61d7bfcc7196161c79cbc27aaf4e21b557421fe1e21c1453614ca89"
   }
 }

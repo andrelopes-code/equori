@@ -7,6 +7,7 @@ import { Button } from "@slotted/react/button";
 import { Page, PageBody, PageFooter } from "@slotted/react/page";
 import {
   PageHeader,
+  PageHeaderActions,
   PageHeaderHeading,
   PageHeaderSubheading,
   PageHeaderTitle,
@@ -19,6 +20,7 @@ import { useState } from "react";
 
 import { useApi } from "@/api/api-context";
 import { ProblemError, errorText, fieldErrors } from "@/api/problem";
+import { HelpLink } from "@/features/help";
 import { calendarsQuery } from "@/features/planning/api";
 import { RecurrenceFields } from "@/features/planning/schedule-fields/recurrence-fields";
 import { ScheduleAccountsSection } from "@/features/planning/schedule-form/schedule-accounts-section";
@@ -141,6 +143,10 @@ export function ScheduleForm({ initial, from }: ScheduleFormProps) {
                 {t("schedule.newSubtitle")}
               </PageHeaderSubheading>
             </PageHeaderTitle>
+
+            <PageHeaderActions>
+              <HelpLink page="schedule" />
+            </PageHeaderActions>
           </PageHeaderTitleRow>
         </PageHeaderTitleArea>
       </PageHeader>

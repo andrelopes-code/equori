@@ -18,3 +18,5 @@ manage_budget_or_goal writes budgets, goals, the plan and the split; action name
 - save_plan: month and amounts, the categories whose amount changes from that month on, each with category_id and amount. source is the reference income of the plan: expected_income (the income expected in the month), average_income (the average income of the past months) or fixed, which takes amount as the reference; the stored source stays when absent. savings_target_bp is the share of the reference to save, in basis points.
 
 The actions create_goal, update_goal, delete_goal, link_expense, unlink_expense and allocate are in the topic goals; save_buckets, move_category and delete_bucket_version in the topic income_split.
+
+New budget asks for the "Category", the "Monthly amount", the "First month" and whether to "Carry the balance to the next month", then "Create budget" opens the page of the budget; a category that already has a budget opens that one. The question mark of the New budget header opens the help page Create a budget (/help/create-budget).

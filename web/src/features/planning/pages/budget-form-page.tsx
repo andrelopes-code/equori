@@ -1,20 +1,6 @@
-import {
-  ActionBar,
-  ActionBarAction,
-  ActionBarActions,
-} from "@slotted/react/action-bar";
-import { Button } from "@slotted/react/button";
 import { Checkbox } from "@slotted/react/checkbox";
 import { Field, FieldError, FieldLabel } from "@slotted/react/field";
-import { Page, PageBody, PageFooter } from "@slotted/react/page";
-import {
-  PageHeader,
-  PageHeaderHeading,
-  PageHeaderSubheading,
-  PageHeaderTitle,
-  PageHeaderTitleArea,
-  PageHeaderTitleRow,
-} from "@slotted/react/page-header";
+import { Page, PageBody } from "@slotted/react/page";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useState } from "react";
@@ -23,6 +9,8 @@ import { useApi } from "@/api/api-context";
 import { ProblemError, errorText, fieldErrors } from "@/api/problem";
 import { CategoryPicker } from "@/features/categories";
 import { budgetsQuery, useCreateBudget } from "@/features/planning/api";
+import { BudgetFormFooter } from "@/features/planning/budget-form/budget-form-footer";
+import { BudgetFormHeader } from "@/features/planning/budget-form/budget-form-header";
 import { settingsQuery, useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
@@ -96,49 +84,14 @@ export function BudgetFormPage() {
     <Page
       width="wide"
       footer={
-        <PageFooter>
-          <ActionBar aria-label={t("agenda.actions")}>
-            <ActionBarActions>
-              <ActionBarAction>
-                <Button
-                  variant="ghost"
-                  tone="secondary"
-                  onClick={() => {
-                    void navigate({
-                      to: "/planning",
-                      search: { tab: "budgets" },
-                    });
-                  }}
-                >
-                  {t("detail.cancel")}
-                </Button>
-              </ActionBarAction>
-              <ActionBarAction>
-                <Button
-                  loading={create.isPending}
-                  disabled={currency === undefined || scale === null}
-                  onClick={submit}
-                >
-                  {t("budget.create")}
-                </Button>
-              </ActionBarAction>
-            </ActionBarActions>
-          </ActionBar>
-        </PageFooter>
+        <BudgetFormFooter
+          pending={create.isPending}
+          disabled={currency === undefined || scale === null}
+          onSubmit={submit}
+        />
       }
     >
-      <PageHeader size="lg">
-        <PageHeaderTitleArea>
-          <PageHeaderTitleRow>
-            <PageHeaderTitle>
-              <PageHeaderHeading>{t("budget.new")}</PageHeaderHeading>
-              <PageHeaderSubheading>
-                {t("budget.newSubtitle")}
-              </PageHeaderSubheading>
-            </PageHeaderTitle>
-          </PageHeaderTitleRow>
-        </PageHeaderTitleArea>
-      </PageHeader>
+      <BudgetFormHeader />
       <PageBody>
         <FormLayout>
           {summary !== null && <FormNotice>{summary}</FormNotice>}

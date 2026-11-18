@@ -150,6 +150,12 @@ describe("the words of a reader", () => {
     ["en", "write as text", "text-capture"],
     ["pt", "anular transação", "correct-transaction"],
     ["en", "correct transaction", "correct-transaction"],
+    ["pt", "criar agendamento", "schedule"],
+    ["en", "create schedule", "schedule"],
+    ["pt", "criar orçamento", "create-budget"],
+    ["en", "create budget", "create-budget"],
+    ["pt", "comprar investimento", "buy-investment"],
+    ["en", "buy investment", "buy-investment"],
   ] as const)("in %s, %s opens %s", async (language, query, page) => {
     const pages = await loadHelpLibrary(language, "US");
 

@@ -246,3 +246,39 @@ The step "Edit" has no figure of its own: a mark around one draft or its button 
 ### Decision: the resting cursor of the grid
 
 After the double press, the description cell of the list keeps a muted ring. It is the resting cursor of the Slotted grid (`--_cursor-rest`, 60 % alpha), drawn on purpose, not a focus ring: the stills show it as the reader sees it. Issue andrelopes-code/slotted#148, opened on the first reading, was corrected and closed.
+
+### Slice 6: schedule
+
+| Claim | Source |
+|---|---|
+| A schedule is a bill, income, subscription, transfer or saving that repeats; each repetition is an occurrence | `schedule.newSubtitle`; glossary "Agendamento", "Ocorrência" |
+| Kind offers Bill, Income, Subscription, Transfer, Savings | `planning/model/schedule-words.ts:12-16` (`kindLabel`) |
+| Recurrence: Frequency (Daily, Weekly, Monthly, Yearly), Interval, Day; Day of the month by (Date, Weekday, Business day) for a monthly rule | `schedule-fields/recurrence-fields.tsx:187-193`; options read on the screen, demo book |
+| On a weekend or holiday: Keep the date, Next business day, Previous business day, Next business day within the month | `recurrence.adjustment.*` |
+| Ends: Never, On a date, After a number of times; a sentence states the rule | `recurrence.end.*`; figure `schedule-ends` |
+| Advanced: Business-day calendar, Match tolerance (%), Days around the expected date, Grace days, with their hints | `schedule.calendar`, `schedule.tolerance(Hint)`, `schedule.window(Hint)`, `schedule.grace(Hint)` |
+| Mark paid / Mark received opens the transactions to link; Skip leaves projection and totals; Move keeps the new date after a change of terms | `planning/agenda/agenda-row.tsx:104-109`, `occurrences/occurrence-actions.tsx:45-63`; `occurrence.skipHint`, `occurrence.moveHint`, `occurrence.realizeHint` |
+
+### Slice 7: create-budget
+
+| Claim | Source |
+|---|---|
+| A budget is a monthly amount for one category | `budget.newSubtitle` |
+| Category, Monthly amount, First month (arrows), Carry the balance to the next month | `pages/budget-form-page.tsx`; aria tree, demo book |
+| What is left or overspent adds to the next month; a yearly expense fits a carried balance; money kept apart is a goal | `budget.rolloverHint` |
+| Create budget opens the budget; a category with a budget opens the existing one | `pages/budget-form-page.tsx` (`open`, `budget_exists`) |
+
+`BudgetFormPage` held 165 lines; its header moved to `budget-form/budget-form-header.tsx` (with the help link) and its footer to `budget-form/budget-form-footer.tsx`: 130 lines. Planning tests passed before and after (the budget pages test gains the help link).
+
+### Slice 8: buy-investment
+
+| Claim | Source |
+|---|---|
+| The purchase is under Other kinds, "Buy or sell an investment" | `entry.kind.trade`; aria tree of the menu, demo book |
+| Side (Buy, Sell), Brokerage, Investment, Date, Settlement (optional), Quantity, Unit price, Order total (optional), Fees (optional) | aria tree of the form, demo book; `trade.*` |
+| The form states the units held and the account the money leaves | `trade.held`, `trade.paidFrom` |
+| Empty settlement follows the settlement cycle of the exchange; order total serves several prices; fees are what broker and exchange charge | `trade.settlementHelp`, `trade.totalHelp`, `trade.feesHelp` |
+| Gross and What leaves or enters the account summarize the operation | `trade.gross`, `trade.cashEffect`; figure `trade-summary` |
+| A shortfall of cash is stated; Move money into … opens a transfer to that account; Save stays enabled | `brokerage-account/shortfall-notice.tsx` (BC8) |
+
+The unit price is a decimal field: "2750" read as 2 750.00, so the tutorial types 27,50 in pt and 27.50 in en.

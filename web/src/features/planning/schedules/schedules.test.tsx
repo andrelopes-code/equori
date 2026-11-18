@@ -220,6 +220,17 @@ describe("Schedules tab with ended schedules", () => {
 });
 
 describe("New schedule", () => {
+  // Help catalog spec, HC3: the form links the page that describes it.
+  it("links its help page from the header", async () => {
+    await renderApp("/planning/schedules/new", { fetch: api() });
+
+    const link = await screen.findByRole("link", {
+      name: catalogEn["help.screen"],
+    });
+
+    expect(link.getAttribute("href")).toBe("/help/schedule");
+  });
+
   it("creates a schedule from the recurrence builder and states the rule in words", async () => {
     const sent: unknown[] = [];
     const { router } = await renderApp("/planning/schedules/new", {

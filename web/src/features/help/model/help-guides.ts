@@ -66,6 +66,21 @@ export const helpGuides: Readonly<Record<string, HelpGuide | undefined>> = {
     symptoms: ["transaction-twice"],
     related: ["check-balance"],
   },
+  schedule: {
+    area: "planning",
+    screen: "/planning",
+    related: ["budget-plan"],
+  },
+  "create-budget": {
+    area: "planning",
+    screen: "/planning",
+    related: ["budget-plan"],
+  },
+  "buy-investment": {
+    area: "portfolio",
+    screen: "/transactions/new",
+    related: ["portfolio"],
+  },
   installation: {
     area: "installation",
     symptoms: ["second-factor", "backup-late", "copy-late", "not-opening"],
