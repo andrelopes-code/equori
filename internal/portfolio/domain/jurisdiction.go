@@ -26,6 +26,9 @@ type Jurisdiction interface {
 	// DeductibleContributions lists the tax classes whose contributions an individual deducts
 	// from taxable income: a pension plan of the jurisdiction; empty when none.
 	DeductibleContributions() []string
+	// GainTax returns the monthly tax on the gains of the sales of variable income, in month
+	// order; none in a region without such a tax (monthly gain tax design GT7).
+	GainTax(sales []TaxSale) []TaxMonth
 }
 
 // UnitTax is when a fund of the listed subtypes cancels units to withhold income tax: on the last

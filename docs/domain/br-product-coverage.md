@@ -60,16 +60,16 @@ Source status:
 | ID | Product | Verdict | Evidence | Missing | Source |
 |---|---|---|---|---|---|
 | E-01 | Stock, unit, round lot and fractional market | supported | type `stock`; an odd-lot code resolves to its security (`noteOrderFromInput`, `internal/ledger/httpapi/notes.go`) | none | to read |
-| E-02 | Sale of stock: monthly exemption, rate, loss carried forward | partial | `get_tax_year` lists each sale with cost, proceeds, result and tax class | the tax due is not computed: no monthly exemption, no rate, no loss carried forward | Lei 11.033/2004 art. 2, II (15%) and art. 3, I (R$ 20,000.00 a month, stocks only), read on 2026-11-18 (planalto.gov.br); loss carried forward: to read |
-| E-03 | Day trade | partial | `SeparatesDayTrades` (IN RFB 1.585/2015 art. 65); result kind `day_trade` | as E-02 | separation: IN RFB 1.585/2015 art. 65, in code; rate: Lei 11.033/2004 art. 2, I (20%), read on 2026-11-18; withholding of a day trade: art. 2, § 3 refers to the law in force, to read |
+| E-02 | Sale of stock: monthly exemption, rate, loss carried forward | supported | `get_tax_year` view `gain_tax`: the R$ 20,000.00 exemption, 15%, the loss carried by pool and the tax withheld (`Jurisdiction.GainTax`); `TestGainTax`, `TestS628S629GainTax`; spec `docs/specs/2026-11-18-monthly-gain-tax-design.md` | none | Lei 11.033/2004 art. 2 and 3, I; IN RFB 1.585/2015 art. 56 to 61; Lei 9.430/1996 art. 68 |
+| E-03 | Day trade | supported | `SeparatesDayTrades` (IN RFB 1.585/2015 art. 65); result kind `day_trade`; the day-trade pool of `gain_tax` at 20% with its own losses; `TestS628S629GainTax` | none | separation: IN RFB 1.585/2015 art. 65, in code; rate: Lei 11.033/2004 art. 2, §1 |
 | E-04 | Dividend, JCP | supported | income types; `Treatment` in `br.go`; rules in `equities_br` | none | Lei 15.270/2025 and Lei Complementar 224/2025 art. 8 and 14, read on 2026-11-18 (planalto.gov.br); article `equities_br` |
 | E-05 | Bonus, split, reverse split, fraction | supported | `record_corporate_action`; `TestRecordCorporateActionToolS431` | none | to read |
 | E-06 | Subscription right and receipt | supported | `record_corporate_action` kinds `right_issue` (rights at no cost) and `right_exercise` (rights into the share or the receipt for the price paid); a right is sold with `record_investment` sell; the receipt becomes shares through `conversion`; `TestRightIssueAndExercise`, `TestRightExerciseTool`; the corporate action entry offers both | a partial exercise sells or writes off the rest first (`write_off`, `TestS625RightWrittenOff`) | IN RFB 1.585/2015, art. 58: a right received free has cost zero (owner decision 2026-11-18: zero weight on its units, migration 00126) |
 | E-07 | Merger, spin-off, ticker change | supported | `record_corporate_action` kinds `conversion` and `spin_off`; `TestConversionMovesTheCost`, `TestSpinOffToolSplitsTheCost`; the corporate action entry offers both | the tax of an exchange is not computed; the cost moved by a spin-off is the percent of the notice of the company | IN RFB 1.585/2015 not readable at normas.receita.fazenda.gov.br on 2026-11-18 (the page needs a browser); the percent comes from the notice of the company |
-| E-08 | FII, Fiagro: distribution, amortization, sale | partial | type `reit`; tax class `fii`; exempt distribution | an amortization that lowers the cost has no event; the tax of a sale is not computed | distribution: Lei 11.033/2004 art. 3, III and § 1 (100 holders, below 10%); sale: Lei 8.668/1993 art. 18 (20%); both read on 2026-11-18 (planalto.gov.br) |
-| E-09 | ETF of stocks, ETF of a foreign index | partial | type `etf` | as E-02 | Lei 11.033/2004 art. 2, II and art. 3, I (the exemption names stocks only), read on 2026-11-18 |
+| E-08 | FII, Fiagro: distribution, amortization, sale | partial | type `reit`; tax class `fii`; exempt distribution | an amortization that lowers the cost has no event; the tax of a sale is computed by `gain_tax` (FII pool, 20%) | distribution: Lei 11.033/2004 art. 3, III and § 1 (100 holders, below 10%); sale: Lei 8.668/1993 art. 18 (20%); both read on 2026-11-18 (planalto.gov.br) |
+| E-09 | ETF of stocks, ETF of a foreign index | supported | type `etf`; the ordinary pool of `gain_tax` at 15%, without the exemption of stocks; `TestGainTaxExemptionReadsStocks` | none | Lei 11.033/2004 art. 2, II and art. 3, I (the exemption names stocks only) |
 | E-10 | ETF of fixed income | partial | type `etf` | no tax class for the rate by the term of the portfolio | to read |
-| E-11 | BDR | partial | tax class `bdr` | the foreign tax of a dividend has no field of its own; as E-02 for a sale | sale: Lei 11.033/2004 art. 2, read on 2026-11-18; tax of a foreign dividend: to read |
+| E-11 | BDR | partial | tax class `bdr` | the foreign tax of a dividend has no field of its own; a sale is in the ordinary pool of `gain_tax` | sale: Lei 11.033/2004 art. 2, read on 2026-11-18; tax of a foreign dividend: to read |
 | E-12 | Option, forward, future | partial | type `option`; a bought option is traded like a stock, expires with `record_investment` kind `write_off` (premium as a realized loss) and a call is exercised with `record_corporate_action` kind `right_exercise` (cost: strike plus premium); `TestS623OptionExpires`, `TestS624CallExercised`, `TestWriteOffTool`, `TestOptionWriteOffInTaxYear`; spec `docs/specs/2026-11-18-listed-options-design.md` | a written option (short position), futures with their daily settlement and forwards | IN RFB 1.585/2015 on options, to read in the norm |
 | E-12b | Securities lending (BTC), lender | supported | income type `lending_fee`, treatment `exclusive`; the units and the cost stay in the holding; `TestJurisdictionBRTreatments`, `TestBR` | the borrower side (a short sale of borrowed shares) is not modeled | the lender fee is withheld at source by the fixed income table (IN RFB 1.585/2015; broker statements), to read in the norm |
 | E-13 | Brokerage note | supported | `record_brokerage_note`; `TestRecordBrokerageNoteToolS427` | none | to read |
@@ -91,8 +91,8 @@ Source status:
 
 | Verdict | Rows |
 |---|---|
-| supported | 25 |
-| partial | 29 |
+| supported | 28 |
+| partial | 26 |
 | unsupported | 0 |
 
 ## What the assistant says

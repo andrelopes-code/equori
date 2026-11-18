@@ -6742,11 +6742,12 @@
         },
         "view": {
           "type": "string",
-          "description": "sales gives realized results, income gives income events; both when absent",
+          "description": "sales gives realized results, income gives income events, gain_tax the monthly tax on variable income; both when absent",
           "enum": [
             "sales",
             "income",
-            "both"
+            "both",
+            "gain_tax"
           ]
         }
       },
@@ -6955,6 +6956,190 @@
             "currency"
           ],
           "additionalProperties": false
+        },
+        "gain_tax": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "month": {
+                "type": "string"
+              },
+              "lines": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "pool": {
+                      "type": "string"
+                    },
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "amount": {
+                          "type": "string",
+                          "description": "decimal amount in the instrument's scale, such as -1234.56"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "description": "currency or instrument code"
+                        }
+                      },
+                      "required": [
+                        "amount",
+                        "currency"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "exempt": {
+                      "type": "object",
+                      "properties": {
+                        "amount": {
+                          "type": "string",
+                          "description": "decimal amount in the instrument's scale, such as -1234.56"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "description": "currency or instrument code"
+                        }
+                      },
+                      "required": [
+                        "amount",
+                        "currency"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "loss_used": {
+                      "type": "object",
+                      "properties": {
+                        "amount": {
+                          "type": "string",
+                          "description": "decimal amount in the instrument's scale, such as -1234.56"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "description": "currency or instrument code"
+                        }
+                      },
+                      "required": [
+                        "amount",
+                        "currency"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "loss_carried": {
+                      "type": "object",
+                      "properties": {
+                        "amount": {
+                          "type": "string",
+                          "description": "decimal amount in the instrument's scale, such as -1234.56"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "description": "currency or instrument code"
+                        }
+                      },
+                      "required": [
+                        "amount",
+                        "currency"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "base": {
+                      "type": "object",
+                      "properties": {
+                        "amount": {
+                          "type": "string",
+                          "description": "decimal amount in the instrument's scale, such as -1234.56"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "description": "currency or instrument code"
+                        }
+                      },
+                      "required": [
+                        "amount",
+                        "currency"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "tax": {
+                      "type": "object",
+                      "properties": {
+                        "amount": {
+                          "type": "string",
+                          "description": "decimal amount in the instrument's scale, such as -1234.56"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "description": "currency or instrument code"
+                        }
+                      },
+                      "required": [
+                        "amount",
+                        "currency"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "withheld": {
+                      "type": "object",
+                      "properties": {
+                        "amount": {
+                          "type": "string",
+                          "description": "decimal amount in the instrument's scale, such as -1234.56"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "description": "currency or instrument code"
+                        }
+                      },
+                      "required": [
+                        "amount",
+                        "currency"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "pool",
+                    "result",
+                    "exempt",
+                    "loss_used",
+                    "loss_carried",
+                    "base",
+                    "tax",
+                    "withheld"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "darf": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "description": "amount to pay; zero when below the minimum and carried",
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "month",
+              "lines",
+              "darf"
+            ],
+            "additionalProperties": false
+          }
         }
       },
       "required": [

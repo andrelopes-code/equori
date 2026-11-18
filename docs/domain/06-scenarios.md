@@ -1187,3 +1187,7 @@ The scenarios of `docs/specs/2026-11-18-listed-options-design.md`, rules O2 to O
 ### S626–S627 Progressive rate
 
 The scenarios of `docs/specs/2026-11-18-progressive-rate-design.md`, rules PR1 to PR4, through the HTTP API and the tool `set_rate_steps`. A pre-fixed CDB of 6% a year issued on 2026-01-01 that pays 12% after 31 days held is worth 1,004.640317564163 on 2026-01-30 under both rules. S626 (retroactive): on 2026-02-03 it is worth 1,010.298826697262, the whole period at 12%. S627 (stepped): on 2026-02-03 it is worth 1,005.433705882182, the price at 6% up to the first priced day of the step chained to the growth at 12%. Steps without their rule, or a rule without steps, are refused with `validation_failed`, and the table refuses a rule without steps.
+
+### S628–S629 Monthly tax on variable income
+
+The scenarios of `docs/specs/2026-11-18-monthly-gain-tax-design.md`, rules GT1 to GT5, through the tool `get_tax_year` view `gain_tax` in a book of region BR. S628: 1,000 PETR4 bought at 10.00; 500 sold at 14.00 in January (R$ 7,000.00 of sales) leave an exempt gain of 2,000.00 and a DARF of 0.00; 500 sold at 50.00 in February with 1.25 withheld give a base of 20,000.00, a tax of 3,000.00 and a DARF of 2,998.75. S629: a day trade of March with a gain of 40.00 and 0.40 withheld owes 7.60, below the minimum, and the day trade of April with a gain of 100.00 and 1.00 withheld gives a DARF of 26.60. A book of region DE reads no month.

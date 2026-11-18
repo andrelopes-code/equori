@@ -5,17 +5,18 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 	"github.com/andrelopes-code/equori/internal/portfolio/app"
 )
 
 type getTaxYearView string
 
-func (getTaxYearView) Values() []string { return []string{"sales", "income", "both"} }
+func (getTaxYearView) Values() []string { return []string{"sales", "income", "both", "gain_tax"} }
 
 type getTaxYearIn struct {
 	Year int            `json:"year"          jsonschema:"year in which the owner's tax year starts"`
-	View getTaxYearView `json:"view,omitzero" jsonschema:"sales gives realized results, income gives income events; both when absent"`
+	View getTaxYearView `json:"view,omitzero" jsonschema:"sales gives realized results, income gives income events, gain_tax the monthly tax on variable income; both when absent"`
 }
 
 type saleView struct {
@@ -47,6 +48,25 @@ type getTaxYearOut struct {
 
 	// DeductibleContributions is the base of the deduction of pension contributions.
 	DeductibleContributions tool.Money `json:"deductible_contributions,omitzero"`
+
+	GainTax []gainTaxMonthView `json:"gain_tax,omitzero"`
+}
+
+type gainTaxMonthView struct {
+	Month string            `json:"month"`
+	Lines []gainTaxLineView `json:"lines"`
+	Darf  tool.Money        `json:"darf"  jsonschema:"amount to pay; zero when below the minimum and carried"`
+}
+
+type gainTaxLineView struct {
+	Pool        string     `json:"pool"`
+	Result      tool.Money `json:"result"`
+	Exempt      tool.Money `json:"exempt"`
+	LossUsed    tool.Money `json:"loss_used"`
+	LossCarried tool.Money `json:"loss_carried"`
+	Base        tool.Money `json:"base"`
+	Tax         tool.Money `json:"tax"`
+	Withheld    tool.Money `json:"withheld"`
 }
 
 func getTaxYear(svc *app.Service, names AccountNames) tool.Tool {
@@ -81,6 +101,12 @@ func getTaxYear(svc *app.Service, names AccountNames) tool.Tool {
 			if out.Income, err = taxYearIncome(ctx, svc, booksID, in.Year, named); err != nil {
 				return getTaxYearOut{}, err
 			}
+		}
+
+		if in.View == "gain_tax" {
+			out.GainTax, err = gainTaxMonths(ctx, svc, booksID, in.Year)
+
+			return out, err
 		}
 
 		paid, ok, err := svc.DeductibleContributions(ctx, booksID, in.Year)
@@ -147,4 +173,52 @@ func taxYearIncome(
 	}
 
 	return income, nil
+}
+
+// gainTaxMonths states the monthly tax in the base currency of the book (monthly gain tax design).
+func gainTaxMonths(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	year int,
+) ([]gainTaxMonthView, error) {
+	months, base, err := svc.GainTax(ctx, booksID, year)
+	if err != nil || len(months) == 0 {
+		return nil, err
+	}
+
+	cents := func(v int64) (tool.Money, error) {
+		m, err := money.New(v, base)
+		return tool.MoneyOf(m), err
+	}
+
+	out := make([]gainTaxMonthView, len(months))
+	for i, m := range months {
+		v := gainTaxMonthView{Month: m.Month.Format("2006-01")}
+		if v.Darf, err = cents(m.Darf); err != nil {
+			return nil, err
+		}
+
+		for _, l := range m.Lines {
+			line := gainTaxLineView{Pool: l.Pool}
+			for _, f := range []struct {
+				dst *tool.Money
+				v   int64
+			}{
+				{&line.Result, l.Result}, {&line.Exempt, l.Exempt}, {&line.LossUsed, l.LossUsed},
+				{&line.LossCarried, l.LossCarried}, {&line.Base, l.Base}, {&line.Tax, l.Tax},
+				{&line.Withheld, l.Withheld},
+			} {
+				if *f.dst, err = cents(f.v); err != nil {
+					return nil, err
+				}
+			}
+
+			v.Lines = append(v.Lines, line)
+		}
+
+		out[i] = v
+	}
+
+	return out, nil
 }
