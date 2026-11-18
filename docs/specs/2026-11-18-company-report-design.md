@@ -55,6 +55,8 @@ Checked by request on 2026-11-18 on `dfp_cia_aberta_2025.zip` (12,863,177 bytes)
 - The net income is the level-two line of the income statement whose description holds "Lucro" and "Período" (442 of 442 consolidated, 668 of 668 individual: "Lucro/Prejuízo do Período", "Lucro/Prejuízo Consolidado do Período", "Lucro ou Prejuízo Líquido do Período", "Lucro ou Prejuízo Líquido Consolidado do Período"). The equity is the level-two line of the liabilities whose description begins with "Patrimônio Líquido" (442 of 442, 668 of 668).
 - `composicao_capital` holds `QT_ACAO_TOTAL_CAP_INTEGR` and `QT_ACAO_TOTAL_TESOURO` by company and `DT_REFER`.
 - `fca_cia_aberta_valor_mobiliario_2026.csv` holds `CNPJ_Companhia`, `Versao`, `Valor_Mobiliario`, `Codigo_Negociacao`, `Mercado`, `Data_Fim_Negociacao`: 451 codes with `Mercado` "Bolsa" and no end date, none shared by two companies, no company with two versions.
+- `composicao_capital` carries no unit: ITAU UNIBANCO HOLDING files 11,026,869 shares, a count in thousands, while WEG files 4,197,317,998. P7 compares two counts of one company, so the unit cancels; the list writes the counts as filed.
+- The source run against the real files on 2026-11-18 (DFP 2025, ITR 2026, FCA 2026): 671 companies in the DFP, 649 of the chart `standard` and 442 consolidated, each with a net income and an equity; 1,855 periods in the ITR; 436 listings; WEG S.A. 2025 net income 677,595,800,000 minor units and revenue 4,080,411,000,000, as the research found.
 - The DFP files of 2020 and 2021 answer 200 (12,637,854 and 13,283,026 bytes); the ITR of 2025 answers 200 (31,684,925 bytes).
 
 ## Rules
