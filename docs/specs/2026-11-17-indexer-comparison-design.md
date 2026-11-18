@@ -190,3 +190,13 @@ In the purchase table, a row bought by its amount (CN17: an account member, a gr
 - The Slotted family of the plan dialog.
 - A fixture of `PrecoTaxaTesouroDireto.csv` that includes a title closed for purchase, to confirm the rate such a row carries (IC11 skips blank and zero).
 - The licence note of each source in `docs/operations/price-feeds.md`: Banco Central open data and Tesouro Transparente are the sources `br_focus` and `tesouro_direto` already read.
+
+## Decisions taken during execution
+
+- A security of form `percent` over a monthly index has no rate: IC1 offers only `spread` for a monthly index.
+- IC6: a year with a point and 0 or 12 stored months takes `(1 + p)^(1/12) − 1` for each month.
+- Implied inflation (IC13) is dated by the older of the two base dates.
+- A security added to the list starts with the values of a default row.
+- The calculator draws the comparison in the `details` slot of the frame, with no inputs column: the component holds its own inputs.
+- The plan's guide article quotes the English label "compare indexers": the guide is written in English and its labels are checked against the English catalog.
+- `cmd/equori/config.go` lists the curve sources, so `EQUORI_FEED_BR_TESOURO_URL` is a known variable.
