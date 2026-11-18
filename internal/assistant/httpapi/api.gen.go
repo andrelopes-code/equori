@@ -9,6 +9,33 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// Defines values for AssistantFileKind.
+const (
+	Csv   AssistantFileKind = "csv"
+	Image AssistantFileKind = "image"
+	Ofx   AssistantFileKind = "ofx"
+	Pdf   AssistantFileKind = "pdf"
+	Text  AssistantFileKind = "text"
+)
+
+// Valid indicates whether the value is a known member of the AssistantFileKind enum.
+func (e AssistantFileKind) Valid() bool {
+	switch e {
+	case Csv:
+		return true
+	case Image:
+		return true
+	case Ofx:
+		return true
+	case Pdf:
+		return true
+	case Text:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AssistantMessageOutcome.
 const (
 	AssistantMessageOutcomeAnswered  AssistantMessageOutcome = "answered"
@@ -168,6 +195,19 @@ type AssistantConversationPage struct {
 	// NextCursor Absent on the last page.
 	NextCursor *string `json:"next_cursor,omitempty"`
 }
+
+// AssistantFile defines model for AssistantFile.
+type AssistantFile struct {
+	ConversationId *openapi_types.UUID `json:"conversation_id,omitempty"`
+	CreatedAt      time.Time           `json:"created_at"`
+	Id             openapi_types.UUID  `json:"id"`
+	Kind           AssistantFileKind   `json:"kind"`
+	Name           string              `json:"name"`
+	Size           int                 `json:"size"`
+}
+
+// AssistantFileKind defines model for AssistantFile.Kind.
+type AssistantFileKind string
 
 // AssistantMessage defines model for AssistantMessage.
 type AssistantMessage struct {
@@ -492,11 +532,20 @@ type ListAssistantConversationsParams struct {
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
 
+// CreateAssistantFileMultipartBody defines parameters for CreateAssistantFile.
+type CreateAssistantFileMultipartBody struct {
+	ConversationId *openapi_types.UUID `json:"conversation_id,omitempty"`
+	File           openapi_types.File  `json:"file"`
+}
+
 // ListUsageDaysParams defines parameters for ListUsageDays.
 type ListUsageDaysParams struct {
 	From openapi_types.Date `form:"from" json:"from"`
 	To   openapi_types.Date `form:"to" json:"to"`
 }
+
+// CreateAssistantFileMultipartRequestBody defines body for CreateAssistantFile for multipart/form-data ContentType.
+type CreateAssistantFileMultipartRequestBody CreateAssistantFileMultipartBody
 
 // CreateProviderJSONRequestBody defines body for CreateProvider for application/json ContentType.
 type CreateProviderJSONRequestBody = ProviderInput

@@ -216,6 +216,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/assistant/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Store a file the member attaches to the next message of a conversation.
+         * @description The kind is read from the content: ofx, csv, pdf, image (JPEG, PNG, WebP) or text; another content
+         *     returns 415 file_kind_unsupported. At most 10 MiB per file (413 file_too_large) and 50 MiB per
+         *     conversation, or for the unsent files of the member when conversation_id is absent
+         *     (409 conversation_files_full). The same content attached twice to one conversation returns the
+         *     stored file. An unsent file is deleted 24 hours after its upload. 404 conversation_not_found.
+         */
+        post: operations["createAssistantFile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/assistant/files/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a file no message has sent yet; 404 file_not_found. */
+        delete: operations["deleteAssistantFile"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/assistant/proposals/{id}/confirm": {
         parameters: {
             query?: never;
@@ -4810,6 +4851,18 @@ export interface components {
             /** Format: date-time */
             retry_at?: string;
         };
+        AssistantFile: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            conversation_id?: string;
+            name: string;
+            /** @enum {string} */
+            kind: "ofx" | "csv" | "pdf" | "image" | "text";
+            size: number;
+            /** Format: date-time */
+            created_at: string;
+        };
         AssistantTurnInput: {
             /** Format: uuid */
             conversation_id?: string;
@@ -8998,6 +9051,63 @@ export interface operations {
         };
     };
     deleteAssistantConversation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    createAssistantFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                    /** Format: uuid */
+                    conversation_id?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Stored. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantFile"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            413: components["responses"]["Problem"];
+            415: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    deleteAssistantFile: {
         parameters: {
             query?: never;
             header?: never;

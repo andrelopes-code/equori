@@ -60,6 +60,9 @@ func (s *Server) Register(mux *http.ServeMux) {
 		httpserver.Handle(s.errs, http.StatusOK, s.getAssistantConversation))
 	mux.HandleFunc("DELETE "+BaseURL+"/assistant/conversations/{id}",
 		httpserver.Handle(s.errs, http.StatusOK, s.deleteAssistantConversation))
+	mux.HandleFunc("POST "+BaseURL+"/assistant/files", s.createAssistantFile)
+	mux.HandleFunc("DELETE "+BaseURL+"/assistant/files/{id}",
+		httpserver.Handle(s.errs, http.StatusOK, s.deleteAssistantFile))
 	mux.HandleFunc("POST "+BaseURL+"/assistant/proposals/{id}/confirm",
 		httpserver.Handle(s.errs, http.StatusOK, s.confirmAssistantProposal))
 	mux.HandleFunc("POST "+BaseURL+"/assistant/proposals/{id}/reject",
@@ -173,7 +176,7 @@ func toProblem(err error) (problem.Details, bool) {
 		), true
 	}
 
-	return problem.Details{}, false
+	return fileProblem(err)
 }
 
 func caps(in []string) []Capability {

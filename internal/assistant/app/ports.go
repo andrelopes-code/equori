@@ -39,6 +39,7 @@ type Repository interface {
 	) (int, error)
 	UsageRepository
 	ConversationRepository
+	FileRepository
 }
 
 // Sealer seals values bound to their row (ADR 008).
@@ -158,4 +159,17 @@ type UsageRepository interface {
 	UsageByDay(ctx context.Context, booksID int64, from, to time.Time) ([]domain.UsageDay, error)
 	Limits(ctx context.Context, booksID int64) ([]domain.Limit, error)
 	SetLimit(ctx context.Context, booksID int64, l domain.Limit) error
+}
+
+// FileRepository stores the files a member attaches to a message (assistant parity design, F1).
+type FileRepository interface {
+	StoreFile(
+		ctx context.Context,
+		booksID, memberID int64,
+		f domain.File,
+		content []byte,
+		staleBefore time.Time,
+		limit int64,
+	) (domain.File, error)
+	DeleteUnsentFile(ctx context.Context, booksID, memberID int64, id uuid.UUID) error
 }

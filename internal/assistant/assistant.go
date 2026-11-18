@@ -16,6 +16,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/assistant/llmapi"
 	"github.com/andrelopes-code/equori/internal/assistant/postgres"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/llm"
 	"github.com/andrelopes-code/equori/internal/platform/locale"
 	"github.com/andrelopes-code/equori/internal/platform/secret"
@@ -82,6 +83,14 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*Module, error) {
 func (m *Module) Resolver() llm.Resolver { return m.resolver }
 
 func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
+
+// BodyLimits raises the request body limit of a conversation file: 10 MiB of content plus the
+// multipart framing (assistant parity design, F3).
+func (m *Module) BodyLimits() []httpserver.BodyLimit {
+	return []httpserver.BodyLimit{
+		{Pattern: "POST /api/v1/assistant/files", Bytes: 11 << 20},
+	}
+}
 
 func newSealer(cfg Config) (app.Sealer, error) {
 	var box app.Sealer

@@ -47,6 +47,8 @@ var topics = []string{
 }
 
 // summaries says, per topic, what its article answers; the model picks the topic from them.
+//
+//nolint:gosec // G101 reads the topic summaries as credentials; they are guide text
 var summaries = map[string]string{
 	"getting_started":                     "first steps and what each area of the app is for",
 	"accounts_and_categories":             "accounts, categories, institutions and their tools",

@@ -5,6 +5,9 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"time"
+
+	"github.com/google/uuid"
 )
 
 // FileKind is the kind of a conversation file, a file a member attaches to a message (assistant
@@ -18,6 +21,18 @@ const (
 	FileImage FileKind = "image"
 	FileText  FileKind = "text"
 )
+
+// File is a stored conversation file without its content. ConversationID is uuid.Nil while the
+// file is not yet sent (Q6).
+type File struct {
+	ID             uuid.UUID
+	ConversationID uuid.UUID
+	Name           string
+	MediaType      string
+	Kind           FileKind
+	Size           int
+	CreatedAt      time.Time
+}
 
 // Limits of F2 and F3.
 const (

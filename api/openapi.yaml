@@ -342,6 +342,66 @@ paths:
           $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
+  /assistant/files:
+    post:
+      tags: [assistant]
+      operationId: createAssistantFile
+      x-book-role: read
+      summary: Store a file the member attaches to the next message of a conversation.
+      description: |
+        The kind is read from the content: ofx, csv, pdf, image (JPEG, PNG, WebP) or text; another content
+        returns 415 file_kind_unsupported. At most 10 MiB per file (413 file_too_large) and 50 MiB per
+        conversation, or for the unsent files of the member when conversation_id is absent
+        (409 conversation_files_full). The same content attached twice to one conversation returns the
+        stored file. An unsent file is deleted 24 hours after its upload. 404 conversation_not_found.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                conversation_id:
+                  type: string
+                  format: uuid
+      responses:
+        "201":
+          description: Stored.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssistantFile"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "413":
+          $ref: "#/components/responses/Problem"
+        "415":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /assistant/files/{id}:
+    delete:
+      tags: [assistant]
+      operationId: deleteAssistantFile
+      x-book-role: read
+      summary: Remove a file no message has sent yet; 404 file_not_found.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "204":
+          description: Deleted.
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
   /assistant/proposals/{id}/confirm:
     post:
       tags: [assistant]
@@ -8272,6 +8332,17 @@ components:
         model: {type: string}
         notice: {type: string, pattern: "^[a-z0-9_]{2,40}$"}
         retry_at: {type: string, format: date-time}
+    AssistantFile:
+      type: object
+      additionalProperties: false
+      required: [id, name, kind, size, created_at]
+      properties:
+        id: {type: string, format: uuid}
+        conversation_id: {type: string, format: uuid}
+        name: {type: string}
+        kind: {type: string, enum: [ofx, csv, pdf, image, text]}
+        size: {type: integer, minimum: 1}
+        created_at: {type: string, format: date-time}
     AssistantTurnInput:
       type: object
       additionalProperties: false

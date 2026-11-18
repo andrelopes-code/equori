@@ -46,6 +46,7 @@ func newHandler(
 			m.ingestion.BodyLimits(),
 			m.reporting.BodyLimits(),
 			m.marketdata.BodyLimits(),
+			m.assistant.BodyLimits(),
 		)...)
 }
 
