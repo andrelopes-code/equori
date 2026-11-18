@@ -217,6 +217,14 @@ test("a section reserves a transparent bar in the gutter, so nothing shifts when
   );
 });
 
+test("a section inside a card keeps its bar clear of the card's edge", () => {
+  // The card's inline padding is space-6, the gutter's width: the bar would sit on the edge.
+  assert.match(
+    css,
+    /\[data-ui="card"\] \[data-ui="field-group"\]\[data-kind="section"\]\s*\{[^}]*margin-inline-start: calc\(var\(--slotted-space-4\) \* -1\);[^}]*padding-inline-start: calc\(var\(--slotted-space-4\) - var\(--slotted-border-width-thick\) \* 1\.5\)/,
+  );
+});
+
 test("a section sets its description tight under the title and the body clear of both", () => {
   assert.match(css, /--slotted-section-gap: var\(--slotted-space-6\)/);
   assert.match(

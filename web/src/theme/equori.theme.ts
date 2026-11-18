@@ -75,6 +75,13 @@ const sectionRule = `
 [data-ui="field-group"][data-kind="section"]:is(:hover, :focus-within) {
   border-inline-start-color: var(--slotted-tone-accent-solid);
 }
+
+/* Inside a card the gutter is the card's own padding (space-6): a full outdent puts the bar on
+   the card's edge. Half the outdent leaves the bar 8 px from the edge (owner review, 2026-11-18). */
+[data-ui="card"] [data-ui="field-group"][data-kind="section"] {
+  margin-inline-start: calc(var(--slotted-space-4) * -1);
+  padding-inline-start: calc(var(--slotted-space-4) - var(--slotted-border-width-thick) * 1.5);
+}
 `;
 
 // Workaround for Slotted issue #98: the description keeps a fixed 2 px margin under the title,

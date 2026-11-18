@@ -1860,6 +1860,11 @@
       border-inline-start-color: var(--slotted-tone-accent-solid);
     }
 
+    [data-ui="card"] [data-ui="field-group"][data-kind="section"] {
+      margin-inline-start: calc(var(--slotted-space-4) * -1);
+      padding-inline-start: calc(var(--slotted-space-4) - var(--slotted-border-width-thick) * 1.5);
+    }
+
     [data-ui="section"] > [data-part="header"] > [data-part="title"] > [data-part="description"] {
       margin-block-start: 0;
     }
