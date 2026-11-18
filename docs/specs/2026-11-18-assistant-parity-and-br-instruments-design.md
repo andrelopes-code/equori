@@ -104,7 +104,7 @@ Each product row of an article holds: the name in pt-BR and its code, type and s
 | `getNetWorthDays` | `-visual` | `get_portfolio`, view `net_worth_days` |
 | `getTag` | `-visual` | `get_transaction` |
 | `getInstitutionIndicators`, `listInstitutionIdentifierSchemes` | `-visual` | `get_market_data` |
-| `getMemberAppearance`, `setMemberAppearance` | `-visual` | `manage_settings` (new) |
+| `getMemberAppearance`, `setMemberAppearance` | `-visual` | `get_appearance`, `set_appearance` (4.5) |
 | `updateSettings` | `-setup` | `manage_settings` (new) |
 | `probeQuote` | `-dialog` | `get_market_data` |
 | `recordInstrumentPrices` | `-file` | `manage_instrument` (JSON body, no file) |
@@ -162,6 +162,19 @@ Composer (web and phone):
 | FU7 | A file dropped on a screen that has its own import (Import statement) keeps that screen's behavior; the panel takes only a drop on the panel. |
 
 Flows the matrix and the tool tests cover: a statement file imported into an account; a price CSV imported; a brokerage note in PDF read into `record_investment` kind `brokerage_note` with the PDF attached; a receipt photo read into `record_transaction` with the photo attached; a CSV file whose profile the assistant proposes from the masked sample.
+
+### 4.5 Appearance
+
+The appearance of a member is a document whose names and values the web defines (`web/src/theme/appearance.ts`, `appearanceNames`); the server stores it whole. The browser holds the choices in its own storage and sends them to the server when they differ, so a document written only on the server is overwritten by the open browser.
+
+| ID | Rule |
+|---|---|
+| AP1 | The tool `set_appearance` takes the choices with a closed set of values (scheme, density, text size, motion, corners, typeface, amount tone, summary amounts, visual, accent as a colour) and merges them into the stored document. The saved themes and the per-book accents are not written by the tool. |
+| AP2 | The value sets live in one Go table that a web test compares with the checks of `web/src/theme`: a value the web refuses fails the test. |
+| AP3 | The receipt of an executed `set_appearance` carries the choices written; the conversation applies them in the open browser through `restoreAppearance`, so the screen changes at once and the next sync sends the same document. |
+| AP4 | `get_appearance` reads the stored choices of AP1. |
+
+Delivered with phase 5, which holds the other web work of this spec.
 
 ## 5. Brazilian product matrix
 

@@ -291,7 +291,7 @@ var exposure = map[string]string{
 	"deleteGoal":                       "manage_budget_or_goal",
 	"listGoalAllocations":              "get_budgets_and_goals",
 	"createGoalAllocation":             "manage_budget_or_goal",
-	"deleteGoalAllocation":             "-screen",
+	"deleteGoalAllocation":             "manage_budget_or_goal",
 	"listGoalExpenses":                 "get_budgets_and_goals",
 	"linkGoalExpense":                  "manage_budget_or_goal",
 	"unlinkGoalExpense":                "manage_budget_or_goal",
