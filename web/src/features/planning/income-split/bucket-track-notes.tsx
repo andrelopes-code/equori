@@ -1,5 +1,6 @@
 import { Button } from "@slotted/react/button";
 import { Inline } from "@slotted/react/inline";
+import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
 
 import { useT } from "@/i18n/i18n-provider";
@@ -17,7 +18,7 @@ interface BucketTrackNotesProps {
 
 // The sentences under the buckets of the Track view: what was spent outside the split, the
 // yields that stayed in the investments (A252) and the unallocated income, an accrual figure
-// (A235). Each is drawn only when its amount is not zero.
+// (A235), one per line. Each is drawn only when its amount is not zero.
 export function BucketTrackNotes({
   outside,
   retained,
@@ -28,8 +29,10 @@ export function BucketTrackNotes({
 }: BucketTrackNotesProps) {
   const t = useT();
 
+  if (outside <= 0 && retained <= 0 && unallocated === 0) return null;
+
   return (
-    <>
+    <Stack gap={1}>
       {outside > 0 && (
         <Inline align="center" gap={3}>
           <Text size="sm" tone="muted">
@@ -66,6 +69,6 @@ export function BucketTrackNotes({
           })}
         </Text>
       )}
-    </>
+    </Stack>
   );
 }

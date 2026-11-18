@@ -103,71 +103,75 @@ export function BucketTrack({ month }: BucketTrackProps) {
       </SectionHeader>
 
       <SectionBody>
-        <Stack gap={1}>
-          <Text size="md" weight="medium">
-            {t(verdict.key, {
-              month: monthName,
-              count: "count" in verdict ? String(verdict.count) : "",
-              total: String(track.rows.length),
-            })}
-          </Text>
-          {track.since !== undefined && versions.data !== undefined && (
-            <Text size="sm" tone="muted">
-              {track.since.first
-                ? t("track.sinceStart")
-                : t("track.since", {
-                    month: names.longYear(track.since.from),
-                  })}
-            </Text>
-          )}
-        </Stack>
-
-        {reference !== undefined &&
-          track.received > 0 &&
-          reference !== track.received && (
-            <Text size="sm" tone="muted">
-              {t("track.referenceDiffers", {
-                received: money(track.received),
-                reference: money(reference),
+        <Stack gap={5}>
+          <Stack gap={1}>
+            <Text size="md" weight="medium">
+              {t(verdict.key, {
+                month: monthName,
+                count: "count" in verdict ? String(verdict.count) : "",
+                total: String(track.rows.length),
               })}
             </Text>
-          )}
+            {track.since !== undefined && versions.data !== undefined && (
+              <Text size="sm" tone="muted">
+                {track.since.first
+                  ? t("track.sinceStart")
+                  : t("track.since", {
+                      month: names.longYear(track.since.from),
+                    })}
+              </Text>
+            )}
 
-        <TrackStrip
-          parts={trackStrip(history.data, month)}
-          received={money(track.received)}
-          money={money}
-        />
+            {reference !== undefined &&
+              track.received > 0 &&
+              reference !== track.received && (
+                <Text size="sm" tone="muted">
+                  {t("track.referenceDiffers", {
+                    received: money(track.received),
+                    reference: money(reference),
+                  })}
+                </Text>
+              )}
+          </Stack>
 
-        <div className={styles.rows}>
-          {track.rows.map((row) => (
-            <BucketTrackRow
-              key={row.id}
-              row={row}
-              received={track.received}
-              month={month}
-              monthNames={names.short}
-              money={money}
-              share={share}
-              onOpen={(id) => {
-                drawer.open(id, month);
-              }}
-            />
-          ))}
-        </div>
-        <BucketTrackNotes
-          outside={outside}
-          retained={track.retained}
-          unallocated={track.unallocated}
-          month={monthName}
-          money={money}
-          onOutside={() => {
-            drawer.open("outside", month);
-          }}
-        />
-        <BucketTrackLegend
-          changed={track.rows.some((r) => r.months.some((c) => c.changed))}
-        />
+          <TrackStrip
+            parts={trackStrip(history.data, month)}
+            received={money(track.received)}
+            money={money}
+          />
+
+          <div className={styles.rows}>
+            {track.rows.map((row) => (
+              <BucketTrackRow
+                key={row.id}
+                row={row}
+                received={track.received}
+                month={month}
+                monthNames={names.short}
+                money={money}
+                share={share}
+                onOpen={(id) => {
+                  drawer.open(id, month);
+                }}
+              />
+            ))}
+          </div>
+
+          <BucketTrackNotes
+            outside={outside}
+            retained={track.retained}
+            unallocated={track.unallocated}
+            month={monthName}
+            money={money}
+            onOutside={() => {
+              drawer.open("outside", month);
+            }}
+          />
+
+          <BucketTrackLegend
+            changed={track.rows.some((r) => r.months.some((c) => c.changed))}
+          />
+        </Stack>
       </SectionBody>
 
       {drawer.target !== undefined && (

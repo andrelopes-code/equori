@@ -3,10 +3,11 @@ import userEvent from "@testing-library/user-event";
 
 // An account field opens its accounts in a drawer titled by the field's label: the button the
 // label names, then the account's option inside the drawer. A search opens the block "Other
-// accounts", so an account of any kind is found by its name.
+// accounts", so an account of any kind is found by its name. The field's name ends at a word
+// boundary: the navigation column draws a button "Accounts", which the label "Account" starts.
 export async function chooseAccount(field: string, account: string) {
   await userEvent.click(
-    await screen.findByRole("button", { name: new RegExp(`^${field}`) }),
+    await screen.findByRole("button", { name: new RegExp(`^${field}(?!\\w)`) }),
   );
   const sheet = await screen.findByRole("dialog", { name: field });
   await userEvent.type(await within(sheet).findByRole("searchbox"), account);

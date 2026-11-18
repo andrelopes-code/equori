@@ -358,7 +358,7 @@ describe("New schedule", () => {
     await chooseAccount(catalogEn["schedule.to"], "Reserva");
     await userEvent.click(
       await screen.findByRole("button", {
-        name: new RegExp(`^${catalogEn["schedule.account"]}`),
+        name: new RegExp(`^${catalogEn["schedule.account"]}(?!\\w)`),
       }),
     );
     const sheet = await screen.findByRole("dialog", {
