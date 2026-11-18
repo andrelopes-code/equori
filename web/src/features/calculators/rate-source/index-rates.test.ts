@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   accumulated,
   expectedOverDaily,
+  expectedOverMonthly,
   percentOfDaily,
   spreadOverDaily,
   trailingDaily,
@@ -132,3 +133,43 @@ describe("index rates", () => {
     );
   });
 });
+
+describe("expectedOverMonthly", () => {
+  const points = [
+    { date: "2026-12-31", rate: 0.051082 },
+    { date: "2027-12-31", rate: 0.05 },
+  ];
+
+  it.each([
+    [2, 0.05344843],
+    [14, 0.05049194],
+    // 2028 is after the last point: the monthly rate of 2027 repeats.
+    [26, 0.05026486],
+  ])("takes the path of the points over %i months", (months, expected) => {
+    expect(expectedOverMonthly(stored2026(10), points, months)).toBeCloseTo(
+      expected,
+      8,
+    );
+  });
+
+  it("takes the rate of a year with a point and no stored month", () => {
+    expect(expectedOverMonthly(stored2026(12), points.slice(1), 6)).toBeCloseTo(
+      0.05,
+      8,
+    );
+  });
+
+  it("is null without a point or a stored rate, or below one month", () => {
+    expect(expectedOverMonthly(stored2026(10), [], 2)).toBeNull();
+    expect(expectedOverMonthly([], points, 2)).toBeNull();
+    expect(expectedOverMonthly(stored2026(10), points, 0)).toBeNull();
+  });
+});
+
+// January to October 2026: nine months at 0 and one accumulating 4.2%.
+function stored2026(count: number): IndexRate[] {
+  return Array.from({ length: count }, (_, i) => ({
+    date: `2026-${String(i + 1).padStart(2, "0")}-01`,
+    rate: i === 9 ? 0.042 : 0,
+  }));
+}

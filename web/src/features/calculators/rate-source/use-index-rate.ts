@@ -7,7 +7,10 @@ import {
   indexExpectationsQuery,
   indexRatesQuery,
 } from "@/features/calculators/api";
-import type { Floating } from "@/features/calculators/rate-source/floating";
+import {
+  perDayOf,
+  type Floating,
+} from "@/features/calculators/rate-source/floating";
 import { dailySpread } from "@/features/calculators/rate-source/index-catalog";
 import {
   expectedOverDaily,
@@ -69,15 +72,11 @@ export function useIndexRate(
   if (value === null) return null;
   if (expected) {
     if (survey === undefined) return null;
-    const spreadDaily = dailySpread(index.id);
-    // As spreadOverDaily: a 360th of the spread on each day of an actual/360 index, otherwise
-    // the spread compounded over the n stored days of a year.
-    const rate = expectedOverDaily(rates, survey.points, months, (d, n) =>
-      floating.form === "percent"
-        ? 1 + value * d
-        : spreadDaily
-          ? 1 + d + value / 360
-          : (1 + d) * (1 + value) ** (1 / n),
+    const rate = expectedOverDaily(
+      rates,
+      survey.points,
+      months,
+      perDayOf(floating.form, value, dailySpread(index.id)),
     );
     return rate === null ? null : { rate, to: survey.surveyDate };
   }

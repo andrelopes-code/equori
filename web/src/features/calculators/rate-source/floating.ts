@@ -79,3 +79,16 @@ export function clearFloating(
     [keys.basis]: undefined,
   };
 }
+
+// The factor of a stored day of an index at a percent or a spread (ADR 026 E7), from the index's
+// daily rate d and the n stored days of its year, as expectedOverDaily takes it. A spread adds
+// its 360th to each day of an actual/360 index; otherwise it compounds over the n days.
+export function perDayOf(
+  form: FloatingForm,
+  value: number,
+  dailySpread: boolean,
+): (d: number, n: number) => number {
+  if (form === "percent") return (d) => 1 + value * d;
+  if (dailySpread) return (d) => 1 + d + value / 360;
+  return (d, n) => (1 + d) * (1 + value) ** (1 / n);
+}

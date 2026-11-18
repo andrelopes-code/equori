@@ -18,7 +18,7 @@ function yearBefore(date: string): string {
 
 // The rates of a daily index after the last stored date minus one year, up to it (design §4);
 // null when the stored rates start after that date.
-function trailingYear(rates: readonly IndexRate[]): IndexRate[] | null {
+export function trailingYear(rates: readonly IndexRate[]): IndexRate[] | null {
   const first = rates.at(0);
   const last = rates.at(-1);
   if (first === undefined || last === undefined) return null;
@@ -126,4 +126,58 @@ export function expectedOverDaily(
     factor *= perDay((1 + rate) ** (1 / n) - 1, n) ** (n / 12);
   }
   return factor ** (12 / months) - 1;
+}
+
+// The annual rate of a monthly index over months under its expected path (ADR 026 E11): each
+// month after the last stored one takes the monthly rate of its calendar year; null without a
+// stored rate or a point, or with months < 1.
+export function expectedOverMonthly(
+  rates: readonly IndexRate[],
+  points: readonly IndexRate[],
+  months: number,
+): number | null {
+  const last = rates.at(-1);
+  const lastPoint = points.at(-1);
+  if (last === undefined || lastPoint === undefined || months < 1) return null;
+  let year = yearNumber(last.date);
+  let month = Number(last.date.slice(5, 7));
+  let factor = 1;
+  for (let k = 0; k < months; k++) {
+    month++;
+    if (month > 12) {
+      month = 1;
+      year++;
+    }
+    factor *= 1 + monthlyRate(rates, points, lastPoint, year);
+  }
+  return factor ** (12 / months) - 1;
+}
+
+// The monthly rate of a calendar year: that of its own point, else that of the first later
+// point, else that of the last point.
+function monthlyRate(
+  rates: readonly IndexRate[],
+  points: readonly IndexRate[],
+  lastPoint: IndexRate,
+  year: number,
+): number {
+  const point =
+    points.find((p) => yearNumber(p.date) === year) ??
+    points.find((p) => yearNumber(p.date) > year) ??
+    lastPoint;
+  const stored = rates.filter(
+    (r) => yearNumber(r.date) === yearNumber(point.date),
+  );
+  // A year with no stored month, or a full one, spreads its point over 12 months.
+  if (stored.length < 1 || stored.length > 11)
+    return (1 + point.rate) ** (1 / 12) - 1;
+  return (
+    ((1 + point.rate) / (1 + accumulated(stored))) **
+      (1 / (12 - stored.length)) -
+    1
+  );
+}
+
+function yearNumber(date: string): number {
+  return Number(date.slice(0, 4));
 }
