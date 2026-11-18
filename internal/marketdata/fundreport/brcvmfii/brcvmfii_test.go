@@ -110,6 +110,45 @@ func TestFetch(t *testing.T) {
 	})
 }
 
+// The register writes some fractions in scientific notation (00GE11, 2026: "8.3E-05"); the
+// report carries them as plain decimals, which a numeric column accepts.
+func TestFetchScientificNotation(t *testing.T) {
+	t.Parallel()
+
+	geralRows := geralHeader +
+		"Classe;11.728.688/0001-47;2026-10-01;1;2026-11-13;FUNDO;BRHGLGCTF004;Log\xedstica;S\n"
+	complementoRows := complementoHeader +
+		"11.728.688/0001-47;2026-10-01;1;10;1000;10;1.5E+2;8.3E-05;6.943e-3;0E-7\n"
+	srv := newServer(t, map[string][]byte{
+		"/inf_mensal_fii_2026.zip": fundReportZip(t, "2026", geralRows, complementoRows),
+	})
+	today := time.Date(2026, 11, 18, 0, 0, 0, 0, time.UTC)
+
+	got, err := brcvmfii.New(srv.client(), srv.URL).Fetch(t.Context(), today, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(got.Reports) != 1 {
+		t.Fatalf("reports = %+v, want one", got.Reports)
+	}
+
+	r := got.Reports[0]
+	for name, tc := range map[string]struct {
+		got  *string
+		want string
+	}{
+		"unit book value":    {r.UnitBookValue, "150"},
+		"admin fee":          {r.AdminFee, "0.000083"},
+		"month yield":        {r.MonthYield, "0.006943"},
+		"month amortization": {r.MonthAmortization, "0"},
+	} {
+		if tc.got == nil || *tc.got != tc.want {
+			t.Errorf("%s = %v, want %s", name, tc.got, tc.want)
+		}
+	}
+}
+
 func TestFetchMalformedFile(t *testing.T) {
 	t.Parallel()
 

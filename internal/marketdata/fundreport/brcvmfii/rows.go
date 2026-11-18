@@ -15,6 +15,10 @@ import (
 	"github.com/andrelopes-code/equori/internal/marketdata/fundreport"
 )
 
+// maxDecimalPlaces bounds the plain form of a cell in scientific notation; a longer fraction is
+// not a figure the register writes.
+const maxDecimalPlaces = 30
+
 var isinPattern = regexp.MustCompile(`^BR[A-Z0-9]{4}CTF[0-9A-Z]{3}$`)
 
 var identifierReplacer = strings.NewReplacer(".", "", "/", "", "-", "")
@@ -277,7 +281,26 @@ func minorUnits(cell string) *int64 {
 
 // decimal returns the cell when it is an exact decimal; nil otherwise.
 func decimal(cell string) *string {
-	_, ok := new(big.Rat).SetString(cell)
+	value, ok := new(big.Rat).SetString(cell)
+	if !ok {
+		return nil
+	}
 
-	return pointerIf(ok, cell)
+	if !strings.ContainsAny(cell, "eE") {
+		return &cell
+	}
+
+	// The register writes some fractions in scientific notation ("8.3E-05"), which a numeric
+	// column refuses; the plain form keeps every digit.
+	scale := big.NewInt(1)
+	for places := 0; places <= maxDecimalPlaces; places++ {
+		if new(big.Rat).Mul(value, new(big.Rat).SetInt(scale)).IsInt() {
+			plain := value.FloatString(places)
+			return &plain
+		}
+
+		scale.Mul(scale, big.NewInt(10))
+	}
+
+	return nil
 }
