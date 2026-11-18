@@ -7,6 +7,8 @@ const (
 	PoolOrdinary = "ordinary"
 	PoolDayTrade = "day_trade"
 	PoolFII      = "fii"
+	// PoolCrypto is crypto sold on an exchange of the country: a capital gain with its own DARF.
+	PoolCrypto = "crypto"
 )
 
 // TaxSale is one realized result read by the monthly tax: its month, kind and tax class, its gross
@@ -29,11 +31,14 @@ type TaxLine struct {
 	Tax, Withheld, Due          int64
 }
 
-// TaxMonth is the tax of the months with sales. Darf is the amount to pay; CarriedIn the amount
-// below the minimum a previous month left, included in Darf or carried again.
+// TaxMonth is the tax of the months with sales. Darf is the amount to pay for the stock, day-trade
+// and FII pools; CarriedIn the amount below the minimum a previous month left, included in Darf
+// or carried again. CryptoDarf and CryptoCarriedIn are the same for the crypto pool, paid apart.
 type TaxMonth struct {
-	Month     time.Time
-	Lines     []TaxLine
-	CarriedIn int64
-	Darf      int64
+	Month           time.Time
+	Lines           []TaxLine
+	CarriedIn       int64
+	Darf            int64
+	CryptoCarriedIn int64
+	CryptoDarf      int64
 }

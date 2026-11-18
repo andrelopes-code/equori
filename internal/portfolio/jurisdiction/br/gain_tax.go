@@ -15,7 +15,17 @@ const (
 	stockExemption = 2000000
 	// minimumDarf is the smallest DARF, in cents (Lei 9.430/1996 art. 68).
 	minimumDarf = 1000
+	// cryptoExemption is the crypto sales of a month, in cents, at or below which their gain is
+	// exempt (the small-value rule of the capital gain, RFB on crypto assets).
+	cryptoExemption = 3500000
 )
+
+// cryptoBrackets are the rates of a capital gain by its amount in cents (Lei 13.259/2016 art. 1):
+// 15% to R$ 5 million, 17.5% to 10 million, 20% to 30 million, 22.5% above.
+var cryptoBrackets = []struct {
+	upTo int64
+	bp   int
+}{{500000000, 1500}, {1000000000, 1750}, {3000000000, 2000}, {1 << 62, 2250}}
 
 // poolRate is the rate of each pool in basis points: 15% for ordinary operations (Lei 11.033/2004
 // art. 2), 20% for a day trade (art. 2, §1) and for FII units (Lei 8.668/1993 art. 18).
@@ -23,6 +33,7 @@ var poolRate = map[string]int{
 	domain.PoolOrdinary: 1500,
 	domain.PoolDayTrade: 2000,
 	domain.PoolFII:      2000,
+	domain.PoolCrypto:   1500,
 }
 
 // variableIncome are the classes whose sales the monthly tax reads, apart from fii.
@@ -57,9 +68,9 @@ func (Jurisdiction) GainTax(sales []domain.TaxSale) []domain.TaxMonth {
 // carry is what a month leaves to the next: the loss of each pool, the tax withheld beyond the
 // tax of each pool within the year, and a DARF below the minimum.
 type carry struct {
-	loss, withheld map[string]int64
-	darf           int64
-	year           int
+	loss, withheld   map[string]int64
+	darf, cryptoDarf int64
+	year             int
 }
 
 func (c *carry) month(m time.Time, sales []domain.TaxSale) domain.TaxMonth {
@@ -88,7 +99,71 @@ func (c *carry) month(m time.Time, sales []domain.TaxSale) domain.TaxMonth {
 		month.Darf, c.darf = total, 0
 	}
 
+	c.crypto(&month, sales)
+
 	return month
+}
+
+// crypto adds the line of the crypto pool and its own DARF (coverage row U-07): exempt up to
+// cryptoExemption of sales; above it every gain is taxed by the brackets and no loss reduces it.
+func (c *carry) crypto(month *domain.TaxMonth, sales []domain.TaxSale) {
+	l := domain.TaxLine{Pool: domain.PoolCrypto, RateBP: poolRate[domain.PoolCrypto]}
+	found := false
+
+	for _, s := range sales {
+		if poolOf(s) == domain.PoolCrypto {
+			found = true
+			l.Gross += s.Gross
+			l.Withheld += s.Withheld
+			l.Result += s.Result
+		}
+	}
+
+	if !found {
+		return
+	}
+
+	for _, s := range sales {
+		if poolOf(s) != domain.PoolCrypto || s.Result <= 0 {
+			continue
+		}
+
+		if l.Gross <= cryptoExemption {
+			l.Exempt += s.Result
+		} else {
+			l.Base += s.Result
+		}
+	}
+
+	l.Tax = bracketTax(l.Base)
+	withheld := l.Withheld + c.withheld[domain.PoolCrypto]
+	l.Due = max(l.Tax-withheld, 0)
+	c.withheld[domain.PoolCrypto] = max(withheld-l.Tax, 0)
+
+	month.Lines = append(month.Lines, l)
+	month.CryptoCarriedIn = c.cryptoDarf
+
+	if total := c.cryptoDarf + l.Due; total < minimumDarf {
+		c.cryptoDarf = total
+	} else {
+		month.CryptoDarf, c.cryptoDarf = total, 0
+	}
+}
+
+// bracketTax is the tax of a capital gain by the brackets, each rate on its slice.
+func bracketTax(gain int64) int64 {
+	var tax, floor int64
+
+	for _, b := range cryptoBrackets {
+		if gain <= floor {
+			break
+		}
+
+		tax += percentOf(min(gain, b.upTo)-floor, b.bp)
+		floor = b.upTo
+	}
+
+	return tax
 }
 
 // line computes one pool of the month; false when the month has no sale of it.
@@ -140,6 +215,8 @@ func poolOf(s domain.TaxSale) string {
 	switch {
 	case s.TaxClass == "fii":
 		return domain.PoolFII
+	case s.TaxClass == "crypto":
+		return domain.PoolCrypto
 	case !slices.Contains(variableIncome, s.TaxClass):
 		return ""
 	case s.Kind == domain.KindDayTrade:

@@ -56,6 +56,8 @@ type gainTaxMonthView struct {
 	Month string            `json:"month"`
 	Lines []gainTaxLineView `json:"lines"`
 	Darf  tool.Money        `json:"darf"  jsonschema:"amount to pay; zero when below the minimum and carried"`
+
+	CryptoDarf tool.Money `json:"crypto_darf,omitzero" jsonschema:"the crypto pool's own DARF"`
 }
 
 type gainTaxLineView struct {
@@ -197,6 +199,12 @@ func gainTaxMonths(
 		v := gainTaxMonthView{Month: m.Month.Format("2006-01")}
 		if v.Darf, err = cents(m.Darf); err != nil {
 			return nil, err
+		}
+
+		if m.CryptoDarf != 0 {
+			if v.CryptoDarf, err = cents(m.CryptoDarf); err != nil {
+				return nil, err
+			}
 		}
 
 		for _, l := range m.Lines {

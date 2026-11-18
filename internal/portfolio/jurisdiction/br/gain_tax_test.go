@@ -176,3 +176,78 @@ func TestGainTaxLeavesFixedIncomeETF(t *testing.T) {
 		t.Errorf("months = %+v, want none", got)
 	}
 }
+
+// Coverage row U-07: crypto sold on a Brazilian exchange is exempt in a month of R$ 35,000.00 of
+// sales or less; above it each gain pays 15% (to R$ 5,000,000.00) and a loss reduces nothing, on
+// a DARF of its own (code 4600) with its own minimum.
+func TestGainTaxCrypto(t *testing.T) {
+	t.Parallel()
+
+	got := New().GainTax([]domain.TaxSale{
+		{
+			Month:    month(time.September),
+			Kind:     "swing",
+			TaxClass: "crypto",
+			Gross:    3000000,
+			Result:   500000,
+		},
+		{
+			Month:    month(time.October),
+			Kind:     "swing",
+			TaxClass: "crypto",
+			Gross:    4000000,
+			Result:   600000,
+		},
+		{
+			Month:    month(time.October),
+			Kind:     "swing",
+			TaxClass: "crypto",
+			Gross:    100000,
+			Result:   -200000,
+		},
+		{
+			Month:    month(time.October),
+			Kind:     "swing",
+			TaxClass: "stock",
+			Gross:    3000000,
+			Result:   100000,
+		},
+	})
+
+	if len(got) != 2 {
+		t.Fatalf("months = %+v", got)
+	}
+
+	sep := got[0].Lines[0]
+	if sep.Pool != domain.PoolCrypto || sep.Exempt != 500000 || sep.Tax != 0 ||
+		got[0].CryptoDarf != 0 {
+		t.Errorf("September = %+v, want 5,000.00 exempt", got[0])
+	}
+
+	var crypto, ordinary domain.TaxLine
+	for _, l := range got[1].Lines {
+		switch l.Pool {
+		case domain.PoolCrypto:
+			crypto = l
+		case domain.PoolOrdinary:
+			ordinary = l
+		}
+	}
+
+	// October sells R$ 41,000.00 of crypto: the gain of 6,000.00 pays 15%; the loss stays apart.
+	if crypto.Base != 600000 || crypto.Tax != 90000 || crypto.LossCarried != 0 ||
+		got[1].CryptoDarf != 90000 || ordinary.Tax != 15000 || got[1].Darf != 15000 {
+		t.Errorf("October = %+v, want crypto 900.00 on DARF 4600 and stocks 150.00 on 6015", got[1])
+	}
+}
+
+// U-07: a gain above R$ 5,000,000.00 pays 17.5% on the slice above it (Lei 13.259/2016).
+func TestBracketTax(t *testing.T) {
+	t.Parallel()
+
+	for gain, want := range map[int64]int64{0: 0, 100000: 15000, 600000000: 92500000} {
+		if got := bracketTax(gain); got != want {
+			t.Errorf("bracketTax(%d) = %d, want %d", gain, got, want)
+		}
+	}
+}

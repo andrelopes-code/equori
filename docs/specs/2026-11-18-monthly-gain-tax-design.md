@@ -17,6 +17,7 @@ For each month of a year, equori states the income tax a Brazilian individual ow
 | GT5 | The DARF of a month adds the tax due of the three pools and any amount carried; a total below R$ 10.00 is carried to the next month instead of paid. | Lei 9.430/1996 art. 68. |
 | GT6 | A sale with both a day-trade and an ordinary part splits its gross value and its withheld tax between them in proportion to their quantities. | The ledger records one gross and one withheld tax per sale. |
 | GT7 | A region without these rules returns no month. | |
+| GT8 | Crypto (class `crypto`) sold on an exchange of the country is a capital gain: a month of R$ 35,000.00 of sales or less is exempt; above it each gain pays 15% up to R$ 5,000,000.00, then 17.5%, 20% and 22.5%; a loss reduces no gain; its DARF (code 4600) is paid apart, with its own minimum. | Lei 13.259/2016 art. 1; IN SRF 84/2001 art. 3 (each sale apart); RFB on crypto assets (small-value exemption); Medida Provisória 1.303/2025, which would have ended the exemption, lost effect. |
 
 ## 3. Cross-cutting questions
 

@@ -84,15 +84,15 @@ Source status:
 | U-04 | FIDC, FIP, closed funds | partial | fund subtypes `fidc` (come-cotas calendar) and `fip`, class `fund`; `TestBR`, `TestUnitTaxOfClosedFunds` | whether a FIDC is an investment entity, which frees it from come-cotas, is not recorded; the tax at a FIP distribution is not estimated | Lei 14.754/2023 as summarized by law firms, 2026-11-18 |
 | U-05 | Pension plan PGBL, VGBL | supported | fund subtypes `pgbl` and `vgbl`, tax classes `pension_pgbl` (taxed on the whole redemption) and `pension_vgbl` (on the gain), no come-cotas; contributions are purchases of quotas, redemptions sales with the tax withheld, portability a custody transfer; `get_tax_year` returns `deductible_contributions` of PGBL plans; `TestPensionContributions`, `TestPensionPlans`, `TestYearContributions` | the tax of a redemption is the one the insurer withholds: the progressive and the regressive tables are not computed; the 12% limit of the deduction needs the taxable income, which equori does not hold | Lei 11.053/2004 art. 1 and Lei 9.532/1997 art. 11 as cited; Lei 14.803/2024 checked 2026-11-18 at camara.leg.br |
 | U-06 | COE | partial | fixed income subtype `coe`, taxed class, no FGC; `TestBR`, `TestUnitTaxOfClosedFunds` | the payoff of the structure is not modeled: the value is the price the user records from the issuer | to read |
-| U-07 | Crypto asset | partial | type `crypto`; source `coinbase` | no tax class for Brazil | to read |
+| U-07 | Crypto asset | supported | type `crypto`, class `crypto`; source `coinbase`; the crypto pool of `gain_tax` (R$ 35,000.00 exemption, capital gain brackets, DARF 4600); `TestGainTaxCrypto`, `TestBracketTax` | crypto held at an exchange abroad (annual tax of Lei 14.754/2023) is not computed | Lei 13.259/2016 art. 1; IN SRF 84/2001 art. 3; press of 2025-2026 on the exemption |
 | U-08 | Stock and ETF held abroad | partial | types `stock`, `etf` in another currency | the annual tax of Lei 14.754/2023 and the rate date of the conversion are not computed | to read |
 
 ## Count
 
 | Verdict | Rows |
 |---|---|
-| supported | 32 |
-| partial | 22 |
+| supported | 33 |
+| partial | 21 |
 | unsupported | 0 |
 
 ## What the assistant says
