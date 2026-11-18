@@ -16,6 +16,10 @@ const STILL = `
     caret-color: transparent !important;
   }
   ::-webkit-scrollbar { display: none !important; }
+  /* The page region at the width of a figure, as it stands beside the assistant pane. */
+  html[data-help-figure] [data-ui="app-shell"] > [data-part="main"] {
+    max-width: var(--help-figure-width) !important;
+  }
 `;
 
 export async function withBrowser(run) {

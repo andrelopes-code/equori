@@ -1,4 +1,4 @@
-// The one way a figure or a video of the help is made (docs/contributing/help-media.md).
+// The one way a figure or a video of the help is made (docs/contributing/help.md, ADR 037).
 //   node run.mjs record [tutorial]   sign in to the demo book and record its answers on tape
 //   node run.mjs build  [tutorial]   replay the tape, capture, mark, compose, check, write;
 //                                    a tutorial whose inputs did not change is skipped (--force builds it)
@@ -124,7 +124,7 @@ async function build() {
       await context.close();
 
       for (const beat of beats.filter((b) => b.figure)) {
-        const spot = percent(beat.mark);
+        const spot = percent(beat.figureMark);
         const name = `${beat.figure}.${language}.${scheme}.png`;
         const key = `${beat.figure}.${language}`;
 

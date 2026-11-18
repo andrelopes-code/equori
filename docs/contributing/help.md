@@ -53,7 +53,7 @@ The figures show the application as it ships: its default theme and density. A p
 2. Write `tools/help-media/tutorials/<id>.mjs`. A beat is `{ figure, target, frame, act, only }`:
    - `target(page, words)` returns the Playwright locator of the element the step points at, or a list of locators whose union is marked. `words(pt, en)` picks a label by language.
    - `figure` is the id the Markdown names. A beat without one is a click the page does not number; it appears in the video only.
-   - `frame(page)` is the region the figure is cut around when it fits (a dialog). Without it the figure stays inside `main`.
+   - `frame(page)` is the region the figure is cut around when it fits (a dialog). Without it the figure spans the page region, held at the width of a figure (ADR 037, 4).
    - `act(page, words)` is what the reader does after the step: one click. A tutorial never confirms a write.
    - `only: "figure"` keeps a beat out of the video.
 3. `make help-media-record`, then `make help-media`.

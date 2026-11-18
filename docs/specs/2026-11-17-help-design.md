@@ -101,3 +101,4 @@ The owner rejected the first figures and video: blurred captures, marks beside t
 | HP4 | A figure is a 640 by 400 CSS pixel window of the screen at two device pixels per CSS pixel, cut and never scaled. Its mark is the box of the element as the browser reports it. |
 | HP6 | A video shows the whole screen, composed frame by frame from the stills of the steps at 1920 by 1200. On the page it waits behind the figure of the first step; pressed, it opens in a player that grows from that place to the size of the window and plays muted with controls. The Figures/Video control and the button "Watch the video" lead to the same player. |
 | R5 | A figure shows the application in the language of the page. |
+| HP4 | Second amendment, 2026-11-18: a figure outside a dialog is cut from the page region held at 640 CSS pixels, so it spans the page's width at full scale (ADR 037, 4). |

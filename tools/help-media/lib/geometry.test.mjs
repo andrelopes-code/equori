@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { clipAround, markIn, markProblems, percent } from "./geometry.mjs";
+import { clipAround, markIn, markProblems, percent, regionWidth } from "./geometry.mjs";
 
 const main = { x: 234, y: 0, width: 1046, height: 800 };
 
@@ -49,4 +49,17 @@ test("a mark keeps the margin its number needs at the edge of the figure", () =>
 
   assert.equal(mark.x + mark.width, 624);
   assert.equal(mark.y, 16);
+});
+
+test("the page region is asked for the width that makes its box as wide as the figure", () => {
+  // A region asked for 640 px that measures 642 px draws 1 px of border on each side.
+  assert.equal(regionWidth(642), 638);
+  assert.equal(regionWidth(640), 640);
+});
+
+test("a figure spans a page region as wide as itself", () => {
+  const region = { x: 201, y: 10, width: 640, height: 781 };
+  const button = { x: 770, y: 96, width: 56, height: 28 };
+
+  assert.deepEqual(clipAround(button, region), { x: 201, y: 10, width: 640, height: 400 });
 });

@@ -38,6 +38,12 @@ export function clipAround(target, frame) {
   };
 }
 
+// The width to ask of the page region so that its box, borders included, is as wide as a figure:
+// a figure then spans the region and never shows a slice of the page's width.
+export function regionWidth(measured) {
+  return CLIP.width - (measured - CLIP.width);
+}
+
 // The mark in CSS pixels of the clip, grown by the pad and held inside the margin.
 export function markIn(target, clip) {
   const left = Math.max(MARGIN, target.x - clip.x - PAD);
