@@ -65,48 +65,70 @@ import f62 from "./import-statement/import-lines.en.dark.png?url";
 import f63 from "./import-statement/import-lines.pt.dark.png?url";
 import f64 from "./import-statement/import-open.en.dark.png?url";
 import f65 from "./import-statement/import-open.pt.dark.png?url";
-import f66 from "./pay-statement/1e8948bb6d63.png?url";
-import f67 from "./pay-statement/33d41aee2daf.png?url";
-import f68 from "./pay-statement/383feb8a205f.png?url";
-import f69 from "./pay-statement/6ed00e589074.png?url";
-import f70 from "./pay-statement/6f7ef8eec2b2.png?url";
-import f71 from "./pay-statement/8899d1d946ff.png?url";
-import f72 from "./pay-statement/89c2c8d2140d.png?url";
-import f73 from "./pay-statement/a26879605658.png?url";
-import f74 from "./pay-statement/pay-account.en.dark.png?url";
-import f75 from "./pay-statement/pay-account.pt.dark.png?url";
-import f76 from "./pay-statement/pay-amount.en.dark.png?url";
-import f77 from "./pay-statement/pay-amount.pt.dark.png?url";
-import f78 from "./pay-statement/pay-cards.en.dark.png?url";
-import f79 from "./pay-statement/pay-cards.pt.dark.png?url";
-import f80 from "./pay-statement/pay-confirm.en.dark.png?url";
-import f81 from "./pay-statement/pay-confirm.pt.dark.png?url";
-import f82 from "./pay-statement/pay-open.en.dark.png?url";
-import f83 from "./pay-statement/pay-open.pt.dark.png?url";
-import f84 from "./pay-statement/statement-total.en.dark.png?url";
-import f85 from "./pay-statement/statement-total.pt.dark.png?url";
-import f86 from "./record-transaction/23857cd69019.png?url";
-import f87 from "./record-transaction/26f8417d29b7.png?url";
-import f88 from "./record-transaction/29a9a18e4f20.png?url";
-import f89 from "./record-transaction/2c1f056d7725.png?url";
-import f90 from "./record-transaction/5559a6c3b771.png?url";
-import f91 from "./record-transaction/6f883593fe5a.png?url";
-import f92 from "./record-transaction/a99b26a09781.png?url";
-import f93 from "./record-transaction/ada0f9ea82d6.png?url";
-import f94 from "./record-transaction/beadf63e3bca.png?url";
-import f95 from "./record-transaction/dd266dd55898.png?url";
-import f96 from "./record-transaction/entry-account.en.dark.png?url";
-import f97 from "./record-transaction/entry-account.pt.dark.png?url";
-import f98 from "./record-transaction/entry-amount.en.dark.png?url";
-import f99 from "./record-transaction/entry-amount.pt.dark.png?url";
-import f100 from "./record-transaction/entry-category.en.dark.png?url";
-import f101 from "./record-transaction/entry-category.pt.dark.png?url";
-import f102 from "./record-transaction/entry-kind.en.dark.png?url";
-import f103 from "./record-transaction/entry-kind.pt.dark.png?url";
-import f104 from "./record-transaction/entry-save.en.dark.png?url";
-import f105 from "./record-transaction/entry-save.pt.dark.png?url";
-import f106 from "./record-transaction/entry-sheet.en.dark.png?url";
-import f107 from "./record-transaction/entry-sheet.pt.dark.png?url";
+import f66 from "./installments/0a61b05d22be.png?url";
+import f67 from "./installments/0d8a9c704899.png?url";
+import f68 from "./installments/1edee176fe38.png?url";
+import f69 from "./installments/2d45ea33a30f.png?url";
+import f70 from "./installments/6ed00e589074.png?url";
+import f71 from "./installments/72a09d0a2a09.png?url";
+import f72 from "./installments/8d3bd0c2501e.png?url";
+import f73 from "./installments/93b1f3c89b22.png?url";
+import f74 from "./installments/a26879605658.png?url";
+import f75 from "./installments/a6de955aa989.png?url";
+import f76 from "./installments/cdfa295fec04.png?url";
+import f77 from "./installments/ff6b4b182994.png?url";
+import f78 from "./installments/installments-card.en.dark.png?url";
+import f79 from "./installments/installments-card.pt.dark.png?url";
+import f80 from "./installments/installments-count.en.dark.png?url";
+import f81 from "./installments/installments-count.pt.dark.png?url";
+import f82 from "./installments/installments-open.en.dark.png?url";
+import f83 from "./installments/installments-open.pt.dark.png?url";
+import f84 from "./installments/installments-price.en.dark.png?url";
+import f85 from "./installments/installments-price.pt.dark.png?url";
+import f86 from "./installments/installments-record.en.dark.png?url";
+import f87 from "./installments/installments-record.pt.dark.png?url";
+import f88 from "./pay-statement/0919edd10ae6.png?url";
+import f89 from "./pay-statement/33d41aee2daf.png?url";
+import f90 from "./pay-statement/383feb8a205f.png?url";
+import f91 from "./pay-statement/6ed00e589074.png?url";
+import f92 from "./pay-statement/6f7ef8eec2b2.png?url";
+import f93 from "./pay-statement/89c2c8d2140d.png?url";
+import f94 from "./pay-statement/a26879605658.png?url";
+import f95 from "./pay-statement/cdd18bee32a3.png?url";
+import f96 from "./pay-statement/pay-account.en.dark.png?url";
+import f97 from "./pay-statement/pay-account.pt.dark.png?url";
+import f98 from "./pay-statement/pay-amount.en.dark.png?url";
+import f99 from "./pay-statement/pay-amount.pt.dark.png?url";
+import f100 from "./pay-statement/pay-cards.en.dark.png?url";
+import f101 from "./pay-statement/pay-cards.pt.dark.png?url";
+import f102 from "./pay-statement/pay-confirm.en.dark.png?url";
+import f103 from "./pay-statement/pay-confirm.pt.dark.png?url";
+import f104 from "./pay-statement/pay-open.en.dark.png?url";
+import f105 from "./pay-statement/pay-open.pt.dark.png?url";
+import f106 from "./pay-statement/statement-total.en.dark.png?url";
+import f107 from "./pay-statement/statement-total.pt.dark.png?url";
+import f108 from "./record-transaction/23857cd69019.png?url";
+import f109 from "./record-transaction/26f8417d29b7.png?url";
+import f110 from "./record-transaction/29a9a18e4f20.png?url";
+import f111 from "./record-transaction/2c1f056d7725.png?url";
+import f112 from "./record-transaction/5559a6c3b771.png?url";
+import f113 from "./record-transaction/6f883593fe5a.png?url";
+import f114 from "./record-transaction/a99b26a09781.png?url";
+import f115 from "./record-transaction/ada0f9ea82d6.png?url";
+import f116 from "./record-transaction/beadf63e3bca.png?url";
+import f117 from "./record-transaction/dd266dd55898.png?url";
+import f118 from "./record-transaction/entry-account.en.dark.png?url";
+import f119 from "./record-transaction/entry-account.pt.dark.png?url";
+import f120 from "./record-transaction/entry-amount.en.dark.png?url";
+import f121 from "./record-transaction/entry-amount.pt.dark.png?url";
+import f122 from "./record-transaction/entry-category.en.dark.png?url";
+import f123 from "./record-transaction/entry-category.pt.dark.png?url";
+import f124 from "./record-transaction/entry-kind.en.dark.png?url";
+import f125 from "./record-transaction/entry-kind.pt.dark.png?url";
+import f126 from "./record-transaction/entry-save.en.dark.png?url";
+import f127 from "./record-transaction/entry-save.pt.dark.png?url";
+import f128 from "./record-transaction/entry-sheet.en.dark.png?url";
+import f129 from "./record-transaction/entry-sheet.pt.dark.png?url";
 
 export const helpMediaFiles: Partial<Record<string, string>> = {
   "category-rule/11a54f084cad.png": f0,
@@ -175,46 +197,68 @@ export const helpMediaFiles: Partial<Record<string, string>> = {
   "import-lines.pt.dark.png": f63,
   "import-open.en.dark.png": f64,
   "import-open.pt.dark.png": f65,
-  "pay-statement/1e8948bb6d63.png": f66,
-  "pay-statement/33d41aee2daf.png": f67,
-  "pay-statement/383feb8a205f.png": f68,
-  "pay-statement/6ed00e589074.png": f69,
-  "pay-statement/6f7ef8eec2b2.png": f70,
-  "pay-statement/8899d1d946ff.png": f71,
-  "pay-statement/89c2c8d2140d.png": f72,
-  "pay-statement/a26879605658.png": f73,
-  "pay-account.en.dark.png": f74,
-  "pay-account.pt.dark.png": f75,
-  "pay-amount.en.dark.png": f76,
-  "pay-amount.pt.dark.png": f77,
-  "pay-cards.en.dark.png": f78,
-  "pay-cards.pt.dark.png": f79,
-  "pay-confirm.en.dark.png": f80,
-  "pay-confirm.pt.dark.png": f81,
-  "pay-open.en.dark.png": f82,
-  "pay-open.pt.dark.png": f83,
-  "statement-total.en.dark.png": f84,
-  "statement-total.pt.dark.png": f85,
-  "record-transaction/23857cd69019.png": f86,
-  "record-transaction/26f8417d29b7.png": f87,
-  "record-transaction/29a9a18e4f20.png": f88,
-  "record-transaction/2c1f056d7725.png": f89,
-  "record-transaction/5559a6c3b771.png": f90,
-  "record-transaction/6f883593fe5a.png": f91,
-  "record-transaction/a99b26a09781.png": f92,
-  "record-transaction/ada0f9ea82d6.png": f93,
-  "record-transaction/beadf63e3bca.png": f94,
-  "record-transaction/dd266dd55898.png": f95,
-  "entry-account.en.dark.png": f96,
-  "entry-account.pt.dark.png": f97,
-  "entry-amount.en.dark.png": f98,
-  "entry-amount.pt.dark.png": f99,
-  "entry-category.en.dark.png": f100,
-  "entry-category.pt.dark.png": f101,
-  "entry-kind.en.dark.png": f102,
-  "entry-kind.pt.dark.png": f103,
-  "entry-save.en.dark.png": f104,
-  "entry-save.pt.dark.png": f105,
-  "entry-sheet.en.dark.png": f106,
-  "entry-sheet.pt.dark.png": f107,
+  "installments/0a61b05d22be.png": f66,
+  "installments/0d8a9c704899.png": f67,
+  "installments/1edee176fe38.png": f68,
+  "installments/2d45ea33a30f.png": f69,
+  "installments/6ed00e589074.png": f70,
+  "installments/72a09d0a2a09.png": f71,
+  "installments/8d3bd0c2501e.png": f72,
+  "installments/93b1f3c89b22.png": f73,
+  "installments/a26879605658.png": f74,
+  "installments/a6de955aa989.png": f75,
+  "installments/cdfa295fec04.png": f76,
+  "installments/ff6b4b182994.png": f77,
+  "installments-card.en.dark.png": f78,
+  "installments-card.pt.dark.png": f79,
+  "installments-count.en.dark.png": f80,
+  "installments-count.pt.dark.png": f81,
+  "installments-open.en.dark.png": f82,
+  "installments-open.pt.dark.png": f83,
+  "installments-price.en.dark.png": f84,
+  "installments-price.pt.dark.png": f85,
+  "installments-record.en.dark.png": f86,
+  "installments-record.pt.dark.png": f87,
+  "pay-statement/0919edd10ae6.png": f88,
+  "pay-statement/33d41aee2daf.png": f89,
+  "pay-statement/383feb8a205f.png": f90,
+  "pay-statement/6ed00e589074.png": f91,
+  "pay-statement/6f7ef8eec2b2.png": f92,
+  "pay-statement/89c2c8d2140d.png": f93,
+  "pay-statement/a26879605658.png": f94,
+  "pay-statement/cdd18bee32a3.png": f95,
+  "pay-account.en.dark.png": f96,
+  "pay-account.pt.dark.png": f97,
+  "pay-amount.en.dark.png": f98,
+  "pay-amount.pt.dark.png": f99,
+  "pay-cards.en.dark.png": f100,
+  "pay-cards.pt.dark.png": f101,
+  "pay-confirm.en.dark.png": f102,
+  "pay-confirm.pt.dark.png": f103,
+  "pay-open.en.dark.png": f104,
+  "pay-open.pt.dark.png": f105,
+  "statement-total.en.dark.png": f106,
+  "statement-total.pt.dark.png": f107,
+  "record-transaction/23857cd69019.png": f108,
+  "record-transaction/26f8417d29b7.png": f109,
+  "record-transaction/29a9a18e4f20.png": f110,
+  "record-transaction/2c1f056d7725.png": f111,
+  "record-transaction/5559a6c3b771.png": f112,
+  "record-transaction/6f883593fe5a.png": f113,
+  "record-transaction/a99b26a09781.png": f114,
+  "record-transaction/ada0f9ea82d6.png": f115,
+  "record-transaction/beadf63e3bca.png": f116,
+  "record-transaction/dd266dd55898.png": f117,
+  "entry-account.en.dark.png": f118,
+  "entry-account.pt.dark.png": f119,
+  "entry-amount.en.dark.png": f120,
+  "entry-amount.pt.dark.png": f121,
+  "entry-category.en.dark.png": f122,
+  "entry-category.pt.dark.png": f123,
+  "entry-kind.en.dark.png": f124,
+  "entry-kind.pt.dark.png": f125,
+  "entry-save.en.dark.png": f126,
+  "entry-save.pt.dark.png": f127,
+  "entry-sheet.en.dark.png": f128,
+  "entry-sheet.pt.dark.png": f129,
 };

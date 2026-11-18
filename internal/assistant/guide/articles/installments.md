@@ -2,4 +2,4 @@ An **Installment purchase** splits a card purchase into an **Installment plan**:
 
 Cancelling a plan credits the installments not yet billed. Paying installments early (anticipation) moves chosen installments to one statement, usually with a discount. The **Committed amount** of a month is what installments and expected bills already take from it.
 
-Record an installment purchase on New transaction with the card and the number of installments. Cancel or anticipate a plan on Statement or Card.
+Record an installment purchase on the Card screen with "Purchase in installments": price, purchase date, category, number of installments and interest; or on Text capture, with the number of installments followed by x on the line (10x). The first installment enters the statement of the purchase date. The "Installment plans" tab of the Card screen lists the plans; a plan opens with its installments and the actions "Cancel plan" and "Bring forward". The question mark of the Card header opens the help page Record a purchase in installments (/help/installments).

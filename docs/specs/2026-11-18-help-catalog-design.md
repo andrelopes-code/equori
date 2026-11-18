@@ -190,3 +190,25 @@ Vitest 5 keeps transformed modules in `node_modules/.vitest-cache` (`fsModuleCac
 | The list of accounts holds "Leaves the balance now" and "Goes to the statement"; a card names its statement | `catalog.pt-BR.ts:1388,1390,1419`; aria tree of the sheet, demo book; figure `entry-sheet` |
 | Save opens the list and shows "Transaction recorded" with View; Save and add another keeps kind, account and date | `new-entry/use-submit-entry.ts:52-82`, `new-entry/use-announce.tsx:13-25` |
 | Other kinds opens the investment, foreign purchase and exchange forms; Write as text opens the text entry | menu of the screen, demo book; `new-entry/new-entry-header.tsx` |
+
+### Slice 2: installments
+
+| Claim | Source |
+|---|---|
+| The purchase is recorded on the card's page, with "Purchase in installments" | `features/cards/card-header/card-header.tsx` (`card.installmentPurchase`); figure `installments-open` |
+| One installment per statement, from the purchase's statement on | `installments.hint`, `catalog-*.ts`; dialog, demo book |
+| Price, Purchase date, Category, Installments, Interest (optional), Record purchase | `card-record/installment-purchase-dialog.tsx:107-205`; aria tree of the dialog, demo book |
+| The dialog writes the approximate installment and the total | `installments.summary` ("{count} installments of about {each}, {total} in all"); figure `installments-count` |
+| Interest is what is paid beyond the price, zero without interest | `installments.interestHint` |
+| The tab Installment plans lists Purchase, Billed, Installment, Still to bill; a row button opens the plan | `plans-tab/plans-tab.tsx:172-179`, `:234` (`plans.openPlan`) |
+| Cancel plan credits the installments not billed; the billed ones follow the bank | `plan.cancelHint` |
+| Bring forward moves the remaining installments to one statement | `plan.anticipateHint` ("{count} remaining installments move to the statement of {month}") |
+| Text capture takes "10x" on a line | `capture.hint` ("3x for installments"); screen `/transactions/capture`, demo book |
+
+### Finding: the pointer of the video
+
+The pointer of a video rested on the centre of the mark. A mark that surrounds two fields (the price and the date of `installments-price`; the date and the category of `entry-category`) put the click between them. Fixed in the tool: a beat declares `point`, the element its `act` uses; the timeline writes it and the compositor rests the pointer on it (`compose-frame.ts`, `lib/video.mjs`, `lib/capture.mjs`; tests in `compose-frame.test.ts` and `video.test.mjs`). `check` refuses a point outside its mark.
+
+### Reorganization: the card header
+
+`CardHeader` held 167 lines (limit 150) before the help link. Its menu moved to `card-header/card-menu.tsx` without a change of condition, text or order. Card tests: 76 before, 78 after (the help link and a new test of the menu). A defect injected in `card-menu.tsx` (closed inverted) failed no test before the new test of the menu; it fails that test now. Line counts: `card-header.tsx` 145, `card-menu.tsx` 112.

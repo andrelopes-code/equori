@@ -1,12 +1,4 @@
-import { Button, IconButton } from "@slotted/react/button";
-import { Glyph, Icon } from "@slotted/react/icon";
-import {
-  Menu,
-  MenuContent,
-  MenuItem,
-  MenuSeparator,
-  MenuTrigger,
-} from "@slotted/react/menu";
+import { Button } from "@slotted/react/button";
 import {
   PageHeader,
   PageHeaderActions,
@@ -24,11 +16,13 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import type { components } from "@/api/schema.gen";
 import { AccountAvatar } from "@/features/accounts";
 import { CardHeaderTabs } from "@/features/cards/card-header/card-header-tabs";
+import { CardMenu } from "@/features/cards/card-header/card-menu";
 import type { CardTab } from "@/features/cards/model/card-search";
 import {
   statementStatusTone,
   statementStatusWords,
 } from "@/features/cards/model/statement-words";
+import { HelpLink } from "@/features/help";
 import { useT } from "@/i18n/i18n-provider";
 import {
   compactQuery,
@@ -36,7 +30,6 @@ import {
   wideQuery,
 } from "@/ui/runtime/use-media-query";
 import { PageBack } from "@/ui/navigation/page-back";
-import { useServed } from "@/ui/navigation/use-served";
 
 type Account = components["schemas"]["Account"];
 type Statement = components["schemas"]["StatementSummary"];
@@ -68,11 +61,6 @@ export function CardHeader({
 }) {
   const t = useT();
   const navigate = useNavigate();
-  const served = useServed();
-  const accountEdit = {
-    to: "/accounts/$id/edit",
-    params: { id: account.id },
-  } as const;
   const wide = useMediaQuery(wideQuery);
   const compact = useMediaQuery(compactQuery);
   const closed = account.closed_on !== undefined;
@@ -114,6 +102,7 @@ export function CardHeader({
             )}
           </PageHeaderTitle>
           <PageHeaderActions>
+            <HelpLink page="installments" />
             {!closed && !compact && (
               <Button
                 variant="outline"
@@ -139,71 +128,14 @@ export function CardHeader({
                 {t("card.payStatement")}
               </Button>
             )}
-            <Menu>
-              <MenuTrigger
-                render={(props) => (
-                  <IconButton
-                    {...props}
-                    variant="ghost"
-                    tone="secondary"
-                    aria-label={t("account.more")}
-                  >
-                    <Icon>
-                      <Glyph name="ellipsis" />
-                    </Icon>
-                  </IconButton>
-                )}
-              />
-              <MenuContent>
-                {compact && !closed && (
-                  <MenuItem onSelect={onInstallments}>
-                    {t("card.installmentPurchase")}
-                  </MenuItem>
-                )}
-                {!closed && (
-                  <MenuItem
-                    onSelect={() => {
-                      void navigate({
-                        to: "/transactions/new",
-                        search: {
-                          account_id: account.id,
-                          kind: "foreign_purchase",
-                        },
-                      });
-                    }}
-                  >
-                    {t("foreignPurchase.record")}
-                  </MenuItem>
-                )}
-                {served(accountEdit) && (
-                  <MenuItem
-                    onSelect={() => {
-                      void navigate(accountEdit);
-                    }}
-                  >
-                    {t("account.edit")}
-                  </MenuItem>
-                )}
-                <MenuItem
-                  onSelect={() => {
-                    void navigate({
-                      to: "/transactions",
-                      search: { account_id: account.id },
-                    });
-                  }}
-                >
-                  {t("account.viewTransactions")}
-                </MenuItem>
-                <MenuSeparator />
-                {closed ? (
-                  <MenuItem onSelect={onReopen}>{t("account.reopen")}</MenuItem>
-                ) : (
-                  <MenuItem tone="danger" onSelect={onClose}>
-                    {t("account.close")}
-                  </MenuItem>
-                )}
-              </MenuContent>
-            </Menu>
+            <CardMenu
+              account={account}
+              closed={closed}
+              compact={compact}
+              onInstallments={onInstallments}
+              onClose={onClose}
+              onReopen={onReopen}
+            />
           </PageHeaderActions>
         </PageHeaderTitleRow>
       </PageHeaderTitleArea>

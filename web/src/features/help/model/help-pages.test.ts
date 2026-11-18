@@ -226,6 +226,7 @@ describe("helpNeighbours", () => {
       expect(videos).toEqual([
         "import-statement",
         "pay-statement",
+        "installments",
         "check-balance",
         "category-rule",
         "record-transaction",

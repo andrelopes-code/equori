@@ -161,6 +161,17 @@ describe("CardPage", () => {
     expect(figures.querySelectorAll("[data-attention]")).toHaveLength(0);
   });
 
+  // Help catalog spec, HC3: the card links the page of a purchase in installments.
+  it("links its help page from the header", async () => {
+    await renderApp(`/cards/${cardID}`, { fetch: api() });
+
+    const link = await screen.findByRole("link", {
+      name: catalogEn["help.screen"],
+    });
+
+    expect(link.getAttribute("href")).toBe("/help/installments");
+  });
+
   it("lists the statements and opens one", async () => {
     const { router } = await renderApp(`/cards/${cardID}`, { fetch: api() });
     const table = await screen.findByRole("table", {
@@ -221,6 +232,20 @@ describe("CardPage", () => {
       account_id: cardID,
       kind: "foreign_purchase",
     });
+  });
+
+  it("offers to close an open card and not to reopen it", async () => {
+    await renderApp(`/cards/${cardID}`, { fetch: api() });
+    await userEvent.click(
+      await screen.findByRole("button", { name: catalogEn["account.more"] }),
+    );
+
+    expect(
+      await screen.findByRole("menuitem", { name: catalogEn["account.close"] }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("menuitem", { name: catalogEn["account.reopen"] }),
+    ).toBeNull();
   });
 
   it("reads earlier statements a year at a time", async () => {

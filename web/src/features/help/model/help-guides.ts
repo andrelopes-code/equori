@@ -34,6 +34,12 @@ export const helpGuides: Readonly<Record<string, HelpGuide | undefined>> = {
     symptoms: ["statement-differs", "transaction-missing"],
     related: ["statement"],
   },
+  installments: {
+    area: "cards",
+    screen: "/cards",
+    symptoms: ["statement-differs"],
+    related: ["statement"],
+  },
   "check-balance": {
     area: "accounts",
     screen: "/accounts",

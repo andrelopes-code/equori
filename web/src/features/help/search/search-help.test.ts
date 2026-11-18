@@ -33,8 +33,10 @@ describe("searchHelp", () => {
       "sections",
       "terms",
     ]);
+    // The lead of the page of installments names the statement (help catalog spec, HC1).
     expect(result.groups[0]?.hits.map((h) => h.title)).toEqual([
       "A tela da fatura",
+      "Registrar uma compra parcelada",
     ]);
     expect(result.groups[2]?.hits[0]?.title).toBe("Fatura");
     expect(result.count).toBe(
@@ -43,7 +45,8 @@ describe("searchHelp", () => {
   });
 
   it("lists a section title that matches before a section whose text matches", () => {
-    const result = searchHelp(library, "parcelas");
+    // "parcelas" alone matches the title of the page of installments (help catalog spec, HC1).
+    const result = searchHelp(library, "pagar em parcelas");
 
     expect(result.best).toMatchObject({
       group: "sections",
@@ -141,6 +144,8 @@ describe("the words of a reader", () => {
   it.each([
     ["pt", "registrar despesa", "record-transaction"],
     ["en", "record expense", "record-transaction"],
+    ["pt", "compra parcelada", "installments"],
+    ["en", "installments", "installments"],
   ] as const)("in %s, %s opens %s", async (language, query, page) => {
     const pages = await loadHelpLibrary(language, "US");
 

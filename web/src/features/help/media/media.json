@@ -247,6 +247,46 @@
       "en": {
         "spot": [61.59, 89.25, 7.81, 8.67]
       }
+    },
+    "installments-card": {
+      "pt": {
+        "spot": [2.5, 31.27, 35.74, 37.53]
+      },
+      "en": {
+        "spot": [2.5, 31.27, 35.74, 37.53]
+      }
+    },
+    "installments-open": {
+      "pt": {
+        "spot": [78.8, 4.71, 15.84, 8.67]
+      },
+      "en": {
+        "spot": [75.16, 4.71, 19.48, 8.67]
+      }
+    },
+    "installments-price": {
+      "pt": {
+        "spot": [19.58, 25.61, 60.84, 12.14]
+      },
+      "en": {
+        "spot": [19.58, 25.61, 60.84, 12.14]
+      }
+    },
+    "installments-count": {
+      "pt": {
+        "spot": [19.58, 48.89, 60.84, 28.27]
+      },
+      "en": {
+        "spot": [19.58, 48.89, 60.84, 28.27]
+      }
+    },
+    "installments-record": {
+      "pt": {
+        "spot": [65.1, 77.99, 15.32, 8.67]
+      },
+      "en": {
+        "spot": [65.42, 77.99, 15, 8.67]
+      }
     }
   },
   "videos": {
@@ -814,7 +854,7 @@
         "accent": "oklch(0.537962 0.124573 215.224)"
       }
     },
-    "pay-statement": {
+    "installments": {
       "pt": {
         "parts": [
           {
@@ -833,78 +873,90 @@
           {
             "start": 3.2,
             "travel": 0.9,
-            "hold": 0.5,
-            "click": 0.6,
-            "number": 0,
-            "mark": {
-              "x": 229,
-              "y": 656.328125,
-              "width": 134,
-              "height": 39.59375
-            }
-          },
-          {
-            "start": 5.2,
-            "travel": 0.9,
             "hold": 1.7,
             "click": 0.6,
             "number": 2,
             "mark": {
-              "x": 1812.5,
+              "x": 1707.5,
               "y": 38.25,
-              "width": 81,
+              "width": 152,
               "height": 52
             }
           },
           {
-            "start": 8.4,
+            "start": 6.4,
             "travel": 0.9,
             "hold": 1.7,
-            "click": 0,
+            "click": 0.6,
             "number": 3,
             "mark": {
               "x": 668,
-              "y": 502.03125,
+              "y": 453.671875,
+              "width": 584,
+              "height": 72.84375
+            },
+            "point": {
+              "x": 680,
+              "y": 465.671875,
+              "width": 273,
+              "height": 48.84375
+            }
+          },
+          {
+            "start": 9.6,
+            "travel": 0.9,
+            "hold": 0.5,
+            "click": 0.6,
+            "number": 0,
+            "mark": {
+              "x": 668,
+              "y": 523.515625,
               "width": 584,
               "height": 72.84375
             }
           },
           {
-            "start": 11,
+            "start": 11.6,
             "travel": 0.9,
             "hold": 1.7,
-            "click": 0,
+            "click": 0.6,
             "number": 4,
             "mark": {
               "x": 668,
-              "y": 571.875,
+              "y": 593.359375,
               "width": 584,
-              "height": 142.6875
+              "height": 169.578125
+            },
+            "point": {
+              "x": 680,
+              "y": 605.359375,
+              "width": 560,
+              "height": 48.84375
             }
           },
           {
-            "start": 13.6,
+            "start": 14.8,
             "travel": 0.9,
             "hold": 1.7,
             "click": 0,
             "number": 5,
             "mark": {
-              "x": 1133,
-              "y": 719.5625,
-              "width": 119,
+              "x": 1105,
+              "y": 767.9375,
+              "width": 147,
               "height": 52
             }
           }
         ],
-        "duration": 17.6,
+        "duration": 18.8,
         "fade": 0.3,
         "stills": [
-          "pay-statement/a26879605658.png",
-          "pay-statement/1e8948bb6d63.png",
-          "pay-statement/33d41aee2daf.png",
-          "pay-statement/383feb8a205f.png",
-          "pay-statement/383feb8a205f.png",
-          "pay-statement/383feb8a205f.png"
+          "installments/a26879605658.png",
+          "installments/ff6b4b182994.png",
+          "installments/93b1f3c89b22.png",
+          "installments/72a09d0a2a09.png",
+          "installments/cdfa295fec04.png",
+          "installments/0d8a9c704899.png"
         ],
         "accent": "oklch(0.537962 0.124573 215.224)"
       },
@@ -926,78 +978,90 @@
           {
             "start": 3.2,
             "travel": 0.9,
-            "hold": 0.5,
-            "click": 0.6,
-            "number": 0,
-            "mark": {
-              "x": 229,
-              "y": 656.328125,
-              "width": 117,
-              "height": 39.59375
-            }
-          },
-          {
-            "start": 5.2,
-            "travel": 0.9,
             "hold": 1.7,
             "click": 0.6,
             "number": 2,
             "mark": {
-              "x": 1825.5,
+              "x": 1672.5,
               "y": 38.25,
-              "width": 68,
+              "width": 187,
               "height": 52
             }
           },
           {
-            "start": 8.4,
+            "start": 6.4,
             "travel": 0.9,
             "hold": 1.7,
-            "click": 0,
+            "click": 0.6,
             "number": 3,
             "mark": {
               "x": 668,
-              "y": 502.03125,
+              "y": 453.671875,
+              "width": 584,
+              "height": 72.84375
+            },
+            "point": {
+              "x": 680,
+              "y": 465.671875,
+              "width": 273,
+              "height": 48.84375
+            }
+          },
+          {
+            "start": 9.6,
+            "travel": 0.9,
+            "hold": 0.5,
+            "click": 0.6,
+            "number": 0,
+            "mark": {
+              "x": 668,
+              "y": 523.515625,
               "width": 584,
               "height": 72.84375
             }
           },
           {
-            "start": 11,
+            "start": 11.6,
             "travel": 0.9,
             "hold": 1.7,
-            "click": 0,
+            "click": 0.6,
             "number": 4,
             "mark": {
               "x": 668,
-              "y": 571.875,
+              "y": 593.359375,
               "width": 584,
-              "height": 142.6875
+              "height": 169.578125
+            },
+            "point": {
+              "x": 680,
+              "y": 605.359375,
+              "width": 560,
+              "height": 48.84375
             }
           },
           {
-            "start": 13.6,
+            "start": 14.8,
             "travel": 0.9,
             "hold": 1.7,
             "click": 0,
             "number": 5,
             "mark": {
-              "x": 1123,
-              "y": 719.5625,
-              "width": 129,
+              "x": 1108,
+              "y": 767.9375,
+              "width": 144,
               "height": 52
             }
           }
         ],
-        "duration": 17.6,
+        "duration": 18.8,
         "fade": 0.3,
         "stills": [
-          "pay-statement/6ed00e589074.png",
-          "pay-statement/8899d1d946ff.png",
-          "pay-statement/6f7ef8eec2b2.png",
-          "pay-statement/89c2c8d2140d.png",
-          "pay-statement/89c2c8d2140d.png",
-          "pay-statement/89c2c8d2140d.png"
+          "installments/6ed00e589074.png",
+          "installments/2d45ea33a30f.png",
+          "installments/1edee176fe38.png",
+          "installments/0a61b05d22be.png",
+          "installments/8d3bd0c2501e.png",
+          "installments/a6de955aa989.png"
         ],
         "accent": "oklch(0.537962 0.124573 215.224)"
       }
@@ -1068,6 +1132,12 @@
               "y": 355.78125,
               "width": 584,
               "height": 142.6875
+            },
+            "point": {
+              "x": 495.75,
+              "y": 437.625,
+              "width": 560,
+              "height": 48.84375
             }
           },
           {
@@ -1161,6 +1231,12 @@
               "y": 355.78125,
               "width": 584,
               "height": 142.6875
+            },
+            "point": {
+              "x": 495.75,
+              "y": 437.625,
+              "width": 560,
+              "height": 48.84375
             }
           },
           {
@@ -1186,6 +1262,194 @@
           "record-transaction/ada0f9ea82d6.png",
           "record-transaction/23857cd69019.png",
           "record-transaction/26f8417d29b7.png"
+        ],
+        "accent": "oklch(0.537962 0.124573 215.224)"
+      }
+    },
+    "pay-statement": {
+      "pt": {
+        "parts": [
+          {
+            "start": 0,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 1,
+            "mark": {
+              "x": 218,
+              "y": 201.609375,
+              "width": 343.09375,
+              "height": 225.1875
+            }
+          },
+          {
+            "start": 3.2,
+            "travel": 0.9,
+            "hold": 0.5,
+            "click": 0.6,
+            "number": 0,
+            "mark": {
+              "x": 229,
+              "y": 656.328125,
+              "width": 134,
+              "height": 39.59375
+            }
+          },
+          {
+            "start": 5.2,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 2,
+            "mark": {
+              "x": 1812.5,
+              "y": 38.25,
+              "width": 81,
+              "height": 52
+            }
+          },
+          {
+            "start": 8.4,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 3,
+            "mark": {
+              "x": 668,
+              "y": 502.03125,
+              "width": 584,
+              "height": 72.84375
+            }
+          },
+          {
+            "start": 11,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 4,
+            "mark": {
+              "x": 668,
+              "y": 571.875,
+              "width": 584,
+              "height": 142.6875
+            }
+          },
+          {
+            "start": 13.6,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 5,
+            "mark": {
+              "x": 1133,
+              "y": 719.5625,
+              "width": 119,
+              "height": 52
+            }
+          }
+        ],
+        "duration": 17.6,
+        "fade": 0.3,
+        "stills": [
+          "pay-statement/a26879605658.png",
+          "pay-statement/0919edd10ae6.png",
+          "pay-statement/33d41aee2daf.png",
+          "pay-statement/383feb8a205f.png",
+          "pay-statement/383feb8a205f.png",
+          "pay-statement/383feb8a205f.png"
+        ],
+        "accent": "oklch(0.537962 0.124573 215.224)"
+      },
+      "en": {
+        "parts": [
+          {
+            "start": 0,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 1,
+            "mark": {
+              "x": 218,
+              "y": 201.609375,
+              "width": 343.09375,
+              "height": 225.1875
+            }
+          },
+          {
+            "start": 3.2,
+            "travel": 0.9,
+            "hold": 0.5,
+            "click": 0.6,
+            "number": 0,
+            "mark": {
+              "x": 229,
+              "y": 656.328125,
+              "width": 117,
+              "height": 39.59375
+            }
+          },
+          {
+            "start": 5.2,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 2,
+            "mark": {
+              "x": 1825.5,
+              "y": 38.25,
+              "width": 68,
+              "height": 52
+            }
+          },
+          {
+            "start": 8.4,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 3,
+            "mark": {
+              "x": 668,
+              "y": 502.03125,
+              "width": 584,
+              "height": 72.84375
+            }
+          },
+          {
+            "start": 11,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 4,
+            "mark": {
+              "x": 668,
+              "y": 571.875,
+              "width": 584,
+              "height": 142.6875
+            }
+          },
+          {
+            "start": 13.6,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 5,
+            "mark": {
+              "x": 1123,
+              "y": 719.5625,
+              "width": 129,
+              "height": 52
+            }
+          }
+        ],
+        "duration": 17.6,
+        "fade": 0.3,
+        "stills": [
+          "pay-statement/6ed00e589074.png",
+          "pay-statement/cdd18bee32a3.png",
+          "pay-statement/6f7ef8eec2b2.png",
+          "pay-statement/89c2c8d2140d.png",
+          "pay-statement/89c2c8d2140d.png",
+          "pay-statement/89c2c8d2140d.png"
         ],
         "accent": "oklch(0.537962 0.124573 215.224)"
       }
@@ -1258,14 +1522,36 @@
     "import-statement/import-lines.pt.dark.png": "bb04c335433a1d05f687e9087c7acf86668702e0210daf5ed4f746ed10d8e7d3",
     "import-statement/import-open.en.dark.png": "67e3a2e6f71e599d82ff8997415eb4229c5ea0bf6078a366681cad293d6c19aa",
     "import-statement/import-open.pt.dark.png": "9d23613db25caab86204332fa3c091dfba3f3fcff72e904d1dd7ca63f0dd30f4",
-    "pay-statement/1e8948bb6d63.png": "1e8948bb6d639b11db0bbd3dc9bbc166923312d2f13ec5cef21eb2f24218f971",
+    "installments/0a61b05d22be.png": "0a61b05d22bec953a28707ed1428433e80cef7d946ec9c4ff6c0dc275150ef1e",
+    "installments/0d8a9c704899.png": "0d8a9c704899fa4bffdde878f56e398190049f0819993ab88630284661a0eaeb",
+    "installments/1edee176fe38.png": "1edee176fe382b399513770f0227fcde9456643269bd602c2fc89653e729a9a2",
+    "installments/2d45ea33a30f.png": "2d45ea33a30fb933dfdc080c8e431fb975a04473a5151a2de297a15dde7bb608",
+    "installments/6ed00e589074.png": "6ed00e5890742c6b4eaead02f4f08832e61b1f41f9964a36729f4d8871776883",
+    "installments/72a09d0a2a09.png": "72a09d0a2a099388f179df3aaff5d5c0fdd841fca7f70577770bbf80a4bac027",
+    "installments/8d3bd0c2501e.png": "8d3bd0c2501e88529da56c687a473f878637608faf92d2b1f8f5ddae66a2d634",
+    "installments/93b1f3c89b22.png": "93b1f3c89b2276ef72f181bbf7d625dedc18de8d41c877c8a2f41865da8246d2",
+    "installments/a26879605658.png": "a268796056585258d960cfd1f080069525ea550332da7306a39545839dbab34e",
+    "installments/a6de955aa989.png": "a6de955aa989380402fc23fcb00d8dd01dda955f42a55a4ecbdbd58cb155b69f",
+    "installments/cdfa295fec04.png": "cdfa295fec04eab072921afb8028507e05369b9ad8e3104598a232c7b6ad7cdb",
+    "installments/ff6b4b182994.png": "ff6b4b1829942c3f10e969b6feccd6a6ee370aecc230c74c88fc5c7d38c7bdfb",
+    "installments/installments-card.en.dark.png": "7d3c3a6c04b89e2089e8dbf35497d20d9aa474c80951e68a9a81c8082b26a862",
+    "installments/installments-card.pt.dark.png": "91dcc049540d023a6d5a9341789f009246c65911311b3aea0ca812e70d13cacc",
+    "installments/installments-count.en.dark.png": "8c5ad3c2ffdcdf85da028291e2d79aa4750a58352fefc8d912aa72e96b57bcc2",
+    "installments/installments-count.pt.dark.png": "29441dba38180385c47b6ffaae9b86fd4c1f67efdefcd7d07b07888abb8ed74d",
+    "installments/installments-open.en.dark.png": "bd3cab999532b01f07478d5e1ed250a13d959981be3e2ad9e7d2f9ad54cebe3d",
+    "installments/installments-open.pt.dark.png": "5aef5d2eb1ee3656d975d0494a52fea550f747897a6ee013113408c360b1dc2a",
+    "installments/installments-price.en.dark.png": "d46a76e4690eb9e6cbecc13f6cb88434bdf67339cbf73f5a8f2435305b295466",
+    "installments/installments-price.pt.dark.png": "e0955c3495751bd54cce17bdf7ec54610480a0e771f01c2b930cf83cd06177f3",
+    "installments/installments-record.en.dark.png": "98e85614f295aaba147383c04a1a97eeaa1970e9bfcd920898c6d040d8b43376",
+    "installments/installments-record.pt.dark.png": "070ed9bb561fbdb057e005c724cd1c0726b3982f63690a9ced588a1435d9921e",
+    "pay-statement/0919edd10ae6.png": "0919edd10ae629890e0c3aeadd00a3b8b3a6f92dc71d8667914860a182042024",
     "pay-statement/33d41aee2daf.png": "33d41aee2daf1e2ef1d9bf0e36bba72a1a2a8b10e5fa0d8b76cb673766717ca7",
     "pay-statement/383feb8a205f.png": "383feb8a205f2a2e6da9a15dd420876b4703169d428bfa32e32ce36ec17ec6db",
     "pay-statement/6ed00e589074.png": "6ed00e5890742c6b4eaead02f4f08832e61b1f41f9964a36729f4d8871776883",
     "pay-statement/6f7ef8eec2b2.png": "6f7ef8eec2b2fd6b04845ac283ae373cbe8b1da2cd936ac78993126836e648f3",
-    "pay-statement/8899d1d946ff.png": "8899d1d946ff6d7cbb87c84c7603b38a0a4891ae5ad8e1578daa3bce4a80eed8",
     "pay-statement/89c2c8d2140d.png": "89c2c8d2140d505746e9ee309d618de59137cada66a97e1e3bfb3e9b1a90fa29",
     "pay-statement/a26879605658.png": "a268796056585258d960cfd1f080069525ea550332da7306a39545839dbab34e",
+    "pay-statement/cdd18bee32a3.png": "cdd18bee32a338fa32bb3ee903b28e69a65ccee691bcf8cf7a683dc0db954e1c",
     "pay-statement/pay-account.en.dark.png": "e9baa66f2887152374e3d4f6692eb35ef344add1e64e2f1daa0b54e9aeeea243",
     "pay-statement/pay-account.pt.dark.png": "4b72ce4577db2cf10f38213258e40fd7492915edb3de117e101316cfaca6fdcf",
     "pay-statement/pay-amount.en.dark.png": "e9baa66f2887152374e3d4f6692eb35ef344add1e64e2f1daa0b54e9aeeea243",
@@ -1306,7 +1592,8 @@
     "category-rule": "08b7ae5cc813e7f1056b7ed0b288fa9ca3c31129b948a1c9f6e18b7e31a7879b",
     "connect-bank": "0a7f48c4e2f49fda35675ea2d92828957e234b99d5bd395ead2a8409fe814f9d",
     "import-statement": "2a81f9c31d641b756f3c172eb3586cd57a2f01b8b75272479dd4bd7df3b36805",
-    "pay-statement": "d5d73636d7edc665ced513b08ebd73c0ff2f86f294f6fc9e90275ea3d3d3bf35",
-    "record-transaction": "a128e16c214ac822b89d6848568836e8e0f28ba762e3fce5d0eb470af8497468"
+    "pay-statement": "a96c67b556568611b08a82b371f95e92f7c32ebd24a27b44121eaf99d9d424a7",
+    "record-transaction": "d0b1f32142a0b7462f253a55938faa909da649c025aa2e0a8c11b745e513840a",
+    "installments": "4773bd8d129e32f2f83abd4ede7a3419c8862cf0a815342ad02f882be332e5ca"
   }
 }

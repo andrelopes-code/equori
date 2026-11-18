@@ -189,8 +189,10 @@ describe("help", () => {
       }),
     ).toBeInTheDocument();
     expect(
-      await screen.findByRole("link", { name: "Check an account's balance" }),
-    ).toHaveAttribute("href", "/help/check-balance");
+      await screen.findByRole("link", {
+        name: "Record a purchase in installments",
+      }),
+    ).toHaveAttribute("href", "/help/installments");
     expect(
       screen.queryByRole("link", { name: "Glossary" }),
     ).not.toBeInTheDocument();

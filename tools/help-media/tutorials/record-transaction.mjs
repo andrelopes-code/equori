@@ -48,6 +48,7 @@ export default {
     {
       figure: "entry-category",
       target: (page, words) => [field(page, words("Data", "Date")), field(page, words("Categoria", "Category"))],
+      point: (page, words) => field(page, words("Categoria", "Category")),
       act: async (page, words) => {
         await category(page, words).click();
         await page.getByRole("option", { name: /Restaurantes/ }).first().click();
