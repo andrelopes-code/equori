@@ -1,7 +1,12 @@
-import { useNavigate, useRouterState } from "@tanstack/react-router";
+import { useNavigate, useRouter, useRouterState } from "@tanstack/react-router";
 import { usePressSelection } from "@slotted/react/press-selection";
 import type { MouseEvent } from "react";
 
+import {
+  matchView,
+  viewHref,
+} from "@/app/shell/destinations/destination-views";
+import type { DestinationView } from "@/app/shell/destinations/destination-views";
 import type {
   Destination,
   DestinationKey,
@@ -15,7 +20,10 @@ export interface DestinationPress {
   topLevel: boolean;
   // The destination drawn as current: the pressed one until its route has rendered.
   selected: DestinationKey | undefined;
+  // The view drawn as current, when the location is on one.
+  selectedView: string | undefined;
   press: (destination: Destination) => (event: MouseEvent) => void;
+  pressView: (view: DestinationView) => (event: MouseEvent) => void;
 }
 
 // A plain press paints the destination before its route renders; a press on the current
@@ -23,31 +31,54 @@ export interface DestinationPress {
 // left to the browser.
 export function useDestinationPress(onReselect: () => void): DestinationPress {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const search = useRouterState({ select: (s) => s.location.search });
   const navigate = useNavigate();
+  const router = useRouter();
   const { destination, topLevel } = matchDestination(pathname);
-  const { selected, select } = usePressSelection(destination?.key);
+  const view = matchView(pathname, search);
+  // One selection holds both: a view key is its destination key, a dot and the tab.
+  const { selected, select } = usePressSelection(view?.key ?? destination?.key);
+
   return {
     pathname,
     current: destination,
     topLevel,
-    selected,
+    selected: selected?.split(".")[0] as DestinationKey | undefined,
+    selectedView: selected?.includes(".") === true ? selected : undefined,
     press: (target) => (event) => {
-      if (
-        event.defaultPrevented ||
-        event.button !== 0 ||
-        event.metaKey ||
-        event.ctrlKey ||
-        event.shiftKey ||
-        event.altKey
-      ) {
-        return;
-      }
+      if (!isPlainPress(event)) return;
+
       event.preventDefault();
       if (pathname === target.to) {
         onReselect();
         return;
       }
+
       select(target.key, () => void navigate({ to: target.to }));
     },
+    pressView: (target) => (event) => {
+      if (!isPlainPress(event)) return;
+
+      event.preventDefault();
+      if (view?.key === target.key) {
+        onReselect();
+        return;
+      }
+
+      select(target.key, () => {
+        router.history.push(viewHref(target));
+      });
+    },
   };
+}
+
+function isPlainPress(event: MouseEvent): boolean {
+  return !(
+    event.defaultPrevented ||
+    event.button !== 0 ||
+    event.metaKey ||
+    event.ctrlKey ||
+    event.shiftKey ||
+    event.altKey
+  );
 }

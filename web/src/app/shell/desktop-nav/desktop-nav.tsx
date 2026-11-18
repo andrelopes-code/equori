@@ -9,11 +9,6 @@ import { IconButton } from "@slotted/react/button";
 import { Glyph, Icon } from "@slotted/react/icon";
 import {
   SideNavigation,
-  SideNavigationCount,
-  SideNavigationIcon,
-  SideNavigationItem,
-  SideNavigationLabel,
-  SideNavigationLink,
   SideNavigationList,
 } from "@slotted/react/side-navigation";
 
@@ -21,8 +16,9 @@ import { AccountMenu } from "@/app/shell/account-menu/account-menu";
 import { BrandMark } from "@/ui/display/brand-mark";
 import styles from "@/app/shell/desktop-nav/desktop-nav.module.css";
 import { NavCommand } from "@/app/shell/desktop-nav/nav-command";
+import { NavDestination } from "@/app/shell/desktop-nav/nav-destination";
+import { useNavGroups } from "@/app/shell/desktop-nav/use-nav-groups";
 import { destinations } from "@/app/shell/destinations/destinations";
-import { ShellIcon } from "@/app/shell/destinations/shell-icon";
 import { useDestinationPress } from "@/app/shell/destinations/use-destination-press";
 import { useEntry } from "@/app/shell/frame-state/use-entry";
 import { useUncategorizedCount } from "@/app/shell/destinations/use-uncategorized-count";
@@ -55,7 +51,9 @@ export function DesktopNav({
   const { open } = useAppShell();
   const openEntry = useEntry();
   const count = useUncategorizedCount();
-  const { selected, press } = useDestinationPress(onReselect);
+  const { selected, selectedView, press, pressView } =
+    useDestinationPress(onReselect);
+  const [groups, setGroups] = useNavGroups();
   const entryKey = t("nav.entry.key");
   const assistantKey = t("assistant.key");
   const calculatorKey = t("calculator.key");
@@ -119,26 +117,27 @@ export function DesktopNav({
             onClick={onCalculator}
           />
         </div>
-        <SideNavigation value={selected ?? null}>
+        <SideNavigation
+          value={selectedView ?? selected ?? null}
+          expanded={groups}
+          autoExpand={false}
+          onExpandedChange={setGroups}
+        >
           <SideNavigationList>
             {listed.map((destination) => (
-              <SideNavigationItem key={destination.key} value={destination.key}>
-                <SideNavigationLink
-                  href={destination.to}
-                  onClick={press(destination)}
-                >
-                  <SideNavigationIcon>
-                    <ShellIcon name={destination.icon} />
-                  </SideNavigationIcon>
-                  <SideNavigationLabel>
-                    {t(destination.label)}
-                  </SideNavigationLabel>
-                  {destination.key === "transactions" &&
-                    count !== undefined && (
-                      <SideNavigationCount>{count}</SideNavigationCount>
-                    )}
-                </SideNavigationLink>
-              </SideNavigationItem>
+              <NavDestination
+                key={destination.key}
+                destination={destination}
+                count={destination.key === "transactions" ? count : undefined}
+                expanded={groups.includes(destination.key)}
+                holdsHidden={
+                  selectedView !== undefined &&
+                  selected === destination.key &&
+                  !(open && groups.includes(destination.key))
+                }
+                onPress={press}
+                onPressView={pressView}
+              />
             ))}
           </SideNavigationList>
         </SideNavigation>

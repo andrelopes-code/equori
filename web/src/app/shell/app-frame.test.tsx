@@ -373,6 +373,50 @@ describe("desktop column", () => {
     expect(search.querySelector("kbd")).toHaveTextContent("K");
   });
 
+  it("opens the views of a destination, goes to one and remembers the open group", async () => {
+    const user = userEvent.setup();
+    const first = await renderApp("/", { fetch: newFetch() });
+
+    await user.click(
+      within(column()).getByRole("button", { name: catalogEn["nav.planning"] }),
+    );
+
+    expect(localStorage.getItem("equori.nav.groups")).toBe('["planning"]');
+
+    await user.click(
+      within(column()).getByRole("link", {
+        name: catalogEn["planning.tab.budgets"],
+      }),
+    );
+
+    await waitFor(() => {
+      expect(first.router.state.location.pathname).toBe("/planning");
+      expect(first.router.state.location.search).toEqual({ tab: "budgets" });
+    });
+    await waitFor(() => {
+      expect(
+        within(column()).getByRole("link", {
+          name: catalogEn["planning.tab.budgets"],
+        }),
+      ).toHaveAttribute("aria-current", "page");
+    });
+
+    first.unmount();
+    await renderApp("/", { fetch: newFetch() });
+
+    expect(
+      within(column()).getByRole("button", { name: catalogEn["nav.planning"] }),
+    ).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("marks the destination while the group of its current view is closed", async () => {
+    await renderApp("/categories/rules", { fetch: newFetch() });
+
+    expect(
+      within(column()).getByRole("link", { name: catalogEn["nav.categories"] }),
+    ).toHaveAttribute("aria-current", "page");
+  });
+
   it("collapses the column to the rail and remembers it", async () => {
     const user = userEvent.setup();
     const first = await renderApp("/", { fetch: newFetch() });
