@@ -52,7 +52,7 @@ func (Jurisdiction) IncomeTypes() []string { return []string{"jcp"} }
 
 // subtypeClass maps the subtypes of an instrument type to the tax class they have for an
 // individual: the interest of the incentivized fixed income securities is exempt (Lei 11.033/2004
-// art. 3 and Lei 12.431/2011 art. 1). A letter of exchange, a financial letter and a common
+// art. 3 and Lei 12.431/2011 art. 2, I). A letter of exchange, a financial letter and a common
 // debenture are taxed like a CDB (Lei 11.033/2004 art. 1). The LH, the LCD and the CDCA are
 // incentivized like the LCI and the LCA; a LIG is taxed like a CDB.
 var subtypeClass = map[string]map[string]string{
