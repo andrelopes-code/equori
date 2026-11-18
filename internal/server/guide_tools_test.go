@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/andrelopes-code/equori/internal/apitest"
 	"github.com/andrelopes-code/equori/internal/assistant/guide"
 )
 
@@ -71,6 +72,28 @@ func TestGuideCoversTools(t *testing.T) {
 	}
 }
 
+// TestGuideCoversLimits keeps the assistant honest about what it does not do (assistant parity
+// design, G5): the article privacy_and_the_assistant names each exclusion in use, so the model
+// states the limit and the screen that serves it instead of guessing a tool.
+func TestGuideCoversLimits(t *testing.T) {
+	t.Parallel()
+
+	article, _ := guide.Article("privacy_and_the_assistant")
+
+	used := map[string]bool{}
+	for _, names := range exposure {
+		if strings.HasPrefix(names, "-") {
+			used[strings.TrimPrefix(names, "-")] = true
+		}
+	}
+
+	for class := range used {
+		if !strings.Contains(article, "\n- "+class+": ") {
+			t.Errorf("privacy_and_the_assistant has no line for the exclusion %q", class)
+		}
+	}
+}
+
 // writeToolWords returns the required inputs of a tool and the values of its closed sets.
 func writeToolWords(tl catalogTool) []string {
 	words := slices.Clone(tl.InputSchema.Required)
@@ -92,4 +115,40 @@ func writeToolWords(tl catalogTool) []string {
 func hasWord(text, word string) bool {
 	return regexp.MustCompile(`(^|[^a-z_])` + regexp.QuoteMeta(word) + `($|[^a-z_])`).
 		MatchString(text)
+}
+
+// TestGuideCoversSubtypes keeps the article of a region complete for its products (assistant
+// parity design, G4): each subtype the jurisdiction of Brazil returns for an instrument type is
+// named in investments_br.
+func TestGuideCoversSubtypes(t *testing.T) {
+	t.Parallel()
+
+	h := apitest.New(t, apitest.As(apitest.Brazil()))
+	article, _ := guide.Article("investments_br")
+
+	for _, instrumentType := range []string{"fixed_income", "fund"} {
+		r := h.Tool("get_portfolio", map[string]any{
+			"view": "subtypes", "instrument_type": instrumentType,
+		})
+		if r.IsError {
+			t.Fatalf("subtypes of %s = %s", instrumentType, r.Content)
+		}
+
+		var out struct {
+			Subtypes []string `json:"subtypes"`
+		}
+		if err := json.Unmarshal(r.Content, &out); err != nil {
+			t.Fatal(err)
+		}
+
+		if len(out.Subtypes) == 0 {
+			t.Fatalf("no subtype of %s in a book of Brazil", instrumentType)
+		}
+
+		for _, subtype := range out.Subtypes {
+			if !hasWord(article, subtype) {
+				t.Errorf("investments_br does not name the %s subtype %q", instrumentType, subtype)
+			}
+		}
+	}
 }

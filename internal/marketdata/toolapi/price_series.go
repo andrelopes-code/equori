@@ -15,9 +15,9 @@ type pricePointIn struct {
 }
 
 type recordPriceSeriesIn struct {
-	Code   string         `json:"code"   jsonschema:"instrument code, such as a ticker"`
-	Quote  string         `json:"quote"  jsonschema:"code of the currency the prices are quoted in"`
-	Prices []pricePointIn `json:"prices" jsonschema:"the series, one price per date"`
+	Code   string         `json:"code"             jsonschema:"instrument code, such as a ticker"`
+	Quote  string         `json:"quote_instrument" jsonschema:"code of the currency the prices are quoted in"`
+	Prices []pricePointIn `json:"prices"           jsonschema:"the series, one price per date"`
 }
 
 type recordPriceSeriesOut struct {

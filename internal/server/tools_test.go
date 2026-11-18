@@ -19,7 +19,8 @@ import (
 
 var update = flag.Bool("update", false, "rewrite testdata/tools.json from the registry")
 
-// exclusions are the reasons an operation has no tool (ADR 012 T14, amended by spec 7.2).
+// exclusions are the reasons an operation has no tool (ADR 012 T14, amended by spec 7.2 and by
+// the assistant parity design, P2: a screen, a dialog or a setup step is no reason).
 var exclusions = map[string]bool{
 	"-session":    true, // authentication
 	"-binary":     true, // file content
@@ -27,13 +28,10 @@ var exclusions = map[string]bool{
 	"-llm":        true, // language model credentials, endpoints and the chat itself are never handed to a language model (ADR 019)
 	"-secret":     true, // credentials and the aggregator's connect flow
 	"-file":       true, // file content or the reading of files
-	"-dialog":     true, // a check the define dialog runs while a person types; the catalog view covers a language model (A222 S1)
 	"-visual":     true, // colour, icon and logo identifiers chosen by looking at them
-	"-setup":      true, // the base currency changes only before the first transaction, during provisioning
 	"-instance":   true, // the instance's outbound sources are chosen by an admin, not handed to a language model (ADR 025)
 	"-credential": true, // a token or a password: it would enter a stored conversation or a log (ADR 020 C8)
 	"-erase":      true, // erases a book with all its data; the owner confirms it by typing the name (DB1)
-	"-screen":     true, // an investment operation recorded on its form; record_investment covers each trade (A228 NG8)
 }
 
 // withoutOperation are the tools that map to no operation, with the reason.

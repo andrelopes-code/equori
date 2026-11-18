@@ -29,6 +29,24 @@ func TestArticlesExist(t *testing.T) {
 	}
 }
 
+// TestGuideIndex keeps one line per topic in the index the model chooses from (assistant parity
+// design, G10).
+func TestGuideIndex(t *testing.T) {
+	t.Parallel()
+
+	lines := strings.Split(strings.TrimSuffix(guide.Index(), "\n"), "\n")
+	if len(lines) != len(guide.Topics()) {
+		t.Fatalf("index holds %d lines, want %d", len(lines), len(guide.Topics()))
+	}
+
+	for i, topic := range guide.Topics() {
+		summary, ok := strings.CutPrefix(lines[i], topic+": ")
+		if !ok || len(summary) < 10 {
+			t.Errorf("index line %d = %q, want %s with what it answers", i, lines[i], topic)
+		}
+	}
+}
+
 var bold = regexp.MustCompile(`\*\*([^*]+)\*\*`)
 
 func TestGuideTermsExistInGlossary(t *testing.T) {

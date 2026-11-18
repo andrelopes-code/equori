@@ -91,8 +91,6 @@ func TestRecordPriceSeriesToolS370(t *testing.T) {
 	}
 
 	args := instrumentSeries(map[string]any{"code": "MXRF11"})
-	args["quote"] = args["quote_instrument"]
-	delete(args, "quote_instrument")
 
 	var got priceCountsAPI
 	toolOutput(t, h, "record_price_series", args, &got)
@@ -109,7 +107,7 @@ func TestRecordPriceSeriesToolS370(t *testing.T) {
 
 	h.ExpectToolError(
 		h.Tool("record_price_series", map[string]any{
-			"code": "NOPE", "quote": "BRL",
+			"code": "NOPE", "quote_instrument": "BRL",
 			"prices": []any{map[string]any{"date": "2026-11-02", "value": "1"}},
 		}),
 		"not_found",

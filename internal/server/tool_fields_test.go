@@ -122,6 +122,12 @@ func collectProperties(s *jsonschema.Schema, into map[string]bool) {
 }
 
 var uncoveredFields = map[string][]string{
+	"requestExport": {
+		"credentials_passphrase",
+	}, // a passphrase would enter a stored conversation; the owner types it on the screen
+	"recordInstrumentPrices": {
+		"dry_run",
+	}, // the preview of record_price_series runs the dry run
 	"saveBudgetBuckets": {
 		"from",
 	}, // the tool reads it as month

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"regexp"
 	"slices"
+	"strings"
 )
 
 //go:embed articles/*.md
@@ -39,6 +40,46 @@ var topics = []string{
 	"reports",
 	"privacy_and_the_assistant",
 	"settings_language_and_region",
+}
+
+// summaries says, per topic, what its article answers; the model picks the topic from them.
+var summaries = map[string]string{
+	"getting_started":                     "first steps and what each area of the app is for",
+	"accounts_and_categories":             "accounts, categories, institutions and their tools",
+	"transactions_and_postings":           "recording, changing, categorizing and voiding",
+	"capture":                             "typing several transactions as text",
+	"credit_cards_and_statements":         "cards, limits, cycles, statements and payments",
+	"installments":                        "purchases in installments",
+	"foreign_purchases_and_exchange":      "other currencies and exchanges",
+	"refunds_reimbursements_and_disputes": "refunds, reimbursements and disputes",
+	"transfers":                           "money between own accounts",
+	"imports_and_bank_connections":        "statement files, bank links and their review",
+	"categorization_rules_and_payees":     "rules, payees, aliases and tags",
+	"reconciliation":                      "checking a balance against the institution",
+	"schedules_and_occurrences":           "recurring bills, income and subscriptions",
+	"budgets":                             "monthly budgets and the budget plan",
+	"income_split":                        "income divided into buckets",
+	"goals":                               "savings goals and shared accounts",
+	"investments":                         "brokerages, trades, prices and the portfolio",
+	"investment_operations":               "notes, corporate actions, custody and day trades",
+	"fixed_income":                        "contracts, rates, terms and applications",
+	"fixed_income_payments":               "coupons, amortization, maturity and redemption",
+	"investment_income":                   "dividends and other income of holdings",
+	"investments_br":                      "Brazil: products, tax, guarantee and codes",
+	"contribution_plan":                   "target split and where a contribution goes",
+	"reports":                             "cash and accrual views, indicators, net worth",
+	"privacy_and_the_assistant":           "privacy mode and what the assistant does not do",
+	"settings_language_and_region":        "language, region, base currency, members, export",
+}
+
+// Index returns one line per topic, the topic and what its article answers, in topic order.
+func Index() string {
+	var b strings.Builder
+	for _, topic := range topics {
+		b.WriteString(topic + ": " + summaries[topic] + "\n")
+	}
+
+	return b.String()
 }
 
 // Topics returns the article topics in the order of the get_help declaration.
