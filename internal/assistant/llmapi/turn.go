@@ -140,10 +140,15 @@ func (a *Agent) run(
 		)
 	}
 
-	req.Messages = append(
-		req.Messages,
-		llm.Message{Role: llm.RoleUser, Parts: []llm.Part{{Text: in.Text}}},
-	)
+	user := llm.Message{Role: llm.RoleUser, Parts: []llm.Part{{Text: in.Text}}}
+	for _, f := range in.Files {
+		user.Parts = append(
+			user.Parts,
+			llm.Part{File: &llm.File{MediaType: f.MediaType, Data: f.Data}},
+		)
+	}
+
+	req.Messages = append(req.Messages, user)
 	calls := 0
 	res, err := llm.Run(auth.WithBooksID(ctx, booksID), a.client, req, a.handlers, llm.LoopOptions{
 		MaxSteps: app.MaxSteps, ForceAnswer: true, Pin: true,

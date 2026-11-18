@@ -36,12 +36,21 @@ type File struct {
 	CreatedAt      time.Time
 	// Summary is what the model reads of the content, besides the descriptor line (F4).
 	Summary string
+	// Unread marks a pdf, image or text file the model of the turn does not read (F5).
+	Unread bool
 }
+
+// Readable reports whether the model reads the content of a file of this kind as a file part.
+func (k FileKind) Readable() bool { return k == FilePDF || k == FileImage || k == FileText }
 
 // Descriptor is what the model receives about a file: its id, name, kind and size, then its
 // summary (F4).
 func (f File) Descriptor() string {
 	line := fmt.Sprintf("[file %s: %s, %s, %d bytes]", f.ID, f.Name, f.Kind, f.Size)
+	if f.Unread {
+		line += "\nThe content of this file was not read: the model of the chat does not read files."
+	}
+
 	if f.Summary == "" {
 		return line
 	}

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 	"unicode/utf8"
 
@@ -39,7 +38,14 @@ type AgentRequest struct {
 	System   string
 	History  []HistoryMessage
 	Text     string
+	Files    []FilePart
 	Deadline time.Time
+}
+
+// FilePart is the content of a file of the message the model reads (assistant parity design, F5).
+type FilePart struct {
+	MediaType string
+	Data      []byte
 }
 
 // AgentResult is the final answer of an agent run and what the run cost.
@@ -88,7 +94,7 @@ func (s *Service) Turn(
 	in TurnInput,
 	ev TurnEvents,
 ) error {
-	text, files, err := s.turnMessage(ctx, booksID, memberID, in)
+	text, files, parts, err := s.turnMessage(ctx, booksID, memberID, in)
 	if err != nil {
 		return err
 	}
@@ -128,6 +134,7 @@ func (s *Service) Turn(
 		ctx,
 		in,
 		userMsg.TextForModel(),
+		parts,
 		prof,
 		notices,
 		s.bookReads(ctx, booksID),
@@ -208,6 +215,7 @@ func (s *Service) agentRequest(
 	ctx context.Context,
 	in TurnInput,
 	text string,
+	files []FilePart,
 	prof locale.Locale,
 	notices []AccountNotice,
 	book []BookRead,
@@ -225,6 +233,7 @@ func (s *Service) agentRequest(
 		}),
 		History:  History(messages, proposals, now),
 		Text:     text,
+		Files:    files,
 		Deadline: s.now().Add(TurnTimeout),
 	}
 }
@@ -308,63 +317,4 @@ func (s *Service) promptInputs(
 	}
 
 	return prof, notices, nil
-}
-
-// turnMessage trims the text of the message and reads the files it carries: the text may be
-// empty only when a file is carried (F2).
-func (s *Service) turnMessage(
-	ctx context.Context,
-	booksID, memberID int64,
-	in TurnInput,
-) (string, []domain.File, error) {
-	text := strings.TrimSpace(in.Text)
-	n := utf8.RuneCountInString(text)
-
-	switch {
-	case len(in.FileIDs) > domain.MaxTurnFiles:
-		return "", nil, ErrTooManyFiles
-	case n > domain.MaxMessage, n == 0 && len(in.FileIDs) == 0:
-		return "", nil, ErrInvalidText
-	case len(in.FileIDs) == 0:
-		return text, nil, nil
-	}
-
-	files, err := s.repo.UnsentFiles(ctx, booksID, memberID, in.FileIDs)
-	if err != nil {
-		return "", nil, err
-	}
-
-	if len(files) != len(in.FileIDs) {
-		return "", nil, domain.ErrFileNotFound
-	}
-
-	// A file uploaded for one conversation is not sent in another.
-	for _, f := range files {
-		if f.ConversationID != uuid.Nil && f.ConversationID != in.ConversationID {
-			return "", nil, domain.ErrFileNotFound
-		}
-	}
-
-	return text, files, nil
-}
-
-// turnTitle titles a conversation by its first text, or by the name of its first file.
-func turnTitle(text string, files []domain.File) string {
-	if text == "" && len(files) > 0 {
-		return domain.Title(files[0].Name)
-	}
-
-	return domain.Title(text)
-}
-
-// attachFiles gives each message the files it carried.
-func attachFiles(messages []domain.Message, files []domain.File) {
-	byMessage := map[uuid.UUID][]domain.File{}
-	for _, f := range files {
-		byMessage[f.MessageID] = append(byMessage[f.MessageID], f)
-	}
-
-	for i := range messages {
-		messages[i].Files = byMessage[messages[i].ID]
-	}
 }

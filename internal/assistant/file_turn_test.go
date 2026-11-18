@@ -148,3 +148,85 @@ func turnConversation(t *testing.T, body []byte) string {
 
 	return turn.ConversationID
 }
+
+// Assistant parity design F5: a PDF, an image or a text file reaches the model as a file part
+// when the model of the chat reads files.
+func TestTurnSendsFileParts(t *testing.T) {
+	t.Parallel()
+
+	f := newFakes()
+	h := harness(t, f, apitest.Today("2026-10-23"))
+
+	p := createProvider(t, h, h.Client, map[string]any{
+		"preset": "custom", "name": "Vision", "base_url": "http://127.0.0.1:9/v1", "key": "kv",
+	})
+	h.MustDo(http.MethodPut, "/api/v1/assistant/uses/assistant.chat/chain", map[string]any{
+		"targets": []any{map[string]any{
+			"provider_id":  p.ID,
+			"model":        "vision-1",
+			"capabilities": []string{"tools", "image_input"},
+		}},
+	}, http.StatusOK, nil)
+
+	answer := textStep("Nota lida.")
+	answer.Model = "vision-1"
+	vision := f.script("kv", answer)
+
+	note := []byte("%PDF-1.7\n1 0 obj")
+	file := uploadFile(t, h, h.Client, nil, "nota.pdf", note, http.StatusCreated)
+
+	r := sendTurn(h, h.Client, map[string]any{"text": "Lê a nota", "file_ids": []string{file.ID}})
+	if r.Status != http.StatusOK {
+		t.Fatalf("turn status %d: %s", r.Status, r.Body)
+	}
+
+	reqs := vision.Requests()
+	if len(reqs) == 0 {
+		t.Fatal("the vision model got no request")
+	}
+
+	var parts []*llm.File
+	for _, part := range reqs[0].Request.Messages[len(reqs[0].Request.Messages)-1].Parts {
+		if part.File != nil {
+			parts = append(parts, part.File)
+		}
+	}
+
+	if len(parts) != 1 || parts[0].MediaType != "application/pdf" ||
+		string(parts[0].Data) != string(note) {
+		t.Errorf("file parts = %+v, want the PDF", parts)
+	}
+}
+
+// Assistant parity design F5: without a model that reads files, the descriptor says that the
+// content was not read and no file part is sent.
+func TestTurnFilesNotRead(t *testing.T) {
+	t.Parallel()
+
+	p := llmtest.New("aistudio", textStep("Não consigo ler."))
+	h := turnHarness(t, p)
+
+	file := uploadFile(
+		t,
+		h,
+		h.Client,
+		nil,
+		"nota.pdf",
+		[]byte("%PDF-1.7\n1 0 obj"),
+		http.StatusCreated,
+	)
+
+	r := sendTurn(h, h.Client, map[string]any{"text": "Lê a nota", "file_ids": []string{file.ID}})
+	if r.Status != http.StatusOK {
+		t.Fatalf("turn status %d: %s", r.Status, r.Body)
+	}
+
+	req := p.Requests()[0].Request
+	if got := lastUserText(req); !strings.Contains(got, "The content of this file was not read") {
+		t.Errorf("user message = %q, want the not read note", got)
+	}
+
+	if req.HasFiles() {
+		t.Error("a file part reached a model that does not read files")
+	}
+}
