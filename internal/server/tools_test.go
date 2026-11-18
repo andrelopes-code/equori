@@ -27,7 +27,6 @@ var exclusions = map[string]bool{
 	"-capture":    true, // the capture screen's typing loop; a language model reads text without it (capture A116)
 	"-llm":        true, // language model credentials, endpoints and the chat itself are never handed to a language model (ADR 019)
 	"-secret":     true, // credentials and the aggregator's connect flow
-	"-file":       true, // file content or the reading of files
 	"-instance":   true, // the instance's outbound sources are chosen by an admin, not handed to a language model (ADR 025)
 	"-credential": true, // a token or a password: it would enter a stored conversation or a log (ADR 020 C8)
 	"-erase":      true, // erases a book with all its data; the owner confirms it by typing the name (DB1)
