@@ -21,7 +21,7 @@ type BRProduct struct {
 
 	// WantIncomeTax and WantNet are empty for a security with no tax estimate.
 	// WantIncomeTax and WantNet are empty for a security with no tax estimate.
-	WantValue, WantIncomeTax, WantNet string
+	WantValue, WantIncomeTax, WantIOF, WantNet string
 	// WantExcess is the value of the issuer above the limit of the guarantee, WantUncovered the
 	// value of subtypes the guarantee does not cover, WantSovereign the value of federal public debt.
 	WantExcess, WantUncovered, WantSovereign string
@@ -55,7 +55,27 @@ func BRProducts() []BRProduct {
 			exempt("Lei 11.033/2004 art. 3, IV"),
 			unguaranteed,
 		),
+		earlyRedemption(),
 	}
+}
+
+// earlyRedemption is row F-19: the CDB of F-02 read 20 days after the application, 13 business
+// days of br_banking (Corpus Christi on 2008-05-22). The value follows the formula of the LTN
+// example, computed independently with 80-digit decimals: 758,547.89, a gain of 5,232.57. The IOF
+// of day 20 is 33% of the gain (Decreto 6.306/2007, art. 32 and annex, read 2026-11-18), and the
+// income tax is 22.5% of the gain less the IOF (Lei 11.033/2004 art. 1, I).
+func earlyRedemption() BRProduct {
+	row := preFixed("F-19", "CDB prefixado resgatado em 20 dias", "cdb", taxed, fgc)
+	row.Source = ltnExample + "; IOF table of Decreto 6.306/2007, art. 32 and annex, read " +
+		"2026-11-18; income tax 22.5% up to 180 days, Lei 11.033/2004 art. 1, I"
+	row.ValuedOn = "2008-06-10"
+	row.WantValue = "758547.89"
+	row.WantIOF = "1726.75"
+	row.WantIncomeTax = "788.81"
+	row.WantNet = "756032.33"
+	row.WantExcess = "508547.89"
+
+	return row
 }
 
 // ltnExample is the LTN example of the Metodologia de Cálculo of the Tesouro Nacional: at 14.36%
@@ -67,24 +87,21 @@ const ltnExample = "Tesouro Nacional, Metodologia de Cálculo dos Títulos Públ
 	"2010-07-01, unit price 753.315323 for 1,000.00), cdn.tesouro.gov.br, " +
 	"Metodologia de Calculo - 290424.pdf, read 2026-11-18"
 
-// rowTax is the income tax of a row: its source, the tax and the net value on ValuedOn.
-type rowTax struct{ source, tax, net string }
+// rowTax is the tax of a row: its source, the income tax, the IOF and the net value on ValuedOn.
+type rowTax struct{ source, tax, iof, net string }
 
 // taxed is 15% of the gain of 246,684.68 after 771 days, with no IOF after 30 days.
 var taxed = rowTax{
-	"income tax 15% above 720 days, Lei 11.033/2004 art. 1, IV, read 2026-11-18",
-	"37002.70",
-	"962997.30",
+	source: "income tax 15% above 720 days, Lei 11.033/2004 art. 1, IV, read 2026-11-18",
+	tax:    "37002.70",
+	iof:    "0.00",
+	net:    "962997.30",
 }
 
 // exempt is a security whose interest an individual does not pay tax on: no estimate is given,
 // since estimate_redemption covers the securities taxed at source.
 func exempt(article string) rowTax {
-	return rowTax{
-		"interest exempt for an individual, " + article + ", read 2026-11-18",
-		"",
-		"",
-	}
+	return rowTax{source: "interest exempt for an individual, " + article + ", read 2026-11-18"}
 }
 
 // rowGuarantee is the issuer exposure of a row on ValuedOn.
@@ -125,6 +142,7 @@ func preFixed(id, name, subtype string, tax rowTax, g rowGuarantee) BRProduct {
 		ValuedOn:      "2010-07-01",
 		WantValue:     "1000000.00",
 		WantIncomeTax: tax.tax,
+		WantIOF:       tax.iof,
 		WantNet:       tax.net,
 		WantExcess:    g.excess,
 		WantUncovered: g.uncovered,

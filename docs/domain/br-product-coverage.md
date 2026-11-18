@@ -36,7 +36,7 @@ Source status:
 | F-17 | CRI, CRA, percent of CDI, CDI plus spread, pre-fixed | supported | as F-01, F-02, F-04; `TestBRProductMatrix` row F-17 (pre-fixed) against the LTN example of the Tesouro Nacional | none | to read |
 | F-18 | CDCA | supported | subtype `cdca`, exempt class; `TestBRProductMatrix` row F-18 against the LTN example of the Tesouro Nacional | none | to read |
 | F-18b | CPR, commercial note, LAM | unsupported | no subtype | three subtypes with their tax class | to read |
-| F-19 | Redemption within 30 days | supported | `brFixedIncomeWithholding`, `estimate_redemption` | none | in code (Decreto 6.306/2007 art. 32) |
+| F-19 | Redemption within 30 days | supported | `brFixedIncomeWithholding`, `estimate_redemption`; `TestBRProductMatrix` row F-19: IOF of day 20 (33%) and income tax 22.5% on the gain less the IOF | none | Decreto 6.306/2007 art. 32 and annex, read 2026-11-18 (planalto.gov.br) |
 | F-20 | Sale before maturity on the secondary market | partial | `record_investment` kind `sell` with the oldest lot first (`CostMethod`) | the tax of a sale at a price other than the accrued one is not estimated apart | to read |
 | F-21 | Indexes IGP-M, Selic, exchange rate | unsupported | the instance stores `cdi` and `ipca` for Brazil | three indexes and their sources | to read |
 | F-22 | Savings account (poupança) | partial | account kind `savings`; `yield_mode` `auto` books the yield | the yield rule of the norm is not computed; how `yield_mode` `auto` derives the yield was not checked for this document | to read |

@@ -41,6 +41,7 @@ func TestBRProductMatrix(t *testing.T) {
 				want := matrixFigures{
 					Value:     row.WantValue,
 					IncomeTax: row.WantIncomeTax,
+					IOF:       row.WantIOF,
 					Net:       row.WantNet,
 					Excess:    row.WantExcess,
 					Uncovered: row.WantUncovered,
@@ -63,7 +64,7 @@ func TestBRProductMatrix(t *testing.T) {
 
 // matrixFigures are the figures a row checks, as decimal strings in BRL.
 type matrixFigures struct {
-	Value, IncomeTax, Net, Excess, Uncovered, Sovereign string
+	Value, IncomeTax, IOF, Net, Excess, Uncovered, Sovereign string
 }
 
 func matrixBrokerage(t *testing.T, h *apitest.Harness) (string, string) {
@@ -151,10 +152,10 @@ func figuresHTTP(
 
 	var positions struct {
 		Items []struct {
-			Instrument   string `json:"instrument"`
-			MarketValue  money  `json:"market_value"`
-			EstimatedTax *money `json:"estimated_tax"`
-			EstimatedNet *money `json:"estimated_net"`
+			AccountID   string `json:"account_id"`
+			Instrument  string `json:"instrument"`
+			Quantity    money  `json:"quantity"`
+			MarketValue money  `json:"market_value"`
 		} `json:"items"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/positions?date="+row.ValuedOn, nil, http.StatusOK, &positions)
@@ -176,16 +177,35 @@ func figuresHTTP(
 
 	var f matrixFigures
 	for _, p := range positions.Items {
-		if p.Instrument == instrument {
-			f.Value = decimalBRL(p.MarketValue.Amount)
-			if p.EstimatedTax != nil {
-				f.IncomeTax = decimalBRL(p.EstimatedTax.Amount)
-			}
-
-			if p.EstimatedNet != nil {
-				f.Net = decimalBRL(p.EstimatedNet.Amount)
-			}
+		if p.Instrument != instrument {
+			continue
 		}
+
+		f.Value = decimalBRL(p.MarketValue.Amount)
+		if row.WantIncomeTax == "" {
+			continue
+		}
+
+		var w struct {
+			IncomeTax money `json:"income_tax"`
+			IOF       money `json:"iof"`
+			Net       money `json:"net"`
+		}
+		h.MustDo(http.MethodGet, fmt.Sprintf(
+			"/api/v1/accounts/%s/withholding?date=%s&quantity=%d&proceeds=%d",
+			p.AccountID,
+			row.ValuedOn,
+			p.Quantity.Amount,
+			p.MarketValue.Amount,
+		), nil, http.StatusOK, &w)
+
+		f.IncomeTax, f.IOF, f.Net = decimalBRL(
+			w.IncomeTax.Amount,
+		), decimalBRL(
+			w.IOF.Amount,
+		), decimalBRL(
+			w.Net.Amount,
+		)
 	}
 
 	if len(exposure.Issuers) == 1 {
@@ -253,6 +273,7 @@ func figuresTool(
 
 		var estimate struct {
 			IncomeTax money `json:"income_tax"`
+			IOF       money `json:"iof"`
 			Net       money `json:"net"`
 		}
 		matrixTool(t, h, "estimate_redemption", map[string]any{
@@ -262,7 +283,7 @@ func figuresTool(
 			"proceeds":   p.MarketValue.Amount,
 		}, &estimate)
 
-		f.IncomeTax, f.Net = estimate.IncomeTax.Amount, estimate.Net.Amount
+		f.IncomeTax, f.IOF, f.Net = estimate.IncomeTax.Amount, estimate.IOF.Amount, estimate.Net.Amount
 	}
 
 	if len(exposure.Issuers) == 1 {
