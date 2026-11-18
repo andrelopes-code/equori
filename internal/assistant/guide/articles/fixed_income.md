@@ -5,7 +5,7 @@ A new application of a bank product or a private security (CDB, LCI, LCA, debent
 The fields in plain words: subtype is the kind (get_portfolio view subtypes lists those of the region); issuer is who owes the money; matures_on is the date the money returns; daily_liquidity says it can be redeemed on any business day; redeemable_from is the first date before maturity it can be redeemed. The rate:
 
 - A percent of an index: index_id and percent_of_index ("110" for 110% of the CDI).
-- An index plus a rate: index_id of a monthly index and spread ("6.5" for IPCA + 6.5%).
+- An index plus a rate: index_id and spread, with percent_of_index 100 or absent ("6.5" with ipca for IPCA + 6.5%; "1.5" with cdi for CDI + 1.5%, the usual form of a debenture, a CRI and a CRA). A daily index and a monthly index both take a spread.
 - Pre-fixed: no index_id, and spread the rate a year ("12" for 12%).
 
 A public security with a code of its own, such as a government bond, is defined with manage_instrument from the listing of its price source, with the subtype the region article gives; its prices come from the source and it is bought with record_investment. The rates, the exempt kinds and the government bond codes are in the article of the region (investments_br for a Brazilian book).
