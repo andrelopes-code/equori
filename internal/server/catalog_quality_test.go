@@ -12,11 +12,12 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
-// Budgets of spec 7.4: a declaration sent to the model and the whole catalog, in bytes
-// (assistant grounding A247 for the catalog).
+// Budgets of spec 7.4: a declaration sent to the model and the whole catalog, in bytes. The
+// catalog ceiling is the 84,877 bytes measured at the end of tool parity phase 2 plus 10%
+// (assistant parity design, G7 and G12).
 const (
 	maxDeclaration = 3500
-	maxCatalog     = 90000
+	maxCatalog     = 93364
 )
 
 func chatTools(t *testing.T) []tool.Tool {
