@@ -61,18 +61,7 @@ func (s *seeder) apply(i int, a application, d time.Time) {
 		return
 	}
 
-	if d.Before(s.start) {
-		// Its own words: the monthly contributions before the records are counted by theirs.
-		s.record(
-			iso(d),
-			"Aplicação anterior ao registro",
-			nil,
-			post(s.id("xp.cash"), a.cents),
-			post(s.id("system.opening_balances"), -a.cents),
-		)
-	} else {
-		s.ensure(d, "xp.cash", a.cents)
-	}
+	s.fundApplication(a, d)
 
 	var out struct {
 		Instrument string `json:"instrument"`
@@ -90,14 +79,7 @@ func (s *seeder) apply(i int, a application, d time.Time) {
 		"contract":        a.contract(d),
 	}, &out)
 
-	// The instance accrues the price of a contract at the next tick of its feeds. Until then the price of the
-	// purchase, typed on its own day, values the position; the accrual starts from it and gives the same value.
-	s.do(http.MethodPost, "/prices", map[string]any{
-		"instrument":       out.Instrument,
-		"quote_instrument": "BRL",
-		"date":             iso(d),
-		"value":            out.UnitPrice,
-	}, nil)
+	s.priceApplication(out.Instrument, out.UnitPrice, d)
 
 	s.bal[s.id("xp.cash")] -= a.cents
 	price, err := strconv.ParseFloat(out.UnitPrice, 64)
@@ -112,6 +94,36 @@ func (s *seeder) apply(i int, a application, d time.Time) {
 		quantity: out.Quantity,
 		price:    price,
 	}
+}
+
+// fundApplication puts the amount of the application in the cash account before d.
+func (s *seeder) fundApplication(a application, d time.Time) {
+	if d.Before(s.start) {
+		// Its own words: the monthly contributions before the records are counted by theirs.
+		s.record(
+			iso(d),
+			"Aplicação anterior ao registro",
+			nil,
+			post(s.id("xp.cash"), a.cents),
+			post(s.id("system.opening_balances"), -a.cents),
+		)
+
+		return
+	}
+
+	s.ensure(d, "xp.cash", a.cents)
+}
+
+// priceApplication records the unit price of the contract on the day of its application.
+func (s *seeder) priceApplication(instrument, unitPrice string, d time.Time) {
+	// The instance accrues the price of a contract at the next tick of its feeds. Until then the price of the
+	// purchase, typed on its own day, values the position; the accrual starts from it and gives the same value.
+	s.do(http.MethodPost, "/prices", map[string]any{
+		"instrument":       instrument,
+		"quote_instrument": "BRL",
+		"date":             iso(d),
+		"value":            unitPrice,
+	}, nil)
 }
 
 // redeem sells the whole contract on the business day on or after its maturity d, at the price a pre-fixed rate
