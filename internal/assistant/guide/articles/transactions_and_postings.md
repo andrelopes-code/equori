@@ -7,3 +7,13 @@ Record transactions on New transaction or Text capture; open one on Transaction 
 The period control in the header of the transactions list and of an account steps to the period before or after with its arrows, and its label opens the presets and a calendar for a run of days. A dot before the label marks a period that holds today, and the button Today returns to the current month.
 
 Transaction detail of an expense holds "Paid by a goal": choosing a goal states that money saved in that goal paid the expense, and "No goal" removes it. The section is not drawn on a phone.
+
+The tools. search_transactions finds transactions and gives their IDs; get_transaction returns one in full: postings, links to refunds and reimbursements, earlier versions with their reasons, attachment names, disputes and the plan of an installment purchase; with include_reimbursement it also lists what can repay or be repaid.
+
+record_transaction records a new transaction. It needs date, description, amount (positive, in the currency of from_account_id) and from_account_id, the account or category the money leaves. to_account_id is where the money arrives: a purchase goes from a checking, cash or card account to an expense category, an income from an income category to an asset account, a transfer between two own accounts. splits replaces to_account_id with several destinations whose amounts add up to amount. payee_id and tags are optional. On a credit card, installments (2 to 48) records an installment purchase, and original_amount with original_currency and exchange_rate records a foreign purchase. Between accounts in two currencies, to_amount is the amount received, fee the fee in the base currency and fee_category_id its category.
+
+change_transaction changes one transaction with transaction_id and action. correct changes the fields given (date, description, payee_id, tags, amount, from_account_id, to_account_id) and keeps reason in the history; on an installment purchase it changes only description, payee_id and tags. make_transfer replaces the category side with to_account_id, another own account. reimburse makes this incoming transaction the repayment of recorded expenses, listed in allocations with the amount each takes. A category is set with categorize_transactions, not here.
+
+categorize_transactions gives one category_id, and optionally one payee_id, to transaction_ids, at most 50 per call. It does not split a transaction among categories: change_transaction does.
+
+void_transaction voids a transaction with transaction_id and reason: it stops counting in balances and reports and stays in the history with the reason. A voided transaction is not restored; it is recorded again.

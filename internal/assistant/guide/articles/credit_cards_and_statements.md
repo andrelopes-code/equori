@@ -9,3 +9,30 @@ On Card, the settings hold the card's appearance, billing cycle and credit limit
 See cards on Cards, a card's statements and settings on Card, and a statement's lines, payment and financing on Statement.
 
 The Overview draws the cards that owe something as a wallet: the total to pay with its deadline, the amount each card owes on its face, and, for the card chosen, what it owes, its open statement with the closing date and its free limit.
+
+The tools. get_account_details lists the statements of a card with their IDs, its plastic cards, limit and cycle, the statement a purchase date falls on (purchase_date) and the installments committed to a month (month). get_statement returns one statement with its amounts, status, dates and every line.
+
+manage_card changes the setup of a credit card account, with account_id and action.
+
+- add_card: holder and last_four; virtual marks a virtual card; foreign_charge_bp is the charge on purchases in another currency, in basis points from 0 to 10000.
+- edit_card: card_id with the holder or the last_four that changes. remove_card: card_id.
+- set_card_active: card_id and active, true or false.
+- set_credit_limit: amount, positive, and effective_from, the first date of the limit.
+- set_billing_cycle: closing_day and due_day, and effective_from, any date of the first statement month the cycle applies to. closing_mode day closes on closing_day; before_due closes closing_days_before_due days (1 to 28) before the due date. closing_adjustment and due_date_adjustment shift a date that is not a business day: none keeps it, following takes the next business day, preceding the one before, modified_following the next one unless it falls in another month, then the one before. closing_day_assignment says where a purchase on the closing day goes: next, the next statement, or closing, the one that closes. calendar is the business-day calendar; the calendar of the region when absent.
+
+settle_statement acts on one statement, with statement_id and action.
+
+- pay: amount, from_account_id and date.
+- finance: installment_count and installment_amount turn the unpaid amount into installments on the next statements.
+- confirm_amount_due: amount is the total the institution charges for a statement that has closed. It confirms the statement when that total equals the total of the book; a different amount is refused and the answer states the difference, which is then found line by line.
+- set_facts: what the statement of the institution states: amount (its total), due_date, closing_date and minimum. remove_facts clears them.
+- defer_postings: transaction_ids whose card posting the institution billed on the next statement.
+
+handle_card_purchase records an event on one card purchase, with transaction_id and action.
+
+- refund: amount, full or partial, and date.
+- open_dispute opens a dispute; resolve_dispute closes it with outcome won, which refunds the remaining charged amount, or lost, which keeps the charge.
+- cancel_installments cancels the purchase: the installments not yet billed are reversed on their statements and the ones already billed are credited.
+- anticipate_installments pays installments early: from_installment and to_installment, and amount, the amount paid.
+
+statement names the statement month (YYYY-MM) that receives the credit or the anticipated installments; the next open statement when absent.

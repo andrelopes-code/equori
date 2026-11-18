@@ -13,3 +13,17 @@ An account whose institution has an ISPB identifier gets the tab Institution onc
 The month composition chart on the Categories screen ranks the top-level categories by their share of the month. Selecting a category that has children shows the composition of that category: each child and the amount booked on the category itself. The Back to the groups button returns to the top level. The Categories tree hides categories without movement behind the switch Show categories without movement, which names how many it hides.
 
 The assistant can also set the colour and the icon of an account or category, when it creates or changes one, and the identifier of an institution; each change waits for the user's confirmation.
+
+The tools. list_accounts lists accounts and categories with their IDs, institution and the base currency; class keeps one of asset, liability, equity, income or expense, and include_closed adds the closed ones. get_balances returns the balance of each asset, liability and equity account at the end of a date; basis booked places a posting on the transaction date and settled on the settlement date of the institution. get_account_details returns one account in depth: reconciliation state and recorded institution balances and, for a credit card, its plastic cards, limit, cycle and statements. get_account_history returns the balance or the flows of one account over time.
+
+manage_accounts_and_payees changes accounts, categories, payees, institutions and tags; action names the operation.
+
+- create_account: name and class. The class income or expense creates a category. An asset or liability takes kind: checking, savings, cash, wallet, benefit, reserve, brokerage, receivable, loan, credit_card or other. Optional: currency (the base currency when absent), parent_id, institution_id, opened_on, color (slot 1 to 8), icon and yield_mode, where auto books the yield of the account and none does not.
+- update_account: account_id and the fields that change: name, parent_id, institution_id, color (0 clears it), icon (none clears it), yield_mode, excluded_from_liquidity, and opened_on, which moves only to an earlier date.
+- close_account and reopen_account: account_id; close_account takes date, today when absent.
+- merge_category: account_id is merged into into_id, which remains.
+- create_payee: name. rename_payee: payee_id and name. merge_payee: payee_id is merged into into_id.
+- create_institution: name. delete_institution: institution_id. set_institution_identifier: institution_id with scheme and identifier; without both it clears the identifier.
+- rename_tag: tag and name. merge_tag: tag is merged into into_tag. delete_tag: tag.
+
+A merge is not undone. Card settings belong to manage_card, not to this tool.

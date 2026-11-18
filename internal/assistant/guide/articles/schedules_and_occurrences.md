@@ -13,3 +13,16 @@ The agenda states how the month closes and what is still to pay. A transfer or a
 Scheduled occurrences show on Transactions and on the Account screen, where the **Projection** uses them. The Overview lists the overdue occurrences first, then those of the next 7 days with the days left, and totals what leaves and what enters; a transfer and a saving are listed and left out of both totals.
 
 A saving or a transfer into an account that several goals share can name one of those goals: marking an occurrence paid sets its amount aside for that goal, and undoing it takes the amount back. The Goals screen opens the form with the goal filled in.
+
+The tools. list_schedules lists the schedules with their terms; with schedule_id, one schedule with the versions of its terms and its pauses; with from and to (31 days when to is absent, at most 366), the occurrences of the period, optionally in one state: expected, overdue, realized or skipped; with month, what is committed to that month. find_recurring finds expenses that repeat on an account and are not scheduled yet. project_balance projects the balance of account_id to a date at most 12 months ahead from its schedules.
+
+manage_schedule creates or changes a schedule; action names the operation.
+
+- create: kind (bill, income, subscription, transfer or savings), description, account_id (the balance account the money leaves or reaches), counterpart_id (the category, or the other account of a transfer or a saving), amount, frequency (daily, weekly, monthly or yearly), interval (every how many units, 1 when absent), day_of_month for a monthly schedule, start (the first occurrence) and until (the last possible date; absent for no end). payee_id is optional. paid_by_transaction_id names the transaction that already paid the occurrence on start.
+- update: schedule_id with a new description, an earlier first date in starts_on, or the matching values.
+- change_terms: schedule_id, from (the first date of the new terms) and the amount, frequency, interval or day_of_month that change. Earlier occurrences keep the terms they had.
+- pause: schedule_id, from and to, the first and last paused dates. end: schedule_id and from, the first date without occurrences.
+
+Matching values, on create and update: match_tolerance_bp is how far the amount of a transaction may differ, in basis points (1000, that is 10%, when absent); match_window_days is how many days from the expected date a transaction may realize the occurrence (7 when absent, 0 to 31); grace_days is how many days after the expected date the occurrence becomes overdue (3 when absent).
+
+manage_occurrence acts on one occurrence, with occurrence_id and action: realize links it to transaction_id, the transaction that paid it; skip skips it, with reason; move gives it another date; unrealize releases the linked transaction, and the occurrence is expected again; reopen brings back a skipped occurrence.

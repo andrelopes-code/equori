@@ -22,7 +22,7 @@ func updateProfile(svc *app.Service) tool.Tool {
 		Name: "update_profile",
 		Description: "Proposes changing the member's language, which sets the language of the app and of these answers. " +
 			"Use it when the user asks to switch language. " +
-			"Do not use it for the region or the base currency of the book, which a book owner changes in settings. " +
+			"Do not use it for the region or the base currency of the book: manage_book and set_base_currency do, for the owner. " +
 			"The user confirms first.",
 		Effect: tool.Write,
 	}, func(ctx context.Context, booksID int64, in updateProfileIn) (tool.Preview, error) {
