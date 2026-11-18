@@ -1,10 +1,10 @@
 package toolapi
 
 import (
-	"bytes"
 	"encoding/json"
 	"flag"
 	"os"
+	"reflect"
 	"testing"
 )
 
@@ -28,12 +28,18 @@ func TestAppearanceValues(t *testing.T) {
 		}
 	}
 
-	got, err := os.ReadFile(appearanceValuesFile)
+	b, err := os.ReadFile(appearanceValuesFile)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if !bytes.Equal(got, want) {
+	// Compared as values: the pre-commit hook rewrites the file in the layout of Prettier.
+	var got map[string][]string
+	if err := json.Unmarshal(b, &got); err != nil {
+		t.Fatal(err)
+	}
+
+	if !reflect.DeepEqual(got, appearanceValues) {
 		t.Errorf(
 			"%s differs from appearanceValues; run go test ./internal/identity/toolapi -update",
 			appearanceValuesFile,
