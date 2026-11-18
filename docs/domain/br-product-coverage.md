@@ -80,10 +80,10 @@ Source status:
 |---|---|---|---|---|---|
 | U-01 | Fixed income fund, multimarket, come-cotas | partial | subtypes `fixed_income_fund`, `multimarket`; `UnitTax` (Lei 14.754/2023 art. 17 to 19); source `cvmfunds` | long term and short term share one subtype pair, so the rate of 15% or 20% is typed | Lei 14.754/2023 art. 17 to 19, read on 2026-11-18 (planalto.gov.br) |
 | U-02 | Equity fund | partial | subtype `equity_fund`, class `fund_equity`, no come-cotas | the tax at redemption is not estimated | to read |
-| U-03 | Exempt funds (FI-Infra, incentivized debenture fund) | unsupported | no subtype | a subtype with an exempt class | to read |
-| U-04 | FIDC, FIP, closed funds | unsupported | no subtype | subtypes and their tax class | to read |
+| U-03 | Exempt funds (FI-Infra, incentivized debenture fund) | supported | fund subtype `fi_infra`, class `fund_exempt`: a distribution is exempt, no come-cotas; `TestBR`, `TestUnitTaxOfClosedFunds` | none | Lei 12.431/2011 art. 3; come-cotas: Lei 14.754/2023 as summarized by law firms, 2026-11-18 |
+| U-04 | FIDC, FIP, closed funds | partial | fund subtypes `fidc` (come-cotas calendar) and `fip`, class `fund`; `TestBR`, `TestUnitTaxOfClosedFunds` | whether a FIDC is an investment entity, which frees it from come-cotas, is not recorded; the tax at a FIP distribution is not estimated | Lei 14.754/2023 as summarized by law firms, 2026-11-18 |
 | U-05 | Pension plan PGBL, VGBL | supported | fund subtypes `pgbl` and `vgbl`, tax classes `pension_pgbl` (taxed on the whole redemption) and `pension_vgbl` (on the gain), no come-cotas; contributions are purchases of quotas, redemptions sales with the tax withheld, portability a custody transfer; `get_tax_year` returns `deductible_contributions` of PGBL plans; `TestPensionContributions`, `TestPensionPlans`, `TestYearContributions` | the tax of a redemption is the one the insurer withholds: the progressive and the regressive tables are not computed; the 12% limit of the deduction needs the taxable income, which equori does not hold | Lei 11.053/2004 art. 1 and Lei 9.532/1997 art. 11 as cited; Lei 14.803/2024 checked 2026-11-18 at camara.leg.br |
-| U-06 | COE | unsupported | no instrument type | an instrument type | to read |
+| U-06 | COE | partial | fixed income subtype `coe`, taxed class, no FGC; `TestBR`, `TestUnitTaxOfClosedFunds` | the payoff of the structure is not modeled: the value is the price the user records from the issuer | to read |
 | U-07 | Crypto asset | partial | type `crypto`; source `coinbase` | no tax class for Brazil | to read |
 | U-08 | Stock and ETF held abroad | partial | types `stock`, `etf` in another currency | the annual tax of Lei 14.754/2023 and the rate date of the conversion are not computed | to read |
 
@@ -91,9 +91,9 @@ Source status:
 
 | Verdict | Rows |
 |---|---|
-| supported | 23 |
-| partial | 26 |
-| unsupported | 4 |
+| supported | 24 |
+| partial | 28 |
+| unsupported | 2 |
 
 ## What the assistant says
 

@@ -30,6 +30,11 @@ func TestBR(t *testing.T) {
 		{"fixed_income", "cpr", "", "fixed_income_exempt"},
 		{"fixed_income", "nota_comercial", "", "fixed_income"},
 		{"fixed_income", "lam", "", "fixed_income"},
+		// Coverage rows U-03, U-04 and U-06.
+		{"fund", "fi_infra", "", "fund_exempt"},
+		{"fund", "fidc", "", "fund"},
+		{"fund", "fip", "", "fund"},
+		{"fixed_income", "coe", "", "fixed_income"},
 		{"fixed_income", "debenture", "", "fixed_income"},
 		{"fixed_income", "xyz_bond", "", "fixed_income"},
 		{"fund", "equity_fund", "", "fund_equity"},
@@ -69,6 +74,7 @@ func TestBR(t *testing.T) {
 		{"jcp", "fixed_income_exempt", "exclusive"},
 		{"distribution", "fii", "exempt"},
 		{"distribution", "fund", "exclusive"},
+		{"distribution", "fund_exempt", "exempt"},
 		{"distribution", "", "exclusive"},
 		{"coupon", "fixed_income", "exclusive"},
 	} {
@@ -85,6 +91,9 @@ func TestBR(t *testing.T) {
 		"fund",
 	), []string{
 		"equity_fund",
+		"fi_infra",
+		"fidc",
+		"fip",
 		"fixed_income_fund",
 		"multimarket",
 		"pgbl",
@@ -186,7 +195,7 @@ func TestUnitTax(t *testing.T) {
 		t.Errorf("Months = %v", u.Months)
 	}
 
-	if !slices.Equal(u.Subtypes, []string{"fixed_income_fund", "multimarket"}) {
+	if !slices.Equal(u.Subtypes, []string{"fixed_income_fund", "multimarket", "fidc"}) {
 		t.Errorf("Subtypes = %v", u.Subtypes)
 	}
 }
@@ -209,5 +218,22 @@ func TestPensionPlans(t *testing.T) {
 	rule, _ := j.UnitTax()
 	if slices.Contains(rule.Subtypes, "pgbl") || slices.Contains(rule.Subtypes, "vgbl") {
 		t.Errorf("UnitTax subtypes = %v, want no pension plan", rule.Subtypes)
+	}
+}
+
+// Coverage rows U-03 and U-04: a FIDC pays come-cotas unless it is an investment entity; a FI-Infra
+// and a FIP do not (Lei 14.754/2023).
+func TestUnitTaxOfClosedFunds(t *testing.T) {
+	t.Parallel()
+
+	rule, _ := New().UnitTax()
+	if !slices.Contains(rule.Subtypes, "fidc") || slices.Contains(rule.Subtypes, "fi_infra") ||
+		slices.Contains(rule.Subtypes, "fip") {
+		t.Errorf("UnitTax subtypes = %v, want fidc and not fi_infra or fip", rule.Subtypes)
+	}
+
+	g, _ := New().Guarantee()
+	if g.Covered("coe") || g.Covered("fi_infra") {
+		t.Error("the FGC covers coe or fi_infra, want neither")
 	}
 }

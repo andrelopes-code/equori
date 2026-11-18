@@ -48,7 +48,8 @@ func (Jurisdiction) UnitTax() (domain.UnitTax, bool) {
 	return domain.UnitTax{
 		Calendar: "br_banking",
 		Months:   []time.Month{time.May, time.November},
-		Subtypes: []string{"fixed_income_fund", "multimarket"},
+		// A FIDC pays come-cotas unless it is an investment entity (Lei 14.754/2023).
+		Subtypes: []string{"fixed_income_fund", "multimarket", "fidc"},
 	}, true
 }
 
@@ -82,6 +83,7 @@ var subtypeClass = map[string]map[string]string{
 		"lam":                   "fixed_income",
 		"nota_comercial":        "fixed_income",
 		"cpr":                   "fixed_income_exempt",
+		"coe":                   "fixed_income",
 		"lh":                    "fixed_income_exempt",
 		"lcd":                   "fixed_income_exempt",
 		"cdca":                  "fixed_income_exempt",
@@ -94,6 +96,9 @@ var subtypeClass = map[string]map[string]string{
 	"fund": {
 		"fixed_income_fund": "fund", "multimarket": "fund", "equity_fund": "fund_equity",
 		"pgbl": "pension_pgbl", "vgbl": "pension_vgbl",
+		// A FI-Infra holds incentivized debentures: its income is exempt for an individual (Lei
+		// 12.431/2011 art. 3); a FIDC and a FIP are taxed as funds (Lei 14.754/2023).
+		"fi_infra": "fund_exempt", "fidc": "fund", "fip": "fund",
 	},
 }
 
@@ -126,7 +131,7 @@ func (Jurisdiction) Treatment(incomeType, taxClass string) string {
 		return "exclusive"
 	case "distribution":
 		// A distribution of a listed FII is exempt for an individual (Lei 11.033/2004 art. 3).
-		if taxClass == "fii" {
+		if taxClass == "fii" || taxClass == "fund_exempt" {
 			return "exempt"
 		}
 

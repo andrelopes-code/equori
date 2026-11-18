@@ -91,6 +91,7 @@ func TestInstrumentSubtypesList(t *testing.T) {
 	), []string{
 		"cdb",
 		"cdca",
+		"coe",
 		"cpr",
 		"cra",
 		"cri",
@@ -120,6 +121,9 @@ func TestInstrumentSubtypesList(t *testing.T) {
 		"fund",
 	), []string{
 		"equity_fund",
+		"fi_infra",
+		"fidc",
+		"fip",
 		"fixed_income_fund",
 		"multimarket",
 		"pgbl",
