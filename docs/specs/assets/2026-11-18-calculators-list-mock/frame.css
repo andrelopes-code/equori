@@ -1,0 +1,267 @@
+/* FIXED FILE: do not edit. Styles of the mock page only (prefix mk-). The design is drawn
+   inside an iframe, so no rule here reaches it and no rule here goes to the app. */
+:root {
+  --mk-bg: #f1f1f3;
+  --mk-panel: #ffffff;
+  --mk-line: #d6d6dc;
+  --mk-text: #17171a;
+  --mk-dim: #5f5f68;
+  --mk-on: #17171a;
+  --mk-on-text: #ffffff;
+  --mk-bad: #b3261e;
+  --mk-good: #1b6e3c;
+}
+
+[data-mk-scheme="dark"] {
+  --mk-bg: #0f0f11;
+  --mk-panel: #19191c;
+  --mk-line: #303036;
+  --mk-text: #ececf0;
+  --mk-dim: #9b9ba5;
+  --mk-on: #ececf0;
+  --mk-on-text: #17171a;
+  --mk-bad: #ff8a80;
+  --mk-good: #7bd69a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--mk-bg);
+  color: var(--mk-text);
+  font:
+    13px/20px system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
+}
+
+/* Header: one line. */
+.mk-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  block-size: 48px;
+  padding-inline: 24px;
+  white-space: nowrap;
+}
+
+.mk-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.mk-status {
+  padding: 0 8px;
+  border: 1px solid var(--mk-line);
+  border-radius: 999px;
+  color: var(--mk-dim);
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.mk-status[data-status="approved"] {
+  border-color: var(--mk-good);
+  color: var(--mk-good);
+}
+
+.mk-source {
+  margin-inline-start: auto;
+  overflow: hidden;
+  color: var(--mk-dim);
+  font-size: 12px;
+  text-overflow: ellipsis;
+}
+
+/* Controls: fixed order, one group per control, 28 px high. */
+.mk-controls {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  padding: 10px 24px;
+  border-block: 1px solid var(--mk-line);
+  background: var(--mk-panel);
+}
+
+.mk-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  block-size: 28px;
+  white-space: nowrap;
+}
+
+.mk-label {
+  color: var(--mk-dim);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.mk-segment {
+  display: flex;
+  border: 1px solid var(--mk-line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.mk-segment button {
+  block-size: 26px;
+  padding: 0 10px;
+  border: 0;
+  border-inline-start: 1px solid var(--mk-line);
+  background: transparent;
+  color: var(--mk-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.mk-segment button:first-child {
+  border-inline-start: 0;
+}
+
+.mk-segment button[aria-pressed="true"] {
+  background: var(--mk-on);
+  color: var(--mk-on-text);
+}
+
+.mk-segment button:focus-visible {
+  outline: 2px solid var(--mk-text);
+  outline-offset: -4px;
+}
+
+.mk-select {
+  block-size: 28px;
+  max-inline-size: 320px;
+  padding: 0 8px;
+  border: 1px solid var(--mk-line);
+  border-radius: 6px;
+  background: var(--mk-panel);
+  color: var(--mk-text);
+  font: inherit;
+}
+
+.mk-fixed {
+  color: var(--mk-dim);
+}
+
+/* Regions. */
+.mk-main {
+  display: grid;
+  gap: 28px;
+  padding: 24px;
+}
+
+.mk-region:empty {
+  display: none;
+}
+
+.mk-h {
+  margin: 0 0 8px;
+  color: var(--mk-dim);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.mk-problems {
+  margin: 0;
+  padding: 0;
+  color: var(--mk-bad);
+  list-style: none;
+}
+
+.mk-chosen {
+  margin: 0;
+}
+
+/* Comparison: the current screen and the proposal, each in a labelled pane. */
+.mk-panes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.mk-pane {
+  margin: 0;
+  max-inline-size: 100%;
+}
+
+.mk-caption {
+  display: flex;
+  gap: 8px;
+  block-size: 28px;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.mk-caption strong {
+  font-weight: 650;
+}
+
+.mk-caption span,
+.mk-caption a {
+  color: var(--mk-dim);
+  font-size: 12px;
+}
+
+.mk-clip {
+  overflow: hidden;
+  max-inline-size: 100%;
+  border: 1px dashed var(--mk-line);
+}
+
+.mk-clip iframe,
+.mk-clip img {
+  display: block;
+  border: 0;
+}
+
+.mk-absent {
+  margin: 0;
+  padding: 16px;
+  color: var(--mk-dim);
+}
+
+/* Notes: tables with the same columns on every use. */
+.mk-notes {
+  display: grid;
+  gap: 24px;
+  max-inline-size: 1100px;
+}
+
+.mk-table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  background: var(--mk-panel);
+}
+
+.mk-table th,
+.mk-table td {
+  padding: 6px 10px;
+  border: 1px solid var(--mk-line);
+  text-align: start;
+  vertical-align: top;
+}
+
+.mk-table th {
+  color: var(--mk-dim);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.mk-missing {
+  margin: 0;
+  color: var(--mk-bad);
+}

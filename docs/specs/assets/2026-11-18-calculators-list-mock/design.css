@@ -1,0 +1,28 @@
+@layer app {
+  /* Concept A: the three groups side by side from 1024 px of the page, one column below. */
+  .groups {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--slotted-space-10);
+    align-items: start;
+  }
+
+  @container slotted-page (min-width: 1024px) { /* literal: breakpoint of the calculator frame */
+    .groups {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--slotted-space-8);
+    }
+  }
+
+  /* Concept B: the groups stacked, as the current page, at a bounded measure. */
+  .groupsB {
+    display: grid;
+    gap: var(--equori-page-section-gap, var(--slotted-space-10));
+    max-inline-size: 48rem; /* literal: measure of a one-line description at sm size */
+  }
+
+  .missing {
+    display: block;
+    margin-block-start: var(--slotted-space-3);
+  }
+}

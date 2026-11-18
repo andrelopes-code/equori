@@ -1,0 +1,129 @@
+{
+  "title": "Calculadoras · lista",
+  "slug": "calculators-list",
+  "status": "approved",
+  "round": 2,
+  "approved": "2026-11-18",
+  "source": {
+    "url": "http://127.0.0.1:5173/calculators",
+    "root": "main",
+    "commit": "494d8af2"
+  },
+  "schemeAttr": "data-slotted-scheme",
+  "schemes": [
+    "light",
+    "dark"
+  ],
+  "themeAttr": "",
+  "themes": [],
+  "widths": {
+    "desktop": 1440,
+    "phone": 768
+  },
+  "stageBackground": "var(--slotted-surface-sunken)",
+  "concepts": [
+    {
+      "id": "a",
+      "name": "Pela pergunta",
+      "organizes": "pela pergunta do usuário, em três colunas por grupo",
+      "answers": "Qual calculadora responde à minha dúvida: a pergunta é o texto principal, o nome é secundário",
+      "costs": "Três listas lado a lado; perguntas reescritas para caber em uma linha de 1/3 da página",
+      "recommended": true
+    }
+  ],
+  "chosen": "a",
+  "states": [
+    {
+      "id": "data",
+      "name": "Com dados"
+    },
+    {
+      "id": "loading",
+      "name": "Carregando"
+    },
+    {
+      "id": "empty",
+      "name": "Sem índices"
+    },
+    {
+      "id": "error",
+      "name": "Falha dos índices"
+    },
+    {
+      "id": "hard",
+      "name": "Sem índices",
+      "hard": true
+    }
+  ],
+  "overlays": [],
+  "notes": {
+    "priority": {
+      "order": [
+        "Grupos de calculadoras com a pergunta de cada uma"
+      ],
+      "confirmed": "Dono, 2026-11-18"
+    },
+    "questions": [
+      {
+        "question": "Qual calculadora responde à minha dúvida?",
+        "decision": "Abrir a calculadora certa",
+        "block": "Grupos"
+      }
+    ],
+    "inventory": [
+      {
+        "datum": "Título e subtítulo da página",
+        "now": "Cabeçalho",
+        "destination": "Cabeçalho, subtítulo encurtado"
+      },
+      {
+        "datum": "Nome e descrição dos 3 grupos",
+        "now": "Seção",
+        "destination": "Nome do grupo; descrição removida",
+        "reason": "As perguntas das linhas já dizem o que o grupo cobre"
+      },
+      {
+        "datum": "Título e pergunta de cada calculadora (13)",
+        "now": "Linha da lista",
+        "destination": "Linha da lista, pergunta em uma linha"
+      },
+      {
+        "datum": "Ausência de Comparar indexadores sem índices",
+        "now": "Linha omitida sem aviso",
+        "destination": "Linha omitida + frase com o motivo"
+      },
+      {
+        "datum": "Reserva de emergência e Independência financeira",
+        "now": "Linhas que abrem um quadro Indisponível",
+        "destination": "removed",
+        "reason": "Calculadoras sem tela (spec CR13); voltam à lista quando escritas"
+      }
+    ],
+    "responsive": [
+      {
+        "block": "Grupos",
+        "desktop": "3 colunas (A) ou 1 coluna de 48rem (B)",
+        "phone": "768 px: 1 coluna; abaixo de 600 px a rota não é servida",
+        "leaves": "nada"
+      }
+    ],
+    "reused": [
+      {
+        "component": "List framed",
+        "draws": "moldura e divisórias",
+        "nesting": "um nível, dentro de Section sem superfície"
+      }
+    ],
+    "decisions": [
+      {
+        "decision": "Sem ícone por calculadora",
+        "reason": "mock-rules M6: ícone decorativo não entra"
+      },
+      {
+        "decision": "Motivo escrito quando Comparar indexadores some",
+        "reason": "quality-bar 5: dado indisponível com motivo"
+      }
+    ],
+    "derivations": []
+  }
+}

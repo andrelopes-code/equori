@@ -1,0 +1,376 @@
+@layer app {
+  /* Concept A. One column below 1024 px of the page: answer, evidence, inputs, details. From
+     1024 px the answer spans both columns; the evidence and the inputs stand side by side. */
+  .calc {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "answer" "evidence" "inputs" "after";
+    gap: var(--slotted-space-8);
+  }
+
+  @container slotted-page (min-width: 1024px) { /* literal: breakpoint of the current calculator frame */
+    .calc {
+      grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+      grid-template-areas: "answer answer" "evidence inputs" "after after";
+      align-items: start;
+    }
+
+    .inputs {
+      position: sticky;
+      inset-block-start: calc(var(--slotted-page-sticky-top, 0px) + var(--slotted-space-6));
+    }
+  }
+
+  .inputs {
+    grid-area: inputs;
+  }
+
+  .evidence {
+    grid-area: evidence;
+    display: grid;
+    gap: var(--slotted-space-10);
+  }
+
+  .after {
+    grid-area: after;
+    display: grid;
+    gap: var(--slotted-space-6);
+  }
+
+  /* The answer: one figure inside a sentence, then the three facts that qualify it. */
+  .answer {
+    grid-area: answer;
+    display: grid;
+    gap: var(--slotted-space-1);
+    padding: var(--slotted-space-8);
+    border: 1px solid var(--slotted-panel-border-color, var(--slotted-border-subtle));
+    border-radius: var(--slotted-radius-lg);
+    background: var(--slotted-panel-surface, var(--slotted-surface-raised));
+    box-shadow: var(--slotted-panel-shadow, none);
+  }
+
+  .answer p {
+    margin: 0;
+  }
+
+  .answerLead {
+    font-size: var(--slotted-font-size-sm);
+    color: var(--slotted-text-muted);
+  }
+
+  .answerFigure {
+    font-size: var(--slotted-font-size-4xl);
+    font-weight: var(--slotted-font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.15; /* literal: a display figure takes a tighter line than body text */
+    color: var(--slotted-text);
+  }
+
+  .answerSentence {
+    font-size: var(--slotted-font-size-md);
+    color: var(--slotted-text);
+  }
+
+  .answerFacts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, max-content));
+    gap: var(--slotted-space-10);
+    margin: var(--slotted-space-6) 0 0;
+    padding-block-start: var(--slotted-space-5);
+    border-block-start: 1px solid var(--slotted-border-subtle);
+  }
+
+  .answerFact {
+    display: grid;
+    gap: var(--slotted-space-1);
+  }
+
+  .answerFact dt {
+    font-size: var(--slotted-font-size-xs);
+    color: var(--slotted-text-muted);
+    white-space: nowrap;
+  }
+
+  .answerFact dd {
+    margin: 0;
+    font-size: var(--slotted-font-size-lg);
+    font-weight: var(--slotted-font-weight-medium);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  /* Bars on one axis: the principal in a neutral, the interest in the accent, the total at the
+     end of the row. */
+  .split {
+    display: grid;
+    gap: var(--slotted-space-3);
+  }
+
+  .splitRow {
+    display: grid;
+    grid-template-columns: 6rem minmax(0, 1fr) 9rem; /* literal: name column fits Price/SAC/Valor final; total column fits R$ 1.023.197,89 */
+    align-items: center;
+    gap: var(--slotted-space-4);
+    block-size: 2rem; /* literal: fixed row height (M9) */
+  }
+
+  .splitName {
+    font-size: var(--slotted-font-size-sm);
+    font-weight: var(--slotted-font-weight-medium);
+    white-space: nowrap;
+  }
+
+  .splitTrack {
+    display: flex;
+    block-size: 0.875rem; /* literal: bar thickness, one step under the text line */
+  }
+
+  .splitPrincipal {
+    background: var(--slotted-text-muted);
+    border-radius: var(--slotted-radius-xs) 0 0 var(--slotted-radius-xs);
+  }
+
+  .splitInterest {
+    background: var(--slotted-tone-accent-solid);
+    border-radius: 0 var(--slotted-radius-xs) var(--slotted-radius-xs) 0;
+  }
+
+  .splitTotal {
+    font-size: var(--slotted-font-size-sm);
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+    white-space: nowrap;
+  }
+
+  .splitLegend {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-2);
+    margin: 0;
+    font-size: var(--slotted-font-size-xs);
+    color: var(--slotted-text-muted);
+  }
+
+  .keyPrincipal,
+  .keyInterest {
+    inline-size: 0.625rem; /* literal: legend key square */
+    block-size: 0.625rem; /* literal: legend key square */
+    border-radius: var(--slotted-radius-xs);
+  }
+
+  .keyPrincipal {
+    background: var(--slotted-text-muted);
+  }
+
+  .keyInterest {
+    margin-inline-start: var(--slotted-space-4);
+    background: var(--slotted-tone-accent-solid);
+  }
+
+  /* The two answers to a prepayment, on one axis of interest saved. */
+  .choices {
+    display: grid;
+  }
+
+  .choiceHead,
+  .choiceRow {
+    display: grid;
+    grid-template-columns: 10rem minmax(0, 1fr) 8rem 8rem; /* literal: columns sized to the longest option name and value */
+    align-items: center;
+    gap: var(--slotted-space-4);
+  }
+
+  .choiceHead {
+    block-size: 2rem; /* literal: fixed header row height (M9) */
+    font-size: var(--slotted-font-size-xs);
+    color: var(--slotted-text-muted);
+    border-block-end: 1px solid var(--slotted-border-subtle);
+  }
+
+  .choiceHead span:last-child {
+    grid-column: 3 / 5;
+    text-align: end;
+  }
+
+  .choiceRow {
+    block-size: 2.75rem; /* literal: fixed row height (M9) */
+    border-block-end: 1px solid var(--slotted-border-subtle);
+  }
+
+  .choiceName {
+    font-size: var(--slotted-font-size-sm);
+    font-weight: var(--slotted-font-weight-medium);
+    white-space: nowrap;
+  }
+
+  .choiceMain {
+    font-size: var(--slotted-font-size-sm);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .choiceTrack {
+    display: flex;
+    block-size: 0.5rem; /* literal: secondary bar thickness */
+  }
+
+  .choiceBar {
+    background: var(--slotted-tone-accent-solid);
+    border-radius: var(--slotted-radius-xs);
+  }
+
+  .choiceSaves {
+    font-size: var(--slotted-font-size-sm);
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+    white-space: nowrap;
+  }
+
+  .choiceNote {
+    margin: var(--slotted-space-3) 0 0;
+    font-size: var(--slotted-font-size-xs);
+    color: var(--slotted-text-muted);
+  }
+
+  /* The range of the simulations on the axis of the final amount. */
+  .range {
+    display: grid;
+    gap: var(--slotted-space-5);
+  }
+
+  .rangeTrack {
+    position: relative;
+    block-size: 1.5rem; /* literal: range track height */
+    border-block-end: 1px solid var(--slotted-border-strong);
+  }
+
+  .rangeBand {
+    position: absolute;
+    inset-block: 0.375rem; /* literal: band inset inside the track */
+    background: var(--slotted-tone-accent-subtle-active);
+    border: 1px solid var(--slotted-tone-accent-border);
+    border-radius: var(--slotted-radius-xs);
+  }
+
+  .rangeMid,
+  .rangeFixed {
+    position: absolute;
+    inset-block: 0;
+    inline-size: 2px; /* literal: marker line width */
+  }
+
+  .rangeMid {
+    background: var(--slotted-tone-accent-solid);
+  }
+
+  .rangeFixed {
+    background: var(--slotted-text);
+  }
+
+  .rangeFacts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, max-content));
+    gap: var(--slotted-space-10);
+    margin: 0;
+  }
+
+  /* Labelled rows with values end-aligned on one line. */
+  .rows {
+    display: grid;
+    margin: 0;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr) max-content;
+    align-items: center;
+    gap: var(--slotted-space-3);
+    block-size: 2.5rem; /* literal: fixed row height (M9) */
+    border-block-end: 1px solid var(--slotted-border-subtle);
+  }
+
+  .row dt {
+    font-size: var(--slotted-font-size-sm);
+    white-space: nowrap;
+  }
+
+  .rowNote {
+    font-size: var(--slotted-font-size-xs);
+    color: var(--slotted-text-muted);
+    white-space: nowrap;
+  }
+
+  .row dd {
+    grid-column: 3;
+    margin: 0;
+    font-size: var(--slotted-font-size-sm);
+    font-weight: var(--slotted-font-weight-medium);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .unitSelect {
+    flex: none;
+  }
+
+  .unitValue {
+    inline-size: 7rem; /* literal: value part of a value-and-unit pair, medium step minus the unit select */
+  }
+
+  /* Concept B. Inputs beside the results from 1024 px; results first below. */
+  .bCalc {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "results" "inputs" "after";
+    gap: var(--slotted-space-8);
+  }
+
+  @container slotted-page (min-width: 1024px) { /* literal: breakpoint of the current calculator frame */
+    .bCalc {
+      grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+      grid-template-areas: "inputs results" "after after";
+      align-items: start;
+    }
+  }
+
+  .bInputs {
+    grid-area: inputs;
+  }
+
+  .bResults {
+    grid-area: results;
+  }
+}
+
+@layer app {
+  .keyBand,
+  .keyMid,
+  .keyFixed {
+    block-size: 0.75rem; /* literal: legend key height, the line of xs text */
+  }
+
+  .keyBand {
+    inline-size: 0.75rem; /* literal: legend key square */
+    background: var(--slotted-tone-accent-subtle-active);
+    border: 1px solid var(--slotted-tone-accent-border);
+    border-radius: var(--slotted-radius-xs);
+  }
+
+  .keyMid,
+  .keyFixed {
+    inline-size: 2px; /* literal: marker line width */
+    margin-inline-start: var(--slotted-space-4);
+  }
+
+  .keyMid {
+    background: var(--slotted-tone-accent-solid);
+  }
+
+  .keyFixed {
+    background: var(--slotted-text);
+  }
+}
