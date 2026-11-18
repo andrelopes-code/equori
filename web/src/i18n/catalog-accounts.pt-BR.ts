@@ -459,7 +459,7 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "positions.costBasis": "Custo",
   "positions.marketValue": "Valor de mercado",
   "positions.result": "Lucro ou prejuízo atual",
-  "positions.priceOf": "Preço de {date}",
+  "positions.priceOf": "Preço de {date} ->",
   "positions.noPrice": "Sem cotação",
   "positions.empty": "Esta corretora ainda não tem investimentos.",
   "positions.recordBuy": "Registrar compra",

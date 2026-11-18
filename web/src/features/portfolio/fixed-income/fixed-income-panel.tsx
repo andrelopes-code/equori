@@ -24,6 +24,7 @@ import { useScale } from "@/features/setup";
 import { formatDate, formatDayMonthNumeric } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import { Stack } from "@slotted/react";
 
 interface FixedIncomePanelProps {
   holdings: readonly Holding[];
@@ -78,18 +79,20 @@ export function FixedIncomePanel({ holdings, date }: FixedIncomePanelProps) {
           <div className={styles.body}>
             {verdict !== null && (
               <div>
-                <Text
-                  size="xl"
-                  weight="semibold"
-                  tone={verdict.tone === "danger" ? "danger" : "inherit"}
-                >
-                  {verdict.line}
-                </Text>
-                {verdict.detail !== "" && (
-                  <Text size="sm" tone="muted">
-                    {verdict.detail}
+                <Stack gap={1}>
+                  <Text
+                    size="xl"
+                    weight="semibold"
+                    tone={verdict.tone === "danger" ? "danger" : "inherit"}
+                  >
+                    {verdict.line}
                   </Text>
-                )}
+                  {verdict.detail !== "" && (
+                    <Text size="sm" tone="muted">
+                      {verdict.detail}
+                    </Text>
+                  )}
+                </Stack>
               </div>
             )}
 

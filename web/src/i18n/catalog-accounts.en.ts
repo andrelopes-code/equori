@@ -461,7 +461,7 @@ export const accountsEn = {
   "positions.costBasis": "Cost",
   "positions.marketValue": "Market value",
   "positions.result": "Gain or loss now",
-  "positions.priceOf": "Price of {date}",
+  "positions.priceOf": "Price of {date} ->",
   "positions.noPrice": "No price",
   "positions.empty": "This brokerage has no investments yet.",
   "positions.recordBuy": "Record a buy",
