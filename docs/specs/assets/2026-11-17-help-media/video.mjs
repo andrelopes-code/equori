@@ -1,6 +1,9 @@
 // Records the video of "Pay a statement" on the demo book (make demo, make run-dev), in both
 // schemes, without writing: the recording ends on the confirm button.
-// Usage: node video.mjs <setup.mjs with login(page)> <out dir>
+// Usage: node video.mjs <setup.mjs with login(page)> <out dir>   (setup.example.mjs signs in the demo user)
+// The dev server takes about 11 s to load the first screen; that lead is cut without re-encoding:
+//   ffmpeg -ss 11 -i pay-statement.<scheme>.webm -c copy -an out.webm
+// with the ffmpeg of Playwright (~/.cache/ms-playwright/ffmpeg-*/ffmpeg-linux).
 import { signIn, loadSetup, withBrowser } from "/home/dreco/.claude/skills/redesign-ui-section/scripts/lib.mjs";
 import { mkdirSync, renameSync } from "node:fs";
 
