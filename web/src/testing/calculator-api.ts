@@ -12,6 +12,32 @@ interface IndexFixture {
   };
 }
 
+interface CurveFixture {
+  id: string;
+  kind: "nominal" | "real";
+  index: string | null;
+  currency: string;
+  base_date: string;
+  source: string;
+  points: { maturity: string; rate: string }[];
+}
+
+// The Brazilian fixed-rate curve of the survey of 2026-11-16; its points surround 2028-11-17.
+export function prefixedCurveFixture(baseDate = "2026-11-16"): CurveFixture {
+  return {
+    id: "br_tesouro_prefixed",
+    kind: "nominal",
+    index: null,
+    currency: "BRL",
+    base_date: baseDate,
+    source: "br_tesouro",
+    points: [
+      { maturity: "2028-01-01", rate: "0.128" },
+      { maturity: "2030-01-01", rate: "0.134" },
+    ],
+  };
+}
+
 // 0.04% on each weekday from 2025-10-01 to 2026-10-16: more than a year of a daily index before
 // the fake today, 2026-10-17.
 export function cdiFixture(): IndexFixture {
@@ -57,9 +83,11 @@ export function ipcaFixture(): IndexFixture {
 // The routes a calculator reads, with the given indexes stored.
 export function calculatorApiRoutes(
   indexes: IndexFixture[] = [],
+  curves: CurveFixture[] = [],
 ): Record<string, (req: Request) => Response> {
   return {
     ...sharedRoutes,
+    "GET /api/v1/curves": () => json(200, { items: curves }),
     "GET /api/v1/indexes": () =>
       json(200, {
         items: indexes.map((x) => ({

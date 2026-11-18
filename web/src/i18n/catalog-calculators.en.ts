@@ -666,4 +666,51 @@ export const calculatorsEn = {
     "What a loan or an installment plan costs, and how to pay debts off.",
   "calc.group.plan.description":
     "Recurring costs, reserves and the choice between owning and renting.",
+  "calc.indexerComparison.amount": "Amount invested",
+  "calc.indexerComparison.maturity": "Maturity",
+  "calc.indexerComparison.security": "Security {n}",
+  "calc.indexerComparison.form": "Indexer",
+  "calc.indexerComparison.form.fixed": "Fixed rate",
+  "calc.indexerComparison.form.percent": "% of {index}",
+  "calc.indexerComparison.form.spread": "{index} + spread",
+  "calc.indexerComparison.rate": "Rate",
+  "calc.indexerComparison.exempt": "Tax-exempt",
+  "calc.indexerComparison.add": "Add security",
+  "calc.indexerComparison.remove": "Remove security {n}",
+  "calc.indexerComparison.text.fixed": "Fixed {rate} a year",
+  "calc.indexerComparison.text.percent": "{percent} of {index}",
+  "calc.indexerComparison.text.spread": "{index} + {rate} a year",
+  "calc.indexerComparison.col.security": "Security",
+  "calc.indexerComparison.col.gross": "Gross yield",
+  "calc.indexerComparison.col.tax": "Tax",
+  "calc.indexerComparison.col.net": "Net yield",
+  "calc.indexerComparison.col.netRate": "Net annual rate",
+  "calc.indexerComparison.noRate": "no rate for this index",
+  "calc.indexerComparison.breakEven.title": "Break-even",
+  "calc.indexerComparison.breakEven":
+    "{security} matches {reference} if the average {index} is {rate} a year",
+  "calc.indexerComparison.breakEven.none":
+    "{security} has no break-even with {reference}",
+  "calc.indexerComparison.breakEven.floatingReference":
+    "{reference} is taken at its expected rate",
+  "calc.indexerComparison.expected":
+    "expected: {rate} a year · survey of {date}",
+  "calc.indexerComparison.expected.none": "no survey of expectations",
+  "calc.indexerComparison.market":
+    "government bond for the term: {rate} a year · {date}",
+  "calc.indexerComparison.market.implied":
+    "inflation implied by government bonds: {rate} a year · {date}",
+  "calc.indexerComparison.market.none": "no government bond for this term",
+  "calc.indexerComparison.stale.survey": "outdated survey",
+  "calc.indexerComparison.stale.curve": "outdated curve",
+  "calc.indexerComparison.note.maturity":
+    "Each security is held to maturity. A sale before it has another result.",
+  "calc.indexerComparison.note.expected":
+    "The expected rate is the median of a survey, not a forecast that must hold.",
+  "calc.indexerComparison.note.market":
+    "The rate of a government bond holds the expected path plus a premium for the term.",
+  "calc.indexerComparison.note.credit":
+    "The issuer's credit risk and the liquidity of each security are not compared.",
+  "calc.indexerComparison.note.decision":
+    "equori computes; the choice is yours.",
 } as const;

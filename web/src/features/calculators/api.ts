@@ -3,6 +3,7 @@ import type { Client } from "openapi-fetch";
 
 import { unwrap } from "@/api/problem";
 import type { paths } from "@/api/schema.gen";
+import type { CurvePoint } from "@/features/calculators/indexer-comparison/market-rate";
 import type { IndexRate } from "@/features/calculators/rate-source/index-rates";
 
 // The indexes the instance stores; an index's rates never change once published.
@@ -47,5 +48,34 @@ export function indexExpectationsQuery(api: Client<paths>, id: string) {
         points: x.items.map((p) => ({ date: p.date, rate: Number(p.rate) })),
       };
     },
+  });
+}
+
+// A market curve of a source (IC9): a nominal curve holds fixed rates, a real one the spread
+// over the index it names.
+export interface MarketCurve {
+  id: string;
+  kind: string;
+  index: string | null;
+  currency: string;
+  baseDate: string;
+  points: CurvePoint[];
+}
+
+export function curvesQuery(api: Client<paths>) {
+  return queryOptions({
+    queryKey: ["calculators", "curves"] as const,
+    queryFn: async (): Promise<MarketCurve[]> =>
+      (await unwrap(await api.GET("/curves"))).items.map((c) => ({
+        id: c.id,
+        kind: c.kind,
+        index: c.index,
+        currency: c.currency,
+        baseDate: c.base_date,
+        points: c.points.map((p) => ({
+          maturity: p.maturity,
+          rate: Number(p.rate),
+        })),
+      })),
   });
 }

@@ -672,4 +672,50 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
     "Quanto custa um empréstimo ou um parcelamento, e como quitar dívidas.",
   "calc.group.plan.description":
     "Custos recorrentes, reservas e a escolha entre comprar e alugar.",
+  "calc.indexerComparison.amount": "Valor aplicado",
+  "calc.indexerComparison.maturity": "Vencimento",
+  "calc.indexerComparison.security": "Título {n}",
+  "calc.indexerComparison.form": "Indexador",
+  "calc.indexerComparison.form.fixed": "Prefixado",
+  "calc.indexerComparison.form.percent": "% do {index}",
+  "calc.indexerComparison.form.spread": "{index} + taxa",
+  "calc.indexerComparison.rate": "Taxa",
+  "calc.indexerComparison.exempt": "Isento de imposto",
+  "calc.indexerComparison.add": "Adicionar título",
+  "calc.indexerComparison.remove": "Remover título {n}",
+  "calc.indexerComparison.text.fixed": "Prefixado {rate} a.a.",
+  "calc.indexerComparison.text.percent": "{percent} do {index}",
+  "calc.indexerComparison.text.spread": "{index} + {rate} a.a.",
+  "calc.indexerComparison.col.security": "Título",
+  "calc.indexerComparison.col.gross": "Rendimento bruto",
+  "calc.indexerComparison.col.tax": "Imposto",
+  "calc.indexerComparison.col.net": "Rendimento líquido",
+  "calc.indexerComparison.col.netRate": "Taxa líquida a.a.",
+  "calc.indexerComparison.noRate": "sem taxa para este índice",
+  "calc.indexerComparison.breakEven.title": "Ponto de empate",
+  "calc.indexerComparison.breakEven":
+    "{security} empata com {reference} se o {index} médio for {rate} a.a.",
+  "calc.indexerComparison.breakEven.none":
+    "{security} não tem ponto de empate com {reference}",
+  "calc.indexerComparison.breakEven.floatingReference":
+    "{reference} entra pela taxa esperada",
+  "calc.indexerComparison.expected":
+    "esperado: {rate} a.a. · pesquisa de {date}",
+  "calc.indexerComparison.expected.none": "sem pesquisa de expectativas",
+  "calc.indexerComparison.market":
+    "título público para o prazo: {rate} a.a. · {date}",
+  "calc.indexerComparison.market.implied":
+    "inflação implícita nos títulos públicos: {rate} a.a. · {date}",
+  "calc.indexerComparison.market.none": "sem título público para esse prazo",
+  "calc.indexerComparison.stale.survey": "pesquisa desatualizada",
+  "calc.indexerComparison.stale.curve": "curva desatualizada",
+  "calc.indexerComparison.note.maturity":
+    "Cada título é mantido até o vencimento. Uma venda antes dele tem outro resultado.",
+  "calc.indexerComparison.note.expected":
+    "A taxa esperada é a mediana de uma pesquisa, não uma previsão garantida.",
+  "calc.indexerComparison.note.market":
+    "A taxa de um título público contém a trajetória esperada mais um prêmio pelo prazo.",
+  "calc.indexerComparison.note.credit":
+    "O risco de crédito do emissor e a liquidez de cada título não são comparados.",
+  "calc.indexerComparison.note.decision": "O equori calcula; a escolha é sua.",
 };
