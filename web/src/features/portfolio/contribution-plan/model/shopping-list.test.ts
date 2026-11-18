@@ -18,10 +18,19 @@ const plan: Plan = {
   total: brl(1000000),
   amount: brl(400000),
   classes: [
-    { name: "Fixed income", target_bp: 4000, value: brl(0), members: [] },
+    {
+      name: "Fixed income",
+      target_bp: 4000,
+      questions: [],
+      question_ideals: false,
+      value: brl(0),
+      members: [],
+    },
     {
       name: "Domestic stocks",
       target_bp: 2000,
+      questions: [],
+      question_ideals: false,
       value: brl(300000),
       amount: brl(100000),
       members: [
@@ -110,6 +119,8 @@ describe("shoppingList", () => {
         {
           name: "Fixed income",
           target_bp: 5000,
+          questions: [],
+          question_ideals: false,
           value: brl(0),
           amount: brl(100000),
           members: [
@@ -124,6 +135,8 @@ describe("shoppingList", () => {
         {
           name: "Bonds",
           target_bp: 5000,
+          questions: [],
+          question_ideals: false,
           value: brl(0),
           amount: brl(40000),
           members: [],
@@ -146,6 +159,8 @@ describe("shoppingList", () => {
         {
           name: "Mixed",
           target_bp: 10000,
+          questions: [],
+          question_ideals: false,
           value: brl(0),
           amount: brl(100000),
           members: [
@@ -205,6 +220,8 @@ describe("shoppingList", () => {
         {
           name: "Real estate funds",
           target_bp: 5000,
+          questions: [],
+          question_ideals: false,
           value: brl(0),
           amount: brl(100000),
           cost: brl(100000),
@@ -213,6 +230,8 @@ describe("shoppingList", () => {
         {
           name: "Bonds",
           target_bp: 5000,
+          questions: [],
+          question_ideals: false,
           value: brl(0),
           amount: brl(100000),
           members: [],
@@ -235,6 +254,8 @@ describe("shoppingList", () => {
         {
           name: "Real estate funds",
           target_bp: 5000,
+          questions: [],
+          question_ideals: false,
           value: brl(0),
           amount: brl(100000),
           members: [{ instrument: "MXRF11", value: brl(0) }],
@@ -242,6 +263,8 @@ describe("shoppingList", () => {
         {
           name: "Bonds",
           target_bp: 5000,
+          questions: [],
+          question_ideals: false,
           value: brl(0),
           amount: brl(100000),
           members: [],
@@ -264,7 +287,14 @@ describe("shoppingList", () => {
     const view: Plan = {
       ...plan,
       classes: [
-        { name: "Fixed income", target_bp: 10000, value: brl(0), members: [] },
+        {
+          name: "Fixed income",
+          target_bp: 10000,
+          questions: [],
+          question_ideals: false,
+          value: brl(0),
+          members: [],
+        },
       ],
     };
 

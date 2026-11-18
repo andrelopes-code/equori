@@ -15,10 +15,6 @@ export interface AssetFactsInput {
   company: CompanyFigures | null;
 }
 
-// Private-use marks around the years with profit, replaced as a whole when there is no figure.
-const yearsFrom = "\uE000";
-const yearsTo = "\uE001";
-
 export function assetFactsText(
   input: AssetFactsInput,
   t: TFunction,
@@ -74,17 +70,21 @@ function companyText(
   locale: string,
 ): string {
   const years = company.positiveYears;
-  const text = t("assetFacts.company", {
+
+  return t("assetFacts.company", {
     roe: figures.percent(company.returnOnEquity),
     margin: figures.percent(company.netMargin),
     netDebt: figures.decimal(company.netDebtToEquity),
-    positive: years === null ? yearsFrom : String(years.positive),
-    count: years === null ? yearsTo : String(years.count),
-    date:
+    years:
+      years === null
+        ? t("assetFacts.yearsMissing")
+        : t("assetFacts.years", {
+            positive: String(years.positive),
+            count: String(years.count),
+          }),
+    window:
       company.window === null
-        ? figures.missing
-        : formatDate(company.window, locale),
+        ? t("assetFacts.windowMissing")
+        : t("assetFacts.window", { date: formatDate(company.window, locale) }),
   });
-
-  return text.replace(new RegExp(`${yearsFrom}.*${yearsTo}`), figures.missing);
 }

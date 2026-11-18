@@ -31,6 +31,8 @@ const demo: Plan = {
     {
       name: "Renda fixa",
       target_bp: 4000,
+      questions: [],
+      question_ideals: false,
       value: brl(0),
       amount: brl(363636),
       members: [],
@@ -38,6 +40,8 @@ const demo: Plan = {
     {
       name: "Ações Brasil",
       target_bp: 2500,
+      questions: [],
+      question_ideals: false,
       value: brl(0),
       amount: brl(0),
       members: [],
@@ -45,6 +49,8 @@ const demo: Plan = {
     {
       name: "Cripto",
       target_bp: 1500,
+      questions: [],
+      question_ideals: false,
       value: brl(0),
       amount: brl(136364),
       members: [],
@@ -68,6 +74,8 @@ describe("monthVerdict", () => {
         {
           name: "Ações Brasil",
           target_bp: 10000,
+          questions: [],
+          question_ideals: false,
           value: brl(0),
           amount: brl(500000),
           members: [

@@ -411,7 +411,11 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "assetFacts.fund":
     "P/VP {priceToBook} · distribuído em 12 meses sobre o preço {yearYield} · informe de {month}",
   "assetFacts.company":
-    "ROE {roe} · margem {margin} · dívida líquida/PL {netDebt} · lucro em {positive} de {count} exercícios · 12 meses até {date}",
+    "ROE {roe} · margem {margin} · dívida líquida/PL {netDebt} · {years} · {window}",
+  "assetFacts.years": "lucro em {positive} de {count} exercícios",
+  "assetFacts.yearsMissing": "anos com lucro sem dado",
+  "assetFacts.window": "12 meses até {date}",
+  "assetFacts.windowMissing": "12 meses sem dado",
   "assetFacts.missing": "sem dado",
   "assetFacts.notApplicable": "não se aplica",
   "assetFacts.none": "sem informe nem demonstrações",

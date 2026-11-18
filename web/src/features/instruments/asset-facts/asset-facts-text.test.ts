@@ -54,11 +54,17 @@ describe("assetFactsText", () => {
     );
   });
 
-  it("writes no data in place of the years with profit when there are none", () => {
-    const none: CompanyFigures = { ...company, positiveYears: null };
+  it("writes the years with profit and the window in words when they are missing", () => {
+    const none: CompanyFigures = {
+      ...company,
+      returnOnEquity: null,
+      netMargin: null,
+      window: null,
+      positiveYears: null,
+    };
 
     expect(assetFactsText({ fund: null, company: none }, t, "pt-BR")).toBe(
-      "ROE 12,00% · margem 15,00% · dívida líquida/PL 0,30 · lucro em sem dado exercícios · 12 meses até 30/09/2026",
+      "ROE sem dado · margem sem dado · dívida líquida/PL 0,30 · anos com lucro sem dado · 12 meses sem dado",
     );
   });
 
