@@ -140,6 +140,20 @@ export function fundReportsQuery(api: Client<paths>, code: string) {
   });
 }
 
+// The statements of the company an instrument stands for, one report set per enabled source; an
+// empty list when none is stored (CR6).
+export function companyReportsQuery(api: Client<paths>, code: string) {
+  return queryOptions({
+    queryKey: [...instrumentKeys.all, "company-reports", code] as const,
+    queryFn: async () =>
+      (
+        await unwrap(
+          await api.GET("/company-reports", { params: { query: { code } } }),
+        )
+      ).items,
+  });
+}
+
 export function catalogQuery(api: Client<paths>, q: string) {
   return queryOptions({
     queryKey: [...instrumentKeys.all, "catalog", q] as const,
