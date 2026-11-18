@@ -110,6 +110,28 @@ func TestAccrueCDI(t *testing.T) {
 			},
 		},
 		{
+			// B3, Caderno de Fórmulas CDBs-DIs-DPGE-LAM-LC-LF-LFS-LFSC-LFSN-IECI-RDB, 6.1.2: the
+			// product runs from the issue date, inclusive, to the date of the price, exclusive.
+			"the rate of a day accrues to the next priced day",
+			cdb(10000, 0),
+			[]IndexRate{
+				{Date: date("2026-01-02"), Rate: "0.000100000000"},
+				{Date: date("2026-01-05"), Rate: "0.000200000000"},
+				{Date: date("2026-01-06"), Rate: "0.000200000000"},
+				{Date: date("2026-01-07"), Rate: "0.000200000000"},
+				{Date: date("2026-01-08"), Rate: "0.000200000000"},
+				{Date: date("2026-01-09"), Rate: "0.000200000000"},
+			},
+			map[string]string{
+				"2026-01-02": "1000.000000000000",
+				"2026-01-05": "1000.100000000000",
+				"2026-01-06": "1000.300020000000",
+				"2026-01-07": "1000.500080004000",
+				"2026-01-08": "1000.700180020001",
+				"2026-01-09": "1000.900320056005",
+			},
+		},
+		{
 			"a day without a published rate is skipped, not invented",
 			cdb(10000, 0),
 			cdiWeek("2026-01-06"),

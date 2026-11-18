@@ -94,10 +94,12 @@ func (s *accrualState) startPeriod(d time.Time) {
 	}
 }
 
-// advanceDaily applies the rates of the business days up to d.
+// advanceDaily applies the rates dated before d: the rate of a day accrues to the next priced
+// day, so the product runs from the issue date, inclusive, to d, exclusive (B3, Caderno de
+// Fórmulas of CDBs, 6.1.2).
 func (s *accrualState) advanceDaily(t Terms, parsed []parsedRate, percent *big.Float, d time.Time) {
-	for s.next < len(parsed) && !parsed[s.next].date.After(d) {
-		if parsed[s.next].date.After(t.IssuedOn) {
+	for s.next < len(parsed) && parsed[s.next].date.Before(d) {
+		if !parsed[s.next].date.Before(t.IssuedOn) {
 			s.period.Mul(
 				s.period,
 				newFloat().Add(newFloat().SetInt64(1), newFloat().Mul(parsed[s.next].rate, percent)),

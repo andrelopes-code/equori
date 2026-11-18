@@ -54,8 +54,9 @@ type BusinessDay func(d time.Time) bool
 // min(`to`, maturity), counting the growth from the issue date:
 //
 //   - an index that compounds by business day: the product of 1 + rate × percent over the
-//     published business days after the issue; there is a price on each of those days and on the
-//     issue date;
+//     published rates dated from the issue date, inclusive, to the day of the price, exclusive (B3,
+//     Caderno de Fórmulas of CDBs, 6.1.2); there is a price on the issue date and on each later
+//     day with a published rate;
 //   - another index: the product of 1 + rate over the months that begin on or after the issue
 //     date and have ended, applied from the day after the month's last day (no pro rata);
 //     there is a price on each weekday;
