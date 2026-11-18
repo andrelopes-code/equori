@@ -4280,6 +4280,7 @@
             "positions",
             "allocation",
             "net_worth",
+            "net_worth_days",
             "return",
             "income_types",
             "subtypes",
@@ -4308,12 +4309,12 @@
         },
         "from": {
           "type": "string",
-          "description": "for return and fixed_income_events: first date",
+          "description": "for return, fixed_income_events and net_worth_days: first date",
           "format": "date"
         },
         "to": {
           "type": "string",
-          "description": "for return and fixed_income_events: last date",
+          "description": "for return, fixed_income_events and net_worth_days: last date, at most 62 days from the first for net_worth_days",
           "format": "date"
         },
         "instrument_type": {
@@ -4776,6 +4777,80 @@
           "items": {
             "type": "string"
           }
+        },
+        "days": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "date": {
+                "type": "string",
+                "format": "date"
+              },
+              "assets": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "liabilities": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "net": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "date",
+              "assets",
+              "liabilities",
+              "net"
+            ],
+            "additionalProperties": false
+          },
+          "description": "for net_worth_days: the net worth at the end of each day"
         },
         "contribution": {
           "type": "object",

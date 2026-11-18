@@ -15,6 +15,7 @@ func (getPortfolioView) Values() []string {
 		"positions",
 		"allocation",
 		"net_worth",
+		"net_worth_days",
 		"return",
 		"income_types",
 		"subtypes",
@@ -48,8 +49,8 @@ type getPortfolioIn struct {
 	Date           tool.Date                  `json:"date,omitzero"            jsonschema:"for positions, allocation, net_worth and issuer_exposure: valuation date; today when absent"`
 	By             getPortfolioBy             `json:"by,omitzero"              jsonschema:"for allocation: grouping"`
 	AccountID      string                     `json:"account_id,omitzero"      jsonschema:"for return: account or brokerage from list_accounts"`
-	From           tool.Date                  `json:"from,omitzero"            jsonschema:"for return and fixed_income_events: first date"`
-	To             tool.Date                  `json:"to,omitzero"              jsonschema:"for return and fixed_income_events: last date"`
+	From           tool.Date                  `json:"from,omitzero"            jsonschema:"for return, fixed_income_events and net_worth_days: first date"`
+	To             tool.Date                  `json:"to,omitzero"              jsonschema:"for return, fixed_income_events and net_worth_days: last date, at most 62 days from the first for net_worth_days"`
 	InstrumentType getPortfolioInstrumentType `json:"instrument_type,omitzero" jsonschema:"for subtypes: instrument type"`
 	Amount         string                     `json:"amount,omitzero"          jsonschema:"for contribution: amount to contribute as a decimal in the base currency, such as 4000.00; absent returns the saved plan without a split"`
 }
@@ -115,24 +116,25 @@ type inflationView struct {
 }
 
 type getPortfolioOut struct {
-	Positions   []positionView `json:"positions,omitzero"`
-	Total       tool.Money     `json:"total,omitzero"`
-	Groups      []groupView    `json:"groups,omitzero"`
-	Assets      tool.Money     `json:"assets,omitzero"`
-	Liabilities tool.Money     `json:"liabilities,omitzero"`
-	Net         tool.Money     `json:"net,omitzero"`
-	AnnualBP    int            `json:"annual_bp,omitzero"`
-	Opening     tool.Money     `json:"opening,omitzero"`
-	Closing     tool.Money     `json:"closing,omitzero"`
-	PeriodBP    int            `json:"period_bp,omitzero"          jsonschema:"for return: time-weighted return of the period in basis points; absent when undefined or zero"`
-	Profile     string         `json:"profile,omitzero"            jsonschema:"for return: rate when every holding is cash or fixed income in the report's currency, market otherwise"`
-	Index       string         `json:"index,omitzero"              jsonschema:"for return: the daily index the report compares with, the named one or the region's default; absent when the region has none"`
-	Benchmark   benchmarkView  `json:"benchmark,omitzero"`
-	Reason      string         `json:"unavailable_reason,omitzero" jsonschema:"for return: why benchmark or its percent is absent - no_index_for_region, currency_mismatch, nothing_held, no_yield_recorded, single_credit, too_small, too_few_days, no_rate_in_window or percent_undefined"`
-	Excluded    excludedView   `json:"excluded,omitzero"           jsonschema:"for return: income and expense of the period treated as money in or out, not as yield"`
-	Inflation   inflationView  `json:"inflation,omitzero"`
-	IncomeTypes []string       `json:"income_types,omitzero"`
-	Subtypes    []string       `json:"subtypes,omitzero"`
+	Positions   []positionView    `json:"positions,omitzero"`
+	Total       tool.Money        `json:"total,omitzero"`
+	Groups      []groupView       `json:"groups,omitzero"`
+	Assets      tool.Money        `json:"assets,omitzero"`
+	Liabilities tool.Money        `json:"liabilities,omitzero"`
+	Net         tool.Money        `json:"net,omitzero"`
+	AnnualBP    int               `json:"annual_bp,omitzero"`
+	Opening     tool.Money        `json:"opening,omitzero"`
+	Closing     tool.Money        `json:"closing,omitzero"`
+	PeriodBP    int               `json:"period_bp,omitzero"          jsonschema:"for return: time-weighted return of the period in basis points; absent when undefined or zero"`
+	Profile     string            `json:"profile,omitzero"            jsonschema:"for return: rate when every holding is cash or fixed income in the report's currency, market otherwise"`
+	Index       string            `json:"index,omitzero"              jsonschema:"for return: the daily index the report compares with, the named one or the region's default; absent when the region has none"`
+	Benchmark   benchmarkView     `json:"benchmark,omitzero"`
+	Reason      string            `json:"unavailable_reason,omitzero" jsonschema:"for return: why benchmark or its percent is absent - no_index_for_region, currency_mismatch, nothing_held, no_yield_recorded, single_credit, too_small, too_few_days, no_rate_in_window or percent_undefined"`
+	Excluded    excludedView      `json:"excluded,omitzero"           jsonschema:"for return: income and expense of the period treated as money in or out, not as yield"`
+	Inflation   inflationView     `json:"inflation,omitzero"`
+	IncomeTypes []string          `json:"income_types,omitzero"`
+	Subtypes    []string          `json:"subtypes,omitzero"`
+	Days        []netWorthDayView `json:"days,omitzero"               jsonschema:"for net_worth_days: the net worth at the end of each day"`
 
 	Contribution contributionView `json:"contribution,omitzero" jsonschema:"for contribution: the saved target split valued today, with the split of amount when given"`
 
@@ -194,7 +196,7 @@ func validatePortfolioIn(in getPortfolioIn) error {
 		}
 	case "return":
 		err = required(name, fields, "account_id", "from", "to")
-	case "fixed_income_events":
+	case "fixed_income_events", "net_worth_days":
 		err = required(name, fields, "from", "to")
 	case "subtypes":
 		err = required(name, fields, "instrument_type")
@@ -232,6 +234,8 @@ func portfolioView(
 			Net:         tool.MoneyOf(r.Net),
 			Current:     currentOf(r.Current),
 		}, nil
+	case "net_worth_days":
+		return netWorthDays(ctx, svc, booksID, in)
 	case "return":
 		return returnView(ctx, svc, booksID, in)
 	case "contribution":
