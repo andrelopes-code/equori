@@ -35,6 +35,7 @@ const actions: Record<string, AssistantIconName> = {
   manage_occurrence: "repeat",
   record_investment: "trend",
   transfer_custody: "trend",
+  record_corporate_action: "trend",
   manage_instrument: "trend",
   manage_card: "card",
   handle_card_purchase: "card",

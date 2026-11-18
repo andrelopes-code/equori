@@ -8531,6 +8531,89 @@
     }
   },
   {
+    "name": "record_corporate_action",
+    "description": "Proposes a corporate action on one Investment: a split, a reverse split, a bonus of units or the units a fund cancels for income tax (unit_tax). The quantity changes and the cost of the holding stays; a bonus with unit_cost adds that cost and records an exempt income. A fraction of a unit leaves the position; its auction cash is recorded with record_investment kind income when it arrives. Use it when the user reports one of these events on a holding. An action is not corrected: void_transaction removes it and it is recorded again. Do not use it for a dividend or other cash income: record_investment does. The user confirms first.",
+    "effect": "write",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "description": "split: more units for each one held; reverse_split: fewer units; bonus: units received for free; unit_tax: units of a fund cancelled for income tax",
+          "enum": [
+            "split",
+            "reverse_split",
+            "bonus",
+            "unit_tax"
+          ]
+        },
+        "account_id": {
+          "type": "string",
+          "description": "Investment line, from list_accounts; instead of brokerage_id and instrument"
+        },
+        "brokerage_id": {
+          "type": "string",
+          "description": "Brokerage that holds the Investment; with instrument, instead of account_id"
+        },
+        "instrument": {
+          "type": "string",
+          "description": "code of the Investment, such as PETR4"
+        },
+        "date": {
+          "type": "string",
+          "description": "first day without the right; for unit_tax, the day the units were cancelled",
+          "format": "date"
+        },
+        "ratio_from": {
+          "type": "integer",
+          "description": "split, reverse_split and bonus: units held, the For each of the notice, from 1 to 1000000"
+        },
+        "ratio_to": {
+          "type": "integer",
+          "description": "split, reverse_split and bonus: units received for each ratio_from held; a split of 1 into 10 is ratio_from 1 and ratio_to 10, a reverse split of 10 into 1 is 10 and 1, a bonus of 1 for each 10 is 10 and 1"
+        },
+        "unit_cost": {
+          "type": "string",
+          "description": "bonus: cost per unit received that the company states, added to the cost of the holding and recorded as exempt income"
+        },
+        "category_id": {
+          "type": "string",
+          "description": "bonus with unit_cost: income category, from list_accounts"
+        },
+        "quantity": {
+          "type": "string",
+          "description": "unit_tax: positive quantity of units cancelled, below the units held"
+        },
+        "amount": {
+          "type": "string",
+          "description": "unit_tax: income tax withheld, in the base currency"
+        },
+        "description": {
+          "type": "string",
+          "description": "description of the transaction; a title derived from the kind and the investment when empty"
+        }
+      },
+      "required": [
+        "kind",
+        "date"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "transaction_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "transaction_id"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "record_fixed_income",
     "description": "Proposes a fixed income application: a new contract of a private issuer (CDB, LCI, LCA, debenture and others) bought with cash of a brokerage, or more money into a contract the book holds. Use it when the user states an application with its issuer, amount, date, maturity and rate. Do not use it for a public security with a ticker: record_investment does. The user confirms first.",
     "effect": "write",

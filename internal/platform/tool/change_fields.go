@@ -59,4 +59,5 @@ var ChangeFields = []string{
 	"icon",
 	"identifier",
 	"issuer",
+	"ratio",
 }

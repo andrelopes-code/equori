@@ -9,6 +9,10 @@ const screens: Record<string, { field: string; path: string }> = {
   handle_card_purchase: { field: "transaction_id", path: "/transactions/$id" },
   record_investment: { field: "transaction_id", path: "/transactions/$id" },
   transfer_custody: { field: "transaction_id", path: "/transactions/$id" },
+  record_corporate_action: {
+    field: "transaction_id",
+    path: "/transactions/$id",
+  },
   manage_occurrence: { field: "transaction_id", path: "/transactions/$id" },
   manage_schedule: { field: "schedule_id", path: "/planning/schedules/$id" },
   manage_budget_or_goal: { field: "budget_id", path: "/planning/budgets/$id" },

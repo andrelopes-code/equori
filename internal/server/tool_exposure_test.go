@@ -104,7 +104,7 @@ var exposure = map[string]string{
 	"recordTrade":                      "record_investment",
 	"createFixedIncomeApplication":     "record_fixed_income",
 	"recordBrokerageNote":              "-screen",
-	"recordCorporateAction":            "-screen",
+	"recordCorporateAction":            "record_corporate_action",
 	"recordCustodyTransfer":            "transfer_custody",
 	"recordInvestmentIncome":           "record_investment",
 	"correctTrade":                     "record_investment",

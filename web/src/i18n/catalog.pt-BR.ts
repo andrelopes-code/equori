@@ -1894,6 +1894,7 @@ export const catalogPtBR: Catalog = {
   "assistant.step.record_investment":
     "Preparando o registro de um investimento",
   "assistant.step.transfer_custody": "Preparando uma transferência de custódia",
+  "assistant.step.record_corporate_action": "Preparando um evento corporativo",
   "assistant.step.get_category_totals": "Somando categorias",
   "assistant.step.get_account_history": "Lendo o histórico da conta",
   "assistant.step.list_schedules": "Lendo agendamentos",
@@ -1966,6 +1967,11 @@ export const catalogPtBR: Catalog = {
   "assistant.action.record_investment.sell": "Registrar venda de ativo",
   "assistant.action.record_investment.income": "Registrar provento",
   "assistant.action.transfer_custody": "Transferir custódia",
+  "assistant.action.record_corporate_action.split": "Registrar desdobramento",
+  "assistant.action.record_corporate_action.reverse_split":
+    "Registrar grupamento",
+  "assistant.action.record_corporate_action.bonus": "Registrar bonificação",
+  "assistant.action.record_corporate_action.unit_tax": "Registrar come-cotas",
   "assistant.action.manage_schedule.create": "Criar agendamento",
   "assistant.action.manage_schedule.change_terms":
     "Alterar condições do agendamento",
@@ -2070,6 +2076,7 @@ export const catalogPtBR: Catalog = {
   "assistant.field.icon": "Ícone",
   "assistant.field.identifier": "Identificador",
   "assistant.field.issuer": "Emissor",
+  "assistant.field.ratio": "Proporção",
   "assistant.body.from": "De",
   "assistant.body.to": "Para",
   "assistant.body.uncategorized": "Sem categoria",
