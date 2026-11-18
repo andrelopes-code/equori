@@ -124,3 +124,14 @@ test("a mark near the edge of the figure keeps one distance from its element on 
     assert.deepEqual(markProblems(target, clip, mark), []);
   }
 });
+
+// Help catalog spec, slice 5: rows 6 px apart. A mark of 12 px around one row crossed the text of
+// the rows above and below it; it keeps one distance on every side, inside the free room.
+test("a mark keeps inside the room free around its element, on every side alike", () => {
+  const clip = { x: 0, y: 0, width: 960, height: 600 };
+  const row = { x: 100, y: 300, width: 400, height: 30 };
+
+  assert.deepEqual(markIn(row, clip, 6), { x: 95, y: 295, width: 410, height: 40 });
+  assert.deepEqual(markOnScreen(row, 6), { x: 95, y: 295, width: 410, height: 40 });
+  assert.deepEqual(markIn(row, clip, 40), { x: 88, y: 288, width: 424, height: 54 });
+});

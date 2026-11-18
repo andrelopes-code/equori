@@ -56,15 +56,17 @@ function along(targetStart, targetSize, frameStart, frameSize, clip, view) {
   return whole(roomy(between(centred(targetStart, targetSize), low, high)));
 }
 
-// The mark in CSS pixels of the clip: the element grown by the pad. Near the edge of the figure
-// the pad shrinks on every side alike: the mark keeps one distance from its element and never
-// stands on it (owner, 2026-11-19).
-export function markIn(target, clip) {
+// The mark in CSS pixels of the clip: the element grown by the pad. Near the edge of the figure,
+// or near the content beside the element (room: the free distance to it), the pad shrinks on every
+// side alike: the mark keeps one distance from its element, never stands on it (owner, 2026-11-19)
+// and never crosses its neighbour.
+export function markIn(target, clip, room = Infinity) {
   const x = target.x - clip.x;
   const y = target.y - clip.y;
   const pad = Math.min(
     padWithin(x, target.width, EDGE, clip.width - EDGE),
     padWithin(y, target.height, EDGE, clip.height - EDGE),
+    padInRoom(room),
   );
 
   return grown({ x, y, width: target.width, height: target.height }, pad);
@@ -72,10 +74,11 @@ export function markIn(target, clip) {
 
 // The mark of the video: the element grown by its pad on the whole screen. No window of a
 // figure bounds it; the edge of the screen holds the pad as the margin holds a figure's.
-export function markOnScreen(target) {
+export function markOnScreen(target, room = Infinity) {
   const pad = Math.min(
     padWithin(target.x, target.width, 0, VIEW.width),
     padWithin(target.y, target.height, 0, VIEW.height),
+    padInRoom(room),
   );
 
   return grown(target, pad);
@@ -125,6 +128,11 @@ export function percent(mark) {
 // The pad an element can take on both of its sides between two bounds of one axis.
 function padWithin(start, size, low, high) {
   return Math.max(0, Math.min(PAD, start - low, high - (start + size)));
+}
+
+// The pad that leaves the outline one pixel short of the content beside the element.
+function padInRoom(room) {
+  return Math.max(0, Math.min(PAD, Math.floor(room) - 1));
 }
 
 function grown(box, pad) {

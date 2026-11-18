@@ -83,10 +83,11 @@ async function place({ page, tape, scheme, beat, words, what }, strict = true) {
   // Without a frame of its own, a figure stays inside the page region, clear of the navigation.
   const frameOf = beat.frame ? beat.frame(page, words) : page.locator("main");
   const frame = (await frameOf.first().boundingBox()) ?? undefined;
+  const room = await roomOf(page, targets);
   const clip = clipAround(target, frame);
-  const mark = markIn(target, clip);
+  const mark = markIn(target, clip, room);
   const problems = markProblems(target, clip, mark);
-  const placed = { clip, mark, problems, onScreen: markOnScreen(target) };
+  const placed = { clip, mark, problems, onScreen: markOnScreen(target, room) };
 
   return strict ? sound(placed, what) : placed;
 }
@@ -108,6 +109,47 @@ async function boxOf(page, locators, what) {
   }
 
   return union(boxes);
+}
+
+// The free distance around the elements of a step: the nearest content beside them that a mark
+// of full pad would cross. Content is a visible element with text of its own, a control or a
+// picture, outside the elements and on top at its centre (the page under a dialog is not).
+async function roomOf(page, locators) {
+  const handles = await Promise.all([locators].flat().map((locator) => locator.first().elementHandle()));
+
+  return page.evaluate(
+    ({ elements, reach }) => {
+      const boxes = elements.map((e) => e.getBoundingClientRect());
+      const left = Math.min(...boxes.map((b) => b.left));
+      const top = Math.min(...boxes.map((b) => b.top));
+      const right = Math.max(...boxes.map((b) => b.right));
+      const bottom = Math.max(...boxes.map((b) => b.bottom));
+      const related = (node) => elements.some((e) => e.contains(node) || node.contains(e));
+      const content = (node) =>
+        /^(INPUT|BUTTON|SELECT|TEXTAREA|IMG|svg|CANVAS)$/.test(node.tagName) ||
+        [...node.childNodes].some((child) => child.nodeType === Node.TEXT_NODE && child.textContent.trim() !== "");
+      let room = Infinity;
+
+      for (const node of document.body.querySelectorAll("*")) {
+        if (related(node) || !content(node)) continue;
+
+        const r = node.getBoundingClientRect();
+        if (r.width === 0 || r.height === 0) continue;
+        if (r.right < left - reach || r.left > right + reach || r.bottom < top - reach || r.top > bottom + reach) continue;
+
+        const gap = Math.max(r.left - right, left - r.right, r.top - bottom, top - r.bottom);
+        if (gap < 0) continue;
+
+        const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        if (hit === null || !(node.contains(hit) || hit.contains(node))) continue;
+
+        room = Math.min(room, gap);
+      }
+
+      return room;
+    },
+    { elements: handles, reach: 12 },
+  );
 }
 
 // The box of the element a beat acts on, read where the page rests: no scroll moves the mark
