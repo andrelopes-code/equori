@@ -488,3 +488,42 @@ func TestStream(t *testing.T) {
 		})
 	}
 }
+
+// Assistant parity design F6: a message with files sends its text and each file as content
+// parts; another media type fails before the call.
+func TestGenerateFiles(t *testing.T) {
+	t.Parallel()
+
+	var got received
+	srv := serve(t, http.StatusOK, nil, textAnswer, &got)
+	p := openai.New(srv.URL+"/v1", "k", http.DefaultClient)
+
+	_, err := p.Generate(context.Background(), "m1", llm.Request{Messages: []llm.Message{{
+		Role: llm.RoleUser,
+		Parts: []llm.Part{
+			{Text: "see"},
+			{File: &llm.File{MediaType: "image/png", Data: []byte("png")}},
+			{File: &llm.File{MediaType: "application/pdf", Data: []byte("pdf")}},
+			{File: &llm.File{MediaType: "text/plain", Data: []byte("note")}},
+		},
+	}}})
+	if err != nil {
+		t.Fatalf("Generate: %v", err)
+	}
+
+	want := `{"messages":[{"content":[{"text":"see","type":"text"},` +
+		`{"image_url":{"url":"data:image/png;base64,cG5n"},"type":"image_url"},` +
+		`{"file":{"file_data":"data:application/pdf;base64,cGRm","filename":"file.pdf"},"type":"file"},` +
+		`{"text":"note","type":"text"}],"role":"user"}],"model":"m1"}`
+	if body := asJSON(t, got.body); body != want {
+		t.Fatalf("body = %s\nwant   %s", body, want)
+	}
+
+	_, err = p.Generate(context.Background(), "m1", llm.Request{Messages: []llm.Message{{
+		Role:  llm.RoleUser,
+		Parts: []llm.Part{{File: &llm.File{MediaType: "audio/mpeg", Data: []byte("x")}}},
+	}}})
+	if !errors.Is(err, llm.ErrFileUnsupported) {
+		t.Errorf("Generate of audio = %v, want ErrFileUnsupported", err)
+	}
+}

@@ -15,6 +15,8 @@ var (
 	ErrExhausted       = errors.New("every target of the chain is cooling down")
 	ErrMalformedOutput = errors.New("answer is not valid JSON")
 	ErrTooManySteps    = errors.New("tool loop exceeded its step limit")
+	// ErrFileUnsupported: the adapter sends no file of this media type; it fails before the call.
+	ErrFileUnsupported = errors.New("the provider does not read files of this media type")
 )
 
 // QuotaError reports a rate limit. RetryAfter is 0 when the provider gives no delay.

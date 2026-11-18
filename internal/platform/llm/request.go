@@ -19,6 +19,19 @@ type Request struct {
 	Thinking string
 }
 
+// HasFiles reports whether a message of the request carries a file part.
+func (r Request) HasFiles() bool {
+	for _, m := range r.Messages {
+		for _, p := range m.Parts {
+			if p.File != nil {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
 type ToolChoice string
 
 const (

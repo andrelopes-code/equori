@@ -27,7 +27,7 @@ func (c *Client) Generate(ctx context.Context, req Request) (Response, error) {
 func (c *Client) Stream(ctx context.Context, req Request, onText func(string)) (Response, error) {
 	r := c.router
 
-	bindings, err := c.bindings(ctx)
+	bindings, err := c.bindings(ctx, req.HasFiles())
 	if err != nil {
 		return Response{}, err
 	}
@@ -64,14 +64,21 @@ func (c *Client) Stream(ctx context.Context, req Request, onText func(string)) (
 	}
 }
 
-func (c *Client) bindings(ctx context.Context) ([]Binding, error) {
+// bindings resolves the targets of the client; a request with files keeps those that read
+// images (assistant parity design, F6).
+func (c *Client) bindings(ctx context.Context, files bool) ([]Binding, error) {
 	r := c.router
 	if c.use != nil {
 		if r.res == nil {
 			return nil, nil
 		}
 
-		b, err := r.res.Resolve(ctx, *c.use)
+		use := *c.use
+		if files && !slices.Contains(use.Needs, CapImageInput) {
+			use.Needs = append(slices.Clone(use.Needs), CapImageInput)
+		}
+
+		b, err := r.res.Resolve(ctx, use)
 		if err != nil {
 			return nil, fmt.Errorf("resolve %s: %w", c.use.ID, err)
 		}

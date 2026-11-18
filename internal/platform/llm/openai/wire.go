@@ -1,7 +1,9 @@
 package openai
 
 import (
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/andrelopes-code/equori/internal/platform/llm"
@@ -30,6 +32,39 @@ type message struct {
 	Content    *string    `json:"content"`
 	ToolCalls  []toolCall `json:"tool_calls,omitempty"`
 	ToolCallID string     `json:"tool_call_id,omitempty"`
+	// Parts replaces Content with a list of parts when the message carries a file (F6).
+	Parts []contentPart `json:"-"`
+}
+
+// contentPart is a text, an image as a data URL, or a PDF as a file with a data URL.
+type contentPart struct {
+	Type     string    `json:"type"`
+	Text     string    `json:"text,omitempty"`
+	ImageURL *imageURL `json:"image_url,omitempty"`
+	File     *filePart `json:"file,omitempty"`
+}
+
+type imageURL struct {
+	URL string `json:"url"`
+}
+
+type filePart struct {
+	Filename string `json:"filename"`
+	FileData string `json:"file_data"`
+}
+
+// MarshalJSON writes Parts as the content when the message has them.
+func (m message) MarshalJSON() ([]byte, error) {
+	type plain message
+
+	if len(m.Parts) == 0 {
+		return json.Marshal(plain(m))
+	}
+
+	return json.Marshal(struct {
+		plain
+		Content []contentPart `json:"content"`
+	}{plain: plain(m), Content: m.Parts})
 }
 
 type toolCall struct {
@@ -170,13 +205,20 @@ func messagesToWire(m llm.Message) []message {
 		case p.ToolCall != nil:
 			w.ToolCalls = append(w.ToolCalls, toolCall{ID: p.ToolCall.ID, Type: "function",
 				Function: function{Name: p.ToolCall.Name, Arguments: string(p.ToolCall.Args)}})
+		case p.File != nil:
+			w.Parts = append(w.Parts, fileToWire(*p.File))
 		case p.ToolResult == nil:
 			text.WriteString(p.Text)
 		}
 	}
 
-	if s := text.String(); s != "" || len(w.ToolCalls) == 0 {
+	s := text.String()
+	if s != "" || len(w.ToolCalls) == 0 {
 		w.Content = &s
+	}
+
+	if len(w.Parts) > 0 && s != "" {
+		w.Parts = append([]contentPart{{Type: "text", Text: s}}, w.Parts...)
 	}
 
 	return []message{w}
@@ -230,4 +272,37 @@ func finishReason(reason string, hasCall bool) llm.FinishReason {
 	default:
 		return llm.FinishOther
 	}
+}
+
+// checkFiles refuses a request whose file the chat completions API does not read, before the
+// call.
+func checkFiles(req llm.Request) error {
+	for _, m := range req.Messages {
+		for _, p := range m.Parts {
+			if p.File == nil {
+				continue
+			}
+
+			switch t := p.File.MediaType; {
+			case t == "application/pdf", t == "text/plain", strings.HasPrefix(t, "image/"):
+			default:
+				return fmt.Errorf("%w: %s", llm.ErrFileUnsupported, t)
+			}
+		}
+	}
+
+	return nil
+}
+
+func fileToWire(f llm.File) contentPart {
+	data := "data:" + f.MediaType + ";base64," + base64.StdEncoding.EncodeToString(f.Data)
+
+	switch f.MediaType {
+	case "text/plain":
+		return contentPart{Type: "text", Text: string(f.Data)}
+	case "application/pdf":
+		return contentPart{Type: "file", File: &filePart{Filename: "file.pdf", FileData: data}}
+	}
+
+	return contentPart{Type: "image_url", ImageURL: &imageURL{URL: data}}
 }

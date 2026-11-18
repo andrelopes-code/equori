@@ -514,3 +514,50 @@ func assertAnswer(t *testing.T, resp llm.Response) {
 		t.Fatalf("args = %s (%v), want open true", call.Args, err)
 	}
 }
+
+// Assistant parity design F6: an image travels as an image block, a PDF and plain text as
+// document blocks; another media type fails before the call.
+func TestGenerateSendsFiles(t *testing.T) {
+	t.Parallel()
+
+	var got received
+	srv := serve(t, http.StatusOK, nil, `{"content":[],"stop_reason":"end_turn"}`, &got)
+	p := anthropic.New(srv.URL+"/v1/", "k", srv.Client())
+
+	req := llm.Request{Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{
+		{Text: "see"},
+		{File: &llm.File{MediaType: "image/png", Data: []byte("png")}},
+		{File: &llm.File{MediaType: "application/pdf", Data: []byte("pdf")}},
+		{File: &llm.File{MediaType: "text/plain", Data: []byte("note")}},
+	}}}}
+
+	if _, err := p.Generate(context.Background(), "claude-a", req); err != nil {
+		t.Fatalf("Generate: %v", err)
+	}
+
+	assertBody(t, got.body, `{
+		"model": "claude-a",
+		"max_tokens": 16000,
+		"cache_control": {"type": "ephemeral"},
+		"messages": [{"role": "user", "content": [
+			{"type": "text", "text": "see"},
+			{"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": "cG5n"}},
+			{"type": "document", "source": {"type": "base64", "media_type": "application/pdf", "data": "cGRm"}},
+			{"type": "document", "source": {"type": "text", "media_type": "text/plain", "data": "note"}}
+		]}]
+	}`)
+
+	gif := llm.Request{Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{
+		{File: &llm.File{MediaType: "image/heic", Data: []byte("x")}},
+	}}}}
+	if _, err := p.Generate(
+		context.Background(),
+		"claude-a",
+		gif,
+	); !errors.Is(
+		err,
+		llm.ErrFileUnsupported,
+	) {
+		t.Errorf("Generate of image/heic = %v, want ErrFileUnsupported", err)
+	}
+}

@@ -28,7 +28,14 @@ type part struct {
 	Thought          bool              `json:"thought,omitempty"`
 	FunctionCall     *functionCall     `json:"functionCall,omitempty"`
 	FunctionResponse *functionResponse `json:"functionResponse,omitempty"`
+	InlineData       *inlineData       `json:"inlineData,omitempty"`
 	ThoughtSignature []byte            `json:"thoughtSignature,omitempty"`
+}
+
+// inlineData is a file sent with the request; Data travels as base64.
+type inlineData struct {
+	MimeType string `json:"mimeType"`
+	Data     []byte `json:"data"`
 }
 
 type functionCall struct {
@@ -171,6 +178,8 @@ func partToWire(p llm.Part) part {
 			Name:     p.ToolResult.Name,
 			Response: asObject(p.ToolResult.Content),
 		}
+	case p.File != nil:
+		w.InlineData = &inlineData{MimeType: p.File.MediaType, Data: p.File.Data}
 	default:
 		t := p.Text
 		w.Text = &t

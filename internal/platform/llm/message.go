@@ -16,13 +16,21 @@ type Message struct {
 	Parts []Part
 }
 
-// Part is a tool call when ToolCall is set, a tool result when ToolResult is set, and text
-// otherwise. A text part may be empty and carry only a Signature.
+// Part is a tool call when ToolCall is set, a tool result when ToolResult is set, a file when
+// File is set, and text otherwise. A text part may be empty and carry only a Signature.
 type Part struct {
 	Text       string
 	ToolCall   *ToolCall
 	ToolResult *ToolResult
+	File       *File
 	Signature  *Signature
+}
+
+// File is the content of a file a user part carries: a PDF, an image or plain text. Only a model
+// with CapImageInput receives it (assistant parity design, F6).
+type File struct {
+	MediaType string
+	Data      []byte
 }
 
 type ToolCall struct {

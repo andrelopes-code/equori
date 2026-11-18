@@ -1,7 +1,9 @@
 package anthropic
 
 import (
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
 
 	"github.com/andrelopes-code/equori/internal/platform/llm"
 )
@@ -42,6 +44,19 @@ type message struct {
 type textBlock struct {
 	Type string `json:"type"`
 	Text string `json:"text"`
+}
+
+// fileBlock is an image block or a document block of a file the user part carries.
+type fileBlock struct {
+	Type   string     `json:"type"`
+	Source fileSource `json:"source"`
+}
+
+// fileSource holds base64 data, or the text itself for a plain text document.
+type fileSource struct {
+	Type      string `json:"type"`
+	MediaType string `json:"media_type"`
+	Data      string `json:"data"`
 }
 
 type toolUseBlock struct {
@@ -200,6 +215,8 @@ func contentToWire(m llm.Message) []any {
 				Content:   string(p.ToolResult.Content),
 				IsError:   p.ToolResult.IsError,
 			})
+		case p.File != nil:
+			out = append(out, fileToWire(*p.File))
 		case p.Signature != nil && p.Signature.Provider == name:
 			out = append(out, json.RawMessage(p.Signature.Data))
 		case p.Text != "":
@@ -273,5 +290,46 @@ func finishReason(reason string, hasCall bool) llm.FinishReason {
 		return llm.FinishBlocked
 	default:
 		return llm.FinishOther
+	}
+}
+
+// fileKinds maps the media types the Messages API reads to the block that carries them.
+var fileKinds = map[string]string{
+	"image/jpeg":      "image",
+	"image/png":       "image",
+	"image/webp":      "image",
+	"image/gif":       "image",
+	"application/pdf": "document",
+	"text/plain":      "document",
+}
+
+// checkFiles refuses a request whose file the Messages API does not read, before the call.
+func checkFiles(req llm.Request) error {
+	for _, m := range req.Messages {
+		for _, p := range m.Parts {
+			if p.File != nil && fileKinds[p.File.MediaType] == "" {
+				return fmt.Errorf("%w: %s", llm.ErrFileUnsupported, p.File.MediaType)
+			}
+		}
+	}
+
+	return nil
+}
+
+func fileToWire(f llm.File) fileBlock {
+	if f.MediaType == "text/plain" {
+		return fileBlock{
+			Type:   "document",
+			Source: fileSource{Type: "text", MediaType: f.MediaType, Data: string(f.Data)},
+		}
+	}
+
+	return fileBlock{
+		Type: fileKinds[f.MediaType],
+		Source: fileSource{
+			Type:      "base64",
+			MediaType: f.MediaType,
+			Data:      base64.StdEncoding.EncodeToString(f.Data),
+		},
 	}
 }

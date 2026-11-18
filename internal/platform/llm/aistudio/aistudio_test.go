@@ -107,6 +107,14 @@ func TestGenerateRequest(t *testing.T) {
 			want: `{"contents":[{"role":"user","parts":[{"text":"hi"}]}],"tools":[{"functionDeclarations":[{"name":"balance","description":"d","parametersJsonSchema":{"type":"object"}}]}]}`,
 		},
 		{
+			name: "a file part",
+			req: llm.Request{Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{
+				{Text: "see"},
+				{File: &llm.File{MediaType: "image/png", Data: []byte("png")}},
+			}}}},
+			want: `{"contents":[{"role":"user","parts":[{"text":"see"},{"inlineData":{"mimeType":"image/png","data":"cG5n"}}]}]}`,
+		},
+		{
 			name: "history with signatures and a tool result",
 			req: llm.Request{Messages: []llm.Message{
 				user("hi"),

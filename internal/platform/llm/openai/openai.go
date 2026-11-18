@@ -39,6 +39,10 @@ func (p *Provider) Generate(
 	model string,
 	req llm.Request,
 ) (llm.Response, error) {
+	if err := checkFiles(req); err != nil {
+		return llm.Response{}, err
+	}
+
 	body, err := json.Marshal(toWire(model, req))
 	if err != nil {
 		return llm.Response{}, fmt.Errorf("encode request: %w", err)
@@ -68,6 +72,10 @@ func (p *Provider) Stream(
 	req llm.Request,
 	onText func(string),
 ) (llm.Response, error) {
+	if err := checkFiles(req); err != nil {
+		return llm.Response{}, err
+	}
+
 	w := toWire(model, req)
 	w.Stream, w.StreamOptions = true, &streamOptions{IncludeUsage: true}
 

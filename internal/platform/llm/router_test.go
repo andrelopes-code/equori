@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"reflect"
 	"slices"
 	"strings"
 	"sync"
@@ -44,10 +45,13 @@ type resolver struct {
 	bindings []llm.Binding
 	err      error
 	uses     []string
+	needs    [][]llm.Capability
 }
 
 func (r *resolver) Resolve(_ context.Context, u llm.Use) ([]llm.Binding, error) {
 	r.uses = append(r.uses, u.ID)
+	r.needs = append(r.needs, u.Needs)
+
 	return r.bindings, r.err
 }
 
@@ -911,4 +915,36 @@ func TestClientStream(t *testing.T) {
 			t.Fatalf("resp = %q, err = %v, chunks = %v", resp.Text(), err, got)
 		}
 	})
+}
+
+// Assistant parity design F6: a request that carries a file resolves the targets of the use that
+// read images; a request without one resolves the use as declared.
+func TestClientUseWithFiles(t *testing.T) {
+	t.Parallel()
+
+	p := llmtest.New("openai", llmtest.Step{Model: "m1", Response: text("ok")},
+		llmtest.Step{Model: "m1", Response: text("ok")})
+	res := &resolver{bindings: []llm.Binding{{Target: target("u1/m1"), Provider: p}}}
+	f := newResolvingFixture(res)
+
+	withFile := prompt()
+	withFile.Messages[0].Parts = append(
+		withFile.Messages[0].Parts,
+		llm.Part{File: &llm.File{MediaType: "image/png", Data: []byte("png")}},
+	)
+
+	for _, req := range []llm.Request{withFile, prompt()} {
+		if _, err := f.router.Use(chatUse).Generate(context.Background(), req); err != nil {
+			t.Fatalf("Generate: %v", err)
+		}
+	}
+
+	want := [][]llm.Capability{{llm.CapTools, llm.CapImageInput}, {llm.CapTools}}
+	if !reflect.DeepEqual(res.needs, want) {
+		t.Errorf("needs = %v, want %v", res.needs, want)
+	}
+
+	if !slices.Equal(chatUse.Needs, []llm.Capability{llm.CapTools}) {
+		t.Errorf("the declared use changed: %v", chatUse.Needs)
+	}
 }
