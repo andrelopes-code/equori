@@ -27,7 +27,18 @@ import {
   goalAccounts,
   withoutNesting,
 } from "@/features/goals/model/goal-accounts";
-import { useCreateGoal, useUpdateGoal } from "@/features/planning";
+import {
+  linkBody,
+  linksOf,
+  syncLinks,
+} from "@/features/goals/model/goal-links";
+import type { GoalLink } from "@/features/goals/model/goal-links";
+import { GoalLinksField } from "@/features/goals/goal-dialog/goal-links-field";
+import {
+  useAllocateToGoal,
+  useCreateGoal,
+  useUpdateGoal,
+} from "@/features/planning";
 import { settingsQuery, useScale } from "@/features/setup";
 import { shiftDate } from "@/i18n/format";
 import { useT } from "@/i18n/i18n-provider";
@@ -57,6 +68,7 @@ export function GoalDialog({
   const overlayOpen = useOverlayOpen();
   const create = useCreateGoal();
   const update = useUpdateGoal();
+  const allocate = useAllocateToGoal();
   const write = goal === undefined ? create : update;
   const accounts = useQuery(accountsQuery(api));
   const settings = useQuery(settingsQuery(api));
@@ -67,9 +79,8 @@ export function GoalDialog({
   const [dueOn, setDueOn] = useState(
     () => goal?.due_on ?? shiftDate(today, 365),
   );
-  const [accountIDs, setAccountIDs] = useState<readonly string[]>(
-    goal?.account_ids ?? [],
-  );
+  const [links, setLinks] = useState<readonly GoalLink[]>(() => linksOf(goal));
+  const accountIDs = links.map((l) => l.id);
   const [countsAsSavings, setCountsAsSavings] = useState(
     goal?.counts_as_savings ?? false,
   );
@@ -103,17 +114,34 @@ export function GoalDialog({
             setErrors(next);
             setSummary(null);
             if (Object.keys(next).length > 0 || currency === undefined) return;
+            const { allocations, ...held } = linkBody(links);
             const body = {
               name: name.trim(),
               target: { amount: target, currency },
               due_on: dueOn,
-              account_ids: [...accountIDs],
+              ...held,
               counts_as_savings: countsAsSavings,
             };
             (goal === undefined
               ? create.mutateAsync(body)
               : update.mutateAsync({ id: goal.id, goal: body })
             )
+              // The amounts to set aside follow the save, one account after the other (A255).
+              .then(async (saved) => {
+                for (const { account, amount } of allocations)
+                  await allocate.mutateAsync({
+                    goal: saved.id,
+                    allocation: {
+                      account_id: account,
+                      amount: {
+                        amount,
+                        currency:
+                          accounts.data?.find((a) => a.id === account)
+                            ?.currency ?? currency,
+                      },
+                    },
+                  });
+              })
               .then(onDone)
               .catch((caught: unknown) => {
                 if (caught instanceof ProblemError)
@@ -184,7 +212,9 @@ export function GoalDialog({
                 <MultiSelect
                   value={accountIDs}
                   items={names}
-                  onValueChange={setAccountIDs}
+                  onValueChange={(ids) => {
+                    setLinks(syncLinks(links, ids));
+                  }}
                 >
                   <MultiSelectControl placeholder={t("goals.accountsHint")} />
                   <MultiSelectContent>
@@ -199,6 +229,15 @@ export function GoalDialog({
                   <FieldError>{errors.account_ids}</FieldError>
                 )}
               </Field>
+
+              {scale !== null && (
+                <GoalLinksField
+                  links={links}
+                  accounts={accounts.data ?? []}
+                  scale={scale}
+                  onChange={setLinks}
+                />
+              )}
 
               <Checkbox
                 checked={countsAsSavings}
@@ -215,7 +254,7 @@ export function GoalDialog({
             </Button>
             <Button
               type="submit"
-              loading={write.isPending}
+              loading={write.isPending || allocate.isPending}
               disabled={currency === undefined}
             >
               {t(goal === undefined ? "goals.create" : "goals.save")}

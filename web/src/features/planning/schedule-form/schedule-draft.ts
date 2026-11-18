@@ -15,6 +15,9 @@ export interface ScheduleDraft {
   accountID: string | null;
   counterpartID: string | null;
   payeeID: string | null;
+  // The goal that holds the counterpart by amount: each occurrence sets its amount aside for it
+  // (planning coherence A255). Null without one.
+  goalID: string | null;
   description: string;
   amount: number;
   recurrence: Recurrence;
@@ -36,6 +39,7 @@ export function emptyDraft(today: string): ScheduleDraft {
     accountID: null,
     counterpartID: null,
     payeeID: null,
+    goalID: null,
     description: "",
     amount: 0,
     recurrence: {
@@ -49,6 +53,32 @@ export function emptyDraft(today: string): ScheduleDraft {
     toleranceBP: defaultToleranceBP,
     graceDays: defaultGraceDays,
     windowDays: defaultWindowDays,
+  };
+}
+
+// What a screen asks the form to open with: a saving into an account, for a goal.
+export interface SchedulePreset {
+  kind?: "savings";
+  counterpart?: string;
+  amount?: number;
+  goal?: string;
+  description?: string;
+}
+
+// The empty draft with the fields a preset names.
+export function draftFromPreset(
+  preset: SchedulePreset,
+  today: string,
+): ScheduleDraft {
+  const base = emptyDraft(today);
+
+  return {
+    ...base,
+    kind: preset.kind ?? base.kind,
+    counterpartID: preset.counterpart ?? null,
+    amount: preset.amount ?? 0,
+    goalID: preset.goal ?? null,
+    description: preset.description ?? "",
   };
 }
 
@@ -95,6 +125,9 @@ export function scheduleInput(
     ...(draft.payeeID === null || !takesCategory(draft.kind)
       ? {}
       : { payee_id: draft.payeeID }),
+    ...(draft.goalID === null || takesCategory(draft.kind)
+      ? {}
+      : { goal_id: draft.goalID }),
     description: draft.description.trim(),
     amount: { amount: draft.amount, currency: ctx.currency },
     recurrence: draft.recurrence,

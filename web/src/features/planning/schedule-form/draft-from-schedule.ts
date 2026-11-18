@@ -25,6 +25,7 @@ export function draftFromSchedule(
     accountID: null,
     counterpartID: source.counterpart_id,
     payeeID: source.payee_id ?? null,
+    goalID: source.goal_id ?? null,
     description: source.description,
     amount: terms?.amount.amount ?? 0,
     recurrence: omitCount({ ...recurrence, start }),

@@ -174,4 +174,26 @@ describe("goal contribution", () => {
     expect(holdsInvestments(["broker"], all)).toBe(true);
     expect(holdsInvestments(["reserve"], all)).toBe(true);
   });
+
+  // Planning coherence A255: a goal over a shared account counts the schedules that name it.
+  it("counts the schedules that name a goal over a shared account", () => {
+    const shared = {
+      id: "g1",
+      account_ids: [],
+      target: { amount: 1, currency: "BRL" },
+    };
+
+    expect(
+      scheduledContribution(
+        shared,
+        [
+          schedule({ goal_id: "g1", counterpart_id: "checking" }),
+          schedule({ id: "s2", goal_id: "g2", counterpart_id: "checking" }),
+          schedule({ id: "s3", counterpart_id: "checking" }),
+        ],
+        accounts,
+        "2026-10-17",
+      ),
+    ).toBe(100000);
+  });
 });

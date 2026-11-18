@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  draftFromPreset,
   draftProblems,
   emptyDraft,
   scheduleInput,
@@ -103,5 +104,48 @@ describe("scheduleInput", () => {
     expect(
       scheduleInput(filled({ calendar: "us_federal" }), ctx),
     ).toHaveProperty("calendar", "us_federal");
+  });
+});
+
+// Planning coherence A255: a goal card opens the form on a saving for the goal.
+describe("draftFromPreset", () => {
+  const goalID = "a0000000-0000-4000-8000-000000000009";
+
+  it("fills the fields a preset names and sends the goal of a saving", () => {
+    const draft = draftFromPreset(
+      {
+        kind: "savings",
+        counterpart: categoryID,
+        amount: 50000,
+        goal: goalID,
+        description: "Trip",
+      },
+      "2026-11-04",
+    );
+
+    expect(draft).toMatchObject({
+      kind: "savings",
+      counterpartID: categoryID,
+      amount: 50000,
+      goalID,
+      description: "Trip",
+      accountID: null,
+    });
+    expect(
+      scheduleInput(
+        { ...draft, accountID },
+        { currency: "BRL", defaultCalendar: undefined },
+      )?.goal_id,
+    ).toBe(goalID);
+  });
+
+  it("is the empty draft without a preset, and a bill sends no goal", () => {
+    expect(draftFromPreset({}, "2026-11-04")).toEqual(emptyDraft("2026-11-04"));
+    expect(
+      scheduleInput(filled({ goalID }), {
+        currency: "BRL",
+        defaultCalendar: undefined,
+      }),
+    ).not.toHaveProperty("goal_id");
   });
 });

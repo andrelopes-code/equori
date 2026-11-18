@@ -8,6 +8,7 @@ import { Text } from "@slotted/react/typography";
 import { useState } from "react";
 
 import { goalLine, type Goal } from "@/features/goals/goal-card/goal-line";
+import { GoalScheduleAction } from "@/features/goals/goal-card/goal-schedule-action";
 import { defaultMonthly, monthlyRange } from "@/features/goals/model/goal-plan";
 import { monthsBetween } from "@/features/goals/model/goal-plan";
 import { formatReferenceMonth, numberFormatter } from "@/i18n/format";
@@ -146,6 +147,7 @@ export function GoalWhatIf({
           />
         </Field>
       )}
+      <GoalScheduleAction goal={goal} amount={major * unit} scale={scale} />
       {line.ready !== null && (
         <Tag tone={line.late ? "warning" : "success"} size="sm">
           {line.late

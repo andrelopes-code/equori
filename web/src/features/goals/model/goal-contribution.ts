@@ -58,7 +58,7 @@ function termsOn(schedule: Schedule, today: string) {
 // The monthly aporte already scheduled: savings and transfers that move money from outside the
 // goal into it, in the goal's currency, active and not paused today.
 export function scheduledContribution(
-  goal: Pick<Goal, "account_ids" | "target">,
+  goal: Pick<Goal, "account_ids" | "target"> & Partial<Pick<Goal, "id">>,
   schedules: readonly Schedule[],
   accounts: readonly Account[],
   today: string,
@@ -67,7 +67,10 @@ export function scheduledContribution(
   let total = 0;
   for (const s of schedules) {
     if (s.kind !== "savings" && s.kind !== "transfer") continue;
-    if (!subtree.has(s.counterpart_id) || subtree.has(s.account_id)) continue;
+    // A schedule that names the goal deposits into an account the goal holds by amount (A255).
+    const named = s.goal_id !== undefined && s.goal_id === goal.id;
+    const whole = subtree.has(s.counterpart_id) && !subtree.has(s.account_id);
+    if (!named && !whole) continue;
     if (s.ends_on !== undefined && s.ends_on <= today) continue;
     if (s.pauses.some((p) => p.from <= today && today <= p.to)) continue;
     const terms = termsOn(s, today);

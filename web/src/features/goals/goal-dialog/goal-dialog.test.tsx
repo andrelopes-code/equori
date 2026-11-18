@@ -66,6 +66,7 @@ describe("GoalDialog", () => {
           target: money(3000000),
           due_on: "2027-10-17",
           account_ids: [reserveID],
+          allocated_account_ids: [],
           counts_as_savings: true,
         },
       ]);

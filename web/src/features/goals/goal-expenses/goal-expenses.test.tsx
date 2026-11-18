@@ -28,6 +28,8 @@ const trip = {
   remaining: money(2000000),
   progress_bp: 3333,
   spent: money(300000),
+  allocated_accounts: [],
+  shared_with: [],
   unexplained_withdrawal: { amount: money(200000), since: "2026-10-01" },
 };
 

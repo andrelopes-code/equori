@@ -23,6 +23,8 @@ const emergency = {
   remaining: money(1991659),
   progress_bp: 3361,
   spent: money(0),
+  allocated_accounts: [],
+  shared_with: [],
 };
 const trip = {
   id: "d1000000-0000-4000-8000-000000000002",
@@ -34,6 +36,8 @@ const trip = {
   remaining: money(0),
   progress_bp: 10000,
   spent: money(0),
+  allocated_accounts: [],
+  shared_with: [],
 };
 const laptop = {
   id: "d1000000-0000-4000-8000-000000000003",
@@ -45,6 +49,8 @@ const laptop = {
   remaining: money(500000),
   progress_bp: 4444,
   spent: money(0),
+  allocated_accounts: [],
+  shared_with: [],
 };
 
 function api(items: unknown[], schedules: unknown[] = []) {

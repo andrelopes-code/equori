@@ -4,15 +4,20 @@ import { useApi } from "@/api/api-context";
 import { occurrencesQuery, scheduleQuery } from "@/features/planning/api";
 import { draftFromSchedule } from "@/features/planning/schedule-form/draft-from-schedule";
 import {
-  emptyDraft,
+  draftFromPreset,
   type ScheduleDraft,
+  type SchedulePreset,
 } from "@/features/planning/schedule-form/schedule-draft";
 import { shiftDate } from "@/i18n/format";
 import { useToday } from "@/i18n/today";
 
-// The draft the schedule form opens with: empty, or filled from the schedule `from` names. A
-// source that cannot be read opens the empty form. Null while the source is loading.
-export function useFormStart(from: string | undefined): ScheduleDraft | null {
+// The draft the schedule form opens with: empty or with the fields of a preset, or filled from
+// the schedule `from` names. A source that cannot be read opens the form of the preset. Null
+// while the source is loading.
+export function useFormStart(
+  from: string | undefined,
+  preset: SchedulePreset = {},
+): ScheduleDraft | null {
   const api = useApi();
   const today = useToday();
   const source = useQuery({
@@ -28,7 +33,8 @@ export function useFormStart(from: string | undefined): ScheduleDraft | null {
     enabled: from !== undefined,
   });
 
-  if (from === undefined || source.isError) return emptyDraft(today);
+  if (from === undefined || source.isError)
+    return draftFromPreset(preset, today);
   if (source.isPending || next.isPending) return null;
 
   return draftFromSchedule(

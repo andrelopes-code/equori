@@ -19,6 +19,8 @@ const emergency = {
   remaining: money(1991659),
   progress_bp: 3361,
   spent: money(0),
+  allocated_accounts: [],
+  shared_with: [],
 };
 
 function api(sent: { method: string; body: unknown }[]) {
@@ -81,6 +83,7 @@ describe("goal actions", () => {
             target: money(3000000),
             due_on: "2027-06-30",
             account_ids: [reserveID],
+            allocated_account_ids: [],
             counts_as_savings: true,
           },
         },

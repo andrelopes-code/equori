@@ -24,6 +24,7 @@ import { RecurrenceFields } from "@/features/planning/schedule-fields/recurrence
 import { ScheduleAccountsSection } from "@/features/planning/schedule-form/schedule-accounts-section";
 import { ScheduleAdvancedSection } from "@/features/planning/schedule-form/schedule-advanced-section";
 import { ScheduleBasicsSection } from "@/features/planning/schedule-form/schedule-basics-section";
+import { ScheduleGoalNote } from "@/features/planning/schedule-form/schedule-goal-note";
 import {
   draftProblems,
   scheduleInput,
@@ -154,6 +155,8 @@ export function ScheduleForm({ initial, from }: ScheduleFormProps) {
             patch={patch}
             errors={errors}
           />
+
+          <ScheduleGoalNote goalID={draft.goalID} />
 
           <FormSection legend={t("schedule.recurrence")}>
             <RecurrenceFields

@@ -66,12 +66,34 @@ export function validateBudgetFormSearch(
 export interface ScheduleFormSearch {
   // The schedule the form continues: its fields fill the form.
   from?: string;
+  // A saving the form opens with (planning coherence A255): the account it goes into, its
+  // amount in minor units, the goal it is set aside for and its description.
+  kind?: "savings";
+  counterpart?: string;
+  amount?: number;
+  goal?: string;
+  description?: string;
 }
 
 export function validateScheduleFormSearch(
   raw: Record<string, unknown>,
 ): ScheduleFormSearch {
-  return typeof raw.from === "string" && uuidPattern.test(raw.from)
-    ? { from: raw.from }
-    : {};
+  const id = (value: unknown) =>
+    typeof value === "string" && uuidPattern.test(value) ? value : undefined;
+  const from = id(raw.from);
+  if (from !== undefined) return { from };
+
+  const counterpart = id(raw.counterpart);
+  const goal = id(raw.goal);
+  const amount = Number(raw.amount);
+
+  return {
+    ...(raw.kind === "savings" ? { kind: "savings" as const } : {}),
+    ...(counterpart === undefined ? {} : { counterpart }),
+    ...(Number.isSafeInteger(amount) && amount > 0 ? { amount } : {}),
+    ...(goal === undefined ? {} : { goal }),
+    ...(typeof raw.description === "string" && raw.description !== ""
+      ? { description: raw.description.slice(0, 200) }
+      : {}),
+  };
 }

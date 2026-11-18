@@ -11,3 +11,5 @@ When a purchase repeats every week, month, quarter or year, the assistant sugges
 The agenda states how the month closes and what is still to pay. A transfer or a saving counts by where its money goes: out of the accounts to spend from (checking, cash, cards) into a savings, reserve, brokerage or goal account it is an outflow, the way back is an inflow, and a move that keeps both ends on the same side is left out of both. The agenda lists open occurrences with Mark paid or Mark received. Schedules shows what stays free after fixed commitments; Subscriptions ranks them by monthly cost.
 
 Scheduled occurrences show on Transactions and on the Account screen, where the **Projection** uses them. The Overview lists the overdue occurrences first, then those of the next 7 days with the days left, and totals what leaves and what enters; a transfer and a saving are listed and left out of both totals.
+
+A saving or a transfer into an account that several goals share can name one of those goals: marking an occurrence paid sets its amount aside for that goal, and undoing it takes the amount back. The Goals screen opens the form with the goal filled in.

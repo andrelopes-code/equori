@@ -11,6 +11,7 @@ import {
 import { Tag } from "@slotted/react/tag";
 import { Heading, Text } from "@slotted/react/typography";
 
+import { GoalAllocations } from "@/features/goals/goal-card/goal-allocations";
 import { GoalMeter } from "@/features/goals/goal-card/goal-meter";
 import { GoalParts } from "@/features/goals/goal-card/goal-parts";
 import { goalState, monthsLeft } from "@/features/goals/goal-card/goal-state";
@@ -27,6 +28,7 @@ import { useMoneyFormat } from "@/privacy/use-money-format";
 // what-if says what each month's saving does to the completion month.
 export function GoalCard({
   goal,
+  goals,
   scale,
   scheduled,
   investing,
@@ -35,6 +37,8 @@ export function GoalCard({
   onDelete,
 }: {
   goal: Goal;
+  // Every goal of the book: the card names the ones that share an account with this one.
+  goals: readonly Goal[];
   scale: (code: string) => number;
   scheduled: number;
   investing: boolean;
@@ -183,6 +187,12 @@ export function GoalCard({
           ))}
         </dl>
         <GoalParts goal={goal} scale={scale} names={names} />
+        <GoalAllocations
+          goal={goal}
+          goals={goals}
+          scale={scale}
+          names={names}
+        />
         <GoalSpent goal={goal} scale={scale} />
         {state !== "reached" && (
           <GoalWhatIf

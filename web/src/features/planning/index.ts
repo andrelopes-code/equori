@@ -11,6 +11,7 @@ export {
   planningKeys,
   projectionQuery,
   schedulesQuery,
+  useAllocateToGoal,
   useCreateGoal,
   useDeleteGoal,
   useLinkGoalExpense,

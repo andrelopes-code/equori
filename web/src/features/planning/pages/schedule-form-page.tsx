@@ -6,8 +6,10 @@ import { ScheduleForm } from "@/features/planning/schedule-form/schedule-form";
 import { useFormStart } from "@/features/planning/schedule-form/use-form-start";
 
 export function ScheduleFormPage() {
-  const { from } = useSearch({ from: "/_authed/planning/schedules/new" });
-  const start = useFormStart(from);
+  const { from, ...preset } = useSearch({
+    from: "/_authed/planning/schedules/new",
+  });
+  const start = useFormStart(from, preset);
 
   if (start === null)
     return (

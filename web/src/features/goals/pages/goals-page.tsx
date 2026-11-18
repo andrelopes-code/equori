@@ -138,6 +138,7 @@ export function GoalsPage() {
                   <GoalCard
                     key={goal.id}
                     goal={goal}
+                    goals={items}
                     scale={scale}
                     scheduled={scheduledContribution(
                       goal,

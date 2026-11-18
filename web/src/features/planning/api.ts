@@ -407,6 +407,27 @@ export function useDeleteGoal() {
   });
 }
 
+// Sets aside a signed amount of a shared account for a goal; a negative amount releases it
+// (planning coherence A255).
+export function useAllocateToGoal() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async ({
+      goal,
+      allocation,
+    }: {
+      goal: string;
+      allocation: components["schemas"]["GoalAllocationInput"];
+    }) =>
+      unwrap(
+        await api.POST("/goals/{id}/allocations", {
+          params: { path: { id: goal } },
+          body: allocation,
+        }),
+      ),
+  });
+}
+
 // The expense transactions a goal pays (planning coherence A256).
 export function goalExpensesQuery(api: Client<paths>, id: string) {
   return queryOptions({
