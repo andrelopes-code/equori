@@ -65,6 +65,17 @@ func TestS536EquityFundHasNoUnitTax(t *testing.T) {
 	}
 }
 
+// Coverage row U-04: a FIDC that is an investment entity pays no come-cotas (Lei 14.754/2023
+// art. 24).
+func TestFIDCEntityHasNoUnitTax(t *testing.T) {
+	t.Parallel()
+	f := newFundEventFixture(t, "fidc_entity")
+
+	if got := f.unitTaxEvents(t); len(got) != 0 {
+		t.Fatalf("events = %+v, want none", rowsOf(got))
+	}
+}
+
 func TestS537RegionWithoutUnitTax(t *testing.T) {
 	t.Parallel()
 	f := newFundEventFixture(t, "fixed_income_fund")

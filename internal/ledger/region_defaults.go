@@ -97,6 +97,12 @@ var brFixedIncomeWithholding = domain.WithholdingTable{
 // art. 32 §2; coverage row U-02).
 var brEquityFundWithholding = domain.WithholdingTable{IncomeTax: []domain.TaxBand{{RateBP: 1500}}}
 
+// brFlatFunds are the fund subtypes withheld at 15% of the gain at a redemption: an equity fund,
+// and a FIP or a FIDC that is an investment entity (Lei 14.754/2023 art. 24 and 26; coverage row
+// U-04). shortcut: the IOF of a FIP or a FIDC redeemed within 30 days is not estimated; upgrade
+// when a source states it.
+var brFlatFunds = []string{"equity_fund", "fip", "fidc_entity"}
+
 // brExemptFixedIncome are the subtypes whose interest is exempt for an individual; it mirrors
 // subtypeClass of internal/portfolio/jurisdiction/br, and a server test keeps both equal.
 var brExemptFixedIncome = []string{
@@ -105,11 +111,11 @@ var brExemptFixedIncome = []string{
 
 // FixedIncomeWithholding returns the withholding table of a fixed income security of a region
 // and whether the security pays tax at source (A235 FS4). Only BR taxes a subtype outside the
-// exempt list, and the redemption of an equity fund.
+// exempt list, and the redemption of a fund of brFlatFunds.
 func FixedIncomeWithholding(
 	region, instrumentType, subtype string,
 ) (domain.WithholdingTable, bool) {
-	if region == "BR" && instrumentType == "fund" && subtype == "equity_fund" {
+	if region == "BR" && instrumentType == "fund" && slices.Contains(brFlatFunds, subtype) {
 		return brEquityFundWithholding, true
 	}
 

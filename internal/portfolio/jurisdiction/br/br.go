@@ -110,10 +110,12 @@ var subtypeClass = map[string]map[string]string{
 		"pgbl":              "pension_pgbl",
 		"vgbl":              "pension_vgbl",
 		// A FI-Infra holds incentivized debentures: its income is exempt for an individual (Lei
-		// 12.431/2011 art. 3); a FIDC and a FIP are taxed as funds (Lei 14.754/2023).
-		"fi_infra": "fund_exempt",
-		"fidc":     "fund",
-		"fip":      "fund",
+		// 12.431/2011 art. 3); a FIDC and a FIP are taxed as funds (Lei 14.754/2023). A FIDC that
+		// is an investment entity (Resolução CMN 5.111/2023) pays no come-cotas (art. 24).
+		"fi_infra":    "fund_exempt",
+		"fidc":        "fund",
+		"fidc_entity": "fund",
+		"fip":         "fund",
 	},
 }
 

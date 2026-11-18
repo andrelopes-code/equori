@@ -203,3 +203,31 @@ func TestS635EquityFundEstimate(t *testing.T) {
 		t.Fatalf("estimated_tax = %+v, want 15000", p.EstimatedTax)
 	}
 }
+
+// S636 (coverage row U-04): a FIP and a FIDC that is an investment entity withhold 15% of the
+// gain at a redemption (Lei 14.754/2023 art. 24 and 26).
+func TestS636InvestmentEntityEstimate(t *testing.T) {
+	t.Parallel()
+
+	for _, subtype := range []string{"fip", "fidc_entity"} {
+		t.Run(subtype, func(t *testing.T) {
+			t.Parallel()
+			h := newNetBook(
+				t,
+				apitest.Brazil(),
+				"ENTITY",
+				"fund",
+				subtype,
+				"2026-01-05",
+				10000,
+				"1.00",
+				"1.10",
+			)
+
+			p := onlyNetPosition(t, h)
+			if p.EstimatedTax == nil || p.EstimatedTax.Amount != 15000 {
+				t.Fatalf("estimated_tax = %+v, want 15000", p.EstimatedTax)
+			}
+		})
+	}
+}

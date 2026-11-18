@@ -1215,3 +1215,7 @@ Coverage row U-01, through the HTTP API. 1,000 units of a fund bought at 10.00 o
 ### S635 Estimate of the redemption of an equity fund
 
 Coverage row U-02, through the HTTP API. 10,000 units of an equity_fund bought at 1.00 on 2026-07-01 and priced 1.10 on 2026-07-06: the position has an estimated_tax of 150.00, 15% of the gain, with no IOF in its first 30 days.
+
+### S636 Estimate of a FIP or a FIDC that is an investment entity
+
+Coverage row U-04, through the HTTP API. 10,000 units of a fip, or of a fidc_entity, bought at 1.00 on 2026-01-05 and priced 1.10 on 2026-07-06: the position has an estimated_tax of 150.00, 15% of the gain; a fidc_entity has no come-cotas event.
