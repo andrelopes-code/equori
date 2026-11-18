@@ -76,12 +76,7 @@ func (r *Repository) toCorporateAction(
 	row LedgerCorporateAction,
 	t *domain.Transaction,
 ) (domain.CorporateAction, error) {
-	var instrument money.Currency
-	for _, p := range t.Postings {
-		if p.AccountID == row.AccountID {
-			instrument = p.Amount.Currency()
-		}
-	}
+	instrument := heldInstrument(row, t)
 
 	held, err := app.AmountOf(ctx, r.ins, row.Held, instrument)
 	if err != nil {
@@ -127,6 +122,18 @@ func (r *Repository) toCorporateAction(
 	}
 
 	return action, nil
+}
+
+// heldInstrument is the instrument of the posting of the holding the action changed.
+func heldInstrument(row LedgerCorporateAction, t *domain.Transaction) money.Currency {
+	var instrument money.Currency
+	for _, p := range t.Postings {
+		if p.AccountID == row.AccountID {
+			instrument = p.Amount.Currency()
+		}
+	}
+
+	return instrument
 }
 
 // receivedIn is the instrument of the units an action received: the security of the new holding
