@@ -9,6 +9,7 @@ What equori does. get_tax_year lists each sale of the year with its cost at aver
 | Ação ON, PN, unit (PETR4, TAEE11) | stock | stock | 15%; exempt when the sales of stocks of the month total R$ 20,000.00 or less | dividend, jcp, bonus_shares |
 | FII, Fiagro (HGLG11) | reit | fii | 20%, no exemption | distribution |
 | ETF (BOVA11, IVVB11) | etf | etf | 15%, no exemption | distribution |
+| ETF of fixed income (IMAB11) | etf, subtype fixed_income_etf | etf_fixed_income | withheld at source on the sale: 25% for a portfolio of average term up to 180 days, 20% up to 720, 15% above (Lei 13.043/2014, art. 2); outside the monthly tax | distribution |
 | BDR (AAPL34) | depositary_receipt | bdr | 15%, no exemption | dividend |
 
 A tax class is the class get_tax_year reports for a sale; it comes from the type and the exchange BVMF. No product of this table has a guarantee of the FGC. Liquidity is the trading session of B3: the price is the market price, and settlement follows the rules of the broker.

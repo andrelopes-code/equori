@@ -156,3 +156,23 @@ func TestGainTaxWithheldCarriesWithinTheYear(t *testing.T) {
 		t.Errorf("months = %+v, want January 2027 to owe 20.00", got)
 	}
 }
+
+// E-10: the sale of an ETF of fixed income stays out of the monthly tax: its tax is withheld at
+// source.
+func TestGainTaxLeavesFixedIncomeETF(t *testing.T) {
+	t.Parallel()
+
+	got := New().GainTax([]domain.TaxSale{
+		{
+			Month:    month(time.August),
+			Kind:     "swing",
+			TaxClass: "etf_fixed_income",
+			Gross:    5000000,
+			Result:   50000,
+		},
+	})
+
+	if len(got) != 0 {
+		t.Errorf("months = %+v, want none", got)
+	}
+}

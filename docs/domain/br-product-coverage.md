@@ -68,7 +68,7 @@ Source status:
 | E-07 | Merger, spin-off, ticker change | supported | `record_corporate_action` kinds `conversion` and `spin_off`; `TestConversionMovesTheCost`, `TestSpinOffToolSplitsTheCost`; the corporate action entry offers both | the tax of an exchange is not computed; the cost moved by a spin-off is the percent of the notice of the company | IN RFB 1.585/2015 not readable at normas.receita.fazenda.gov.br on 2026-11-18 (the page needs a browser); the percent comes from the notice of the company |
 | E-08 | FII, Fiagro: distribution, amortization, sale | partial | type `reit`; tax class `fii`; exempt distribution | an amortization that lowers the cost has no event; the tax of a sale is computed by `gain_tax` (FII pool, 20%) | distribution: Lei 11.033/2004 art. 3, III and § 1 (100 holders, below 10%); sale: Lei 8.668/1993 art. 18 (20%); both read on 2026-11-18 (planalto.gov.br) |
 | E-09 | ETF of stocks, ETF of a foreign index | supported | type `etf`; the ordinary pool of `gain_tax` at 15%, without the exemption of stocks; `TestGainTaxExemptionReadsStocks` | none | Lei 11.033/2004 art. 2, II and art. 3, I (the exemption names stocks only) |
-| E-10 | ETF of fixed income | partial | type `etf` | no tax class for the rate by the term of the portfolio | to read |
+| E-10 | ETF of fixed income | supported | `etf` subtype `fixed_income_etf`, class `etf_fixed_income`, outside the monthly tax (`TestGainTaxLeavesFixedIncomeETF`); the tax withheld on the sale is recorded as `taxes` | the rate by the term of the portfolio is the one withheld, not estimated | Lei 13.043/2014 art. 2 |
 | E-11 | BDR | partial | tax class `bdr` | the foreign tax of a dividend has no field of its own; a sale is in the ordinary pool of `gain_tax` | sale: Lei 11.033/2004 art. 2, read on 2026-11-18; tax of a foreign dividend: to read |
 | E-12 | Option, forward, future | partial | type `option`; a bought option is traded like a stock, expires with `record_investment` kind `write_off` (premium as a realized loss) and a call is exercised with `record_corporate_action` kind `right_exercise` (cost: strike plus premium); `TestS623OptionExpires`, `TestS624CallExercised`, `TestWriteOffTool`, `TestOptionWriteOffInTaxYear`; spec `docs/specs/2026-11-18-listed-options-design.md` | a written option (short position), futures with their daily settlement and forwards | IN RFB 1.585/2015 on options, to read in the norm |
 | E-12b | Securities lending (BTC), lender | supported | income type `lending_fee`, treatment `exclusive`; the units and the cost stay in the holding; `TestJurisdictionBRTreatments`, `TestBR` | the borrower side (a short sale of borrowed shares) is not modeled | the lender fee is withheld at source by the fixed income table (IN RFB 1.585/2015; broker statements), to read in the norm |
@@ -91,8 +91,8 @@ Source status:
 
 | Verdict | Rows |
 |---|---|
-| supported | 30 |
-| partial | 24 |
+| supported | 31 |
+| partial | 23 |
 | unsupported | 0 |
 
 ## What the assistant says

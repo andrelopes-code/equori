@@ -33,6 +33,9 @@ func TestBR(t *testing.T) {
 		{"fixed_income", "lam", "", "fixed_income"},
 		// Coverage rows U-03, U-04 and U-06.
 		{"fund", "fi_infra", "", "fund_exempt"},
+		// Coverage row E-10: an ETF of fixed income is taxed at source by term (Lei 13.043/2014).
+		{"etf", "fixed_income_etf", "BVMF", "etf_fixed_income"},
+		{"etf", "", "BVMF", "etf"},
 		{"fund", "fidc", "", "fund"},
 		{"fund", "fip", "", "fund"},
 		{"fixed_income", "coe", "", "fixed_income"},

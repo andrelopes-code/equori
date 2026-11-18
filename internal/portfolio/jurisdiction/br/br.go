@@ -94,6 +94,9 @@ var subtypeClass = map[string]map[string]string{
 		"cra":                   "fixed_income_exempt",
 		"debenture_incentivada": "fixed_income_exempt",
 	},
+	// An ETF of fixed income is taxed at source by the term of its portfolio, 15% to 25% (Lei
+	// 13.043/2014 art. 2), and stays out of the monthly tax of variable income.
+	"etf": {"fixed_income_etf": "etf_fixed_income"},
 	"fund": {
 		"fixed_income_fund": "fund", "multimarket": "fund", "equity_fund": "fund_equity",
 		"pgbl": "pension_pgbl", "vgbl": "pension_vgbl",
