@@ -2,7 +2,7 @@ An **Account** has an **Account class**: asset and liability accounts hold money
 
 A brokerage is an account kind with one Investment line per security. Its money is in a Cash account inside it or in an account of the same institution; the articles on investments describe how to create it and record a buy (topic investments).
 
-A **Category** is an income or expense account. Categories form a tree: a **Parent account** sums its children, so Food can hold Supermarket and Restaurant. An **Institution** is the bank or broker that keeps an account.
+A **Category** is an income or expense account. Categories form a tree: a **Parent account** sums its children, so Food can hold Supermarket and Restaurant. An **Institution** is the bank or broker that keeps an account. list_payees_and_tags kind identifier_schemes lists the schemes that identify an institution with the pattern of each, and get_institution_indicators reads the figures the regulator publishes for a scheme and an identifier: the ratios as decimal fractions (0.155 is 15.5%), equity and net income by quarter, newest first, with the minimum of each ratio and the norm that sets it. A figure the source does not report is absent, never zero; an institution the source does not report is not_found.
 
 Create accounts and categories on the New account screen: pick a kind from the two groups, What you have and What you owe, read what the form will ask in the panel beside them, then Continue; rename, move, close or reopen them on Edit account. Merging a category moves all its postings into another category and cannot be undone; it is done on the Categories screen. Closing an account keeps its history; reopening brings it back.
 

@@ -39,6 +39,17 @@ type Service interface {
 	RequestHistory(ctx context.Context, code string, from time.Time) error
 	Coverage(ctx context.Context, in domain.Instrument) (domain.Coverage, error)
 	SearchCatalog(ctx context.Context, query string) (domain.CatalogResult, error)
+	ProbeQuote(ctx context.Context, in domain.Instrument) (domain.ProbeResult, error)
+	InstitutionIndicators(
+		ctx context.Context, scheme, identifier string,
+	) (domain.InstitutionIndicators, error)
+	RecordInstrumentPrices(
+		ctx context.Context,
+		code string,
+		quote money.Currency,
+		points []domain.PricePoint,
+		dryRun bool,
+	) (domain.PriceCounts, error)
 }
 
 // Holiday is a non-business day of a calendar.
@@ -60,7 +71,13 @@ type Calendars struct {
 }
 
 func Tools(svc Service, cals Calendars) []tool.Tool {
-	return []tool.Tool{getMarketData(svc, cals), manageInstrument(svc)}
+	return []tool.Tool{
+		getMarketData(svc, cals),
+		manageInstrument(svc),
+		probeQuote(svc),
+		getInstitutionIndicators(svc),
+		recordPriceSeries(svc),
+	}
 }
 
 // field is an optional input and whether the call gave it.

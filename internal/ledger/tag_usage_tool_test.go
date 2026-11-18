@@ -48,3 +48,26 @@ func TestTagUsageTool(t *testing.T) {
 		"query",
 	)
 }
+
+// TestIdentifierSchemesTool lists the identifier schemes of an institution with their patterns.
+func TestIdentifierSchemesTool(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+
+	var out struct {
+		IdentifierSchemes []struct {
+			Scheme  string `json:"scheme"`
+			Pattern string `json:"pattern"`
+		} `json:"identifier_schemes"`
+	}
+	toolOutput(t, h, "list_payees_and_tags", map[string]any{"kind": "identifier_schemes"}, &out)
+
+	patterns := map[string]string{}
+	for _, s := range out.IdentifierSchemes {
+		patterns[s.Scheme] = s.Pattern
+	}
+
+	if patterns["br_ispb"] != "^[0-9]{8}$" {
+		t.Fatalf("schemes = %v, want br_ispb with 8 digits", patterns)
+	}
+}

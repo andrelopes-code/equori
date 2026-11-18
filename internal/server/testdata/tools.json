@@ -3590,6 +3590,142 @@
     }
   },
   {
+    "name": "get_institution_indicators",
+    "description": "Returns the prudential indicators a regulator publishes for a financial institution: Basel ratio, principal capital, fixed asset ratio, equity and net income by quarter, with the regulatory minimums. Use it when the user asks how solid a bank or an issuer of fixed income is. The figures state facts and are no recommendation; an institution the source does not report is not_found. Do not use it for the deposit guarantee: get_portfolio view issuer_exposure does.",
+    "effect": "read_only",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "scheme": {
+          "type": "string",
+          "description": "identifier scheme of the institution, from list_payees_and_tags kind identifier_schemes, such as br_ispb"
+        },
+        "identifier": {
+          "type": "string",
+          "description": "identifier of the institution under the scheme"
+        }
+      },
+      "required": [
+        "scheme",
+        "identifier"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "type": "string"
+        },
+        "source_url": {
+          "type": "string"
+        },
+        "conglomerate_code": {
+          "type": "string"
+        },
+        "conglomerate_name": {
+          "type": "string",
+          "description": "whose figures these are: the prudential conglomerate of the institution"
+        },
+        "rule": {
+          "type": "string",
+          "description": "norm that sets the minimums"
+        },
+        "basel_minimum": {
+          "type": "string"
+        },
+        "basel_with_buffer": {
+          "type": "string",
+          "description": "minimum plus the conservation buffer"
+        },
+        "principal_capital_minimum": {
+          "type": "string"
+        },
+        "principal_capital_with_buffer": {
+          "type": "string"
+        },
+        "periods": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "period": {
+                "type": "string",
+                "description": "last day of the quarter",
+                "format": "date"
+              },
+              "basel": {
+                "type": "string",
+                "description": "Basel ratio as a decimal fraction: 0.155 is 15.5%; absent when the source reports none"
+              },
+              "principal_capital": {
+                "type": "string",
+                "description": "principal capital ratio as a decimal fraction"
+              },
+              "fixed_asset": {
+                "type": "string",
+                "description": "fixed asset ratio as a decimal fraction"
+              },
+              "equity": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "net_income": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "period"
+            ],
+            "additionalProperties": false
+          },
+          "description": "quarters, newest first"
+        }
+      },
+      "required": [
+        "source",
+        "source_url",
+        "rule",
+        "basel_minimum",
+        "basel_with_buffer",
+        "principal_capital_minimum",
+        "principal_capital_with_buffer",
+        "periods"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "get_market_data",
     "description": "Returns market data of the instance: instruments with their type and scale, one instrument with its fixed income terms, prices of an instrument in a period, business-day calendars, a calendar's holidays in a year, the stored economic indexes, the rates of one index in a period, or the annual rates a market survey expects for one index (where the indexes view says expected). The catalog view searches, by code or name, the instruments the enabled price sources can quote, to define one with manage_instrument. Use it for prices, securities, holidays and index rates. Do not use it for the book's holdings: get_portfolio does.",
     "effect": "read_only",
@@ -6862,7 +6998,7 @@
   },
   {
     "name": "list_payees_and_tags",
-    "description": "Lists the book's payees, the tags in use or the institutions, by name, with IDs; kind tag_usage counts the transactions of one tag. Use it to find the payee_id a write takes or to check whether a payee, tag or institution exists. Do not use it for transactions of a payee: search_transactions with query does that.",
+    "description": "Lists the book's payees, the tags in use or the institutions, by name, with IDs; kind tag_usage counts the transactions of one tag; kind identifier_schemes lists the schemes that identify an institution. Use it to find the payee_id a write takes or to check whether a payee, tag or institution exists. Do not use it for transactions of a payee: search_transactions with query does that.",
     "effect": "read_only",
     "idempotent": false,
     "input_schema": {
@@ -6875,7 +7011,8 @@
             "payees",
             "tags",
             "institutions",
-            "tag_usage"
+            "tag_usage",
+            "identifier_schemes"
           ]
         },
         "query": {
@@ -6940,6 +7077,26 @@
             "transactions"
           ],
           "additionalProperties": false
+        },
+        "identifier_schemes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "scheme": {
+                "type": "string"
+              },
+              "pattern": {
+                "type": "string",
+                "description": "regular expression an identifier of the scheme matches"
+              }
+            },
+            "required": [
+              "scheme",
+              "pattern"
+            ],
+            "additionalProperties": false
+          }
         },
         "institutions": {
           "type": "array",
@@ -9080,6 +9237,101 @@
     }
   },
   {
+    "name": "probe_quote",
+    "description": "Asks each enabled price source for the latest quote of a security that is not defined yet; nothing is stored. Use it before manage_instrument define, to check that the code, the exchange and the currency give a price. Do not use it for a defined security: get_market_data reads its prices.",
+    "effect": "read_only",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "code of the security, such as a ticker"
+        },
+        "type": {
+          "type": "string",
+          "description": "instrument type; a currency is not probed",
+          "enum": [
+            "currency",
+            "stock",
+            "etf",
+            "reit",
+            "depositary_receipt",
+            "fixed_income",
+            "fund",
+            "crypto"
+          ]
+        },
+        "quote_currency": {
+          "type": "string",
+          "description": "currency the price is quoted in"
+        },
+        "exchange": {
+          "type": "string",
+          "description": "market identifier code of the exchange, such as BVMF or XETR"
+        },
+        "symbols": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "entries written source=symbol, such as yahoo=PETR4.SA, when the symbol at a source differs from the code"
+        }
+      },
+      "required": [
+        "code",
+        "type",
+        "quote_currency"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "quotes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "source": {
+                "type": "string"
+              },
+              "date": {
+                "type": "string",
+                "description": "absent when the source gave no quote",
+                "format": "date"
+              },
+              "value": {
+                "type": "string"
+              },
+              "error": {
+                "type": "string",
+                "description": "why the source gave no quote"
+              }
+            },
+            "required": [
+              "source"
+            ],
+            "additionalProperties": false
+          },
+          "description": "one per enabled source that covers the security"
+        },
+        "available": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "sources that cover the security and are disabled on this instance"
+        }
+      },
+      "required": [
+        "quotes",
+        "available"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "project_balance",
     "description": "Projects the balance of an account to a future date from its schedules, with each expected occurrence on the way. Use it for will there be enough money on a date. Do not use it for past balances: get_account_history does.",
     "effect": "read_only",
@@ -9755,6 +10007,80 @@
       },
       "required": [
         "transaction_id"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "record_price_series",
+    "description": "Proposes a series of prices of one instrument, typed by the user or read from a statement, all or nothing. A price of a date already typed is replaced; a date a price source covers keeps the price of the source. Use it for more than one date, such as the history of a fund or of a fixed income contract. Do not use it for one price: manage_instrument record_price does. The user confirms first.",
+    "effect": "write",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "instrument code, such as a ticker"
+        },
+        "quote": {
+          "type": "string",
+          "description": "code of the currency the prices are quoted in"
+        },
+        "prices": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "date": {
+                "type": "string",
+                "description": "date of the price",
+                "format": "date"
+              },
+              "value": {
+                "type": "string",
+                "description": "positive decimal price of one unit"
+              }
+            },
+            "required": [
+              "date",
+              "value"
+            ],
+            "additionalProperties": false
+          },
+          "description": "the series, one price per date"
+        }
+      },
+      "required": [
+        "code",
+        "quote",
+        "prices"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "new": {
+          "type": "integer"
+        },
+        "replaced": {
+          "type": "integer",
+          "description": "dates whose typed price changed"
+        },
+        "unchanged": {
+          "type": "integer"
+        },
+        "below_feed": {
+          "type": "integer",
+          "description": "dates stored but not used, because a price source already gives that date"
+        }
+      },
+      "required": [
+        "new",
+        "replaced",
+        "unchanged",
+        "below_feed"
       ],
       "additionalProperties": false
     }
