@@ -22,6 +22,8 @@ func Tools(svc *app.Service, names AccountNames, files ConversationFile) []tool.
 		manageImports(svc, names),
 		reviewInvestmentMovement(svc),
 		importStatementFile(svc, names, files),
+		getCSVProfile(svc),
+		saveCSVProfile(svc, names),
 	}
 }
 
