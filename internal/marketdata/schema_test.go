@@ -223,6 +223,47 @@ func TestSchemaRejectsInvalidFundReports(t *testing.T) {
 	}
 }
 
+// CR6.
+func TestSchemaRejectsInvalidCompanyReports(t *testing.T) {
+	t.Parallel()
+
+	const report = `INSERT INTO marketdata_company_report ` +
+		`(source, identifier, period, months, file, currency, name, consolidated, plan) VALUES `
+	const listing = `INSERT INTO marketdata_company_listing ` +
+		`(source, exchange, code, identifier, name) VALUES `
+
+	pool := pgtest.New(t)
+	for _, sql := range []string{
+		report + `('br_cvm_cia', '84429695000111', '2025-12-31', 12, 'dfp_2025', 'BRL', 'WEG', true, 'standard')`,
+		listing + `('br_cvm_cia', 'BVMF', 'WEGE3', '84429695000111', 'WEG')`,
+	} {
+		if _, err := pool.Exec(t.Context(), sql); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	for name, sql := range map[string]string{
+		"report source outside the pattern": report + `('BR_CVM', '1', '2025-12-31', 12, 'dfp_2025', 'BRL', 'WEG', true, 'standard')`,
+		"report months 0":                   report + `('br_cvm_cia', '1', '2025-12-31', 0, 'dfp_2025', 'BRL', 'WEG', true, 'standard')`,
+		"report months 13":                  report + `('br_cvm_cia', '1', '2025-12-31', 13, 'dfp_2025', 'BRL', 'WEG', true, 'standard')`,
+		"report file outside the pattern":   report + `('br_cvm_cia', '1', '2025-12-31', 12, 'DFP-2025', 'BRL', 'WEG', true, 'standard')`,
+		"report currency in lower case":     report + `('br_cvm_cia', '1', '2025-12-31', 12, 'dfp_2025', 'brl', 'WEG', true, 'standard')`,
+		"report empty name":                 report + `('br_cvm_cia', '1', '2025-12-31', 12, 'dfp_2025', 'BRL', '', true, 'standard')`,
+		"report plan outside the pattern":   report + `('br_cvm_cia', '1', '2025-12-31', 12, 'dfp_2025', 'BRL', 'WEG', true, 'Other')`,
+		"report duplicate":                  report + `('br_cvm_cia', '84429695000111', '2025-12-31', 12, 'itr_2025', 'BRL', 'WEG', true, 'standard')`,
+		"listing exchange in lower case":    listing + `('br_cvm_cia', 'bvmf', 'WEGE3', '1', 'WEG')`,
+		"listing code in lower case":        listing + `('br_cvm_cia', 'BVMF', 'wege3', '1', 'WEG')`,
+		"listing empty identifier":          listing + `('br_cvm_cia', 'BVMF', 'WEGE4', '', 'WEG')`,
+		"listing duplicate":                 listing + `('br_cvm_cia', 'BVMF', 'WEGE3', '2', 'WEG')`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			if _, err := pool.Exec(t.Context(), sql); err == nil {
+				t.Fatal("accepted")
+			}
+		})
+	}
+}
+
 // A237 I5.
 func TestSchemaRejectsInvalidInstitutionIndicators(t *testing.T) {
 	t.Parallel()
