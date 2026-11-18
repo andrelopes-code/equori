@@ -24,7 +24,8 @@ func TestBR(t *testing.T) {
 		{"fixed_income", "lcd", "", "fixed_income_exempt"},
 		{"fixed_income", "lh", "", "fixed_income_exempt"},
 		{"fixed_income", "cdca", "", "fixed_income_exempt"},
-		{"fixed_income", "lig", "", "fixed_income"},
+		// Coverage row F-11: the income of a LIG is exempt for an individual (Lei 13.097/2015).
+		{"fixed_income", "lig", "", "fixed_income_exempt"},
 		{"fixed_income", "dpge", "", "fixed_income"},
 		// Coverage row F-18b: a financial CPR is exempt; a commercial note and a LAM are taxed.
 		{"fixed_income", "cpr", "", "fixed_income_exempt"},
