@@ -96,7 +96,6 @@ export function HelpFound({ library, result, active }: HelpFoundProps) {
       <HelpBest
         hit={best}
         page={library.find((p) => p.id === best.page)}
-        query={query}
         active={best === active}
       />
 

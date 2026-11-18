@@ -4,7 +4,6 @@ import { Text } from "@slotted/react/typography";
 
 import type { HelpLibraryPage } from "@/features/help/model/help-library";
 import { HelpAnchor } from "@/features/help/row/help-anchor";
-import { HelpMark } from "@/features/help/search/help-mark";
 import type { HelpHit } from "@/features/help/search/search-help";
 import { useHitPlace } from "@/features/help/search/use-hit-place";
 import styles from "@/features/help/styles/help.module.css";
@@ -19,13 +18,13 @@ interface HelpBestProps {
   hit: HelpHit;
   // The page of the result, for its sections, its steps and its video.
   page: HelpLibraryPage | undefined;
-  query: string;
   active: boolean;
 }
 
 // The first result, the one Enter opens: a card of the app, with the sections of its page so the
-// reader lands on the right one (help spec, HP9).
-export function HelpBest({ hit, page, query, active }: HelpBestProps) {
+// reader lands on the right one (help spec, HP9). The card stands out on its own: its words are
+// not marked (owner, 2026-11-19).
+export function HelpBest({ hit, page, active }: HelpBestProps) {
   const t = useT();
   const [locale] = useAppLocale();
   const place = useHitPlace();
@@ -51,9 +50,7 @@ export function HelpBest({ hit, page, query, active }: HelpBestProps) {
     >
       <HelpAnchor className={styles.bestLink} page={hit.page} hash={hit.hash}>
         <span className={styles.resultTitle}>
-          <span className={styles.bestTitle}>
-            <HelpMark text={hit.title} query={query} />
-          </span>
+          <span className={styles.bestTitle}>{hit.title}</span>
           <span className={styles.bestEnd}>
             <Text
               size="sm"
@@ -72,7 +69,7 @@ export function HelpBest({ hit, page, query, active }: HelpBestProps) {
           className={styles.resultExcerpt}
           render={(props) => <span {...props} />}
         >
-          <HelpMark text={hit.excerpt} query={query} />
+          {hit.excerpt}
         </Text>
       </HelpAnchor>
 

@@ -84,10 +84,14 @@ describe("help", () => {
     expect(
       screen.queryByRole("heading", { name: "Your first month in equori" }),
     ).not.toBeInTheDocument();
-    // The matched words are marked by the Highlight family.
-    expect(best.querySelector('[data-ui="highlight"] mark')).toHaveTextContent(
-      "statement",
-    );
+    // The matched words are marked by the Highlight family in the other results; the card of
+    // the best result stands out on its own and marks nothing (owner, 2026-11-19).
+    expect(best.querySelector("mark")).toBeNull();
+    expect(
+      screen
+        .getByRole("link", { name: /^Pay a statement/ })
+        .querySelector('[data-ui="highlight"] mark'),
+    ).toHaveTextContent("statement");
   });
 
   it("draws a glossary term as a word above its meaning, with its anchor", async () => {
