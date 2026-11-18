@@ -45,14 +45,14 @@ Source status:
 
 | ID | Product | Verdict | Evidence | Missing | Source |
 |---|---|---|---|---|---|
-| T-01 | Tesouro Selic (LFT) | supported | source `tesourodireto`; subtype `tesouro`; codes in `government_bonds_br` | none | to read |
+| T-01 | Tesouro Selic (LFT) | supported | source `tesourodireto`; subtype `tesouro`; codes in `government_bonds_br`; `TestBRProductMatrix` row T-01 with the published buying and selling prices | none | Tesouro Transparente, PrecoTaxaTesouroDireto.csv, fetched 2026-11-18 |
 | T-02 | Tesouro Prefixado (LTN) | supported | as T-01; `TestBRProductMatrix` row T-02: LTN of the Metodologia de Cálculo example, 37,002.70 of income tax, sovereign 1,000,000.00 | none | Metodologia de Cálculo of the Tesouro Nacional, LTN example, read 2026-11-18 |
 | T-03 | Tesouro Prefixado with half-yearly interest (NTNF) | partial | as T-01; a coupon is an income of type coupon | the coupon is recorded by the user: no schedule comes from the source | to read |
-| T-04 | Tesouro IPCA+ (NTNBP) | supported | as T-01 | none | to read |
+| T-04 | Tesouro IPCA+ (NTNBP) | supported | as T-01; `TestBRProductMatrix` row T-04 with the published buying and selling prices | none | Tesouro Transparente, PrecoTaxaTesouroDireto.csv, fetched 2026-11-18 |
 | T-05 | Tesouro IPCA+ with half-yearly interest (NTNB) | partial | as T-03 | as T-03 | to read |
 | T-06 | Tesouro RendA+ | partial | code `RENDA` | the monthly income phase after the conversion date has no event | to read |
 | T-07 | Tesouro Educa+ | partial | code `EDUCA` | as T-06 | to read |
-| T-08 | Tesouro IGPM+ (NTNC) | supported | code `NTNC` in `internal/marketdata/feed/tesourodireto` | none | to read |
+| T-08 | Tesouro IGPM+ (NTNC) | supported | code `NTNC` in `internal/marketdata/feed/tesourodireto`; `TestBRProductMatrix` row T-08 with the published buying and selling prices | none | Tesouro Transparente, PrecoTaxaTesouroDireto.csv, fetched 2026-11-18 |
 | T-09 | Custody fee of B3 | partial | a fee is recorded as an expense | no event ties the fee to the bond; the exemption band is not computed | to read |
 
 ## Listed securities

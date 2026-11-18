@@ -65,6 +65,43 @@ func BRProducts() []BRProduct {
 		),
 		earlyRedemption(),
 		ltn(),
+		tesouro(
+			"T-01",
+			"Tesouro Selic 2029",
+			"LFT.20290301",
+			"15745.70",
+			"18051.58",
+			"2026-01-02",
+			"180515.80",
+			"4035.29",
+			"176480.51",
+			"17.5% from 361 to 720 days, Lei 11.033/2004 art. 1, III",
+		),
+		tesouro(
+			"T-04",
+			"Tesouro IPCA+ 2035",
+			"NTNBP.20350515",
+			"2063.09",
+			"2374.22",
+			"2026-01-02",
+			"23742.20",
+			"544.48",
+			"23197.72",
+			"17.5% from 361 to 720 days, Lei 11.033/2004 art. 1, III",
+		),
+		// Read on 2025-06-30, the business day before the coupon of 2025-07-01.
+		tesouro(
+			"T-08",
+			"Tesouro IGPM+ com Juros Semestrais 2031",
+			"NTNC.20310101",
+			"7797.51",
+			"8023.00",
+			"2025-06-30",
+			"80230.00",
+			"507.35",
+			"79722.65",
+			"22.5% up to 180 days, Lei 11.033/2004 art. 1, I",
+		),
 		cdiRow("F-01", "CDB 100% do CDI, liquidez diária", map[string]any{
 			"index_id": "cdi", "percent_of_index_bp": 10000, "daily_liquidity": true,
 		}, map[string]any{
@@ -249,5 +286,34 @@ func ltn() BRProduct {
 		WantExcess:    "0.00",
 		WantUncovered: "0.00",
 		WantSovereign: "1000000.00",
+	}
+}
+
+// precoTaxa is the published price file of the Tesouro Direto, Tesouro Transparente dataset
+// "Preço e Taxa dos Títulos Públicos Federais" (PrecoTaxaTesouroDireto.csv, fetched 2026-11-18).
+const precoTaxa = "Tesouro Transparente, PrecoTaxaTesouroDireto.csv, fetched 2026-11-18"
+
+// tesouro is a Tesouro Direto row: 10 units bought on 2025-01-02 at the published buying price
+// (PU Compra Manha) and priced on valuedOn at the published selling price (PU Venda Manha). The
+// income tax is the rate of the days held on the gain, with no IOF after 30 days.
+func tesouro(id, name, code, buy, sell, valuedOn, value, tax, net, rate string) BRProduct {
+	return BRProduct{
+		ID:            id,
+		Name:          name,
+		Subtype:       "tesouro",
+		Source:        precoTaxa + "; income tax " + rate + ", read 2026-11-18",
+		Code:          code,
+		Units:         "10.00",
+		UnitPrice:     buy,
+		Price:         sell,
+		AppliedOn:     "2025-01-02",
+		ValuedOn:      valuedOn,
+		WantValue:     value,
+		WantIncomeTax: tax,
+		WantIOF:       "0.00",
+		WantNet:       net,
+		WantExcess:    "0.00",
+		WantUncovered: "0.00",
+		WantSovereign: value,
 	}
 }
