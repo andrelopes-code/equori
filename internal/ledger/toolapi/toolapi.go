@@ -39,6 +39,7 @@ func Tools(svc *app.Service) []tool.Tool {
 		recordFixedIncome(svc),
 		transferCustody(svc),
 		recordCorporateAction(svc),
+		recordBrokerageNote(svc),
 		estimateRedemption(svc),
 	}
 }

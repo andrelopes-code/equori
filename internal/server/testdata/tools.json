@@ -8531,6 +8531,108 @@
     }
   },
   {
+    "name": "record_brokerage_note",
+    "description": "Proposes one brokerage note: the several orders of one day at one Brokerage, with the costs and the withheld tax of the whole note. Each order becomes a trade of its own, in the order given; the costs are split by gross value. Use it when the user reports a note or more than one trade of the same day at the same Brokerage. Each security must exist: manage_instrument defines a new one. Do not use it for one trade whose own costs are known: record_investment does. The user confirms first.",
+    "effect": "write",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "brokerage_id": {
+          "type": "string",
+          "description": "Brokerage of the note, from list_accounts"
+        },
+        "cash_account_id": {
+          "type": "string",
+          "description": "Cash of the Brokerage or an open account of its institution; the single candidate when absent"
+        },
+        "date": {
+          "type": "string",
+          "description": "trade date of the note",
+          "format": "date"
+        },
+        "settlement_date": {
+          "type": "string",
+          "description": "date the money moves; derived from the trade date when empty",
+          "format": "date"
+        },
+        "fees": {
+          "type": "string",
+          "description": "every cost of the whole note, positive; split among the orders in proportion to their gross value"
+        },
+        "taxes": {
+          "type": "string",
+          "description": "income tax withheld on the whole note, positive; split among the sales in proportion to their gross value"
+        },
+        "taxes_category_id": {
+          "type": "string",
+          "description": "expense category of the taxes; the taxes account when absent"
+        },
+        "description": {
+          "type": "string",
+          "description": "description of each transaction; a title derived from the order when empty"
+        },
+        "orders": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "side": {
+                "type": "string",
+                "description": "buy or sell",
+                "enum": [
+                  "buy",
+                  "sell"
+                ]
+              },
+              "instrument": {
+                "type": "string",
+                "description": "code of the security, such as PETR4; an odd-lot code such as PETR4F is the same security"
+              },
+              "quantity": {
+                "type": "string",
+                "description": "positive quantity of the security"
+              },
+              "unit_price": {
+                "type": "string",
+                "description": "decimal price of one unit, without costs"
+              }
+            },
+            "required": [
+              "side",
+              "instrument",
+              "quantity",
+              "unit_price"
+            ],
+            "additionalProperties": false
+          },
+          "description": "the orders of the note, 1 to 50"
+        }
+      },
+      "required": [
+        "brokerage_id",
+        "date",
+        "orders"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "transaction_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "transaction_ids"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "record_corporate_action",
     "description": "Proposes a corporate action on one Investment: a split, a reverse split, a bonus of units or the units a fund cancels for income tax (unit_tax). The quantity changes and the cost of the holding stays; a bonus with unit_cost adds that cost and records an exempt income. A fraction of a unit leaves the position; its auction cash is recorded with record_investment kind income when it arrives. Use it when the user reports one of these events on a holding. An action is not corrected: void_transaction removes it and it is recorded again. Do not use it for a dividend or other cash income: record_investment does. The user confirms first.",
     "effect": "write",
