@@ -1,6 +1,6 @@
 Reports read your ledger: totals by **Category** for a period, the balance of an account day by day, money in and out of an account, allocation of your assets, return of an investment account and **Net worth**.
 
-The **Accrual view** counts a card purchase on its date; the **Cash view** counts it when the statement is paid.
+The **Accrual view** counts a card purchase on its date; the **Cash view** counts it when the statement is paid. A statement paid in part counts each purchase in proportion to the payment. get_category_totals takes view accrual or cash (accrual when absent); with view cash and category_id it also lists the card amounts of that category in the period, each with its date, its statement and the payment transaction, at most 366 days.
 
 Category totals are on Categories; an account's balance chart and figures on the Account screen; the month summary on Overview.
 

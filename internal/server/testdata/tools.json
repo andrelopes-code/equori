@@ -2277,7 +2277,7 @@
   },
   {
     "name": "get_category_totals",
-    "description": "Totals the income or expense categories in a period, each with its own total and the total of its subtree, in category name order; only categories with postings and their ancestors are listed. Use it for how much was spent or earned by category. Do not use it for the transactions behind a total: search_transactions with account_id lists them.",
+    "description": "Totals the income or expense categories in a period, each with its own total and the total of its subtree, in category name order; only categories with postings and their ancestors are listed. View cash counts card purchases when the statement is paid, as the Reports screen does. Use it for how much was spent or earned by category. Do not use it for the transactions behind a total: search_transactions with account_id lists them.",
     "effect": "read_only",
     "idempotent": false,
     "input_schema": {
@@ -2300,6 +2300,18 @@
           "type": "string",
           "description": "last date, inclusive; at most 366 days after from",
           "format": "date"
+        },
+        "view": {
+          "type": "string",
+          "description": "accrual counts a card purchase on its date; cash counts it when its statement is paid, in proportion to the payment; accrual when absent",
+          "enum": [
+            "accrual",
+            "cash"
+          ]
+        },
+        "category_id": {
+          "type": "string",
+          "description": "with view cash: also list the card amounts of this category, each with its statement and payment"
         },
         "limit": {
           "type": "integer",
@@ -2392,6 +2404,60 @@
             ],
             "additionalProperties": false
           }
+        },
+        "payments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "date": {
+                "type": "string",
+                "format": "date"
+              },
+              "amount": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "card_account_id": {
+                "type": "string"
+              },
+              "statement_id": {
+                "type": "string"
+              },
+              "statement_reference": {
+                "type": "string",
+                "description": "first day of the statement month",
+                "format": "date"
+              },
+              "payment_transaction_id": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "date",
+              "amount",
+              "card_account_id",
+              "statement_id",
+              "statement_reference",
+              "payment_transaction_id"
+            ],
+            "additionalProperties": false
+          },
+          "description": "with category_id: the card amounts of that category in the cash view"
         },
         "next_cursor": {
           "type": "string",

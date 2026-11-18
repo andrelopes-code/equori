@@ -126,7 +126,7 @@ var exposure = map[string]string{
 	"previewContributionPlan":          "get_portfolio",
 	"saveContributionPlan":             "save_contribution_plan",
 	"getStatementAnalytics":            "-visual",
-	"listCategoryCashPayments":         "-visual",
+	"listCategoryCashPayments":         "get_category_totals",
 	"getCardStatementAnalytics":        "-visual",
 	"requestExport":                    "-file",
 	"getExport":                        "-file",
