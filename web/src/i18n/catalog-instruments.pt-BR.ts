@@ -364,5 +364,10 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "fundReport.curve.br_tesouro_ipca": "Tesouro IPCA+",
   "fundReport.method":
     "O valor distribuído é estimado pelo rendimento informado e pelo valor patrimonial. O empate supõe crescimento constante e preço no mesmo múltiplo do rendimento, antes de imposto. Um número não é previsão; a decisão é do investidor.",
+  "fundReport.choice.line":
+    "{count} fundos informam o código {code}; escolha o deste ativo",
+  "fundReport.choice.list": "Fundos com o mesmo código",
+  "fundReport.choice.link": "Vincular",
+  "fundReport.choice.linkNamed": "Vincular {name}",
   "fundReport.link": "Abrir o conjunto de dados da fonte",
 };

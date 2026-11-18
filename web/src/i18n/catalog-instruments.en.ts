@@ -360,5 +360,10 @@ export const instrumentsEn = {
   "fundReport.curve.br_tesouro_ipca": "Tesouro IPCA+",
   "fundReport.method":
     "The distributed amount is estimated from the reported yield and the book value. The break-even assumes constant growth and a constant price multiple, before tax. A figure is not a forecast; the decision is the investor's.",
+  "fundReport.choice.line":
+    "{count} funds report the code {code}; choose the one of this asset",
+  "fundReport.choice.list": "Funds with the same code",
+  "fundReport.choice.link": "Link",
+  "fundReport.choice.linkNamed": "Link {name}",
   "fundReport.link": "Open the dataset of the source",
 } as const;

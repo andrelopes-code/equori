@@ -127,7 +127,7 @@ A section "Informe do fundo" below the price section, for an instrument whose `G
 
 ### Choice of the fund (FR15)
 
-On the instrument page, an instrument whose report list is empty and whose `candidates` is not empty shows a section "Informe do fundo" with the line "{count} fundos informam o código {code} em {source}; escolha o deste ativo" and one row per candidate: the name as label, "{segment} · {identifier}" as description, and a button "Vincular". The button writes the symbol through `updateInstrument` with the stored name, exchange, subtype, issuer and symbols of the instrument; the section then shows the report. A failure is written under the list in words. A reader (`read` role) sees the rows without the button. The symbol is also editable in "Editar cadastro", as any symbol.
+On the instrument page, an instrument whose report list is empty and whose `candidates` is not empty shows a section "Informe do fundo" with the line "{count} fundos informam o código {code}; escolha o deste ativo" and one row per candidate: the name as label, "{segment} · {identifier}" as description, the source's label at the end, and a button "Vincular". The button writes the symbol through `updateInstrument` with the stored name, exchange, subtype, issuer and symbols of the instrument; the section then shows the report. A failure, a 403 to a reader among them, is written under the list in words, as the other actions of the page. The symbol is also editable in "Editar cadastro", as any symbol.
 
 ### Contribution plan ("This month")
 

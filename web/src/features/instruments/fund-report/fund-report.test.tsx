@@ -79,7 +79,10 @@ function api(
         region: "BR",
       }),
     "GET /api/v1/fund-reports": () =>
-      json(200, { items: periods.length === 0 ? [] : [reportOf(periods)] }),
+      json(200, {
+        items: periods.length === 0 ? [] : [reportOf(periods)],
+        candidates: [],
+      }),
     "GET /api/v1/curves": () => json(200, { items: curves }),
     "GET /api/v1/prices": () => json(200, { interval: "day", items: [price] }),
   });

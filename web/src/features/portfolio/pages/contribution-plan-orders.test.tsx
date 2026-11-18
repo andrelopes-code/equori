@@ -404,6 +404,7 @@ async function openFunds(stored = true) {
             stored && new URL(req.url).searchParams.get("code") === "HGLG11"
               ? [fundReport]
               : [],
+          candidates: [],
         }),
       "GET /api/v1/curves": () => json(200, { items: [] }),
       "GET /api/v1/prices": () => json(200, { interval: "day", items: [] }),

@@ -17,6 +17,7 @@ import { useApi } from "@/api/api-context";
 import { instrumentQuery, termsQuery } from "@/features/instruments/api";
 import { InstrumentPagePlaceholder } from "@/features/instruments/pages/instrument-page-placeholder";
 import { FundReport } from "@/features/instruments/fund-report/fund-report";
+import { FundReportChoice } from "@/features/instruments/fund-report/fund-report-choice";
 import { InstrumentPositions } from "@/features/instruments/positions/instrument-positions";
 import {
   subtypeLabel,
@@ -154,6 +155,8 @@ export function InstrumentPage() {
           <InstrumentPositions code={i.code} quote={quote} />
 
           <FundReport code={i.code} quote={quote} />
+
+          <FundReportChoice instrument={i} />
 
           {fixedIncome && terms.isError && (
             <QueryError

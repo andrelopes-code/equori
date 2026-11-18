@@ -123,15 +123,20 @@ export function instrumentQuotesQuery(api: Client<paths>, base: string) {
 }
 
 // The monthly reports of a listed fund, newest period first; an empty list when none is stored.
-export function fundReportsQuery(api: Client<paths>, code: string) {
+// The report sets of an instrument and, while it has none from a source, the funds that share its
+// code (FR15).
+export function fundReportListQuery(api: Client<paths>, code: string) {
   return queryOptions({
     queryKey: [...instrumentKeys.all, "fund-reports", code] as const,
     queryFn: async () =>
-      (
-        await unwrap(
-          await api.GET("/fund-reports", { params: { query: { code } } }),
-        )
-      ).items,
+      unwrap(await api.GET("/fund-reports", { params: { query: { code } } })),
+  });
+}
+
+export function fundReportsQuery(api: Client<paths>, code: string) {
+  return queryOptions({
+    ...fundReportListQuery(api, code),
+    select: (list) => list.items,
   });
 }
 
