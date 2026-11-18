@@ -129,6 +129,24 @@ import f126 from "./record-transaction/entry-save.en.dark.png?url";
 import f127 from "./record-transaction/entry-save.pt.dark.png?url";
 import f128 from "./record-transaction/entry-sheet.en.dark.png?url";
 import f129 from "./record-transaction/entry-sheet.pt.dark.png?url";
+import f130 from "./text-capture/4b45764d62d3.png?url";
+import f131 from "./text-capture/4ec121301cab.png?url";
+import f132 from "./text-capture/55d591eb0509.png?url";
+import f133 from "./text-capture/684807b29521.png?url";
+import f134 from "./text-capture/728c21cca70e.png?url";
+import f135 from "./text-capture/77562a58b855.png?url";
+import f136 from "./text-capture/bfcb94ace8c9.png?url";
+import f137 from "./text-capture/c6b85643cf72.png?url";
+import f138 from "./text-capture/capture-category.en.dark.png?url";
+import f139 from "./text-capture/capture-category.pt.dark.png?url";
+import f140 from "./text-capture/capture-drafts.en.dark.png?url";
+import f141 from "./text-capture/capture-drafts.pt.dark.png?url";
+import f142 from "./text-capture/capture-record.en.dark.png?url";
+import f143 from "./text-capture/capture-record.pt.dark.png?url";
+import f144 from "./text-capture/capture-text.en.dark.png?url";
+import f145 from "./text-capture/capture-text.pt.dark.png?url";
+import f146 from "./text-capture/fdcf87fe621c.png?url";
+import f147 from "./text-capture/ff19392a8b04.png?url";
 
 export const helpMediaFiles: Partial<Record<string, string>> = {
   "category-rule/11a54f084cad.png": f0,
@@ -261,4 +279,22 @@ export const helpMediaFiles: Partial<Record<string, string>> = {
   "entry-save.pt.dark.png": f127,
   "entry-sheet.en.dark.png": f128,
   "entry-sheet.pt.dark.png": f129,
+  "text-capture/4b45764d62d3.png": f130,
+  "text-capture/4ec121301cab.png": f131,
+  "text-capture/55d591eb0509.png": f132,
+  "text-capture/684807b29521.png": f133,
+  "text-capture/728c21cca70e.png": f134,
+  "text-capture/77562a58b855.png": f135,
+  "text-capture/bfcb94ace8c9.png": f136,
+  "text-capture/c6b85643cf72.png": f137,
+  "capture-category.en.dark.png": f138,
+  "capture-category.pt.dark.png": f139,
+  "capture-drafts.en.dark.png": f140,
+  "capture-drafts.pt.dark.png": f141,
+  "capture-record.en.dark.png": f142,
+  "capture-record.pt.dark.png": f143,
+  "capture-text.en.dark.png": f144,
+  "capture-text.pt.dark.png": f145,
+  "text-capture/fdcf87fe621c.png": f146,
+  "text-capture/ff19392a8b04.png": f147,
 };

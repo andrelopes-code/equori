@@ -146,6 +146,8 @@ describe("the words of a reader", () => {
     ["en", "record expense", "record-transaction"],
     ["pt", "compra parcelada", "installments"],
     ["en", "installments", "installments"],
+    ["pt", "registrar por texto", "text-capture"],
+    ["en", "write as text", "text-capture"],
   ] as const)("in %s, %s opens %s", async (language, query, page) => {
     const pages = await loadHelpLibrary(language, "US");
 

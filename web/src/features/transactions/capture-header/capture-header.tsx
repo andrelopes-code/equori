@@ -12,6 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 
 import { useApi } from "@/api/api-context";
+import { HelpLink } from "@/features/help";
 import { meQuery } from "@/features/session";
 import { readQueue } from "@/features/transactions/capture-model/capture-queue";
 import { formatDate } from "@/i18n/format";
@@ -53,6 +54,7 @@ export function CaptureHeader({ queuedOn }: CaptureHeaderProps) {
           </PageHeaderTitle>
 
           <PageHeaderActions>
+            <HelpLink page="text-capture" />
             <ButtonLink
               variant="outline"
               tone="secondary"

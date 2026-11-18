@@ -120,6 +120,17 @@ beforeEach(() => {
 });
 
 describe("CapturePage", () => {
+  // Help catalog spec, HC3: the screen links the page that describes it.
+  it("links its help page from the header", async () => {
+    await renderApp("/transactions/capture", { fetch: api([], []) });
+
+    const link = await screen.findByRole("link", {
+      name: catalogEn["help.screen"],
+    });
+
+    expect(link.getAttribute("href")).toBe("/help/text-capture");
+  });
+
   it("records every draft in one batch once each reading is settled", async () => {
     const previews: { text: string }[] = [];
     const sent: unknown[] = [];

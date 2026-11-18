@@ -212,3 +212,18 @@ The pointer of a video rested on the centre of the mark. A mark that surrounds t
 ### Reorganization: the card header
 
 `CardHeader` held 167 lines (limit 150) before the help link. Its menu moved to `card-header/card-menu.tsx` without a change of condition, text or order. Card tests: 76 before, 78 after (the help link and a new test of the menu). A defect injected in `card-menu.tsx` (closed inverted) failed no test before the new test of the menu; it fails that test now. Line counts: `card-header.tsx` 145, `card-menu.tsx` 112.
+
+### Slice 3: text-capture
+
+| Claim | Source |
+|---|---|
+| Each line becomes a draft; nothing is recorded until the confirmation | `capture.subheading`, `capture.empty`; screen, demo book |
+| A line without an account uses the default account | `capture.defaultAccountHint` |
+| A line holds amount, date (yesterday, friday, 12/10), account or card (final 1234), 3x, #tag | `capture.syntax`; `internal/capture/domain/lexicon_pt.go:13`, `lexicon_en.go:9,16` |
+| Without a date, today counts | `internal/capture/domain/read_line.go:21` |
+| The draft names the source of its category: by rule, by payee history, suggested by AI | `capture-drafts/capture-line-item.tsx:86-97`; `capture.source.*` |
+| Edit replaces the reading until the text of the line changes | `capture.editDescription` |
+| Record carries the count; Ctrl with Enter records | `capture.record`; `capture.composerHint` and the keys under the composer, figure `capture-text` |
+| After recording, a notice gives the count and View opens the list | `capture-submit/use-capture-submit.tsx:67-81` |
+
+The step "Edit" has no figure of its own: a mark around one draft or its button crossed the text of the neighbouring draft (the rows stand 6 px apart, the mark keeps 12 px). The figure of the drafts marks the list and the pointer of the video rests on Edit.

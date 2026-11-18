@@ -230,6 +230,7 @@ describe("helpNeighbours", () => {
         "check-balance",
         "category-rule",
         "record-transaction",
+        "text-capture",
       ]);
       for (const id of figures) {
         const figure = helpFigure(id, language);

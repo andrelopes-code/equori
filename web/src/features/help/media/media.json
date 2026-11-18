@@ -287,6 +287,54 @@
       "en": {
         "spot": [65.42, 77.99, 15, 8.67]
       }
+    },
+    "capture-default": {
+      "pt": {
+        "spot": [25.81, 22.78, 48.29, 14.29]
+      },
+      "en": {
+        "spot": [25.81, 22.78, 48.29, 14.29]
+      }
+    },
+    "capture-text": {
+      "pt": {
+        "spot": [25.81, 22.78, 48.29, 34.77]
+      },
+      "en": {
+        "spot": [25.81, 22.78, 48.29, 34.77]
+      }
+    },
+    "capture-drafts": {
+      "pt": {
+        "spot": [14.41, 22.78, 71.19, 31.37]
+      },
+      "en": {
+        "spot": [14.41, 22.78, 71.19, 31.37]
+      }
+    },
+    "capture-edit": {
+      "pt": {
+        "spot": [14.41, 39.64, 71.19, 14.51]
+      },
+      "en": {
+        "spot": [14.41, 39.64, 71.19, 14.51]
+      }
+    },
+    "capture-category": {
+      "pt": {
+        "spot": [19.58, 43.97, 60.84, 12.14]
+      },
+      "en": {
+        "spot": [19.58, 43.97, 60.84, 12.14]
+      }
+    },
+    "capture-record": {
+      "pt": {
+        "spot": [57.94, 89.25, 11.46, 8.67]
+      },
+      "en": {
+        "spot": [59.3, 89.25, 10.1, 8.67]
+      }
     }
   },
   "videos": {
@@ -1453,6 +1501,190 @@
         ],
         "accent": "oklch(0.537962 0.124573 215.224)"
       }
+    },
+    "text-capture": {
+      "pt": {
+        "parts": [
+          {
+            "start": 0,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 1,
+            "mark": {
+              "x": 483.75,
+              "y": 146.6875,
+              "width": 463.59375,
+              "height": 208.609375
+            },
+            "point": {
+              "x": 495.75,
+              "y": 234.421875,
+              "width": 439.59375,
+              "height": 108.875
+            }
+          },
+          {
+            "start": 3.2,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 2,
+            "mark": {
+              "x": 944.34375,
+              "y": 146.6875,
+              "width": 683.40625,
+              "height": 188.203125
+            },
+            "point": {
+              "x": 1553.75,
+              "y": 267.046875,
+              "width": 51,
+              "height": 26
+            }
+          },
+          {
+            "start": 6.4,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 3,
+            "mark": {
+              "x": 668,
+              "y": 601.796875,
+              "width": 584,
+              "height": 72.84375
+            }
+          },
+          {
+            "start": 9.6,
+            "travel": 0.9,
+            "hold": 0.5,
+            "click": 0.6,
+            "number": 0,
+            "mark": {
+              "x": 1165,
+              "y": 971.96875,
+              "width": 87,
+              "height": 52
+            }
+          },
+          {
+            "start": 11.6,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 4,
+            "mark": {
+              "x": 1507.25,
+              "y": 1135.5,
+              "width": 110,
+              "height": 52
+            }
+          }
+        ],
+        "duration": 15.6,
+        "fade": 0.3,
+        "stills": [
+          "text-capture/728c21cca70e.png",
+          "text-capture/77562a58b855.png",
+          "text-capture/bfcb94ace8c9.png",
+          "text-capture/4ec121301cab.png",
+          "text-capture/684807b29521.png"
+        ],
+        "accent": "oklch(0.537962 0.124573 215.224)"
+      },
+      "en": {
+        "parts": [
+          {
+            "start": 0,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 1,
+            "mark": {
+              "x": 483.75,
+              "y": 146.6875,
+              "width": 463.59375,
+              "height": 208.609375
+            },
+            "point": {
+              "x": 495.75,
+              "y": 234.421875,
+              "width": 439.59375,
+              "height": 108.875
+            }
+          },
+          {
+            "start": 3.2,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 2,
+            "mark": {
+              "x": 944.34375,
+              "y": 146.6875,
+              "width": 683.40625,
+              "height": 188.203125
+            },
+            "point": {
+              "x": 1565.75,
+              "y": 267.046875,
+              "width": 39,
+              "height": 26
+            }
+          },
+          {
+            "start": 6.4,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 3,
+            "mark": {
+              "x": 668,
+              "y": 601.796875,
+              "width": 584,
+              "height": 72.84375
+            }
+          },
+          {
+            "start": 9.6,
+            "travel": 0.9,
+            "hold": 0.5,
+            "click": 0.6,
+            "number": 0,
+            "mark": {
+              "x": 1173,
+              "y": 971.96875,
+              "width": 79,
+              "height": 52
+            }
+          },
+          {
+            "start": 11.6,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 4,
+            "mark": {
+              "x": 1520.25,
+              "y": 1135.5,
+              "width": 97,
+              "height": 52
+            }
+          }
+        ],
+        "duration": 15.6,
+        "fade": 0.3,
+        "stills": [
+          "text-capture/ff19392a8b04.png",
+          "text-capture/55d591eb0509.png",
+          "text-capture/c6b85643cf72.png",
+          "text-capture/4b45764d62d3.png",
+          "text-capture/fdcf87fe621c.png"
+        ],
+        "accent": "oklch(0.537962 0.124573 215.224)"
+      }
     }
   },
   "files": {
@@ -1585,7 +1817,25 @@
     "record-transaction/entry-save.en.dark.png": "558b210969367dd0ddd85a0cb52b26c8d9503877459b91b6143be90b439c8723",
     "record-transaction/entry-save.pt.dark.png": "d8de24801d0377cee4ccf5723247e87bc975d9e5eed250324dd6fc65cfc6b3ea",
     "record-transaction/entry-sheet.en.dark.png": "81895c3c9c29baa1aef145c9685b2f8e1276580c9d41b2f519d42e7863c4058c",
-    "record-transaction/entry-sheet.pt.dark.png": "c4b767c488941b6da28b9779b500ccb4cb7eb5b6a7005213ebe28c5488af1d9d"
+    "record-transaction/entry-sheet.pt.dark.png": "c4b767c488941b6da28b9779b500ccb4cb7eb5b6a7005213ebe28c5488af1d9d",
+    "text-capture/4b45764d62d3.png": "4b45764d62d3319fcfdca4de603d4769cc82e8adfc697bd08ad039640e9bf11d",
+    "text-capture/4ec121301cab.png": "4ec121301cabfea13177799fdc98e7af2eb86edeb04f25bdb35ad8f1a9d62a6d",
+    "text-capture/55d591eb0509.png": "55d591eb0509b28e442df3a6d75cc1baf13f2acbb52289912a8385b1377f31fa",
+    "text-capture/684807b29521.png": "684807b2952160057aeadfa8696f8502f1a8b1e8a24c1a4876d2b9fd28c63f59",
+    "text-capture/728c21cca70e.png": "728c21cca70e5036f81b7f9c5a3f30303eb8c5a9ce8eb57d5693e4342839858f",
+    "text-capture/77562a58b855.png": "77562a58b855e3c44b95e52d999f4686ab62edc96d270220218cca18da5eaeb4",
+    "text-capture/bfcb94ace8c9.png": "bfcb94ace8c95477102c9e809eb57462bcd9ff17e63e55e95f3392e7d1bbdac3",
+    "text-capture/c6b85643cf72.png": "c6b85643cf7227520cb19bac85c8fada4a47f96ecfaed11a2a4f697b9bb028f5",
+    "text-capture/capture-category.en.dark.png": "91f8955e25b2d964cb67cc480b3f1eaa0fb1bb6e4af2bdba968971733821c60a",
+    "text-capture/capture-category.pt.dark.png": "a803ce2ea16057ed16f3399610b021d1ba1d121e58d2a24b269965c450feda32",
+    "text-capture/capture-drafts.en.dark.png": "e73c2b7772312e8e95a819b1672b18181406589d2ccc6483c3c31b417de4374f",
+    "text-capture/capture-drafts.pt.dark.png": "901415acb192a68a7bbf43b15da4fcfa3e4262bfb1100d24bdc712a0112fec08",
+    "text-capture/capture-record.en.dark.png": "c718fbe4fe6f3c53940d62f4c4ad225ea2859446bff6a817a6b2d8d6293b9d8f",
+    "text-capture/capture-record.pt.dark.png": "0f1bb981dfe564891f131bdc0c3d5f8dbadc0f8ab72e0a3b214aa74d6bdb397f",
+    "text-capture/capture-text.en.dark.png": "ae4fc20867c4722ca71ed22f2269d0140fdcaadd9c006365a4a88ac7c2e7d87c",
+    "text-capture/capture-text.pt.dark.png": "1a7266f8ff060dad112f894cd9217b34c4da19015438004b50d1e5bbba832041",
+    "text-capture/fdcf87fe621c.png": "fdcf87fe621cfffd6b7f82728dda2518ff29404fc10ec8c2348cb93e9fa2a916",
+    "text-capture/ff19392a8b04.png": "ff19392a8b04eb058a3368f45ad7493e1209acd93ecbcff001b5a64ff433dd69"
   },
   "inputs": {
     "check-balance": "568cd260d08793d5664a754aa3628cee7f61880f6ac8d29dab2683c67abb3d9f",
@@ -1594,6 +1844,7 @@
     "import-statement": "2a81f9c31d641b756f3c172eb3586cd57a2f01b8b75272479dd4bd7df3b36805",
     "pay-statement": "a96c67b556568611b08a82b371f95e92f7c32ebd24a27b44121eaf99d9d424a7",
     "record-transaction": "d0b1f32142a0b7462f253a55938faa909da649c025aa2e0a8c11b745e513840a",
-    "installments": "4773bd8d129e32f2f83abd4ede7a3419c8862cf0a815342ad02f882be332e5ca"
+    "installments": "4773bd8d129e32f2f83abd4ede7a3419c8862cf0a815342ad02f882be332e5ca",
+    "text-capture": "323cd5d12feaf0a789392431ea644259b42fa27056f8c030b4478dd70b497944"
   }
 }
