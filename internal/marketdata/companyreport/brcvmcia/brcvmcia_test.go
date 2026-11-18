@@ -182,6 +182,60 @@ func TestFetchHigherCodeOfTwoLines(t *testing.T) {
 	}
 }
 
+// Real DFP of 2021: a fiscal year from 2020-03-31 to 2021-03-31 spans twelve months, a short
+// first fiscal year its whole months, and a span longer than twelve months is not stored.
+func TestFetchMonthsOfAFiscalYear(t *testing.T) {
+	t.Parallel()
+
+	for name, tc := range map[string]struct {
+		ini, fim string
+		months   int
+	}{
+		"starts on the last day of a month": {"2024-03-31", "2025-03-31", 12},
+		"short first fiscal year":           {"2025-02-26", "2025-12-31", 10},
+		"one month":                         {"2025-12-01", "2025-12-31", 1},
+		"thirteen months":                   {"2024-01-01", "2025-01-31", 0},
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			year := filing{weg, tc.fim, "1", mil, last, tc.ini, tc.fim}
+			srv := newServer(t, map[string][]byte{
+				"/DFP/DADOS/dfp_cia_aberta_2025.zip": zipOf(
+					t,
+					members("dfp", "2025", map[string][]string{
+						"": {general(weg, tc.fim, "1", "2026-02-27")},
+						"DRE_con": {
+							year.flow("3.11", "Lucro/Prejuízo Consolidado do Período", "10"),
+						},
+					}),
+				),
+			})
+
+			got, err := brcvmcia.New(srv.client(), srv.URL).Fetch(t.Context(), today())
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			var months []int
+			for _, f := range got.Files {
+				for _, r := range f.Reports {
+					months = append(months, r.Months)
+				}
+			}
+
+			want := []int{tc.months}
+			if tc.months == 0 {
+				want = nil
+			}
+
+			if !slices.Equal(months, want) {
+				t.Fatalf("months = %v, want %v", months, want)
+			}
+		})
+	}
+}
+
 func today() time.Time { return time.Date(2026, time.November, 18, 0, 0, 0, 0, time.UTC) }
 
 func wantWindow() []string {

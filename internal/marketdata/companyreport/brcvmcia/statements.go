@@ -13,6 +13,9 @@ import (
 	"github.com/andrelopes-code/equori/internal/marketdata/companyreport"
 )
 
+// maxMonths is the longest period a report covers: one fiscal year (CR1).
+const maxMonths = 12
+
 // account is a figure of a report that a line of a statement gives (CR5).
 type account int
 
@@ -229,10 +232,16 @@ func build(
 			continue
 		}
 
+		// A span outside one fiscal year (13 months in the DFP of 2021) is no period of CR1.
+		months := st.months()
+		if months < 1 || months > maxMonths {
+			continue
+		}
+
 		rep := companyreport.Report{
 			Identifier:     k.identifier,
 			Period:         k.ref,
-			Months:         st.months(),
+			Months:         months,
 			Name:           f.name,
 			Consolidated:   isConsolidated,
 			Plan:           st.plan(),
@@ -255,9 +264,17 @@ func build(
 	return out
 }
 
-// months counts the months from the start of the income statement to its end.
+// months counts the whole months from the start of the income statement to the day after its
+// end: 2020-03-31 to 2021-03-31 is 12, 2025-02-26 to 2025-12-31 is 10.
 func (st *statement) months() int {
-	return (st.fim.Year()*12 + int(st.fim.Month())) - (st.ini.Year()*12 + int(st.ini.Month())) + 1
+	end := st.fim.AddDate(0, 0, 1)
+	months := (end.Year()*12 + int(end.Month())) - (st.ini.Year()*12 + int(st.ini.Month()))
+
+	if end.Day() < st.ini.Day() {
+		months--
+	}
+
+	return months
 }
 
 func (st *statement) plan() string {
