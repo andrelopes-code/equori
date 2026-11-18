@@ -14,7 +14,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/apitest"
 )
 
-// TestBRProductMatrix runs each supported Brazilian product twice, through the HTTP operations
+// S610–S622: TestBRProductMatrix runs each supported Brazilian product twice, through the HTTP operations
 // and through the tools, and checks the value, the tax estimate and the issuer exposure against
 // the published example of the row (assistant parity design, M1 to M5).
 func TestBRProductMatrix(t *testing.T) {

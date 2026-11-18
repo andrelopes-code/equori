@@ -73,6 +73,7 @@ Capture reads its separators and date order from `locale.ConventionsOf` through 
 | `web/src/features/calculators/financing-region.ts` | `systemNames`: a `switch` on the region that returns the names of the fixed-installment and fixed-amortization systems (Price and SAC in Brazil); a region without a case names them by what each keeps fixed | `web/src/features/calculators/financing-calculator.test.tsx` |
 | `web/src/features/calculators/debt-region.ts` | `debtRateQuote`: a `switch` on the region that returns the period a debt's rate is quoted in and whether an annual rate is nominal (an APR in the United States); a region without a case quotes a monthly rate | `web/src/features/calculators/debt-region.test.ts` |
 | `web/src/features/help/content/regions/<REGION>/<language>/<page>.md` | Help passages: the passage of a region that `loadHelpPage` adds after the neutral page of the same language (`content/<language>/<page>.md`); a region without a file reads the neutral page, which names no regional value | `web/src/features/help/help-pages.test.ts`, `web/src/features/help/help-page.test.tsx` |
+| `internal/apitest/br_matrix.go` | `BRProducts`: the product matrix of a region, one row per supported product with the published example of its source, run by `TestBRProductMatrix` through the HTTP API and the tools; a region adds its own table and test, and a region without one has no matrix (assistant parity design, R4). |
 
 ## Checklist
 
