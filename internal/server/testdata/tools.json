@@ -3651,7 +3651,7 @@
   },
   {
     "name": "get_portfolio",
-    "description": "Returns investment views at a date: positions with quantity, cost and market value; allocation by instrument type, currency or institution; net worth; or the annual return of an account over a period, with its time-weighted return and the percent of the default index of the region (the region's daily reference rate) that grows as much. With view contribution it returns the saved contribution plan, a target split of the portfolio by class, valued today, and with amount the split of a contribution over its classes. Also lists the income types and instrument subtypes the book's tax jurisdiction accepts. Use it for investments and net worth. Do not use it for cash balances only (get_balances) nor for a tax year (get_tax_year).",
+    "description": "Returns investment views at a date: positions with quantity, cost and market value; allocation by instrument type, currency or institution; net worth; or the annual return of an account over a period, with its time-weighted return and the percent of the default index of the region (the region's daily reference rate) that grows as much. With view contribution it returns the saved contribution plan, a target split of the portfolio by class, valued today, and with amount the split of a contribution over its classes. Also lists the income types and instrument subtypes the book's tax jurisdiction accepts. At today a view with current holds values read during the trading session, not closes; with open true they are partial and change until the close. Use it for investments and net worth. Do not use it for cash balances only (get_balances) nor for a tax year (get_tax_year).",
     "effect": "read_only",
     "idempotent": true,
     "input_schema": {
@@ -4763,6 +4763,30 @@
             "type": "string"
           },
           "description": "for issuer_exposure: instruments without a price"
+        },
+        "current": {
+          "type": "object",
+          "properties": {
+            "count": {
+              "type": "integer",
+              "description": "prices that are current quotes"
+            },
+            "open": {
+              "type": "boolean",
+              "description": "a trading session still runs: the values are partial"
+            },
+            "oldest_at": {
+              "type": "string",
+              "description": "the earliest instant among them, RFC 3339"
+            }
+          },
+          "description": "for positions, allocation and net_worth at today: set when market values took current quotes read during the trading session instead of closes",
+          "required": [
+            "count",
+            "open",
+            "oldest_at"
+          ],
+          "additionalProperties": false
         }
       },
       "additionalProperties": false

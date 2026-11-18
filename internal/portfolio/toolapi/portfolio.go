@@ -142,6 +142,8 @@ type getPortfolioOut struct {
 	Guarantee     guaranteeView        `json:"guarantee,omitzero"      jsonschema:"for issuer_exposure: deposit guarantee; absent when none"`
 	PeriodNote    bool                 `json:"period_note,omitzero"    jsonschema:"for issuer_exposure: covered values exceed the period limit"`
 	MissingPrices []string             `json:"missing_prices,omitzero" jsonschema:"for issuer_exposure: instruments without a price"`
+
+	Current currentView `json:"current,omitzero" jsonschema:"for positions, allocation and net_worth at today: set when market values took current quotes read during the trading session instead of closes"`
 }
 
 func getPortfolio(
@@ -154,6 +156,7 @@ func getPortfolio(
 		Description: "Returns investment views at a date: positions with quantity, cost and market value; allocation by instrument type, currency or institution; net worth; or the annual return of an account over a period, with its time-weighted return and the percent of the default index of the region (the region's daily reference rate) that grows as much. " +
 			"With view contribution it returns the saved contribution plan, a target split of the portfolio by class, valued today, and with amount the split of a contribution over its classes. " +
 			"Also lists the income types and instrument subtypes the book's tax jurisdiction accepts. " +
+			"At today a view with current holds values read during the trading session, not closes; with open true they are partial and change until the close. " +
 			"Use it for investments and net worth. " +
 			"Do not use it for cash balances only (get_balances) nor for a tax year (get_tax_year).",
 		Effect:     tool.ReadOnly,
@@ -227,6 +230,7 @@ func portfolioView(
 			Assets:      tool.MoneyOf(r.Assets),
 			Liabilities: tool.MoneyOf(r.Liabilities),
 			Net:         tool.MoneyOf(r.Net),
+			Current:     currentOf(r.Current),
 		}, nil
 	case "return":
 		return returnView(ctx, svc, booksID, in)
@@ -266,6 +270,8 @@ func allocationView(
 			ShareBP: g.ShareBP,
 		})
 	}
+
+	out.Current = currentOf(r.Current)
 
 	return out, nil
 }
@@ -344,6 +350,8 @@ func positions(
 
 		out.Positions = append(out.Positions, v)
 	}
+
+	out.Current = currentOf(app.PositionsCurrent(ps))
 
 	return out, nil
 }

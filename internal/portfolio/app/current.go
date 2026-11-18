@@ -37,6 +37,16 @@ func (s *Service) value(
 	return s.md.Convert(ctx, q, to, date)
 }
 
+// PositionsCurrent summarizes the current quotes the positions took; nil when none took one.
+func PositionsCurrent(ps []Position) *CurrentQuotes {
+	var prices []Price
+	for _, p := range ps {
+		prices = append(prices, p.Prices...)
+	}
+
+	return currentQuotes(distinctPrices(prices))
+}
+
 // currentQuotes summarizes the prices of a total; nil when none is a current quote.
 func currentQuotes(prices []Price) *CurrentQuotes {
 	var out *CurrentQuotes

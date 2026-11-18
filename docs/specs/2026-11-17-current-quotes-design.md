@@ -2,7 +2,7 @@
 
 - Issue: #54
 - Date: 2026-11-17
-- Status: approved. The owner approved the approach on 2026-11-17 ("ok") under four conditions (section 2) and delegated the approval of this text ("você avalia a spec, e procede").
+- Status: approved. The owner approved the approach on 2026-11-17 ("ok") under four conditions (section 2) and delegated the approval of this text ("você avalia a spec, e procede"). Delivered by plans 1 to 4 (2026-11-18).
 - Amendment: A248. Scenarios: S553 to S566.
 - Amends: A222 "Non-goals" (intraday quotes), MQ9, MQ17, MQ18, ADR 025 F5; P8 amendment A62 (what a tick stores).
 - Keeps: N17 (the application contacts only the sources an admin enabled), A60 (one chosen price per date), A61 (conversion path), MQ22 (consent for an unofficial source), MQ24 (`stale`).
@@ -90,7 +90,7 @@ Non-goals:
 | CQ18 | Before valuing, a read asks for the current quotes of all its pairs in one call (CQ14), including the currency legs of A61. |
 | CQ19 | A caller opts in by calling the method of CQ16. No context value and no date comparison inside `Convert` selects it. `Convert(ctx, q, to, date)` keeps its behavior for every caller. |
 | CQ20 | The method of CQ16 is called only by a read whose valuation date is today of the book (`platform/clock`). A read at an earlier date, a point of a series before today, a write, the rebuild, the accrual, an import and an export call `Convert`. |
-| CQ21 | The reads of CQ20, delivered in the order of section 8: `listPositions`, `getAllocation`, `getNetWorth`, `getIssuerExposure`, `getContributionPlan`, `previewContributionPlan`, the last point of `getNetWorthDays` and of `getReturn` when it is today; then every other operation that values holdings at today, listed by the plan from `docs/contributing/map.md`. An operation not yet delivered shows closes, as before. |
+| CQ21 | The reads of CQ20, delivered in the order of section 8: `listPositions`, `getAllocation`, `getNetWorth`, `getIssuerExposure`, `getContributionPlan`, `previewContributionPlan`, the last point of `getNetWorthDays` and of `getReturn` when it is today; then `getAccountBalance` with `value_in` and the contribution operations. `getReturn`, `getIssuerExposure` and every value the reports read from the portfolio take current quotes at today through the same two functions. |
 | CQ22 | `quote_warnings` (MQ26) and `stale` (MQ24) read closes only. A current quote never clears a warning. |
 
 ### 3.4 Contract
@@ -98,9 +98,9 @@ Non-goals:
 | ID | Rule |
 |---|---|
 | CQ23 | The schema `Price` gains `at` (`date-time`) and `open` (`boolean`), both absent for a close. `date` and `source` are filled for both kinds. |
-| CQ24 | A response that holds a total valued at today (`getAllocation`, `getNetWorth`, the contribution operations, `getReturn`) gains `current`: `count` (legs that took a current quote), `open` (true when any of them has `open`) and `oldest_at`. It is absent when `count` is 0. |
+| CQ24 | A response that holds a total valued at today (`getAllocation`, `getNetWorth`, the contribution operations) gains `current`: `count` (legs that took a current quote), `open` (true when any of them has `open`) and `oldest_at`. It is absent when `count` is 0. |
 | CQ25 | `listMarketDataFeeds` (F5) gains `current` (the source implements `feed.Spot`), `current_at` (instant of its last successful request, or null) and `current_error` (message of its last failure, or null), kept in memory like `last_run`. |
-| CQ26 | The assistant and MCP tools that expose the operations of CQ21 return the fields of CQ23 and CQ24. Their descriptions state that a value with `at` is not a close. |
+| CQ26 | The tool `get_portfolio` returns `current` (CQ24) for its views `positions`, `allocation` and `net_worth` at today. Its description states that such values are read during the session and are partial while `open` is true. |
 
 ## 4. Screens
 
@@ -141,7 +141,7 @@ No operation is added. `listPositions`, `getAllocation`, `getNetWorth`, `getIssu
 | D2 | One goose migration (CQ4). It changes no schema; it deletes rows of `marketdata_price` that a tick refills and inserts or updates rows of `marketdata_history`. |
 | D3 | No recorded fact changes. CQ4 removes prices of a source that the same source refills. Facts recorded with a value of G1 are not rewritten (non-goal). |
 | D4 | A current quote decides nothing and writes nothing. |
-| D5 | The diagnostic file gains, per source, `current` and whether `current_error` is set. No amount, name or message text. |
+| D5 | Does not apply: the diagnostic file lists no state of a market data source, and this feature adds none. |
 | S1 | No operation is added, so no new entry in `tool_exposure_test.go`. The tool catalog changes by CQ26 (`TestToolCatalog`). No new `Problem.code`. |
 | S2 | Yes, CQ31. |
 | S3 | The guide articles of the portfolio screen and of market data settings state what "parcial" means and that the history holds closes only. |
@@ -192,6 +192,8 @@ Tests use a fixed clock and sources served from fixtures. No test reaches a prov
 - `current_error` of `yahoo_chart` set on 7 consecutive days in the owner's instance: add `feed.Spot` to a second source per class (the B3 site for `XBVMF`, a second exchange for crypto).
 - A member asks for the change of the day: it needs the previous close per leg, which CQ16 already reads.
 - Yahoo answers 429 under CQ12 and CQ13 in normal use: raise the freshness of an open quote.
+- `current` on `getReturn` and `getIssuerExposure`: when a screen shows one of them beside a value marked partial.
+- The hour label on the account positions tab and on the instrument page: with the next change to either screen.
 
 ## 11. Calls of the planning model
 

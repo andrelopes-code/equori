@@ -530,3 +530,50 @@ func foreignBaseFixture(t *testing.T, answer func(w http.ResponseWriter)) fixtur
 
 	return f
 }
+
+// CQ26: the assistant tool states that the values of today took current quotes.
+func TestToolStatesCurrentQuotes(t *testing.T) {
+	t.Parallel()
+
+	f, _ := currentFixture(t, answerOK)
+
+	type current struct {
+		Count    int    `json:"count"`
+		Open     bool   `json:"open"`
+		OldestAt string `json:"oldest_at"`
+	}
+
+	want := current{Count: 1, Open: true, OldestAt: "2026-11-03T14:58:00Z"}
+
+	for _, args := range []map[string]any{
+		{"view": "positions"},
+		{"view": "net_worth"},
+		{"view": "allocation", "by": "currency"},
+	} {
+		var out struct {
+			Current *current `json:"current"`
+		}
+
+		toolOutput(t, f.h, "get_portfolio", args, &out)
+
+		if out.Current == nil || *out.Current != want {
+			t.Fatalf("%v: current = %+v, want %+v", args["view"], out.Current, want)
+		}
+	}
+
+	var earlier struct {
+		Current *current `json:"current"`
+	}
+
+	toolOutput(
+		t,
+		f.h,
+		"get_portfolio",
+		map[string]any{"view": "net_worth", "date": "2026-11-02"},
+		&earlier,
+	)
+
+	if earlier.Current != nil {
+		t.Fatalf("net worth of an earlier date: current = %+v, want none", earlier.Current)
+	}
+}
