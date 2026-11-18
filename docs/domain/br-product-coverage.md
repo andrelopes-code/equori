@@ -23,8 +23,8 @@ Source status:
 | F-04 | CDI plus spread (debenture, CRI, CRA, CDB) | supported | `TestRecordFixedIncomeCDIPlusSpread`; `TestBRProductMatrix` row F-04: CDI + 1.5%, 101,144.58 after 22 rates | none | to read |
 | F-05 | CDB with a rate that rises with the holding period | supported | terms `rate_steps` with `rate_steps_apply` `retroactive` or `stepped` (`domain.AccrueSteps`); tool `set_rate_steps`; `TestAccrueSteps`, `TestRateStepsAccrue`, `TestSetRateStepsTool`; spec `docs/specs/2026-11-18-progressive-rate-design.md` | none | Santander, ficha do CDB Progressivo (retroactive); the issuer states the rule |
 | F-06 | RDB | supported | subtype `rdb` in `internal/portfolio/jurisdiction/br/br.go`; FGC list; `TestBRProductMatrix` row F-06 against the LTN example of the Tesouro Nacional | none | FGC: in code (Resolução CMN 4.222/2013, annex II, art. 2) |
-| F-07 | LCI, LCA, percent of CDI, minimum term | partial | subtypes `lci`, `lca`, exempt class; `redeemable_from` | the minimum term of the norm is typed by the user, not derived | exemption: in code (Lei 11.033/2004 art. 3); minimum term: to read |
-| F-08 | LCI, LCA, IPCA plus spread or pre-fixed | partial | as F-03 and F-07 | as F-03 and F-07 | to read |
+| F-07 | LCI, LCA, percent of CDI, minimum term | supported | subtypes `lci`, `lca`, exempt class; the minimum term of the rule of the issue date is the default `redeemable_from` of a new contract (`MinimumRedemption`); `TestMinimumTermOfLCIAndLCA` | an LCA updated by a price index takes no default | Resolução CMN 5.119/2024 and 5.215/2025 (BCB normativos and press of 2024-02 and 2025-05, read 2026-11-18) |
+| F-08 | LCI, LCA, IPCA plus spread or pre-fixed | partial | as F-03 and F-07 | as F-03; an LCA on IPCA takes no default minimum term | to read |
 | F-09 | LC | supported | subtype `lc`, taxed, FGC list; `TestBRProductMatrix` row F-09 against the LTN example of the Tesouro Nacional | none | in code |
 | F-10 | LF, senior and subordinated | partial | subtype `lf`, taxed, outside the FGC list | no subordinated variant; no rule on redemption before maturity | to read |
 | F-11 | LIG | supported | subtype `lig`, exempt class, outside the FGC; the withholding estimate follows the class (`TestWithholdingFollowsTheTaxClass`); `TestBR` | none | Lei 13.097/2015 (LIG chapter); the issuer's statement (Itaú, investor relations, LIG page) read 2026-11-18; a B3 glossary entry that calls it taxed contradicts the law and the issuers |
@@ -91,8 +91,8 @@ Source status:
 
 | Verdict | Rows |
 |---|---|
-| supported | 31 |
-| partial | 23 |
+| supported | 32 |
+| partial | 22 |
 | unsupported | 0 |
 
 ## What the assistant says

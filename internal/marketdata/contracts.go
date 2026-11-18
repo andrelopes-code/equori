@@ -127,6 +127,13 @@ func (m *Module) withContractDefaults(c Contract, applicationID uuid.UUID) Contr
 		c.CalendarID = calendar
 	}
 
+	if c.RedeemableFrom.IsZero() {
+		minimum := MinimumRedemption(c.Region, c.Subtype, c.IndexID, c.IssuedOn)
+		if minimum.Before(c.MaturesOn) {
+			c.RedeemableFrom = minimum
+		}
+	}
+
 	if strings.TrimSpace(c.Name) == "" {
 		c.Name = contractName(c)
 	}

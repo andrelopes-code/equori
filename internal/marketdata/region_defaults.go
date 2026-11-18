@@ -110,3 +110,33 @@ func SettlementCycle(mic string, date time.Time) (int, string, bool) {
 
 	return 2, CalendarBRBanking, true
 }
+
+// MinimumRedemption is the first day a new security of subtype may be redeemed under the rule of
+// region on its issue date; zero when the region sets none. In Brazil an LCI or an LCA without a
+// price index waits 6 months from 2025-08-01 (Resolução CMN 5.215/2025), 12 months (LCI) or 9
+// months (LCA) from 2024-02-02 (Resolução CMN 5.119/2024) and 90 days before; an LCI updated by a
+// price index waits 36 months from 2024-02-02. An LCA updated by a price index has no figure the
+// sources state, so it takes none (coverage row F-07).
+func MinimumRedemption(region, subtype, indexID string, issuedOn time.Time) time.Time {
+	if region != "BR" || (subtype != "lci" && subtype != "lca") || issuedOn.IsZero() {
+		return time.Time{}
+	}
+
+	priceIndex := indexID == "ipca" || indexID == "igpm"
+	reformed := !issuedOn.Before(time.Date(2024, time.February, 2, 0, 0, 0, 0, time.UTC))
+
+	switch {
+	case !reformed:
+		return issuedOn.AddDate(0, 0, 90)
+	case priceIndex && subtype == "lci":
+		return issuedOn.AddDate(0, 36, 0)
+	case priceIndex:
+		return time.Time{}
+	case !issuedOn.Before(time.Date(2025, time.August, 1, 0, 0, 0, 0, time.UTC)):
+		return issuedOn.AddDate(0, 6, 0)
+	case subtype == "lci":
+		return issuedOn.AddDate(0, 12, 0)
+	}
+
+	return issuedOn.AddDate(0, 9, 0)
+}
