@@ -46,7 +46,17 @@ export function ContributionEmpty({ view, onStart }: ContributionEmptyProps) {
   }
 
   function handleScratch() {
-    onStart({ classes: [{ name: "", targetBp: 10000, members: [] }] });
+    onStart({
+      classes: [
+        {
+          name: "",
+          targetBp: 10000,
+          byQuestions: false,
+          questions: [],
+          members: [],
+        },
+      ],
+    });
   }
 
   return (

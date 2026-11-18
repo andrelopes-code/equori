@@ -8,6 +8,8 @@ type Plan = components["schemas"]["ContributionPlan"];
 
 const brl = (amount: number) => ({ amount, currency: "BRL" });
 
+const plain = { byQuestions: false, questions: [] };
+
 const view = {
   status: "complete",
   total: brl(1000000),
@@ -19,9 +21,19 @@ const view = {
       value: brl(0),
       share_bp: 3000,
       amount: brl(5000),
+      questions: [],
+      question_ideals: false,
       members: [],
     },
-    { name: "B", target_bp: 4000, value: brl(0), members: [], amount: brl(0) },
+    {
+      name: "B",
+      target_bp: 4000,
+      value: brl(0),
+      members: [],
+      amount: brl(0),
+      questions: [],
+      question_ideals: false,
+    },
   ],
   outside: [],
   missing: [],
@@ -31,9 +43,9 @@ describe("compositionGroups", () => {
   it("takes names, ideals and locks from the draft and figures from the view", () => {
     const draft = startEditing({
       classes: [
-        { name: "A", targetBp: 5000, members: [] },
-        { name: "B", targetBp: 4000, members: [] },
-        { name: "C", targetBp: 1000, members: [] },
+        { ...plain, name: "A", targetBp: 5000, members: [] },
+        { ...plain, name: "B", targetBp: 4000, members: [] },
+        { ...plain, name: "C", targetBp: 1000, members: [] },
       ],
     });
     draft.classes = draft.classes.map((c, i) => ({ ...c, locked: i === 1 }));
@@ -55,7 +67,7 @@ describe("compositionGroups", () => {
 
   it("takes the cost of the order as the amount of a group", () => {
     const draft = startEditing({
-      classes: [{ name: "A", targetBp: 5000, members: [] }],
+      classes: [{ ...plain, name: "A", targetBp: 5000, members: [] }],
     });
     const costed = {
       ...view,

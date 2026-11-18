@@ -159,4 +159,18 @@ export const contributionPlanEn = {
   "contributionPlan.compareIndexers.title": "Compare indexers",
   "contributionPlan.fundReport": "see report",
   "contributionPlan.fundReport.title": "Fund report",
+  "contributionPlan.questions.mode": "Target of each asset",
+  "contributionPlan.questions.typed": "Typed",
+  "contributionPlan.questions.byQuestions": "By my questions",
+  "contributionPlan.questions.hint":
+    "Write yes-or-no questions. Each yes adds one point to the asset; the target of each asset is its part of the group's points.",
+  "contributionPlan.questions.label": "Question {n}",
+  "contributionPlan.questions.remove": "Remove question {n}",
+  "contributionPlan.questions.add": "Add question",
+  "contributionPlan.questions.answerLabel": "Answer to question {n}",
+  "contributionPlan.questions.count": "{yes} of {count} yes",
+  "contributionPlan.questions.ideal": "target {share} of the group",
+  "contributionPlan.questions.noYes":
+    "No yes: the group receives its amount without a split between the assets.",
+  "contributionPlan.questions.noFacts": "An account has no report.",
 } as const;

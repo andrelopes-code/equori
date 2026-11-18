@@ -160,4 +160,18 @@ export const contributionPlanPtBR: Record<
   "contributionPlan.compareIndexers.title": "Comparar indexadores",
   "contributionPlan.fundReport": "ver informe",
   "contributionPlan.fundReport.title": "Informe do fundo",
+  "contributionPlan.questions.mode": "Ideal de cada ativo",
+  "contributionPlan.questions.typed": "Digitado",
+  "contributionPlan.questions.byQuestions": "Pelas minhas perguntas",
+  "contributionPlan.questions.hint":
+    "Escreva perguntas de sim ou não. Cada sim soma um ponto ao ativo; o ideal de cada ativo é a sua parte dos pontos do grupo.",
+  "contributionPlan.questions.label": "Pergunta {n}",
+  "contributionPlan.questions.remove": "Remover pergunta {n}",
+  "contributionPlan.questions.add": "Adicionar pergunta",
+  "contributionPlan.questions.answerLabel": "Resposta à pergunta {n}",
+  "contributionPlan.questions.count": "{yes} de {count} sim",
+  "contributionPlan.questions.ideal": "ideal {share} do grupo",
+  "contributionPlan.questions.noYes":
+    "Nenhum sim: o grupo recebe o valor sem divisão entre os ativos.",
+  "contributionPlan.questions.noFacts": "Uma conta não tem informe.",
 };

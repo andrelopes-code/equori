@@ -34,6 +34,8 @@ export function planFromPortfolio(
     classes: types.map((type, i): ClassDraft => ({
       name: label(type),
       targetBp: shares[i] ?? 0,
+      byQuestions: false,
+      questions: [],
       members: entries
         .filter((e) => e.type === type)
         .map((e) => memberRefOf(e.entry)),

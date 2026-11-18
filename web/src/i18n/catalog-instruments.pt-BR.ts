@@ -408,4 +408,11 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "companyReport.method":
     "Cada número é calculado das demonstrações entregues à CVM, como a sua linha descreve. Os sinais de Piotroski são fatos das contas, não uma nota. A decisão é do investidor.",
   "companyReport.link": "Abrir o conjunto de dados da fonte",
+  "assetFacts.fund":
+    "P/VP {priceToBook} · distribuído em 12 meses sobre o preço {yearYield} · informe de {month}",
+  "assetFacts.company":
+    "ROE {roe} · margem {margin} · dívida líquida/PL {netDebt} · lucro em {positive} de {count} exercícios · 12 meses até {date}",
+  "assetFacts.missing": "sem dado",
+  "assetFacts.notApplicable": "não se aplica",
+  "assetFacts.none": "sem informe nem demonstrações",
 };

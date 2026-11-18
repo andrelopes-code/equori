@@ -40,16 +40,22 @@ describe("planFromPortfolio", () => {
         {
           name: "L:stock",
           targetBp: 8000,
+          byQuestions: false,
+          questions: [],
           members: [{ instrument: "PETR4" }, { instrument: "VALE3" }],
         },
         {
           name: "L:currency",
           targetBp: 500,
+          byQuestions: false,
+          questions: [],
           members: [{ accountId: "acc-1" }],
         },
         {
           name: "L:reit",
           targetBp: 1500,
+          byQuestions: false,
+          questions: [],
           members: [{ instrument: "MXRF11" }],
         },
       ],

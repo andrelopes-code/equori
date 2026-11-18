@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   addMember,
   overlayDraft,
+  removeMember,
   removeClass,
   setClassTarget,
   setClassTargets,
@@ -10,12 +11,19 @@ import {
   setSplit,
   startEditing,
 } from "@/features/portfolio/contribution-plan/model/plan-edits";
+import {
+  addQuestion,
+  setByQuestions,
+} from "@/features/portfolio/contribution-plan/model/question-edits";
+
+const plain = { byQuestions: false, questions: [] };
 
 const plan = () =>
   startEditing({
     classes: [
-      { name: "Renda fixa", targetBp: 4000, members: [] },
+      { ...plain, name: "Renda fixa", targetBp: 4000, members: [] },
       {
+        ...plain,
         name: "Ações Brasil",
         targetBp: 2000,
         members: [
@@ -23,8 +31,8 @@ const plan = () =>
           { instrument: "VALE3", targetBp: 4000 },
         ],
       },
-      { name: "Ações exterior", targetBp: 2000, members: [] },
-      { name: "FIIs", targetBp: 2000, members: [] },
+      { ...plain, name: "Ações exterior", targetBp: 2000, members: [] },
+      { ...plain, name: "FIIs", targetBp: 2000, members: [] },
     ],
   });
 
@@ -101,6 +109,39 @@ describe("plan edits", () => {
   });
 });
 
+describe("plan edits in question mode", () => {
+  const questioned = () =>
+    addQuestion(addQuestion(setByQuestions(plan(), 1, true), 1), 1);
+
+  it("gives a new member one false answer per question and no target", () => {
+    const added = addMember(questioned(), 1, { instrument: "ITUB4" });
+
+    expect(added.classes[1]?.members[2]).toEqual({
+      instrument: "ITUB4",
+      answers: [false, false],
+    });
+  });
+
+  it("removes a member without redistributing", () => {
+    const removed = removeMember(questioned(), 1, 0);
+
+    expect(removed.classes[1]?.members).toEqual([
+      { instrument: "VALE3", answers: [false, false] },
+    ]);
+  });
+
+  it("leaves the question mode when the split goes off", () => {
+    const off = setSplit(questioned(), 1, false).classes[1];
+
+    expect(off?.byQuestions).toBe(false);
+    expect(off?.questions).toEqual([]);
+    expect(off?.members).toEqual([
+      { instrument: "PETR4" },
+      { instrument: "VALE3" },
+    ]);
+  });
+});
+
 describe("overlayDraft", () => {
   const money = (amount: number) => ({ amount, currency: "BRL" });
   const view = {
@@ -112,6 +153,8 @@ describe("overlayDraft", () => {
         target_bp: 5000,
         value: money(600),
         share_bp: 6000,
+        questions: [],
+        question_ideals: false,
         members: [
           {
             instrument: "PETR4",
@@ -131,6 +174,7 @@ describe("overlayDraft", () => {
     const draft = startEditing({
       classes: [
         {
+          ...plain,
           name: "New A",
           targetBp: 3000,
           members: [
@@ -138,7 +182,7 @@ describe("overlayDraft", () => {
             { instrument: "PETR4" },
           ],
         },
-        { name: "New B", targetBp: 7000, members: [] },
+        { ...plain, name: "New B", targetBp: 7000, members: [] },
       ],
     });
 
@@ -148,6 +192,8 @@ describe("overlayDraft", () => {
         target_bp: 3000,
         value: money(600),
         share_bp: 6000,
+        questions: [],
+        question_ideals: false,
         members: [
           {
             account_id: "a1",
@@ -158,14 +204,26 @@ describe("overlayDraft", () => {
           { instrument: "PETR4", value: money(400), share_bp: 4000 },
         ],
       },
-      { name: "New B", target_bp: 7000, value: money(0), members: [] },
+      {
+        name: "New B",
+        target_bp: 7000,
+        value: money(0),
+        questions: [],
+        question_ideals: false,
+        members: [],
+      },
     ]);
   });
 
   it("reads zero for a member the view lacks", () => {
     const draft = startEditing({
       classes: [
-        { name: "Old A", targetBp: 5000, members: [{ instrument: "VALE3" }] },
+        {
+          ...plain,
+          name: "Old A",
+          targetBp: 5000,
+          members: [{ instrument: "VALE3" }],
+        },
       ],
     });
 

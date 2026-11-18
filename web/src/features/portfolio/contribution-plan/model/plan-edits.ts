@@ -32,8 +32,9 @@ export function startEditing(draft: PlanDraft): EditDraft {
       ...cls,
       locked: false,
       split:
-        cls.members.length > 0 &&
-        cls.members.every((m) => m.targetBp !== undefined),
+        cls.byQuestions ||
+        (cls.members.length > 0 &&
+          cls.members.every((m) => m.targetBp !== undefined)),
       memberLocks: cls.members.map(() => false),
     })),
   };
@@ -86,6 +87,8 @@ export function addClass(draft: EditDraft): EditDraft {
   const cls: EditClass = {
     name: "",
     targetBp: 0,
+    byQuestions: false,
+    questions: [],
     members: [],
     locked: false,
     split: false,
@@ -115,10 +118,12 @@ export function setSplit(
   return updateClass(draft, index, (cls) => {
     const shares = equalShares(cls.members.length);
     const members = cls.members.map((m, at) =>
-      on ? { ...m, targetBp: shares[at] ?? 0 } : withoutTarget(m),
+      on ? { ...m, targetBp: shares[at] ?? 0 } : withoutTargetAndAnswers(m),
     );
 
-    return { ...cls, split: on, members };
+    return on
+      ? { ...cls, split: true, members }
+      : { ...cls, split: false, byQuestions: false, questions: [], members };
   });
 }
 
@@ -158,7 +163,8 @@ export function setMemberLocked(
   }));
 }
 
-// A member of a split class joins with 0, or with 10000 when it is the only one.
+// A member of a split class joins with 0, or with 10000 when it is the only one; in question mode
+// it joins with every answer no and no target.
 export function addMember(
   draft: EditDraft,
   index: number,
@@ -166,7 +172,7 @@ export function addMember(
 ): EditDraft {
   return updateClass(draft, index, (cls) => {
     const targetBp = cls.members.length === 0 ? total : 0;
-    const member: MemberDraft = cls.split ? { ...ref, targetBp } : { ...ref };
+    const member = newMember(cls, ref, targetBp);
 
     return {
       ...cls,
@@ -182,16 +188,19 @@ export function removeMember(
   at: number,
 ): EditDraft {
   return updateClass(draft, index, (cls) => {
-    const spread = cls.split
-      ? redistributeTargets(
-          cls.members.map((m) => m.targetBp ?? 0),
-          cls.memberLocks,
-          at,
-          0,
-        )
-      : [];
+    const spread =
+      cls.split && !cls.byQuestions
+        ? redistributeTargets(
+            cls.members.map((m) => m.targetBp ?? 0),
+            cls.memberLocks,
+            at,
+            0,
+          )
+        : [];
     const members = cls.members
-      .map((m, i) => (cls.split ? { ...m, targetBp: spread[i] ?? 0 } : m))
+      .map((m, i) =>
+        cls.split && !cls.byQuestions ? { ...m, targetBp: spread[i] ?? 0 } : m,
+      )
       .filter((_, i) => i !== at);
 
     return {
@@ -200,6 +209,17 @@ export function removeMember(
       memberLocks: cls.memberLocks.filter((_, i) => i !== at),
     };
   });
+}
+
+export function updateClass(
+  draft: EditDraft,
+  index: number,
+  change: (cls: EditClass) => EditClass,
+): EditDraft {
+  return {
+    ...draft,
+    classes: draft.classes.map((cls, i) => (i === index ? change(cls) : cls)),
+  };
 }
 
 // The saved view with the draft laid over it: names, targets and members come from the draft;
@@ -214,9 +234,11 @@ export function overlayDraft(view: Plan, draft: EditDraft): Plan {
 
       return {
         value: zero,
+        question_ideals: false,
         ...row,
         name: cls.name,
         target_bp: cls.targetBp,
+        questions: cls.questions,
         members: cls.members.map((m) => {
           const found = row?.members.find(
             (v) =>
@@ -225,17 +247,30 @@ export function overlayDraft(view: Plan, draft: EditDraft): Plan {
           );
           const figures = { ...(found ?? { value: zero }) };
           delete figures.target_bp;
+          delete figures.answers;
 
           return {
             ...figures,
             ...(m.accountId === undefined ? {} : { account_id: m.accountId }),
             ...(m.instrument === undefined ? {} : { instrument: m.instrument }),
             ...(m.targetBp === undefined ? {} : { target_bp: m.targetBp }),
+            ...(m.answers === undefined ? {} : { answers: m.answers }),
           };
         }),
       };
     }),
   };
+}
+
+function newMember(
+  cls: EditClass,
+  ref: MemberRef,
+  targetBp: number,
+): MemberDraft {
+  if (cls.byQuestions)
+    return { ...ref, answers: cls.questions.map(() => false) };
+
+  return cls.split ? { ...ref, targetBp } : { ...ref };
 }
 
 function spreadClasses(
@@ -251,20 +286,10 @@ function spreadClasses(
   );
 }
 
-function updateClass(
-  draft: EditDraft,
-  index: number,
-  change: (cls: EditClass) => EditClass,
-): EditDraft {
-  return {
-    ...draft,
-    classes: draft.classes.map((cls, i) => (i === index ? change(cls) : cls)),
-  };
-}
-
-function withoutTarget(member: MemberDraft): MemberDraft {
+function withoutTargetAndAnswers(member: MemberDraft): MemberDraft {
   const rest = { ...member };
   delete rest.targetBp;
+  delete rest.answers;
 
   return rest;
 }
