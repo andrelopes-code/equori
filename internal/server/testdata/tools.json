@@ -2692,6 +2692,112 @@
     }
   },
   {
+    "name": "get_holding_lots",
+    "description": "Returns how one Investment removes cost on a sale, its quantity and cost basis, and each open purchase with its date, quantity and cost. Use it to explain the cost or the tax of a sale, or which purchases a redemption consumes. Do not use it for the value or the result of a position: get_portfolio does.",
+    "effect": "read_only",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "account_id": {
+          "type": "string",
+          "description": "Investment line inside a Brokerage, from list_accounts"
+        },
+        "date": {
+          "type": "string",
+          "description": "day whose end the answer describes; today when empty",
+          "format": "date"
+        }
+      },
+      "required": [
+        "account_id"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "method": {
+          "type": "string",
+          "description": "how a sale removes cost: fifo takes the oldest lot first, average takes the average cost of the holding"
+        },
+        "estimates_withholding": {
+          "type": "boolean",
+          "description": "true when estimate_redemption answers for this holding"
+        },
+        "quantity": {
+          "type": "string"
+        },
+        "cost_basis": {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "string",
+              "description": "decimal amount in the instrument's scale, such as -1234.56"
+            },
+            "currency": {
+              "type": "string",
+              "description": "currency or instrument code"
+            }
+          },
+          "required": [
+            "amount",
+            "currency"
+          ],
+          "additionalProperties": false
+        },
+        "lots": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "acquired_on": {
+                "type": "string",
+                "format": "date"
+              },
+              "quantity": {
+                "type": "string"
+              },
+              "cost": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "acquired_on",
+              "quantity",
+              "cost"
+            ],
+            "additionalProperties": false
+          },
+          "description": "open purchases, oldest first; empty under the average method"
+        }
+      },
+      "required": [
+        "method",
+        "estimates_withholding",
+        "quantity",
+        "cost_basis",
+        "lots"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "get_imports",
     "description": "Returns import activity: statement import batches with their counts, the records of a batch and those needing review, entries of an account that no bank line confirmed, bank connections with their sync state and accounts, the recent syncs of a connection with the automatic decisions they made, and the investments a connection reports with the movements to review (review_investment_movement decides each). Use it for whether a bank synced, what an import did or what needs review. Do not use it for the transactions themselves: search_transactions does.",
     "effect": "read_only",

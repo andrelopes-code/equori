@@ -16,6 +16,7 @@ const sources: Record<string, AssistantIconName> = {
   list_schedules: "calendar",
   get_budgets_and_goals: "calendar",
   get_portfolio: "trend",
+  get_holding_lots: "trend",
   save_contribution_plan: "trend",
   set_base_currency: "wallet",
   get_market_data: "trend",

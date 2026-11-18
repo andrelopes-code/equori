@@ -41,6 +41,7 @@ func Tools(svc *app.Service) []tool.Tool {
 		recordCorporateAction(svc),
 		recordBrokerageNote(svc),
 		setBaseCurrency(svc),
+		getHoldingLots(svc),
 		estimateRedemption(svc),
 	}
 }

@@ -1882,6 +1882,7 @@ export const catalogEn = {
   "assistant.step.reconcile_account": "Preparing a reconciliation",
   "assistant.step.record_investment": "Preparing an investment transaction",
   "assistant.step.transfer_custody": "Preparing a custody transfer",
+  "assistant.step.get_holding_lots": "Reading the purchases of a holding",
   "assistant.step.set_base_currency": "Preparing the base currency change",
   "assistant.step.save_contribution_plan": "Preparing the contribution plan",
   "assistant.step.review_investment_movement":
