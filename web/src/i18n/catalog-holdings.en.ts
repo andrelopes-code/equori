@@ -77,7 +77,7 @@ export const holdingsEn = {
   "holdings.list": "Investments",
   "holdings.list.note":
     "Largest first. Quantity, average cost and other details are under Columns.",
-  "holdings.quote.partial": "{time} · partial",
+  "holdings.quote.partial": "{time} · partial ->",
   "holdings.quote.at": "Quote of {time}",
   "holdings.quotes.current.one": "1 holding quoted at {time}",
   "holdings.quotes.current.other": "{count} holdings quoted since {time}",
