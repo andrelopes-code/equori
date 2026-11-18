@@ -1199,3 +1199,7 @@ Coverage row F-07, through the HTTP API in a book of region BR. A new LCI on the
 ### S631 Capital return
 
 Coverage row E-08, through the HTTP API and the tool `record_corporate_action`. 100 PETR4 bought at 10.00 receive a capital return of 200.00 on 2026-11-10: the holding keeps its 100 units at a cost of 800.00 and the cash account receives 200.00; a return of 800.00 or more is refused with `validation_failed` on amount, and the table refuses a capital return of no value.
+
+### S632 Payments of a government bond
+
+Coverage rows T-03 and T-05, through the HTTP API. 2.00 units each of NTNF.20290101, NTNB.20350515 and LTN.20270101 bought on 2026-01-12; the events from 2026-06-01 to 2027-01-31 are the NTNF interest of 97.62 on 2026-07-01 and on 2027-01-04 (2027-01-01 is a holiday), the NTNB interest on 2026-11-16 without an amount, and the LTN maturity of 2,000.00 on 2027-01-04.

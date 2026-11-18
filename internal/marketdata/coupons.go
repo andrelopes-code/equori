@@ -13,9 +13,15 @@ import (
 type Coupon = domain.Coupon
 
 // Coupons is the coupon of each payment of code, in date order; ErrNoTerms when code has none.
+// A government bond without terms takes the payments its code states (governmentBondCoupons).
 func (m *Module) Coupons(ctx context.Context, code string) ([]Coupon, error) {
 	row, err := m.q.GetTerms(ctx, code)
 	if errors.Is(err, pgx.ErrNoRows) {
+		bond, err := m.governmentBondCoupons(ctx, code)
+		if err != nil || len(bond) > 0 {
+			return bond, err
+		}
+
 		return nil, ErrNoTerms
 	}
 

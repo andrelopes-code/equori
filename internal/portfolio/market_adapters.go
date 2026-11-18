@@ -219,7 +219,13 @@ func (p marketPort) Coupons(ctx context.Context, code money.Currency) ([]app.Cou
 func (p marketPort) Maturity(ctx context.Context, code money.Currency) (time.Time, bool, error) {
 	t, err := p.md.Terms(ctx, string(code))
 	if errors.Is(err, marketdata.ErrNoTerms) {
-		return time.Time{}, false, nil
+		// A government bond states its maturity in its code: its last payment.
+		cs, err := p.md.Coupons(ctx, string(code))
+		if errors.Is(err, marketdata.ErrNoTerms) || len(cs) == 0 {
+			return time.Time{}, false, nil
+		}
+
+		return cs[len(cs)-1].PaysOn, err == nil, err
 	}
 
 	return t.MaturesOn, err == nil, err

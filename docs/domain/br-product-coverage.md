@@ -47,9 +47,9 @@ Source status:
 |---|---|---|---|---|---|
 | T-01 | Tesouro Selic (LFT) | supported | source `tesourodireto`; subtype `tesouro`; codes in `government_bonds_br`; `TestBRProductMatrix` row T-01 with the published buying and selling prices | none | Tesouro Transparente, PrecoTaxaTesouroDireto.csv, fetched 2026-11-18 |
 | T-02 | Tesouro Prefixado (LTN) | supported | as T-01; `TestBRProductMatrix` row T-02: LTN of the Metodologia de Cálculo example, 37,002.70 of income tax, sovereign 1,000,000.00 | none | Metodologia de Cálculo of the Tesouro Nacional, LTN example, read 2026-11-18 |
-| T-03 | Tesouro Prefixado with half-yearly interest (NTNF) | partial | as T-01; a coupon is an income of type coupon | the coupon is recorded by the user: no schedule comes from the source | to read |
+| T-03 | Tesouro Prefixado with half-yearly interest (NTNF) | supported | as T-01; `fixed_income_events` lists the coupons every 6 months back from the maturity, 48.81 a unit, and 1,000.00 at maturity (`governmentBondCoupons`, `TestS632GovernmentBondEvents`); a coupon is an income of type coupon | none | Metodologia de Cálculo dos Títulos Públicos Federais, Tesouro Nacional (coupon of 10% a year, 1,000.00 × (1.10^½ − 1)) |
 | T-04 | Tesouro IPCA+ (NTNBP) | supported | as T-01; `TestBRProductMatrix` row T-04 with the published buying and selling prices | none | Tesouro Transparente, PrecoTaxaTesouroDireto.csv, fetched 2026-11-18 |
-| T-05 | Tesouro IPCA+ with half-yearly interest (NTNB) | partial | as T-03 | as T-03 | to read |
+| T-05 | Tesouro IPCA+ with half-yearly interest (NTNB) | partial | as T-03: the coupon dates of 6% a year come from the maturity; their amount is missing | the nominal value (VNA) is not published by the source, so a coupon carries no amount until it is recorded | Metodologia de Cálculo dos Títulos Públicos Federais, Tesouro Nacional (coupon of 6% a year on the VNA) |
 | T-06 | Tesouro RendA+ | partial | code `RENDA` | the monthly income phase after the conversion date has no event | to read |
 | T-07 | Tesouro Educa+ | partial | code `EDUCA` | as T-06 | to read |
 | T-08 | Tesouro IGPM+ (NTNC) | supported | code `NTNC` in `internal/marketdata/feed/tesourodireto`; `TestBRProductMatrix` row T-08 with the published buying and selling prices | none | Tesouro Transparente, PrecoTaxaTesouroDireto.csv, fetched 2026-11-18 |
@@ -91,8 +91,8 @@ Source status:
 
 | Verdict | Rows |
 |---|---|
-| supported | 36 |
-| partial | 18 |
+| supported | 37 |
+| partial | 17 |
 | unsupported | 0 |
 
 ## What the assistant says
