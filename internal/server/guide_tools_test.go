@@ -119,14 +119,18 @@ func hasWord(text, word string) bool {
 
 // TestGuideCoversSubtypes keeps the article of a region complete for its products (assistant
 // parity design, G4): each subtype the jurisdiction of Brazil returns for an instrument type is
-// named in investments_br.
+// named in the regional article of its product family.
 func TestGuideCoversSubtypes(t *testing.T) {
 	t.Parallel()
 
 	h := apitest.New(t, apitest.As(apitest.Brazil()))
-	article, _ := guide.Article("investments_br")
 
-	for _, instrumentType := range []string{"fixed_income", "fund"} {
+	for instrumentType, topic := range map[string]string{
+		"fixed_income": "fixed_income_br",
+		"fund":         "funds_br",
+	} {
+		article, _ := guide.Article(topic)
+
 		r := h.Tool("get_portfolio", map[string]any{
 			"view": "subtypes", "instrument_type": instrumentType,
 		})
@@ -147,7 +151,7 @@ func TestGuideCoversSubtypes(t *testing.T) {
 
 		for _, subtype := range out.Subtypes {
 			if !hasWord(article, subtype) {
-				t.Errorf("investments_br does not name the %s subtype %q", instrumentType, subtype)
+				t.Errorf("%s does not name the %s subtype %q", topic, instrumentType, subtype)
 			}
 		}
 	}

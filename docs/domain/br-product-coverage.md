@@ -27,7 +27,7 @@ Source status:
 | F-08 | LCI, LCA, IPCA plus spread or pre-fixed | partial | as F-03 and F-07 | as F-03 and F-07 | to read |
 | F-09 | LC | supported | subtype `lc`, taxed, FGC list | none | in code |
 | F-10 | LF, senior and subordinated | partial | subtype `lf`, taxed, outside the FGC list | no subordinated variant; no rule on redemption before maturity | to read |
-| F-11 | LIG | partial | subtype `lig`, classed as taxed and without guarantee | the tax treatment is stated as not confirmed in `investments_br` | to read |
+| F-11 | LIG | partial | subtype `lig`, classed as taxed and without guarantee | the tax treatment is stated as not confirmed in `fixed_income_br` | to read |
 | F-12 | LH, LCD | supported | subtypes `lh`, `lcd`, exempt class, FGC list | none | Lei 11.033/2004 art. 3, II (LH), read on 2026-11-18; LCD: Lei 14.937/2024, to read |
 | F-13 | DPGE | unsupported | no subtype; `domain.Guarantee` holds one limit per holder | subtype and a second guarantee limit | to read |
 | F-14 | Debenture with half-yearly coupon and amortization | partial | `record_fixed_income` takes `interest_every_months`, `first_payment_on` and `amortizations`; `get_portfolio` view `fixed_income_events` | `manage_instrument set_terms` does not take explicit payment dates (`uncoveredFields`, `putInstrumentTerms.payments`) | to read |
@@ -45,7 +45,7 @@ Source status:
 
 | ID | Product | Verdict | Evidence | Missing | Source |
 |---|---|---|---|---|---|
-| T-01 | Tesouro Selic (LFT) | supported | source `tesourodireto`; subtype `tesouro`; codes in `investments_br` | none | to read |
+| T-01 | Tesouro Selic (LFT) | supported | source `tesourodireto`; subtype `tesouro`; codes in `government_bonds_br` | none | to read |
 | T-02 | Tesouro Prefixado (LTN) | supported | as T-01 | none | to read |
 | T-03 | Tesouro Prefixado with half-yearly interest (NTNF) | partial | as T-01; a coupon is an income of type coupon | the coupon is recorded by the user: no schedule comes from the source | to read |
 | T-04 | Tesouro IPCA+ (NTNBP) | supported | as T-01 | none | to read |
@@ -62,7 +62,7 @@ Source status:
 | E-01 | Stock, unit, round lot and fractional market | supported | type `stock`; an odd-lot code resolves to its security (`noteOrderFromInput`, `internal/ledger/httpapi/notes.go`) | none | to read |
 | E-02 | Sale of stock: monthly exemption, rate, loss carried forward | partial | `get_tax_year` lists each sale with cost, proceeds, result and tax class | the tax due is not computed: no monthly exemption, no rate, no loss carried forward | Lei 11.033/2004 art. 2, II (15%) and art. 3, I (R$ 20,000.00 a month, stocks only), read on 2026-11-18 (planalto.gov.br); loss carried forward: to read |
 | E-03 | Day trade | partial | `SeparatesDayTrades` (IN RFB 1.585/2015 art. 65); result kind `day_trade` | as E-02 | separation: IN RFB 1.585/2015 art. 65, in code; rate: Lei 11.033/2004 art. 2, I (20%), read on 2026-11-18; withholding of a day trade: art. 2, § 3 refers to the law in force, to read |
-| E-04 | Dividend, JCP | supported | income types; `Treatment` in `br.go`; rules in `investments_br` | none | Lei 15.270/2025 and Lei Complementar 224/2025 art. 8 and 14, read on 2026-11-18 (planalto.gov.br); article `equities_br` |
+| E-04 | Dividend, JCP | supported | income types; `Treatment` in `br.go`; rules in `equities_br` | none | Lei 15.270/2025 and Lei Complementar 224/2025 art. 8 and 14, read on 2026-11-18 (planalto.gov.br); article `equities_br` |
 | E-05 | Bonus, split, reverse split, fraction | supported | `record_corporate_action`; `TestRecordCorporateActionToolS431` | none | to read |
 | E-06 | Subscription right and receipt | unsupported | `ActionKind` holds split, reverse_split, bonus and unit_tax | a right as a holding, its exercise and its sale | to read |
 | E-07 | Merger, spin-off, ticker change | unsupported | as E-06 | an action that moves cost between two securities | to read |

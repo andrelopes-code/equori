@@ -36,7 +36,10 @@
       "fixed_income_payments",
       "investment_income",
       "investments_br",
-      "equities_br"
+      "fixed_income_br",
+      "government_bonds_br",
+      "equities_br",
+      "funds_br"
     ],
     "screen": "New transaction",
     "tasks": [
@@ -298,7 +301,15 @@
   },
   {
     "path": "/instruments",
-    "topics": ["investments", "fixed_income", "investments_br", "equities_br"],
+    "topics": [
+      "investments",
+      "fixed_income",
+      "investments_br",
+      "fixed_income_br",
+      "government_bonds_br",
+      "equities_br",
+      "funds_br"
+    ],
     "screen": "Instruments",
     "tasks": [
       "list the currencies and securities by type with their latest price",
@@ -308,7 +319,15 @@
   },
   {
     "path": "/instruments/$code",
-    "topics": ["investments", "fixed_income", "investments_br", "equities_br"],
+    "topics": [
+      "investments",
+      "fixed_income",
+      "investments_br",
+      "fixed_income_br",
+      "government_bonds_br",
+      "equities_br",
+      "funds_br"
+    ],
     "screen": "Instrument",
     "tasks": [
       "see the price history of an instrument over up to 366 days",
