@@ -43,6 +43,7 @@ func TestBRProductMatrix(t *testing.T) {
 					IncomeTax: row.WantIncomeTax,
 					Net:       row.WantNet,
 					Excess:    row.WantExcess,
+					Uncovered: row.WantUncovered,
 					Sovereign: row.WantSovereign,
 				}
 				if got != want {
@@ -62,7 +63,7 @@ func TestBRProductMatrix(t *testing.T) {
 
 // matrixFigures are the figures a row checks, as decimal strings in BRL.
 type matrixFigures struct {
-	Value, IncomeTax, Net, Excess, Sovereign string
+	Value, IncomeTax, Net, Excess, Uncovered, Sovereign string
 }
 
 func matrixBrokerage(t *testing.T, h *apitest.Harness) (string, string) {
@@ -152,8 +153,8 @@ func figuresHTTP(
 		Items []struct {
 			Instrument   string `json:"instrument"`
 			MarketValue  money  `json:"market_value"`
-			EstimatedTax money  `json:"estimated_tax"`
-			EstimatedNet money  `json:"estimated_net"`
+			EstimatedTax *money `json:"estimated_tax"`
+			EstimatedNet *money `json:"estimated_net"`
 		} `json:"items"`
 	}
 	h.MustDo(http.MethodGet, "/api/v1/positions?date="+row.ValuedOn, nil, http.StatusOK, &positions)
@@ -161,6 +162,7 @@ func figuresHTTP(
 	var exposure struct {
 		Issuers []struct {
 			Excess         money `json:"excess"`
+			UncoveredValue money `json:"uncovered_value"`
 			SovereignValue money `json:"sovereign_value"`
 		} `json:"issuers"`
 	}
@@ -176,13 +178,19 @@ func figuresHTTP(
 	for _, p := range positions.Items {
 		if p.Instrument == instrument {
 			f.Value = decimalBRL(p.MarketValue.Amount)
-			f.IncomeTax = decimalBRL(p.EstimatedTax.Amount)
-			f.Net = decimalBRL(p.EstimatedNet.Amount)
+			if p.EstimatedTax != nil {
+				f.IncomeTax = decimalBRL(p.EstimatedTax.Amount)
+			}
+
+			if p.EstimatedNet != nil {
+				f.Net = decimalBRL(p.EstimatedNet.Amount)
+			}
 		}
 	}
 
 	if len(exposure.Issuers) == 1 {
 		f.Excess = decimalBRL(exposure.Issuers[0].Excess.Amount)
+		f.Uncovered = decimalBRL(exposure.Issuers[0].UncoveredValue.Amount)
 		f.Sovereign = decimalBRL(exposure.Issuers[0].SovereignValue.Amount)
 	}
 
@@ -220,6 +228,7 @@ func figuresTool(
 	var exposure struct {
 		Issuers []struct {
 			Excess         money `json:"excess"`
+			UncoveredValue money `json:"uncovered_value"`
 			SovereignValue money `json:"sovereign_value"`
 		} `json:"issuers"`
 	}
@@ -237,6 +246,11 @@ func figuresTool(
 			continue
 		}
 
+		f.Value = p.MarketValue.Amount
+		if row.WantIncomeTax == "" {
+			continue
+		}
+
 		var estimate struct {
 			IncomeTax money `json:"income_tax"`
 			Net       money `json:"net"`
@@ -248,11 +262,12 @@ func figuresTool(
 			"proceeds":   p.MarketValue.Amount,
 		}, &estimate)
 
-		f.Value, f.IncomeTax, f.Net = p.MarketValue.Amount, estimate.IncomeTax.Amount, estimate.Net.Amount
+		f.IncomeTax, f.Net = estimate.IncomeTax.Amount, estimate.Net.Amount
 	}
 
 	if len(exposure.Issuers) == 1 {
 		f.Excess = exposure.Issuers[0].Excess.Amount
+		f.Uncovered = exposure.Issuers[0].UncoveredValue.Amount
 		f.Sovereign = exposure.Issuers[0].SovereignValue.Amount
 	}
 

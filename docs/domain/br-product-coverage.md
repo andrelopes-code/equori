@@ -22,19 +22,19 @@ Source status:
 | F-03 | CDB, IPCA plus spread | partial | `TestRecordFixedIncomeRates`, case "index plus spread" | the monthly index enters by published month without pro rata (`accrual.go`); issuers accrue pro rata by business day with a projected index | to read |
 | F-04 | CDI plus spread (debenture, CRI, CRA, CDB) | supported | `TestRecordFixedIncomeCDIPlusSpread` | none | to read |
 | F-05 | CDB with a rate that rises with the holding period | unsupported | terms hold one rate (`domain.Terms`) | a rate schedule by holding period | to read |
-| F-06 | RDB | supported | subtype `rdb` in `internal/portfolio/jurisdiction/br/br.go`; FGC list | none | FGC: in code (Resolução CMN 4.222/2013, annex II, art. 2) |
+| F-06 | RDB | supported | subtype `rdb` in `internal/portfolio/jurisdiction/br/br.go`; FGC list; `TestBRProductMatrix` row F-06 against the LTN example of the Tesouro Nacional | none | FGC: in code (Resolução CMN 4.222/2013, annex II, art. 2) |
 | F-07 | LCI, LCA, percent of CDI, minimum term | partial | subtypes `lci`, `lca`, exempt class; `redeemable_from` | the minimum term of the norm is typed by the user, not derived | exemption: in code (Lei 11.033/2004 art. 3); minimum term: to read |
 | F-08 | LCI, LCA, IPCA plus spread or pre-fixed | partial | as F-03 and F-07 | as F-03 and F-07 | to read |
-| F-09 | LC | supported | subtype `lc`, taxed, FGC list | none | in code |
+| F-09 | LC | supported | subtype `lc`, taxed, FGC list; `TestBRProductMatrix` row F-09 against the LTN example of the Tesouro Nacional | none | in code |
 | F-10 | LF, senior and subordinated | partial | subtype `lf`, taxed, outside the FGC list | no subordinated variant; no rule on redemption before maturity | to read |
 | F-11 | LIG | partial | subtype `lig`, classed as taxed and without guarantee | the tax treatment is stated as not confirmed in `fixed_income_br` | to read |
-| F-12 | LH, LCD | supported | subtypes `lh`, `lcd`, exempt class, FGC list | none | Lei 11.033/2004 art. 3, II (LH), read on 2026-11-18; LCD: Lei 14.937/2024, to read |
+| F-12 | LH, LCD | supported | subtypes `lh`, `lcd`, exempt class, FGC list; `TestBRProductMatrix` row F-12 against the LTN example of the Tesouro Nacional | none | Lei 11.033/2004 art. 3, II (LH), read on 2026-11-18; LCD: Lei 14.937/2024, to read |
 | F-13 | DPGE | unsupported | no subtype; `domain.Guarantee` holds one limit per holder | subtype and a second guarantee limit | to read |
 | F-14 | Debenture with half-yearly coupon and amortization | partial | `record_fixed_income` takes `interest_every_months`, `first_payment_on` and `amortizations`; `get_portfolio` view `fixed_income_events` | none for the schedule: `set_payment_schedule` writes explicit payment dates (`TestSetPaymentScheduleTool`) | to read |
 | F-15 | Incentivized debenture | partial | subtype `debenture_incentivada`, exempt class | the tax rule from 2026 onward was not checked | rate of 0% for an individual: Lei 12.431/2011 art. 2, I, read on 2026-11-18 (planalto.gov.br); 2026 rule: Medida Provisória 1.303/2025 is marked there as expired |
 | F-16 | CRI, CRA, IPCA plus spread, monthly interest, irregular amortization | partial | subtypes `cri`, `cra`, exempt class; coupons and amortizations as F-14 | as F-03; the explicit schedule is written by `set_payment_schedule` (`TestSetPaymentScheduleTool`); the unit price formula of the registrar was not compared | to read |
-| F-17 | CRI, CRA, percent of CDI, CDI plus spread, pre-fixed | supported | as F-01, F-02, F-04 | none | to read |
-| F-18 | CDCA | supported | subtype `cdca`, exempt class | none | to read |
+| F-17 | CRI, CRA, percent of CDI, CDI plus spread, pre-fixed | supported | as F-01, F-02, F-04; `TestBRProductMatrix` row F-17 (pre-fixed) against the LTN example of the Tesouro Nacional | none | to read |
+| F-18 | CDCA | supported | subtype `cdca`, exempt class; `TestBRProductMatrix` row F-18 against the LTN example of the Tesouro Nacional | none | to read |
 | F-18b | CPR, commercial note, LAM | unsupported | no subtype | three subtypes with their tax class | to read |
 | F-19 | Redemption within 30 days | supported | `brFixedIncomeWithholding`, `estimate_redemption` | none | in code (Decreto 6.306/2007 art. 32) |
 | F-20 | Sale before maturity on the secondary market | partial | `record_investment` kind `sell` with the oldest lot first (`CostMethod`) | the tax of a sale at a price other than the accrued one is not estimated apart | to read |
