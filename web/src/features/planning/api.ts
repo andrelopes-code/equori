@@ -407,6 +407,48 @@ export function useDeleteGoal() {
   });
 }
 
+// The expense transactions a goal pays (planning coherence A256).
+export function goalExpensesQuery(api: Client<paths>, id: string) {
+  return queryOptions({
+    queryKey: [...planningKeys.goals, id, "expenses"] as const,
+    queryFn: async () =>
+      (
+        await unwrap(
+          await api.GET("/goals/{id}/expenses", { params: { path: { id } } }),
+        )
+      ).items,
+  });
+}
+
+interface GoalExpenseLink {
+  goal: string;
+  transaction: string;
+}
+
+export function useLinkGoalExpense() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async ({ goal, transaction }: GoalExpenseLink) => {
+      const result = await api.PUT("/goals/{id}/expenses/{transaction_id}", {
+        params: { path: { id: goal, transaction_id: transaction } },
+      });
+      if (result.error !== undefined) await unwrap(result);
+    },
+  });
+}
+
+export function useUnlinkGoalExpense() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async ({ goal, transaction }: GoalExpenseLink) => {
+      const result = await api.DELETE("/goals/{id}/expenses/{transaction_id}", {
+        params: { path: { id: goal, transaction_id: transaction } },
+      });
+      if (result.error !== undefined) await unwrap(result);
+    },
+  });
+}
+
 export function useRealizeOccurrence() {
   const api = useApi();
   return useMutation({

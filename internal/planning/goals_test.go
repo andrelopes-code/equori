@@ -24,6 +24,11 @@ type goalView struct {
 	ProgressBP int `json:"progress_bp"`
 	// Spent is a pointer: a response without the field fails the test (A256).
 	Spent *money `json:"spent"`
+	// UnexplainedWithdrawal is absent without a withdrawal that linked expenses do not cover.
+	UnexplainedWithdrawal *struct {
+		Amount money  `json:"amount"`
+		Since  string `json:"since"`
+	} `json:"unexplained_withdrawal"`
 	// TrailingReturn is nil when the accounts have too little history or no flow (A124).
 	TrailingReturn *struct {
 		PeriodMonths int `json:"period_months"`

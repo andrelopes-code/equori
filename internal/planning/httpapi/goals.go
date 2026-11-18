@@ -30,6 +30,13 @@ func toGoalAPI(g app.GoalView) Goal {
 		Prices:     toPricesAPI(g.Prices),
 		Parts:      toGoalPartsAPI(g.Parts),
 	}
+	if g.Withdrawal != nil {
+		out.UnexplainedWithdrawal = &GoalWithdrawal{
+			Amount: toMoneyAPI(g.Withdrawal.Amount.Amount(), g.Withdrawal.Amount.Currency()),
+			Since:  apiDate(g.Withdrawal.Since),
+		}
+	}
+
 	if g.Trailing != nil {
 		out.TrailingReturn = &TrailingReturn{
 			PeriodMonths: g.Trailing.Months,

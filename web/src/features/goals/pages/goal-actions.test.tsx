@@ -18,6 +18,7 @@ const emergency = {
   current: money(1008341),
   remaining: money(1991659),
   progress_bp: 3361,
+  spent: money(0),
 };
 
 function api(sent: { method: string; body: unknown }[]) {

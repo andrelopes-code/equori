@@ -7886,6 +7886,7 @@ export interface components {
             remaining: components["schemas"]["Money"];
             progress_bp: number;
             spent: components["schemas"]["Money"];
+            unexplained_withdrawal?: components["schemas"]["GoalWithdrawal"];
             /** @description Prices that value accounts in another currency (P8 amendment A72). */
             prices?: components["schemas"]["Price"][];
             /**
@@ -7910,6 +7911,16 @@ export interface components {
             instrument: string;
             quantity: components["schemas"]["Money"];
             value: components["schemas"]["Money"];
+        };
+        /**
+         * @description The latest withdrawal of the last 12 months from the accounts the goal holds whole into another balance
+         *     account, less the expenses linked to the goal dated on or after it; absent when they cover it (planning
+         *     coherence A256). The screen asks which expenses the goal paid.
+         */
+        GoalWithdrawal: {
+            amount: components["schemas"]["Money"];
+            /** Format: date */
+            since: string;
         };
         GoalExpense: {
             /** Format: uuid */

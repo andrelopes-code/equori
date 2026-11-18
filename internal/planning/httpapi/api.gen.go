@@ -525,6 +525,11 @@ type Goal struct {
 	// first posting if shorter, valued in the target currency (investments design 4.4). Absent with less than three
 	// months of postings or no external flow in the window.
 	TrailingReturn *TrailingReturn `json:"trailing_return,omitempty"`
+
+	// UnexplainedWithdrawal The latest withdrawal of the last 12 months from the accounts the goal holds whole into another balance
+	// account, less the expenses linked to the goal dated on or after it; absent when they cover it (planning
+	// coherence A256). The screen asks which expenses the goal paid.
+	UnexplainedWithdrawal *GoalWithdrawal `json:"unexplained_withdrawal,omitempty"`
 }
 
 // GoalExpense defines model for GoalExpense.
@@ -581,6 +586,14 @@ type GoalPatch struct {
 	DueOn           *openapi_types.Date `json:"due_on,omitempty"`
 	Name            *string             `json:"name,omitempty"`
 	Target          *Money              `json:"target,omitempty"`
+}
+
+// GoalWithdrawal The latest withdrawal of the last 12 months from the accounts the goal holds whole into another balance
+// account, less the expenses linked to the goal dated on or after it; absent when they cover it (planning
+// coherence A256). The screen asks which expenses the goal paid.
+type GoalWithdrawal struct {
+	Amount Money              `json:"amount"`
+	Since  openapi_types.Date `json:"since"`
 }
 
 // Money defines model for Money.

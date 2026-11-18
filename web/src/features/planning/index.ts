@@ -4,6 +4,7 @@ export {
   holidaysQuery,
   budgetsQuery,
   committedQuery,
+  goalExpensesQuery,
   goalsQuery,
   occurrencesQuery,
   scheduleQuery,
@@ -12,6 +13,8 @@ export {
   schedulesQuery,
   useCreateGoal,
   useDeleteGoal,
+  useLinkGoalExpense,
+  useUnlinkGoalExpense,
   useUpdateGoal,
 } from "@/features/planning/api";
 export {

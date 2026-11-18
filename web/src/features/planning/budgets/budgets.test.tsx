@@ -4,7 +4,12 @@ import { describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { money } from "@/testing/account-api";
-import { budgetApi, foodBudget, health } from "@/testing/budget-api";
+import {
+  budgetApi,
+  foodBudget,
+  fuelBudget,
+  health,
+} from "@/testing/budget-api";
 import { json } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
 
@@ -18,6 +23,34 @@ function words(key: keyof typeof catalogEn, values: Record<string, string>) {
 }
 
 describe("PlanningPage budgets", () => {
+  // Planning coherence A257: what a goal paid is outside the spending and named on the row.
+  it("names what goals paid outside the budget", async () => {
+    await renderApp(november, {
+      fetch: budgetApi({
+        [`GET /api/v1/budgets/${fuelBudget.id}/progress`]: () =>
+          json(200, {
+            month: "2026-11",
+            planned: money(40000),
+            carried: money(0),
+            spent: money(10000),
+            goal_paid: money(25000),
+            available: money(30000),
+          }),
+      }),
+    });
+
+    const fuel = await screen.findByRole("row", { name: "Fuel" });
+
+    expect(
+      within(fuel).getByText(
+        words("budget.restGoalPaid", {
+          rest: words("budget.left", { amount: "R$300.00" }),
+          paid: "R$250.00",
+        }),
+      ),
+    ).toBeInTheDocument();
+  });
+
   it("carries the month before into available (S60)", async () => {
     await renderApp("/planning?tab=budgets&view=track&month=2026-12", {
       fetch: budgetApi(),

@@ -334,3 +334,41 @@ func TestGoalExpenseTool(t *testing.T) {
 		"transaction_id",
 	)
 }
+
+// A withdrawal from a goal account to checking is unexplained until the expenses linked since it
+// reach its amount; an expense paid from the goal account is no withdrawal to explain (A256).
+func TestGoalUnexplainedWithdrawal(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-12")
+	trip := f.h.Account("Trip", "asset", "savings", nil)
+	travel := f.h.Account("Travel", "expense", "", nil)
+	goal := f.goal("Trip", 1000000, trip)
+	f.h.Record("2026-09-10", apitest.Posting(trip, 900000), apitest.Posting(f.checking, -900000))
+	f.h.Record("2026-10-20", apitest.Posting(travel, 10000), apitest.Posting(trip, -10000))
+
+	if got := f.goalByID(goal.ID).UnexplainedWithdrawal; got != nil {
+		t.Fatalf("before a withdrawal = %+v, want none", got)
+	}
+
+	f.h.Record("2026-10-01", apitest.Posting(f.checking, 500000), apitest.Posting(trip, -500000))
+	flight := f.pay("2026-10-06", 300000, travel, "")
+	hotel := f.pay("2026-10-07", 200000, travel, "")
+
+	got := f.goalByID(goal.ID).UnexplainedWithdrawal
+	if got == nil || got.Amount.Amount != 500000 || got.Since != "2026-10-01" {
+		t.Fatalf("after the withdrawal = %+v, want 500000 since 2026-10-01", got)
+	}
+
+	f.h.MustDo(http.MethodPut, goalExpensePath(goal.ID, flight), nil, http.StatusNoContent, nil)
+
+	got = f.goalByID(goal.ID).UnexplainedWithdrawal
+	if got == nil || got.Amount.Amount != 200000 {
+		t.Fatalf("after one link = %+v, want 200000", got)
+	}
+
+	f.h.MustDo(http.MethodPut, goalExpensePath(goal.ID, hotel), nil, http.StatusNoContent, nil)
+
+	if got := f.goalByID(goal.ID).UnexplainedWithdrawal; got != nil {
+		t.Errorf("after both links = %+v, want none", got)
+	}
+}

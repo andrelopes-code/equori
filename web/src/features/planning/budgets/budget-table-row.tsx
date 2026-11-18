@@ -54,10 +54,15 @@ export function BudgetTableRow({
           amount: money({ ...p.available, amount: -p.available.amount }),
         })
       : t("budget.left", { amount: money(p.available) });
-  const status =
+  // One line: what goals paid outside the budget comes before the carried balance (A257).
+  const withCarried =
     p.carried.amount === 0
       ? rest
       : t("budget.restCarried", { rest, carried: money(p.carried) });
+  const status =
+    p.goal_paid.amount > 0
+      ? t("budget.restGoalPaid", { rest, paid: money(p.goal_paid) })
+      : withCarried;
 
   return (
     <TableRow value={row.budget.id} aria-label={row.label}>

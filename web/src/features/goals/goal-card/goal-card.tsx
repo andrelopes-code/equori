@@ -16,6 +16,7 @@ import { GoalParts } from "@/features/goals/goal-card/goal-parts";
 import { goalState, monthsLeft } from "@/features/goals/goal-card/goal-state";
 import type { Goal } from "@/features/goals/goal-card/goal-line";
 import { GoalWhatIf } from "@/features/goals/goal-card/goal-what-if";
+import { GoalSpent } from "@/features/goals/goal-expenses/goal-spent";
 import styles from "@/features/goals/pages/goals.module.css";
 import { formatDate, numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -182,6 +183,7 @@ export function GoalCard({
           ))}
         </dl>
         <GoalParts goal={goal} scale={scale} names={names} />
+        <GoalSpent goal={goal} scale={scale} />
         {state !== "reached" && (
           <GoalWhatIf
             goal={goal}

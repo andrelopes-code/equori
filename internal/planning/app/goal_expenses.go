@@ -130,39 +130,36 @@ func (s *Service) GoalExpenses(
 	return out, base, nil
 }
 
-// goalsSpent returns, by goal, the sum of the expense postings of the transactions it pays, and
-// the currency of the sums (A256).
-func (s *Service) goalsSpent(
-	ctx context.Context,
-	booksID int64,
-) (map[uuid.UUID]int64, money.Currency, error) {
-	facts, base, err := s.factsAndBase(ctx, booksID)
-	if err != nil {
-		return nil, "", err
-	}
-
-	paid, err := s.goalPaid(ctx, booksID, facts, base, allTime[0], allTime[1])
-	if err != nil {
-		return nil, "", err
-	}
-
-	out := make(map[uuid.UUID]int64)
-	for _, p := range paid {
-		out[p.goalID] += p.amount
-	}
-
-	return out, base, nil
-}
-
-// withSpent sets the spent amount of each view.
+// withSpent sets the spent amount and the unexplained withdrawal of each view (A256).
 func (s *Service) withSpent(ctx context.Context, booksID int64, views ...*GoalView) error {
-	spent, base, err := s.goalsSpent(ctx, booksID)
+	facts, base, err := s.factsAndBase(ctx, booksID)
 	if err != nil {
 		return err
 	}
 
+	paid, err := s.goalPaid(ctx, booksID, facts, base, allTime[0], allTime[1])
+	if err != nil {
+		return err
+	}
+
+	spent := make(map[uuid.UUID]int64)
+	for _, p := range paid {
+		spent[p.goalID] += p.amount
+	}
+
 	for _, v := range views {
 		if v.Spent, err = money.New(spent[v.ID], base); err != nil {
+			return err
+		}
+
+		if v.Withdrawal, err = s.unexplainedWithdrawal(
+			ctx,
+			booksID,
+			facts,
+			base,
+			v.Goal,
+			paid,
+		); err != nil {
 			return err
 		}
 	}

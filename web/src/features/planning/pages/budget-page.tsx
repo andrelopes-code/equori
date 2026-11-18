@@ -42,13 +42,10 @@ import { monthEnd } from "@/features/planning/model/agenda";
 import { budgetProgressQuery, budgetQuery } from "@/features/planning/api";
 import { BudgetAmountDialog } from "@/features/planning/budget-dialogs/budget-amount-dialog";
 import { DeleteBudgetDialog } from "@/features/planning/budget-dialogs/delete-budget-dialog";
-import { budgetState, usedShare } from "@/features/planning/model/budget-month";
+import { BudgetSpentFigure } from "@/features/planning/budgets/budget-spent-figure";
+import { budgetState } from "@/features/planning/model/budget-month";
 import { useScale } from "@/features/setup";
-import {
-  formatMonthName,
-  formatMonthTitle,
-  numberFormatter,
-} from "@/i18n/format";
+import { formatMonthName, formatMonthTitle } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
@@ -136,8 +133,6 @@ export function BudgetPage() {
   );
   const current = progress.find((p) => p.data?.month === month)?.data;
   const state = current === undefined ? undefined : budgetState(current);
-  const percent = (share: number) =>
-    numberFormatter(locale, { style: "percent" }).format(share / 100);
   return (
     <Page width="full">
       <PageHeader size="lg">
@@ -226,18 +221,7 @@ export function BudgetPage() {
               note={t(b.rollover ? "budget.carriedNote" : "budget.noCarry")}
               loading={current === undefined}
             />
-            <FigureCard
-              label={t("budget.spent")}
-              value={current && figure(current.spent.amount)}
-              note={
-                current === undefined
-                  ? ""
-                  : t("budget.usedNote", {
-                      share: percent(usedShare(current)),
-                    })
-              }
-              loading={current === undefined}
-            />
+            <BudgetSpentFigure progress={current} />
             <FigureCard
               label={t("budget.available")}
               value={current && figure(current.available.amount)}

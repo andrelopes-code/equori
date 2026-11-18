@@ -29,6 +29,7 @@ import { useMemo, useState } from "react";
 
 import { ProblemError, errorText } from "@/api/problem";
 import { useCategoryEntries } from "@/features/categories";
+import { GoalPaymentSection } from "@/features/goals";
 import { RealizedOccurrences } from "@/features/planning";
 import { DetailActions } from "@/features/transactions/transaction-detail/detail-actions";
 import { AttachmentsSection } from "@/features/transactions/attachments/attachments-section";
@@ -276,6 +277,10 @@ export function TransactionDetail({
               />
             </DetailPanelSection>
           )}
+          <GoalPaymentSection
+            transaction={tx}
+            expense={expenseState(tx, accounts).expense}
+          />
           <MovedAccountsSection
             postings={tx.postings}
             accounts={accounts}

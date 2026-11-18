@@ -22,6 +22,7 @@ const emergency = {
   current: money(1008341),
   remaining: money(1991659),
   progress_bp: 3361,
+  spent: money(0),
 };
 const trip = {
   id: "d1000000-0000-4000-8000-000000000002",
@@ -32,6 +33,7 @@ const trip = {
   current: money(500000),
   remaining: money(0),
   progress_bp: 10000,
+  spent: money(0),
 };
 const laptop = {
   id: "d1000000-0000-4000-8000-000000000003",
@@ -42,6 +44,7 @@ const laptop = {
   current: money(400000),
   remaining: money(500000),
   progress_bp: 4444,
+  spent: money(0),
 };
 
 function api(items: unknown[], schedules: unknown[] = []) {

@@ -1781,6 +1781,8 @@ schemas:
         type: integer
       spent:
         $ref: "#/components/schemas/Money"
+      unexplained_withdrawal:
+        $ref: "#/components/schemas/GoalWithdrawal"
       prices:
         type: array
         description: Prices that value accounts in another currency (P8 amendment A72).
@@ -1820,6 +1822,19 @@ schemas:
         $ref: "#/components/schemas/Money"
       value:
         $ref: "#/components/schemas/Money"
+  GoalWithdrawal:
+    type: object
+    required: [amount, since]
+    description: |
+      The latest withdrawal of the last 12 months from the accounts the goal holds whole into another balance
+      account, less the expenses linked to the goal dated on or after it; absent when they cover it (planning
+      coherence A256). The screen asks which expenses the goal paid.
+    properties:
+      amount:
+        $ref: "#/components/schemas/Money"
+      since:
+        type: string
+        format: date
   GoalExpense:
     type: object
     required: [transaction_id, date, description, amount, direct]

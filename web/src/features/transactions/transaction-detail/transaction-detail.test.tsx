@@ -63,6 +63,47 @@ beforeEach(() => {
 });
 
 describe("transaction detail", () => {
+  // Planning coherence A256: an expense names the goal that paid it.
+  it("links an expense to the goal chosen in the detail", async () => {
+    const sent: string[] = [];
+    const goalID = "d1000000-0000-4000-8000-000000000001";
+    const base = api();
+    const goals = fakeApi({
+      "GET /api/v1/goals": () =>
+        json(200, { items: [{ id: goalID, name: "Trip" }] }),
+      [`GET /api/v1/goals/${goalID}/expenses`]: () => json(200, { items: [] }),
+      [`PUT /api/v1/goals/${goalID}/expenses/${txID}`]: () => {
+        sent.push("link");
+        return new Response(null, { status: 204 });
+      },
+    });
+    await renderApp(`/transactions/${txID}`, {
+      fetch: Object.assign(
+        (input: RequestInfo | URL, init?: RequestInit) => {
+          const path = new URL(new Request(input, init).url).pathname;
+          return path.startsWith("/api/v1/goals")
+            ? goals(input, init)
+            : base(input, init);
+        },
+        { calls: [] },
+      ),
+    });
+
+    const section = await screen.findByRole("region", {
+      name: catalogEn["detail.goal"],
+    });
+    await userEvent.click(
+      within(section).getByRole("combobox", {
+        name: catalogEn["detail.goal.label"],
+      }),
+    );
+    await userEvent.click(await screen.findByRole("option", { name: "Trip" }));
+
+    await waitFor(() => {
+      expect(sent).toEqual(["link"]);
+    });
+  });
+
   it("lists the occurrences the transaction realized and releases one", async () => {
     const sent: string[] = [];
     const realized = {

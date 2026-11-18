@@ -24,6 +24,8 @@ type GoalView struct {
 	// Spent sums the expense postings of the transactions the goal pays, in the base currency
 	// (planning coherence A256).
 	Spent money.Money
+	// Withdrawal is nil when linked expenses cover the latest withdrawal, or the goal had none.
+	Withdrawal *GoalWithdrawal
 }
 
 // TrailingReturn is a return in basis points a year over a window of whole months.
