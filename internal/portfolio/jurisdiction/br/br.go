@@ -78,6 +78,7 @@ var subtypeClass = map[string]map[string]string{
 		"tesouro":               "fixed_income",
 		"lc":                    "fixed_income",
 		"lf":                    "fixed_income",
+		"lf_subordinated":       "fixed_income",
 		"debenture":             "fixed_income",
 		"lig":                   "fixed_income_exempt",
 		"dpge":                  "fixed_income",

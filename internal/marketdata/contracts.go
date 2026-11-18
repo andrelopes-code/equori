@@ -128,8 +128,8 @@ func (m *Module) withContractDefaults(c Contract, applicationID uuid.UUID) Contr
 	}
 
 	if c.RedeemableFrom.IsZero() {
-		minimum := MinimumRedemption(c.Region, c.Subtype, c.IndexID, c.IssuedOn)
-		if minimum.Before(c.MaturesOn) {
+		minimum := MinimumRedemption(c.Region, c.Subtype, c.IndexID, c.IssuedOn, c.MaturesOn)
+		if !minimum.After(c.MaturesOn) {
 			c.RedeemableFrom = minimum
 		}
 	}

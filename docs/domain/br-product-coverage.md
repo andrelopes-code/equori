@@ -26,11 +26,11 @@ Source status:
 | F-07 | LCI, LCA, percent of CDI, minimum term | supported | subtypes `lci`, `lca`, exempt class; the minimum term of the rule of the issue date is the default `redeemable_from` of a new contract (`MinimumRedemption`); `TestMinimumTermOfLCIAndLCA` | an LCA updated by a price index takes no default | Resolução CMN 5.119/2024 and 5.215/2025 (BCB normativos and press of 2024-02 and 2025-05, read 2026-11-18) |
 | F-08 | LCI, LCA, IPCA plus spread or pre-fixed | partial | as F-03 and F-07 | as F-03; an LCA on IPCA takes no default minimum term | to read |
 | F-09 | LC | supported | subtype `lc`, taxed, FGC list; `TestBRProductMatrix` row F-09 against the LTN example of the Tesouro Nacional | none | in code |
-| F-10 | LF, senior and subordinated | partial | subtype `lf`, taxed, outside the FGC list | no subordinated variant; no rule on redemption before maturity | to read |
+| F-10 | LF, senior and subordinated | supported | subtypes `lf` and `lf_subordinated`, taxed, outside the FGC list; a new one takes its maturity as `redeemable_from` (`MinimumRedemption`; `TestMinimumTermOfLCIAndLCA` cases LF and LF subordinated) | none | Lei 12.249/2010 art. 37 and 38; Resolução CMN 5.007/2022 art. 5 (redemption before maturity barred; minimum term of 24 months, 60 with subordination) |
 | F-11 | LIG | supported | subtype `lig`, exempt class, outside the FGC; the withholding estimate follows the class (`TestWithholdingFollowsTheTaxClass`); `TestBR` | none | Lei 13.097/2015 (LIG chapter); the issuer's statement (Itaú, investor relations, LIG page) read 2026-11-18; a B3 glossary entry that calls it taxed contradicts the law and the issuers |
 | F-12 | LH, LCD | supported | subtypes `lh`, `lcd`, exempt class, FGC list; `TestBRProductMatrix` row F-12 against the LTN example of the Tesouro Nacional | none | Lei 11.033/2004 art. 3, II (LH), read on 2026-11-18; LCD: Lei 14.937/2024, to read |
 | F-13 | DPGE | supported | subtype `dpge`, taxed class; the FGC guarantee holds a special limit of R$ 40,000,000.00 per issuer apart from the ordinary one and outside the four-year ceiling; `issuer_exposure` returns `special_value`; `TestExposureOfDPGE`, `TestGuarantee` | none | FGC, material for brokers, December 2025 (fgc.org.br), read 2026-11-18 |
-| F-14 | Debenture with half-yearly coupon and amortization | partial | `record_fixed_income` takes `interest_every_months`, `first_payment_on` and `amortizations`; `get_portfolio` view `fixed_income_events` | none for the schedule: `set_payment_schedule` writes explicit payment dates (`TestSetPaymentScheduleTool`) | to read |
+| F-14 | Debenture with half-yearly coupon and amortization | supported | `record_fixed_income` takes `interest_every_months`, `first_payment_on` and `amortizations`; `get_portfolio` view `fixed_income_events` | none | to read |
 | F-15 | Incentivized debenture | supported | subtype `debenture_incentivada`, exempt class | none | rate of 0% for an individual: Lei 12.431/2011 art. 2, I, read on 2026-11-18 (planalto.gov.br); 2026: Medida Provisória 1.303/2025, which would have taxed it, lost effect unvoted on 2025-10-08, so the exemption stands (press of 2025-10 and 2026-02, read 2026-11-18) |
 | F-16 | CRI, CRA, IPCA plus spread, monthly interest, irregular amortization | partial | subtypes `cri`, `cra`, exempt class; coupons and amortizations as F-14 | as F-03; the explicit schedule is written by `set_payment_schedule` (`TestSetPaymentScheduleTool`); the unit price formula of the registrar was not compared | to read |
 | F-17 | CRI, CRA, percent of CDI, CDI plus spread, pre-fixed | supported | as F-01, F-02, F-04; `TestBRProductMatrix` row F-17 (pre-fixed) against the LTN example of the Tesouro Nacional | none | to read |
@@ -91,8 +91,8 @@ Source status:
 
 | Verdict | Rows |
 |---|---|
-| supported | 34 |
-| partial | 20 |
+| supported | 36 |
+| partial | 18 |
 | unsupported | 0 |
 
 ## What the assistant says

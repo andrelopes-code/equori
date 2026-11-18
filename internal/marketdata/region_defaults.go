@@ -116,8 +116,14 @@ func SettlementCycle(mic string, date time.Time) (int, string, bool) {
 // price index waits 6 months from 2025-08-01 (Resolução CMN 5.215/2025), 12 months (LCI) or 9
 // months (LCA) from 2024-02-02 (Resolução CMN 5.119/2024) and 90 days before; an LCI updated by a
 // price index waits 36 months from 2024-02-02. An LCA updated by a price index has no figure the
-// sources state, so it takes none (coverage row F-07).
-func MinimumRedemption(region, subtype, indexID string, issuedOn time.Time) time.Time {
+// sources state, so it takes none (coverage row F-07). An LF, senior or subordinated, and a DPGE
+// redeem at maturesOn only (Lei 12.249/2010 art. 38, Resolução CMN 5.007/2022 art. 5; the DPGE
+// rule of the FGC; coverage row F-10).
+func MinimumRedemption(region, subtype, indexID string, issuedOn, maturesOn time.Time) time.Time {
+	if region == "BR" && (subtype == "lf" || subtype == "lf_subordinated" || subtype == "dpge") {
+		return maturesOn
+	}
+
 	if region != "BR" || (subtype != "lci" && subtype != "lca") || issuedOn.IsZero() {
 		return time.Time{}
 	}
