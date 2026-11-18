@@ -102,7 +102,8 @@ export function PlanEditor({
           onShowAmounts={privacy.toggle}
         />
 
-        <div ref={panelRef}>
+        <div className={styles.panel}>
+          <div ref={panelRef} className={styles.panelProbe} />
           <PlanReferencePanel
             plan={plan}
             source={draft.source}

@@ -357,10 +357,26 @@
     background: var(--slotted-tone-accent-border);
   }
 
+  .panel {
+    position: relative;
+  }
+
+  /* The panel's box moved up by the height of the page's chrome: it leaves the viewport when
+     the panel goes under that chrome, and the strip is shown from then. */
+  .panelProbe {
+    position: absolute;
+    inset-inline: 0;
+    inset-block: calc(-1 * var(--slotted-page-sticky-top, 0px))
+      var(--slotted-page-sticky-top, 0px);
+    pointer-events: none;
+  }
+
   .strip {
     composes: edge from "../../../ui/display/panel-edge.module.css";
     position: sticky;
-    inset-block-start: var(--slotted-page-sticky-top, 0);
+    inset-block-start: calc(
+      var(--slotted-page-sticky-top, 0px) + var(--slotted-space-3)
+    );
     z-index: 1;
     display: flex;
     align-items: center;
