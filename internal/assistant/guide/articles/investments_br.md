@@ -8,15 +8,11 @@ Terms. Indexes: cdi (business days, bus252) and ipca (monthly, act365). A pre-fi
 
 Tesouro Direto. The code is the listing code: LFT, LTN, NTNF, NTNB, NTNBP, NTNC, EDUCA or RENDA, a dot and the maturity as YYYYMMDD (NTNB.20350515). Subtype tesouro, quote currency BRL, scale 2.
 
-Dividend. Exempt up to R$ 50,000 a month paid by one source to one individual, and above it when the profit is of 2025 or earlier, approved by 2025-12-31 and paid as the approval states. From 2026 a source that pays more than R$ 50,000 in a month withholds 10% of the whole amount (Lei 15.270/2025); withheld is that amount. The annual minimum tax on high income is settled in the tax return, not recorded here.
-
-JCP. 15% at source up to 2025-12-31 and 17.5% from 2026-01-01, by the payment date (Lei Complementar 224/2025).
-
 Issuer. The CNPJ of the issuer of a contract, numeric or alphanumeric (IN RFB 2.229/2024), is its identifier with the scheme br_cnpj; the check digits are validated.
 
 Funds. The subtypes of fund are fixed_income_fund, multimarket and equity_fund (get_portfolio view subtypes). Come-cotas applies to fixed_income_fund and multimarket, and not to equity_fund; it is recorded with record_corporate_action kind unit_tax. A fixed income or multimarket fund cancels units on the last business day of May and of November for the tax on the gain: 15% for a long-term fund, 20% for a short-term one (Lei 14.754/2023, art. 17 to 19).
 
-Distribution. Exempt for a listed FII or Fiagro under the conditions of Lei 11.033/2004 (exchange traded, holder below 10% of the units); the informe of the fund states them.
+Stocks, FII, Fiagro, ETF and BDR, their income and the tax of their sale: get_help topic equities_br.
 
 Indexer comparison. The sources are the CDI and the IPCA of the instance, the Focus survey of the Banco Central do Brasil for the expected rates, and the curves of Tesouro Direto for the market rate of the term and the inflation implied by government bonds. The tax follows the table of the income tax above, and an exempt security pays none. The screen gives no recommendation and no verdict.
 
