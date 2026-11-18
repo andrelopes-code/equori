@@ -125,10 +125,14 @@ describe("Fund report on the instrument page", () => {
     expect(
       await screen.findByText(
         new RegExp(
-          `CSHG Logística FII · Logística · informe de ${month} · entregue em 13/11/2026`,
+          `^Logística · informe de ${month} · entregue em 13/11/2026$`,
         ),
       ),
     ).toBeInTheDocument();
+    expect(screen.getByText("CSHG Logística FII")).toHaveAttribute(
+      "title",
+      "CSHG Logística FII",
+    );
     expect(await screen.findByText("1,44")).toBeInTheDocument();
     expect(screen.getAllByText("preço de 17/11/2026")).toHaveLength(2);
     expect(screen.getByText("633.787")).toBeInTheDocument();

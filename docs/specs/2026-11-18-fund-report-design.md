@@ -105,7 +105,7 @@ Checked on 2026-11-18 for `HGLG11`, period 2026-10-01: unit book value 165.02474
 
 `FundReport` in `web/src/features/instruments/fund-report/`, exported by the feature `index.ts`. Props: the instrument code. It reads `GET /fund-reports`, the instrument's quote and `GET /curves`. It draws nothing when the list is empty.
 
-- Header line: the fund's name as the source writes it, its segment, "Informe de outubro de 2026 · entregue em 13/11/2026", and the source as a link to the dataset page ("CVM, Informe Mensal de FII").
+- Header line: the segment and "informe de outubro de 2026 · entregue em 13/11/2026". Under it, on its own line, the fund's name as the source writes it, cut with an ellipsis and whole in its title when the line is too short (a name of the register runs past 70 characters). The source is a link to the dataset page ("CVM, Informe Mensal de FII").
 - Figures as peer tiles of one grid, as the institution figures of an account, each with a line that says what it counts or the date of the price it uses:
   - "Valor patrimonial da cota"
   - "Preço sobre o valor patrimonial", with "preço de 17/11/2026"

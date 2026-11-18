@@ -44,7 +44,6 @@ export function FundReport({ code, quote }: FundReportProps) {
   if (report === undefined || figures === null) return null;
 
   const description = [
-    report.name,
     report.segment,
     t("fundReport.month", {
       month: formatReferenceMonth(figures.period.slice(0, 7), locale),
@@ -70,6 +69,10 @@ export function FundReport({ code, quote }: FundReportProps) {
 
       <SectionBody>
         <Stack gap={6}>
+          <Text size="sm" truncate title={report.name}>
+            {report.name}
+          </Text>
+
           {stale && (
             <Text size="sm" tone="warning">
               {t("fundReport.stale")}
