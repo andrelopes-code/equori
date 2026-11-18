@@ -296,6 +296,7 @@ Funds and others:
 | Q3 | Files in the conversation belong to this delivery (4.4, phase 5). | owner, 2026-11-18 |
 | Q4 | Phase 6 implements the unsupported products in this order: F-04 (CDI plus spread), F-16 and F-14 (coupons with amortization), E-06 and E-07 (subscription, merger), U-05 (pension plans), F-13 and F-18 (missing subtypes), E-12 (derivatives), then the remaining rows by issue number. The order follows how many retail investors hold each product; phase 1 corrects it with the figures of B3 and ANBIMA it reads. | session, 2026-11-18 |
 | Q5 | The eval set of A4 is written in phase 3 and is not run by an agent. It calls a paid model; the owner names the model and the request budget in the message that asks for a run. | project rule |
+| Q6 | A file not yet sent has no conversation: `createAssistantFile` takes an optional `conversation_id`, and the turn that sends a file without one binds it to its conversation. The limit of 50 MiB of F3 counts the files of the conversation named, or the unsent files of the member when none is named. `createAssistantFile` first deletes the unsent files of the member created more than 24 hours earlier; no background job is added. | session, 2026-11-18 |
 
 ## 9. Cross-cutting questions
 
