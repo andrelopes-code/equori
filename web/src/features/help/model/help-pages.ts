@@ -36,6 +36,7 @@ export const helpPages: readonly HelpPageEntry[] = [
   { id: "glossary", kind: "reference" },
   { id: "statement", kind: "reference" },
   { id: "portfolio", kind: "reference" },
+  { id: "contribution-plan", kind: "reference" },
   { id: "budget-plan", kind: "reference" },
   { id: "troubleshooting", kind: "reference" },
   { id: "how-money-is-recorded", kind: "explanation" },

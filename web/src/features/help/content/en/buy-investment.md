@@ -1,4 +1,4 @@
-# Record the purchase of an investment
+# Buy an investment
 
 A purchase of an investment takes money from the cash of a brokerage and adds units to the portfolio. It is recorded on [New transaction](/transactions/new), under **Other kinds**.
 

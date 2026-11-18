@@ -90,6 +90,17 @@ describe("Contribution plan page", () => {
     await renderApp("/portfolio/contribution-plan", { fetch: api() });
   }
 
+  // Help catalog spec, HC3: the screen links the page that describes it.
+  it("links its help page from the header", async () => {
+    await open();
+
+    const link = await screen.findByRole("link", {
+      name: catalogPtBR["help.screen"],
+    });
+
+    expect(link.getAttribute("href")).toBe("/help/contribution-plan");
+  });
+
   // CN20: the amount field offers what the month plan already sends to the brokerage.
   it("CN20: offers the amount the month plan sends to the brokerage", async () => {
     localStorage.setItem(

@@ -98,6 +98,11 @@ export const helpGuides: Readonly<Record<string, HelpGuide | undefined>> = {
   },
   statement: { area: "cards", screen: "/cards", related: ["pay-statement"] },
   portfolio: { area: "portfolio", screen: "/portfolio" },
+  "contribution-plan": {
+    area: "portfolio",
+    screen: "/portfolio/contribution-plan",
+    related: ["portfolio", "buy-investment"],
+  },
   "budget-plan": { area: "planning", screen: "/planning" },
   "how-money-is-recorded": { area: "transactions" },
   "bank-connections": { area: "accounts", related: ["connect-bank"] },

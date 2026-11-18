@@ -1,16 +1,5 @@
-import { Button } from "@slotted/react/button";
 import { Page, PageBody } from "@slotted/react/page";
-import {
-  PageHeader,
-  PageHeaderActions,
-  PageHeaderHeading,
-  PageHeaderSubheading,
-  PageHeaderTitle,
-  PageHeaderTitleArea,
-  PageHeaderTitleRow,
-} from "@slotted/react/page-header";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { useApi } from "@/api/api-context";
@@ -18,6 +7,7 @@ import { errorText } from "@/api/problem";
 import { accountsQuery } from "@/features/accounts";
 import { contributionPlanQuery } from "@/features/portfolio/api";
 import { EditSection } from "@/features/portfolio/contribution-plan/editor/edit-section";
+import { PlanHeader } from "@/features/portfolio/contribution-plan/header/plan-header";
 import { IdealSection } from "@/features/portfolio/contribution-plan/ideal/ideal-section";
 import { ContributionEmpty } from "@/features/portfolio/contribution-plan/states/contribution-empty";
 import { ContributionSaveBar } from "@/features/portfolio/contribution-plan/editor/contribution-save-bar";
@@ -32,7 +22,6 @@ import { useLeaveGuard } from "@/features/portfolio/contribution-plan/editor/use
 import { usePlanEditor } from "@/features/portfolio/contribution-plan/editor/use-plan-editor";
 import { useT } from "@/i18n/i18n-provider";
 import { FormNotice } from "@/ui/form-layout/form-notice";
-import { PageBack } from "@/ui/navigation/page-back";
 import { PageStack } from "@/ui/page-layout/page-stack";
 
 // Where this month's money goes, how far the portfolio is from its ideal (spec, Screen).
@@ -91,31 +80,11 @@ export function ContributionPlanPage() {
         )
       }
     >
-      <PageHeader size="lg">
-        <PageHeaderTitleArea>
-          <PageBack render={(props) => <Link {...props} to="/portfolio" />}>
-            {t("nav.portfolio")}
-          </PageBack>
-          <PageHeaderTitleRow>
-            <PageHeaderTitle>
-              <PageHeaderHeading>
-                {t("contributionPlan.title")}
-              </PageHeaderHeading>
-              <PageHeaderSubheading>
-                {t("contributionPlan.subtitle")}
-              </PageHeaderSubheading>
-            </PageHeaderTitle>
-
-            <PageHeaderActions>
-              {editor.draft === undefined && !empty && (
-                <Button disabled={plan.data === undefined} onClick={handleEdit}>
-                  {t("contributionPlan.edit")}
-                </Button>
-              )}
-            </PageHeaderActions>
-          </PageHeaderTitleRow>
-        </PageHeaderTitleArea>
-      </PageHeader>
+      <PlanHeader
+        editable={editor.draft === undefined && !empty}
+        editDisabled={plan.data === undefined}
+        onEdit={handleEdit}
+      />
 
       <PageBody>
         <PageStack>

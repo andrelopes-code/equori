@@ -303,3 +303,18 @@ Demo data: the book held no repayment left to link. `cmd/demoseed` gains `pendin
 ### Finding: the mark across the neighbour
 
 A mark of 12 px around a row of a list whose rows stand 6 px apart crossed the text of the rows above and below. Fixed in the tool: `capture.mjs` measures the free room around the target (visible text, controls and pictures outside it, on top at their centre, within 12 px) and `geometry.mjs` shrinks the pad on every side alike to one pixel short of it (`geometry.test.mjs`, "a mark keeps inside the room free around its element").
+
+### Slice 9: contribution-plan
+
+| Claim | Source |
+|---|---|
+| The plan splits the portfolio into groups with a target; it only buys | `contributionPlan.subtitle`, intro text of the screen; `internal/assistant/guide/articles/contribution_plan.md` ("The split only buys") |
+| This month: Contribution, the portfolio today and after, a sentence of where the money goes | `month/` components; `contributionPlan.verdictMany`, `contributionPlan.verdictRest`; figure `plan-month` |
+| Shopping list: asset or group, approximate order in units, total, share; Copy list | aria tree of the table, demo book; `contributionPlan.copy` |
+| Portfolio against the target: bars today, with this contribution, target; the sentence of each group; a group above its target receives nothing | legend and verdicts of the screen; `contribution_plan.md` |
+| Edit groups and targets, the lock, Assets (…), Save, Discard | `contributionPlan.edit`, `contributionPlan.lock`, `contributionPlan.assetsButton`, `contributionPlan.save`, `contributionPlan.discard` |
+| Outside the plan; Start from my portfolio, Start from scratch | `contributionPlan.outside*`, `contributionPlan.startPortfolio`, `contributionPlan.startScratch` |
+
+The book of the isolated instance lacked its plan (the seed stopped at the goals); it was saved through `PUT /api/v1/contribution-plan` with the groups and targets of `cmd/demoseed/groups_data.go` and the contracts of the book not redeemed. The tutorial declares the preview of the month as a read. `ContributionPlanPage` held 156 lines: its header moved to `contribution-plan/header/plan-header.tsx`, with the help link (136 lines). Portfolio page tests: 132 before, 133 after; the edit button inverted in the new header failed 27 tests.
+
+The English title of `buy-investment` became "Buy an investment": "buy investment" found the contribution plan first, whose lead says the plan only buys.

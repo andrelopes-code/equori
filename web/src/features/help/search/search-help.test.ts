@@ -152,6 +152,8 @@ describe("the words of a reader", () => {
     ["en", "correct transaction", "correct-transaction"],
     ["pt", "reembolso", "reimbursement"],
     ["en", "reimbursement", "reimbursement"],
+    ["pt", "plano de aporte", "contribution-plan"],
+    ["en", "contribution plan", "contribution-plan"],
     ["pt", "criar agendamento", "schedule"],
     ["en", "create schedule", "schedule"],
     ["pt", "criar orçamento", "create-budget"],
