@@ -97,6 +97,8 @@ type LedgerCorporateAction struct {
 	FractionRemainder int64
 	UnitCost          pgtype.Numeric
 	Value             int64
+	NewAccountID      uuid.NullUUID
+	CostBp            *int32
 }
 
 type LedgerCreditLimit struct {

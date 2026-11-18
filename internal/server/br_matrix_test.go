@@ -194,6 +194,7 @@ func figuresHTTP(
 		}
 
 		f.Value = decimalBRL(p.MarketValue.Amount)
+
 		if row.WantIncomeTax == "" {
 			continue
 		}
@@ -279,6 +280,7 @@ func figuresTool(
 		}
 
 		f.Value = p.MarketValue.Amount
+
 		if row.WantIncomeTax == "" {
 			continue
 		}

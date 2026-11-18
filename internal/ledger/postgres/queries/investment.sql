@@ -247,7 +247,9 @@ INSERT INTO
         received,
         fraction_remainder,
         unit_cost,
-        value
+        value,
+        new_account_id,
+        cost_bp
     )
 VALUES
     (
@@ -261,7 +263,9 @@ VALUES
         @received,
         @fraction_remainder,
         @unit_cost,
-        @value
+        @value,
+        sqlc.narg (new_account_id),
+        sqlc.narg (cost_bp)
     );
 
 -- name: ListCorporateActions :many

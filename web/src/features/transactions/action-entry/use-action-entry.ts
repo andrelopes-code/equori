@@ -13,6 +13,7 @@ import {
   emptyAction,
   isActionDraft,
 } from "@/features/transactions/action-entry/action-draft";
+import { exchangeProblems } from "@/features/transactions/action-entry/action-exchange";
 import type { ActionDraft } from "@/features/transactions/action-entry/action-draft";
 import { useRecordCorporateAction } from "@/features/transactions/api";
 import type { NewTransactionSearch } from "@/features/transactions/model/search";
@@ -121,6 +122,8 @@ export function useActionEntry(
         problems.ratio_from = t("action.required.ratio");
       if ((draft.ratioTo ?? 0) <= 0)
         problems.ratio_to = t("action.required.ratio");
+      for (const [field, key] of Object.entries(exchangeProblems(draft)))
+        problems[field] = t(key);
     }
     if (
       Object.keys(problems).length > 0 ||

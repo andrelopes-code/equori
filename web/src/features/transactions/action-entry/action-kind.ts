@@ -8,11 +8,19 @@ export const actionKinds = [
   "reverse_split",
   "bonus",
   "unit_tax",
+  "conversion",
+  "spin_off",
 ] as const;
 
-// The unit tax cancels units of a fund (FC25); no other holding offers it.
+// The kinds that give units of another security (coverage row E-07).
+export const exchangeKinds: readonly ActionKind[] = ["conversion", "spin_off"];
+
+// The unit tax cancels units of a fund (FC25); a conversion and a spin-off exchange the shares of
+// a company, which a fund holding offers neither.
 export function offeredKinds(fund: boolean): readonly ActionKind[] {
-  return fund ? actionKinds : actionKinds.filter((k) => k !== "unit_tax");
+  return actionKinds.filter((k) =>
+    fund ? !exchangeKinds.includes(k) : k !== "unit_tax",
+  );
 }
 
 export const actionKindKeys = {
@@ -20,4 +28,6 @@ export const actionKindKeys = {
   reverse_split: "action.kind.reverse_split",
   bonus: "action.kind.bonus",
   unit_tax: "action.kind.unit_tax",
+  conversion: "action.kind.conversion",
+  spin_off: "action.kind.spin_off",
 } satisfies Record<ActionKind, MessageKey>;

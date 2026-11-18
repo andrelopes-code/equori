@@ -13,11 +13,11 @@ import (
 )
 
 // Budgets of spec 7.4: a declaration sent to the model and the whole catalog, in bytes. The
-// catalog ceiling is the 84,877 bytes measured at the end of tool parity phase 2 plus 10%
-// (assistant parity design, G7 and G12).
+// catalog ceiling is the threshold of G12 while phase 6 adds products; above it the tools split
+// into sets declared on demand first (assistant parity design, G7 as amended and G12).
 const (
 	maxDeclaration = 3500
-	maxCatalog     = 93364
+	maxCatalog     = 100000
 )
 
 func chatTools(t *testing.T) []tool.Tool {

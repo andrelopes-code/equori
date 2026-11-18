@@ -1,7 +1,6 @@
 package app
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -66,8 +65,11 @@ func (s *Service) buildCorporateAction(
 		return domain.Transaction{}, err
 	}
 
-	if o.Kind == domain.ActionUnitTax {
+	switch {
+	case o.Kind == domain.ActionUnitTax:
 		return s.buildUnitTax(ctx, r, booksID, o, security, h, base)
+	case o.Kind.IsExchange():
+		return s.buildExchange(ctx, r, o, security, h, base)
 	}
 
 	postings, action, err := domain.BuildCorporateAction(o, h, base)
@@ -77,6 +79,57 @@ func (s *Service) buildCorporateAction(
 
 	return domain.Transaction{
 		BooksID:           booksID,
+		Date:              o.Date,
+		Description:       o.Description,
+		BalancingCurrency: base,
+		Postings:          postings,
+		CorporateAction:   &action,
+	}, nil
+}
+
+// buildExchange builds a conversion or a spin-off of holding h of security into the holding of
+// o.NewInstrument under the same brokerage, created when absent (coverage row E-07).
+func (s *Service) buildExchange(
+	ctx context.Context,
+	r Repository,
+	o domain.ActionOrder,
+	security domain.Account,
+	h domain.Holding,
+	base money.Currency,
+) (domain.Transaction, error) {
+	o.Instrument = security.Instrument
+
+	in, err := s.ins.Instrument(ctx, o.NewInstrument)
+	if err != nil || (in.BooksID != 0 && in.BooksID != security.BooksID) {
+		return domain.Transaction{}, fieldErr(
+			"new_instrument",
+			"is not a known instrument",
+			domain.ErrValidation,
+		)
+	}
+
+	brokerage, err := s.lockBrokerage(ctx, r, security.BooksID, security.ParentID)
+	if err != nil {
+		return domain.Transaction{}, err
+	}
+
+	holding, err := s.findOrCreateHolding(
+		ctx,
+		r,
+		brokerage,
+		target{Instrument: o.NewInstrument, Create: true},
+	)
+	if err != nil {
+		return domain.Transaction{}, err
+	}
+
+	postings, action, err := domain.BuildExchange(o, h, holding.ID, in.Scale)
+	if err != nil {
+		return domain.Transaction{}, err
+	}
+
+	return domain.Transaction{
+		BooksID:           security.BooksID,
 		Date:              o.Date,
 		Description:       o.Description,
 		BalancingCurrency: base,
@@ -200,37 +253,6 @@ func (s *Service) buildCustodyTransfer(
 	}, nil
 }
 
-// givingHolding loads the holding o moves out of and checks it can move to o's brokerage.
-func givingHolding(
-	ctx context.Context,
-	r Repository,
-	booksID int64,
-	o domain.CustodyOrder,
-) (domain.Account, error) {
-	from, err := loadAccount(ctx, r, booksID, o.AccountID, "account_id")
-	if err != nil {
-		return domain.Account{}, err
-	}
-
-	if !from.HoldsSecurity() {
-		return domain.Account{}, fieldErr(
-			"account_id",
-			"must hold a security",
-			domain.ErrValidation,
-		)
-	}
-
-	if from.ParentID == o.BrokerageID {
-		return domain.Account{}, fieldErr(
-			"brokerage_id",
-			"must be another brokerage",
-			domain.ErrValidation,
-		)
-	}
-
-	return from, nil
-}
-
 // custodyDescription is the description given, else the ledger's wording of a custody transfer
 // of code in the book's language (A228 IO31).
 func (s *Service) custodyDescription(
@@ -270,22 +292,6 @@ func (s *Service) receivingHolding(
 		brokerage,
 		target{Instrument: from.Instrument, Create: true},
 	)
-}
-
-// lockPair locks two accounts in ID order, so two transfers in opposite directions cannot wait
-// on each other.
-func lockPair(ctx context.Context, r Repository, booksID int64, a, b uuid.UUID) error {
-	if bytes.Compare(a[:], b[:]) > 0 {
-		a, b = b, a
-	}
-
-	for _, id := range []uuid.UUID{a, b} {
-		if _, err := r.LockAccount(ctx, booksID, id); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 // buildUnitTax builds the transaction of a unit tax on h, the holding of security the day

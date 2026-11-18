@@ -18,6 +18,10 @@ export interface ActionDraft {
   amount: number;
   categoryId: string | null;
   description: string;
+  // A conversion or a spin-off: the code of the security received and, for a spin-off, the
+  // percent of the cost it takes, as typed.
+  newInstrument: string;
+  costPercent: string;
 }
 
 export function emptyAction(
@@ -36,6 +40,8 @@ export function emptyAction(
     amount: 0,
     categoryId: null,
     description: "",
+    newInstrument: "",
+    costPercent: "",
   };
 }
 

@@ -3,6 +3,8 @@ package toolapi
 
 import (
 	"context"
+	"strconv"
+	"strings"
 
 	"github.com/google/uuid"
 
@@ -134,4 +136,16 @@ func itemOf(t domain.Transaction, accounts map[uuid.UUID]domain.Account) tool.It
 func isUncategorizedRole(a domain.Account) bool {
 	return a.SystemRole == domain.RoleUncategorizedExpense ||
 		a.SystemRole == domain.RoleUncategorizedIncome
+}
+
+// percentBP reads a percent with at most two decimals, such as 25 or 12.5, as basis points.
+func percentBP(s string) (int, bool) {
+	whole, frac, _ := strings.Cut(s, ".")
+	if len(frac) > 2 {
+		return 0, false
+	}
+
+	n, err := strconv.Atoi(whole + (frac + "00")[:2])
+
+	return n, err == nil && whole != ""
 }

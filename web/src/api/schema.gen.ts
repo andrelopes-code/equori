@@ -6759,8 +6759,13 @@ export interface components {
             reason: string;
             income: components["schemas"]["InvestmentIncomeInput"];
         };
-        /** @enum {string} */
-        CorporateActionKind: "split" | "reverse_split" | "bonus" | "unit_tax";
+        /**
+         * @description conversion exchanges the whole holding for units of new_instrument and moves its whole cost
+         *     (a merger or a ticker change); spin_off keeps the holding, gives units of new_instrument and
+         *     moves cost_bp of its cost to them, the share the company's notice states.
+         * @enum {string}
+         */
+        CorporateActionKind: "split" | "reverse_split" | "bonus" | "unit_tax" | "conversion" | "spin_off";
         /** @description A unit tax takes quantity (units of the fund cancelled, below the units held) and amount (income tax withheld, base currency), both required with it. */
         CorporateActionInput: {
             /**
@@ -6793,6 +6798,10 @@ export interface components {
             quantity?: components["schemas"]["Money"];
             amount?: components["schemas"]["Money"];
             description?: string;
+            /** @description The security a conversion or a spin-off gives; required with them. Its holding under the brokerage is created when absent. */
+            new_instrument?: string;
+            /** @description Basis points of the cost a spin-off moves to new_instrument; required with spin_off only. */
+            cost_bp?: number;
         };
         CustodyTransferInput: {
             /**
@@ -6820,6 +6829,12 @@ export interface components {
             ratio_to: number;
             held: components["schemas"]["Money"];
             received: components["schemas"]["Money"];
+            /**
+             * Format: uuid
+             * @description The holding of the security a conversion or a spin-off gave; received is in it.
+             */
+            new_account_id?: string;
+            cost_bp?: number;
             /** @description Units left over, a decimal of at most 12 places (A228 IO26, NG2). */
             fraction: string;
             unit_cost?: components["schemas"]["Rate"];

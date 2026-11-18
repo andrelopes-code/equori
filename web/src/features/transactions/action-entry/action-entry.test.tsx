@@ -157,6 +157,47 @@ describe("corporate action entry", () => {
     ]);
   });
 
+  // Coverage row E-07: a spin-off sends the security received and the cost it takes.
+  it("records a spin-off with the security received and the cost moved", async () => {
+    const sent: unknown[] = [];
+    await renderApp(path, {
+      fetch: api(sent, { held: { quantity: 100, cost: 100000 } }),
+    });
+    await chooseAction(catalogEn["action.kind.spin_off"]);
+    await proportion("10", "1");
+    await save();
+
+    expect(
+      await screen.findByText(catalogEn["action.required.newInstrument"]),
+    ).toBeInTheDocument();
+    expect(sent).toEqual([]);
+
+    await userEvent.type(
+      screen.getByRole("textbox", { name: catalogEn["action.newInstrument"] }),
+      "nova3",
+    );
+    await userEvent.type(
+      screen.getByRole("textbox", { name: catalogEn["action.costPercent"] }),
+      "25",
+    );
+    await save();
+
+    await waitFor(() => {
+      expect(sent).toEqual([
+        {
+          brokerage_id: brokerID,
+          instrument: "MXRF11",
+          kind: "spin_off",
+          date: "2026-10-17",
+          ratio_from: 10,
+          ratio_to: 1,
+          new_instrument: "NOVA3",
+          cost_bp: 2500,
+        },
+      ]);
+    });
+  });
+
   // FC25: the unit tax of a fund cancels units and withholds the tax.
   it("records the unit tax of a fund", async () => {
     const sent: unknown[] = [];

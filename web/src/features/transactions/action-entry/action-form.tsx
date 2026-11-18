@@ -6,9 +6,11 @@ import { TextField } from "@slotted/react/text-field";
 
 import {
   actionKindKeys,
+  exchangeKinds,
   offeredKinds,
 } from "@/features/transactions/action-entry/action-kind";
 import { ActionBonusFields } from "@/features/transactions/action-entry/action-bonus-fields";
+import { ActionExchangeFields } from "@/features/transactions/action-entry/action-exchange-fields";
 import { ActionUnitTaxFields } from "@/features/transactions/action-entry/action-unit-tax-fields";
 import type { ActionDraft } from "@/features/transactions/action-entry/action-draft";
 import { ActionPreviewText } from "@/features/transactions/action-entry/action-preview-text";
@@ -166,6 +168,14 @@ export function ActionForm({
       )}
 
       {!unitTax && <ActionPreviewText view={view} />}
+
+      {exchangeKinds.includes(draft.kind) && (
+        <ActionExchangeFields
+          draft={draft}
+          errors={errors}
+          onChange={handleChange}
+        />
+      )}
 
       {draft.kind === "bonus" && (
         <ActionBonusFields

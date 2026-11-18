@@ -3,6 +3,7 @@ import { formatRate } from "@/features/instruments";
 import { useScale } from "@/features/setup";
 import { actionKindKeys } from "@/features/transactions/action-entry/action-kind";
 import { FactItem } from "@/features/transactions/transaction-facts/fact-item";
+import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
@@ -35,6 +36,20 @@ export function ActionFacts({ action }: ActionFactsProps) {
       <FactItem label={t("transaction.facts.received")}>
         {fmt.number(received, scale(received.currency))}
       </FactItem>
+      {action.new_account_id !== undefined && (
+        <FactItem label={t("transaction.facts.newInstrument")}>
+          {received.currency}
+        </FactItem>
+      )}
+      {action.cost_bp !== undefined && (
+        <FactItem label={t("transaction.facts.costMoved")}>
+          {t("transaction.facts.costMovedValue", {
+            percent: numberFormatter(tag, { maximumFractionDigits: 2 }).format(
+              action.cost_bp / 100,
+            ),
+          })}
+        </FactItem>
+      )}
       {action.fraction !== "0" && (
         <FactItem label={t("transaction.facts.fraction")}>
           {formatRate(action.fraction, tag)}

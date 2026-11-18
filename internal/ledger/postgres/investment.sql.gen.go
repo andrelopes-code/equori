@@ -199,7 +199,9 @@ INSERT INTO
         received,
         fraction_remainder,
         unit_cost,
-        value
+        value,
+        new_account_id,
+        cost_bp
     )
 VALUES
     (
@@ -213,7 +215,9 @@ VALUES
         $8,
         $9,
         $10,
-        $11
+        $11,
+        $12,
+        $13
     )
 `
 
@@ -229,6 +233,8 @@ type InsertCorporateActionParams struct {
 	FractionRemainder int64
 	UnitCost          pgtype.Numeric
 	Value             int64
+	NewAccountID      uuid.NullUUID
+	CostBp            *int32
 }
 
 func (q *Queries) InsertCorporateAction(ctx context.Context, arg InsertCorporateActionParams) error {
@@ -244,6 +250,8 @@ func (q *Queries) InsertCorporateAction(ctx context.Context, arg InsertCorporate
 		arg.FractionRemainder,
 		arg.UnitCost,
 		arg.Value,
+		arg.NewAccountID,
+		arg.CostBp,
 	)
 	return err
 }
@@ -422,7 +430,7 @@ func (q *Queries) LaterSaleExists(ctx context.Context, arg LaterSaleExistsParams
 
 const listCorporateActions = `-- name: ListCorporateActions :many
 SELECT
-    transaction_id, books_id, account_id, kind, ratio_from, ratio_to, held, received, fraction_remainder, unit_cost, value
+    transaction_id, books_id, account_id, kind, ratio_from, ratio_to, held, received, fraction_remainder, unit_cost, value, new_account_id, cost_bp
 FROM
     ledger_corporate_action
 WHERE
@@ -456,6 +464,8 @@ func (q *Queries) ListCorporateActions(ctx context.Context, arg ListCorporateAct
 			&i.FractionRemainder,
 			&i.UnitCost,
 			&i.Value,
+			&i.NewAccountID,
+			&i.CostBp,
 		); err != nil {
 			return nil, err
 		}

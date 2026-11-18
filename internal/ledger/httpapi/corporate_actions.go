@@ -3,8 +3,11 @@ package httpapi
 import (
 	"context"
 	"math/big"
+
 	"net/http"
 	"strings"
+
+	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/ledger/domain"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
@@ -52,6 +55,14 @@ func (s *Server) actionOrderFromInput(
 		RatioTo:     b.RatioTo,
 		Description: optString(b.Description),
 	}
+	if b.NewInstrument != nil {
+		o.NewInstrument = money.Currency(*b.NewInstrument)
+	}
+
+	if b.CostBp != nil {
+		o.CostBP = *b.CostBp
+	}
+
 	if b.UnitCost != nil {
 		cost, err := money.ParseRate(*b.UnitCost)
 		if err != nil {
@@ -116,6 +127,14 @@ func toCorporateActionAPI(a domain.CorporateAction) *CorporateAction {
 	if a.UnitCost != nil {
 		cost := a.UnitCost.String()
 		out.UnitCost = &cost
+	}
+
+	if a.NewAccountID != uuid.Nil {
+		out.NewAccountId = &a.NewAccountID
+	}
+
+	if a.CostBP != 0 {
+		out.CostBp = &a.CostBP
 	}
 
 	return out

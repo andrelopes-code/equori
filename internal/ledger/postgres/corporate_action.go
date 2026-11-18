@@ -21,6 +21,13 @@ func (r *Repository) insertCorporateAction(ctx context.Context, t domain.Transac
 		unitCost = platformpg.NumericOf(*a.UnitCost)
 	}
 
+	var costBP *int32
+	if a.CostBP != 0 {
+		//nolint:gosec // at most 9999, checked by the domain and the table
+		v := int32(a.CostBP)
+		costBP = &v
+	}
+
 	return r.q.InsertCorporateAction(ctx, InsertCorporateActionParams{
 		TransactionID:     t.ID,
 		BooksID:           t.BooksID,
@@ -33,6 +40,8 @@ func (r *Repository) insertCorporateAction(ctx context.Context, t domain.Transac
 		FractionRemainder: a.FractionRemainder,
 		UnitCost:          unitCost,
 		Value:             a.Value.Amount(),
+		NewAccountID:      uuid.NullUUID{UUID: a.NewAccountID, Valid: a.NewAccountID != uuid.Nil},
+		CostBp:            costBP,
 	})
 }
 
@@ -79,7 +88,7 @@ func (r *Repository) toCorporateAction(
 		return domain.CorporateAction{}, fmt.Errorf("action %s held: %w", row.TransactionID, err)
 	}
 
-	received, err := app.AmountOf(ctx, r.ins, row.Received, instrument)
+	received, err := app.AmountOf(ctx, r.ins, row.Received, receivedIn(row, t, instrument))
 	if err != nil {
 		return domain.CorporateAction{}, fmt.Errorf(
 			"action %s received: %w",
@@ -102,7 +111,12 @@ func (r *Repository) toCorporateAction(
 		Received:          received,
 		FractionRemainder: row.FractionRemainder,
 		Value:             value,
+		NewAccountID:      row.NewAccountID.UUID,
 	}
+	if row.CostBp != nil {
+		action.CostBP = int(*row.CostBp)
+	}
+
 	if row.UnitCost.Valid {
 		rate, err := platformpg.RateOf(row.UnitCost)
 		if err != nil {
@@ -113,4 +127,20 @@ func (r *Repository) toCorporateAction(
 	}
 
 	return action, nil
+}
+
+// receivedIn is the instrument of the units an action received: the security of the new holding
+// of a conversion or a spin-off, else the instrument of the holding.
+func receivedIn(
+	row LedgerCorporateAction,
+	t *domain.Transaction,
+	instrument money.Currency,
+) money.Currency {
+	for _, p := range t.Postings {
+		if row.NewAccountID.Valid && p.AccountID == row.NewAccountID.UUID {
+			return p.Amount.Currency()
+		}
+	}
+
+	return instrument
 }

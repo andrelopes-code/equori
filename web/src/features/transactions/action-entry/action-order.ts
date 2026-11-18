@@ -1,6 +1,7 @@
 import type { components } from "@/api/schema.gen";
 import { parseRate } from "@/features/instruments";
 import type { ActionDraft } from "@/features/transactions/action-entry/action-draft";
+import { exchangeFields } from "@/features/transactions/action-entry/action-exchange";
 
 type CorporateActionInput = components["schemas"]["CorporateActionInput"];
 
@@ -49,6 +50,7 @@ export function actionOrder(
     ...(bonus && draft.categoryId !== null
       ? { category_id: draft.categoryId }
       : {}),
+    ...exchangeFields(draft),
     ...described,
   };
 }

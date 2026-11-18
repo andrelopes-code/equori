@@ -122,6 +122,9 @@ func collectProperties(s *jsonschema.Schema, into map[string]bool) {
 }
 
 var uncoveredFields = map[string][]string{
+	"recordCorporateAction": {
+		"cost_bp",
+	}, // record_corporate_action reads it as cost_percent, a percent with two decimals (E-07)
 	"importPrices": {
 		"file",
 	}, // import_price_file reads file_id, a file the member attached to the conversation (F7)

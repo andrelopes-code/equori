@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -318,4 +319,51 @@ func payingAccount(
 	}
 
 	return brokerage.InstitutionID != uuid.Nil && cash.InstitutionID == brokerage.InstitutionID, nil
+}
+
+// givingHolding loads the holding o moves out of and checks it can move to o's brokerage.
+func givingHolding(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	o domain.CustodyOrder,
+) (domain.Account, error) {
+	from, err := loadAccount(ctx, r, booksID, o.AccountID, "account_id")
+	if err != nil {
+		return domain.Account{}, err
+	}
+
+	if !from.HoldsSecurity() {
+		return domain.Account{}, fieldErr(
+			"account_id",
+			"must hold a security",
+			domain.ErrValidation,
+		)
+	}
+
+	if from.ParentID == o.BrokerageID {
+		return domain.Account{}, fieldErr(
+			"brokerage_id",
+			"must be another brokerage",
+			domain.ErrValidation,
+		)
+	}
+
+	return from, nil
+}
+
+// lockPair locks two accounts in ID order, so two transfers in opposite directions cannot wait
+// on each other.
+func lockPair(ctx context.Context, r Repository, booksID int64, a, b uuid.UUID) error {
+	if bytes.Compare(a[:], b[:]) > 0 {
+		a, b = b, a
+	}
+
+	for _, id := range []uuid.UUID{a, b} {
+		if _, err := r.LockAccount(ctx, booksID, id); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

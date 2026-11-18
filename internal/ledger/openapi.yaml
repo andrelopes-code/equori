@@ -3886,7 +3886,11 @@ schemas:
         $ref: "#/components/schemas/InvestmentIncomeInput"
   CorporateActionKind:
     type: string
-    enum: [split, reverse_split, bonus, unit_tax]
+    enum: [split, reverse_split, bonus, unit_tax, conversion, spin_off]
+    description: |
+      conversion exchanges the whole holding for units of new_instrument and moves its whole cost
+      (a merger or a ticker change); spin_off keeps the holding, gives units of new_instrument and
+      moves cost_bp of its cost to them, the share the company's notice states.
   CorporateActionInput:
     type: object
     additionalProperties: false
@@ -3933,6 +3937,15 @@ schemas:
       description:
         type: string
         maxLength: 500
+      new_instrument:
+        type: string
+        pattern: "^[A-Z0-9.]{2,20}$"
+        description: The security a conversion or a spin-off gives; required with them. Its holding under the brokerage is created when absent.
+      cost_bp:
+        type: integer
+        minimum: 1
+        maximum: 9999
+        description: Basis points of the cost a spin-off moves to new_instrument; required with spin_off only.
   CustodyTransferInput:
     type: object
     additionalProperties: false
@@ -3973,6 +3986,12 @@ schemas:
         $ref: "#/components/schemas/Money"
       received:
         $ref: "#/components/schemas/Money"
+      new_account_id:
+        type: string
+        format: uuid
+        description: The holding of the security a conversion or a spin-off gave; received is in it.
+      cost_bp:
+        type: integer
       fraction:
         type: string
         description: Units left over, a decimal of at most 12 places (A228 IO26, NG2).

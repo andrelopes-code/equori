@@ -753,7 +753,9 @@ func (e CategoryIcon) Valid() bool {
 // Defines values for CorporateActionKind.
 const (
 	CorporateActionKindBonus        CorporateActionKind = "bonus"
+	CorporateActionKindConversion   CorporateActionKind = "conversion"
 	CorporateActionKindReverseSplit CorporateActionKind = "reverse_split"
+	CorporateActionKindSpinOff      CorporateActionKind = "spin_off"
 	CorporateActionKindSplit        CorporateActionKind = "split"
 	CorporateActionKindUnitTax      CorporateActionKind = "unit_tax"
 )
@@ -763,7 +765,11 @@ func (e CorporateActionKind) Valid() bool {
 	switch e {
 	case CorporateActionKindBonus:
 		return true
+	case CorporateActionKindConversion:
+		return true
 	case CorporateActionKindReverseSplit:
+		return true
+	case CorporateActionKindSpinOff:
 		return true
 	case CorporateActionKindSplit:
 		return true
@@ -1658,14 +1664,22 @@ type Commitment struct {
 // CorporateAction defines model for CorporateAction.
 type CorporateAction struct {
 	AccountId openapi_types.UUID `json:"account_id"`
+	CostBp    *int               `json:"cost_bp,omitempty"`
 
 	// Fraction Units left over, a decimal of at most 12 places (A228 IO26, NG2).
-	Fraction  string              `json:"fraction"`
-	Held      Money               `json:"held"`
-	Kind      CorporateActionKind `json:"kind"`
-	RatioFrom int64               `json:"ratio_from"`
-	RatioTo   int64               `json:"ratio_to"`
-	Received  Money               `json:"received"`
+	Fraction string `json:"fraction"`
+	Held     Money  `json:"held"`
+
+	// Kind conversion exchanges the whole holding for units of new_instrument and moves its whole cost
+	// (a merger or a ticker change); spin_off keeps the holding, gives units of new_instrument and
+	// moves cost_bp of its cost to them, the share the company's notice states.
+	Kind CorporateActionKind `json:"kind"`
+
+	// NewAccountId The holding of the security a conversion or a spin-off gave; received is in it.
+	NewAccountId *openapi_types.UUID `json:"new_account_id,omitempty"`
+	RatioFrom    int64               `json:"ratio_from"`
+	RatioTo      int64               `json:"ratio_to"`
+	Received     Money               `json:"received"`
 
 	// UnitCost Positive exact decimal with at most 12 decimals (ADR 005).
 	//
@@ -1684,13 +1698,23 @@ type CorporateActionInput struct {
 	// CategoryId Income category of a bonus with unit_cost; required with it.
 	CategoryId *openapi_types.UUID `json:"category_id,omitempty"`
 
+	// CostBp Basis points of the cost a spin-off moves to new_instrument; required with spin_off only.
+	CostBp *int `json:"cost_bp,omitempty"`
+
 	// Date The first day without the right.
-	Date        openapi_types.Date  `json:"date"`
-	Description *string             `json:"description,omitempty"`
-	Instrument  *string             `json:"instrument,omitempty"`
-	Kind        CorporateActionKind `json:"kind"`
-	Quantity    *Money              `json:"quantity,omitempty"`
-	RatioFrom   int64               `json:"ratio_from"`
+	Date        openapi_types.Date `json:"date"`
+	Description *string            `json:"description,omitempty"`
+	Instrument  *string            `json:"instrument,omitempty"`
+
+	// Kind conversion exchanges the whole holding for units of new_instrument and moves its whole cost
+	// (a merger or a ticker change); spin_off keeps the holding, gives units of new_instrument and
+	// moves cost_bp of its cost to them, the share the company's notice states.
+	Kind CorporateActionKind `json:"kind"`
+
+	// NewInstrument The security a conversion or a spin-off gives; required with them. Its holding under the brokerage is created when absent.
+	NewInstrument *string `json:"new_instrument,omitempty"`
+	Quantity      *Money  `json:"quantity,omitempty"`
+	RatioFrom     int64   `json:"ratio_from"`
 
 	// RatioTo Units received for each ratio_from held.
 	RatioTo int64 `json:"ratio_to"`
@@ -1701,7 +1725,9 @@ type CorporateActionInput struct {
 	UnitCost *Rate `json:"unit_cost,omitempty"`
 }
 
-// CorporateActionKind defines model for CorporateActionKind.
+// CorporateActionKind conversion exchanges the whole holding for units of new_instrument and moves its whole cost
+// (a merger or a ticker change); spin_off keeps the holding, gives units of new_instrument and
+// moves cost_bp of its cost to them, the share the company's notice states.
 type CorporateActionKind string
 
 // CorrectionInput defines model for CorrectionInput.
