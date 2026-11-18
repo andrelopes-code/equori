@@ -9,7 +9,7 @@ export const budgetPlanPtBR: Record<keyof typeof budgetPlanEn, string> = {
   "plan.over": "Acima do valor a distribuir",
   "plan.lead": "{share} do valor a distribuir já tem destino em {month}.",
   "plan.leadOver":
-    "Orçamentos e compromissos somam {total}; o valor a distribuir é {reference}.",
+    "Orçamentos e compromissos somam {total}, {share} do valor a distribuir ({reference}).",
   "plan.noReference": "Escolha um valor a distribuir para ver o que falta.",
   "plan.source": "De onde vem o valor",
   "plan.source.expected_income": "Receita prevista",

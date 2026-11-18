@@ -9,7 +9,7 @@ export const budgetPlanEn = {
   "plan.lead":
     "{share} of the amount to distribute has a destination in {month}.",
   "plan.leadOver":
-    "Budgets and commitments add up to {total}; the amount to distribute is {reference}.",
+    "Budgets and commitments add up to {total}, {share} of the amount to distribute ({reference}).",
   "plan.noReference": "Choose an amount to distribute to see what is left.",
   "plan.source": "Where the amount comes from",
   "plan.source.expected_income": "Expected income",

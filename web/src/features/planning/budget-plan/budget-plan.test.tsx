@@ -87,6 +87,33 @@ describe("Budget plan", () => {
     ).toBeInTheDocument();
   });
 
+  // Spec 5.1: over the reference the sentence states the total as a share of the reference
+  // and the bar marks the excess.
+  it("states the excess once the plan passes the reference", async () => {
+    await renderPlan();
+    const field = await input("Energy");
+    await userEvent.clear(field);
+    await userEvent.type(field, "300000");
+
+    expect(await figure("R$660.00")).toBeInTheDocument();
+    expect(
+      within(await panel()).getByText(
+        words("plan.leadOver", {
+          total: "R$9,160.00",
+          share: "107.8%",
+          reference: "R$8,500.00",
+        }),
+      ),
+    ).toBeInTheDocument();
+    expect(within(await panel()).getByText(/107\.8%/)).toBeInTheDocument();
+    expect(
+      within(await panel()).getByText(catalogEn["plan.overSegment"]),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /^Over, / }),
+    ).not.toBeInTheDocument();
+  });
+
   // Spec 5.2, row menu: fills a row from its history without typing.
   it("fills a row from its menu", async () => {
     await renderPlan();

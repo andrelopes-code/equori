@@ -171,6 +171,7 @@ export function PlanReferencePanel({
                 : over
                   ? t("plan.leadOver", {
                       total: format.money(committed),
+                      share: format.share(share) ?? t("plan.dash"),
                       reference: format.money(reference),
                     })
                   : t("plan.lead", {

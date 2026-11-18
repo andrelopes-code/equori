@@ -182,8 +182,25 @@
   .segment[data-tone="data-8"] {
     --plan-tone: var(--slotted-data-8);
   }
-  .segment[data-tone="over"] {
-    --plan-tone: var(--slotted-tone-danger-solid);
+
+  /* The excess: a bracket from the point of the reference to the end of the bar. */
+  .overMark {
+    position: relative;
+    display: flex;
+    justify-content: flex-end;
+    padding-block-end: var(--slotted-space-3);
+    margin-block-end: var(--slotted-space-1);
+  }
+
+  .overLine {
+    position: absolute;
+    inset-block-end: 0;
+    inset-inline-end: 0;
+    block-size: var(--slotted-space-2);
+    border-block-start: var(--slotted-border-width-medium) solid
+      var(--slotted-tone-danger-solid);
+    border-inline-start: var(--slotted-border-width-medium) solid
+      var(--slotted-tone-danger-solid);
   }
 
   .segment[data-tone="rest"] .swatch {
@@ -208,8 +225,7 @@
     white-space: nowrap;
   }
 
-  .segment[data-tone="rest"] .segmentLabel,
-  .segment[data-tone="over"] .segmentLabel {
+  .segment[data-tone="rest"] .segmentLabel {
     justify-items: end;
     text-align: end;
   }
@@ -364,7 +380,8 @@
     margin-block-start: 0;
   }
 
-  .stripBar .segmentLabel {
+  .stripBar .segmentLabel,
+  .stripBar .overMark {
     display: none;
   }
 

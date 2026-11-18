@@ -19,11 +19,10 @@ export interface SegmentNames {
   installments: string;
   savings: string;
   rest: string;
-  over: string;
 }
 
-// The segments of the allocation bar: the commitments, the groups by size and the rest or
-// the excess (budget plan spec 5.1).
+// The segments of the allocation bar: the commitments, the groups by size and the rest. Over
+// the reference they are the whole scale; the excess is part of them (budget plan spec 5.1).
 export function planSegments(
   installments: number,
   savings: number,
@@ -65,12 +64,6 @@ export function planSegments(
       amount: unassigned,
       tone: "rest",
     });
-  if (unassigned !== undefined && unassigned < 0)
-    segments.push({
-      key: "over",
-      name: names.over,
-      amount: -unassigned,
-      tone: "over",
-    });
+
   return segments;
 }

@@ -3,6 +3,7 @@ import { Text } from "@slotted/react/typography";
 import styles from "@/features/planning/budget-plan/budget-plan.module.css";
 import type { PlanFormat } from "@/features/planning/budget-plan/use-plan-format";
 import { planShare } from "@/features/planning/budget-plan/plan-math";
+import { PlanOverMark } from "@/features/planning/budget-plan/plan-over-mark";
 import { useT } from "@/i18n/i18n-provider";
 
 export type SegmentTone =
@@ -15,8 +16,7 @@ export type SegmentTone =
   | "data-6"
   | "data-7"
   | "data-8"
-  | "rest"
-  | "over";
+  | "rest";
 
 export interface PlanSegment {
   key: string;
@@ -52,67 +52,71 @@ export function PlanAllocationBar({
   const t = useT();
   const scale = segments.reduce((sum, s) => sum + s.amount, 0);
   return (
-    <div
-      className={styles.bar}
-      role="group"
-      aria-label={t("plan.bar")}
-      data-focus={highlighted === null ? undefined : ""}
-    >
-      {segments.map((s) => {
-        const share =
-          format.share(planShare(s.amount, reference)) ?? t("plan.dash");
-        const name = t("plan.segment", {
-          name: s.name,
-          amount: format.money(s.amount),
-          share,
-        });
-        const wide = scale > 0 && (s.amount * 10000) / scale >= labelShareBp;
-        const group = s.group;
-        return (
-          <button
-            key={s.key}
-            type="button"
-            className={styles.segment}
-            style={{ flexGrow: s.amount }}
-            data-tone={s.tone}
-            data-lit={
-              group !== undefined && group === highlighted ? "" : undefined
-            }
-            aria-label={name}
-            title={name}
-            disabled={group === undefined}
-            onMouseEnter={() => {
-              onHighlight(group ?? null);
-            }}
-            onMouseLeave={() => {
-              onHighlight(null);
-            }}
-            onFocus={() => {
-              onHighlight(group ?? null);
-            }}
-            onBlur={() => {
-              onHighlight(null);
-            }}
-            onClick={() => {
-              if (group !== undefined) onSelect(group);
-            }}
-          >
-            <span className={styles.swatch} aria-hidden="true" />
-            <span
-              className={styles.segmentLabel}
-              aria-hidden="true"
-              data-wide={wide ? "" : undefined}
+    <>
+      <PlanOverMark scale={scale} reference={reference} />
+
+      <div
+        className={styles.bar}
+        role="group"
+        aria-label={t("plan.bar")}
+        data-focus={highlighted === null ? undefined : ""}
+      >
+        {segments.map((s) => {
+          const share =
+            format.share(planShare(s.amount, reference)) ?? t("plan.dash");
+          const name = t("plan.segment", {
+            name: s.name,
+            amount: format.money(s.amount),
+            share,
+          });
+          const wide = scale > 0 && (s.amount * 10000) / scale >= labelShareBp;
+          const group = s.group;
+          return (
+            <button
+              key={s.key}
+              type="button"
+              className={styles.segment}
+              style={{ flexGrow: s.amount }}
+              data-tone={s.tone}
+              data-lit={
+                group !== undefined && group === highlighted ? "" : undefined
+              }
+              aria-label={name}
+              title={name}
+              disabled={group === undefined}
+              onMouseEnter={() => {
+                onHighlight(group ?? null);
+              }}
+              onMouseLeave={() => {
+                onHighlight(null);
+              }}
+              onFocus={() => {
+                onHighlight(group ?? null);
+              }}
+              onBlur={() => {
+                onHighlight(null);
+              }}
+              onClick={() => {
+                if (group !== undefined) onSelect(group);
+              }}
             >
-              <Text size="xs" weight="medium" className={styles.segmentName}>
-                {s.name}
-              </Text>
-              <Text size="xs" tone="muted" numeric="tabular">
-                {share}
-              </Text>
-            </span>
-          </button>
-        );
-      })}
-    </div>
+              <span className={styles.swatch} aria-hidden="true" />
+              <span
+                className={styles.segmentLabel}
+                aria-hidden="true"
+                data-wide={wide ? "" : undefined}
+              >
+                <Text size="xs" weight="medium" className={styles.segmentName}>
+                  {s.name}
+                </Text>
+                <Text size="xs" tone="muted" numeric="tabular">
+                  {share}
+                </Text>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </>
   );
 }

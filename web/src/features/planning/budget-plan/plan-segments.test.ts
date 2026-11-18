@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { PlanGroup } from "@/features/planning/budget-plan/plan-groups";
 import { planSegments } from "@/features/planning/budget-plan/plan-segments";
 
-const names = { installments: "I", savings: "S", rest: "R", over: "O" };
+const names = { installments: "I", savings: "S", rest: "R" };
 
 function group(id: string, draft: number): PlanGroup {
   return { id, name: id, lines: [], draft, lastMonth: 0, average: 0 };
@@ -28,9 +28,11 @@ describe("planSegments", () => {
     ]);
   });
 
-  it("draws the excess and leaves out zero commitments", () => {
-    const got = planSegments(0, 0, [], -25, names);
+  // Spec 5.1: over the reference the scale is the commitments and the budgets; the excess
+  // is part of them and takes no segment of its own.
+  it("adds no segment for the excess and leaves out zero commitments", () => {
+    const got = planSegments(0, 0, [group("a", 125)], -25, names);
 
-    expect(got).toEqual([{ key: "over", name: "O", amount: 25, tone: "over" }]);
+    expect(got.map((s) => [s.key, s.amount])).toEqual([["a", 125]]);
   });
 });

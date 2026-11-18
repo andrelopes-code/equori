@@ -70,7 +70,6 @@ export function usePlanFigures(
         installments: t("plan.installments"),
         savings: t("plan.savings"),
         rest: t("plan.unassigned"),
-        over: t("plan.overSegment"),
       },
     ),
     applies:
