@@ -117,7 +117,7 @@ func toProblem(err error) (problem.Details, bool) {
 		}
 
 		return d, true
-	case errors.Is(err, app.ErrInvalidText):
+	case errors.Is(err, app.ErrInvalidText), errors.Is(err, app.ErrTooManyFiles):
 		return problem.New(http.StatusBadRequest, "invalid_request", err.Error()), true
 	case errors.Is(err, domain.ErrConversationNotFound):
 		return problem.New(

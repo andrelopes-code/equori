@@ -67,7 +67,7 @@ func historyTurns(
 
 		turns = append(
 			turns,
-			[2]HistoryMessage{{domain.RoleUser, u.Content}, {domain.RoleAssistant, text}},
+			[2]HistoryMessage{{domain.RoleUser, u.TextForModel()}, {domain.RoleAssistant, text}},
 		)
 	}
 

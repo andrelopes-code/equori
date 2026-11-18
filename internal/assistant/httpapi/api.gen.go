@@ -279,8 +279,13 @@ type AssistantRecurrence struct {
 // AssistantTurnInput defines model for AssistantTurnInput.
 type AssistantTurnInput struct {
 	ConversationId *openapi_types.UUID `json:"conversation_id,omitempty"`
-	Page           *string             `json:"page,omitempty"`
-	Text           string              `json:"text"`
+
+	// FileIds Unsent files of createAssistantFile the message carries.
+	FileIds *[]openapi_types.UUID `json:"file_ids,omitempty"`
+	Page    *string               `json:"page,omitempty"`
+
+	// Text Empty only when file_ids names a file.
+	Text string `json:"text"`
 }
 
 // AssistantValue defines model for AssistantValue.

@@ -156,3 +156,62 @@ func toFile(row FileBySHARow) domain.File {
 func nullUUID(id uuid.UUID) uuid.NullUUID {
 	return uuid.NullUUID{UUID: id, Valid: id != uuid.Nil}
 }
+
+// UnsentFiles returns the unsent files of the member among ids, oldest first.
+func (r *Repository) UnsentFiles(
+	ctx context.Context,
+	booksID, memberID int64,
+	ids []uuid.UUID,
+) ([]domain.File, error) {
+	rows, err := r.q.UnsentFiles(
+		ctx,
+		UnsentFilesParams{BooksID: booksID, MemberID: memberID, Ids: ids},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("read unsent files: %w", err)
+	}
+
+	files := make([]domain.File, len(rows))
+	for i, row := range rows {
+		files[i] = domain.File{
+			ID:             row.ID,
+			ConversationID: row.ConversationID.UUID,
+			Name:           row.Name,
+			Kind:           domain.FileKind(row.Kind),
+			Size:           int(row.Size),
+			Summary:        row.Summary,
+		}
+	}
+
+	return files, nil
+}
+
+// ConversationFiles returns the sent files of a conversation, oldest first.
+func (r *Repository) ConversationFiles(
+	ctx context.Context,
+	booksID int64,
+	conversationID uuid.UUID,
+) ([]domain.File, error) {
+	rows, err := r.q.FilesOfConversation(ctx, FilesOfConversationParams{
+		BooksID:        booksID,
+		ConversationID: nullUUID(conversationID),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("read conversation files: %w", err)
+	}
+
+	files := make([]domain.File, len(rows))
+	for i, row := range rows {
+		files[i] = domain.File{
+			ID:             row.ID,
+			ConversationID: conversationID,
+			MessageID:      row.MessageID.UUID,
+			Name:           row.Name,
+			Kind:           domain.FileKind(row.Kind),
+			Size:           int(row.Size),
+			Summary:        row.Summary,
+		}
+	}
+
+	return files, nil
+}

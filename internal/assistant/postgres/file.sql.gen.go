@@ -12,12 +12,64 @@ import (
 	"github.com/google/uuid"
 )
 
+const bindFiles = `-- name: BindFiles :many
+UPDATE assistant_conversation_file
+SET
+    conversation_id = $1,
+    message_id = $2
+WHERE
+    books_id = $3
+    AND member_id = $4
+    AND message_id IS NULL
+    AND (
+        conversation_id IS NULL
+        OR conversation_id = $1
+    )
+    AND id = ANY ($5::UUID[])
+RETURNING
+    id
+`
+
+type BindFilesParams struct {
+	ConversationID uuid.NullUUID
+	MessageID      uuid.NullUUID
+	BooksID        int64
+	MemberID       int64
+	Ids            []uuid.UUID
+}
+
+func (q *Queries) BindFiles(ctx context.Context, arg BindFilesParams) ([]uuid.UUID, error) {
+	rows, err := q.db.Query(ctx, bindFiles,
+		arg.ConversationID,
+		arg.MessageID,
+		arg.BooksID,
+		arg.MemberID,
+		arg.Ids,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []uuid.UUID
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const deleteStaleUnsentFiles = `-- name: DeleteStaleUnsentFiles :exec
 DELETE FROM assistant_conversation_file
 WHERE
     books_id = $1
     AND member_id = $2
-    AND conversation_id IS NULL
+    AND message_id IS NULL
     AND created_at < $3
 `
 
@@ -37,7 +89,7 @@ DELETE FROM assistant_conversation_file
 WHERE
     books_id = $1
     AND member_id = $2
-    AND conversation_id IS NULL
+    AND message_id IS NULL
     AND id = $3
 `
 
@@ -134,6 +186,66 @@ func (q *Queries) FileBytes(ctx context.Context, arg FileBytesParams) (int64, er
 	return column_1, err
 }
 
+const filesOfConversation = `-- name: FilesOfConversation :many
+SELECT
+    id,
+    message_id,
+    name,
+    kind,
+    size,
+    summary
+FROM
+    assistant_conversation_file
+WHERE
+    books_id = $1
+    AND conversation_id = $2
+    AND message_id IS NOT NULL
+ORDER BY
+    created_at,
+    id
+`
+
+type FilesOfConversationParams struct {
+	BooksID        int64
+	ConversationID uuid.NullUUID
+}
+
+type FilesOfConversationRow struct {
+	ID        uuid.UUID
+	MessageID uuid.NullUUID
+	Name      string
+	Kind      string
+	Size      int32
+	Summary   string
+}
+
+func (q *Queries) FilesOfConversation(ctx context.Context, arg FilesOfConversationParams) ([]FilesOfConversationRow, error) {
+	rows, err := q.db.Query(ctx, filesOfConversation, arg.BooksID, arg.ConversationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []FilesOfConversationRow
+	for rows.Next() {
+		var i FilesOfConversationRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.MessageID,
+			&i.Name,
+			&i.Kind,
+			&i.Size,
+			&i.Summary,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const insertFile = `-- name: InsertFile :one
 INSERT INTO
     assistant_conversation_file (
@@ -199,4 +311,66 @@ func (q *Queries) InsertFile(ctx context.Context, arg InsertFileParams) (uuid.UU
 	var id uuid.UUID
 	err := row.Scan(&id)
 	return id, err
+}
+
+const unsentFiles = `-- name: UnsentFiles :many
+SELECT
+    id,
+    conversation_id,
+    name,
+    kind,
+    size,
+    summary
+FROM
+    assistant_conversation_file
+WHERE
+    books_id = $1
+    AND member_id = $2
+    AND message_id IS NULL
+    AND id = ANY ($3::UUID[])
+ORDER BY
+    created_at,
+    id
+`
+
+type UnsentFilesParams struct {
+	BooksID  int64
+	MemberID int64
+	Ids      []uuid.UUID
+}
+
+type UnsentFilesRow struct {
+	ID             uuid.UUID
+	ConversationID uuid.NullUUID
+	Name           string
+	Kind           string
+	Size           int32
+	Summary        string
+}
+
+func (q *Queries) UnsentFiles(ctx context.Context, arg UnsentFilesParams) ([]UnsentFilesRow, error) {
+	rows, err := q.db.Query(ctx, unsentFiles, arg.BooksID, arg.MemberID, arg.Ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []UnsentFilesRow
+	for rows.Next() {
+		var i UnsentFilesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ConversationID,
+			&i.Name,
+			&i.Kind,
+			&i.Size,
+			&i.Summary,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

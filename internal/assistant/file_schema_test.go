@@ -82,6 +82,41 @@ func TestConversationFileSchema(t *testing.T) {
 		}
 	}
 
+	// F2: a message that carries a file may have empty text; a file of a message is in its
+	// conversation.
+	const message = "55555555-5555-5555-5555-555555555555"
+	if _, err := pool.Exec(
+		ctx,
+		`INSERT INTO assistant_message (id, books_id, conversation_id, seq, role, content, created_at)
+		VALUES ($1, $2, $3, 1, 'user', '', now())`,
+		message,
+		books,
+		conv,
+	); err != nil {
+		t.Fatalf("empty user message: %v", err)
+	}
+
+	if _, err := pool.Exec(
+		ctx,
+		`UPDATE assistant_conversation_file SET message_id = $1 WHERE name = 'a.txt'`,
+		message,
+	); err != nil {
+		t.Fatalf("bind a file of the conversation: %v", err)
+	}
+
+	_, err := pool.Exec(
+		ctx,
+		`UPDATE assistant_conversation_file SET message_id = $1 WHERE name = 'b.txt'`,
+		message,
+	)
+	if pgErr, ok := errors.AsType[*pgconn.PgError](err); !ok || pgErr.Code != checkViolation {
+		t.Errorf(
+			"bind an unsent file without its conversation: err = %v, want %s",
+			err,
+			checkViolation,
+		)
+	}
+
 	if _, err := pool.Exec(
 		ctx,
 		`DELETE FROM assistant_conversation WHERE id = $1`,

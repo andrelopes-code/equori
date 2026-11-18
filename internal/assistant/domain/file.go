@@ -3,6 +3,7 @@ package domain
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -27,11 +28,25 @@ const (
 type File struct {
 	ID             uuid.UUID
 	ConversationID uuid.UUID
+	MessageID      uuid.UUID
 	Name           string
 	MediaType      string
 	Kind           FileKind
 	Size           int
 	CreatedAt      time.Time
+	// Summary is what the model reads of the content, besides the descriptor line (F4).
+	Summary string
+}
+
+// Descriptor is what the model receives about a file: its id, name, kind and size, then its
+// summary (F4).
+func (f File) Descriptor() string {
+	line := fmt.Sprintf("[file %s: %s, %s, %d bytes]", f.ID, f.Name, f.Kind, f.Size)
+	if f.Summary == "" {
+		return line
+	}
+
+	return line + "\n" + f.Summary
 }
 
 // Limits of F2 and F3.

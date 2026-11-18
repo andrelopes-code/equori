@@ -43,6 +43,18 @@ type Message struct {
 	Content            string
 	Outcome            Outcome
 	CreatedAt          time.Time
+	// Files are the files the message carries (assistant parity design, F2).
+	Files []File
+}
+
+// TextForModel is the content of the message followed by one descriptor per file (F4).
+func (m Message) TextForModel() string {
+	lines := []string{m.Content}
+	for _, f := range m.Files {
+		lines = append(lines, f.Descriptor())
+	}
+
+	return strings.TrimSpace(strings.Join(lines, "\n"))
 }
 
 // Title derives a conversation title from its first message: whitespace collapsed, at most MaxTitle runes,

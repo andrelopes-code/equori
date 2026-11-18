@@ -29,6 +29,10 @@ func (s *Server) sendAssistantMessage(w http.ResponseWriter, r *http.Request) {
 	booksID, memberID := auth.MustBooksID(ctx), auth.MustMemberID(ctx)
 
 	in := app.TurnInput{Text: body.Text}
+	if body.FileIds != nil {
+		in.FileIDs = *body.FileIds
+	}
+
 	if body.ConversationId != nil {
 		in.ConversationID = *body.ConversationId
 	}

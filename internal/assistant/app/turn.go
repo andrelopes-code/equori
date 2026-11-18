@@ -30,6 +30,7 @@ var (
 	ErrChatUnavailable = errors.New("no language model provider serves the assistant")
 	ErrTurnFailed      = errors.New("the language model provider refused the request")
 	ErrInvalidText     = errors.New("the message must have between 1 and 4000 characters")
+	ErrTooManyFiles    = errors.New("a message carries at most 5 files")
 )
 
 // AgentRequest is what the agent sends to the model: the prompt, the earlier turns and the book's text.
@@ -68,6 +69,7 @@ type AnsweredMessage struct {
 type TurnInput struct {
 	ConversationID uuid.UUID // Nil starts a conversation
 	Text, Page     string
+	FileIDs        []uuid.UUID // unsent files the message carries (F2)
 }
 
 func truncateRunes(s string, n int) string {
@@ -86,15 +88,15 @@ func (s *Service) Turn(
 	in TurnInput,
 	ev TurnEvents,
 ) error {
-	text := strings.TrimSpace(in.Text)
-	if n := utf8.RuneCountInString(text); n < 1 || n > domain.MaxMessage {
-		return ErrInvalidText
+	text, files, err := s.turnMessage(ctx, booksID, memberID, in)
+	if err != nil {
+		return err
 	}
 
 	now := s.now()
 	conv := domain.Conversation{
 		ID:        in.ConversationID,
-		Title:     domain.Title(text),
+		Title:     turnTitle(text, files),
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
@@ -118,23 +120,47 @@ func (s *Service) Turn(
 		return err
 	}
 
+	userMsg.Files = files
+
 	ev.Turn(conv.ID, userMsg.ID)
 
-	state := &turnState{conversationID: conv.ID}
-	book := s.bookReads(ctx, booksID)
+	req := s.agentRequest(
+		ctx,
+		in,
+		userMsg.TextForModel(),
+		prof,
+		notices,
+		s.bookReads(ctx, booksID),
+		messages,
+		proposals,
+		now,
+	)
+
+	return s.runTurn(ctx, ev, booksID, memberID, conv.ID, req, now)
+}
+
+// runTurn runs the agent on req and stores its answer or its failure.
+func (s *Service) runTurn(
+	ctx context.Context,
+	ev TurnEvents,
+	booksID, memberID int64,
+	conversationID uuid.UUID,
+	req AgentRequest,
+	now time.Time,
+) error {
+	state := &turnState{conversationID: conversationID}
 
 	runCtx, cancel := context.WithTimeout(context.WithValue(ctx, turnKey{}, state), TurnTimeout)
 	defer cancel()
 
-	req := s.agentRequest(ctx, in, text, prof, notices, book, messages, proposals, now)
 	discard := func() { s.discardProposals(ctx, booksID, state) }
 
 	res, err := s.agent.Run(runCtx, booksID, req, ev.Step, ev.Delta, discard)
 	if err != nil {
-		return s.failTurn(ctx, ev, booksID, conv.ID, state, res, err, now)
+		return s.failTurn(ctx, ev, booksID, conversationID, state, res, err, now)
 	}
 
-	return s.answerTurn(ctx, ev, booksID, memberID, conv.ID, state, res, now)
+	return s.answerTurn(ctx, ev, booksID, memberID, conversationID, state, res, now)
 }
 
 // conversationHistory reads the messages and proposals of a conversation; a new conversation has none.
@@ -166,13 +192,13 @@ func (s *Service) storeUserMessage(
 		}
 	}
 
-	userMsg, err := s.repo.AppendMessage(ctx, booksID, domain.Message{
+	userMsg, err := s.repo.AppendUserMessage(ctx, booksID, memberID, domain.Message{
 		ID:             uuid.New(),
 		ConversationID: conv.ID,
 		Role:           domain.RoleUser,
 		Content:        text,
 		CreatedAt:      now,
-	})
+	}, in.FileIDs)
 
 	return conv, userMsg, err
 }
@@ -217,6 +243,13 @@ func (s *Service) loadConversation(
 	if err != nil {
 		return nil, nil, err
 	}
+
+	files, err := s.repo.ConversationFiles(ctx, booksID, conversationID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	attachFiles(messages, files)
 
 	proposals, err := s.repo.Proposals(ctx, booksID, conversationID)
 	if err != nil {
@@ -275,4 +308,63 @@ func (s *Service) promptInputs(
 	}
 
 	return prof, notices, nil
+}
+
+// turnMessage trims the text of the message and reads the files it carries: the text may be
+// empty only when a file is carried (F2).
+func (s *Service) turnMessage(
+	ctx context.Context,
+	booksID, memberID int64,
+	in TurnInput,
+) (string, []domain.File, error) {
+	text := strings.TrimSpace(in.Text)
+	n := utf8.RuneCountInString(text)
+
+	switch {
+	case len(in.FileIDs) > domain.MaxTurnFiles:
+		return "", nil, ErrTooManyFiles
+	case n > domain.MaxMessage, n == 0 && len(in.FileIDs) == 0:
+		return "", nil, ErrInvalidText
+	case len(in.FileIDs) == 0:
+		return text, nil, nil
+	}
+
+	files, err := s.repo.UnsentFiles(ctx, booksID, memberID, in.FileIDs)
+	if err != nil {
+		return "", nil, err
+	}
+
+	if len(files) != len(in.FileIDs) {
+		return "", nil, domain.ErrFileNotFound
+	}
+
+	// A file uploaded for one conversation is not sent in another.
+	for _, f := range files {
+		if f.ConversationID != uuid.Nil && f.ConversationID != in.ConversationID {
+			return "", nil, domain.ErrFileNotFound
+		}
+	}
+
+	return text, files, nil
+}
+
+// turnTitle titles a conversation by its first text, or by the name of its first file.
+func turnTitle(text string, files []domain.File) string {
+	if text == "" && len(files) > 0 {
+		return domain.Title(files[0].Name)
+	}
+
+	return domain.Title(text)
+}
+
+// attachFiles gives each message the files it carried.
+func attachFiles(messages []domain.Message, files []domain.File) {
+	byMessage := map[uuid.UUID][]domain.File{}
+	for _, f := range files {
+		byMessage[f.MessageID] = append(byMessage[f.MessageID], f)
+	}
+
+	for i := range messages {
+		messages[i].Files = byMessage[messages[i].ID]
+	}
 }

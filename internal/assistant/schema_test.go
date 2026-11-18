@@ -165,11 +165,6 @@ func TestSchema(t *testing.T) {
 		checkViolation,
 	)
 	add(
-		"empty user content",
-		func() (string, []any) { return msg(a, "user", "", nil) },
-		checkViolation,
-	)
-	add(
 		"proposal status",
 		func() (string, []any) { return proposal("done", hash, "", "2026-10-23T10:15:00Z") },
 		checkViolation,

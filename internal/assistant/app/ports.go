@@ -172,4 +172,22 @@ type FileRepository interface {
 		limit int64,
 	) (domain.File, error)
 	DeleteUnsentFile(ctx context.Context, booksID, memberID int64, id uuid.UUID) error
+	UnsentFiles(
+		ctx context.Context,
+		booksID, memberID int64,
+		ids []uuid.UUID,
+	) ([]domain.File, error)
+	ConversationFiles(
+		ctx context.Context,
+		booksID int64,
+		conversationID uuid.UUID,
+	) ([]domain.File, error)
+	// AppendUserMessage appends m and binds the files to it; ErrFileNotFound when one is not an
+	// unsent file of the member.
+	AppendUserMessage(
+		ctx context.Context,
+		booksID, memberID int64,
+		m domain.Message,
+		fileIDs []uuid.UUID,
+	) (domain.Message, error)
 }

@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -122,20 +123,61 @@ func (r *Repository) AppendMessage(
 	booksID int64,
 	m domain.Message,
 ) (domain.Message, error) {
+	return r.AppendUserMessage(ctx, booksID, 0, m, nil)
+}
+
+// AppendUserMessage appends m and binds the unsent files of the member to it (F2): a file that is
+// not an unsent file of the member in this conversation fails the append with ErrFileNotFound.
+func (r *Repository) AppendUserMessage(
+	ctx context.Context,
+	booksID, memberID int64,
+	m domain.Message,
+	fileIDs []uuid.UUID,
+) (domain.Message, error) {
+	var stored domain.Message
+
+	err := pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
+		q := r.q.WithTx(tx)
+
+		var err error
+
+		stored, err = insertMessage(ctx, q, booksID, m)
+		if err != nil || len(fileIDs) == 0 {
+			return err
+		}
+
+		bound, err := q.BindFiles(ctx, BindFilesParams{
+			ConversationID: uuid.NullUUID{UUID: m.ConversationID, Valid: true},
+			MessageID:      uuid.NullUUID{UUID: m.ID, Valid: true},
+			BooksID:        booksID,
+			MemberID:       memberID,
+			Ids:            fileIDs,
+		})
+		if err != nil {
+			return fmt.Errorf("bind files: %w", err)
+		}
+
+		if len(bound) != len(fileIDs) {
+			return domain.ErrFileNotFound
+		}
+
+		return nil
+	})
+
+	return stored, err
+}
+
+func insertMessage(
+	ctx context.Context,
+	q *Queries,
+	booksID int64,
+	m domain.Message,
+) (domain.Message, error) {
 	var outcome *string
 	if m.Outcome != domain.OutcomeNone {
 		o := string(m.Outcome)
 		outcome = &o
 	}
-
-	tx, err := r.pool.Begin(ctx)
-	if err != nil {
-		return domain.Message{}, err
-	}
-
-	defer func() { _ = tx.Rollback(ctx) }()
-
-	q := r.q.WithTx(tx)
 
 	row, err := q.AppendMessage(ctx, AppendMessageParams{
 		ID:             m.ID,
@@ -157,7 +199,7 @@ func (r *Repository) AppendMessage(
 		return domain.Message{}, err
 	}
 
-	return toMessage(row), tx.Commit(ctx)
+	return toMessage(row), nil
 }
 
 func (r *Repository) Messages(
