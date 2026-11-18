@@ -21,6 +21,8 @@ import { useT } from "@/i18n/i18n-provider";
 interface NavDestinationProps {
   destination: Destination;
   count?: string | undefined;
+  // The column is narrowed to icons.
+  rail: boolean;
   // The views of this destination are on screen.
   expanded: boolean;
   // The location is on this destination and on none of its views.
@@ -33,11 +35,14 @@ interface NavDestinationProps {
   onPressView: (view: DestinationView) => (event: MouseEvent) => void;
 }
 
-// A row of the desktop column. A destination whose page has tabs is one button: its press goes
-// to the page and opens the tabs as rows of their own; on the page, it opens or closes them.
+// A row of the desktop column. A destination whose page has tabs holds two controls: its link
+// goes to the page and opens the tabs as rows of their own; the arrow at its end only opens or
+// closes them. In the rail no arrow is drawn, so the row is one button that goes to the page
+// and lists the tabs beside the icon.
 export function NavDestination({
   destination,
   count,
+  rail,
   expanded,
   current,
   onPress,
@@ -46,27 +51,40 @@ export function NavDestination({
 }: NavDestinationProps) {
   const t = useT();
   const views = destinationViews[destination.key];
-  const Row = views === undefined ? SideNavigationLink : SideNavigationTrigger;
-  const rowProps =
-    views === undefined
-      ? { href: destination.to, onClick: onPress(destination) }
-      : { onClick: onPressGroup(destination, expanded) };
+  const button = views !== undefined && rail;
+
+  const content = (
+    <>
+      <SideNavigationIcon>
+        <ShellIcon name={destination.icon} />
+      </SideNavigationIcon>
+      <SideNavigationLabel>{t(destination.label)}</SideNavigationLabel>
+      {count !== undefined && (
+        <SideNavigationCount>{count}</SideNavigationCount>
+      )}
+    </>
+  );
 
   return (
     <SideNavigationItem
       value={destination.key}
       // Workaround for Slotted issue #144: an item whose row is a trigger is never marked.
-      data-current={views !== undefined && current ? "" : undefined}
+      data-current={button && current ? "" : undefined}
     >
-      <Row {...rowProps}>
-        <SideNavigationIcon>
-          <ShellIcon name={destination.icon} />
-        </SideNavigationIcon>
-        <SideNavigationLabel>{t(destination.label)}</SideNavigationLabel>
-        {count !== undefined && (
-          <SideNavigationCount>{count}</SideNavigationCount>
-        )}
-      </Row>
+      {button && (
+        <SideNavigationTrigger onClick={onPressGroup(destination, expanded)}>
+          {content}
+        </SideNavigationTrigger>
+      )}
+      {!button && (
+        <SideNavigationLink
+          href={destination.to}
+          onClick={onPress(destination)}
+        >
+          {content}
+        </SideNavigationLink>
+      )}
+      {views !== undefined && !rail && <SideNavigationTrigger />}
 
       {views !== undefined && (
         <SideNavigationGroup>

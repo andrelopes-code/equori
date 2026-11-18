@@ -23,9 +23,11 @@ export interface DestinationPress {
   selected: DestinationKey | undefined;
   // The view drawn as current, when the location is on one.
   selectedView: string | undefined;
+  // The press on a destination's link: it goes to the destination, to its first view when
+  // it has views.
   press: (destination: Destination) => (event: MouseEvent) => void;
-  // The press on a row that also opens the views of its destination; open tells that the
-  // views are on screen.
+  // The press on a rail row that also lists the views of its destination; open tells that
+  // the views are on screen.
   pressGroup: (
     destination: Destination,
     open: boolean,
@@ -35,8 +37,11 @@ export interface DestinationPress {
 
 // A plain press paints the destination before its route renders; a press on the current
 // destination at its own route calls onReselect instead of navigating; a modified click is
-// left to the browser.
-export function useDestinationPress(onReselect: () => void): DestinationPress {
+// left to the browser. onEnterGroup tells that a press went to a destination that has views.
+export function useDestinationPress(
+  onReselect: () => void,
+  onEnterGroup?: (key: DestinationKey) => void,
+): DestinationPress {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const search = useRouterState({ select: (s) => s.location.search });
   const navigate = useNavigate();
@@ -45,6 +50,17 @@ export function useDestinationPress(onReselect: () => void): DestinationPress {
   const view = matchView(pathname, search);
   // One selection holds both: a view key is its destination key, a dot and the tab.
   const { selected, select } = usePressSelection(view?.key ?? destination?.key);
+
+  function goToView(target: DestinationView) {
+    if (view?.key === target.key) {
+      onReselect();
+      return;
+    }
+
+    select(target.key, () => {
+      router.history.push(viewHref(target));
+    });
+  }
 
   return {
     pathname,
@@ -56,6 +72,14 @@ export function useDestinationPress(onReselect: () => void): DestinationPress {
       if (!isPlainPress(event)) return;
 
       event.preventDefault();
+      // The destination's own route is its first view: that view is painted with the press.
+      const first = destinationViews[target.key]?.[0];
+      if (first !== undefined) {
+        onEnterGroup?.(target.key);
+        goToView(first);
+        return;
+      }
+
       if (pathname === target.to) {
         onReselect();
         return;
@@ -70,7 +94,6 @@ export function useDestinationPress(onReselect: () => void): DestinationPress {
       // An open group stays open; a closed one opens with the navigation.
       if (open) event.preventDefault();
 
-      // The destination's own route is its first view: that view is painted with the press.
       select(
         destinationViews[target.key]?.[0]?.key ?? target.key,
         () => void navigate({ to: target.to }),
@@ -80,14 +103,7 @@ export function useDestinationPress(onReselect: () => void): DestinationPress {
       if (!isPlainPress(event)) return;
 
       event.preventDefault();
-      if (view?.key === target.key) {
-        onReselect();
-        return;
-      }
-
-      select(target.key, () => {
-        router.history.push(viewHref(target));
-      });
+      goToView(target);
     },
   };
 }

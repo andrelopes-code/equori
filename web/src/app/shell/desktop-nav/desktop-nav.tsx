@@ -19,6 +19,7 @@ import { NavCommand } from "@/app/shell/desktop-nav/nav-command";
 import { NavDestination } from "@/app/shell/desktop-nav/nav-destination";
 import { useNavGroups } from "@/app/shell/desktop-nav/use-nav-groups";
 import { destinations } from "@/app/shell/destinations/destinations";
+import type { DestinationKey } from "@/app/shell/destinations/destinations";
 import { useDestinationPress } from "@/app/shell/destinations/use-destination-press";
 import { useEntry } from "@/app/shell/frame-state/use-entry";
 import { useUncategorizedCount } from "@/app/shell/destinations/use-uncategorized-count";
@@ -51,12 +52,16 @@ export function DesktopNav({
   const { open } = useAppShell();
   const openEntry = useEntry();
   const count = useUncategorizedCount();
-  const { selected, selectedView, press, pressGroup, pressView } =
-    useDestinationPress(onReselect);
   const [groups, setGroups] = useNavGroups();
+  const { selected, selectedView, press, pressGroup, pressView } =
+    useDestinationPress(onReselect, handleEnterGroup);
   const entryKey = t("nav.entry.key");
   const assistantKey = t("assistant.key");
   const calculatorKey = t("calculator.key");
+
+  function handleEnterGroup(key: DestinationKey) {
+    if (open && !groups.includes(key)) setGroups([...groups, key]);
+  }
 
   return (
     <>
@@ -129,6 +134,7 @@ export function DesktopNav({
                 key={destination.key}
                 destination={destination}
                 count={destination.key === "transactions" ? count : undefined}
+                rail={!open}
                 expanded={open && groups.includes(destination.key)}
                 current={
                   selected === destination.key && selectedView === undefined

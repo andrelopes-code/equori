@@ -158,7 +158,7 @@ describe("desktop column", () => {
 
   it("shows the uncategorized count beside Transactions", async () => {
     await renderApp("/", { fetch: uncategorizedFetch(12) });
-    const link = within(column()).getByRole("button", {
+    const link = within(column()).getByRole("link", {
       name: new RegExp(`^${catalogEn["nav.transactions"]}`),
     });
     await waitFor(() => {
@@ -175,7 +175,7 @@ describe("desktop column", () => {
     await act(async () => {
       await Promise.resolve();
     });
-    const link = within(column()).getByRole("button", {
+    const link = within(column()).getByRole("link", {
       name: catalogEn["nav.transactions"],
     });
     expect(link).toHaveTextContent(
@@ -377,15 +377,38 @@ describe("desktop column", () => {
     expect(search.querySelector("kbd")).toHaveTextContent("K");
   });
 
-  it("goes to a destination and opens its views in one press of its one row", async () => {
+  it("opens and closes the views of a destination from its arrow, without leaving the page", async () => {
+    const user = userEvent.setup();
+    const app = await renderApp("/", { fetch: newFetch() });
+    const planning = { name: catalogEn["nav.planning"] };
+
+    expect(within(column()).getAllByRole("link", planning)).toHaveLength(1);
+    expect(within(column()).getAllByRole("button", planning)).toHaveLength(1);
+
+    await user.click(within(column()).getByRole("button", planning));
+
+    expect(within(column()).getByRole("button", planning)).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+    expect(localStorage.getItem("equori.nav.groups")).toBe('["planning"]');
+
+    await user.click(within(column()).getByRole("button", planning));
+
+    expect(within(column()).getByRole("button", planning)).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
+    expect(localStorage.getItem("equori.nav.groups")).toBe("[]");
+    expect(app.router.state.location.pathname).toBe("/");
+  });
+
+  it("goes to a destination from its label and opens its views", async () => {
     const user = userEvent.setup();
     const first = await renderApp("/", { fetch: newFetch() });
     const planning = { name: catalogEn["nav.planning"] };
 
-    expect(within(column()).queryByRole("link", planning)).toBeNull();
-    expect(within(column()).getAllByRole("button", planning)).toHaveLength(1);
-
-    await user.click(within(column()).getByRole("button", planning));
+    await user.click(within(column()).getByRole("link", planning));
 
     await waitFor(() => {
       expect(first.router.state.location.pathname).toBe("/planning");
@@ -413,26 +436,22 @@ describe("desktop column", () => {
       ).toHaveAttribute("aria-current", "page");
     });
 
-    first.unmount();
-    const second = await renderApp("/", { fetch: newFetch() });
-
-    expect(within(column()).getByRole("button", planning)).toHaveAttribute(
-      "aria-expanded",
-      "true",
-    );
-
-    // A press from another page goes to the destination and leaves its open group open.
-    await user.click(within(column()).getByRole("button", planning));
+    // From another view of the page, the label goes to the destination's own view.
+    await user.click(within(column()).getByRole("link", planning));
 
     await waitFor(() => {
-      expect(second.router.state.location.pathname).toBe("/planning");
+      expect(first.router.state.location.search).toEqual({});
     });
+
+    first.unmount();
+    const second = await renderApp("/planning", { fetch: newFetch() });
+
     expect(within(column()).getByRole("button", planning)).toHaveAttribute(
       "aria-expanded",
       "true",
     );
 
-    // On the destination, the press closes the group and stays on the page.
+    // On the destination, the arrow closes the group and stays on the page.
     await user.click(within(column()).getByRole("button", planning));
 
     expect(within(column()).getByRole("button", planning)).toHaveAttribute(
@@ -446,7 +465,7 @@ describe("desktop column", () => {
     const app = await renderApp("/", { fetch: newFetch() });
 
     fireEvent.click(
-      within(column()).getByRole("button", { name: catalogEn["nav.planning"] }),
+      within(column()).getByRole("link", { name: catalogEn["nav.planning"] }),
     );
 
     expect(app.router.state.location.pathname).toBe("/");
