@@ -2693,7 +2693,7 @@
   },
   {
     "name": "get_imports",
-    "description": "Returns import activity: statement import batches with their counts, the records of a batch and those needing review, entries of an account that no bank line confirmed, bank connections with their sync state and accounts, and the recent syncs of a connection with the automatic decisions they made. Use it for whether a bank synced, what an import did or what needs review. Do not use it for the transactions themselves: search_transactions does.",
+    "description": "Returns import activity: statement import batches with their counts, the records of a batch and those needing review, entries of an account that no bank line confirmed, bank connections with their sync state and accounts, the recent syncs of a connection with the automatic decisions they made, and the investments a connection reports with the movements to review (review_investment_movement decides each). Use it for whether a bank synced, what an import did or what needs review. Do not use it for the transactions themselves: search_transactions does.",
     "effect": "read_only",
     "idempotent": false,
     "input_schema": {
@@ -2707,7 +2707,8 @@
             "records",
             "unconfirmed",
             "connections",
-            "syncs"
+            "syncs",
+            "investments"
           ]
         },
         "batch_id": {
@@ -2732,7 +2733,7 @@
         },
         "connection_id": {
           "type": "string",
-          "description": "for syncs: connection from the connections view"
+          "description": "for syncs and investments: connection from the connections view"
         },
         "limit": {
           "type": "integer",
@@ -3164,6 +3165,154 @@
               "integration_id",
               "name",
               "aggregator"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "investments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "investment_id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              },
+              "subtype": {
+                "type": "string"
+              },
+              "issuer": {
+                "type": "string"
+              },
+              "matures_on": {
+                "type": "string",
+                "format": "date"
+              },
+              "has_terms": {
+                "type": "boolean",
+                "description": "false when the bank reports no rate: the contract is created without terms and manage_instrument set_terms adds them"
+              },
+              "balance": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "balance_date": {
+                "type": "string",
+                "format": "date"
+              },
+              "instrument": {
+                "type": "string",
+                "description": "code of the contract in the book, once the application is confirmed"
+              },
+              "brokerage_id": {
+                "type": "string",
+                "description": "Brokerage that holds it, once the application is confirmed"
+              },
+              "movements": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "movement_id": {
+                      "type": "string"
+                    },
+                    "kind": {
+                      "type": "string",
+                      "description": "what the bank reports: buy, sell, income, tax, amortization or transfer"
+                    },
+                    "date": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "amount": {
+                      "type": "object",
+                      "properties": {
+                        "amount": {
+                          "type": "string",
+                          "description": "decimal amount in the instrument's scale, such as -1234.56"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "description": "currency or instrument code"
+                        }
+                      },
+                      "required": [
+                        "amount",
+                        "currency"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "state": {
+                      "type": "string",
+                      "description": "pending, confirmed or dismissed"
+                    },
+                    "proposal": {
+                      "type": "string",
+                      "description": "what a confirmation records: application (first purchase, creates the contract), contribution, sale, income, tax_of_sale (recorded with its sale) or none (nothing to record)"
+                    },
+                    "taxes": {
+                      "type": "object",
+                      "properties": {
+                        "amount": {
+                          "type": "string",
+                          "description": "decimal amount in the instrument's scale, such as -1234.56"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "description": "currency or instrument code"
+                        }
+                      },
+                      "description": "taxes the bank attached to this sale",
+                      "required": [
+                        "amount",
+                        "currency"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "transaction_id": {
+                      "type": "string",
+                      "description": "transaction a confirmation recorded"
+                    }
+                  },
+                  "required": [
+                    "movement_id",
+                    "kind",
+                    "date",
+                    "amount",
+                    "state",
+                    "proposal"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "investment_id",
+              "name",
+              "type",
+              "has_terms",
+              "balance",
+              "balance_date",
+              "movements"
             ],
             "additionalProperties": false
           }
@@ -9103,6 +9252,121 @@
         "transaction_id",
         "date",
         "description"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "review_investment_movement",
+    "description": "Proposes the review of one movement of an investment that a bank connection reports: confirm records what it proposes in the ledger, dismiss records nothing, undo voids what a confirmation recorded or reopens a dismissed movement. The application of an investment is confirmed before its other movements (investment_not_applied), and a confirmation is undone from the latest movement back (later_movement_confirmed). Use it when the user asks to accept, ignore or revert investment movements read from a bank. Do not use it for the lines of a bank account: manage_imports with resolve_record does. The user confirms first.",
+    "effect": "destructive",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "description": "confirm records what the movement proposes; dismiss records nothing; undo voids what a confirmation recorded or reopens a dismissed movement",
+          "enum": [
+            "confirm",
+            "dismiss",
+            "undo"
+          ]
+        },
+        "movement_id": {
+          "type": "string",
+          "description": "movement from get_imports with view investments"
+        },
+        "brokerage_id": {
+          "type": "string",
+          "description": "for confirm of an application: Brokerage that will hold the contract, from list_accounts"
+        },
+        "cash_account_id": {
+          "type": "string",
+          "description": "for confirm: Cash of the Brokerage or an open account of its institution; the single candidate when absent"
+        },
+        "category_id": {
+          "type": "string",
+          "description": "for confirm of an income: income category, from list_accounts"
+        }
+      },
+      "required": [
+        "action",
+        "movement_id"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "movement_id": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "description": "what the bank reports: buy, sell, income, tax, amortization or transfer"
+        },
+        "date": {
+          "type": "string",
+          "format": "date"
+        },
+        "amount": {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "string",
+              "description": "decimal amount in the instrument's scale, such as -1234.56"
+            },
+            "currency": {
+              "type": "string",
+              "description": "currency or instrument code"
+            }
+          },
+          "required": [
+            "amount",
+            "currency"
+          ],
+          "additionalProperties": false
+        },
+        "state": {
+          "type": "string",
+          "description": "pending, confirmed or dismissed"
+        },
+        "proposal": {
+          "type": "string",
+          "description": "what a confirmation records: application (first purchase, creates the contract), contribution, sale, income, tax_of_sale (recorded with its sale) or none (nothing to record)"
+        },
+        "taxes": {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "string",
+              "description": "decimal amount in the instrument's scale, such as -1234.56"
+            },
+            "currency": {
+              "type": "string",
+              "description": "currency or instrument code"
+            }
+          },
+          "description": "taxes the bank attached to this sale",
+          "required": [
+            "amount",
+            "currency"
+          ],
+          "additionalProperties": false
+        },
+        "transaction_id": {
+          "type": "string",
+          "description": "transaction a confirmation recorded"
+        }
+      },
+      "required": [
+        "movement_id",
+        "kind",
+        "date",
+        "amount",
+        "state",
+        "proposal"
       ],
       "additionalProperties": false
     }

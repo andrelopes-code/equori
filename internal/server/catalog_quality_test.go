@@ -16,7 +16,7 @@ import (
 // (assistant grounding A247 for the catalog).
 const (
 	maxDeclaration = 3500
-	maxCatalog     = 72000
+	maxCatalog     = 80000
 )
 
 func chatTools(t *testing.T) []tool.Tool {

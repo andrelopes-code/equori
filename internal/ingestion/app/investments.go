@@ -42,3 +42,24 @@ func (s *Service) Investments(
 
 	return out, nil
 }
+
+// Movement returns one movement with what it proposes and the investment that holds it. It
+// returns ErrNotFound for a movement of another book.
+func (s *Service) Movement(
+	ctx context.Context,
+	booksID int64,
+	movementID uuid.UUID,
+) (domain.StoredInvestment, MovementView, error) {
+	if err := s.available(); err != nil {
+		return domain.StoredInvestment{}, MovementView{}, err
+	}
+
+	r, err := s.reload(ctx, booksID, movementID)
+	if err != nil {
+		return domain.StoredInvestment{}, MovementView{}, err
+	}
+
+	view := MovementView{InvestmentID: r.inv.ID, Movement: r.movement(), Proposal: r.proposal()}
+
+	return r.inv, view, nil
+}

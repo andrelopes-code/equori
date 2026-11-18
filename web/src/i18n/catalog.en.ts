@@ -1881,6 +1881,8 @@ export const catalogEn = {
   "assistant.step.reconcile_account": "Preparing a reconciliation",
   "assistant.step.record_investment": "Preparing an investment transaction",
   "assistant.step.transfer_custody": "Preparing a custody transfer",
+  "assistant.step.review_investment_movement":
+    "Preparing the review of an investment movement",
   "assistant.step.record_brokerage_note": "Preparing a brokerage note",
   "assistant.step.record_corporate_action": "Preparing a corporate action",
   "assistant.step.get_category_totals": "Adding up categories",
@@ -1948,6 +1950,12 @@ export const catalogEn = {
   "assistant.action.record_investment.sell": "Record sale of security",
   "assistant.action.record_investment.income": "Record investment income",
   "assistant.action.transfer_custody": "Transfer custody",
+  "assistant.action.review_investment_movement.confirm":
+    "Confirm investment movement",
+  "assistant.action.review_investment_movement.dismiss":
+    "Dismiss investment movement",
+  "assistant.action.review_investment_movement.undo":
+    "Undo investment movement review",
   "assistant.action.record_brokerage_note": "Record brokerage note",
   "assistant.action.record_corporate_action.split": "Record split",
   "assistant.action.record_corporate_action.reverse_split":

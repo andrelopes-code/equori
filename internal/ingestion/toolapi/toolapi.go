@@ -17,7 +17,11 @@ import (
 type AccountNames func(ctx context.Context, booksID int64) (map[uuid.UUID]string, error)
 
 func Tools(svc *app.Service, names AccountNames) []tool.Tool {
-	return []tool.Tool{getImports(svc, names), manageImports(svc, names)}
+	return []tool.Tool{
+		getImports(svc, names),
+		manageImports(svc, names),
+		reviewInvestmentMovement(svc),
+	}
 }
 
 func optionalID(s, field string) (uuid.UUID, error) {

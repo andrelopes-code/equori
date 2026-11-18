@@ -20,6 +20,7 @@ const sources: Record<string, AssistantIconName> = {
   get_statement: "receipt",
   get_tax_year: "receipt",
   get_imports: "receipt",
+  review_investment_movement: "trend",
   get_help: "book",
 };
 

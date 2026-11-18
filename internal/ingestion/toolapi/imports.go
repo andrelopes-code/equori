@@ -14,7 +14,7 @@ import (
 type importsView string
 
 func (importsView) Values() []string {
-	return []string{"batches", "records", "unconfirmed", "connections", "syncs"}
+	return []string{"batches", "records", "unconfirmed", "connections", "syncs", "investments"}
 }
 
 type recordState string
@@ -28,7 +28,7 @@ type getImportsIn struct {
 	BatchID      string      `json:"batch_id,omitzero"      jsonschema:"for records: batch from the batches view"`
 	State        recordState `json:"state,omitzero"         jsonschema:"for records: keep records in this state"`
 	AccountID    string      `json:"account_id,omitzero"    jsonschema:"for unconfirmed: balance account from list_accounts"`
-	ConnectionID string      `json:"connection_id,omitzero" jsonschema:"for syncs: connection from the connections view"`
+	ConnectionID string      `json:"connection_id,omitzero" jsonschema:"for syncs and investments: connection from the connections view"`
 	tool.PageArgs
 }
 
@@ -111,6 +111,7 @@ type getImportsOut struct {
 	Connections  []connectionView  `json:"connections,omitzero"`
 	Syncs        []syncView        `json:"syncs,omitzero"`
 	Integrations []integrationView `json:"integrations,omitzero"`
+	Investments  []investmentView  `json:"investments,omitzero"`
 	NextCursor   string            `json:"next_cursor,omitzero"  jsonschema:"present when more items follow; pass it as cursor"`
 }
 
@@ -118,7 +119,8 @@ func getImports(svc *app.Service, names AccountNames) tool.Tool {
 	return tool.New(tool.Spec{
 		Name: "get_imports",
 		Description: "Returns import activity: statement import batches with their counts, the records of a batch and those needing review, " +
-			"entries of an account that no bank line confirmed, bank connections with their sync state and accounts, and the recent syncs of a connection with the automatic decisions they made. " +
+			"entries of an account that no bank line confirmed, bank connections with their sync state and accounts, the recent syncs of a connection with the automatic decisions they made, " +
+			"and the investments a connection reports with the movements to review (review_investment_movement decides each). " +
 			"Use it for whether a bank synced, what an import did or what needs review. " +
 			"Do not use it for the transactions themselves: search_transactions does.",
 		Effect: tool.ReadOnly,
@@ -170,6 +172,8 @@ func getImportsAction(
 		}
 
 		return syncs(ctx, svc, booksID, in, named)
+	case "investments":
+		return investments(ctx, svc, booksID, in, fields)
 	case "connections":
 		if err := required("connections", fields); err != nil {
 			return getImportsOut{}, err
