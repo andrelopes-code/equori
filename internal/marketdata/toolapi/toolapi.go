@@ -77,6 +77,7 @@ func Tools(svc Service, cals Calendars, files ConversationFile) []tool.Tool {
 	return []tool.Tool{
 		importPriceFile(svc, files),
 		setPaymentSchedule(svc),
+		setRateSteps(svc),
 		getMarketData(svc, cals),
 		manageInstrument(svc),
 		probeQuote(svc),

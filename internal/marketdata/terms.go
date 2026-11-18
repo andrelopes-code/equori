@@ -2,6 +2,7 @@ package marketdata
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -84,6 +85,8 @@ func storeTerms(ctx context.Context, q *postgres.Queries, code string, t Terms) 
 		CalendarID:     optional(t.CalendarID),
 		DailyLiquidity: t.DailyLiquidity,
 		RedeemableFrom: optionalDate(t.RedeemableFrom),
+		RateSteps:      rateStepsJSON(t.RateSteps),
+		RateStepsApply: optional(t.RateStepsApply),
 	}); err != nil {
 		return fmt.Errorf("put terms: %w", err)
 	}
@@ -121,6 +124,15 @@ func (m *Module) termsWithPayments(
 	}
 
 	t := toTerms(row)
+	var steps []storedStep
+	if err := json.Unmarshal(row.RateSteps, &steps); err != nil {
+		return Terms{}, fmt.Errorf("read rate steps of %s: %w", row.InstrumentCode, err)
+	}
+
+	for _, s := range steps {
+		t.RateSteps = append(t.RateSteps, domain.RateStep(s))
+	}
+
 	for _, p := range payments {
 		t.Payments = append(t.Payments, Payment{
 			PaysOn:         p.PaysOn,
@@ -179,7 +191,30 @@ func toTerms(r postgres.MarketdataFixedIncomeTerm) Terms {
 		t.RedeemableFrom = *r.RedeemableFrom
 	}
 
+	if r.RateStepsApply != nil {
+		t.RateStepsApply = *r.RateStepsApply
+	}
+
 	return t
+}
+
+// storedStep is a rate step as the terms row holds it in rate_steps (progressive rate PR1).
+type storedStep struct {
+	AfterDays        int `json:"after_days"`
+	PercentOfIndexBP int `json:"percent_of_index_bp"`
+	SpreadBP         int `json:"spread_bp"`
+}
+
+// rateStepsJSON is the JSON array of steps; [] when there is none.
+func rateStepsJSON(steps []domain.RateStep) []byte {
+	out := make([]storedStep, len(steps))
+	for i, s := range steps {
+		out[i] = storedStep(s)
+	}
+
+	b, _ := json.Marshal(out) //nolint:errchkjson // a slice of int fields always marshals
+
+	return b
 }
 
 // optionalDate is nil for the zero time.

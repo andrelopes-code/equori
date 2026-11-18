@@ -42,6 +42,24 @@ func (e CalendarWeekend) Valid() bool {
 	}
 }
 
+// Defines values for FixedIncomeTermsRateStepsApply.
+const (
+	FixedIncomeTermsRateStepsApplyRetroactive FixedIncomeTermsRateStepsApply = "retroactive"
+	FixedIncomeTermsRateStepsApplyStepped     FixedIncomeTermsRateStepsApply = "stepped"
+)
+
+// Valid indicates whether the value is a known member of the FixedIncomeTermsRateStepsApply enum.
+func (e FixedIncomeTermsRateStepsApply) Valid() bool {
+	switch e {
+	case FixedIncomeTermsRateStepsApplyRetroactive:
+		return true
+	case FixedIncomeTermsRateStepsApplyStepped:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for FixedIncomeTermsInputInterestEveryMonths.
 const (
 	N1  FixedIncomeTermsInputInterestEveryMonths = 1
@@ -60,6 +78,24 @@ func (e FixedIncomeTermsInputInterestEveryMonths) Valid() bool {
 	case N3:
 		return true
 	case N6:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for FixedIncomeTermsInputRateStepsApply.
+const (
+	FixedIncomeTermsInputRateStepsApplyRetroactive FixedIncomeTermsInputRateStepsApply = "retroactive"
+	FixedIncomeTermsInputRateStepsApplyStepped     FixedIncomeTermsInputRateStepsApply = "stepped"
+)
+
+// Valid indicates whether the value is a known member of the FixedIncomeTermsInputRateStepsApply enum.
+func (e FixedIncomeTermsInputRateStepsApply) Valid() bool {
+	switch e {
+	case FixedIncomeTermsInputRateStepsApplyRetroactive:
+		return true
+	case FixedIncomeTermsInputRateStepsApplyStepped:
 		return true
 	default:
 		return false
@@ -357,6 +393,13 @@ type FixedIncomePayment struct {
 	PaysOn         openapi_types.Date `json:"pays_on"`
 }
 
+// FixedIncomeRateStep defines model for FixedIncomeRateStep.
+type FixedIncomeRateStep struct {
+	AfterDays        int `json:"after_days"`
+	PercentOfIndexBp int `json:"percent_of_index_bp"`
+	SpreadBp         int `json:"spread_bp"`
+}
+
 // FixedIncomeTerms defines model for FixedIncomeTerms.
 type FixedIncomeTerms struct {
 	// CalendarId Calendar whose business days bus252 counts when the index does not compound by business day.
@@ -374,10 +417,17 @@ type FixedIncomeTerms struct {
 	Payments         []FixedIncomePayment `json:"payments"`
 	PercentOfIndexBp int                  `json:"percent_of_index_bp"`
 
+	// RateSteps Empty when the rate does not change with the days held.
+	RateSteps      []FixedIncomeRateStep           `json:"rate_steps"`
+	RateStepsApply *FixedIncomeTermsRateStepsApply `json:"rate_steps_apply,omitempty"`
+
 	// RedeemableFrom First date of a redemption before maturity; absent when redeemable from issued_on.
 	RedeemableFrom *openapi_types.Date `json:"redeemable_from,omitempty"`
 	SpreadBp       int                 `json:"spread_bp"`
 }
+
+// FixedIncomeTermsRateStepsApply defines model for FixedIncomeTerms.RateStepsApply.
+type FixedIncomeTermsRateStepsApply string
 
 // FixedIncomeTermsInput defines model for FixedIncomeTermsInput.
 type FixedIncomeTermsInput struct {
@@ -408,6 +458,12 @@ type FixedIncomeTermsInput struct {
 	// PercentOfIndexBp 10000 is 100% of the index; 10000 when omitted.
 	PercentOfIndexBp *int `json:"percent_of_index_bp,omitempty"`
 
+	// RateSteps The rate after a number of days held from issued_on, increasing; percent_of_index_bp and spread_bp hold before the first step (progressive rate PR1).
+	RateSteps *[]FixedIncomeRateStep `json:"rate_steps,omitempty"`
+
+	// RateStepsApply Required with rate_steps. retroactive applies the step a day has reached to the whole period since issued_on; stepped accrues each step from its own day (PR2).
+	RateStepsApply *FixedIncomeTermsInputRateStepsApply `json:"rate_steps_apply,omitempty"`
+
 	// RedeemableFrom First date of a redemption before maturity; absent when redeemable from issued_on.
 	RedeemableFrom *openapi_types.Date `json:"redeemable_from,omitempty"`
 
@@ -417,6 +473,9 @@ type FixedIncomeTermsInput struct {
 
 // FixedIncomeTermsInputInterestEveryMonths Interest paid every n months from first_payment_on up to matures_on; expands into payments.
 type FixedIncomeTermsInputInterestEveryMonths int
+
+// FixedIncomeTermsInputRateStepsApply Required with rate_steps. retroactive applies the step a day has reached to the whole period since issued_on; stepped accrues each step from its own day (PR2).
+type FixedIncomeTermsInputRateStepsApply string
 
 // FundReport defines model for FundReport.
 type FundReport struct {

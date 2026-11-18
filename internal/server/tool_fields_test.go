@@ -146,7 +146,10 @@ var uncoveredFields = map[string][]string{
 	}, // the tool reads it as month
 	"putInstrumentTerms": {
 		"payments",
-	}, // manage_instrument set_terms leaves it out for its size; set_payment_schedule writes it (F-16)
+		"rate_steps",
+		"rate_steps_apply",
+	}, // manage_instrument set_terms leaves them out for its size; set_payment_schedule and
+	// set_rate_steps write them (F-16, F-05)
 	"createFixedIncomeApplication": {
 		"application_id",
 		"contract",

@@ -19,6 +19,40 @@ const (
 func (s *Server) putInstrumentTerms(
 	ctx context.Context, r *http.Request, b PutInstrumentTermsJSONRequestBody,
 ) (FixedIncomeTerms, error) {
+	t, err := termsOf(b)
+	if err != nil {
+		return FixedIncomeTerms{}, err
+	}
+
+	if _, err := s.visible(ctx, r.PathValue("code")); err != nil {
+		return FixedIncomeTerms{}, err
+	}
+
+	out, err := s.svc.PutTerms(ctx, r.PathValue("code"), t)
+	if err != nil {
+		return FixedIncomeTerms{}, err
+	}
+
+	return toTermsAPI(out), nil
+}
+
+func (s *Server) getInstrumentTerms(
+	ctx context.Context, r *http.Request, _ httpserver.None,
+) (FixedIncomeTerms, error) {
+	if _, err := s.visible(ctx, r.PathValue("code")); err != nil {
+		return FixedIncomeTerms{}, err
+	}
+
+	t, err := s.svc.Terms(ctx, r.PathValue("code"))
+	if err != nil {
+		return FixedIncomeTerms{}, err
+	}
+
+	return toTermsAPI(t), nil
+}
+
+// termsOf is the terms the body of putInstrumentTerms states, with the defaults of the contract.
+func termsOf(b PutInstrumentTermsJSONRequestBody) (domain.Terms, error) {
 	t := domain.Terms{
 		IssuedOn:         b.IssuedOn.Time,
 		MaturesOn:        b.MaturesOn.Time,
@@ -51,38 +85,32 @@ func (s *Server) putInstrumentTerms(
 		t.RedeemableFrom = b.RedeemableFrom.Time
 	}
 
-	payments, err := paymentsOf(b)
-	if err != nil {
-		return FixedIncomeTerms{}, err
-	}
+	t.RateSteps, t.RateStepsApply = rateStepsOf(b)
 
+	payments, err := paymentsOf(b)
 	t.Payments = payments
 
-	if _, err := s.visible(ctx, r.PathValue("code")); err != nil {
-		return FixedIncomeTerms{}, err
-	}
-
-	out, err := s.svc.PutTerms(ctx, r.PathValue("code"), t)
-	if err != nil {
-		return FixedIncomeTerms{}, err
-	}
-
-	return toTermsAPI(out), nil
+	return t, err
 }
 
-func (s *Server) getInstrumentTerms(
-	ctx context.Context, r *http.Request, _ httpserver.None,
-) (FixedIncomeTerms, error) {
-	if _, err := s.visible(ctx, r.PathValue("code")); err != nil {
-		return FixedIncomeTerms{}, err
+// rateStepsOf is the steps and the rule the body sets (progressive rate PR1, PR2).
+func rateStepsOf(b PutInstrumentTermsJSONRequestBody) ([]domain.RateStep, string) {
+	var steps []domain.RateStep
+	if b.RateSteps != nil {
+		for _, step := range *b.RateSteps {
+			steps = append(steps, domain.RateStep{
+				AfterDays:        step.AfterDays,
+				PercentOfIndexBP: step.PercentOfIndexBp,
+				SpreadBP:         step.SpreadBp,
+			})
+		}
 	}
 
-	t, err := s.svc.Terms(ctx, r.PathValue("code"))
-	if err != nil {
-		return FixedIncomeTerms{}, err
+	if b.RateStepsApply == nil {
+		return steps, ""
 	}
 
-	return toTermsAPI(t), nil
+	return steps, string(*b.RateStepsApply)
 }
 
 // paymentsOf is the payments the body sets: the listed rows, or the expansion of
@@ -124,7 +152,21 @@ func toTermsAPI(t domain.Terms) FixedIncomeTerms {
 		FaceValue:        t.FaceValue,
 		DailyLiquidity:   t.DailyLiquidity,
 		Payments:         make([]FixedIncomePayment, 0, len(t.Payments)),
+		RateSteps:        make([]FixedIncomeRateStep, len(t.RateSteps)),
 	}
+	for i, step := range t.RateSteps {
+		out.RateSteps[i] = FixedIncomeRateStep{
+			AfterDays:        step.AfterDays,
+			PercentOfIndexBp: step.PercentOfIndexBP,
+			SpreadBp:         step.SpreadBP,
+		}
+	}
+
+	if t.RateStepsApply != "" {
+		apply := FixedIncomeTermsRateStepsApply(t.RateStepsApply)
+		out.RateStepsApply = &apply
+	}
+
 	if t.IndexID != "" {
 		index := t.IndexID
 		out.IndexId = &index

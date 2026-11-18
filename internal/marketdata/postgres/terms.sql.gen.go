@@ -23,7 +23,7 @@ func (q *Queries) DeletePayments(ctx context.Context, instrumentCode string) err
 
 const getTerms = `-- name: GetTerms :one
 SELECT
-    instrument_code, issued_on, matures_on, index_id, percent_of_index_bp, spread_bp, day_count, face_value, calendar_id, daily_liquidity, redeemable_from
+    instrument_code, issued_on, matures_on, index_id, percent_of_index_bp, spread_bp, day_count, face_value, calendar_id, daily_liquidity, redeemable_from, rate_steps, rate_steps_apply
 FROM
     marketdata_fixed_income_terms
 WHERE
@@ -45,6 +45,8 @@ func (q *Queries) GetTerms(ctx context.Context, instrumentCode string) (Marketda
 		&i.CalendarID,
 		&i.DailyLiquidity,
 		&i.RedeemableFrom,
+		&i.RateSteps,
+		&i.RateStepsApply,
 	)
 	return i, err
 }
@@ -114,7 +116,7 @@ func (q *Queries) ListPayments(ctx context.Context, instrumentCode string) ([]Ma
 
 const listTerms = `-- name: ListTerms :many
 SELECT
-    instrument_code, issued_on, matures_on, index_id, percent_of_index_bp, spread_bp, day_count, face_value, calendar_id, daily_liquidity, redeemable_from
+    instrument_code, issued_on, matures_on, index_id, percent_of_index_bp, spread_bp, day_count, face_value, calendar_id, daily_liquidity, redeemable_from, rate_steps, rate_steps_apply
 FROM
     marketdata_fixed_income_terms
 ORDER BY
@@ -142,6 +144,8 @@ func (q *Queries) ListTerms(ctx context.Context) ([]MarketdataFixedIncomeTerm, e
 			&i.CalendarID,
 			&i.DailyLiquidity,
 			&i.RedeemableFrom,
+			&i.RateSteps,
+			&i.RateStepsApply,
 		); err != nil {
 			return nil, err
 		}
@@ -166,7 +170,9 @@ INSERT INTO
         face_value,
         calendar_id,
         daily_liquidity,
-        redeemable_from
+        redeemable_from,
+        rate_steps,
+        rate_steps_apply
     )
 VALUES
     (
@@ -180,7 +186,9 @@ VALUES
         $8,
         $9,
         $10,
-        $11
+        $11,
+        $12,
+        $13
     )
 ON CONFLICT (instrument_code) DO UPDATE
 SET
@@ -193,7 +201,9 @@ SET
     face_value = EXCLUDED.face_value,
     calendar_id = EXCLUDED.calendar_id,
     daily_liquidity = EXCLUDED.daily_liquidity,
-    redeemable_from = EXCLUDED.redeemable_from
+    redeemable_from = EXCLUDED.redeemable_from,
+    rate_steps = EXCLUDED.rate_steps,
+    rate_steps_apply = EXCLUDED.rate_steps_apply
 `
 
 type PutTermsParams struct {
@@ -208,6 +218,8 @@ type PutTermsParams struct {
 	CalendarID       *string
 	DailyLiquidity   bool
 	RedeemableFrom   *time.Time
+	RateSteps        []byte
+	RateStepsApply   *string
 }
 
 func (q *Queries) PutTerms(ctx context.Context, arg PutTermsParams) error {
@@ -223,6 +235,8 @@ func (q *Queries) PutTerms(ctx context.Context, arg PutTermsParams) error {
 		arg.CalendarID,
 		arg.DailyLiquidity,
 		arg.RedeemableFrom,
+		arg.RateSteps,
+		arg.RateStepsApply,
 	)
 	return err
 }

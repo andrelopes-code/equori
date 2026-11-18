@@ -1961,6 +1961,8 @@ export const catalogEn = {
   "assistant.action.attach_file": "Attach file",
   "assistant.action.detach_attachment": "Remove attachment",
   "assistant.action.save_csv_profile": "Save CSV profile",
+  "assistant.action.set_payment_schedule": "Set payment dates",
+  "assistant.action.set_rate_steps": "Set progressive rate",
   "assistant.action.record_transaction": "Record transaction",
   "assistant.action.categorize_transactions": "Categorize transactions",
   "assistant.action.void_transaction": "Void transaction",

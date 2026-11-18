@@ -13770,9 +13770,19 @@ components:
           type: string
           format: date
           description: First interest date; required with interest_every_months.
+        rate_steps:
+          type: array
+          maxItems: 20
+          items:
+            $ref: "#/components/schemas/FixedIncomeRateStep"
+          description: The rate after a number of days held from issued_on, increasing; percent_of_index_bp and spread_bp hold before the first step (progressive rate PR1).
+        rate_steps_apply:
+          type: string
+          enum: [retroactive, stepped]
+          description: Required with rate_steps. retroactive applies the step a day has reached to the whole period since issued_on; stepped accrues each step from its own day (PR2).
     FixedIncomeTerms:
       type: object
-      required: [issued_on, matures_on, percent_of_index_bp, spread_bp, day_count, face_value, daily_liquidity, payments]
+      required: [issued_on, matures_on, percent_of_index_bp, spread_bp, day_count, face_value, daily_liquidity, payments, rate_steps]
       properties:
         issued_on:
           type: string
@@ -13808,6 +13818,31 @@ components:
           items:
             $ref: "#/components/schemas/FixedIncomePayment"
           description: The expanded payments, sorted by date; empty when none.
+        rate_steps:
+          type: array
+          items:
+            $ref: "#/components/schemas/FixedIncomeRateStep"
+          description: Empty when the rate does not change with the days held.
+        rate_steps_apply:
+          type: string
+          enum: [retroactive, stepped]
+    FixedIncomeRateStep:
+      type: object
+      additionalProperties: false
+      required: [after_days, percent_of_index_bp, spread_bp]
+      properties:
+        after_days:
+          type: integer
+          minimum: 1
+          maximum: 36600
+        percent_of_index_bp:
+          type: integer
+          minimum: 0
+          maximum: 100000
+        spread_bp:
+          type: integer
+          minimum: -10000
+          maximum: 100000
     FixedIncomePayment:
       type: object
       required: [pays_on, amortization_bp, pays_interest]

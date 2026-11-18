@@ -19,7 +19,9 @@ INSERT INTO
         face_value,
         calendar_id,
         daily_liquidity,
-        redeemable_from
+        redeemable_from,
+        rate_steps,
+        rate_steps_apply
     )
 VALUES
     (
@@ -33,7 +35,9 @@ VALUES
         @face_value,
         sqlc.narg (calendar_id),
         @daily_liquidity,
-        sqlc.narg (redeemable_from)
+        sqlc.narg (redeemable_from),
+        @rate_steps,
+        sqlc.narg (rate_steps_apply)
     )
 ON CONFLICT (instrument_code) DO UPDATE
 SET
@@ -46,7 +50,9 @@ SET
     face_value = EXCLUDED.face_value,
     calendar_id = EXCLUDED.calendar_id,
     daily_liquidity = EXCLUDED.daily_liquidity,
-    redeemable_from = EXCLUDED.redeemable_from;
+    redeemable_from = EXCLUDED.redeemable_from,
+    rate_steps = EXCLUDED.rate_steps,
+    rate_steps_apply = EXCLUDED.rate_steps_apply;
 
 -- name: ListTerms :many
 SELECT

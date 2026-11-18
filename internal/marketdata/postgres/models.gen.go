@@ -34,6 +34,8 @@ type MarketdataFixedIncomeTerm struct {
 	CalendarID       *string
 	DailyLiquidity   bool
 	RedeemableFrom   *time.Time
+	RateSteps        []byte
+	RateStepsApply   *string
 }
 
 type MarketdataHistory struct {

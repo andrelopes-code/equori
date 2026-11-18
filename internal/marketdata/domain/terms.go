@@ -40,10 +40,18 @@ type Terms struct {
 
 	// Payments are the dates of interest and principal, sorted by PaysOn (A236 FC6).
 	Payments []Payment
+
+	// RateSteps raise the rate with the days held, under RateStepsApply (progressive rate PR1).
+	RateSteps      []RateStep
+	RateStepsApply string
 }
 
 // Validate checks the rules the contract cannot state; the contract bounds the numbers.
 func (t Terms) Validate(daily BusinessDayIndexes) error {
+	if err := CheckRateSteps(t.RateSteps, t.RateStepsApply); err != nil {
+		return err
+	}
+
 	switch {
 	case !t.MaturesOn.After(t.IssuedOn):
 		return invalid("matures_on", "must be after issued_on")

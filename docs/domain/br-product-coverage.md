@@ -21,7 +21,7 @@ Source status:
 | F-02 | CDB, pre-fixed | supported | `TestBRProductMatrix` row F-02, through HTTP and tools: value 1,000,000.00, income tax 37,002.70, FGC excess 750,000.00 | none | LTN example of the Metodologia de Cálculo of the Tesouro Nacional (14.36% a.a., 532 business days, 753.315323 for 1,000.00), read 2026-11-18; Lei 11.033/2004 art. 1, IV |
 | F-03 | CDB, IPCA plus spread | partial | `TestRecordFixedIncomeRates`, case "index plus spread" | the monthly index enters by published month without pro rata (`accrual.go`); issuers accrue pro rata by business day with a projected index | to read |
 | F-04 | CDI plus spread (debenture, CRI, CRA, CDB) | supported | `TestRecordFixedIncomeCDIPlusSpread`; `TestBRProductMatrix` row F-04: CDI + 1.5%, 101,144.58 after 22 rates | none | to read |
-| F-05 | CDB with a rate that rises with the holding period | unsupported | terms hold one rate (`domain.Terms`) | a rate schedule by holding period | to read |
+| F-05 | CDB with a rate that rises with the holding period | supported | terms `rate_steps` with `rate_steps_apply` `retroactive` or `stepped` (`domain.AccrueSteps`); tool `set_rate_steps`; `TestAccrueSteps`, `TestRateStepsAccrue`, `TestSetRateStepsTool`; spec `docs/specs/2026-11-18-progressive-rate-design.md` | none | Santander, ficha do CDB Progressivo (retroactive); the issuer states the rule |
 | F-06 | RDB | supported | subtype `rdb` in `internal/portfolio/jurisdiction/br/br.go`; FGC list; `TestBRProductMatrix` row F-06 against the LTN example of the Tesouro Nacional | none | FGC: in code (Resolução CMN 4.222/2013, annex II, art. 2) |
 | F-07 | LCI, LCA, percent of CDI, minimum term | partial | subtypes `lci`, `lca`, exempt class; `redeemable_from` | the minimum term of the norm is typed by the user, not derived | exemption: in code (Lei 11.033/2004 art. 3); minimum term: to read |
 | F-08 | LCI, LCA, IPCA plus spread or pre-fixed | partial | as F-03 and F-07 | as F-03 and F-07 | to read |
@@ -91,9 +91,9 @@ Source status:
 
 | Verdict | Rows |
 |---|---|
-| supported | 24 |
+| supported | 25 |
 | partial | 29 |
-| unsupported | 1 |
+| unsupported | 0 |
 
 ## What the assistant says
 

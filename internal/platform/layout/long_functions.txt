@@ -9,3 +9,4 @@ internal/ledger/httpapi/server.go	Server.Register	table of data
 internal/marketdata/sources.go	sourceEntries	table of data
 internal/planning/httpapi/server.go	Server.Register	table of data
 internal/platform/config/variables.go	Variables	table of data
+internal/marketdata/indexes.go	indexEntries	table of data

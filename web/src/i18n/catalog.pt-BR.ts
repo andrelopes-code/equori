@@ -1977,6 +1977,8 @@ export const catalogPtBR: Catalog = {
   "assistant.action.attach_file": "Anexar arquivo",
   "assistant.action.detach_attachment": "Remover anexo",
   "assistant.action.save_csv_profile": "Salvar perfil do CSV",
+  "assistant.action.set_payment_schedule": "Definir datas de pagamento",
+  "assistant.action.set_rate_steps": "Definir taxa progressiva",
   "assistant.action.record_transaction": "Registrar transação",
   "assistant.action.categorize_transactions": "Categorizar transações",
   "assistant.action.void_transaction": "Anular transação",

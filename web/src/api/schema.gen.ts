@@ -7719,6 +7719,13 @@ export interface components {
              * @description First interest date; required with interest_every_months.
              */
             first_payment_on?: string;
+            /** @description The rate after a number of days held from issued_on, increasing; percent_of_index_bp and spread_bp hold before the first step (progressive rate PR1). */
+            rate_steps?: components["schemas"]["FixedIncomeRateStep"][];
+            /**
+             * @description Required with rate_steps. retroactive applies the step a day has reached to the whole period since issued_on; stepped accrues each step from its own day (PR2).
+             * @enum {string}
+             */
+            rate_steps_apply?: "retroactive" | "stepped";
         };
         FixedIncomeTerms: {
             /** Format: date */
@@ -7742,6 +7749,15 @@ export interface components {
             redeemable_from?: string;
             /** @description The expanded payments, sorted by date; empty when none. */
             payments: components["schemas"]["FixedIncomePayment"][];
+            /** @description Empty when the rate does not change with the days held. */
+            rate_steps: components["schemas"]["FixedIncomeRateStep"][];
+            /** @enum {string} */
+            rate_steps_apply?: "retroactive" | "stepped";
+        };
+        FixedIncomeRateStep: {
+            after_days: number;
+            percent_of_index_bp: number;
+            spread_bp: number;
         };
         FixedIncomePayment: {
             /** Format: date */

@@ -12185,6 +12185,155 @@
     }
   },
   {
+    "name": "set_rate_steps",
+    "description": "Proposes the rates a fixed income instrument takes as it is held longer, such as a CDB progressivo that pays 100% of the CDI, then 105% after 180 days; the other terms stay. The issuer states whether a step pays from the issue date (retroactive) or from its own day (stepped). Use it after set_terms when the rate rises with the time held. Do not use it for a rate that never changes: set_terms holds it. The user confirms first.",
+    "effect": "write",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "code of a fixed income instrument with terms"
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "after_days": {
+                "type": "integer",
+                "description": "days held from the issue date"
+              },
+              "percent_of_index_bp": {
+                "type": "integer",
+                "description": "percent of the index in bp from then, 11000 for 110%"
+              },
+              "spread_bp": {
+                "type": "integer",
+                "description": "annual spread, or pre-fixed rate, in bp from then"
+              }
+            },
+            "required": [
+              "after_days"
+            ],
+            "additionalProperties": false
+          },
+          "description": "every step in order of after_days; empty to keep one rate"
+        },
+        "apply": {
+          "type": "string",
+          "description": "with steps: retroactive (the reached rate from the issue) or stepped (each rate from its day)",
+          "enum": [
+            "retroactive",
+            "stepped"
+          ]
+        }
+      },
+      "required": [
+        "code",
+        "steps"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "terms": {
+          "type": "object",
+          "properties": {
+            "issued_on": {
+              "type": "string",
+              "format": "date"
+            },
+            "matures_on": {
+              "type": "string",
+              "format": "date"
+            },
+            "index_id": {
+              "type": "string"
+            },
+            "percent_of_index_bp": {
+              "type": "integer"
+            },
+            "spread_bp": {
+              "type": "integer"
+            },
+            "day_count": {
+              "type": "string"
+            },
+            "face_value": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "type": "string",
+                  "description": "decimal amount in the instrument's scale, such as -1234.56"
+                },
+                "currency": {
+                  "type": "string",
+                  "description": "currency or instrument code"
+                }
+              },
+              "required": [
+                "amount",
+                "currency"
+              ],
+              "additionalProperties": false
+            },
+            "calendar_id": {
+              "type": "string"
+            },
+            "daily_liquidity": {
+              "type": "boolean"
+            },
+            "redeemable_from": {
+              "type": "string",
+              "format": "date"
+            },
+            "payments": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "pays_on": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "amortization_bp": {
+                    "type": "integer"
+                  },
+                  "pays_interest": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "pays_on",
+                  "amortization_bp",
+                  "pays_interest"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "issued_on",
+            "matures_on",
+            "percent_of_index_bp",
+            "spread_bp",
+            "day_count",
+            "face_value",
+            "daily_liquidity"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "terms"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "settle_statement",
     "description": "Proposes an action on a credit card statement: pay it from an account, finance its unpaid amount in installments, confirm the amount the institution charges, record or remove the institution's due date and total, or move postings the institution billed on the next statement. Use it when the user pays a card bill or reports what the bank's statement says. Do not use it for one purchase: handle_card_purchase does. The user confirms first.",
     "effect": "write",

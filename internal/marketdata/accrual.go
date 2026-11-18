@@ -88,8 +88,10 @@ func (m *Module) anchoredSeries(
 		return nil, err
 	}
 
-	series, err := domain.Accrue(
+	series, err := domain.AccrueSteps(
 		inputs.terms,
+		inputs.terms.RateSteps,
+		inputs.terms.RateStepsApply,
 		m.businessDays,
 		inputs.quoteScale,
 		inputs.rates,
