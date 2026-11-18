@@ -20,12 +20,22 @@ const EventExportRequested = "reporting.export_requested.v1"
 
 // notExported are the tables with books_id that stay out of the archive (export design E2).
 var notExported = []string{
-	"assistant_conversation", "assistant_message", "assistant_proposal",
+	"assistant_conversation",
+	"assistant_conversation_file",
+	"assistant_message",
+	"assistant_proposal",
 	"assistant_usage",
-	"capture_category_hint", "identity_access_token", "identity_invitation", "identity_membership",
-	"identity_session", "outbox_event",
-	"portfolio_income_event", "portfolio_position_day", "portfolio_realized_result",
-	"reporting_account_day", "reporting_export",
+	"capture_category_hint",
+	"identity_access_token",
+	"identity_invitation",
+	"identity_membership",
+	"identity_session",
+	"outbox_event",
+	"portfolio_income_event",
+	"portfolio_position_day",
+	"portfolio_realized_result",
+	"reporting_account_day",
+	"reporting_export",
 }
 
 var _ app.ExportRepository = (*Exports)(nil)

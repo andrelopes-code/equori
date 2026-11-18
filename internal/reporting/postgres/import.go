@@ -311,6 +311,7 @@ func restoreSecrets(
 var replacedTables = []string{
 	"assistant_proposal",
 	"assistant_message",
+	"assistant_conversation_file",
 	"assistant_conversation",
 	"assistant_usage",
 }
