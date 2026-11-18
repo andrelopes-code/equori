@@ -17,6 +17,9 @@ type WithholdingTable struct {
 	IOF       []int
 }
 
+// Flat reports whether the rate of t ignores the days held: one income tax band and no IOF.
+func (t WithholdingTable) Flat() bool { return len(t.IncomeTax) == 1 && len(t.IOF) == 0 }
+
 // Withholding is the estimated tax of a sale in minor units of the base currency.
 type Withholding struct {
 	IncomeTax, IOF int64

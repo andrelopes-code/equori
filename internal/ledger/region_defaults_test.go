@@ -71,6 +71,8 @@ func TestFixedIncomeWithholding(t *testing.T) {
 		{"BR", "fixed_income", "debenture_incentivada", false},
 		{"BR", "stock", "", false},
 		{"BR", "fund", "multimarket", false},
+		{"BR", "fund", "equity_fund", true},
+		{"NZ", "fund", "equity_fund", false},
 		{"NZ", "fixed_income", "cdb", false},
 		{"", "fixed_income", "cdb", false},
 	} {

@@ -84,3 +84,16 @@ func TestEstimateWithholding(t *testing.T) {
 		})
 	}
 }
+
+// Coverage row U-02: a table of one band and no IOF ignores the days held.
+func TestWithholdingTableFlat(t *testing.T) {
+	t.Parallel()
+
+	flat := WithholdingTable{IncomeTax: []TaxBand{{RateBP: 1500}}}
+	withIOF := WithholdingTable{IncomeTax: []TaxBand{{RateBP: 1500}}, IOF: []int{9600}}
+
+	if !flat.Flat() || testTable.Flat() || withIOF.Flat() {
+		t.Errorf("Flat = %v, %v, %v; want true, false, false",
+			flat.Flat(), testTable.Flat(), withIOF.Flat())
+	}
+}

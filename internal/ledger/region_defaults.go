@@ -92,6 +92,11 @@ var brFixedIncomeWithholding = domain.WithholdingTable{
 	},
 }
 
+// brEquityFundWithholding is the withholding on the gain of a redemption of an equity fund in
+// Brazil: 15% whatever the days held (Lei 14.754/2023 art. 21) and no IOF (Decreto 6.306/2007
+// art. 32 §2; coverage row U-02).
+var brEquityFundWithholding = domain.WithholdingTable{IncomeTax: []domain.TaxBand{{RateBP: 1500}}}
+
 // brExemptFixedIncome are the subtypes whose interest is exempt for an individual; it mirrors
 // subtypeClass of internal/portfolio/jurisdiction/br, and a server test keeps both equal.
 var brExemptFixedIncome = []string{
@@ -100,10 +105,14 @@ var brExemptFixedIncome = []string{
 
 // FixedIncomeWithholding returns the withholding table of a fixed income security of a region
 // and whether the security pays tax at source (A235 FS4). Only BR taxes a subtype outside the
-// exempt list.
+// exempt list, and the redemption of an equity fund.
 func FixedIncomeWithholding(
 	region, instrumentType, subtype string,
 ) (domain.WithholdingTable, bool) {
+	if region == "BR" && instrumentType == "fund" && subtype == "equity_fund" {
+		return brEquityFundWithholding, true
+	}
+
 	if region != "BR" || instrumentType != "fixed_income" ||
 		slices.Contains(brExemptFixedIncome, subtype) {
 		return domain.WithholdingTable{}, false

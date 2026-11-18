@@ -1211,3 +1211,7 @@ Coverage rows T-06 and T-07, through the HTTP API. 240.00 units of RENDA.2049121
 ### S634 Estimate of the come-cotas
 
 Coverage row U-01, through the HTTP API. 1,000 units of a fund bought at 10.00 on 2026-01-05, priced 10.50 on 2026-05-29 and 10.80 on 2026-11-30: a fixed_income_fund has an estimated_tax of 75.00 and 45.00, a short_term_fund of 100.00 and 60.00.
+
+### S635 Estimate of the redemption of an equity fund
+
+Coverage row U-02, through the HTTP API. 10,000 units of an equity_fund bought at 1.00 on 2026-07-01 and priced 1.10 on 2026-07-06: the position has an estimated_tax of 150.00, 15% of the gain, with no IOF in its first 30 days.

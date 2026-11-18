@@ -181,3 +181,25 @@ func onlyNetPosition(t *testing.T, h *apitest.Harness) netPosition {
 
 	return out.Items[0]
 }
+
+// S635 (coverage row U-02): a redemption of an equity fund withholds 15% of the gain whatever the
+// days held, and no IOF (Lei 14.754/2023 art. 21; Decreto 6.306/2007 art. 32 §2).
+func TestS635EquityFundEstimate(t *testing.T) {
+	t.Parallel()
+	h := newNetBook(
+		t,
+		apitest.Brazil(),
+		"EQFUND",
+		"fund",
+		"equity_fund",
+		"2026-07-01",
+		10000,
+		"1.00",
+		"1.10",
+	)
+
+	p := onlyNetPosition(t, h)
+	if p.EstimatedTax == nil || p.EstimatedTax.Amount != 15000 {
+		t.Fatalf("estimated_tax = %+v, want 15000", p.EstimatedTax)
+	}
+}

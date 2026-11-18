@@ -57,7 +57,7 @@ func (s *Service) EstimateWithholding(
 		)
 	}
 
-	consumed, err := s.consumedLots(ctx, booksID, security, base, date, units)
+	consumed, err := s.consumedLots(ctx, booksID, security, base, date, units, table.Flat())
 	if err != nil {
 		return WithholdingEstimate{}, err
 	}
@@ -68,7 +68,8 @@ func (s *Service) EstimateWithholding(
 }
 
 // consumedLots returns the open lots a sale of units of the security on date consumes, oldest
-// first, at their FIFO cost.
+// first, at their FIFO cost. A holding at average cost has no lots: under a flat table, whose rate
+// ignores the days held, it is one lot at its average cost (coverage row U-02).
 func (s *Service) consumedLots(
 	ctx context.Context,
 	booksID int64,
@@ -76,6 +77,7 @@ func (s *Service) consumedLots(
 	base money.Currency,
 	date time.Time,
 	units int64,
+	flat bool,
 ) ([]domain.Lot, error) {
 	h, err := s.readHolding(ctx, s.repo, booksID, security, base, date, uuid.Nil)
 	if err != nil {
@@ -85,6 +87,12 @@ func (s *Service) consumedLots(
 	h, err = s.withCostMethod(ctx, s.repo, booksID, security, h, date, uuid.Nil)
 	if err != nil {
 		return nil, err
+	}
+
+	if h.Method != domain.CostFIFO && flat {
+		h.Lots = []domain.Lot{
+			{AcquiredOn: date, Quantity: h.Quantity.Amount(), Cost: h.CostBasis.Amount()},
+		}
 	}
 
 	cost, err := domain.FIFOCost(h.Lots, units)

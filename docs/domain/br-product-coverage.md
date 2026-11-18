@@ -79,7 +79,7 @@ Source status:
 | ID | Product | Verdict | Evidence | Missing | Source |
 |---|---|---|---|---|---|
 | U-01 | Fixed income fund, multimarket, come-cotas | supported | subtypes `fixed_income_fund`, `multimarket` (long term, 15%) and `short_term_fund` (20%); `UnitTax` with `RateBP` (Lei 14.754/2023 art. 17 to 19); `estimated_tax` of each come-cotas (`UnitTaxEstimate`, `TestS634UnitTaxEstimate`); source `cvmfunds` | none | Lei 14.754/2023 art. 17 to 19, read on 2026-11-18 (planalto.gov.br) |
-| U-02 | Equity fund | partial | subtype `equity_fund`, class `fund_equity`, no come-cotas | the tax at redemption is not estimated | to read |
+| U-02 | Equity fund | supported | subtype `equity_fund`, class `fund_equity`, no come-cotas; the position estimates the 15% withheld at redemption, without IOF, on the average cost (`FixedIncomeWithholding`, `TestS635EquityFundEstimate`) | none | Lei 14.754/2023 art. 21; Decreto 6.306/2007 art. 32 §2 |
 | U-03 | Exempt funds (FI-Infra, incentivized debenture fund) | supported | fund subtype `fi_infra`, class `fund_exempt`: a distribution is exempt, no come-cotas; `TestBR`, `TestUnitTaxOfClosedFunds` | none | Lei 12.431/2011 art. 3; come-cotas: Lei 14.754/2023 as summarized by law firms, 2026-11-18 |
 | U-04 | FIDC, FIP, closed funds | partial | fund subtypes `fidc` (come-cotas calendar) and `fip`, class `fund`; `TestBR`, `TestUnitTaxOfClosedFunds` | whether a FIDC is an investment entity, which frees it from come-cotas, is not recorded; the tax at a FIP distribution is not estimated | Lei 14.754/2023 as summarized by law firms, 2026-11-18 |
 | U-05 | Pension plan PGBL, VGBL | supported | fund subtypes `pgbl` and `vgbl`, tax classes `pension_pgbl` (taxed on the whole redemption) and `pension_vgbl` (on the gain), no come-cotas; contributions are purchases of quotas, redemptions sales with the tax withheld, portability a custody transfer; `get_tax_year` returns `deductible_contributions` of PGBL plans; `TestPensionContributions`, `TestPensionPlans`, `TestYearContributions` | the tax of a redemption is the one the insurer withholds: the progressive and the regressive tables are not computed; the 12% limit of the deduction needs the taxable income, which equori does not hold | Lei 11.053/2004 art. 1 and Lei 9.532/1997 art. 11 as cited; Lei 14.803/2024 checked 2026-11-18 at camara.leg.br |
@@ -91,8 +91,8 @@ Source status:
 
 | Verdict | Rows |
 |---|---|
-| supported | 38 |
-| partial | 16 |
+| supported | 39 |
+| partial | 15 |
 | unsupported | 0 |
 
 ## What the assistant says
