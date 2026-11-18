@@ -124,7 +124,12 @@ async function build() {
   });
 
   await served.close();
-  writeFileSync(MANIFEST, `${JSON.stringify(next, null, 2)}\n`);
+  // The form the formatter of the repository keeps: a list of numbers on one line.
+  const text = JSON.stringify(next, null, 2).replace(
+    /\[\s+([-\d.,\s]+?)\s+\]/g,
+    (_, body) => `[${body.split(/,\s*/).join(", ")}]`,
+  );
+  writeFileSync(MANIFEST, `${text}\n`);
   check();
 }
 
