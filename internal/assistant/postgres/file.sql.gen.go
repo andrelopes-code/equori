@@ -115,6 +115,7 @@ SELECT
     media_type,
     kind,
     size,
+    summary,
     created_at
 FROM
     assistant_conversation_file
@@ -139,6 +140,7 @@ type FileBySHARow struct {
 	MediaType      string
 	Kind           string
 	Size           int32
+	Summary        string
 	CreatedAt      time.Time
 }
 
@@ -157,6 +159,7 @@ func (q *Queries) FileBySHA(ctx context.Context, arg FileBySHAParams) (FileBySHA
 		&i.MediaType,
 		&i.Kind,
 		&i.Size,
+		&i.Summary,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -259,6 +262,7 @@ INSERT INTO
         size,
         sha256,
         content,
+        summary,
         created_at
     )
 VALUES
@@ -273,7 +277,8 @@ VALUES
         $8,
         $9,
         $10,
-        $11
+        $11,
+        $12
     )
 ON CONFLICT (books_id, member_id, conversation_id, sha256) DO NOTHING
 RETURNING
@@ -291,6 +296,7 @@ type InsertFileParams struct {
 	Size           int32
 	Sha256         []byte
 	Content        []byte
+	Summary        string
 	CreatedAt      time.Time
 }
 
@@ -306,6 +312,7 @@ func (q *Queries) InsertFile(ctx context.Context, arg InsertFileParams) (uuid.UU
 		arg.Size,
 		arg.Sha256,
 		arg.Content,
+		arg.Summary,
 		arg.CreatedAt,
 	)
 	var id uuid.UUID

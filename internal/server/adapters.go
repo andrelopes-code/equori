@@ -107,6 +107,7 @@ func (s credentialSource) Reseal(
 // linkAdapters hands each module the adapters that join it to another module (ADR 002).
 func linkAdapters(m *modules) {
 	m.assistant.UseNotices(accountNotices(m.ledger, m.ingestion))
+	m.assistant.UseFileSummary(ingestion.FileSummary)
 	m.reporting.OnImport(m.portfolio.RebuildBooks)
 	m.reporting.UseCredentials(credentialSource{m.ingestion, m.assistant})
 	m.reporting.UseIndicatorSources(m.planning, m.portfolio)

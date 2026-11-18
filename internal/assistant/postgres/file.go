@@ -111,6 +111,7 @@ func storeNewFile(
 		Size:           size,
 		Sha256:         sum,
 		Content:        content,
+		Summary:        f.Summary,
 		CreatedAt:      f.CreatedAt,
 	}); err != nil {
 		return fmt.Errorf("insert file: %w", err)
@@ -150,6 +151,7 @@ func toFile(row FileBySHARow) domain.File {
 		Kind:           domain.FileKind(row.Kind),
 		Size:           int(row.Size),
 		CreatedAt:      row.CreatedAt,
+		Summary:        row.Summary,
 	}
 }
 

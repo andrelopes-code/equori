@@ -11,6 +11,7 @@ INSERT INTO
         size,
         sha256,
         content,
+        summary,
         created_at
     )
 VALUES
@@ -25,6 +26,7 @@ VALUES
         @size,
         @sha256,
         @content,
+        @summary,
         @created_at
     )
 ON CONFLICT (books_id, member_id, conversation_id, sha256) DO NOTHING
@@ -39,6 +41,7 @@ SELECT
     media_type,
     kind,
     size,
+    summary,
     created_at
 FROM
     assistant_conversation_file

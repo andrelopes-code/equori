@@ -27,7 +27,9 @@ type Service struct {
 	agent    Agent
 	profile  func(context.Context, int64) (locale.Locale, error)
 	notices  func(context.Context, int64) ([]AccountNotice, error)
-	signals  func(context.Context, int64, tool.Preview) ([]Signal, error)
+	// summarize describes a statement file for the model (F4); nil gives no summary.
+	summarize func(kind string, content []byte) string
+	signals   func(context.Context, int64, tool.Preview) ([]Signal, error)
 }
 
 // NewService takes the clock as now (an instant) and today (the UTC date of usage days).

@@ -27,6 +27,11 @@ func (m *Module) UseTools(set tool.Set) error {
 	return nil
 }
 
+// UseFileSummary sets what describes an ofx or csv file to the model (assistant parity design, F4).
+func (m *Module) UseFileSummary(summarize func(kind string, content []byte) string) {
+	m.svc.UseFileSummary(summarize)
+}
+
 // UseNotices sets the lookup of the accounts the system prompt names (P12 A152).
 func (m *Module) UseNotices(n func(context.Context, int64) ([]AccountNotice, error)) {
 	m.svc.UseNotices(n)

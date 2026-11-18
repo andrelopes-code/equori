@@ -12,6 +12,11 @@ import (
 // unsentFileLife is how long a file no turn sent is kept (Q6).
 const unsentFileLife = 24 * time.Hour
 
+// UseFileSummary sets what describes an ofx or csv file to the model (F4).
+func (s *Service) UseFileSummary(summarize func(kind string, content []byte) string) {
+	s.summarize = summarize
+}
+
 // CreateFile stores a file the member attaches to a message of conversation, or to the next
 // message when conversation is uuid.Nil. The kind comes from the content (F3).
 func (s *Service) CreateFile(
@@ -37,15 +42,28 @@ func (s *Service) CreateFile(
 	}
 
 	now := s.now()
-
-	return s.repo.StoreFile(ctx, booksID, memberID, domain.File{
+	f := domain.File{
 		ID:             uuid.New(),
 		ConversationID: conversation,
 		Name:           fileName(name),
 		MediaType:      mediaType,
 		Kind:           kind,
 		CreatedAt:      now,
-	}, content, now.Add(-unsentFileLife), domain.MaxConversationFileBytes)
+	}
+
+	if s.summarize != nil {
+		f.Summary = s.summarize(string(kind), content)
+	}
+
+	return s.repo.StoreFile(
+		ctx,
+		booksID,
+		memberID,
+		f,
+		content,
+		now.Add(-unsentFileLife),
+		domain.MaxConversationFileBytes,
+	)
 }
 
 // DeleteFile removes a file of the member that no turn sent yet (F2).

@@ -23,7 +23,11 @@ func TestTurnWithFiles(t *testing.T) {
 
 	statement := apitest.OFX("100.00")
 	f := uploadFile(t, h, h.Client, nil, "extrato.ofx", statement, http.StatusCreated)
-	descriptor := fmt.Sprintf("[file %s: extrato.ofx, ofx, %d bytes]", f.ID, len(statement))
+	descriptor := fmt.Sprintf(
+		"[file %s: extrato.ofx, ofx, %d bytes]\nOFX statement: 0 lines from 2026-10-01 to 2026-10-31, currency BRL.",
+		f.ID,
+		len(statement),
+	)
 
 	r := sendTurn(h, h.Client, map[string]any{"text": "", "file_ids": []string{f.ID}})
 	if r.Status != http.StatusOK {
