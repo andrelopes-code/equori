@@ -30,6 +30,7 @@ import {
   tradePreset,
 } from "@/features/transactions/trade-entry/trade-draft";
 import type { TradeDraft } from "@/features/transactions/trade-entry/trade-draft";
+import { tradeOrder } from "@/features/transactions/trade-entry/trade-order";
 import { unitPriceOfTotal } from "@/features/transactions/trade-entry/unit-price-of-total";
 import { shortfall } from "@/features/transactions/brokerage-account/cash-state";
 import { useBrokerages } from "@/features/transactions/brokerage-account/use-brokerages";
@@ -133,6 +134,7 @@ export function useTradeEntry(
       : draft;
   const instrument = chosen.instrument;
   const sell = draft.side === "sell";
+  const writeOff = draft.side === "write_off";
   const state = useBrokerages(chosen.brokerageId, instrument);
   const payer =
     state.payers.find((a) => a.id === draft.cashAccountId) ?? state.payer;
@@ -243,8 +245,11 @@ export function useTradeEntry(
           })
       : null;
 
+  // A write-off moves no cash.
   const cashEffectValue =
-    gross === null ? null : cashEffect(draft.side, gross, draft.fees, taxes);
+    gross === null || draft.side === "write_off"
+      ? null
+      : cashEffect(draft.side, gross, draft.fees, taxes);
   const view: TradeView = {
     base,
     brokerages: state.brokerages,
@@ -278,12 +283,17 @@ export function useTradeEntry(
       problems.brokerage_id = t("entry.required.account");
     if (instrument === null)
       problems.instrument = t("trade.required.securityAccount");
-    if (payer === undefined)
+    if (payer === undefined && !writeOff)
       problems.cash_account_id = t("trade.required.cashAccount");
     if (draft.quantity <= 0) problems.quantity = t("trade.required.quantity");
-    if (rate === null && !byTotal)
+    if (rate === null && !byTotal && !writeOff)
       problems.unit_price = t("trade.required.price");
-    if (rate === null && byTotal && (draft.total === 0 || draft.quantity > 0))
+    if (
+      rate === null &&
+      byTotal &&
+      !writeOff &&
+      (draft.total === 0 || draft.quantity > 0)
+    )
       problems.unit_price = t("trade.required.total");
     if (limit !== null) problems.quantity = limit;
     if (correction?.reason.trim() === "")
@@ -292,8 +302,7 @@ export function useTradeEntry(
       Object.keys(problems).length > 0 ||
       state.brokerage === undefined ||
       instrument === null ||
-      payer === undefined ||
-      rate === null ||
+      (!writeOff && (payer === undefined || rate === null)) ||
       base === undefined
     ) {
       setErrors(problems);
@@ -302,27 +311,14 @@ export function useTradeEntry(
     }
     setErrors({});
     setSummary(null);
-    const description = draft.description.trim();
-    const order: components["schemas"]["TradeInput"] = {
-      brokerage_id: state.brokerage.id,
+    const order = tradeOrder(draft, {
+      brokerageId: state.brokerage.id,
       instrument,
-      cash_account_id: payer.id,
-      side: draft.side,
-      date: draft.date,
-      ...(draft.settlementDate === null
-        ? {}
-        : { settlement_date: draft.settlementDate }),
-      quantity: { amount: draft.quantity, currency: instrument },
-      unit_price: rate,
-      ...(draft.fees > 0
-        ? { fees: { amount: draft.fees, currency: base } }
-        : {}),
-      ...(taxes > 0 ? { taxes: { amount: taxes, currency: base } } : {}),
-      ...(taxes > 0 && draft.taxesCategoryId !== null
-        ? { taxes_category_id: draft.taxesCategoryId }
-        : {}),
-      ...(description === "" ? {} : { description }),
-    };
+      cashAccountId: payer?.id,
+      rate,
+      base,
+      taxes,
+    });
     try {
       if (correction !== undefined) {
         return await correct.mutateAsync({

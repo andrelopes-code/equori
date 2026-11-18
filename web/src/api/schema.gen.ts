@@ -6639,7 +6639,7 @@ export interface components {
             items: components["schemas"]["Balance"][];
         };
         /**
-         * @description write_off removes units at zero proceeds (an option expired, a right not exercised, a security that became worthless) and books their cost as a realized loss; it takes account_id and quantity, no unit_price, fees, taxes or cash account. A brokerage note refuses it.
+         * @description write_off removes units at zero proceeds (an option expired, a right not exercised, a security that became worthless) and books their cost as a realized loss; it takes account_id, or brokerage_id and instrument, and quantity; no unit_price, fees, taxes or cash account. A brokerage note refuses it.
          * @enum {string}
          */
         TradeSide: "buy" | "sell" | "write_off";

@@ -6,15 +6,13 @@ import type { ReactNode } from "react";
 
 import { BrokerageFields } from "@/features/transactions/brokerage-account/brokerage-fields";
 import { MissingCashNotice } from "@/features/transactions/brokerage-account/missing-cash-notice";
-import { ShortfallNotice } from "@/features/transactions/brokerage-account/shortfall-notice";
 import type { EntryKind } from "@/features/transactions/entry-model/entry-kind";
 import { EntryKindPicker } from "@/features/transactions/entry-kind-picker/entry-kind-picker";
+import { TradeAmountFields } from "@/features/transactions/trade-entry/trade-amount-fields";
 import type { TradeDraft } from "@/features/transactions/trade-entry/trade-draft";
 import { TradeAside } from "@/features/transactions/trade-entry/trade-aside";
 import { TradeDatesFields } from "@/features/transactions/trade-entry/trade-dates-fields";
-import { TradeCostFields } from "@/features/transactions/trade-entry/trade-cost-fields";
 import { TradePriceField } from "@/features/transactions/trade-entry/trade-price-field";
-import { TradeTotalField } from "@/features/transactions/trade-entry/trade-total-field";
 import type { TradeView } from "@/features/transactions/trade-entry/use-trade-entry";
 import { useT } from "@/i18n/i18n-provider";
 import { FormLayout } from "@/ui/form-layout/form-layout";
@@ -33,7 +31,7 @@ interface TradeFormProps {
   children?: ReactNode;
 }
 
-// Families read: segmented-control, field, text-field, stat-card. The side is two exclusive words
+// Families read: segmented-control, field, text-field, stat-card. The side is three exclusive words
 // (a segmented control); the money fields are the application's own MoneyInput (a till-style
 // entry, O7); the accounts are AccountField, offered only the accounts the contract accepts.
 export function TradeForm({
@@ -51,7 +49,8 @@ export function TradeForm({
   };
   const { base, instrument } = view;
   const sell = draft.side === "sell";
-  const baseScale = base === undefined ? 0 : scale(base);
+  // A write-off moves no money: no cash account, price, total or charges (W1).
+  const writeOff = draft.side === "write_off";
 
   function handleUseEstimate() {
     if (view.withheld !== null) set({ taxes: view.withheld });
@@ -60,12 +59,14 @@ export function TradeForm({
   return (
     <FormLayout
       aside={
-        <TradeAside
-          view={view}
-          sell={sell}
-          scale={scale}
-          onUseEstimate={handleUseEstimate}
-        />
+        writeOff ? undefined : (
+          <TradeAside
+            view={view}
+            sell={sell}
+            scale={scale}
+            onUseEstimate={handleUseEstimate}
+          />
+        )
       }
     >
       {onKind !== undefined && (
@@ -80,11 +81,13 @@ export function TradeForm({
             aria-label={t("trade.side")}
             value={draft.side}
             onValueChange={(side) => {
-              if (side === "buy" || side === "sell") set({ side });
+              if (side === "buy" || side === "sell" || side === "write_off")
+                set({ side });
             }}
           >
             <Segment value="buy">{t("trade.side.buy")}</Segment>
             <Segment value="sell">{t("trade.side.sell")}</Segment>
+            <Segment value="write_off">{t("trade.side.write_off")}</Segment>
           </SegmentedControl>
         </Inline>
       </Field>
@@ -93,9 +96,9 @@ export function TradeForm({
         brokerages={view.brokerages}
         brokerage={view.brokerage}
         instrument={view.instrument}
-        held={sell ? undefined : view.held}
+        held={sell || writeOff ? undefined : view.held}
         heldCodes={view.heldCodes}
-        payers={view.payers}
+        payers={writeOff ? [] : view.payers}
         payer={view.payer}
         balance={view.balance}
         base={base}
@@ -114,9 +117,12 @@ export function TradeForm({
         }}
       />
 
-      {view.brokerage !== undefined && !view.baseCash && base !== undefined && (
-        <MissingCashNotice brokerage={view.brokerage} base={base} />
-      )}
+      {view.brokerage !== undefined &&
+        !view.baseCash &&
+        !writeOff &&
+        base !== undefined && (
+          <MissingCashNotice brokerage={view.brokerage} base={base} />
+        )}
 
       <TradeDatesFields draft={draft} errors={errors} onChange={set} />
 
@@ -138,37 +144,23 @@ export function TradeForm({
           )}
         </Field>
 
-        <TradePriceField
-          draft={draft}
-          view={view}
-          errors={errors}
-          onChange={set}
-        />
+        {!writeOff && (
+          <TradePriceField
+            draft={draft}
+            view={view}
+            errors={errors}
+            onChange={set}
+          />
+        )}
       </FormRow>
 
-      <TradeTotalField
+      <TradeAmountFields
         draft={draft}
         view={view}
         errors={errors}
         scale={scale}
         onChange={set}
       />
-
-      <TradeCostFields
-        draft={draft}
-        base={base}
-        baseScale={baseScale}
-        errors={errors}
-        onChange={set}
-      />
-
-      {view.shortfall !== null && view.payer !== undefined && (
-        <ShortfallNotice
-          payer={view.payer}
-          amount={view.shortfall}
-          scale={baseScale}
-        />
-      )}
 
       <Field invalid={errors.description !== undefined}>
         <FieldLabel>{t("facts.description")}</FieldLabel>

@@ -173,7 +173,8 @@ func checkInvestmentFields(in recordInvestmentIn) error {
 	}
 
 	if in.Kind == "write_off" {
-		return checkFields(action, given, []string{"account_id", "date", "quantity"}, "description")
+		return checkFields(action, given, []string{"date", "quantity"},
+			"account_id", "brokerage_id", "instrument", "description")
 	}
 
 	return checkFields(action, given, []string{"date", "quantity", "unit_price"},

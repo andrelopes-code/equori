@@ -16,7 +16,7 @@ A retail investor records the listed options bought on B3 (calls and puts on sto
 | O4 | The exercise of a call is `record_corporate_action` kind `right_exercise` on the option holding: its units become the underlying at the ratio, and the cost is the premium plus `amount`, the strike times the quantity, paid from the cash account. | The cost of a share bought by exercising a call is the strike plus the premium paid (IN RFB 1.585/2015); the mechanics are those of a right exercise. |
 | O5 | The exercise of a put is a sale of the underlying at the strike and a write-off of the put. | The holder sells at the strike; the premium of the put is a loss of the same month. |
 | O6 | The tax class of an option in Brazil is `option`, the class of its type: a common operation (15%) and a day trade (20%) as E-02 and E-03 compute neither. | Lei 11.033/2004 art. 2. |
-| O8 | The write-off is recorded through `/trades` and `record_investment` in this slice; its entry on the new transaction page follows in the next one. | The trade form resolves the holding from the brokerage and the code; the write-off names the holding by account, as the API requires. |
+| O8 | A write-off names its holding by account or by the brokerage and the code, as a sale does; the trade form offers it as a third side. | The trade form resolves the holding from the brokerage and the code; the same form serves the API, the tool and the screen. |
 | O7 | Writing an option (a short position), a future with its daily settlement and a forward are later slices, each with a design of its own. | The ledger refuses a sale above the units held; a short position changes the average cost and the sign rules of the holding. |
 
 ## 3. Rules
@@ -36,7 +36,7 @@ A retail investor records the listed options bought on B3 (calls and puts on sto
 | R2 | Without a jurisdiction the option has the class of its type and the write-off its result, as any sale. |
 | R3 | The instrument type is a closed set checked in SQL (`marketdata_instrument_instrument_type_check`); `option` joins it, as every type did. The side is a closed set of the trade model. |
 | R4 | Does not apply: no extension point is added. |
-| R5 | Catalog keys: the label of the type `option` (`instruments.type.option`) and the title of a write-off (`transactions.title.write_off`), pt-BR and en. |
+| R5 | Catalog keys: the label of the type `option` (`instruments.type.option`), the side `trade.side.write_off` and the title of a write-off (`transactions.title.write_off`), pt-BR and en. |
 | R6 | The screens write the dates and amounts they already write; no new format. |
 | C1 | The cost leaving with a write-off is an integer of minor units of the base currency, the weight of the holding. |
 | C2 | Does not apply: a write-off sums no amounts across currencies. |
@@ -53,7 +53,7 @@ A retail investor records the listed options bought on B3 (calls and puts on sto
 | D4 | Does not apply: no bank, file or model input. |
 | D5 | Does not apply. |
 | S1 | No new operation; `recordTrade` and `record_investment` gain the side. |
-| S2 | This slice adds no screen entry: the trade form names its holding by brokerage and code, and a write-off by account; the entry is the next slice (O8). A write-off shows in the transaction list with its title. |
+| S2 | The trade form offers the side Write-off on the desktop and on the phone; it hides the cash account, the price, the total, the charges and the estimate (O8). A write-off shows in the transaction list with its title. |
 | S3 | The guide articles `investment_operations` and `equities_br` describe the write-off and the options. |
 | S4 | `record_investment` takes side `write_off`; `get_tax_year` returns its result. |
 | X1 | S623 an option bought and expired, S624 a call exercised, S625 a right left unexercised written off. |

@@ -100,6 +100,33 @@ func TestS624CallExercised(t *testing.T) {
 	)
 }
 
+// O8: a write-off names its holding by account or by the brokerage and the code, as a sale does.
+func TestWriteOffByBrokerageAndCode(t *testing.T) {
+	t.Parallel()
+	f := newInvestFixture(t)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/instruments",
+		security("PETRK300", "option"),
+		http.StatusCreated,
+		nil,
+	)
+	option := f.buyOption(t, "PETRK300", 100, "0.50")
+
+	var expiry tradeTx
+	f.h.MustDo(http.MethodPost, "/api/v1/trades", map[string]any{
+		"brokerage_id": f.xp,
+		"instrument":   "PETRK300",
+		"side":         "write_off",
+		"date":         "2026-11-16",
+		"quantity":     units(40, "PETRK300"),
+	}, http.StatusCreated, &expiry)
+
+	if len(expiry.Postings) != 2 || expiry.Postings[0].AccountID != option {
+		t.Errorf("postings = %+v, want the holding %s out first", expiry.Postings, option)
+	}
+}
+
 // S625 (O3): a right left unexercised is written off with no result, since it cost nothing.
 func TestS625RightWrittenOff(t *testing.T) {
 	t.Parallel()

@@ -697,6 +697,37 @@ describe("trade entry", () => {
     expect(sent[0]).toMatchObject({ side: "sell" });
   });
 
+  // Listed options design W1, O8: a write-off sends no cash account, price or charges.
+  it("records a write-off with the quantity only", async () => {
+    const sent: unknown[] = [];
+    await renderApp(path, {
+      fetch: api(sent, { held: { quantity: 150, cost: 151240 } }),
+    });
+    await userEvent.click(
+      await screen.findByRole("radio", {
+        name: catalogEn["trade.side.write_off"],
+      }),
+    );
+
+    expect(
+      screen.queryByLabelText(catalogEn["trade.unitPrice"]),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(catalogEn["trade.total"]),
+    ).not.toBeInTheDocument();
+
+    await type(catalogEn["trade.quantity"], "150");
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["entry.save"] }),
+    );
+    await waitFor(() => {
+      expect(sent).toHaveLength(1);
+    });
+    expect(sent[0]).toMatchObject({ side: "write_off" });
+    expect(sent[0]).not.toHaveProperty("unit_price");
+    expect(sent[0]).not.toHaveProperty("cash_account_id");
+  });
+
   it("refuses a sale above the position of the date", async () => {
     const sent: unknown[] = [];
     await renderApp(path, {

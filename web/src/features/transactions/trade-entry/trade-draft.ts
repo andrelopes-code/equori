@@ -2,7 +2,8 @@ import { parseRate } from "@/features/instruments";
 import type { NewTransactionSearch } from "@/features/transactions/model/search";
 
 export interface TradeDraft {
-  side: "buy" | "sell";
+  // A write-off removes units at zero proceeds (listed options design O3).
+  side: "buy" | "sell" | "write_off";
   brokerageId: string | null;
   // The code of the investment; the server finds or creates its holding account (BC6).
   instrument: string | null;

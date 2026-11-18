@@ -1149,6 +1149,7 @@ export const catalogPtBR: Catalog = {
   "trade.side": "Operação",
   "trade.side.buy": "Compra",
   "trade.side.sell": "Venda",
+  "trade.side.write_off": "Baixa",
   "trade.cashAccount": "Conta que paga ou recebe",
   "trade.cashAccountHelp":
     "A conta de onde sai o dinheiro da compra, ou para onde vai o dinheiro da venda.",

@@ -1516,7 +1516,7 @@ type BrokerageNoteOrder struct {
 	Instrument string `json:"instrument"`
 	Quantity   Money  `json:"quantity"`
 
-	// Side write_off removes units at zero proceeds (an option expired, a right not exercised, a security that became worthless) and books their cost as a realized loss; it takes account_id and quantity, no unit_price, fees, taxes or cash account. A brokerage note refuses it.
+	// Side write_off removes units at zero proceeds (an option expired, a right not exercised, a security that became worthless) and books their cost as a realized loss; it takes account_id, or brokerage_id and instrument, and quantity; no unit_price, fees, taxes or cash account. A brokerage note refuses it.
 	Side TradeSide `json:"side"`
 
 	// UnitPrice Positive exact decimal with at most 12 decimals (ADR 005).
@@ -2545,7 +2545,7 @@ type Trade struct {
 	// SettlementDate The day the cash settles; the transaction date when it settles that day (A228 IO9).
 	SettlementDate openapi_types.Date `json:"settlement_date"`
 
-	// Side write_off removes units at zero proceeds (an option expired, a right not exercised, a security that became worthless) and books their cost as a realized loss; it takes account_id and quantity, no unit_price, fees, taxes or cash account. A brokerage note refuses it.
+	// Side write_off removes units at zero proceeds (an option expired, a right not exercised, a security that became worthless) and books their cost as a realized loss; it takes account_id, or brokerage_id and instrument, and quantity; no unit_price, fees, taxes or cash account. A brokerage note refuses it.
 	Side  TradeSide `json:"side"`
 	Taxes Money     `json:"taxes"`
 
@@ -2583,7 +2583,7 @@ type TradeInput struct {
 	// SettlementDate The day the cash settles, not before date and at most 30 days after it; absent takes the settlement cycle of the instrument's exchange (A228 IO6, IO7).
 	SettlementDate *openapi_types.Date `json:"settlement_date,omitempty"`
 
-	// Side write_off removes units at zero proceeds (an option expired, a right not exercised, a security that became worthless) and books their cost as a realized loss; it takes account_id and quantity, no unit_price, fees, taxes or cash account. A brokerage note refuses it.
+	// Side write_off removes units at zero proceeds (an option expired, a right not exercised, a security that became worthless) and books their cost as a realized loss; it takes account_id, or brokerage_id and instrument, and quantity; no unit_price, fees, taxes or cash account. A brokerage note refuses it.
 	Side  TradeSide `json:"side"`
 	Taxes *Money    `json:"taxes,omitempty"`
 
@@ -2596,7 +2596,7 @@ type TradeInput struct {
 	UnitPrice *Rate `json:"unit_price,omitempty"`
 }
 
-// TradeSide write_off removes units at zero proceeds (an option expired, a right not exercised, a security that became worthless) and books their cost as a realized loss; it takes account_id and quantity, no unit_price, fees, taxes or cash account. A brokerage note refuses it.
+// TradeSide write_off removes units at zero proceeds (an option expired, a right not exercised, a security that became worthless) and books their cost as a realized loss; it takes account_id, or brokerage_id and instrument, and quantity; no unit_price, fees, taxes or cash account. A brokerage note refuses it.
 type TradeSide string
 
 // Transaction defines model for Transaction.

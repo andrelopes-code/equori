@@ -1139,6 +1139,7 @@ export const catalogEn = {
   "trade.side": "Side",
   "trade.side.buy": "Buy",
   "trade.side.sell": "Sell",
+  "trade.side.write_off": "Write-off",
   "trade.cashAccount": "Account that pays or receives",
   "trade.cashAccountHelp":
     "The account the money of a purchase leaves, or the money of a sale enters.",
