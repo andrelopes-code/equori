@@ -737,13 +737,12 @@
     border: 1px solid
       var(--slotted-panel-border-color, var(--slotted-border-subtle));
     border-radius: var(--slotted-radius-lg);
-    aspect-ratio: 8 / 5; /* literal: every video is composed at 1920 by 1200 */
     background: var(--slotted-surface-sunken);
     box-shadow: var(--slotted-shadow-lg, var(--slotted-panel-shadow, none));
     inline-size: min(
       94dvi - 20rem - var(--slotted-space-5),
-      147dvb
-    ); /* literal: the widest 8:5 box that leaves the steps their column and 3% of the window on each side */
+      (94dvb - 3rem) * 1.6
+    ); /* literal: the widest 8:5 picture that leaves the steps their column, the 3rem of the controls and 3% of the window on each side */
     transform-origin: center;
   }
 
@@ -751,22 +750,51 @@
     .playerPanel {
       inline-size: min(
         94dvi,
-        96dvb
-      ); /* literal: the widest 8:5 box that leaves 30% of the height to the steps */
+        (64dvb - 3rem) * 1.6
+      ); /* literal: the widest 8:5 picture that leaves 30% of the height to the steps */
     }
   }
 
-  /* The keys of the video (space, arrows) focus it; the owner wants no ring around the picture
-     (2026-11-18). Its controls keep their own focus marks. */
-  .playerVideo:focus,
-  .playerVideo:focus-visible {
-    outline: none;
+  /* The video in the player, and in full screen the whole screen: the picture over its controls. */
+  .videoScreen,
+  .videoContent {
+    display: flex;
+    flex-direction: column;
+    block-size: 100%;
+    background: var(--slotted-surface-sunken);
   }
 
-  .playerVideo {
+  /* The picture keeps the 8:5 of the 1920 by 1200 screen the stills were taken of. */
+  .videoPicture {
+    position: relative;
+    display: grid;
+    flex: 1;
+    min-block-size: 0;
+    aspect-ratio: 8 / 5;
+  }
+
+  /* The canvas draws at the size of the still (3840 by 2400) and the page reduces it. */
+  .videoCanvas,
+  .videoPoster {
     display: block;
     block-size: 100%;
     inline-size: 100%;
+    grid-area: 1 / 1;
+    object-fit: contain;
+  }
+
+  .videoBar {
+    display: flex;
+    align-items: center;
+    padding-inline: var(--slotted-space-2) var(--slotted-space-3);
+    border-block-start: 1px solid
+      var(--slotted-panel-border-color, var(--slotted-border-subtle));
+    gap: var(--slotted-space-3);
+    min-block-size: 3rem; /* literal: the room the player's size keeps for the controls */
+  }
+
+  .videoPosition {
+    flex: 1;
   }
 
   /* At the corner of the player, above the steps: clear of the picture, whose own corner holds

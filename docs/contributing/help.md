@@ -39,17 +39,17 @@ A figure or a video is built by `tools/help-media` (ADR 037). No file of `web/sr
 | Command | Does | Needs |
 |---|---|---|
 | `make help-media-record` | records the reads of each tutorial on `tutorials/<id>.tape.json` | `make demo`, `make run-dev` |
-| `make help-media` | builds every figure and video from the tapes, in each language, and checks them | `make web-build` (the target runs it) |
-| `make help-media-check` | checks the written media against `media.json` and the pages, without a browser; `make static`, CI and the pre-push hook run it | nothing |
-| `make help-media-review` | writes `tools/help-media/out/review.html`: every figure under its mark, every video | a build |
+| `make help-media` | builds every figure and the stills and timeline of every video from the tapes, in each language, and checks them | `make web-build` (the target runs it) |
+| `make help-media-check` | checks the written media against `media.json` and the pages, without a browser, and prints the `size-pack` of the repository; `make static`, CI and the pre-push hook run it | nothing |
+| `make help-media-review` | writes `tools/help-media/out/review.html`: every figure under its mark, every video played by the compositor of the application | a build |
 
-A build takes about two minutes per tutorial with a video: its variants are built at once (`HELP_MEDIA_JOBS`, 4 by default). A tutorial whose inputs did not change (the build of the application, the tutorial, its tape, the tool, the pages) is skipped; `node run.mjs build --force` builds it anyway.
+A video is no file: the help page draws it on a canvas from the stills of its steps (`<tutorial>/<hash>.png`, 3840 by 2400, lossless) and the timeline of `media.json` (`docs/specs/2026-11-18-help-video-composed-design.md`). A build takes under a minute per tutorial: its variants are built at once (`HELP_MEDIA_JOBS`, 4 by default). A tutorial whose inputs did not change (the build of the application, the tutorial, its tape, the tool, the pages) is skipped; `node run.mjs build --force` builds it anyway.
 
 The figures show the application as it ships: its default theme and density. A preference of the recorded account never reaches a figure. After a change of the default appearance, `make help-media` rebuilds every tutorial; the marks are measured again, so a change of size needs no edit of a tutorial.
 
 ### Adding media to a page
 
-1. Write the figures in the Markdown of every language (`web/src/features/help/README.md`, "Writing a page"): a figure id per step, and the video id before the list.
+1. Write the figures in the Markdown of every language (`web/src/features/help/README.md`, "Writing a page"): a figure id per step, and the video id with the suffix `.video` before the list.
 2. Write `tools/help-media/tutorials/<id>.mjs`. A beat is `{ figure, target, frame, act, only }`:
    - `target(page, words)` returns the Playwright locator of the element the step points at, or a list of locators whose union is marked. `words(pt, en)` picks a label by language.
    - `figure` is the id the Markdown names. A beat without one is a click the page does not number; it appears in the video only.

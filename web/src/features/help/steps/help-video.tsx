@@ -1,9 +1,8 @@
 import { Button } from "@slotted/react/button";
-import { Icon } from "@slotted/react/icon";
+import { Glyph, Icon } from "@slotted/react/icon";
 import { useRef, useState } from "react";
 
 import { HelpShot } from "@/features/help/figure/help-shot";
-import { HelpIcon } from "@/features/help/icon/help-icon";
 import { useHelpMedia } from "@/features/help/media/use-help-media";
 import type {
   HelpFigure,
@@ -23,13 +22,13 @@ interface HelpVideoProps {
 }
 
 // The video of the steps waits behind a capture; pressed, it opens in a player that grows over
-// the page and plays muted, with controls. It never starts alone and loads nothing before the
+// the page and plays, with controls. It never starts alone and loads nothing before the
 // press, and the steps are its text (help spec, HP6).
 export function HelpVideo({ video, steps, poster }: HelpVideoProps) {
   const t = useT();
   const [locale] = useAppLocale();
   const media = useHelpMedia().video(video.id);
-  const [playing, setPlaying] = useState<string | null>(null);
+  const [playing, setPlaying] = useState(false);
   const frame = useRef<HTMLElement>(null);
   const [origin, setOrigin] = useState<DOMRect | null>(null);
   const watch = useRef<HTMLButtonElement>(null);
@@ -39,15 +38,13 @@ export function HelpVideo({ video, steps, poster }: HelpVideoProps) {
   const seconds = numberFormatter(locale).format(media.seconds);
 
   const handlePlay = () => {
-    const scheme = document.documentElement.getAttribute("data-slotted-scheme");
-
     setOrigin(frame.current?.getBoundingClientRect() ?? null);
-    setPlaying(scheme === "light" ? media.light : media.dark);
+    setPlaying(true);
   };
 
   // The focus returns to the button that opened the player (WCAG 2.4.3).
   const handleClose = () => {
-    setPlaying(null);
+    setPlaying(false);
     watch.current?.focus();
   };
 
@@ -62,7 +59,7 @@ export function HelpVideo({ video, steps, poster }: HelpVideoProps) {
           tone="accent"
           start={
             <Icon size="sm">
-              <HelpIcon name="play" />
+              <Glyph name="play" />
             </Icon>
           }
           onClick={handlePlay}
@@ -71,9 +68,9 @@ export function HelpVideo({ video, steps, poster }: HelpVideoProps) {
         </Button>
       </span>
 
-      {playing !== null && (
+      {playing && (
         <HelpPlayer
-          src={playing}
+          video={media}
           label={video.alt}
           steps={steps}
           origin={origin}

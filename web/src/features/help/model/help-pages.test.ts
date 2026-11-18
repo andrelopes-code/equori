@@ -1,6 +1,7 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { helpFigure, helpVideo } from "@/features/help/media/help-media";
+import media from "@/features/help/media/media.json";
 import { helpGuides } from "@/features/help/model/help-guides";
 import {
   loadHelpLibrary,
@@ -13,6 +14,10 @@ import {
   splitHelpPage,
 } from "@/features/help/model/help-pages";
 import { languages } from "@/i18n/languages";
+
+// The video entries of the manifest, by tutorial and language.
+const ownVideos: Partial<Record<string, Partial<Record<string, unknown>>>> =
+  media.videos;
 
 describe("help pages", () => {
   it.each(languages.map((l) => l.language))(
@@ -186,11 +191,6 @@ describe("helpNeighbours", () => {
         "check-balance",
         "category-rule",
       ]);
-      // jsdom plays no media; a browser that does not play the video gets none.
-      vi.spyOn(HTMLMediaElement.prototype, "canPlayType").mockReturnValue(
-        "probably",
-      );
-
       for (const id of figures) {
         const figure = helpFigure(id, language);
 
@@ -201,11 +201,18 @@ describe("helpNeighbours", () => {
         expect(figure?.spot, id).toHaveLength(4);
       }
 
+      // A video is the stills of its language and their timeline (spec
+      // 2026-11-18-help-video-composed-design, Data): one still per part, in its folder.
       for (const id of videos) {
-        expect(helpVideo(id, language)?.dark, id).toContain(
-          `${id}.${language}.dark`,
-        );
-        expect(helpVideo(id, language)?.seconds, id).toBeGreaterThan(0);
+        const video = helpVideo(id, language);
+
+        // Each language has its own stills: none borrows another's.
+        expect(ownVideos[id]?.[language], id).toBeDefined();
+        expect(video?.parts.length, id).toBeGreaterThan(0);
+        expect(video?.stills, id).toHaveLength(video?.parts.length ?? -1);
+        for (const still of video?.stills ?? [])
+          expect(still, id).toContain(`/${id}/`);
+        expect(video?.seconds, id).toBeGreaterThan(0);
       }
     },
   );

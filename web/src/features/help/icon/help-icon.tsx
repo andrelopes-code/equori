@@ -1,11 +1,10 @@
-export type HelpIconName = "search" | "open" | "expand" | "play";
+export type HelpIconName = "search" | "open" | "expand";
 
-// Lucide geometry (ISC licence) on its 24-unit grid: search, arrow-up-right, maximize-2, play.
+// Lucide geometry (ISC licence) on its 24-unit grid: search, arrow-up-right, maximize-2.
 const PATHS: Record<HelpIconName, readonly string[]> = {
   search: ["m21 21-4.34-4.34", "M3 11a8 8 0 1 0 16 0a8 8 0 1 0 -16 0"],
   open: ["M7 7h10v10", "M7 17 17 7"],
   expand: ["M15 3h6v6", "m21 3-7 7", "M9 21H3v-6", "m3 21 7-7"],
-  play: ["M6 4v16l14-8z"],
 };
 
 interface HelpIconProps {
@@ -13,7 +12,7 @@ interface HelpIconProps {
 }
 
 // Families read: icon.
-// Workaround for Slotted issue #141: the glyph set holds no magnifier, enlarge, play or
+// Workaround for Slotted issue #141: the glyph set holds no magnifier, enlarge or
 // open-elsewhere mark, so the help draws them on Lucide's grid like the shell's own marks.
 export function HelpIcon({ name }: HelpIconProps) {
   return (

@@ -4,7 +4,7 @@ A fatura reúne as compras de um ciclo do cartão. Ela fecha numa data e vence a
 
 ## Registrar o pagamento
 
-![Vídeo: o pagamento de uma fatura do começo ao fim](pay-statement.webm)
+![Vídeo: o pagamento de uma fatura do começo ao fim](pay-statement.video)
 
 1. Abra o cartão em [Cartões](/cards).
    ![A lista de cartões, com o cartão a abrir marcado](pay-cards)

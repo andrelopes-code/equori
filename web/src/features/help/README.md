@@ -41,13 +41,13 @@ None. `model/help-pages.ts` loads the Markdown through `import.meta.glob` with t
 - `icon/`: the marks the glyph set does not hold.
 - `model/`: the page list, the guides (area, screen, symptoms, related), the Markdown loader and parser, the library of every page.
 - `styles/`: the stylesheet of the approved mock.
-- `media/`: one folder per tutorial with its figures (`<id>.<language>.<scheme>.png`) and videos (`<id>.<language>.<scheme>.webm`), and `media.json` (the mark of each figure, the length of each video, the hash of each file), all written by `tools/help-media` (`docs/contributing/help.md`, "Figures and videos"); `help-media-files.gen.ts` lists the files for the bundler, written by the same tool; `help-media.ts` and `use-help-media.ts` resolve them.
+- `media/`: one folder per tutorial with its figures (`<id>.<language>.<scheme>.png`) and the stills of its video (`<hash>.png`, one file per distinct still), and `media.json` (the mark of each figure, the timeline, stills and accent of each video, the hash of each file), all written by `tools/help-media` (`docs/contributing/help.md`, "Figures and videos"); `help-media-files.gen.ts` lists the files for the bundler, written by the same tool; `help-media.ts` and `use-help-media.ts` resolve them.
 - `content/`: Markdown sources, `<language>/<page id>.md` and `regions/<region>/<language>/<page id>.md`.
 
 ## Writing a page
 
 - `## Title {#id}` gives a section an id that is the same in every language.
 - An ordered list is drawn as numbered steps. `![alternative text](figure-id)` on an indented line under a step is the figure of that step.
-- `![alternative text](video-id.webm)` in its own paragraph before the list is the video of those steps.
+- `![alternative text](video-id.video)` in its own paragraph before the list is the video of those steps. `video/` draws it on a canvas from its stills (`docs/specs/2026-11-18-help-video-composed-design.md`).
 - `![alternative text](figure-id "caption")` in its own paragraph is a figure in the text.
 - A figure id is a beat of a tutorial of `tools/help-media`; `make help-media` builds its files.

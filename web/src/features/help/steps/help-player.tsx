@@ -2,14 +2,16 @@ import { IconButton } from "@slotted/react/button";
 import { Glyph, Icon } from "@slotted/react/icon";
 import { useEffect, useRef } from "react";
 
+import type { HelpVideoMedia } from "@/features/help/media/help-media";
 import type { HelpStep } from "@/features/help/model/parse-help-page";
 import { HelpStepLine } from "@/features/help/steps/help-step-line";
 import { shrinkTo, useGrow } from "@/features/help/steps/use-grow";
 import styles from "@/features/help/styles/help.module.css";
+import { HelpCanvas } from "@/features/help/video/help-canvas";
 import { useT } from "@/i18n/i18n-provider";
 
 interface HelpPlayerProps {
-  src: string;
+  video: HelpVideoMedia;
   label: string;
   // The steps the video shows, listed beside it.
   steps: readonly HelpStep[];
@@ -23,7 +25,7 @@ interface HelpPlayerProps {
 // the window, grown from where it stood on the page, so the whole screen of the app stays
 // legible (owner, 2026-11-18); this screen's form.
 export function HelpPlayer({
-  src,
+  video,
   label,
   steps,
   origin,
@@ -76,15 +78,7 @@ export function HelpPlayer({
     >
       <div className={styles.playerLayout}>
         <div className={styles.playerPanel} ref={panel}>
-          <video
-            className={styles.playerVideo}
-            src={src}
-            aria-label={label}
-            autoPlay
-            controls
-            muted
-            playsInline
-          />
+          <HelpCanvas video={video} label={label} />
         </div>
 
         <ol

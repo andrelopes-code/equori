@@ -63,9 +63,16 @@ async function place({ page, tape, scheme, beat, words, what }, strict = true) {
   const targets = beat.target(page, words);
 
   await boxOf(page, targets, what);
-  // A dialog focuses its first field; in a figure that ring would read as a second mark.
-  await page.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur());
-  await settle(page, tape, scheme);
+  // A dialog focuses its first field; in a figure that ring would read as a second mark. The
+  // dialog can focus it again a frame later, so the page rests with nothing focused.
+  for (let attempt = 0; ; attempt++) {
+    await page.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur());
+    await settle(page, tape, scheme);
+
+    const focused = await page.evaluate(() => document.activeElement !== document.body);
+    if (!focused) break;
+    if (attempt === 4) throw new Error(`${what}: an element keeps the focus`);
+  }
   await assertOnTop(targets, what);
 
   const target = await boxOf(page, targets, what);

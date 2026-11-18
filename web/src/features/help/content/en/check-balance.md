@@ -4,7 +4,7 @@ Reconciling compares the balance equori calculates with the balance the institut
 
 ## How to reconcile
 
-![Video: checking the balance of an account, up to the comparison](check-balance.webm)
+![Video: checking the balance of an account, up to the comparison](check-balance.video)
 
 1. Open the account in [Accounts](/accounts).
    ![The list of accounts, with the account to open marked](check-account)

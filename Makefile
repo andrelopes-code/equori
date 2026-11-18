@@ -177,7 +177,7 @@ demo: demo-user
 HELP_MEDIA := tools/help-media
 
 $(HELP_MEDIA)/node_modules: $(HELP_MEDIA)/package.json $(HELP_MEDIA)/pnpm-lock.yaml
-	cd $(HELP_MEDIA) && pnpm install --frozen-lockfile && pnpm exec playwright install chromium ffmpeg
+	cd $(HELP_MEDIA) && pnpm install --frozen-lockfile && pnpm exec playwright install chromium
 	touch $@
 
 help-media-record: $(HELP_MEDIA)/node_modules

@@ -7,14 +7,14 @@ import { fakeApi } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
 import { sharedRoutes } from "@/testing/transaction-api";
 
-// jsdom plays no media; the browser of these tests plays the videos of the help.
+// jsdom plays no media. The help video is drawn on a canvas, so what the browser plays does not
+// decide whether it is offered (spec 2026-11-18-help-video-composed-design, Player).
 function plays(answer: CanPlayTypeResult) {
   vi.spyOn(HTMLMediaElement.prototype, "canPlayType").mockReturnValue(answer);
 }
 
 beforeEach(() => {
   localStorage.clear();
-  plays("probably");
 });
 
 function inRegion(region: string) {
@@ -234,7 +234,7 @@ describe("help", () => {
     await user.click(
       await screen.findByRole("radio", { name: /^Video · \d+ s$/ }),
     );
-    expect(document.querySelector("video")).toBeNull();
+    expect(document.querySelector("canvas")).toBeNull();
 
     await user.click(
       screen.getByRole("button", { name: /^Watch the video · \d+ s$/ }),
@@ -243,17 +243,32 @@ describe("help", () => {
     const player = screen.getByRole("dialog", {
       name: "Video: the payment of a statement from start to end",
     });
-    const video = player.querySelector("video");
-    expect(video).toHaveAttribute("controls");
-    expect(video?.muted).toBe(true);
-    expect(video?.getAttribute("src")).toMatch(/pay-statement\.en\./);
+    // The picture is named by the video; its first still of the reader's language stands as the
+    // poster until the stills are decoded.
+    const picture = within(player).getByRole("img", {
+      name: "Video: the payment of a statement from start to end",
+    });
+    expect(picture.tagName).toBe("CANVAS");
+    expect(player.querySelector("img")?.getAttribute("src")).toMatch(
+      /pay-statement\/[0-9a-f]{12}\.png/,
+    );
+    expect(
+      within(player).getByRole("button", {
+        name: catalogEn["help.video.play"],
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(player).getByRole("slider", {
+        name: catalogEn["help.video.position"],
+      }),
+    ).toBeInTheDocument();
 
     await user.click(
       within(player).getByRole("button", {
         name: catalogEn["help.video.close"],
       }),
     );
-    expect(document.querySelector("video")).toBeNull();
+    expect(document.querySelector("canvas")).toBeNull();
   });
 
   // Owner, 2026-11-18: the player holds the steps the video shows, beside it.
@@ -298,8 +313,9 @@ describe("help", () => {
     expect(watch).toHaveFocus();
   });
 
-  // ADR 037: the steps and their figures are the content for a browser without WebM VP9.
-  it("keeps the figures and offers no video to a browser that cannot play it", async () => {
+  // Spec 2026-11-18-help-video-composed-design, Player: a browser without WebM VP9 gets the
+  // video too, beside the figures.
+  it("keeps the figures and offers the video to a browser that plays no WebM", async () => {
     plays("");
     await renderApp("/help/pay-statement", { fetch: fakeApi(sharedRoutes) });
 
@@ -308,13 +324,12 @@ describe("help", () => {
         "The list of cards, with the card to open marked",
       ),
     ).toHaveLength(2);
-    expect(screen.queryByRole("radio", { name: /^Video/ })).toBeNull();
     expect(
-      screen.queryByRole("button", { name: /^Watch the video/ }),
-    ).toBeNull();
+      screen.getByRole("radio", { name: /^Video · \d+ s$/ }),
+    ).toBeInTheDocument();
   });
 
-  it("names no video in the index for a browser that cannot play it", async () => {
+  it("names the video in the index for a browser that plays no WebM", async () => {
     plays("");
     await renderApp("/help", { fetch: fakeApi(sharedRoutes) });
 
@@ -326,7 +341,7 @@ describe("help", () => {
       name: /Pay a statement/,
     });
 
-    expect(link).not.toHaveTextContent(catalogEn["help.media.video"]);
+    expect(link).toHaveTextContent(catalogEn["help.media.video"]);
   });
 
   it("draws the figures of the reader's language", async () => {

@@ -4,7 +4,7 @@ O extrato é o arquivo que o banco ou o cartão oferece para baixar. O equori l�
 
 ## Enviar o arquivo
 
-![Vídeo: a importação de um extrato em CSV, até o envio](import-statement.webm)
+![Vídeo: a importação de um extrato em CSV, até o envio](import-statement.video)
 
 1. Abra a conta em [Contas](/accounts).
    ![A lista de contas, com a conta a abrir marcada](import-account)

@@ -4,7 +4,7 @@ A statement file is the file your bank or card offers for download. equori reads
 
 ## Send the file
 
-![Video: importing a CSV statement, up to sending it](import-statement.webm)
+![Video: importing a CSV statement, up to sending it](import-statement.video)
 
 1. Open the account in [Accounts](/accounts).
    ![The list of accounts, with the account to open marked](import-account)

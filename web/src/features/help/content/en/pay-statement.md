@@ -4,7 +4,7 @@ A statement gathers the purchases of one card cycle. It closes on a date and is 
 
 ## Record the payment
 
-![Video: the payment of a statement from start to end](pay-statement.webm)
+![Video: the payment of a statement from start to end](pay-statement.video)
 
 1. Open the card in [Cards](/cards).
    ![The list of cards, with the card to open marked](pay-cards)

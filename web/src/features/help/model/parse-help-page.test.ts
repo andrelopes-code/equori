@@ -10,7 +10,7 @@ What each number means is in [The statement screen](/help/statement).
 
 ## Record the payment
 
-![Video: the payment from start to end](pay-statement.webm)
+![Video: the payment from start to end](pay-statement.video)
 
 1. Open the card in [Cards](/cards).
    ![The list of cards](pay-cards)

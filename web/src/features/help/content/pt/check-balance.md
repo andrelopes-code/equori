@@ -4,7 +4,7 @@ Conferir é comparar o saldo que o equori calcula com o saldo que a instituiçã
 
 ## Como conferir
 
-![Vídeo: a conferência do saldo de uma conta, até a comparação](check-balance.webm)
+![Vídeo: a conferência do saldo de uma conta, até a comparação](check-balance.video)
 
 1. Abra a conta em [Contas](/accounts).
    ![A lista de contas, com a conta a abrir marcada](check-account)

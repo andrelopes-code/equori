@@ -4,7 +4,7 @@ A rule gives a transaction the right category as soon as it arrives, imported or
 
 ## Build the rule
 
-![Video: creating a category rule, up to saving it](category-rule.webm)
+![Video: creating a category rule, up to saving it](category-rule.video)
 
 1. In [Categories](/categories), open the **Rules** tab and choose **New rule**.
    ![The Rules tab, with the New rule button marked](rule-new)

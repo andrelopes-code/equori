@@ -11,6 +11,7 @@ Phases, features and defects are GitHub issues. A label `type:` names the kind (
 Requirements: Go (version in `go.mod`), Docker with Compose, Node.js (version in `web/.node-version`) with Corepack enabled.
 
 ```sh
+git clone --filter=blob:none <repository>   # partial clone: past versions of the help media download on demand (ADR 037)
 make hooks     # install the git hooks of lefthook.yml (ADR 015)
 make run-dev   # PostgreSQL, the API on :8080 and the Vite dev server
 ```

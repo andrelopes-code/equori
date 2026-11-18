@@ -4,7 +4,7 @@ Uma regra dá a categoria certa a uma transação assim que ela chega, importada
 
 ## Montar a regra
 
-![Vídeo: a criação de uma regra de categoria, até salvar](category-rule.webm)
+![Vídeo: a criação de uma regra de categoria, até salvar](category-rule.video)
 
 1. Em [Categorias](/categories), abra a aba **Regras** e escolha **Nova regra**.
    ![A aba Regras, com o botão Nova regra marcado](rule-new)

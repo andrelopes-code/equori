@@ -202,88 +202,852 @@
     }
   },
   "videos": {
-    "pay-statement": {
-      "seconds": 18,
-      "frames": 528
+    "check-balance": {
+      "pt": {
+        "parts": [
+          {
+            "start": 0,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 1,
+            "mark": {
+              "x": 331.75,
+              "y": 391.796875,
+              "width": 129,
+              "height": 51.90625
+            }
+          },
+          {
+            "start": 3.2,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 2,
+            "mark": {
+              "x": 1596,
+              "y": 38.25,
+              "width": 128,
+              "height": 52
+            }
+          },
+          {
+            "start": 6.4,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 3,
+            "mark": {
+              "x": 741.5,
+              "y": 545.875,
+              "width": 437,
+              "height": 155.578125
+            }
+          },
+          {
+            "start": 9,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 4,
+            "mark": {
+              "x": 1033.5,
+              "y": 699.453125,
+              "width": 145,
+              "height": 52
+            }
+          }
+        ],
+        "duration": 13,
+        "fade": 0.3,
+        "stills": [
+          "check-balance/ec86090899a5.png",
+          "check-balance/091ce79e09c1.png",
+          "check-balance/dac10eb31a17.png",
+          "check-balance/dac10eb31a17.png"
+        ],
+        "accent": "oklch(0.537962 0.124573 215.224)"
+      },
+      "en": {
+        "parts": [
+          {
+            "start": 0,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 1,
+            "mark": {
+              "x": 331.75,
+              "y": 391.796875,
+              "width": 129,
+              "height": 51.90625
+            }
+          },
+          {
+            "start": 3.2,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 2,
+            "mark": {
+              "x": 1586,
+              "y": 38.25,
+              "width": 135,
+              "height": 52
+            }
+          },
+          {
+            "start": 6.4,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 3,
+            "mark": {
+              "x": 741.5,
+              "y": 545.875,
+              "width": 437,
+              "height": 155.578125
+            }
+          },
+          {
+            "start": 9,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 4,
+            "mark": {
+              "x": 999.5,
+              "y": 699.453125,
+              "width": 179,
+              "height": 52
+            }
+          }
+        ],
+        "duration": 13,
+        "fade": 0.3,
+        "stills": [
+          "check-balance/cb34c2357d3b.png",
+          "check-balance/d77d407a0056.png",
+          "check-balance/b48ac10c2711.png",
+          "check-balance/b48ac10c2711.png"
+        ],
+        "accent": "oklch(0.537962 0.124573 215.224)"
+      }
     },
     "category-rule": {
-      "seconds": 23,
-      "frames": 690
-    },
-    "check-balance": {
-      "seconds": 13,
-      "frames": 390
+      "pt": {
+        "parts": [
+          {
+            "start": 0,
+            "travel": 0.9,
+            "hold": 0.5,
+            "click": 0.6,
+            "number": 0,
+            "mark": {
+              "x": 303.75,
+              "y": 71.171875,
+              "width": 86,
+              "height": 52
+            }
+          },
+          {
+            "start": 2,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 1,
+            "mark": {
+              "x": 1766,
+              "y": 9,
+              "width": 127.5,
+              "height": 52
+            }
+          },
+          {
+            "start": 5.2,
+            "travel": 0.9,
+            "hold": 0.5,
+            "click": 0.6,
+            "number": 0,
+            "mark": {
+              "x": 494.75,
+              "y": 116.09375,
+              "width": 562,
+              "height": 52
+            }
+          },
+          {
+            "start": 7.2,
+            "travel": 0.9,
+            "hold": 0.5,
+            "click": 0.6,
+            "number": 0,
+            "mark": {
+              "x": 795.75,
+              "y": 239.921875,
+              "width": 229.5,
+              "height": 52
+            }
+          },
+          {
+            "start": 9.2,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 2,
+            "mark": {
+              "x": 469.75,
+              "y": 179.09375,
+              "width": 598,
+              "height": 147.578125
+            }
+          },
+          {
+            "start": 11.8,
+            "travel": 0.9,
+            "hold": 0.5,
+            "click": 0.6,
+            "number": 0,
+            "mark": {
+              "x": 680.25,
+              "y": 384.5,
+              "width": 326.25,
+              "height": 52
+            }
+          },
+          {
+            "start": 13.8,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 3,
+            "mark": {
+              "x": 469.75,
+              "y": 337.671875,
+              "width": 598,
+              "height": 133.578125
+            }
+          },
+          {
+            "start": 16.4,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 4,
+            "mark": {
+              "x": 1071.75,
+              "y": 226.5625,
+              "width": 528,
+              "height": 273.234375
+            }
+          },
+          {
+            "start": 19,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 5,
+            "mark": {
+              "x": 1499.25,
+              "y": 1135.5,
+              "width": 118,
+              "height": 52
+            }
+          }
+        ],
+        "duration": 23,
+        "fade": 0.3,
+        "stills": [
+          "category-rule/941adae37f17.png",
+          "category-rule/11a54f084cad.png",
+          "category-rule/fcd134f159a3.png",
+          "category-rule/3b09e5282307.png",
+          "category-rule/91975be4e91f.png",
+          "category-rule/91975be4e91f.png",
+          "category-rule/d0f3c48fcc00.png",
+          "category-rule/d0f3c48fcc00.png",
+          "category-rule/d0f3c48fcc00.png"
+        ],
+        "accent": "oklch(0.537962 0.124573 215.224)"
+      },
+      "en": {
+        "parts": [
+          {
+            "start": 0,
+            "travel": 0.9,
+            "hold": 0.5,
+            "click": 0.6,
+            "number": 0,
+            "mark": {
+              "x": 303.75,
+              "y": 71.171875,
+              "width": 76,
+              "height": 52
+            }
+          },
+          {
+            "start": 2,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 1,
+            "mark": {
+              "x": 1780,
+              "y": 9,
+              "width": 113.5,
+              "height": 52
+            }
+          },
+          {
+            "start": 5.2,
+            "travel": 0.9,
+            "hold": 0.5,
+            "click": 0.6,
+            "number": 0,
+            "mark": {
+              "x": 494.75,
+              "y": 116.09375,
+              "width": 562,
+              "height": 52
+            }
+          },
+          {
+            "start": 7.2,
+            "travel": 0.9,
+            "hold": 0.5,
+            "click": 0.6,
+            "number": 0,
+            "mark": {
+              "x": 795.75,
+              "y": 225.921875,
+              "width": 229.5,
+              "height": 52
+            }
+          },
+          {
+            "start": 9.2,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 2,
+            "mark": {
+              "x": 469.75,
+              "y": 179.09375,
+              "width": 598,
+              "height": 133.578125
+            }
+          },
+          {
+            "start": 11.8,
+            "travel": 0.9,
+            "hold": 0.5,
+            "click": 0.6,
+            "number": 0,
+            "mark": {
+              "x": 680.25,
+              "y": 370.5,
+              "width": 326.25,
+              "height": 52
+            }
+          },
+          {
+            "start": 13.8,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 3,
+            "mark": {
+              "x": 469.75,
+              "y": 323.671875,
+              "width": 598,
+              "height": 133.578125
+            }
+          },
+          {
+            "start": 16.4,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 4,
+            "mark": {
+              "x": 1071.75,
+              "y": 226.5625,
+              "width": 528,
+              "height": 273.234375
+            }
+          },
+          {
+            "start": 19,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 5,
+            "mark": {
+              "x": 1517.25,
+              "y": 1135.5,
+              "width": 100,
+              "height": 52
+            }
+          }
+        ],
+        "duration": 23,
+        "fade": 0.3,
+        "stills": [
+          "category-rule/20945d12558b.png",
+          "category-rule/961df6b349ed.png",
+          "category-rule/a0fe7e093684.png",
+          "category-rule/dded50a308bf.png",
+          "category-rule/3c063fa6833a.png",
+          "category-rule/3c063fa6833a.png",
+          "category-rule/72f1f12a2566.png",
+          "category-rule/72f1f12a2566.png",
+          "category-rule/72f1f12a2566.png"
+        ],
+        "accent": "oklch(0.537962 0.124573 215.224)"
+      }
     },
     "import-statement": {
-      "seconds": 15,
-      "frames": 450
+      "pt": {
+        "parts": [
+          {
+            "start": 0,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 1,
+            "mark": {
+              "x": 331.75,
+              "y": 391.796875,
+              "width": 129,
+              "height": 51.90625
+            }
+          },
+          {
+            "start": 3.2,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 2,
+            "mark": {
+              "x": 1475,
+              "y": 38.25,
+              "width": 139,
+              "height": 52
+            }
+          },
+          {
+            "start": 6.4,
+            "travel": 0.9,
+            "hold": 0.5,
+            "click": 0.6,
+            "number": 0,
+            "mark": {
+              "x": 700.75,
+              "y": 204.765625,
+              "width": 150,
+              "height": 54
+            }
+          },
+          {
+            "start": 8.4,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 3,
+            "mark": {
+              "x": 483.75,
+              "y": 464.828125,
+              "width": 584,
+              "height": 142.6875
+            }
+          },
+          {
+            "start": 11,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 4,
+            "mark": {
+              "x": 1522.25,
+              "y": 1135.5,
+              "width": 95,
+              "height": 52
+            }
+          }
+        ],
+        "duration": 15,
+        "fade": 0.3,
+        "stills": [
+          "import-statement/ec86090899a5.png",
+          "import-statement/091ce79e09c1.png",
+          "import-statement/c04551039749.png",
+          "import-statement/05bd61f5aa7f.png",
+          "import-statement/b5c245a18878.png"
+        ],
+        "accent": "oklch(0.537962 0.124573 215.224)"
+      },
+      "en": {
+        "parts": [
+          {
+            "start": 0,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 1,
+            "mark": {
+              "x": 331.75,
+              "y": 391.796875,
+              "width": 129,
+              "height": 51.90625
+            }
+          },
+          {
+            "start": 3.2,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 2,
+            "mark": {
+              "x": 1460,
+              "y": 38.25,
+              "width": 144,
+              "height": 52
+            }
+          },
+          {
+            "start": 6.4,
+            "travel": 0.9,
+            "hold": 0.5,
+            "click": 0.6,
+            "number": 0,
+            "mark": {
+              "x": 716.75,
+              "y": 204.765625,
+              "width": 118,
+              "height": 54
+            }
+          },
+          {
+            "start": 8.4,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 3,
+            "mark": {
+              "x": 483.75,
+              "y": 464.828125,
+              "width": 584,
+              "height": 142.6875
+            }
+          },
+          {
+            "start": 11,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 4,
+            "mark": {
+              "x": 1534.25,
+              "y": 1135.5,
+              "width": 83,
+              "height": 52
+            }
+          }
+        ],
+        "duration": 15,
+        "fade": 0.3,
+        "stills": [
+          "import-statement/cb34c2357d3b.png",
+          "import-statement/d77d407a0056.png",
+          "import-statement/043a6b80cae8.png",
+          "import-statement/a753a8de41a8.png",
+          "import-statement/1cd06251a442.png"
+        ],
+        "accent": "oklch(0.537962 0.124573 215.224)"
+      }
+    },
+    "pay-statement": {
+      "pt": {
+        "parts": [
+          {
+            "start": 0,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 1,
+            "mark": {
+              "x": 218,
+              "y": 201.609375,
+              "width": 343.09375,
+              "height": 225.1875
+            }
+          },
+          {
+            "start": 3.2,
+            "travel": 0.9,
+            "hold": 0.5,
+            "click": 0.6,
+            "number": 0,
+            "mark": {
+              "x": 229,
+              "y": 656.328125,
+              "width": 134,
+              "height": 39.59375
+            }
+          },
+          {
+            "start": 5.2,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 2,
+            "mark": {
+              "x": 1812.5,
+              "y": 38.25,
+              "width": 81,
+              "height": 52
+            }
+          },
+          {
+            "start": 8.4,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 3,
+            "mark": {
+              "x": 668,
+              "y": 502.03125,
+              "width": 584,
+              "height": 72.84375
+            }
+          },
+          {
+            "start": 11,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 4,
+            "mark": {
+              "x": 668,
+              "y": 571.875,
+              "width": 584,
+              "height": 142.6875
+            }
+          },
+          {
+            "start": 13.6,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 5,
+            "mark": {
+              "x": 1133,
+              "y": 719.5625,
+              "width": 119,
+              "height": 52
+            }
+          }
+        ],
+        "duration": 17.6,
+        "fade": 0.3,
+        "stills": [
+          "pay-statement/a26879605658.png",
+          "pay-statement/1e8948bb6d63.png",
+          "pay-statement/33d41aee2daf.png",
+          "pay-statement/383feb8a205f.png",
+          "pay-statement/383feb8a205f.png",
+          "pay-statement/383feb8a205f.png"
+        ],
+        "accent": "oklch(0.537962 0.124573 215.224)"
+      },
+      "en": {
+        "parts": [
+          {
+            "start": 0,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 1,
+            "mark": {
+              "x": 218,
+              "y": 201.609375,
+              "width": 343.09375,
+              "height": 225.1875
+            }
+          },
+          {
+            "start": 3.2,
+            "travel": 0.9,
+            "hold": 0.5,
+            "click": 0.6,
+            "number": 0,
+            "mark": {
+              "x": 229,
+              "y": 656.328125,
+              "width": 117,
+              "height": 39.59375
+            }
+          },
+          {
+            "start": 5.2,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 2,
+            "mark": {
+              "x": 1825.5,
+              "y": 38.25,
+              "width": 68,
+              "height": 52
+            }
+          },
+          {
+            "start": 8.4,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 3,
+            "mark": {
+              "x": 668,
+              "y": 502.03125,
+              "width": 584,
+              "height": 72.84375
+            }
+          },
+          {
+            "start": 11,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 4,
+            "mark": {
+              "x": 668,
+              "y": 571.875,
+              "width": 584,
+              "height": 142.6875
+            }
+          },
+          {
+            "start": 13.6,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 5,
+            "mark": {
+              "x": 1123,
+              "y": 719.5625,
+              "width": 129,
+              "height": 52
+            }
+          }
+        ],
+        "duration": 17.6,
+        "fade": 0.3,
+        "stills": [
+          "pay-statement/6ed00e589074.png",
+          "pay-statement/8899d1d946ff.png",
+          "pay-statement/6f7ef8eec2b2.png",
+          "pay-statement/89c2c8d2140d.png",
+          "pay-statement/89c2c8d2140d.png",
+          "pay-statement/89c2c8d2140d.png"
+        ],
+        "accent": "oklch(0.537962 0.124573 215.224)"
+      }
     }
   },
   "files": {
-    "category-rule/rule-new.pt.dark.png": "d2cfc9b62ad696d5ee84fe70c29a99f9f2e111d8088469ebf8aa053edd553d0d",
-    "category-rule/rule-conditions.pt.dark.png": "08a2ca6f25f76b4de3d7f50696c431fb74a4e4d1432008190d869dc7b265e26e",
-    "category-rule/rule-actions.pt.dark.png": "5a74d3de270e2b3244d4b1ced9c8caf4fdccd0587c91b25fae2dff1d0da350ad",
-    "category-rule/rule-preview.pt.dark.png": "81ec139bd521daf264f8304fc817b63ad8ce3701a4950df5c87fcbe3c96b830d",
-    "category-rule/rule-save.pt.dark.png": "1243276728e3e1fb240ab427a9d852024faa475a6b10e37348109b98a4e1c920",
-    "category-rule/rule-new.en.dark.png": "a96ddc91be199a9647712ebf2e75fe3b8207dfff702d1345f43d3ff425eb3e2d",
-    "category-rule/rule-conditions.en.dark.png": "b732c534b5cbdc63aeb9b2a0087d2152c08d5634ce93e5127e10dec7a65b5266",
+    "category-rule/11a54f084cad.png": "11a54f084cad9d1bc0186d881a5ac834e8e2a208a8ba657dbd0b0e2c55a9e50d",
+    "category-rule/20945d12558b.png": "20945d12558bf1f771dfd134aeafc82583dd540ef5cd722c53396ba7bded2cd9",
+    "category-rule/3b09e5282307.png": "3b09e5282307aff77c36782eb120e60fdb6631a4dd55b3ce877404486d842a9c",
+    "category-rule/3c063fa6833a.png": "3c063fa6833a8b7d2947f14beeb2523ba58c221209635dcff4f3fb57de5e4c5f",
+    "category-rule/72f1f12a2566.png": "72f1f12a2566875e53b58aa4851772869ffa6ca85584a26d8bd545356ef25db2",
+    "category-rule/91975be4e91f.png": "91975be4e91fbcfef3bee5a4acfc93ebf5d954d0c93a085d999701081b30c978",
+    "category-rule/941adae37f17.png": "941adae37f175b9d083104a14abb07d11ce814827102776c0394ec33e63937dd",
+    "category-rule/961df6b349ed.png": "961df6b349ed103f7c05c908c508444734e9154a183e7a44eeb3e2db7a6744fc",
+    "category-rule/a0fe7e093684.png": "a0fe7e0936841bec29501b8177d6fb3447a879ea75db927c528187ae6c75b5f2",
+    "category-rule/d0f3c48fcc00.png": "d0f3c48fcc00048e2adf86cd9e3e880e6c31e5ead546d7530d850c36f1d407fa",
+    "category-rule/dded50a308bf.png": "dded50a308bfb1080d3b9627755452e8aa18cc12e88d1cf965c7a3aa2263ca49",
+    "category-rule/fcd134f159a3.png": "fcd134f159a374841ef9806f7a044f301e58597c7b2d13ebb4c795f22a10c16f",
     "category-rule/rule-actions.en.dark.png": "4cf91041e8d6ae4636b21ea1ab5a48032a113c49918d5158bc4938676d50cb33",
+    "category-rule/rule-actions.pt.dark.png": "5a74d3de270e2b3244d4b1ced9c8caf4fdccd0587c91b25fae2dff1d0da350ad",
+    "category-rule/rule-conditions.en.dark.png": "b732c534b5cbdc63aeb9b2a0087d2152c08d5634ce93e5127e10dec7a65b5266",
+    "category-rule/rule-conditions.pt.dark.png": "08a2ca6f25f76b4de3d7f50696c431fb74a4e4d1432008190d869dc7b265e26e",
+    "category-rule/rule-new.en.dark.png": "a96ddc91be199a9647712ebf2e75fe3b8207dfff702d1345f43d3ff425eb3e2d",
+    "category-rule/rule-new.pt.dark.png": "d2cfc9b62ad696d5ee84fe70c29a99f9f2e111d8088469ebf8aa053edd553d0d",
     "category-rule/rule-preview.en.dark.png": "1f681c0fabc19fb25ee15717cc3aaab18ce186c99da5f48ac60859cdbccd5913",
+    "category-rule/rule-preview.pt.dark.png": "81ec139bd521daf264f8304fc817b63ad8ce3701a4950df5c87fcbe3c96b830d",
     "category-rule/rule-save.en.dark.png": "1e29fab6c632b2729207404e48d31712fdd2f01fa17bc99012d007e85e71a9f9",
-    "category-rule/category-rule.en.dark.webm": "12cae2ef0be044a9de0967a25199e9926f06d8228be915e028465a7a26e084a5",
-    "category-rule/category-rule.pt.dark.webm": "6bfe4bc24738f4977d564e9e6b0a6b5506be4212120283c4641274bcaaf1e772",
-    "check-balance/check-account.pt.dark.png": "be45b98cdee607098fe8dd68f4e05f45add206dd11ec95d7ae16b11f55575899",
-    "check-balance/check-open.pt.dark.png": "9d23613db25caab86204332fa3c091dfba3f3fcff72e904d1dd7ca63f0dd30f4",
-    "check-balance/check-values.pt.dark.png": "30ed8150a3da083867fdfd242f98ac98004e77aae237b83b2a61710206c90d66",
-    "check-balance/check-compare.pt.dark.png": "30ed8150a3da083867fdfd242f98ac98004e77aae237b83b2a61710206c90d66",
-    "check-balance/check-difference.pt.dark.png": "90ba7efed58584f91a4c4c3d80d13aa76cc77bfad1be078d85bf305234882185",
+    "category-rule/rule-save.pt.dark.png": "1243276728e3e1fb240ab427a9d852024faa475a6b10e37348109b98a4e1c920",
+    "check-balance/091ce79e09c1.png": "091ce79e09c15428a9092099113bddd5ae8a5396e21f439183f0eb25e6094f62",
+    "check-balance/b48ac10c2711.png": "b48ac10c27111a26db022c3d910e499a928d44d1341f1f4d6d5ecfacf7516c77",
+    "check-balance/cb34c2357d3b.png": "cb34c2357d3b1228d80ed51220af31df429fa44c9c9feffb876906b6a829c529",
     "check-balance/check-account.en.dark.png": "368389ce4012f0dd45330d79e3fedd8ad6e1c6734c562389cf28b89ee391cf58",
-    "check-balance/check-open.en.dark.png": "67e3a2e6f71e599d82ff8997415eb4229c5ea0bf6078a366681cad293d6c19aa",
-    "check-balance/check-values.en.dark.png": "61e68f5722043258b26ccd80baded6c5c656bd2764b67541f7b780885de96e04",
+    "check-balance/check-account.pt.dark.png": "be45b98cdee607098fe8dd68f4e05f45add206dd11ec95d7ae16b11f55575899",
     "check-balance/check-compare.en.dark.png": "61e68f5722043258b26ccd80baded6c5c656bd2764b67541f7b780885de96e04",
+    "check-balance/check-compare.pt.dark.png": "30ed8150a3da083867fdfd242f98ac98004e77aae237b83b2a61710206c90d66",
     "check-balance/check-difference.en.dark.png": "72c3f6731e7d835bf74aa0100cbb987bc517df9ad3deb6d647643eabc5a79800",
-    "check-balance/check-balance.pt.dark.webm": "8973076de29e7f8afa1c5e2698a24f97cc47245cce81f2f0a3c5383fbfc0e043",
-    "check-balance/check-balance.en.dark.webm": "7de535534a1facff73517cece75230d6de3339a0d4672f53cee225c944c98a9f",
-    "connect-bank/connect-settings.pt.dark.png": "6ecaa802273dbbd6ee097d69f4defe205f40833342fba9d4262409a815f2ff39",
-    "connect-bank/connect-add.pt.dark.png": "26deac138b36d0927e554ec1ef9aede44ba82420b20302bf3ab17e776d7e4f97",
-    "connect-bank/connect-credentials.pt.dark.png": "699a3ea81f96029f04795c2640deec3ad1379cf29369bc032a11f340f86c6ca2",
-    "connect-bank/connect-create.pt.dark.png": "699a3ea81f96029f04795c2640deec3ad1379cf29369bc032a11f340f86c6ca2",
-    "connect-bank/connect-settings.en.dark.png": "9e50736c40eaa7ac8cef4ac778942780309fcc969e084a2c61b6a2f8afed7844",
+    "check-balance/check-difference.pt.dark.png": "90ba7efed58584f91a4c4c3d80d13aa76cc77bfad1be078d85bf305234882185",
+    "check-balance/check-open.en.dark.png": "67e3a2e6f71e599d82ff8997415eb4229c5ea0bf6078a366681cad293d6c19aa",
+    "check-balance/check-open.pt.dark.png": "9d23613db25caab86204332fa3c091dfba3f3fcff72e904d1dd7ca63f0dd30f4",
+    "check-balance/check-values.en.dark.png": "61e68f5722043258b26ccd80baded6c5c656bd2764b67541f7b780885de96e04",
+    "check-balance/check-values.pt.dark.png": "30ed8150a3da083867fdfd242f98ac98004e77aae237b83b2a61710206c90d66",
+    "check-balance/d77d407a0056.png": "d77d407a00562e044ce75830669852fd339d8482bf282ce55bd3adafb9b87a5a",
+    "check-balance/dac10eb31a17.png": "dac10eb31a1740b9141866dd3583538de7c57e269eb8e79390ee3eba0f3844cc",
+    "check-balance/ec86090899a5.png": "ec86090899a51b23388ac14d4eefbfd8479099b2ad74cf0fdde7fc02c196ff5e",
     "connect-bank/connect-add.en.dark.png": "f93e83f4962acf02056ce09e6748e1c698b37771dd6e57e61063aaa4ee0065f8",
-    "connect-bank/connect-credentials.en.dark.png": "19f6356290b6426f2be1bd91a01ca7944f4039770494b940d7d9b78e82b7c56b",
+    "connect-bank/connect-add.pt.dark.png": "26deac138b36d0927e554ec1ef9aede44ba82420b20302bf3ab17e776d7e4f97",
     "connect-bank/connect-create.en.dark.png": "19f6356290b6426f2be1bd91a01ca7944f4039770494b940d7d9b78e82b7c56b",
-    "import-statement/import-account.pt.dark.png": "be45b98cdee607098fe8dd68f4e05f45add206dd11ec95d7ae16b11f55575899",
-    "import-statement/import-open.pt.dark.png": "9d23613db25caab86204332fa3c091dfba3f3fcff72e904d1dd7ca63f0dd30f4",
-    "import-statement/import-csv.pt.dark.png": "0a5d43a3af671b351df7e772d068795ea823f1256972974ac432fd01fc5961e4",
-    "import-statement/import-confirm.pt.dark.png": "1726789463326ed31382a0df7fcd5d1de4d7fa202da529a17919b2d11fd9a790",
-    "import-statement/import-lines.pt.dark.png": "bb04c335433a1d05f687e9087c7acf86668702e0210daf5ed4f746ed10d8e7d3",
+    "connect-bank/connect-create.pt.dark.png": "699a3ea81f96029f04795c2640deec3ad1379cf29369bc032a11f340f86c6ca2",
+    "connect-bank/connect-credentials.en.dark.png": "19f6356290b6426f2be1bd91a01ca7944f4039770494b940d7d9b78e82b7c56b",
+    "connect-bank/connect-credentials.pt.dark.png": "699a3ea81f96029f04795c2640deec3ad1379cf29369bc032a11f340f86c6ca2",
+    "connect-bank/connect-settings.en.dark.png": "9e50736c40eaa7ac8cef4ac778942780309fcc969e084a2c61b6a2f8afed7844",
+    "connect-bank/connect-settings.pt.dark.png": "6ecaa802273dbbd6ee097d69f4defe205f40833342fba9d4262409a815f2ff39",
+    "import-statement/043a6b80cae8.png": "043a6b80cae80493818a48552328fd85f0300374968f41f49082b82e5cbf17bf",
+    "import-statement/05bd61f5aa7f.png": "05bd61f5aa7f40e41f714e22dad14ca4b70f46e9908298254c88be462890be28",
+    "import-statement/091ce79e09c1.png": "091ce79e09c15428a9092099113bddd5ae8a5396e21f439183f0eb25e6094f62",
+    "import-statement/1cd06251a442.png": "1cd06251a4421a20a9ef645a91ea60ee7e1c4d2a00d7aee66a9824253d5e4edb",
+    "import-statement/a753a8de41a8.png": "a753a8de41a8a4e390b721778bf8bae34e9a6cc29e24cb38b15d4fae4899edbf",
+    "import-statement/b5c245a18878.png": "b5c245a188785aaabcab73b0eb3ab2c1862b01c4ec47bb8b549710929d9515fb",
+    "import-statement/c04551039749.png": "c0455103974966bbb850058b7e3a9a791c473fd3120827dc88c34180fb02c418",
+    "import-statement/cb34c2357d3b.png": "cb34c2357d3b1228d80ed51220af31df429fa44c9c9feffb876906b6a829c529",
+    "import-statement/d77d407a0056.png": "d77d407a00562e044ce75830669852fd339d8482bf282ce55bd3adafb9b87a5a",
+    "import-statement/ec86090899a5.png": "ec86090899a51b23388ac14d4eefbfd8479099b2ad74cf0fdde7fc02c196ff5e",
     "import-statement/import-account.en.dark.png": "368389ce4012f0dd45330d79e3fedd8ad6e1c6734c562389cf28b89ee391cf58",
-    "import-statement/import-open.en.dark.png": "67e3a2e6f71e599d82ff8997415eb4229c5ea0bf6078a366681cad293d6c19aa",
-    "import-statement/import-csv.en.dark.png": "11b999a4fbb4757a77b964a9fdd9b7a2f082529aa8dbe8155f244c92718be9e0",
+    "import-statement/import-account.pt.dark.png": "be45b98cdee607098fe8dd68f4e05f45add206dd11ec95d7ae16b11f55575899",
     "import-statement/import-confirm.en.dark.png": "63498ca50bcad03db81760f2dc39f33c277d02056419b29c8c447e43ea851d85",
+    "import-statement/import-confirm.pt.dark.png": "1726789463326ed31382a0df7fcd5d1de4d7fa202da529a17919b2d11fd9a790",
+    "import-statement/import-csv.en.dark.png": "11b999a4fbb4757a77b964a9fdd9b7a2f082529aa8dbe8155f244c92718be9e0",
+    "import-statement/import-csv.pt.dark.png": "0a5d43a3af671b351df7e772d068795ea823f1256972974ac432fd01fc5961e4",
     "import-statement/import-lines.en.dark.png": "f52ed63dc3182edefb5916a37a3ab53c608d347bc2ad97cae306737eef081f3d",
-    "import-statement/import-statement.pt.dark.webm": "2a689c8b0d1c556f0c704224df13ca261e3676b255ddbd0c1e2def49f8a6ae22",
-    "import-statement/import-statement.en.dark.webm": "3aef22112d760bb8435bb0f369d533f67f3d1001a1bc234b9dc984e3992fd8be",
-    "pay-statement/pay-cards.pt.dark.png": "91dcc049540d023a6d5a9341789f009246c65911311b3aea0ca812e70d13cacc",
-    "pay-statement/statement-total.pt.dark.png": "fe3317dc1797675c7198d73630967bd003c1ad94ea5e2f03dc95fec57bea1b88",
-    "pay-statement/pay-open.pt.dark.png": "f804e9b6e638ae1084eedcd350e83bddb5c30f18c636a048adf3372a188d2779",
-    "pay-statement/pay-amount.pt.dark.png": "4b72ce4577db2cf10f38213258e40fd7492915edb3de117e101316cfaca6fdcf",
-    "pay-statement/pay-account.pt.dark.png": "4b72ce4577db2cf10f38213258e40fd7492915edb3de117e101316cfaca6fdcf",
-    "pay-statement/pay-confirm.pt.dark.png": "4b72ce4577db2cf10f38213258e40fd7492915edb3de117e101316cfaca6fdcf",
-    "pay-statement/pay-cards.en.dark.png": "7d3c3a6c04b89e2089e8dbf35497d20d9aa474c80951e68a9a81c8082b26a862",
-    "pay-statement/statement-total.en.dark.png": "80c691e1f917c3215e1de9224519246039f65ba0f181de98be4c0ade21cf6436",
-    "pay-statement/pay-open.en.dark.png": "4380cc823332037f05317ecbd42e1dbda7e2a24e044ac8550cf45bdf6d2396a4",
-    "pay-statement/pay-amount.en.dark.png": "e9baa66f2887152374e3d4f6692eb35ef344add1e64e2f1daa0b54e9aeeea243",
+    "import-statement/import-lines.pt.dark.png": "bb04c335433a1d05f687e9087c7acf86668702e0210daf5ed4f746ed10d8e7d3",
+    "import-statement/import-open.en.dark.png": "67e3a2e6f71e599d82ff8997415eb4229c5ea0bf6078a366681cad293d6c19aa",
+    "import-statement/import-open.pt.dark.png": "9d23613db25caab86204332fa3c091dfba3f3fcff72e904d1dd7ca63f0dd30f4",
+    "pay-statement/1e8948bb6d63.png": "1e8948bb6d639b11db0bbd3dc9bbc166923312d2f13ec5cef21eb2f24218f971",
+    "pay-statement/33d41aee2daf.png": "33d41aee2daf1e2ef1d9bf0e36bba72a1a2a8b10e5fa0d8b76cb673766717ca7",
+    "pay-statement/383feb8a205f.png": "383feb8a205f2a2e6da9a15dd420876b4703169d428bfa32e32ce36ec17ec6db",
+    "pay-statement/6ed00e589074.png": "6ed00e5890742c6b4eaead02f4f08832e61b1f41f9964a36729f4d8871776883",
+    "pay-statement/6f7ef8eec2b2.png": "6f7ef8eec2b2fd6b04845ac283ae373cbe8b1da2cd936ac78993126836e648f3",
+    "pay-statement/8899d1d946ff.png": "8899d1d946ff6d7cbb87c84c7603b38a0a4891ae5ad8e1578daa3bce4a80eed8",
+    "pay-statement/89c2c8d2140d.png": "89c2c8d2140d505746e9ee309d618de59137cada66a97e1e3bfb3e9b1a90fa29",
+    "pay-statement/a26879605658.png": "a268796056585258d960cfd1f080069525ea550332da7306a39545839dbab34e",
     "pay-statement/pay-account.en.dark.png": "e9baa66f2887152374e3d4f6692eb35ef344add1e64e2f1daa0b54e9aeeea243",
+    "pay-statement/pay-account.pt.dark.png": "4b72ce4577db2cf10f38213258e40fd7492915edb3de117e101316cfaca6fdcf",
+    "pay-statement/pay-amount.en.dark.png": "e9baa66f2887152374e3d4f6692eb35ef344add1e64e2f1daa0b54e9aeeea243",
+    "pay-statement/pay-amount.pt.dark.png": "4b72ce4577db2cf10f38213258e40fd7492915edb3de117e101316cfaca6fdcf",
+    "pay-statement/pay-cards.en.dark.png": "7d3c3a6c04b89e2089e8dbf35497d20d9aa474c80951e68a9a81c8082b26a862",
+    "pay-statement/pay-cards.pt.dark.png": "91dcc049540d023a6d5a9341789f009246c65911311b3aea0ca812e70d13cacc",
     "pay-statement/pay-confirm.en.dark.png": "e9baa66f2887152374e3d4f6692eb35ef344add1e64e2f1daa0b54e9aeeea243",
-    "pay-statement/pay-statement.pt.dark.webm": "fe132a43b12ab4605ae0c02f54e89614849e524ebfef5c95c1806299136bcd66",
-    "pay-statement/pay-statement.en.dark.webm": "53ef619a29aa7f0151755f60ccb5cf27e118fd5d0fc7b7b0b73778cf3a3f9757"
+    "pay-statement/pay-confirm.pt.dark.png": "4b72ce4577db2cf10f38213258e40fd7492915edb3de117e101316cfaca6fdcf",
+    "pay-statement/pay-open.en.dark.png": "4380cc823332037f05317ecbd42e1dbda7e2a24e044ac8550cf45bdf6d2396a4",
+    "pay-statement/pay-open.pt.dark.png": "f804e9b6e638ae1084eedcd350e83bddb5c30f18c636a048adf3372a188d2779",
+    "pay-statement/statement-total.en.dark.png": "80c691e1f917c3215e1de9224519246039f65ba0f181de98be4c0ade21cf6436",
+    "pay-statement/statement-total.pt.dark.png": "fe3317dc1797675c7198d73630967bd003c1ad94ea5e2f03dc95fec57bea1b88"
   },
   "inputs": {
-    "check-balance": "297d03988e57a58ea75ee3afd48c4abd4337fd4ef065b1db562a2708259754da",
-    "category-rule": "255982654f6f72333c0129bfc4ee58cc105534ce8d413f5e17e6352df08419fe",
-    "connect-bank": "cd077a9b8968de7e8e8dec68ffaa6fe5edc89348d79bfce4d18b3725b547852b",
-    "import-statement": "bf3105e37fff9535afe10f1c95b0c49000a339a087bb9e5b51c93d822c778133",
-    "pay-statement": "46b20b70e355ac4306b772f6ce57513edb1886105831f61a71431cafbdd02d50"
+    "check-balance": "85365426a6c9ea3051feea52a44a213e9ec85663e15b5ac3f41a270efb258e39",
+    "category-rule": "cb3d1751133537d3a8c21fbc111d3eddd39d09e5446d17b12b0322ff8500910a",
+    "connect-bank": "fd43aaa34039ef73d0ee03b1f41cd5a813a586824adb2d3cb3e3eefdd9c88160",
+    "import-statement": "bf46e0fcec88d52534b32eddb7dafeaf1efd8bd442a334978e0d3a76abf15fe9",
+    "pay-statement": "0231a4b2617579e7af3a97b57f0103ee03c21591580f9f6affd416ac671ba361"
   }
 }

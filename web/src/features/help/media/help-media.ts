@@ -1,5 +1,6 @@
 import { helpMediaFiles as files } from "@/features/help/media/help-media-files.gen";
 import media from "@/features/help/media/media.json";
+import type { VideoTimeline } from "@/features/help/video/compose-frame";
 
 export interface HelpFigureMedia {
   dark: string;
@@ -8,10 +9,16 @@ export interface HelpFigureMedia {
   spot: readonly number[];
 }
 
-export interface HelpVideoMedia {
-  dark: string;
-  light: string;
+export interface HelpVideoMedia extends VideoTimeline {
+  // The address of the still of each part, in the order of the parts.
+  stills: readonly string[];
+  accent: string;
   seconds: number;
+}
+
+interface VideoEntry extends VideoTimeline {
+  stills: readonly string[];
+  accent: string;
 }
 
 type Marks = Partial<Record<string, { spot: number[] }>>;
@@ -19,11 +26,12 @@ type Marks = Partial<Record<string, { spot: number[] }>>;
 // The language whose captures stand in for a language without its own.
 const FALLBACK = "pt";
 
-// The URL of each file; the browser fetches a capture or a video when its element asks for it.
+// The URL of each file; the browser fetches a capture or a still when its element asks for it.
 // Every file, media.json and the list of files are written by tools/help-media
 // (docs/contributing/help.md).
 const figures: Partial<Record<string, Marks>> = media.figures;
-const videos: Partial<Record<string, { seconds: number }>> = media.videos;
+const videos: Partial<Record<string, Partial<Record<string, VideoEntry>>>> =
+  media.videos;
 
 // The captures of a figure in the reader's language, in both schemes, and its mark.
 export function helpFigure(
@@ -43,29 +51,21 @@ export function helpFigure(
   return { dark, light, spot: mark.spot };
 }
 
-// A browser that does not play WebM VP9 gets no video: the steps and their figures are the
-// same content (ADR 037).
+// The video of the steps in the reader's language: its timeline and the address of each still.
+// The page draws it on a canvas (ADR 037, 7), so every browser with a 2D canvas plays it.
 export function helpVideo(
   id: string,
   language: string,
 ): HelpVideoMedia | undefined {
-  if (!playsVideo()) return undefined;
+  const entry = videos[id]?.[language] ?? videos[id]?.[FALLBACK];
+  if (entry === undefined) return undefined;
 
-  const own = files[`${id}.${language}.dark.webm`] !== undefined;
-  const used = own ? language : FALLBACK;
-  const entry = videos[id];
-  const dark = files[`${id}.${used}.dark.webm`];
-  if (entry === undefined || dark === undefined) {
-    return undefined;
-  }
+  const stills = entry.stills.map((name) => files[name]);
+  if (stills.some((url) => url === undefined)) return undefined;
 
-  const light = files[`${id}.${used}.light.webm`] ?? dark;
-
-  return { dark, light, seconds: entry.seconds };
-}
-
-function playsVideo(): boolean {
-  const probe = document.createElement("video");
-
-  return probe.canPlayType('video/webm; codecs="vp9"') !== "";
+  return {
+    ...entry,
+    stills: stills.filter((url) => url !== undefined),
+    seconds: Math.round(entry.duration),
+  };
 }

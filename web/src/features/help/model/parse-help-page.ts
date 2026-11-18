@@ -39,7 +39,7 @@ const IMAGE = /^!\[([^\]]*)\]\(([^\s)]+)(?:\s+"([^"]*)")?\)$/;
 const ITEM = /^\d+\.\s+/;
 const TERM = /^\*\*([^*]+)\*\*:\s+/;
 const POINTER = /^[^\s:]{2,16}:\s+(\[[^\]]+\]\([^)]+\)\.?)$/;
-const VIDEO = ".webm";
+const VIDEO = ".video";
 
 // A help page as the screens draw it (spec 2026-11-17-help-design, HP2 and HP3): the title, the
 // lead, and sections of text, steps, figures, terms and a closing pointer.
