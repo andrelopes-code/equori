@@ -1895,6 +1895,8 @@ export const catalogPtBR: Catalog = {
   "assistant.step.record_investment":
     "Preparando o registro de um investimento",
   "assistant.step.transfer_custody": "Preparando uma transferência de custódia",
+  "assistant.step.request_export": "Preparando uma exportação",
+  "assistant.step.get_export": "Lendo a exportação",
   "assistant.step.probe_quote": "Consultando as fontes de cotação",
   "assistant.step.record_price_series": "Preparando uma série de preços",
   "assistant.step.get_institution_indicators":
@@ -1980,6 +1982,7 @@ export const catalogPtBR: Catalog = {
   "assistant.action.record_investment.sell": "Registrar venda de ativo",
   "assistant.action.record_investment.income": "Registrar provento",
   "assistant.action.transfer_custody": "Transferir custódia",
+  "assistant.action.request_export": "Exportar os dados do livro",
   "assistant.action.record_price_series": "Registrar série de preços",
   "assistant.action.set_card_face": "Mudar a aparência do cartão",
   "assistant.action.set_base_currency": "Trocar moeda base",

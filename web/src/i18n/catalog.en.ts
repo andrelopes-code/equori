@@ -1882,6 +1882,8 @@ export const catalogEn = {
   "assistant.step.reconcile_account": "Preparing a reconciliation",
   "assistant.step.record_investment": "Preparing an investment transaction",
   "assistant.step.transfer_custody": "Preparing a custody transfer",
+  "assistant.step.request_export": "Preparing an export",
+  "assistant.step.get_export": "Reading the export",
   "assistant.step.probe_quote": "Checking the price sources",
   "assistant.step.record_price_series": "Preparing a series of prices",
   "assistant.step.get_institution_indicators":
@@ -1960,6 +1962,7 @@ export const catalogEn = {
   "assistant.action.record_investment.sell": "Record sale of security",
   "assistant.action.record_investment.income": "Record investment income",
   "assistant.action.transfer_custody": "Transfer custody",
+  "assistant.action.request_export": "Export the data of the book",
   "assistant.action.record_price_series": "Record series of prices",
   "assistant.action.set_card_face": "Change the look of the card",
   "assistant.action.set_base_currency": "Change base currency",

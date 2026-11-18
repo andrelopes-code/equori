@@ -2473,6 +2473,46 @@
     }
   },
   {
+    "name": "get_export",
+    "description": "Returns the latest export of the book: whether the archive is pending, ready or failed, its size and, when ready, the path that downloads it. Use it after request_export or when the user asks where the backup is. Without an export it answers not_found. Do not use it to start an export: request_export does.",
+    "effect": "read_only",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "description": "pending while the archive is built, ready, or failed"
+        },
+        "requested_at": {
+          "type": "string",
+          "description": "UTC time of the request"
+        },
+        "size": {
+          "type": "integer",
+          "description": "bytes of the archive, when ready"
+        },
+        "problem": {
+          "type": "string",
+          "description": "code of the failure, such as export_too_large"
+        },
+        "download_path": {
+          "type": "string",
+          "description": "when ready: path the user opens in the app to download the archive"
+        }
+      },
+      "required": [
+        "status",
+        "requested_at"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "get_financial_indicators",
     "description": "Returns 12 months of financial indicators in the cash view, oldest first, the last one the month asked: savings rate, trailing 12-month savings rate, liquidity (10000 bp = one month of mean expense), committed share and debt service share of mean income, with their amounts. A ratio with a reason has no value. Use it for how much is saved, how long the reserve lasts, and how much income is committed or spent on debt. Do not use it for category totals: get_category_totals lists them.",
     "effect": "read_only",
@@ -10202,6 +10242,46 @@
         "transaction_id",
         "date",
         "description"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "request_export",
+    "description": "Proposes an export of the book: one archive with every fact, to keep as a copy or to restore into another book. It is refused while another export is pending (export_pending); get_export reads its state and, when ready, the path that downloads it. Use it when the user asks for a backup or a copy of the data. The archive carries no credential of a bank integration: the owner adds them with a passphrase in Settings, Data. Do not use it to restore an archive: the owner does that in Settings, Data. The user confirms first.",
+    "effect": "write",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "description": "pending while the archive is built, ready, or failed"
+        },
+        "requested_at": {
+          "type": "string",
+          "description": "UTC time of the request"
+        },
+        "size": {
+          "type": "integer",
+          "description": "bytes of the archive, when ready"
+        },
+        "problem": {
+          "type": "string",
+          "description": "code of the failure, such as export_too_large"
+        },
+        "download_path": {
+          "type": "string",
+          "description": "when ready: path the user opens in the app to download the archive"
+        }
+      },
+      "required": [
+        "status",
+        "requested_at"
       ],
       "additionalProperties": false
     }

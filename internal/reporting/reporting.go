@@ -81,7 +81,7 @@ func (m *Module) BodyLimits() []httpserver.BodyLimit {
 // Tools returns the reporting module's tools for language models (ADR 012).
 func (m *Module) Tools() tool.Group {
 	return tool.Group{
-		Tools:  toolapi.Tools(m.svc, m.clk),
+		Tools:  toolapi.Tools(m.svc, m.exports, m.clk),
 		Errors: tool.FromProblem(httpapi.ToProblem),
 	}
 }

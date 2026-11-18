@@ -19,6 +19,8 @@ const sources: Record<string, AssistantIconName> = {
   get_holding_lots: "trend",
   save_contribution_plan: "trend",
   set_base_currency: "wallet",
+  request_export: "receipt",
+  get_export: "receipt",
   get_market_data: "trend",
   get_statement: "receipt",
   get_tax_year: "receipt",
