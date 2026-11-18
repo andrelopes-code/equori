@@ -42,7 +42,7 @@ Anti-goals:
 
 The derived ideals are what GET, PUT and the preview return as `target_bp`, so every rule after CN4 reads them as typed ideals.
 
-**CQ4 Storage.** `portfolio_contribution_question (id uuid PK, books_id, class_id, position int, text text)`, unique `(books_id, class_id, position)`, `class_id` referencing the class with `ON DELETE CASCADE`, `text` of 1 to 200 characters. `portfolio_contribution_answer (books_id, question_id, member_id, yes boolean NOT NULL)`, primary key `(question_id, member_id)`, both referencing their rows with `ON DELETE CASCADE`. A save replaces the questions and answers with the rest of the plan (CN1). The derived ideals are stored in `portfolio_contribution_member.target_bp` by the same save.
+**CQ4 Storage.** `portfolio_contribution_question (books_id, class_id, position int, text text)`, primary key `(class_id, position)`, `(books_id, class_id)` referencing the class with `ON DELETE CASCADE`, `position` 0 to 9, `text` of 1 to 200 characters. `portfolio_contribution_answer (books_id, class_id, question_position, member_position, yes boolean NOT NULL)`, primary key `(class_id, question_position, member_position)`, `(class_id, question_position)` referencing the question and `(class_id, member_position)` referencing the member (`portfolio_contribution_member` has the key `(class_id, position)` and no `id`), both with `ON DELETE CASCADE`. A save replaces the questions and answers with the rest of the plan (CN1). The derived ideals are stored in `portfolio_contribution_member.target_bp` by the same save.
 
 **CQ5 API.** `ContributionClassInput` and `ContributionClass` gain `questions` (array of strings, at most 10); `ContributionMemberInput` and `ContributionMember` gain `answers` (array of booleans). `ContributionClass` gains `question_ideals` (boolean): true when the group has questions and `S > 0`. A group without questions returns `questions` empty and no `answers`. The preview applies CQ1 to CQ3 to the draft.
 
@@ -94,7 +94,7 @@ The facts are the figures of the existing pure functions; the line computes noth
 - C4: Does not apply: no amount is written by this feature.
 - T1: Does not apply: no date is stored; the facts carry their own dates.
 - T2: Does not apply.
-- B1: Two tables with `books_id`; every query filters by it; a schema test rejects a row without a book, a question of 201 characters and an answer of a member of another class's question.
+- B1: Two tables with `books_id`; every query filters by it; a schema test rejects a row without a book, a question of 201 characters, a question at position 10 and an answer whose member position does not exist in the class.
 - B2: No new operation; `PUT /contribution-plan` keeps `write`, GET and preview keep `read`; HTTP tests cover a reader that writes (403).
 - B3: Does not apply: no setting.
 - D1: Both tables are facts of the book in the export; the archive version rises by one and its testdata gains the tables.
