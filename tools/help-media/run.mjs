@@ -1,6 +1,7 @@
 // The one way a figure or a video of the help is made (docs/contributing/help-media.md).
 //   node run.mjs record [tutorial]   sign in to the demo book and record its answers on tape
-//   node run.mjs build  [tutorial]   replay the tape, capture, mark, compose, check, write
+//   node run.mjs build  [tutorial]   replay the tape, capture, mark, compose, check, write;
+//                                    a tutorial whose inputs did not change is skipped (--force builds it)
 //   node run.mjs check               check the written media without a browser
 //   node run.mjs review              write out/review.html: every figure under its mark, every video
 import { createHash } from "node:crypto";
@@ -17,10 +18,20 @@ const LIVE = process.env.HELP_MEDIA_BASE ?? "http://127.0.0.1:5173";
 const DIST = join(here, "../../web/dist");
 const SIZE = { width: 1280, height: 800 };
 const MAX_VIDEO_BYTES = 2_500_000;
+// Variants built at once; each takes one core for its encoder and part of one for its page.
+const JOBS = Number(process.env.HELP_MEDIA_JOBS ?? 4);
+const FORCE = process.argv.includes("--force");
 
-const [command, only] = process.argv.slice(2);
+const [command, only] = process.argv.slice(2).filter((arg) => !arg.startsWith("--"));
 
 const sha = (buffer) => createHash("sha256").update(buffer).digest("hex");
+
+function filesUnder(dir) {
+  return readdirSync(dir, { recursive: true, withFileTypes: true })
+    .filter((entry) => entry.isFile())
+    .map((entry) => join(entry.parentPath, entry.name))
+    .sort();
+}
 
 async function tutorials(base) {
   const files = readdirSync(join(here, "tutorials")).filter((f) => f.endsWith(".mjs"));
@@ -69,58 +80,84 @@ async function build() {
 
   mkdirSync(join(here, "out"), { recursive: true });
 
+  // What a tutorial is built from: the build of the application, the tutorial, its tape, the
+  // tool and the pages. Unchanged inputs give the same files, so the tutorial is not built again.
+  const common = sha(
+    [...filesUnder(DIST), ...filesUnder(join(here, "lib")), ...filesUnder(CONTENT), join(here, "run.mjs")]
+      .map((path) => sha(readFileSync(path)))
+      .join(""),
+  );
+  next.inputs = { ...manifest.inputs };
+
   await withBrowser(async (browser) => {
+    const jobs = [];
+
     for (const tutorial of await tutorials(served.base)) {
       const tape = loadTape(tapePath(tutorial.id));
+      const inputs = sha(
+        common + sha(readFileSync(tapePath(tutorial.id))) + sha(readFileSync(join(here, "tutorials", `${tutorial.id}.mjs`))),
+      );
 
-      for (const language of LANGUAGES) {
-        const spots = {};
-
-        for (const scheme of SCHEMES) {
-          const { context, page } = await openApp(browser, { language, scheme, clock: tape.clock });
-          const state = await replayTape(context, tape, { language, scheme });
-          const beats = await captureBeats(page, state, tutorial, { language, scheme });
-          const accent = await page.evaluate(() => {
-            const probe = document.createElement("i");
-            probe.style.color = "var(--slotted-tone-accent-solid)";
-            document.body.append(probe);
-            const colour = getComputedStyle(probe).color;
-            probe.remove();
-
-            return colour;
-          });
-          await context.close();
-
-          for (const beat of beats.filter((b) => b.figure)) {
-            const spot = percent(beat.mark);
-            const name = `${beat.figure}.${language}.${scheme}.png`;
-
-            // The mark is one per language: a scheme that moves an element is a defect of the app.
-            if (spots[beat.figure] && spots[beat.figure].join() !== spot.join()) {
-              throw new Error(`${name}: the mark differs between schemes`);
-            }
-
-            spots[beat.figure] = spot;
-            writeFileSync(join(MEDIA, name), beat.figureImage);
-            next.files[name] = sha(beat.figureImage);
-            next.figures[beat.figure] = { ...next.figures[beat.figure], [language]: { spot } };
-          }
-
-          if (tutorial.video) {
-            const name = `${tutorial.id}.${language}.${scheme}.webm`;
-            const video = await renderVideo(browser, beats, accent, join(MEDIA, name));
-            const bytes = readFileSync(join(MEDIA, name));
-
-            if (bytes.length > MAX_VIDEO_BYTES) throw new Error(`${name}: ${bytes.length} bytes, above the limit`);
-
-            next.files[name] = sha(bytes);
-            next.videos[tutorial.id] = { seconds: video.seconds, frames: video.frames };
-          }
-
-          console.log(`built ${tutorial.id} ${language} ${scheme}`);
-        }
+      if (!FORCE && manifest.inputs?.[tutorial.id] === inputs) {
+        console.log(`unchanged ${tutorial.id}`);
+        continue;
       }
+
+      next.inputs[tutorial.id] = inputs;
+      for (const language of LANGUAGES) for (const scheme of SCHEMES) jobs.push({ tutorial, tape, language, scheme });
     }
+
+    const spots = {};
+    const one = async ({ tutorial, tape, language, scheme }) => {
+      const { context, page } = await openApp(browser, { language, scheme, clock: tape.clock });
+      const state = await replayTape(context, tape, { language, scheme });
+      const beats = await captureBeats(page, state, tutorial, { language, scheme });
+      const accent = await page.evaluate(() => {
+        const probe = document.createElement("i");
+        probe.style.color = "var(--slotted-tone-accent-solid)";
+        document.body.append(probe);
+        const colour = getComputedStyle(probe).color;
+        probe.remove();
+
+        return colour;
+      });
+      await context.close();
+
+      for (const beat of beats.filter((b) => b.figure)) {
+        const spot = percent(beat.mark);
+        const name = `${beat.figure}.${language}.${scheme}.png`;
+        const key = `${beat.figure}.${language}`;
+
+        // The mark is one per language: a scheme that moves an element is a defect of the app.
+        if (spots[key] && spots[key].join() !== spot.join()) {
+          throw new Error(`${name}: the mark differs between schemes`);
+        }
+
+        spots[key] = spot;
+        writeFileSync(join(MEDIA, name), beat.figureImage);
+        next.files[name] = sha(beat.figureImage);
+        next.figures[beat.figure] = { ...next.figures[beat.figure], [language]: { spot } };
+      }
+
+      if (tutorial.video) {
+        const name = `${tutorial.id}.${language}.${scheme}.webm`;
+        const video = await renderVideo(browser, beats, accent, join(MEDIA, name));
+        const bytes = readFileSync(join(MEDIA, name));
+
+        if (bytes.length > MAX_VIDEO_BYTES) throw new Error(`${name}: ${bytes.length} bytes, above the limit`);
+
+        next.files[name] = sha(bytes);
+        next.videos[tutorial.id] = { seconds: video.seconds, frames: video.frames };
+      }
+
+      console.log(`built ${tutorial.id} ${language} ${scheme}`);
+    };
+
+    // The variants are independent: each has its own page and its own encoder.
+    const workers = Array.from({ length: Math.min(JOBS, jobs.length) }, async () => {
+      for (let job = jobs.shift(); job !== undefined; job = jobs.shift()) await one(job);
+    });
+    await Promise.all(workers);
   });
 
   await served.close();

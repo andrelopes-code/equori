@@ -43,6 +43,10 @@ A figure or a video is built by `tools/help-media` (ADR 037). No file of `web/sr
 | `make help-media-check` | checks the written media against `media.json` and the pages, without a browser | nothing |
 | `make help-media-review` | writes `tools/help-media/out/review.html`: every figure under its mark, every video | a build |
 
+A build takes about two minutes per tutorial with a video: its four variants are built at once (`HELP_MEDIA_JOBS`, 4 by default). A tutorial whose inputs did not change (the build of the application, the tutorial, its tape, the tool, the pages) is skipped; `node run.mjs build --force` builds it anyway.
+
+The figures show the application as it ships: its default theme and density. A preference of the recorded account never reaches a figure. After a change of the default appearance, `make help-media` rebuilds every tutorial; the marks are measured again, so a change of size needs no edit of a tutorial.
+
 ### Adding media to a page
 
 1. Write the figures in the Markdown of every language (`web/src/features/help/README.md`, "Writing a page"): a figure id per step, and the video id before the list.

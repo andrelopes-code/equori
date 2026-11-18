@@ -75,6 +75,12 @@ window.render = (t) => {
   const local = t - part.start;
   const k = ease(clamp(local / part.travel));
 
+  // A frame equal to the one before it (the pointer at rest on a step) is not drawn again.
+  const state = [i, k, i > 0 ? clamp(local / line.fade) : 1, clamp((local - part.travel) / 0.25),
+    part.click > 0 ? clamp((local - part.travel - part.hold) / part.click) : 0].map((n) => n.toFixed(4)).join("|");
+  if (state === window.drawn) return null;
+  window.drawn = state;
+
   // The frame is the whole screen; only the pointer travels, from the beat before to this one.
   const cam = { x: 0, y: 0 };
   const from = i === 0 ? { x: VW / 2, y: VH * 0.8 } : centre(before);
@@ -159,8 +165,9 @@ export async function renderVideo(browser, beats, accent, path) {
     "-f", "image2pipe", "-framerate", String(FPS), "-c:v", "mjpeg", "-i", "pipe:0",
     "-c:v", "libvpx-vp9", "-crf", "32", "-b:v", "0", "-g", String(FPS * 2),
     "-cpu-used", "2",
-    // One thread and exact bit streams: the same frames give the same file.
-    "-threads", "1", "-fflags", "+bitexact", "-flags:v", "+bitexact", "-map_metadata", "-1",
+    // Four column tiles on four threads: the multithreading of VP9 that keeps the output the same
+    // on every run (row-mt does not). Exact bit streams: the same frames give the same file.
+    "-tile-columns", "2", "-row-mt", "0", "-threads", "4", "-fflags", "+bitexact", "-flags:v", "+bitexact", "-map_metadata", "-1",
     "-vf", "format=yuv420p", "-an", path,
   ]);
   let errors = "";
@@ -169,9 +176,11 @@ export async function renderVideo(browser, beats, accent, path) {
     encoder.on("close", (code) => (code === 0 ? resolve() : reject(new Error(`ffmpeg: ${errors}`))));
   });
 
+  let image;
   for (let frame = 0; frame < frames; frame++) {
     const url = await page.evaluate((t) => window.render(t), frame / FPS);
-    const ok = encoder.stdin.write(Buffer.from(url.slice(url.indexOf(",") + 1), "base64"));
+    if (url !== null) image = Buffer.from(url.slice(url.indexOf(",") + 1), "base64");
+    const ok = encoder.stdin.write(image);
     if (!ok) await new Promise((resolve) => encoder.stdin.once("drain", resolve));
   }
 
