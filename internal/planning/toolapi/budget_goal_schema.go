@@ -24,6 +24,8 @@ func (manageBudgetOrGoalAction) Values() []string {
 		"save_plan",
 		"save_buckets",
 		"move_category",
+		"link_expense",
+		"unlink_expense",
 	}
 }
 
@@ -45,7 +47,8 @@ type planAmountIn struct {
 type manageBudgetOrGoalIn struct {
 	Action          manageBudgetOrGoalAction `json:"action"                     jsonschema:"operation to propose"`
 	BudgetID        string                   `json:"budget_id,omitzero"         jsonschema:"for set_budget_amount and delete_budget: budget from get_budgets_and_goals"`
-	GoalID          string                   `json:"goal_id,omitzero"           jsonschema:"for update_goal and delete_goal: goal from get_budgets_and_goals"`
+	GoalID          string                   `json:"goal_id,omitzero"           jsonschema:"goal from get_budgets_and_goals"`
+	TransactionID   string                   `json:"transaction_id,omitzero"    jsonschema:"for link_expense and unlink_expense: the expense transaction"`
 	CategoryID      string                   `json:"category_id,omitzero"       jsonschema:"for create_budget and move_category: expense category from list_accounts"`
 	Amount          string                   `json:"amount,omitzero"            jsonschema:"positive monthly amount (budgets), target (goals) or fixed reference income (save_plan)"`
 	Month           string                   `json:"month,omitzero"             jsonschema:"first month it applies, YYYY-MM"`
@@ -70,6 +73,8 @@ type manageBudgetOrGoalOut struct {
 // budgetGoalPlan holds what a manage_budget_or_goal call reads and validates before it previews or writes.
 type budgetGoalPlan struct {
 	budgetID, goalID, categoryID uuid.UUID
+	txID                         uuid.UUID
+	tx                           Transaction
 	budget                       domain.Budget
 	goal                         app.GoalView
 	categoryName                 string

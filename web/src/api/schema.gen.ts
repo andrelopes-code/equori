@@ -3773,6 +3773,52 @@ export interface paths {
         patch: operations["updateGoal"];
         trace?: never;
     };
+    "/goals/{id}/expenses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The expense transactions a goal pays, the latest first (planning coherence A256).
+         * @description A goal pays a transaction by a stored link, or directly: the transaction holds an expense posting and a posting
+         *     in an account that this goal alone holds whole, sub-accounts included. `amount` sums the expense postings of
+         *     the transaction in the base currency.
+         */
+        get: operations["listGoalExpenses"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/goals/{id}/expenses/{transaction_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * State that a goal paid an expense transaction (planning coherence A256).
+         * @description The transaction is a non-voided transaction of the book with at least one expense posting; any other is a 422
+         *     on `transaction_id`. A transaction holds one link: a new link replaces the one it had. The expense stays in
+         *     every report; the bucket of its category is judged without it and the budget of its category leaves it out
+         *     of the spending (A257).
+         */
+        put: operations["linkGoalExpense"];
+        post?: never;
+        /** Remove the link between a goal and an expense transaction; 404 without that link. */
+        delete: operations["unlinkGoalExpense"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/accounts/{id}/projection": {
         parameters: {
             query?: never;
@@ -7575,13 +7621,15 @@ export interface components {
         };
         /**
          * @description carried is the previous month's available amount when rollover is set, else zero; available is
-         *     planned + carried - spent, negative when overspent.
+         *     planned + carried - spent, negative when overspent. spent leaves out the expenses of the month that a goal
+         *     pays, and goal_paid is the amount left out (planning coherence A257).
          */
         BudgetProgress: {
             month: string;
             planned: components["schemas"]["Money"];
             carried: components["schemas"]["Money"];
             spent: components["schemas"]["Money"];
+            goal_paid: components["schemas"]["Money"];
             available: components["schemas"]["Money"];
         };
         /** @enum {string} */
@@ -7818,7 +7866,8 @@ export interface components {
         /**
          * @description current is the sum of the booked balances of the accounts today, valued in the target currency with
          *     stored prices (P8 amendment A72); remaining is max(target - current, 0); progress_bp is current / target
-         *     in basis points, rounded down, between 0 and 10000.
+         *     in basis points, rounded down, between 0 and 10000. spent sums the expense postings of the transactions the
+         *     goal pays, in the base currency (planning coherence A256).
          */
         Goal: {
             /** Format: uuid */
@@ -7836,6 +7885,7 @@ export interface components {
             current: components["schemas"]["Money"];
             remaining: components["schemas"]["Money"];
             progress_bp: number;
+            spent: components["schemas"]["Money"];
             /** @description Prices that value accounts in another currency (P8 amendment A72). */
             prices?: components["schemas"]["Price"][];
             /**
@@ -7860,6 +7910,19 @@ export interface components {
             instrument: string;
             quantity: components["schemas"]["Money"];
             value: components["schemas"]["Money"];
+        };
+        GoalExpense: {
+            /** Format: uuid */
+            transaction_id: string;
+            /** Format: date */
+            date: string;
+            description: string;
+            amount: components["schemas"]["Money"];
+            /** @description Paid from an account the goal holds whole; false for a stored link. */
+            direct: boolean;
+        };
+        GoalExpenses: {
+            items: components["schemas"]["GoalExpense"][];
         };
         GoalPage: {
             items: components["schemas"]["Goal"][];
@@ -8393,6 +8456,7 @@ export interface components {
         /** @description The browser's origin; its host name is the WebAuthn RP ID (HA42). */
         Origin: string;
         TagName: string;
+        GoalTransactionID: string;
         PlanMonth: string;
         /** @description Year in which the tax year of the owner's jurisdiction starts. */
         Year: number;
@@ -15186,6 +15250,77 @@ export interface operations {
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+        };
+    };
+    listGoalExpenses: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalExpenses"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    linkGoalExpense: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+                transaction_id: components["parameters"]["GoalTransactionID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Linked. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    unlinkGoalExpense: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+                transaction_id: components["parameters"]["GoalTransactionID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Unlinked. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
         };
     };
     getProjection: {

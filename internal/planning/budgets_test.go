@@ -21,6 +21,8 @@ type progressView struct {
 	Available struct {
 		Amount int64 `json:"amount"`
 	} `json:"available"`
+	// GoalPaid is a pointer: a response without the field fails the test (A257).
+	GoalPaid *money `json:"goal_paid"`
 }
 
 func (f fixture) budget(category string, amount int64, from string, rollover bool) string {

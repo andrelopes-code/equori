@@ -61,7 +61,12 @@ func decodeBudgetGoalArguments(in manageBudgetOrGoalIn) (budgetGoalPlan, error) 
 	for _, id := range []struct {
 		s, field string
 		into     *uuid.UUID
-	}{{in.BudgetID, "budget_id", &p.budgetID}, {in.GoalID, "goal_id", &p.goalID}, {in.CategoryID, "category_id", &p.categoryID}} {
+	}{
+		{in.BudgetID, "budget_id", &p.budgetID},
+		{in.GoalID, "goal_id", &p.goalID},
+		{in.CategoryID, "category_id", &p.categoryID},
+		{in.TransactionID, "transaction_id", &p.txID},
+	} {
 		if *id.into, err = optionalID(id.s, id.field); err != nil {
 			return budgetGoalPlan{}, err
 		}
@@ -142,6 +147,8 @@ func resolveBudgetGoalCurrency(
 		if p.goal, err = svc.Goal(ctx, booksID, p.goalID); err == nil {
 			currency = p.goal.Currency
 		}
+	case "link_expense", "unlink_expense":
+		err = loadGoalExpense(ctx, svc, l, booksID, p)
 	}
 
 	return currency, err
@@ -217,6 +224,7 @@ func manageBudgetOrGoal(svc *app.Service, l Ledger, _ clock.Clock) tool.Tool {
 	return tool.NewWrite(tool.Spec{
 		Name: "manage_budget_or_goal",
 		Description: "Proposes creating, changing or deleting a monthly budget or a goal, saving a month's budget plan or the income split into buckets (50/30/20 and others), or moving one category to another bucket. " +
+			"link_expense states that a goal paid an expense, which then counts against neither its budget nor its bucket; unlink_expense undoes it. " +
 			"Use it when the user sets a spending limit or a savings target. Do not use it for recurring payments: manage_schedule does. " +
 			"Deleting a budget or a goal cannot be undone; the user confirms every change.",
 		Effect: tool.Destructive,
@@ -252,14 +260,8 @@ func runBudgetOrGoal(
 		_, err := svc.AddBudgetAmount(ctx, booksID, p.budgetID, p.month, *p.amount)
 		return manageBudgetOrGoalOut{BudgetID: p.budgetID.String()}, err
 	case "delete_budget":
-		return manageBudgetOrGoalOut{
-			BudgetID: p.budgetID.String(),
-			Deleted:  true,
-		}, svc.DeleteBudget(
-			ctx,
-			booksID,
-			p.budgetID,
-		)
+		out := manageBudgetOrGoalOut{BudgetID: p.budgetID.String(), Deleted: true}
+		return out, svc.DeleteBudget(ctx, booksID, p.budgetID)
 	case "create_goal":
 		g, err := svc.CreateGoal(
 			ctx,
@@ -284,16 +286,13 @@ func runBudgetOrGoal(
 		return manageBudgetOrGoalOut{}, svc.SaveBudgetBuckets(ctx, booksID, from, p.buckets)
 	case "update_goal":
 		return updateGoal(ctx, svc, booksID, in, p)
+	case "link_expense", "unlink_expense":
+		return runGoalExpense(ctx, svc, booksID, in, p)
 	}
 
-	return manageBudgetOrGoalOut{
-		GoalID:  p.goalID.String(),
-		Deleted: true,
-	}, svc.DeleteGoal(
-		ctx,
-		booksID,
-		p.goalID,
-	)
+	out := manageBudgetOrGoalOut{GoalID: p.goalID.String(), Deleted: true}
+
+	return out, svc.DeleteGoal(ctx, booksID, p.goalID)
 }
 
 func savePlan(

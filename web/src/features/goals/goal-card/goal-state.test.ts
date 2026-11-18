@@ -13,6 +13,7 @@ const goal = (remaining: number, due_on: string) => ({
   current: money(3000000 - remaining),
   remaining: money(remaining),
   progress_bp: 0,
+  spent: money(0),
 });
 
 describe("goal state", () => {

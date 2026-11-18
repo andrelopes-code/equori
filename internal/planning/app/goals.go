@@ -21,6 +21,9 @@ type GoalView struct {
 	// Trailing is the return of the goal's accounts over the last 12 months; nil when there is
 	// too little history or no flow (A124).
 	Trailing *TrailingReturn
+	// Spent sums the expense postings of the transactions the goal pays, in the base currency
+	// (planning coherence A256).
+	Spent money.Money
 }
 
 // TrailingReturn is a return in basis points a year over a window of whole months.
@@ -28,8 +31,17 @@ type TrailingReturn struct {
 	Months, BP int
 }
 
-// withReturn attaches the trailing return; a goal without one reads as before.
+// withReturn attaches the spent amount and the trailing return; a goal without a return reads as
+// before.
 func (s *Service) withReturn(ctx context.Context, booksID int64, v GoalView) (GoalView, error) {
+	if err := s.withSpent(ctx, booksID, &v); err != nil {
+		return v, err
+	}
+
+	return s.withTrailing(ctx, booksID, v)
+}
+
+func (s *Service) withTrailing(ctx context.Context, booksID int64, v GoalView) (GoalView, error) {
 	bp, months, ok, err := s.returns.TrailingReturn(
 		ctx,
 		booksID,
@@ -244,15 +256,19 @@ func (s *Service) ListGoals(
 	}
 
 	out := make([]GoalView, len(gs))
+	views := make([]*GoalView, len(gs))
+
 	for i, g := range gs {
 		if out[i], err = s.measure(ctx, booksID, g); err != nil {
 			return nil, nil, err
 		}
 
-		if out[i], err = s.withReturn(ctx, booksID, out[i]); err != nil {
+		if out[i], err = s.withTrailing(ctx, booksID, out[i]); err != nil {
 			return nil, nil, err
 		}
+
+		views[i] = &out[i]
 	}
 
-	return out, next, nil
+	return out, next, s.withSpent(ctx, booksID, views...)
 }

@@ -202,19 +202,7 @@ func (s *Service) BudgetProgress(
 		}
 	}
 
-	sign := int64(1)
-	if category.Class == "income" {
-		sign = -1
-	}
-
-	totals, err := s.monthlyTotals(ctx, booksID, b, month)
-	if err != nil {
-		return domain.Progress{}, "", err
-	}
-
-	spent := s.spentFunc(ctx, booksID, b, month, sign, totals)
-
-	p, ok, err := b.Progress(month, spent)
+	p, ok, err := s.progress(ctx, booksID, b, category, month)
 	if err != nil {
 		return domain.Progress{}, "", err
 	}
@@ -228,6 +216,74 @@ func (s *Service) BudgetProgress(
 	}
 
 	return p, b.Currency, nil
+}
+
+// progress walks the budget to month with the spending of its category, less what goals paid
+// (A257); ok is false when month precedes the first amount.
+func (s *Service) progress(
+	ctx context.Context,
+	booksID int64,
+	b domain.Budget,
+	category Account,
+	month time.Time,
+) (domain.Progress, bool, error) {
+	sign := int64(1)
+	if category.Class == "income" {
+		sign = -1
+	}
+
+	totals, err := s.monthlyTotals(ctx, booksID, b, month)
+	if err != nil {
+		return domain.Progress{}, false, err
+	}
+
+	paid, err := s.budgetPaid(ctx, booksID, b, category, month)
+	if err != nil {
+		return domain.Progress{}, false, err
+	}
+
+	spent := s.spentFunc(ctx, booksID, b, month, sign, totals)
+
+	p, ok, err := b.Progress(month, func(m time.Time) (int64, error) {
+		total, err := spent(m)
+		return total - paid[m], err
+	})
+	p.GoalPaid = paid[month]
+
+	return p, ok, err
+}
+
+// budgetPaid returns, by month, the expenses of the budget's categories that a goal pays, from
+// the first month the progress walks to month; nil for a budget of an income category (A257).
+func (s *Service) budgetPaid(
+	ctx context.Context,
+	booksID int64,
+	b domain.Budget,
+	category Account,
+	month time.Time,
+) (map[time.Time]int64, error) {
+	if category.Class != "expense" {
+		return nil, nil
+	}
+
+	from := month
+	if b.Rollover && len(b.Amounts) > 0 && b.Amounts[0].EffectiveFrom.Before(month) {
+		from = b.Amounts[0].EffectiveFrom
+	}
+
+	facts, base, err := s.factsAndBase(ctx, booksID)
+	if err != nil {
+		return nil, err
+	}
+
+	paid, err := s.goalPaid(ctx, booksID, facts, base, from, month.AddDate(0, 1, 0))
+	if err != nil {
+		return nil, err
+	}
+
+	subtree := categorySubtree(b.CategoryID, expenseParents(facts))
+
+	return subtreePaid(paidByCategory(paid), subtree), nil
 }
 
 // monthlyTotals runs one ledger query per request: the months of a rollover budget at once.

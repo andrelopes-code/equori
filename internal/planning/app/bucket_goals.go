@@ -10,7 +10,6 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/planning/domain"
 	"github.com/andrelopes-code/equori/internal/platform/money"
-	"github.com/andrelopes-code/equori/internal/platform/page"
 )
 
 // goalInflows returns, by first day of month in [from, to), what went into the accounts of the
@@ -145,29 +144,20 @@ func (s *Service) goalAccounts(
 ) (goals, savings map[uuid.UUID]bool, err error) {
 	goals, savings = make(map[uuid.UUID]bool), make(map[uuid.UUID]bool)
 
-	r := page.Request[IDKey]{Limit: page.MaxLimit}
-	for {
-		got, next, err := s.repo.ListGoals(ctx, booksID, r)
-		if err != nil {
-			return nil, nil, err
+	all, err := s.allGoals(ctx, booksID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	for _, g := range all {
+		into := goals
+		if g.CountsAsSavings {
+			into = savings
 		}
 
-		for _, g := range got {
-			into := goals
-			if g.CountsAsSavings {
-				into = savings
-			}
-
-			for _, id := range g.AccountIDs {
-				into[id] = true
-			}
+		for _, id := range g.AccountIDs {
+			into[id] = true
 		}
-
-		if next == nil {
-			break
-		}
-
-		r.After = next
 	}
 
 	withSubAccounts(goals, facts)

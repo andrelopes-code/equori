@@ -44,6 +44,8 @@ type goalView struct {
 	DueOn            tool.Date  `json:"due_on"`
 	TrailingReturnBP int        `json:"trailing_return_bp,omitzero"`
 	CountsAsSavings  bool       `json:"counts_as_savings,omitzero"`
+	// Spent sums the expenses the goal paid; absent at zero (planning coherence A256).
+	Spent tool.Money `json:"spent,omitzero"`
 }
 
 type planRowView struct {
@@ -111,6 +113,10 @@ func toGoalView(g app.GoalView) (goalView, error) {
 		DueOn:           tool.DateOf(g.DueOn),
 		CountsAsSavings: g.CountsAsSavings,
 	}
+	if g.Spent.Amount() != 0 {
+		v.Spent = tool.MoneyOf(g.Spent)
+	}
+
 	for _, f := range []struct {
 		amount int64
 		into   *tool.Money

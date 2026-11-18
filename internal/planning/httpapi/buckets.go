@@ -171,7 +171,7 @@ func toBucketHistoryAPI(h app.BucketHistory) BudgetBucketHistory {
 			reals[j] = BudgetBucketReal{
 				Id:       b.ID,
 				Real:     m(real),
-				GoalPaid: m(0),
+				GoalPaid: m(month.GoalPaid[j]),
 				Covered:  m(month.Covered[j]),
 			}
 

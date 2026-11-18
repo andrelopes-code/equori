@@ -49,6 +49,28 @@ func (q *Queries) DeleteGoalAccounts(ctx context.Context, arg DeleteGoalAccounts
 	return err
 }
 
+const deleteGoalExpense = `-- name: DeleteGoalExpense :execrows
+DELETE FROM planning_goal_expense
+WHERE
+    books_id = $1
+    AND goal_id = $2
+    AND transaction_id = $3
+`
+
+type DeleteGoalExpenseParams struct {
+	BooksID       int64
+	GoalID        uuid.UUID
+	TransactionID uuid.UUID
+}
+
+func (q *Queries) DeleteGoalExpense(ctx context.Context, arg DeleteGoalExpenseParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteGoalExpense, arg.BooksID, arg.GoalID, arg.TransactionID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const getGoal = `-- name: GetGoal :one
 SELECT
     id, books_id, name, target, currency, due_on, created_at, counts_as_savings
@@ -185,6 +207,43 @@ func (q *Queries) ListGoalAccounts(ctx context.Context, arg ListGoalAccountsPara
 	return items, nil
 }
 
+const listGoalExpenses = `-- name: ListGoalExpenses :many
+SELECT
+    goal_id,
+    transaction_id
+FROM
+    planning_goal_expense
+WHERE
+    books_id = $1
+ORDER BY
+    transaction_id
+`
+
+type ListGoalExpensesRow struct {
+	GoalID        uuid.UUID
+	TransactionID uuid.UUID
+}
+
+func (q *Queries) ListGoalExpenses(ctx context.Context, booksID int64) ([]ListGoalExpensesRow, error) {
+	rows, err := q.db.Query(ctx, listGoalExpenses, booksID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListGoalExpensesRow
+	for rows.Next() {
+		var i ListGoalExpensesRow
+		if err := rows.Scan(&i.GoalID, &i.TransactionID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listGoals = `-- name: ListGoals :many
 SELECT
     id, books_id, name, target, currency, due_on, created_at, counts_as_savings
@@ -284,4 +343,25 @@ func (q *Queries) UpdateGoal(ctx context.Context, arg UpdateGoalParams) (Plannin
 		&i.CountsAsSavings,
 	)
 	return i, err
+}
+
+const upsertGoalExpense = `-- name: UpsertGoalExpense :exec
+INSERT INTO
+    planning_goal_expense (books_id, transaction_id, goal_id)
+VALUES
+    ($1, $2, $3)
+ON CONFLICT (books_id, transaction_id) DO UPDATE
+SET
+    goal_id = EXCLUDED.goal_id
+`
+
+type UpsertGoalExpenseParams struct {
+	BooksID       int64
+	TransactionID uuid.UUID
+	GoalID        uuid.UUID
+}
+
+func (q *Queries) UpsertGoalExpense(ctx context.Context, arg UpsertGoalExpenseParams) error {
+	_, err := q.db.Exec(ctx, upsertGoalExpense, arg.BooksID, arg.TransactionID, arg.GoalID)
+	return err
 }

@@ -27,7 +27,8 @@ type BucketHistory struct {
 // to Received (A235). Retained is the yield and the realized gain that stayed in the investments,
 // left out of Received (planning coherence A252). Covered holds, per bucket, the spending that the
 // accumulated balance of rollover budgets paid; Deposited and Withdrawn hold what went into the
-// goal set and what left it, for the bucket that takes goals (A254).
+// goal set and what left it, for the bucket that takes goals (A254). GoalPaid holds, per bucket, the
+// spending of its categories that a goal paid (A256).
 type BucketMonth struct {
 	Month             time.Time
 	From              time.Time
@@ -37,6 +38,7 @@ type BucketMonth struct {
 	Retained          int64
 	Real              []int64
 	Covered           []int64
+	GoalPaid          []int64
 
 	Deposited, Withdrawn int64
 }
@@ -108,6 +110,7 @@ func (s *Service) addBucketMonths(
 		month.HasMethod = wm.ok
 		month.Retained = figures.retained[wm.month]
 		month.Covered = figures.covered[wm.month]
+		month.GoalPaid = bucketPaid(figures.paid, resolve, len(wm.method.Buckets), wm.month)
 		month.Received -= month.Retained
 
 		if wm.ok {
@@ -123,11 +126,13 @@ func (s *Service) addBucketMonths(
 
 // windowFigures holds, by month of the window, what the history reads beside the own postings:
 // the flows into the goal set and into the savings set, the retained income (A252) and the
-// spending covered by accumulated balances, by bucket (A254).
+// spending covered by accumulated balances, by bucket (A254). paid holds the expenses a goal
+// pays by category and month (A256).
 type windowFigures struct {
 	goals, savings map[time.Time]flow
 	retained       map[time.Time]int64
 	covered        map[time.Time][]int64
+	paid           map[uuid.UUID]map[time.Time]int64
 }
 
 func (s *Service) windowFigures(
@@ -154,9 +159,56 @@ func (s *Service) windowFigures(
 		return windowFigures{}, err
 	}
 
-	out.covered, err = s.coveredSpending(ctx, booksID, facts, months, expense, to)
+	budgets, err := s.repo.Budgets(ctx, booksID)
+	if err != nil {
+		return windowFigures{}, err
+	}
+
+	// The balance a rollover budget carries into the window depends on what goals paid since its
+	// first amount (A257).
+	since := from
+	for _, b := range budgets {
+		if b.Rollover && len(b.Amounts) > 0 && b.Amounts[0].EffectiveFrom.Before(since) {
+			since = b.Amounts[0].EffectiveFrom
+		}
+	}
+
+	paid, err := s.goalPaid(ctx, booksID, facts, history.Currency, since, to)
+	if err != nil {
+		return windowFigures{}, err
+	}
+
+	out.paid = paidByCategory(paid)
+	out.covered, err = s.coveredSpending(
+		ctx,
+		booksID,
+		facts,
+		months,
+		budgets,
+		expense,
+		out.paid,
+		to,
+	)
 
 	return out, err
+}
+
+// bucketPaid sums, by bucket, the expenses of month that a goal pays (A254).
+func bucketPaid(
+	paid map[uuid.UUID]map[time.Time]int64,
+	resolve func(uuid.UUID) (int, bool),
+	buckets int,
+	month time.Time,
+) []int64 {
+	out := make([]int64, buckets)
+
+	for category, byMonth := range paid {
+		if i, ok := resolve(category); ok {
+			out[i] += byMonth[month]
+		}
+	}
+
+	return out
 }
 
 // windowInflows returns what went into the goal set and into the savings set by month, each read

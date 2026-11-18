@@ -45,6 +45,8 @@ func checkBudgetGoalFields(in manageBudgetOrGoalIn) error {
 		err = required(name, fields, []string{"buckets"}, "month")
 	case "move_category":
 		err = required(name, fields, []string{"category_id", "bucket"})
+	case "link_expense", "unlink_expense":
+		err = required(name, fields, []string{"goal_id", "transaction_id"})
 	}
 
 	return err
@@ -57,6 +59,7 @@ func budgetGoalFields(in manageBudgetOrGoalIn) []field {
 			in.BudgetID != "",
 		},
 		{"goal_id", in.GoalID != ""},
+		{"transaction_id", in.TransactionID != ""},
 		{"category_id", in.CategoryID != ""},
 		{
 			"amount",

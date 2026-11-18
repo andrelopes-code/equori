@@ -69,9 +69,12 @@ func CountedBudget(
 	return true
 }
 
+// Progress is a budget in a month. Spent leaves out the expenses a goal pays; GoalPaid is the
+// amount of the month left out (planning coherence A257).
 type Progress struct {
 	Month                              time.Time
 	Planned, Carried, Spent, Available int64
+	GoalPaid                           int64
 }
 
 // Progress walks the months from the first amount to month: available = planned + carried −

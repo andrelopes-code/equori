@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/google/uuid"
+
 	"github.com/andrelopes-code/equori/internal/planning/app"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
@@ -24,6 +26,7 @@ func toGoalAPI(g app.GoalView) Goal {
 		),
 		Remaining:  toMoneyAPI(g.Progress.Remaining, g.Currency),
 		ProgressBp: g.Progress.ProgressBP,
+		Spent:      toMoneyAPI(g.Spent.Amount(), g.Spent.Currency()),
 		Prices:     toPricesAPI(g.Prices),
 		Parts:      toGoalPartsAPI(g.Parts),
 	}
@@ -181,4 +184,70 @@ func (s *Server) addGoal(ctx context.Context, in CreateGoalJSONRequestBody) (app
 		in.AccountIds,
 		in.CountsAsSavings != nil && *in.CountsAsSavings,
 	)
+}
+
+func (s *Server) linkGoalExpense(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (httpserver.None, error) {
+	goal, tx, err := goalExpensePath(r)
+	if err != nil {
+		return httpserver.None{}, err
+	}
+
+	return httpserver.None{}, s.svc.LinkGoalExpense(ctx, auth.MustBooksID(ctx), goal, tx)
+}
+
+func (s *Server) unlinkGoalExpense(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (httpserver.None, error) {
+	goal, tx, err := goalExpensePath(r)
+	if err != nil {
+		return httpserver.None{}, err
+	}
+
+	return httpserver.None{}, s.svc.UnlinkGoalExpense(ctx, auth.MustBooksID(ctx), goal, tx)
+}
+
+// goalExpensePath reads the goal and the transaction of the path.
+func goalExpensePath(r *http.Request) (goal, tx uuid.UUID, err error) {
+	if goal, err = httpserver.PathUUID(r, "id"); err != nil {
+		return uuid.Nil, uuid.Nil, err
+	}
+
+	tx, err = httpserver.PathUUID(r, "transaction_id")
+
+	return goal, tx, err
+}
+
+func (s *Server) listGoalExpenses(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (GoalExpenses, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return GoalExpenses{}, err
+	}
+
+	expenses, currency, err := s.svc.GoalExpenses(ctx, auth.MustBooksID(ctx), id)
+	if err != nil {
+		return GoalExpenses{}, err
+	}
+
+	out := GoalExpenses{Items: make([]GoalExpense, len(expenses))}
+	for i, e := range expenses {
+		out.Items[i] = GoalExpense{
+			TransactionId: e.TransactionID,
+			Date:          apiDate(e.Date),
+			Description:   e.Description,
+			Amount:        toMoneyAPI(e.Amount, currency),
+			Direct:        e.Direct,
+		}
+	}
+
+	return out, nil
 }

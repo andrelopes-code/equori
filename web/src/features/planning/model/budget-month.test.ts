@@ -25,6 +25,7 @@ function progress(spent: number) {
     planned: money(100000),
     carried: money(0),
     spent: money(spent),
+    goal_paid: money(0),
     available: money(100000 - spent),
   };
 }

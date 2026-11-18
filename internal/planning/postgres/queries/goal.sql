@@ -77,3 +77,30 @@ DELETE FROM planning_goal
 WHERE
     books_id = @books_id
     AND id = @id;
+
+-- name: UpsertGoalExpense :exec
+INSERT INTO
+    planning_goal_expense (books_id, transaction_id, goal_id)
+VALUES
+    (@books_id, @transaction_id, @goal_id)
+ON CONFLICT (books_id, transaction_id) DO UPDATE
+SET
+    goal_id = EXCLUDED.goal_id;
+
+-- name: DeleteGoalExpense :execrows
+DELETE FROM planning_goal_expense
+WHERE
+    books_id = @books_id
+    AND goal_id = @goal_id
+    AND transaction_id = @transaction_id;
+
+-- name: ListGoalExpenses :many
+SELECT
+    goal_id,
+    transaction_id
+FROM
+    planning_goal_expense
+WHERE
+    books_id = @books_id
+ORDER BY
+    transaction_id;

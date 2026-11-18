@@ -181,6 +181,7 @@ func (s *Server) getBudgetProgress(
 		Planned:   toMoneyAPI(p.Planned, currency),
 		Carried:   toMoneyAPI(p.Carried, currency),
 		Spent:     toMoneyAPI(p.Spent, currency),
+		GoalPaid:  toMoneyAPI(p.GoalPaid, currency),
 		Available: toMoneyAPI(p.Available, currency),
 	}, nil
 }

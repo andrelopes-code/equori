@@ -613,6 +613,67 @@ paths:
           $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
+  /goals/{id}/expenses:
+    get:
+      tags: [planning]
+      operationId: listGoalExpenses
+      x-book-role: read
+      summary: The expense transactions a goal pays, the latest first (planning coherence A256).
+      description: |
+        A goal pays a transaction by a stored link, or directly: the transaction holds an expense posting and a posting
+        in an account that this goal alone holds whole, sub-accounts included. `amount` sums the expense postings of
+        the transaction in the base currency.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoalExpenses"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /goals/{id}/expenses/{transaction_id}:
+    put:
+      tags: [planning]
+      operationId: linkGoalExpense
+      x-book-role: write
+      summary: State that a goal paid an expense transaction (planning coherence A256).
+      description: |
+        The transaction is a non-voided transaction of the book with at least one expense posting; any other is a 422
+        on `transaction_id`. A transaction holds one link: a new link replaces the one it had. The expense stays in
+        every report; the bucket of its category is judged without it and the budget of its category leaves it out
+        of the spending (A257).
+      parameters:
+        - $ref: "#/components/parameters/ID"
+        - $ref: "#/components/parameters/GoalTransactionID"
+      responses:
+        "204":
+          description: Linked.
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [planning]
+      operationId: unlinkGoalExpense
+      x-book-role: write
+      summary: Remove the link between a goal and an expense transaction; 404 without that link.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+        - $ref: "#/components/parameters/GoalTransactionID"
+      responses:
+        "204":
+          description: Unlinked.
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
   /accounts/{id}/projection:
     get:
       tags: [planning]
@@ -920,6 +981,13 @@ paths:
         "409":
           $ref: "#/components/responses/Problem"
 parameters:
+  GoalTransactionID:
+    name: transaction_id
+    in: path
+    required: true
+    schema:
+      type: string
+      format: uuid
   PlanMonth:
     name: month
     in: query
@@ -1202,10 +1270,11 @@ schemas:
         description: Absent on the last page.
   BudgetProgress:
     type: object
-    required: [month, planned, carried, spent, available]
+    required: [month, planned, carried, spent, goal_paid, available]
     description: |
       carried is the previous month's available amount when rollover is set, else zero; available is
-      planned + carried - spent, negative when overspent.
+      planned + carried - spent, negative when overspent. spent leaves out the expenses of the month that a goal
+      pays, and goal_paid is the amount left out (planning coherence A257).
     properties:
       month:
         type: string
@@ -1214,6 +1283,8 @@ schemas:
       carried:
         $ref: "#/components/schemas/Money"
       spent:
+        $ref: "#/components/schemas/Money"
+      goal_paid:
         $ref: "#/components/schemas/Money"
       available:
         $ref: "#/components/schemas/Money"
@@ -1675,10 +1746,12 @@ schemas:
       - current
       - remaining
       - progress_bp
+      - spent
     description: |
       current is the sum of the booked balances of the accounts today, valued in the target currency with
       stored prices (P8 amendment A72); remaining is max(target - current, 0); progress_bp is current / target
-      in basis points, rounded down, between 0 and 10000.
+      in basis points, rounded down, between 0 and 10000. spent sums the expense postings of the transactions the
+      goal pays, in the base currency (planning coherence A256).
     properties:
       id:
         type: string
@@ -1706,6 +1779,8 @@ schemas:
         $ref: "#/components/schemas/Money"
       progress_bp:
         type: integer
+      spent:
+        $ref: "#/components/schemas/Money"
       prices:
         type: array
         description: Prices that value accounts in another currency (P8 amendment A72).
@@ -1745,6 +1820,31 @@ schemas:
         $ref: "#/components/schemas/Money"
       value:
         $ref: "#/components/schemas/Money"
+  GoalExpense:
+    type: object
+    required: [transaction_id, date, description, amount, direct]
+    properties:
+      transaction_id:
+        type: string
+        format: uuid
+      date:
+        type: string
+        format: date
+      description:
+        type: string
+      amount:
+        $ref: "#/components/schemas/Money"
+      direct:
+        type: boolean
+        description: Paid from an account the goal holds whole; false for a stored link.
+  GoalExpenses:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/GoalExpense"
   GoalPage:
     type: object
     required: [items]

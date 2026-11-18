@@ -787,3 +787,24 @@ func TestAddExternalInvestments(t *testing.T) {
 		t.Fatalf("ArchiveVersion = %d, want at least 26", ArchiveVersion)
 	}
 }
+
+// A version 26 archive holds no expense paid by a goal; the step leaves its rows as they are
+// (migration 00117).
+func TestAddGoalExpenses(t *testing.T) {
+	t.Parallel()
+
+	v26 := []ArchiveTable{
+		{Name: "planning_goal", Rows: [][]byte{[]byte(`{"id":"a"}`)}},
+	}
+
+	got, err := addGoalExpenses(v26)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assertTables(t, got, v26)
+
+	if ArchiveVersion < 27 {
+		t.Fatalf("ArchiveVersion = %d, want at least 27", ArchiveVersion)
+	}
+}

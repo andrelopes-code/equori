@@ -462,10 +462,12 @@ type BudgetPlanRow struct {
 type BudgetPlanSource string
 
 // BudgetProgress carried is the previous month's available amount when rollover is set, else zero; available is
-// planned + carried - spent, negative when overspent.
+// planned + carried - spent, negative when overspent. spent leaves out the expenses of the month that a goal
+// pays, and goal_paid is the amount left out (planning coherence A257).
 type BudgetProgress struct {
 	Available Money  `json:"available"`
 	Carried   Money  `json:"carried"`
+	GoalPaid  Money  `json:"goal_paid"`
 	Month     string `json:"month"`
 	Planned   Money  `json:"planned"`
 	Spent     Money  `json:"spent"`
@@ -495,7 +497,8 @@ type FieldError struct {
 
 // Goal current is the sum of the booked balances of the accounts today, valued in the target currency with
 // stored prices (P8 amendment A72); remaining is max(target - current, 0); progress_bp is current / target
-// in basis points, rounded down, between 0 and 10000.
+// in basis points, rounded down, between 0 and 10000. spent sums the expense postings of the transactions the
+// goal pays, in the base currency (planning coherence A256).
 type Goal struct {
 	AccountIds []openapi_types.UUID `json:"account_ids"`
 
@@ -515,12 +518,29 @@ type Goal struct {
 	Prices     *[]Price `json:"prices,omitempty"`
 	ProgressBp int      `json:"progress_bp"`
 	Remaining  Money    `json:"remaining"`
+	Spent      Money    `json:"spent"`
 	Target     Money    `json:"target"`
 
 	// TrailingReturn The money-weighted return of the goal's accounts, taken as one tree, over the last 12 months or since their
 	// first posting if shorter, valued in the target currency (investments design 4.4). Absent with less than three
 	// months of postings or no external flow in the window.
 	TrailingReturn *TrailingReturn `json:"trailing_return,omitempty"`
+}
+
+// GoalExpense defines model for GoalExpense.
+type GoalExpense struct {
+	Amount      Money              `json:"amount"`
+	Date        openapi_types.Date `json:"date"`
+	Description string             `json:"description"`
+
+	// Direct Paid from an account the goal holds whole; false for a stored link.
+	Direct        bool               `json:"direct"`
+	TransactionId openapi_types.UUID `json:"transaction_id"`
+}
+
+// GoalExpenses defines model for GoalExpenses.
+type GoalExpenses struct {
+	Items []GoalExpense `json:"items"`
 }
 
 // GoalInput defines model for GoalInput.
@@ -831,6 +851,9 @@ type TrailingReturn struct {
 
 // Cursor defines model for Cursor.
 type Cursor = string
+
+// GoalTransactionID defines model for GoalTransactionID.
+type GoalTransactionID = openapi_types.UUID
 
 // ID defines model for ID.
 type ID = openapi_types.UUID

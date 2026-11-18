@@ -12,21 +12,18 @@ import (
 // coveredSpending returns, by month of the window and bucket of its method, the spending that the
 // accumulated balance of the counted rollover budgets paid: for each budget, the balance carried
 // into the month, never below zero, up to the spending of its categories in the bucket (planning
-// coherence A254). own holds the own postings of each expense category by month; to is the end
-// of the window.
+// coherence A254). own holds the own postings of each expense category by month and paid the
+// part of them that a goal pays, which counts neither as spending of the budget nor as covered
+// (A257); to is the end of the window.
 func (s *Service) coveredSpending(
 	ctx context.Context,
 	booksID int64,
 	facts []Account,
 	months []windowMethod,
-	own map[uuid.UUID]map[time.Time]int64,
+	budgets []domain.Budget,
+	own, paid map[uuid.UUID]map[time.Time]int64,
 	to time.Time,
 ) (map[time.Time][]int64, error) {
-	budgets, err := s.repo.Budgets(ctx, booksID)
-	if err != nil {
-		return nil, err
-	}
-
 	parents := expenseParents(facts)
 	byCategory := make(map[uuid.UUID]domain.Budget, len(budgets))
 	for _, b := range budgets {
@@ -53,17 +50,17 @@ func (s *Service) coveredSpending(
 		}
 
 		subtree := categorySubtree(b.CategoryID, parents)
+		goalPaid := subtreePaid(paid, subtree)
+		spent := func(m time.Time) (int64, error) { return totals[m] - goalPaid[m], nil }
+
 		for _, wm := range months {
 			if !domain.CountedBudget(b, wm.month, byCategory, parents) {
 				continue
 			}
 
-			p, _, _ := b.Progress(
-				wm.month,
-				func(m time.Time) (int64, error) { return totals[m], nil },
-			)
+			p, _, _ := b.Progress(wm.month, spent)
 			resolve := domain.BucketResolver(wm.method.Buckets, parents)
-			cover(out[wm.month], p.Carried, subtree, resolve, own, wm.month)
+			cover(out[wm.month], p.Carried, subtree, resolve, own, paid, wm.month)
 		}
 	}
 
@@ -77,13 +74,13 @@ func cover(
 	carried int64,
 	subtree []uuid.UUID,
 	resolve func(uuid.UUID) (int, bool),
-	own map[uuid.UUID]map[time.Time]int64,
+	own, paid map[uuid.UUID]map[time.Time]int64,
 	month time.Time,
 ) {
 	spent := make([]int64, len(covered))
 	for _, c := range subtree {
 		if i, ok := resolve(c); ok {
-			spent[i] += own[c][month]
+			spent[i] += own[c][month] - paid[c][month]
 		}
 	}
 

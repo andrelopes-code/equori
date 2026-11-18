@@ -382,16 +382,5 @@ type Repository interface {
 	// DeleteBucketMethod deletes the version of from; false when the book has none.
 	DeleteBucketMethod(ctx context.Context, booksID int64, from time.Time) (bool, error)
 
-	// InsertGoal stores g with its accounts; a used name is a field error on name.
-	InsertGoal(ctx context.Context, booksID int64, g domain.Goal) (domain.Goal, error)
-	Goal(ctx context.Context, booksID int64, id uuid.UUID) (domain.Goal, error)
-	ListGoals(
-		ctx context.Context,
-		booksID int64,
-		p page.Request[IDKey],
-	) ([]domain.Goal, *IDKey, error)
-	// UpdateGoal replaces the fields and the accounts of g.ID; ErrNotFound when it is not the book's.
-	UpdateGoal(ctx context.Context, booksID int64, g domain.Goal) (domain.Goal, error)
-	// DeleteGoal removes the goal with its accounts; ErrNotFound when it is not the book's.
-	DeleteGoal(ctx context.Context, booksID int64, id uuid.UUID) error
+	GoalRepository
 }

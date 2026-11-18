@@ -81,10 +81,28 @@ func movementCounterparts(
 		case "asset", "liability":
 			out[f.ID] = true
 		case "expense":
-			out[f.ID] = f.SystemRole != "realized_losses" && f.SystemRole != "adjustments" &&
-				f.SystemRole != "opening_balances"
+			out[f.ID] = isSpendingRole(f.SystemRole)
 		case "income":
 			out[f.ID] = !isRetainedRole(f.SystemRole)
+		}
+	}
+
+	return out
+}
+
+// isSpendingRole reports whether an expense category of the role records money spent: not a
+// realized loss or a correction (A251).
+func isSpendingRole(role string) bool {
+	return role != "realized_losses" && role != "adjustments" && role != "opening_balances"
+}
+
+// spendingCategories returns the expense categories in base whose postings are money spent.
+func spendingCategories(facts []Account, base money.Currency) map[uuid.UUID]bool {
+	out := make(map[uuid.UUID]bool)
+
+	for _, f := range facts {
+		if f.Class == "expense" && f.Instrument == base && isSpendingRole(f.SystemRole) {
+			out[f.ID] = true
 		}
 	}
 

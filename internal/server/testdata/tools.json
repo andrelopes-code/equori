@@ -1467,6 +1467,24 @@
               },
               "counts_as_savings": {
                 "type": "boolean"
+              },
+              "spent": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
               }
             },
             "required": [
@@ -6828,7 +6846,7 @@
   },
   {
     "name": "manage_budget_or_goal",
-    "description": "Proposes creating, changing or deleting a monthly budget or a goal, saving a month's budget plan or the income split into buckets (50/30/20 and others), or moving one category to another bucket. Use it when the user sets a spending limit or a savings target. Do not use it for recurring payments: manage_schedule does. Deleting a budget or a goal cannot be undone; the user confirms every change.",
+    "description": "Proposes creating, changing or deleting a monthly budget or a goal, saving a month's budget plan or the income split into buckets (50/30/20 and others), or moving one category to another bucket. link_expense states that a goal paid an expense, which then counts against neither its budget nor its bucket; unlink_expense undoes it. Use it when the user sets a spending limit or a savings target. Do not use it for recurring payments: manage_schedule does. Deleting a budget or a goal cannot be undone; the user confirms every change.",
     "effect": "destructive",
     "idempotent": false,
     "input_schema": {
@@ -6846,7 +6864,9 @@
             "delete_goal",
             "save_plan",
             "save_buckets",
-            "move_category"
+            "move_category",
+            "link_expense",
+            "unlink_expense"
           ]
         },
         "budget_id": {
@@ -6855,7 +6875,11 @@
         },
         "goal_id": {
           "type": "string",
-          "description": "for update_goal and delete_goal: goal from get_budgets_and_goals"
+          "description": "goal from get_budgets_and_goals"
+        },
+        "transaction_id": {
+          "type": "string",
+          "description": "for link_expense and unlink_expense: the expense transaction"
         },
         "category_id": {
           "type": "string",
