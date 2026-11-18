@@ -442,6 +442,21 @@ describe("desktop column", () => {
     expect(second.router.state.location.pathname).toBe("/planning");
   });
 
+  it("marks the first view of a pressed destination before its route renders", async () => {
+    const app = await renderApp("/", { fetch: newFetch() });
+
+    fireEvent.click(
+      within(column()).getByRole("button", { name: catalogEn["nav.planning"] }),
+    );
+
+    expect(app.router.state.location.pathname).toBe("/");
+    expect(
+      within(column()).getByRole("link", {
+        name: catalogEn["planning.tab.agenda"],
+      }),
+    ).toHaveAttribute("aria-current", "page");
+  });
+
   it("marks the destination while the group of its current view is closed", async () => {
     await renderApp("/categories/rules", { fetch: newFetch() });
 

@@ -3,6 +3,7 @@ import { usePressSelection } from "@slotted/react/press-selection";
 import type { MouseEvent } from "react";
 
 import {
+  destinationViews,
   matchView,
   viewHref,
 } from "@/app/shell/destinations/destination-views";
@@ -69,7 +70,11 @@ export function useDestinationPress(onReselect: () => void): DestinationPress {
       // An open group stays open; a closed one opens with the navigation.
       if (open) event.preventDefault();
 
-      select(target.key, () => void navigate({ to: target.to }));
+      // The destination's own route is its first view: that view is painted with the press.
+      select(
+        destinationViews[target.key]?.[0]?.key ?? target.key,
+        () => void navigate({ to: target.to }),
+      );
     },
     pressView: (target) => (event) => {
       if (!isPlainPress(event)) return;
