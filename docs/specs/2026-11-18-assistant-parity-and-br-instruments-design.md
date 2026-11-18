@@ -190,6 +190,7 @@ Delivered with phase 5, which holds the other web work of this spec.
 | M6 | A source is a primary source: a law or decree (planalto.gov.br), a CMN or BCB resolution (bcb.gov.br), a CVM resolution (gov.br/cvm), an RFB instruction (normas.receita.fazenda.gov.br), the FGC regulation (fgc.org.br), a B3 or ANBIMA methodology, the Tesouro Direto site. A broker page, a blog and a model's memory are not sources. |
 | M7 | A product the system does not support is not a row of the test. It is a row of `docs/domain/br-product-coverage.md` with the verdict `unsupported` or `partial`, the missing capability and its issue number. The row moves to the test in the commit that implements it. |
 | M8 | The article row of a product (section 3) and the matrix row cite the same source. `TestGuideCoversSubtypes` and a test of the matrix IDs keep both lists equal. |
+| M9 | The matrix holds the rows of fixed income and government bonds, whose steps M5 names (apply, accrue, redeem). A listed security row (E-01, E-04, E-05, E-13) has no accrual or redemption estimate; it is verified by its scenario test, which `docs/domain/br-product-coverage.md` names in its evidence. The table is `apitest.BRProducts`; `TestBRProductMatrix` and `TestBRMatrixMatchesArticles` sit in `internal/server`. A row without a tax estimate (an exempt subtype) expects none, as `estimate_redemption` gives none. |
 
 ### 5.2 Candidate rows
 

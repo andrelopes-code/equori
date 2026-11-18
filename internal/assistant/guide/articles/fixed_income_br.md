@@ -7,3 +7,20 @@ Income tax of a taxed security, on the gain, by days since each purchase: 22.5% 
 Terms. Indexes: cdi (business days, bus252) and ipca (monthly, act365). A pre-fixed rate and the spread over IPCA count the business days of calendar br_banking: day_count bus252 with calendar_id br_banking. The statement of the issuer is recorded with record_price.
 
 Indexer comparison. The sources are the CDI and the IPCA of the instance, the Focus survey of the Banco Central do Brasil for the expected rates, and the curves of Tesouro Direto for the market rate of the term and the inflation implied by government bonds. The tax follows the table of the income tax above, and an exempt security pays none. The screen gives no recommendation and no verdict.
+
+## Products
+
+Each row is a product equori records and values as the published calculation of its source does (checked by the product matrix). The tool is record_fixed_income; the facts to ask are the brokerage, the amount, the application date, the issuer, the maturity and the rate.
+
+| ID | Product | Subtype | Rate form | Tax of an individual | Guarantee | Liquidity | Source, read 2026-11-18 |
+|---|---|---|---|---|---|---|---|
+| F-01 | CDB pós-fixado | cdb | percent of the CDI (index_id cdi, percent_of_index) | table of art. 1 of Lei 11.033/2004; IOF within 30 days | FGC | daily_liquidity when the issuer allows it | BCB SGS series 12 (CDI); B3 Caderno de Fórmulas of CDBs, 6.1.2 |
+| F-02 | CDB prefixado | cdb | annual rate (spread) on bus252 with calendar_id br_banking | table of art. 1 of Lei 11.033/2004 | FGC | at maturity unless redeemable_from | Metodologia de Cálculo of the Tesouro Nacional, LTN example |
+| F-04 | CDB CDI + spread | cdb | percent of the CDI and an annual spread | table of art. 1 of Lei 11.033/2004 | FGC | at maturity unless redeemable_from | BCB SGS series 12 (CDI); B3 Caderno de Fórmulas of CDBs, 6.1.2 |
+| F-06 | RDB | rdb | as the CDB; not transferable | table of art. 1 of Lei 11.033/2004 | FGC | at maturity | Metodologia de Cálculo of the Tesouro Nacional, LTN example |
+| F-09 | Letra de Câmbio (LC) | lc | as the CDB | table of art. 1 of Lei 11.033/2004 | FGC | at maturity | Metodologia de Cálculo of the Tesouro Nacional, LTN example |
+| F-12 | Letra Hipotecária (LH), LCD | lh, lcd | as the CDB | exempt, Lei 11.033/2004 art. 3, II | FGC | at maturity | Metodologia de Cálculo of the Tesouro Nacional, LTN example |
+| F-17 | CRI, CRA | cri, cra | pre-fixed, percent of the CDI, CDI + spread | exempt, Lei 11.033/2004 art. 3, II and IV | none | at maturity | Metodologia de Cálculo of the Tesouro Nacional, LTN example |
+| F-18 | CDCA | cdca | as the CRI | exempt, Lei 11.033/2004 art. 3, IV | none | at maturity | Metodologia de Cálculo of the Tesouro Nacional, LTN example |
+| F-19 | Redemption within 30 days | any taxed subtype | any | IOF of the annex of Decreto 6.306/2007, then income tax on the gain less the IOF | as the product | as the product | Decreto 6.306/2007, art. 32 and annex |
+

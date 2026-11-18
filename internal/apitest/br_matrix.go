@@ -153,7 +153,7 @@ func cdiRow(id, name string, contract, args map[string]any, value, tax, net stri
 		ID:      id,
 		Name:    name,
 		Subtype: "cdb",
-		Source: "BCB SGS series 12 (CDI, percent a day), January 2025, fetched 2026-11-18; " +
+		Source: "BCB SGS series 12 (CDI), percent a day, January 2025, fetched 2026-11-18; " +
 			"income tax 22.5% up to 180 days, Lei 11.033/2004 art. 1, I, read 2026-11-18",
 		Contract:      terms(contract),
 		Args:          terms(args),
@@ -194,10 +194,10 @@ func earlyRedemption() BRProduct {
 // a year, 753.315323 grows to 1,000.00 in the 532 business days from 2008-05-21 to 2010-07-01.
 // A pre-fixed contract of any issuer accrues by the same formula, so the example prices each
 // pre-fixed row at 1,000 times the published unit price.
-const ltnExample = "Tesouro Nacional, Metodologia de Cálculo dos Títulos Públicos Federais Ofertados " +
-	"nos Leilões Primários, LTN example (14.36% a.a., 532 business days from 2008-05-21 to " +
-	"2010-07-01, unit price 753.315323 for 1,000.00), cdn.tesouro.gov.br, " +
-	"Metodologia de Calculo - 290424.pdf, read 2026-11-18"
+const ltnExample = "Metodologia de Cálculo of the Tesouro Nacional, LTN example (Metodologia de " +
+	"Cálculo dos Títulos Públicos Federais Ofertados nos Leilões Primários: 14.36% a.a., 532 " +
+	"business days from 2008-05-21 to 2010-07-01, unit price 753.315323 for 1,000.00), " +
+	"cdn.tesouro.gov.br, Metodologia de Calculo - 290424.pdf, read 2026-11-18"
 
 // rowTax is the tax of a row: its source, the income tax, the IOF and the net value on ValuedOn.
 type rowTax struct{ source, tax, iof, net string }
