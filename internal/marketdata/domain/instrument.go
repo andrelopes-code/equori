@@ -21,6 +21,9 @@ var SecurityTypes = []string{
 	"fixed_income",
 	"fund",
 	"crypto",
+	// An option listed on an exchange; its terms live in the code and the name (listed options
+	// design O1).
+	"option",
 }
 
 // ReclassifiableTypes are the types a security changes among: the same scale, no terms and the

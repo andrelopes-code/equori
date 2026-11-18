@@ -34,6 +34,7 @@ func (manageInstrumentType) Values() []string {
 		"fixed_income",
 		"fund",
 		"crypto",
+		"option",
 	}
 }
 

@@ -18,6 +18,7 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "instruments.type.fixed_income": "Renda fixa",
   "instruments.type.fund": "Fundos",
   "instruments.type.crypto": "Criptoativos",
+  "instruments.type.option": "Opções",
   "instruments.col.code": "Código",
   "instruments.col.name": "Nome",
   "instruments.col.type": "Tipo",

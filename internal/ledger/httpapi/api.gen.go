@@ -1130,8 +1130,9 @@ func (e StatementSummaryStatus) Valid() bool {
 
 // Defines values for TradeSide.
 const (
-	Buy  TradeSide = "buy"
-	Sell TradeSide = "sell"
+	Buy      TradeSide = "buy"
+	Sell     TradeSide = "sell"
+	WriteOff TradeSide = "write_off"
 )
 
 // Valid indicates whether the value is a known member of the TradeSide enum.
@@ -1140,6 +1141,8 @@ func (e TradeSide) Valid() bool {
 	case Buy:
 		return true
 	case Sell:
+		return true
+	case WriteOff:
 		return true
 	default:
 		return false
@@ -1510,9 +1513,11 @@ type BrokerageNoteInput struct {
 
 // BrokerageNoteOrder defines model for BrokerageNoteOrder.
 type BrokerageNoteOrder struct {
-	Instrument string    `json:"instrument"`
-	Quantity   Money     `json:"quantity"`
-	Side       TradeSide `json:"side"`
+	Instrument string `json:"instrument"`
+	Quantity   Money  `json:"quantity"`
+
+	// Side write_off removes units at zero proceeds (an option expired, a right not exercised, a security that became worthless) and books their cost as a realized loss; it takes account_id and quantity, no unit_price, fees, taxes or cash account. A brokerage note refuses it.
+	Side TradeSide `json:"side"`
 
 	// UnitPrice Positive exact decimal with at most 12 decimals (ADR 005).
 	//
@@ -2539,8 +2544,10 @@ type Trade struct {
 
 	// SettlementDate The day the cash settles; the transaction date when it settles that day (A228 IO9).
 	SettlementDate openapi_types.Date `json:"settlement_date"`
-	Side           TradeSide          `json:"side"`
-	Taxes          Money              `json:"taxes"`
+
+	// Side write_off removes units at zero proceeds (an option expired, a right not exercised, a security that became worthless) and books their cost as a realized loss; it takes account_id and quantity, no unit_price, fees, taxes or cash account. A brokerage note refuses it.
+	Side  TradeSide `json:"side"`
+	Taxes Money     `json:"taxes"`
 
 	// UnitPrice Positive exact decimal with at most 12 decimals (ADR 005).
 	//
@@ -2575,8 +2582,10 @@ type TradeInput struct {
 
 	// SettlementDate The day the cash settles, not before date and at most 30 days after it; absent takes the settlement cycle of the instrument's exchange (A228 IO6, IO7).
 	SettlementDate *openapi_types.Date `json:"settlement_date,omitempty"`
-	Side           TradeSide           `json:"side"`
-	Taxes          *Money              `json:"taxes,omitempty"`
+
+	// Side write_off removes units at zero proceeds (an option expired, a right not exercised, a security that became worthless) and books their cost as a realized loss; it takes account_id and quantity, no unit_price, fees, taxes or cash account. A brokerage note refuses it.
+	Side  TradeSide `json:"side"`
+	Taxes *Money    `json:"taxes,omitempty"`
 
 	// TaxesCategoryId Default the system account taxes.
 	TaxesCategoryId *openapi_types.UUID `json:"taxes_category_id,omitempty"`
@@ -2584,10 +2593,10 @@ type TradeInput struct {
 	// UnitPrice Positive exact decimal with at most 12 decimals (ADR 005).
 	//
 	// Example: 5.4830
-	UnitPrice Rate `json:"unit_price"`
+	UnitPrice *Rate `json:"unit_price,omitempty"`
 }
 
-// TradeSide defines model for TradeSide.
+// TradeSide write_off removes units at zero proceeds (an option expired, a right not exercised, a security that became worthless) and books their cost as a realized loss; it takes account_id and quantity, no unit_price, fees, taxes or cash account. A brokerage note refuses it.
 type TradeSide string
 
 // Transaction defines model for Transaction.

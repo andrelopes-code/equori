@@ -151,13 +151,9 @@ func (s *Server) tradeOrderFromInput(
 		}
 	}
 
-	price, err := money.ParseRate(b.UnitPrice)
+	price, err := tradePrice(b)
 	if err != nil {
-		return domain.TradeOrder{}, &domain.FieldError{
-			Field:   "unit_price",
-			Message: "must be a positive decimal with at most 12 decimals",
-			Err:     domain.ErrValidation,
-		}
+		return domain.TradeOrder{}, err
 	}
 
 	o := domain.TradeOrder{
@@ -178,6 +174,24 @@ func (s *Server) tradeOrderFromInput(
 	}
 
 	return o, nil
+}
+
+// tradePrice reads the unit price a purchase and a sale require; a write-off takes none.
+func tradePrice(b RecordTradeJSONRequestBody) (money.Rate, error) {
+	if b.UnitPrice == nil && b.Side == WriteOff {
+		return money.Rate{}, nil
+	}
+
+	price, err := money.ParseRate(optString(b.UnitPrice))
+	if err != nil {
+		return money.Rate{}, &domain.FieldError{
+			Field:   "unit_price",
+			Message: "must be a positive decimal with at most 12 decimals",
+			Err:     domain.ErrValidation,
+		}
+	}
+
+	return price, nil
 }
 
 func setTradeCharges(o *domain.TradeOrder, b RecordTradeJSONRequestBody) error {

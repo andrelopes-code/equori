@@ -4658,7 +4658,7 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /** @enum {string} */
-        InstrumentType: "currency" | "stock" | "etf" | "reit" | "depositary_receipt" | "fixed_income" | "fund" | "crypto";
+        InstrumentType: "currency" | "stock" | "etf" | "reit" | "depositary_receipt" | "fixed_income" | "fund" | "crypto" | "option";
         /**
          * @description Positive exact decimal with at most 12 decimals (ADR 005).
          * @example 5.4830
@@ -6638,8 +6638,11 @@ export interface components {
         BalanceList: {
             items: components["schemas"]["Balance"][];
         };
-        /** @enum {string} */
-        TradeSide: "buy" | "sell";
+        /**
+         * @description write_off removes units at zero proceeds (an option expired, a right not exercised, a security that became worthless) and books their cost as a realized loss; it takes account_id and quantity, no unit_price, fees, taxes or cash account. A brokerage note refuses it.
+         * @enum {string}
+         */
+        TradeSide: "buy" | "sell" | "write_off";
         /** @description Exactly one of contract (a new contract) and instrument (more money into a contract of the book). */
         FixedIncomeApplicationInput: {
             /**
@@ -6734,7 +6737,7 @@ export interface components {
              */
             settlement_date?: string;
             quantity: components["schemas"]["Money"];
-            unit_price: components["schemas"]["Rate"];
+            unit_price?: components["schemas"]["Rate"];
             fees?: components["schemas"]["Money"];
             taxes?: components["schemas"]["Money"];
             /**

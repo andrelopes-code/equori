@@ -237,9 +237,12 @@ func (st *snapshotTrade) trade(ctx context.Context, ins app.Instruments) (*domai
 		return nil, err
 	}
 
-	price, err := money.ParseRate(st.UnitPrice)
-	if err != nil {
-		return nil, err
+	// A write-off carries no price; the archive holds it as zero (listed options design W3).
+	var price money.Rate
+	if domain.Side(st.Side) != domain.SideWriteOff {
+		if price, err = money.ParseRate(st.UnitPrice); err != nil {
+			return nil, err
+		}
 	}
 
 	dayQuantity, err := app.AmountOf(ctx, ins, st.DayTradeQuantity, money.Currency(st.Instrument))

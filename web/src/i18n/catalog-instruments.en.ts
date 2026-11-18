@@ -18,6 +18,7 @@ export const instrumentsEn = {
   "instruments.type.fixed_income": "Fixed income",
   "instruments.type.fund": "Funds",
   "instruments.type.crypto": "Crypto assets",
+  "instruments.type.option": "Options",
   "instruments.col.code": "Code",
   "instruments.col.name": "Name",
   "instruments.col.type": "Type",

@@ -13,7 +13,8 @@ export function tradeDraftOf(
   accounts: readonly Account[],
 ): TradeDraft | null {
   const trade = tx.trade;
-  if (trade === undefined) return null;
+  // A write-off is voided and recorded again, not corrected through the trade form.
+  if (trade === undefined || trade.side === "write_off") return null;
 
   return {
     side: trade.side,

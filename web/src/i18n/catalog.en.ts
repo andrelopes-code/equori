@@ -676,6 +676,7 @@ export const catalogEn = {
   "transactions.untitled": "No description",
   "transactions.title.buy": "Purchase of {code}",
   "transactions.title.sell": "Sale of {code}",
+  "transactions.title.write_off": "Write-off of {code}",
   "transactions.title.income": "Income from {code}",
   "transactions.title.action": "{kind} of {code}",
   "transactions.title.transfer": "Transfer from {from} to {to}",

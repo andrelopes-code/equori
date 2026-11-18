@@ -123,8 +123,15 @@ func checkTransactionHeader(t Transaction) (Transaction, error) {
 	return t, nil
 }
 
+// freeWriteOff reports whether t writes off units that hold no cost: one posting of weight zero,
+// since no value moves (listed options design O3, a right not exercised).
+func freeWriteOff(t Transaction) bool {
+	return len(t.Postings) == 1 && t.Trade != nil && t.Trade.Side == SideWriteOff &&
+		t.Postings[0].Weight.IsZero() && t.Postings[0].Amount.IsNegative()
+}
+
 func normalizePostings(t Transaction, accounts map[uuid.UUID]Account) ([]Posting, error) {
-	if len(t.Postings) < 2 {
+	if len(t.Postings) < 2 && !freeWriteOff(t) {
 		return nil, &FieldError{
 			Field:   "postings",
 			Message: "at least two postings are required",

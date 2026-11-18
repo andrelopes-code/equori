@@ -35,7 +35,9 @@ Dividend. Exempt up to R$ 50,000.00 a month paid by one source to one individual
 
 JCP. 15% at source up to 2025-12-31 and 17.5% from 2026-01-01, by the payment date (Lei Complementar 224/2025, art. 8 and 14).
 
-Securities lending (BTC). Shares lent at B3 stay in the holding: the lender keeps their units and their cost, and receives the dividends as a refund from the borrower. The fee of the loan is recorded with record_investment kind income and income_type lending_fee, with the tax the broker withheld at source by the table of the fixed income gains; get_tax_year lists it with the treatment exclusive. Options, forwards and futures are not recorded: equori has no instrument type for them.
+Securities lending (BTC). Shares lent at B3 stay in the holding: the lender keeps their units and their cost, and receives the dividends as a refund from the borrower. The fee of the loan is recorded with record_investment kind income and income_type lending_fee, with the tax the broker withheld at source by the table of the fixed income gains; get_tax_year lists it with the treatment exclusive. Forwards and futures are not recorded, nor a written option (a short position): equori has no model for them.
+
+Listed options. A call or a put bought on B3 is an instrument of type option (such as PETRK300), bought and sold with record_investment like a stock; its result has the tax class option. An option that expires worthless is record_investment kind write_off with its account_id and quantity: the premium paid becomes a realized loss. The exercise of a call is record_corporate_action kind right_exercise on the option: new_instrument is the underlying, amount the strike times the quantity, and the cost of the shares is that amount plus the premium. The exercise of a put is a sale of the underlying at the strike and a write_off of the put. The write-off has no entry on the new transaction page yet.
 
 Fund report. The report of a listed FII on the instrument page comes from the CVM (Informe Mensal de FII, feed br_cvm_fii); the break-even is read against the Tesouro IPCA+ curve (feed br_tesouro).
 

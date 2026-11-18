@@ -75,7 +75,7 @@ func (s *Service) buildTrade(
 		return domain.Transaction{}, err
 	}
 
-	if o.Side == domain.SideSell {
+	if o.Side == domain.SideSell || o.Side == domain.SideWriteOff {
 		h, err = s.withCostMethod(ctx, r, booksID, security, h, o.Date, exclude)
 		if err != nil {
 			return domain.Transaction{}, err
@@ -183,6 +183,10 @@ func (s *Service) resolveTrade(
 	o *domain.TradeOrder,
 	base money.Currency,
 ) (security, cash domain.Account, err error) {
+	if o.Side == domain.SideWriteOff {
+		return s.writeOffHolding(ctx, r, booksID, o, base)
+	}
+
 	o.AccountID, o.CashAccountID, err = s.resolveTarget(ctx, r, booksID, base, target{
 		AccountID: o.AccountID, CashAccountID: o.CashAccountID, BrokerageID: o.BrokerageID,
 		Instrument: o.Instrument, Create: o.Side == domain.SideBuy,
@@ -212,6 +216,39 @@ func (s *Service) resolveTrade(
 	}
 
 	return security, cash, nil
+}
+
+// writeOffHolding resolves the holding a write-off names by account_id; no cash moves, so the
+// cash side of the order is the base currency alone (listed options design W1).
+func (s *Service) writeOffHolding(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	o *domain.TradeOrder,
+	base money.Currency,
+) (security, cash domain.Account, err error) {
+	if o.AccountID == uuid.Nil || o.CashAccountID != uuid.Nil {
+		return domain.Account{}, domain.Account{}, fieldErr(
+			"account_id",
+			"is required for a write-off, without cash_account_id",
+			domain.ErrValidation,
+		)
+	}
+
+	security, err = loadAccount(ctx, r, booksID, o.AccountID, "account_id")
+	if err != nil {
+		return domain.Account{}, domain.Account{}, err
+	}
+
+	if o.Quantity.Currency() != security.Instrument {
+		return domain.Account{}, domain.Account{}, fieldErr(
+			"quantity",
+			"must be an amount of "+string(security.Instrument),
+			domain.ErrValidation,
+		)
+	}
+
+	return security, domain.Account{Instrument: base}, nil
 }
 
 // brokerageAccounts checks a security account and a cash account of the same brokerage

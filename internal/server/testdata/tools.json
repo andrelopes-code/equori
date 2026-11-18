@@ -4959,7 +4959,8 @@
             "depositary_receipt",
             "fixed_income",
             "fund",
-            "crypto"
+            "crypto",
+            "option"
           ]
         },
         "amount": {
@@ -9013,7 +9014,8 @@
             "depositary_receipt",
             "fixed_income",
             "fund",
-            "crypto"
+            "crypto",
+            "option"
           ]
         },
         "quote_currency": {
@@ -9896,7 +9898,8 @@
             "depositary_receipt",
             "fixed_income",
             "fund",
-            "crypto"
+            "crypto",
+            "option"
           ]
         },
         "quote_currency": {
@@ -10556,7 +10559,7 @@
   },
   {
     "name": "record_investment",
-    "description": "Proposes an investment transaction in a Brokerage: buy or sell an Investment for the Cash of the same Brokerage, or record income paid on an Investment. A first buy creates the Investment line; a sale or income needs an existing one. A Brokerage with no Cash account in the base currency is refused: create one first with manage_accounts_and_payees. Use it when the user reports a trade, a dividend or other investment income. With transaction_id and reason it corrects that trade or income instead of recording one: change_transaction does not correct them. Do not use it to define a new security: manage_instrument does. The user confirms first.",
+    "description": "Proposes an investment transaction in a Brokerage: buy or sell an Investment for the Cash of the same Brokerage, or record income paid on an Investment. A first buy creates the Investment line; a sale or income needs an existing one. A Brokerage with no Cash account in the base currency is refused: create one first with manage_accounts_and_payees. Use it when the user reports a trade, a dividend or other investment income. write_off removes units at zero proceeds, their cost a realized loss: an option expired, a right not exercised, a security that became worthless. With transaction_id and reason it corrects that trade or income instead of recording one: change_transaction does not correct them. Do not use it to define a new security: manage_instrument does. The user confirms first.",
     "effect": "write",
     "idempotent": false,
     "input_schema": {
@@ -10568,6 +10571,7 @@
           "enum": [
             "buy",
             "sell",
+            "write_off",
             "income"
           ]
         },

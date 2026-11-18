@@ -36,7 +36,7 @@ responses:
 schemas:
   InstrumentType:
     type: string
-    enum: [currency, stock, etf, reit, depositary_receipt, fixed_income, fund, crypto]
+    enum: [currency, stock, etf, reit, depositary_receipt, fixed_income, fund, crypto, option]
   Rate:
     type: string
     description: Positive exact decimal with at most 12 decimals (ADR 005).

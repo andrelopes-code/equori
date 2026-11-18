@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/andrelopes-code/equori/internal/ledger/app"
 	"github.com/andrelopes-code/equori/internal/ledger/domain"
@@ -26,7 +27,7 @@ func (r *Repository) toTrade(
 		return domain.Trade{}, fmt.Errorf("trade %s quantity: %w", row.TransactionID, err)
 	}
 
-	price, err := platformpg.RateOf(row.UnitPrice)
+	price, err := tradePrice(row.Side, row.UnitPrice)
 	if err != nil {
 		return domain.Trade{}, err
 	}
@@ -68,6 +69,16 @@ func (r *Repository) toTrade(
 	}
 
 	return trade, nil
+}
+
+// tradePrice reads the unit price of a trade row; a write-off has none and stores zero (listed
+// options design W3).
+func tradePrice(side string, n pgtype.Numeric) (money.Rate, error) {
+	if domain.Side(side) == domain.SideWriteOff {
+		return money.Rate{}, nil
+	}
+
+	return platformpg.RateOf(n)
 }
 
 // postingInstrument returns the instrument of the posting of t on accountID.

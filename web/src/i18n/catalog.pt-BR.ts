@@ -688,6 +688,7 @@ export const catalogPtBR: Catalog = {
   "transactions.untitled": "Sem descrição",
   "transactions.title.buy": "Compra de {code}",
   "transactions.title.sell": "Venda de {code}",
+  "transactions.title.write_off": "Baixa de {code}",
   "transactions.title.income": "Provento de {code}",
   "transactions.title.action": "{kind} de {code}",
   "transactions.title.transfer": "Transferência de {from} para {to}",

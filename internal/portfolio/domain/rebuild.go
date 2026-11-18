@@ -150,7 +150,7 @@ func realizedResults(f Facts, securities map[uuid.UUID]Security, j Jurisdiction)
 	var results []RealizedResult
 
 	for _, t := range f.Trades {
-		if t.Side != "sell" {
+		if t.Side != "sell" && t.Side != "write_off" {
 			continue
 		}
 

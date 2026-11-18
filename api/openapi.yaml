@@ -8013,7 +8013,7 @@ components:
   schemas:
     InstrumentType:
       type: string
-      enum: [currency, stock, etf, reit, depositary_receipt, fixed_income, fund, crypto]
+      enum: [currency, stock, etf, reit, depositary_receipt, fixed_income, fund, crypto, option]
     Rate:
       type: string
       description: Positive exact decimal with at most 12 decimals (ADR 005).
@@ -11829,7 +11829,8 @@ components:
             $ref: "#/components/schemas/Balance"
     TradeSide:
       type: string
-      enum: [buy, sell]
+      enum: [buy, sell, write_off]
+      description: write_off removes units at zero proceeds (an option expired, a right not exercised, a security that became worthless) and books their cost as a realized loss; it takes account_id and quantity, no unit_price, fees, taxes or cash account. A brokerage note refuses it.
     FixedIncomeApplicationInput:
       type: object
       additionalProperties: false
@@ -11957,7 +11958,7 @@ components:
     TradeInput:
       type: object
       additionalProperties: false
-      required: [side, date, quantity, unit_price]
+      required: [side, date, quantity]
       properties:
         brokerage_id:
           type: string

@@ -13,6 +13,9 @@ type Side string
 const (
 	SideBuy  Side = "buy"
 	SideSell Side = "sell"
+	// SideWriteOff removes units at zero proceeds: an option expired, a right not exercised, a
+	// security that became worthless; their cost is a realized loss (listed options design O3).
+	SideWriteOff Side = "write_off"
 )
 
 // TradeOrder is a purchase or sale of a security for cash of the same brokerage (M17).
@@ -89,6 +92,10 @@ func BuildTrade(
 		return nil, Trade{}, err
 	}
 
+	if o.Side == SideWriteOff {
+		return writeOffTrade(o, h, accts, zero)
+	}
+
 	gross, err := money.Convert(o.Quantity, cash, money.Leg{Rate: o.UnitPrice})
 	if err != nil || gross.IsZero() {
 		return nil, Trade{}, invalid("unit_price", "must give a positive gross amount")
@@ -114,8 +121,12 @@ func BuildTrade(
 
 func checkTradeOrder(o TradeOrder, cash money.Currency, fees, taxes money.Money) error {
 	switch {
-	case o.Side != SideBuy && o.Side != SideSell:
-		return invalid("side", "must be buy or sell")
+	case o.Side != SideBuy && o.Side != SideSell && o.Side != SideWriteOff:
+		return invalid("side", "must be buy, sell or write_off")
+	case o.Side == SideWriteOff && o.UnitPrice.Mantissa() != 0:
+		return invalid("unit_price", "is not taken by a write-off")
+	case o.Side == SideWriteOff && (!fees.IsZero() || !taxes.IsZero()):
+		return invalid("fees", "a write-off has no fees and no taxes")
 	case o.Quantity.IsZero() || o.Quantity.IsNegative():
 		return invalid("quantity", "must be positive")
 	case fees.Currency() != cash || fees.IsNegative():
@@ -194,6 +205,45 @@ func sellTrade(
 	postings := sellPostings(o, accts, proceeds, taxes, cost, result)
 
 	return postings, trade, nil
+}
+
+// writeOffTrade removes the quantity at its cost, as a sale without a day-trade part would, and
+// books that cost as a realized loss; nothing reaches a cash account (W2, W3, W4).
+func writeOffTrade(
+	o TradeOrder,
+	h Holding,
+	accts TradeAccounts,
+	zero money.Money,
+) ([]Posting, Trade, error) {
+	lot, err := soldCost(o, h, nil)
+	if err != nil {
+		return nil, Trade{}, err
+	}
+
+	cost := lot.Cost
+	postings := []Posting{{AccountID: o.AccountID, Amount: o.Quantity.Neg(), Weight: cost.Neg()}}
+
+	if !cost.IsZero() {
+		postings = append(
+			postings,
+			Posting{AccountID: accts.RealizedLosses, Amount: cost, Weight: cost},
+		)
+	}
+
+	// No cash moves: the trade names the holding as its cash account (W3).
+	return postings, Trade{
+		AccountID:        o.AccountID,
+		CashAccountID:    o.AccountID,
+		Side:             SideWriteOff,
+		Quantity:         o.Quantity,
+		UnitPrice:        o.UnitPrice,
+		Gross:            zero,
+		Fees:             zero,
+		Taxes:            zero,
+		Cost:             &cost,
+		DayTradeQuantity: lot.DayQuantity,
+		DayTradeCost:     lot.DayCost,
+	}, nil
 }
 
 func sellPostings(

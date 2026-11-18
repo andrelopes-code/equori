@@ -13,7 +13,9 @@ import (
 
 type recordInvestmentKind string
 
-func (recordInvestmentKind) Values() []string { return []string{"buy", "sell", "income"} }
+func (recordInvestmentKind) Values() []string {
+	return []string{"buy", "sell", "write_off", "income"}
+}
 
 type recordInvestmentIn struct {
 	Kind          recordInvestmentKind `json:"kind"                     jsonschema:"operation to propose"`
@@ -50,6 +52,7 @@ func recordInvestment(svc *app.Service) tool.Tool {
 			"A first buy creates the Investment line; a sale or income needs an existing one. " +
 			"A Brokerage with no Cash account in the base currency is refused: create one first with manage_accounts_and_payees. " +
 			"Use it when the user reports a trade, a dividend or other investment income. " +
+			"write_off removes units at zero proceeds, their cost a realized loss: an option expired, a right not exercised, a security that became worthless. " +
 			"With transaction_id and reason it corrects that trade or income instead of recording one: change_transaction does not correct them. " +
 			"Do not use it to define a new security: manage_instrument does. " +
 			"The user confirms first.",
@@ -169,6 +172,10 @@ func checkInvestmentFields(in recordInvestmentIn) error {
 			append(target, "withheld", "description", "withheld_category_id")...)
 	}
 
+	if in.Kind == "write_off" {
+		return checkFields(action, given, []string{"account_id", "date", "quantity"}, "description")
+	}
+
 	return checkFields(action, given, []string{"date", "quantity", "unit_price"},
 		append(target, "fees", "taxes", "description", "taxes_category_id")...)
 }
@@ -235,8 +242,13 @@ func (s investmentStep) trade(
 	pv.Changes = append(
 		pv.Changes,
 		tool.Change{Field: "quantity", After: tool.TextValue(o.Quantity.Decimal())},
-		tool.Change{Field: "price", After: tool.TextValue(o.UnitPrice.String())},
 	)
+	if o.Side != domain.SideWriteOff {
+		pv.Changes = append(
+			pv.Changes,
+			tool.Change{Field: "price", After: tool.TextValue(o.UnitPrice.String())},
+		)
+	}
 
 	appendAmountChange(&pv, o.Fees)
 	appendAmountChange(&pv, o.Taxes)
@@ -262,12 +274,15 @@ func (s investmentStep) tradeOrder(ctx context.Context) (domain.TradeOrder, erro
 		return domain.TradeOrder{}, err
 	}
 
-	price, err := money.ParseRate(in.UnitPrice)
-	if err != nil {
-		return domain.TradeOrder{}, tool.InvalidArgument(
-			"unit_price",
-			"must be a positive decimal with at most 12 decimals",
-		)
+	// A write-off takes no price (listed options design W1).
+	var price money.Rate
+	if in.Kind != "write_off" {
+		if price, err = money.ParseRate(in.UnitPrice); err != nil {
+			return domain.TradeOrder{}, tool.InvalidArgument(
+				"unit_price",
+				"must be a positive decimal with at most 12 decimals",
+			)
+		}
 	}
 
 	fees, err := s.optional("fees", in.Fees)
