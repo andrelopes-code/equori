@@ -12,6 +12,7 @@ import type {
   EditDraft,
   MemberRef,
 } from "@/features/portfolio/contribution-plan/model/plan-edits";
+import * as questions from "@/features/portfolio/contribution-plan/model/question-edits";
 
 type Plan = components["schemas"]["ContributionPlan"];
 type Money = components["schemas"]["Money"];
@@ -82,6 +83,21 @@ export function usePlanEditor(plan: Plan | undefined) {
     },
     setSplit: (index: number, on: boolean) => {
       change((d) => edits.setSplit(d, index, on));
+    },
+    setByQuestions: (index: number, on: boolean, targets?: number[]) => {
+      change((d) => questions.setByQuestions(d, index, on, targets));
+    },
+    addQuestion: (index: number) => {
+      change((d) => questions.addQuestion(d, index));
+    },
+    setQuestionText: (index: number, q: number, text: string) => {
+      change((d) => questions.setQuestionText(d, index, q, text));
+    },
+    removeQuestion: (index: number, q: number) => {
+      change((d) => questions.removeQuestion(d, index, q));
+    },
+    setAnswer: (index: number, at: number, q: number, yes: boolean) => {
+      change((d) => questions.setAnswer(d, index, at, q, yes));
     },
     setMemberTarget: (index: number, at: number, bp: number) => {
       change((d) => edits.setMemberTarget(d, index, at, bp));

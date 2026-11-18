@@ -21,6 +21,8 @@ const plan = {
     {
       name: "Ações Brasil",
       target_bp: 5000,
+      questions: [],
+      question_ideals: false,
       value: brl(300000),
       share_bp: 5000,
       amount: brl(100000),
@@ -40,6 +42,8 @@ const plan = {
     {
       name: "FIIs",
       target_bp: 5000,
+      questions: [],
+      question_ideals: false,
       value: brl(300000),
       share_bp: 5000,
       amount: brl(100000),
@@ -200,6 +204,8 @@ const comparablePlan = {
     {
       name: "Reserva",
       target_bp: 5000,
+      questions: [],
+      question_ideals: false,
       value: brl(300000),
       share_bp: 5000,
       amount: brl(100000),
@@ -344,6 +350,8 @@ const fundPlan = {
     {
       name: "FIIs",
       target_bp: 10000,
+      questions: [],
+      question_ideals: false,
       value: brl(300000),
       share_bp: 10000,
       amount: brl(100000),

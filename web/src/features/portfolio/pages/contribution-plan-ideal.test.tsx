@@ -15,6 +15,8 @@ const cls = (
 ) => ({
   name,
   target_bp: target,
+  questions: [],
+  question_ideals: false,
   value: brl(1000),
   share_bp: share,
   members: [],

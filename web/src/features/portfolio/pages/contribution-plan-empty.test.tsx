@@ -35,12 +35,16 @@ const incomplete = {
     {
       name: "FIIs",
       target_bp: 6000,
+      questions: [],
+      question_ideals: false,
       value: brl(0),
       members: [],
     },
     {
       name: "Renda fixa",
       target_bp: 4000,
+      questions: [],
+      question_ideals: false,
       value: brl(0),
       members: [],
     },

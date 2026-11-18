@@ -19,6 +19,8 @@ const cls = (
 ) => ({
   name,
   target_bp: target,
+  questions: [],
+  question_ideals: false,
   value: brl(value),
   share_bp: share,
   ...(after === undefined ? {} : { after_share_bp: after }),

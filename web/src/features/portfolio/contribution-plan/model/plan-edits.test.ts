@@ -215,6 +215,30 @@ describe("overlayDraft", () => {
     ]);
   });
 
+  it("keeps the target the preview derived for a class divided by questions", () => {
+    const draft = addQuestion(
+      setByQuestions(
+        startEditing({
+          classes: [
+            {
+              ...plain,
+              name: "Old A",
+              targetBp: 5000,
+              members: [{ instrument: "PETR4" }, { accountId: "a1" }],
+            },
+          ],
+        }),
+        0,
+        true,
+      ),
+      0,
+    );
+
+    expect(
+      overlayDraft(view, draft).classes[0]?.members.map((m) => m.target_bp),
+    ).toEqual([7000, undefined]);
+  });
+
   it("reads zero for a member the view lacks", () => {
     const draft = startEditing({
       classes: [

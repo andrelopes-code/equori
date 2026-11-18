@@ -246,7 +246,8 @@ export function overlayDraft(view: Plan, draft: EditDraft): Plan {
               (m.instrument !== undefined && v.instrument === m.instrument),
           );
           const figures = { ...(found ?? { value: zero }) };
-          delete figures.target_bp;
+          // A class divided by questions has no typed target: the preview derived it.
+          if (!cls.byQuestions) delete figures.target_bp;
           delete figures.answers;
 
           return {

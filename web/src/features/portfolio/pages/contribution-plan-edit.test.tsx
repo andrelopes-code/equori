@@ -33,6 +33,8 @@ const cls = (name: string, target: number, members: unknown[] = []) => ({
   target_bp: target,
   value: brl(100000),
   share_bp: 2500,
+  questions: [],
+  question_ideals: false,
   members,
 });
 
@@ -478,5 +480,209 @@ describe("Contribution plan edit mode", () => {
     expect(
       await screen.findByText(catalogPtBR["contributionPlan.leaveTitle"]),
     ).toBeInTheDocument();
+  });
+});
+
+const hglgID = "HGLG11";
+
+const fundGroup = (ideals: boolean, share: number) => ({
+  name: "Fundos",
+  target_bp: 10000,
+  value: brl(100000),
+  share_bp: 10000,
+  questions: [],
+  question_ideals: ideals,
+  members: [
+    { instrument: hglgID, target_bp: share, value: brl(100000) },
+    { account_id: cdbID, target_bp: 10000 - share, value: brl(0) },
+  ],
+});
+
+const fundReport = {
+  source: "br_cvm_fii",
+  source_url: "https://dados.cvm.gov.br/dataset/fii-doc-inf_mensal",
+  exchange: "B3SA",
+  code: hglgID,
+  currency: "BRL",
+  identifier: "11728688000147",
+  name: "CSHG Logística FII",
+  segment: "Logística",
+  periods: [
+    {
+      period: "2026-10-01",
+      delivered: "2026-11-13",
+      net_assets: 765689937148,
+      holders: 633787,
+      units: null,
+      unit_book_value: "110.000000000000",
+      admin_fee: "0.000465000000",
+      month_yield: "0.010000000000",
+      month_amortization: null,
+    },
+  ],
+};
+
+let ideals = true;
+
+const questionApi = () => {
+  const view = () => ({
+    ...saved,
+    classes: [fundGroup(ideals, 10000), ...saved.classes.slice(1)],
+  });
+
+  return portfolioApi({
+    "GET /api/v1/contribution-plan": () =>
+      json(200, {
+        ...view(),
+        classes: [
+          {
+            ...fundGroup(false, 5000),
+            members: [
+              { instrument: hglgID, value: brl(100000) },
+              { account_id: cdbID, value: brl(0) },
+            ],
+          },
+          ...saved.classes.slice(1),
+        ],
+      }),
+    "POST /api/v1/contribution-plan/preview": async (req) => {
+      previews.push((await req.json()) as Body);
+      return json(200, { ...view(), total_after: brl(2200000) });
+    },
+    "PUT /api/v1/contribution-plan": async (req) => {
+      puts.push((await req.clone().json()) as Body);
+      return json(200, view());
+    },
+    [`GET /api/v1/instruments/${hglgID}`]: () =>
+      json(200, {
+        code: hglgID,
+        type: "reit",
+        scale: 0,
+        name: hglgID,
+        quote_currency: "BRL",
+      }),
+    "GET /api/v1/fund-reports": () =>
+      json(200, { items: [fundReport], candidates: [] }),
+    "GET /api/v1/company-reports": () => json(200, { items: [] }),
+    "GET /api/v1/curves": () => json(200, { items: [] }),
+    "GET /api/v1/prices": () => json(200, { interval: "day", items: [] }),
+  });
+};
+
+async function openQuestions() {
+  await edit(questionApi());
+  await openAssets("Fundos");
+  await userEvent.click(
+    await screen.findByRole("switch", {
+      name: "Dividir o ideal do grupo entre os ativos",
+    }),
+  );
+  await userEvent.click(
+    await screen.findByRole("radio", { name: "Pelas minhas perguntas" }),
+  );
+}
+
+async function answerFirst() {
+  await openQuestions();
+  await userEvent.click(
+    await screen.findByRole("button", { name: "Adicionar pergunta" }),
+  );
+  await userEvent.type(
+    await screen.findByRole("textbox", { name: "Pergunta 1" }),
+    "Paga dividendos?",
+  );
+  await userEvent.click(
+    screen.getAllByRole("checkbox", { name: "Paga dividendos?" })[0] ??
+      document.body,
+  );
+}
+
+describe("Contribution plan edit mode, questions", () => {
+  beforeEach(() => {
+    previews = [];
+    puts = [];
+    ideals = true;
+  });
+
+  afterEach(() => {
+    localStorage.removeItem("equori.locale");
+  });
+
+  it("starts the question mode with the hint and no question", async () => {
+    await openQuestions();
+
+    expect(
+      screen.getByText(catalogPtBR["contributionPlan.questions.hint"]),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Adicionar pergunta" }),
+    ).toBeEnabled();
+    expect(
+      screen.queryByRole("textbox", { name: /^Pergunta/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("sends the questions and the answers, and writes the count and the derived ideal", async () => {
+    await answerFirst();
+
+    await waitFor(() => {
+      expect(previews.at(-1)?.classes[0]).toEqual({
+        name: "Fundos",
+        target_bp: 10000,
+        questions: ["Paga dividendos?"],
+        members: [
+          { instrument: hglgID, answers: [true] },
+          { account_id: cdbID, answers: [false] },
+        ],
+      });
+    });
+    expect(await screen.findByText("1 de 1 sim")).toBeVisible();
+    expect(screen.getByText("0 de 1 sim")).toBeVisible();
+    expect(await screen.findByText("ideal 100% do grupo")).toBeVisible();
+  });
+
+  it("says a group without a yes receives its amount undivided", async () => {
+    ideals = false;
+    await openQuestions();
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Adicionar pergunta" }),
+    );
+
+    expect(
+      await screen.findByText(catalogPtBR["contributionPlan.questions.noYes"]),
+    ).toBeVisible();
+  });
+
+  it("writes the facts of a fund and says an account has no report", async () => {
+    await openQuestions();
+
+    expect(await screen.findByText(/^P\/VP /)).toBeVisible();
+    expect(
+      screen.getByText(catalogPtBR["contributionPlan.questions.noFacts"]),
+    ).toBeVisible();
+  });
+
+  it("saves the preview body without the amount", async () => {
+    await answerFirst();
+    await waitFor(() => {
+      expect(previews.at(-1)?.classes[0]?.members[0]).toEqual({
+        instrument: hglgID,
+        answers: [true],
+      });
+    });
+    const asked = { ...previews.at(-1) };
+    delete asked.amount;
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Salvar" }),
+    );
+
+    await waitFor(() => {
+      expect(puts).toHaveLength(1);
+    });
+    const sent = { ...puts[0] };
+    delete sent.amount;
+
+    expect(sent).toEqual(asked);
   });
 });

@@ -1,9 +1,14 @@
+import { Text } from "@slotted/react/typography";
+
 import type { components } from "@/api/schema.gen";
 import styles from "@/features/portfolio/contribution-plan/editor/edit-list.module.css";
 import { GroupAssetsFooter } from "@/features/portfolio/contribution-plan/editor/group-assets-footer";
 import { MemberEditRow } from "@/features/portfolio/contribution-plan/editor/member-edit-row";
+import { MemberQuestionRow } from "@/features/portfolio/contribution-plan/editor/member-question-row";
+import { QuestionList } from "@/features/portfolio/contribution-plan/editor/question-list";
 import type { PlanEditor } from "@/features/portfolio/contribution-plan/editor/use-plan-editor";
 import type { EditClass } from "@/features/portfolio/contribution-plan/model/plan-edits";
+import { useT } from "@/i18n/i18n-provider";
 
 type Group = components["schemas"]["ContributionClass"];
 
@@ -30,26 +35,68 @@ export function GroupAssetsPanel({
   memberName,
   onAddAsset,
 }: GroupAssetsPanelProps) {
+  const t = useT();
+
+  const asked = edit.byQuestions && edit.split;
+  const noYes = asked && edit.questions.length > 0 && !group.question_ideals;
+
+  function handleByQuestions(on: boolean) {
+    const targets = group.question_ideals
+      ? group.members.map((m) => m.target_bp ?? 0)
+      : undefined;
+
+    editor.setByQuestions(index, on, targets);
+  }
+
   return (
     <div role="group" id={id} aria-label={edit.name} className={styles.panel}>
-      {group.members.map((member, at) => (
-        <MemberEditRow
-          key={`group-${String(index)}-${String(at)}`}
+      {asked && (
+        <QuestionList
           index={index}
-          at={at}
-          member={member}
-          name={memberName(member)}
-          edit={edit}
+          questions={edit.questions}
           editor={editor}
         />
-      ))}
+      )}
+
+      {group.members.map((member, at) =>
+        asked ? (
+          <MemberQuestionRow
+            key={`group-${String(index)}-${String(at)}`}
+            index={index}
+            at={at}
+            member={member}
+            name={memberName(member)}
+            questions={edit.questions}
+            ideals={group.question_ideals}
+            editor={editor}
+          />
+        ) : (
+          <MemberEditRow
+            key={`group-${String(index)}-${String(at)}`}
+            index={index}
+            at={at}
+            member={member}
+            name={memberName(member)}
+            edit={edit}
+            editor={editor}
+          />
+        ),
+      )}
+
+      {noYes && (
+        <Text size="sm" tone="muted" className={styles.noYes}>
+          {t("contributionPlan.questions.noYes")}
+        </Text>
+      )}
 
       <GroupAssetsFooter
         empty={group.members.length === 0}
         split={edit.split}
+        byQuestions={edit.byQuestions}
         onSplit={(on) => {
           editor.setSplit(index, on);
         }}
+        onByQuestions={handleByQuestions}
         onAdd={onAddAsset}
       />
     </div>

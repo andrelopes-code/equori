@@ -4,7 +4,7 @@ import {
   updateClass,
 } from "@/features/portfolio/contribution-plan/model/plan-edits";
 
-const maxQuestions = 10;
+export const maxQuestions = 10;
 
 // On: the class divides its ideal by questions, with none yet and no member target. Off: the
 // members take the targets the last preview returned, or equal shares without them.
