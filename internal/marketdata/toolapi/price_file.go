@@ -1,0 +1,87 @@
+package toolapi
+
+import (
+	"context"
+	"strconv"
+
+	"github.com/google/uuid"
+
+	"github.com/andrelopes-code/equori/internal/marketdata/domain"
+	"github.com/andrelopes-code/equori/internal/platform/auth"
+	"github.com/andrelopes-code/equori/internal/platform/tool"
+)
+
+// ConversationFile reads the content of a file the member attached to the conversation; false
+// when the member has no such file (assistant parity design, F7).
+type ConversationFile func(
+	ctx context.Context,
+	booksID, memberID int64,
+	id uuid.UUID,
+) (name string, content []byte, found bool, err error)
+
+type importPriceFileIn struct {
+	FileID string `json:"file_id" jsonschema:"id of a csv file the user attached, from the [file ...] line of the message"`
+}
+
+type importPriceFileOut struct {
+	Recorded int `json:"recorded"`
+}
+
+func importPriceFile(svc Service, files ConversationFile) tool.Tool {
+	return tool.NewWrite(tool.Spec{
+		Name: "import_price_file",
+		Description: "Proposes recording the prices of a csv file the user attached to the conversation, as the " +
+			"price import of the instruments screen does: header instrument,quote_instrument,date,value, at most " +
+			"10,000 lines, all or nothing, as source csv. Use it when the user attaches a price file. " +
+			"Do not use it for a few prices typed in the message: record_price_series does. The user confirms first.",
+		Effect: tool.Write,
+		Role:   auth.RoleWrite,
+	}, func(ctx context.Context, booksID int64, in importPriceFileIn) (tool.Preview, error) {
+		name, content, err := priceFile(ctx, booksID, files, in)
+		if err != nil {
+			return tool.Preview{}, err
+		}
+
+		prices, err := domain.ParsePriceCSV(content)
+		if err != nil {
+			return tool.Preview{}, err
+		}
+
+		return tool.Preview{Action: "import_price_file", Changes: []tool.Change{
+			{Field: "source", After: tool.TextValue(name)},
+			{Field: "count", After: tool.TextValue(strconv.Itoa(len(prices)))},
+		}}, nil
+	}, func(ctx context.Context, booksID int64, in importPriceFileIn) (importPriceFileOut, error) {
+		_, content, err := priceFile(ctx, booksID, files, in)
+		if err != nil {
+			return importPriceFileOut{}, err
+		}
+
+		n, err := svc.ImportPrices(ctx, booksID, content)
+
+		return importPriceFileOut{Recorded: n}, err
+	})
+}
+
+func priceFile(
+	ctx context.Context,
+	booksID int64,
+	files ConversationFile,
+	in importPriceFileIn,
+) (string, []byte, error) {
+	id, err := uuid.Parse(in.FileID)
+	if err != nil {
+		return "", nil, tool.InvalidArgument("file_id", "is not a UUID")
+	}
+
+	name, content, found, err := files(ctx, booksID, auth.MustMemberID(ctx), id)
+	if err != nil {
+		return "", nil, err
+	}
+
+	if !found {
+		return "", nil, tool.InvalidArgument("file_id", "is not a file of this conversation")
+	}
+
+	return name, content, nil
+}

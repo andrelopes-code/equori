@@ -122,6 +122,9 @@ func collectProperties(s *jsonschema.Schema, into map[string]bool) {
 }
 
 var uncoveredFields = map[string][]string{
+	"importPrices": {
+		"file",
+	}, // import_price_file reads file_id, a file the member attached to the conversation (F7)
 	"createAttachment": {
 		"file",
 	}, // attach_file reads file_id, a file the member attached to the conversation (F7)

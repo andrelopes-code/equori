@@ -7277,6 +7277,37 @@
     }
   },
   {
+    "name": "import_price_file",
+    "description": "Proposes recording the prices of a csv file the user attached to the conversation, as the price import of the instruments screen does: header instrument,quote_instrument,date,value, at most 10,000 lines, all or nothing, as source csv. Use it when the user attaches a price file. Do not use it for a few prices typed in the message: record_price_series does. The user confirms first.",
+    "effect": "write",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "file_id": {
+          "type": "string",
+          "description": "id of a csv file the user attached, from the [file ...] line of the message"
+        }
+      },
+      "required": [
+        "file_id"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "recorded": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "recorded"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "import_statement_file",
     "description": "Proposes importing an ofx or csv statement file the user attached to the conversation into one account, as the Import statement screen does: each line is deduplicated, matched to an existing transaction or created, and a line already imported creates nothing. A csv file needs the CSV profile of the account. Use it when the user attaches a statement and asks to import it. Do not use it for a PDF or an image: read it and propose record_transaction. The user confirms first.",
     "effect": "write",

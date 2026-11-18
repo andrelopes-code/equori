@@ -110,6 +110,7 @@ func linkAdapters(m *modules) {
 	m.assistant.UseFileSummary(ingestion.FileSummary)
 	m.ingestion.UseConversationFiles(statementFiles(m.assistant))
 	m.ledger.UseConversationFiles(attachmentFiles(m.assistant))
+	m.marketdata.UseConversationFiles(attachmentFiles(m.assistant))
 	m.reporting.OnImport(m.portfolio.RebuildBooks)
 	m.reporting.UseCredentials(credentialSource{m.ingestion, m.assistant})
 	m.reporting.UseIndicatorSources(m.planning, m.portfolio)

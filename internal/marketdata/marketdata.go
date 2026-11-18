@@ -12,6 +12,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/marketdata/calendar"
 	"github.com/andrelopes-code/equori/internal/marketdata/domain"
 	"github.com/andrelopes-code/equori/internal/marketdata/postgres"
+	"github.com/andrelopes-code/equori/internal/marketdata/toolapi"
 	"github.com/andrelopes-code/equori/internal/platform/registry"
 )
 
@@ -19,6 +20,9 @@ import (
 const sourceAccrual = domain.SourceAccrual
 
 type Module struct {
+	// files reads a file the member attached to the conversation (assistant parity design, F7).
+	files toolapi.ConversationFile
+
 	pool  *pgxpool.Pool
 	q     *postgres.Queries
 	feeds FeedConfig

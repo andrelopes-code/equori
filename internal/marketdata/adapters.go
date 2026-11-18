@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/google/uuid"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
 	"github.com/andrelopes-code/equori/internal/marketdata/httpapi"
@@ -45,7 +46,27 @@ func (m *Module) Tools() tool.Group {
 		},
 	}
 
-	return tool.Group{Tools: toolapi.Tools(m, cals), Errors: tool.FromProblem(httpapi.ToProblem)}
+	return tool.Group{
+		Tools:  toolapi.Tools(m, cals, m.conversationFile),
+		Errors: tool.FromProblem(httpapi.ToProblem),
+	}
+}
+
+// UseConversationFiles sets how a tool reads a file the member attached to the conversation
+// (assistant parity design, F7).
+func (m *Module) UseConversationFiles(files toolapi.ConversationFile) { m.files = files }
+
+// conversationFile reads the file through the reader the server set; none set finds no file.
+func (m *Module) conversationFile(
+	ctx context.Context,
+	booksID, memberID int64,
+	id uuid.UUID,
+) (string, []byte, bool, error) {
+	if m.files == nil {
+		return "", nil, false, nil
+	}
+
+	return m.files(ctx, booksID, memberID, id)
 }
 
 func (m *Module) RegisterRoutes(mux *http.ServeMux, log *slog.Logger) {

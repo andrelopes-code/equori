@@ -13,6 +13,7 @@ import (
 
 // Service is the part of the module the tools use.
 type Service interface {
+	ImportPrices(ctx context.Context, booksID int64, content []byte) (int, error)
 	Instrument(ctx context.Context, code string) (domain.Instrument, error)
 	ListInstruments(ctx context.Context, typ string) ([]domain.Instrument, error)
 	DefineInstrument(ctx context.Context, in domain.Instrument) (domain.Instrument, error)
@@ -72,8 +73,9 @@ type Calendars struct {
 	Holidays func(ctx context.Context, calendar string, year int) ([]Holiday, error)
 }
 
-func Tools(svc Service, cals Calendars) []tool.Tool {
+func Tools(svc Service, cals Calendars, files ConversationFile) []tool.Tool {
 	return []tool.Tool{
+		importPriceFile(svc, files),
 		getMarketData(svc, cals),
 		manageInstrument(svc),
 		probeQuote(svc),
