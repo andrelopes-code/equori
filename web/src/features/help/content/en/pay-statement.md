@@ -17,7 +17,7 @@ A statement gathers the purchases of one card cycle. It closes on a date and is 
 5. Choose **Pay statement**.
    ![The payment dialog, with the Pay statement button marked](pay-confirm)
 
-**After the payment.** The payment leaves the chosen account and shows as a credit on the next statement. A payment below the total leaves the rest open, and the screen says how much stays.
+Once paid, the amount leaves the chosen account and shows as a credit on the next statement. A payment below the total leaves the rest open, and the screen says how much stays.
 
 ## Pay in installments
 

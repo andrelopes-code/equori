@@ -23,7 +23,9 @@ A page holds one kind only.
 4. Add the id to the tasks of `/help/$page` in `web/src/navigation/navigation-map.json`, so the assistant can link the page.
 5. When a selected screen explains itself through the page, draw `HelpLink` with the page id in its header actions.
 
-`help-pages.test.ts` fails when a page lacks a language or opens without a title.
+`help-pages.test.ts` fails when a page lacks a language or opens without a title, and when a bold text is neither a label of the catalog of its language (`…` stands for a placeholder) nor a term of the glossary.
+
+Vitest keeps transformed modules in `node_modules/.vitest-cache`, keyed by the source of the module: the `import.meta.glob` of `help-pages.ts` does not see a Markdown file added after the cache was written. The first test run after adding a page or a passage passes `--experimental.fsModuleCache=false`.
 
 ## Writing
 

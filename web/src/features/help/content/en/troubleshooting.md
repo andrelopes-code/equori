@@ -26,7 +26,7 @@ The comparison found a difference. A transaction is missing, a yield was not rec
 
 1. Open the account and the tab **Reconciliation**.
 2. Record the missing transactions and choose **I recorded what was missing**.
-3. For a yield, choose **Record yield**. For a difference without explanation, choose **Record adjustment**.
+3. For a yield, choose **Record yield of …**. For a difference without explanation, choose **Record adjustment of …**.
 
 More: [Check an account's balance](/help/check-balance).
 

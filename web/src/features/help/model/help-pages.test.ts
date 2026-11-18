@@ -45,7 +45,9 @@ describe("help pages", () => {
       for (const { id } of helpPages) {
         const text = await loadHelpPage(language, "US", id);
 
-        expect(text, id).not.toMatch(/Open Finance|Pluggy|Pix|\bR\$|\bBRL\b/);
+        expect(text, id).not.toMatch(
+          /Open Finance|Pluggy|Pix|\bR\$|\bBRL\b|\bCDI\b|\bIPCA\b/,
+        );
       }
     }
   });
@@ -69,6 +71,18 @@ describe("help pages", () => {
     },
   );
 
+  // Help catalog spec, D2: the index of the comparison is the region's.
+  it.each(languages.map((l) => l.language))(
+    "names the reference rate of region BR only in its passage of portfolio in %s",
+    async (language) => {
+      const neutral = await loadHelpPage(language, "US", "portfolio");
+      const brazil = await loadHelpPage(language, "BR", "portfolio");
+
+      expect(brazil?.startsWith(neutral ?? "")).toBe(true);
+      expect(brazil).toContain("CDI");
+    },
+  );
+
   it.each(["connect-bank", "troubleshooting"])(
     "adds the passage of region BR to %s and none for US (S250)",
     async (id) => {
@@ -85,6 +99,30 @@ describe("help pages", () => {
   it("has no page for an unknown id", async () => {
     expect(await loadHelpPage("en", "US", "nope")).toBeNull();
   });
+
+  // Help catalog spec, HC4: a bold text is a label of the screen, written as the screen shows
+  // it, or a term of the glossary of the same language.
+  it.each(languages.map((l) => [l.language, l.catalog] as const))(
+    "writes in bold only labels of the screens and glossary terms in %s",
+    async (language, catalog) => {
+      const labels = new Set(Object.values(catalog).flatMap(labelForms));
+      const glossary = await loadHelpPage(language, "BR", "glossary");
+      const terms = new Set(boldTexts(glossary ?? "").map(normal));
+      const unknown: string[] = [];
+
+      for (const { id } of helpPages) {
+        const text = await loadHelpPage(language, "BR", id);
+
+        for (const bold of boldTexts(text ?? "")) {
+          const key = normal(bold);
+          if (!labels.has(key) && !terms.has(key))
+            unknown.push(`${id}: ${bold}`);
+        }
+      }
+
+      expect(unknown).toEqual([]);
+    },
+  );
 });
 
 describe("splitHelpPage", () => {
@@ -217,3 +255,20 @@ describe("helpNeighbours", () => {
     },
   );
 });
+
+function boldTexts(markdown: string): string[] {
+  return [...markdown.matchAll(/\*\*([^*]+)\*\*/g)].map((m) => m[1] ?? "");
+}
+
+// A catalog text as a page may write it: whole, or with "…" in place of each placeholder, the
+// part of a label the screen fills (an amount, a month).
+function labelForms(text: string): string[] {
+  let open = text;
+  while (/\{[^{}]*\}/.test(open)) open = open.replace(/\{[^{}]*\}/g, "…");
+
+  return [normal(text), normal(open)];
+}
+
+function normal(text: string): string {
+  return text.toLocaleLowerCase().replace(/\s+/g, " ").trim();
+}

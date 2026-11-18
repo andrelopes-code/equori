@@ -10,7 +10,7 @@ Choose **where the amount comes from**:
 - **Average income**: the average of what came in over the previous months.
 - **Fixed amount**: an amount you type.
 
-The bar at the top shows how much of that amount already has a destination and how much is **unassigned**. Installments and scheduled saving enter the bar as commitments.
+The bar at the top shows how much of that amount already has a destination and how much stays under **To distribute**. Installments and scheduled saving enter the bar as commitments.
 
 ## Plan each category
 
@@ -18,7 +18,7 @@ Type the planned amount of each category. In **Edit in**, choose **Percent** to 
 
 The columns beside it help you decide:
 
-- **Spent in** a month: what the category spent in the previous month.
+- **Spent in …**: what the category spent in the previous month.
 - **3-month average**: the average of the last three months.
 - **Suggested**: the amount the history suggests.
 

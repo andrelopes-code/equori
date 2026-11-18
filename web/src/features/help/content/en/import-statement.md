@@ -30,7 +30,7 @@ The import page shows the state of each line:
 
 ## Review a line
 
-Choose the line to see the **similar transactions**, each with a score. The score adds points for a close date, amount and payee.
+Choose the line to see the similar transactions, each with its **Score**. The score adds points for a close date, amount and payee.
 
 - **This is the transaction** matches the line to the chosen transaction.
 - **Create a new transaction** records the line as a new transaction.

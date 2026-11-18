@@ -1,0 +1,181 @@
+# Help catalog: every process that needs help
+
+- Status: accepted (owner delegated the curation, `docs/specs/2026-10-29-ui-clarity-design.md`, section 6, item 5)
+- Builds on: `docs/specs/2026-11-17-help-design.md`, `docs/specs/2026-11-18-help-video-composed-design.md`, ADR 037.
+
+The help holds 14 pages; five carry figures and four a video. This spec lists every process of the application, decides by the curation of `docs/specs/2026-10-29-ui-clarity-design.md` (section 5) which one gets a page, and fixes the existing pages whose text differs from the screen.
+
+## 1. Sources of the inventory
+
+- Every route of `web/src/navigation/navigation-map.json` (44 entries) and its tasks.
+- The flows F1 to F9 of `docs/domain/03-domain-flows.md` and the scenario groups of `docs/domain/06-scenarios.md`.
+- The actions each screen draws, read on the running application with the demo book (`make demo`), in pt-BR and en.
+- The symptoms of `troubleshooting` and the empty states of the screens.
+- The 30 topics of `internal/assistant/guide/articles/`.
+
+## 2. Curation rules applied
+
+A process gets a page when one criterion holds (curation 5.2, help spec HP1):
+
+| Code | Criterion |
+|---|---|
+| K1 | A task of several steps whose order the screen does not show, or whose error costs work to undo. |
+| K2 | A screen with a concept of its own that no label explains (curation 5.2, "Sobre esta tela"). |
+| K3 | A task the curation listed for the documentation (curation, Camada 4) and not yet delivered. |
+
+A process is rejected when one holds:
+
+| Code | Reason |
+|---|---|
+| N1 | A list, a short form or a simple settings screen: its labels and descriptions answer it (curation 5.2). |
+| N2 | An existing page covers it; the row names that page. |
+| N3 | The process needs a language model provider: the text cannot be checked by an agent (CLAUDE.md forbids provider runs), and no figure can be recorded. |
+| N4 | Every step after the first press is a write or needs data the demo book cannot hold (a bank connection, an instance administrator): no figure can be recorded; the guide article answers the assistant. |
+
+## 3. Inventory
+
+Columns: id; Diátaxis kind; screens; steps; demo data needed; figures; video; regional passage; guide article; priority (P1 first); decision.
+
+| Id | Kind | Screens | Steps | Demo data | Fig. | Video | Region | Guide | Pri. | Decision |
+|---|---|---|---|---|---|---|---|---|---|---|
+| record-transaction | howto | `/transactions/new` | kind, amount, account, date, category, save | accounts, categories (present) | 5 | yes | no | transactions_and_postings | P1 | new page (K1: F1, S01 to S04) |
+| installments | howto | `/cards/$accountId` | open the card, Installment purchase, total and count, category, record | a credit card (present) | 4 | yes | no | installments | P1 | new page (K3; F2, F3, S05 to S15) |
+| text-capture | howto | `/transactions/capture` | Write as text, type lines, default account, read the drafts, record | accounts, cards, tags (present) | 4 | yes | no | capture | P1 | new page (K1: section 6.18) |
+| correct-transaction | howto | `/transactions/$id`, `/transactions/$id/correct` | open, Correct, change, reason, save; Void | a manual transaction (present) | 5 | yes | no | transactions_and_postings | P1 | new page (K1: F1 versions; symptom `transaction-twice`) |
+| reimbursement | howto | `/transactions/$id` | open the expense, Record reimbursement received, choose the receipt, amount, record | an expense and an unlinked income within 90 days | 3 | yes | no | refunds_reimbursements_and_disputes | P2 | new page (K2: F8, S18 to S20, S113, S114) |
+| schedule | howto | `/planning/schedules/new`, `/planning` | kind, description, amount, account, category, recurrence, create | accounts, categories (present) | 5 | yes | no | schedules_and_occurrences | P1 | new page (K1: F7, S27 to S29, S143, S283 to S285) |
+| create-budget | howto | `/planning/budgets/new` | category, monthly amount, first month, carry over, create | categories (present) | 4 | yes | no | budgets | P2 | new page (K1: section 6.16) |
+| buy-investment | howto | `/transactions/new` | Other types, Investment buy or sale, operation, brokerage, investment, quantity and price, save | a brokerage with cash and an instrument (present) | 5 | yes | no | investment_operations | P2 | new page (K1: F9, S21, S22) |
+| contribution-plan | reference | `/portfolio/contribution-plan` | what the plan shows, targets, locks, the contribution | a saved plan (present) | 3 | no | no | contribution_plan | P2 | new page (K2) |
+| import-statement | howto | `/accounts/$id/import`, `/accounts/$id/imports/$batchId` | as today, with "Review a line" | a batch line that waits for review | +1 | yes | no | imports_and_bank_connections | P3 | revision: the review figure (section 6) |
+| portfolio | reference | `/portfolio` | as today | present | 3 | no | yes (BR) | investments | P1 | revision: the neutral page names a regional index (section 5, D2) |
+| budget-plan | reference | `/planning` | as today | present | 2 | no | no | budgets | P1 | revision: labels differ from the screen (section 5, D3) |
+| check-balance | howto | `/accounts/$id` | as today | present | as today | yes | no | reconciliation | P1 | revision: labels written without their amount (section 5, D3) |
+| statement | reference | `/cards/$accountId/statements/$statementId` | as today | present | 2 | no | no | credit_cards_and_statements | P3 | revision: figures |
+| first-month | tutorial | `/start` to `/reports` | as today | present | 0 | no | no | getting_started | P2 | revision: links to the new pages |
+| glossary | reference | none | | | 0 | no | no | getting_started | P2 | revision: terms the new pages introduce |
+| pay-statement | howto | `/cards` | as today | present | as today | yes | no | credit_cards_and_statements | | kept: text and media checked against the catalog (section 5) |
+| category-rule | howto | `/categories/rules/new` | as today | present | as today | yes | no | categorization_rules_and_payees | | kept |
+| connect-bank | howto | `/settings`, `/accounts/links` | as today | none possible | as today | no | yes | imports_and_bank_connections | | kept; the linking steps stay without figure (N4) |
+| installation | howto | none | | | 0 | no | no | getting_started | | kept (N4: the Backup panel needs an administrator) |
+| troubleshooting | reference | many | | | 1 | no | yes | getting_started | | kept |
+| how-money-is-recorded | explanation | none | | | 0 | no | no | transactions_and_postings | | kept |
+| bank-connections | explanation | `/accounts/links` | | | 0 | no | yes | imports_and_bank_connections | | kept |
+| overview | | `/` | | | | | | getting_started | | rejected N2 (first-month, stop 5) |
+| first-use walkthrough | | `/start` | | | | | | getting_started | | rejected N2 (first-month, stop 1) |
+| list and filter transactions | | `/transactions` | | | | | | transactions_and_postings | | rejected N1 |
+| categorize several at once | | `/transactions` | | | | | | categorization_rules_and_payees | | rejected N1 (the selection bar names the action) |
+| offline captures | | `/transactions/queue` | | | | | | capture | | rejected N1 |
+| attach a receipt | | `/transactions/$id` | | | | | | transactions_and_postings | | rejected N1 (one button, S31) |
+| mark as transfer | | `/transactions/$id` | | | | | | transfers | | rejected N2 (correct-transaction names it; S45 to S50 are imports) |
+| category tree, merge | | `/categories` | | | | | | accounts_and_categories | | rejected N1 |
+| rules list, suggested rules, aggregator map | | `/categories/rules` | | | | | | categorization_rules_and_payees | | rejected N2 (category-rule; S37 to S44, S72 to S79, S98) |
+| payees, tags | | `/categories/payees`, `/categories/tags` | | | | | | categorization_rules_and_payees | | rejected N1 |
+| cards list | | `/cards` | | | | | | credit_cards_and_statements | | rejected N2 (pay-statement, statement) |
+| limits and billing cycle | | `/cards/$accountId` | | | | | | credit_cards_and_statements | | rejected N1 (a form with descriptions) |
+| refund, dispute, early installments | | statement | | | | | | refunds_reimbursements_and_disputes | | rejected N2 (statement; S80 to S89) |
+| balance sheet, open an account | | `/accounts`, `/accounts/new` | | | | | | accounts_and_categories | | rejected N2 (first-month, stop 1) |
+| edit, close, reopen an account | | `/accounts/$id/edit` | | | | | | accounts_and_categories | | rejected N1 |
+| institutions | | `/accounts/institutions` | | | | | | accounts_and_categories | | rejected N1 |
+| bank connection sync | | `/accounts/links` | | | | | | imports_and_bank_connections | | rejected N4 (S51 to S59, S68 to S71, S90 to S97, S167 to S175) |
+| goals | | `/goals` | | | | | | goals | | rejected N1 (a short form; the what-if values are labelled) |
+| occurrences of a month | | `/planning` | | | | | | schedules_and_occurrences | | rejected N2 (schedule, section "After creating") |
+| subscriptions | | `/planning` | | | | | | schedules_and_occurrences | | rejected N2 (schedule) |
+| income split | | `/planning` | | | | | | income_split | | rejected N2 (budget-plan) |
+| budget detail, delete | | `/planning/budgets/$id` | | | | | | budgets | | rejected N1 |
+| instruments, prices import | | `/instruments`, `/instruments/$code` | | | | | | investments | | rejected N1 (the import states its rule on screen, S64 to S67, S119 to S130) |
+| fixed income terms | | `/instruments/$code` | | | | | | fixed_income | | rejected N1 (regional products; the guide covers them, `docs/domain/br-product-coverage.md`) |
+| tax year of investments | | `/portfolio/year` | | | | | | investments | | rejected N1 (a report; tax classes are regional) |
+| reports | | `/reports` | | | | | | reports | | rejected N2 (first-month, stop 5; S145 to S157) |
+| calculators | | `/calculators`, `/calculators/$id` | | | | | | investments | | rejected N1 (each states its formula) |
+| language, region, privacy | | `/settings` | | | | | | settings_language_and_region | | rejected N1 |
+| providers and limits of the model | | `/settings` | | | | | | privacy_and_the_assistant | | rejected N3 |
+| appearance | | `/settings/appearance` | | | | | | settings_language_and_region | | rejected N1 |
+| second factor, passkeys | | `/settings` | | | | | | getting_started | | rejected N4 (every step writes; symptom `second-factor` stays) |
+| members and invitations | | `/settings` | | | | | | getting_started | | rejected N4 (the invitation is a write) |
+| backup and restore | | `/settings` | | | | | | getting_started | | rejected N2 (installation) and N4 |
+| foreign purchase, exchange | | `/transactions/new` | | | | | | foreign_purchases_and_exchange | | rejected N1 (one form, each field labelled; S16, S17) |
+| investment income, brokerage note, corporate event, custody transfer | | `/transactions/new` | | | | | | investment_income, investment_operations | | rejected N1 (each kind's form describes itself; buy-investment shows the menu) |
+| assistant conversation and proposals | | panel | | | | | | privacy_and_the_assistant | | rejected N3 (S131 to S142) |
+
+Scenario groups without a screen of their own (6.1 fixture, 6.12 coverage, 6.19 daily flows, 6.21 cash view, 6.22 indicators) are read by the screens above.
+
+## 4. Decisions
+
+| ID | Decision |
+|---|---|
+| HC1 | Nine new pages: `record-transaction`, `installments`, `text-capture`, `correct-transaction`, `reimbursement`, `schedule`, `create-budget`, `buy-investment` (howto) and `contribution-plan` (reference). Each howto has a video; `contribution-plan` has figures only. |
+| HC2 | Order of `helpPages`: the walkthrough, the howtos by area (transactions, cards, accounts, planning, portfolio, installation), the references, the explanations. Areas of the new pages: `record-transaction`, `text-capture`, `correct-transaction`, `reimbursement` in `transactions`; `installments` in `cards`; `schedule`, `create-budget` in `planning`; `buy-investment`, `contribution-plan` in `portfolio`. |
+| HC3 | Each new page opens its screen from the header action (`screen` of `helpGuides`); each screen it describes draws `HelpLink` in its header: `/transactions/new` (`record-transaction`), `/transactions/capture` (`text-capture`), the card header (`installments`), `/transactions/$id/correct` (`correct-transaction`), `/planning/schedules/new` (`schedule`), `/planning/budgets/new` (`create-budget`), `/portfolio/contribution-plan` (`contribution-plan`). `reimbursement` and `buy-investment` share a screen with another page and draw no second link. |
+| HC4 | A bold text of a page is a label of the interface or a term of the glossary of its language. `help-pages.test.ts` reads every bold text and accepts a catalog text (a placeholder `{x}` matches any words), a Slotted message or a glossary term. The existing texts that fail are rewritten (D3). |
+| HC5 | A page is found by the words a reader types: `search-help.test.ts` holds, per new page and language, one query whose best result is that page. |
+| HC6 | No subagent is dispatched: every slice records a tape from the one running instance and builds media on a machine with 7 GB free; two builds at once exceed it. The list sent to the owner is empty. |
+| HC7 | Media is built with `HELP_MEDIA_JOBS=2` from the production build. When an uncommitted change of another session touches a captured screen, the build runs in a detached worktree in the scratchpad (task statement, "Build da mídia"). |
+
+## 5. Defects found in the existing help
+
+| ID | Defect | Fix |
+|---|---|---|
+| D1 | `internal/assistant/guide/articles/installments.md` says an installment purchase is recorded on New transaction; the form has no installment field. It is recorded from the card page (`card-header.tsx`, `card.installmentPurchase`) or by text capture (`capture.installments`). | The article names the two places (slice 2). |
+| D2 | `portfolio.md` names the CDI in the neutral page (pt and en). The screen writes `return.against.index` with the region's index. | The neutral page says "against the index"; the BR passage names the CDI (slice 0). |
+| D3 | Bold texts that are no label: `budget-plan` writes "falta distribuir" / "unassigned" where the screen says **A distribuir** / **To distribute**; `check-balance` and `troubleshooting` write **Registrar ajuste** / **Record adjustment** and **Record yield** where the screen says "Registrar ajuste de {amount}". | Rewritten to the screen's words; the guard of HC4 keeps them (slice 0). |
+
+## 6. Claim sources
+
+Each page has a table "claim → source" in section 9, written in its slice. A claim without a source is removed. A behavior is checked on the running application with the demo book.
+
+## 7. Cross-cutting questions
+
+| ID | Answer |
+|---|---|
+| R1 | No regional value enters a neutral page. The regional facts go to `content/regions/BR/<language>/<page>.md` (extension point "Help passages", `docs/contributing/regions.md`). `portfolio` gains a BR passage (D2). |
+| R2 | A region without a passage reads the neutral page. |
+| R3 | Does not apply: no value set. |
+| R4 | Does not apply: the help passages already have their row in `regions.md`. |
+| R5 | No catalog key is added: the pages are Markdown per language of `web/src/i18n/languages.ts` (pt, en); `HelpLink` uses its existing key. |
+| R6 | Does not apply: the pages write no number or date of their own; the figures are captures. |
+| C1 | Does not apply: no amount is stored or computed. |
+| C2 | Does not apply. |
+| C3 | Does not apply. |
+| C4 | Does not apply: the amounts in a figure are pixels of the demo book. |
+| T1 | Does not apply: the tape fixes the clock of the recording. |
+| T2 | Does not apply. |
+| B1 | Does not apply: no table. |
+| B2 | Does not apply: no operation. |
+| B3 | Does not apply: no setting. |
+| D1 | Does not apply. |
+| D2 | Does not apply. |
+| D3 | Does not apply: a tutorial never confirms a write (ADR 037, 2). |
+| D4 | Does not apply. |
+| D5 | Does not apply. |
+| S1 | Does not apply: no operation of `api/openapi.yaml`. |
+| S2 | `/help/$page` is a phone route; the screens that gain `HelpLink` are desktop routes, except none. |
+| S3 | Each slice updates the guide article of its screen's topic (the help page it can open) and `getting_started.md` (the pages with figures). |
+| S4 | The assistant links help pages through the tasks of `/help/$page` in `navigation-map.json`; each slice adds its page id there. |
+| X1 | Does not apply: no scenario is added. |
+| X2 | Does not apply: R1 and R2 add no behavior; the test of the BR passage of `portfolio` reads region US and region BR. |
+
+## 8. Tests
+
+- `model/help-pages.test.ts`: every page in every language; the bold guard (HC4); no regional value in a neutral page; the BR passage of `portfolio`; the media of every page (figures and videos listed).
+- `search/search-help.test.ts`: the query of each new page (HC5).
+- `link/help-link.test.tsx` and the test of each screen that gains `HelpLink`: the link names its page.
+- `tools/help-media`: `node --test` and `make help-media-check`.
+- `go test ./internal/assistant/guide`: labels and terms of the articles.
+
+## 9. Claim sources per page
+
+### Slice 0: corrections
+
+| Claim | Source |
+|---|---|
+| portfolio: the summary label reads "Proventos em {year}" / "Income in {year}" | `web/src/i18n/catalog-holdings.pt-BR.ts:16`, `catalog-holdings.en.ts:14`; screen `/portfolio`, demo book |
+| portfolio: the comparison names the region's daily index | `web/src/features/portfolio/model/return-summary.ts:126`; `internal/portfolio/region_defaults.go:17` (`defaultBenchmark`) |
+| portfolio BR: the index is the CDI, the inflation index the IPCA | `internal/portfolio/region_defaults.go:17-22`, `:39-44` |
+| check-balance, troubleshooting: the buttons read "Registrar rendimento de {amount}", "Registrar ajuste de {amount}" | `web/src/i18n/catalog-accounts.pt-BR.ts:401-402`, `catalog-accounts.en.ts:404-405` |
+| budget-plan: the bar reads "A distribuir" / "To distribute"; the column "Gasto em {month}" / "Spent in {month}" | `web/src/i18n/catalog-budget-plan.pt-BR.ts:8,45`, `catalog-budget-plan.en.ts:7,45` |
+| import-statement: each similar transaction carries a "Pontuação" / "Score" | `web/src/i18n/catalog-accounts.pt-BR.ts:646`, `catalog-accounts.en.ts:648` |
+
+### Finding: the module cache of Vitest
+
+Vitest 5 keeps transformed modules in `node_modules/.vitest-cache` (`fsModuleCache`, default on), keyed by the module's source. A Markdown file added under `content/` is not seen by the cached `import.meta.glob` of `help-pages.ts`: the BR passage of `portfolio` was missing until the run passed `--experimental.fsModuleCache=false`. Decision: the flag is documented in `docs/contributing/help.md` for the first run after adding a page; the cache stays on for the other suites of the shared machine. CI starts without a cache and is not affected.

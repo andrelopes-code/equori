@@ -19,11 +19,13 @@ The comparison uses the **cleared** balance at the end of the date: pending tran
 
 ## What can happen
 
-- **The balances match**: the account is reconciled up to that date. The transactions up to there become **Reconciled**.
-- **There is a difference**: it stays open in the **Reconciliation** tab until you choose what to do:
+- When the balances match, the account is reconciled up to that date. The transactions up to there become **Reconciled**.
+- When there is a difference, it stays open in the **Reconciliation** tab until you choose what to do:
   - record the missing transactions and choose **I recorded what was missing**;
-  - **Record yield**, when the difference is a yield the institution paid;
-  - **Record adjustment**, when the difference has no explanation and should be accepted.
+  - **Record yield of …**, when the difference is a yield the institution paid;
+  - **Record adjustment of …**, when the difference has no explanation and should be accepted.
+
+The last two buttons carry the amount of the difference in their name.
 
 ![The Reconciliation tab, with the actions of the open difference marked](check-difference "The open difference stands at the top of the tab, with the actions that settle it.")
 

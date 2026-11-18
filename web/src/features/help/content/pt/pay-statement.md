@@ -17,7 +17,7 @@ A fatura reúne as compras de um ciclo do cartão. Ela fecha numa data e vence a
 5. Escolha **Pagar fatura**.
    ![O diálogo de pagamento, com o botão Pagar fatura marcado](pay-confirm)
 
-**Depois do pagamento.** O pagamento sai da conta escolhida e aparece como crédito na próxima fatura. Um pagamento menor que o total deixa o restante em aberto, e a tela mostra quanto fica.
+Depois de pago, o valor sai da conta escolhida e aparece como crédito na próxima fatura. Um pagamento menor que o total deixa o restante em aberto, e a tela mostra quanto fica.
 
 ## Pagar em parcelas
 

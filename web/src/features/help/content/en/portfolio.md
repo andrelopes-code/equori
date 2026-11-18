@@ -6,7 +6,7 @@ The [portfolio](/portfolio) answers three questions: how much you have invested,
 
 - **Portfolio value**: the priced investments plus the brokerage cash.
 - **Gain or loss**: market value minus cost, without income. It only becomes a real gain or loss when you sell.
-- **Income of the year**: dividends, interest and other payments received, net of the tax withheld.
+- **Income in …**: dividends, interest and other payments received in the year, net of the tax withheld.
 
 ## Where the money is
 
@@ -30,10 +30,10 @@ Record buys, sales and income with the buttons above the list.
 
 Under **How it performed**, choose the whole portfolio or one account and a period of up to 366 days. The section opens with the **Gain in the period** in money, beside one sentence that states the result, such as "In the period, the portfolio returned 4.20%.". Two comparisons follow, each a pair of bars on one axis with a chip:
 
-- **Against the CDI**: the return of the period beside the CDI over the same days. The chip shows the percent of the CDI, or the difference in percentage points.
+- **Against the …**: the return of the period beside the reference rate of your region over the same days. The chip shows the percent of that rate, or the difference in percentage points.
 - **Against inflation**: the return beside the inflation index. The chip shows the real return.
 
-A region without these indexes shows the return of the period alone. The block **Where the closing balance came from** lists the **Opening balance**, the **Net deposits** (when the period has deposits or withdrawals), the **Gain** and the **Closing balance**. When the gain is positive and no part is negative, a bar splits the closing balance into these parts. Notes at the foot say what the figures leave out, beside the annual rate. The button **View details and method** opens the percent of the index, the percent of the index, the index, the yield credits, the opening and closing values, the time-weighted return, the personal rate and the list of deposits and withdrawals.
+A region without these indexes shows the return of the period alone. The block **Where the closing balance came from** lists the **Opening balance**, the **Net deposits** (when the period has deposits or withdrawals), the **Gain** and the **Closing balance**. When the gain is positive and no part is negative, a bar splits the closing balance into these parts. Notes at the foot say what the figures leave out, beside the annual rate. The button **View details and method** opens the percent of the index, the index, the yield credits, the opening and closing values, the time-weighted return, the personal rate and the list of deposits and withdrawals.
 
 ## The year
 

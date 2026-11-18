@@ -30,7 +30,7 @@ A página da importação mostra a situação de cada linha:
 
 ## Revisar uma linha
 
-Escolha a linha para ver as **transações parecidas**, cada uma com uma pontuação. A pontuação soma pontos pela data, pelo valor e pelo favorecido parecidos.
+Escolha a linha para ver as transações parecidas, cada uma com a sua **Pontuação**. A pontuação soma pontos pela data, pelo valor e pelo favorecido parecidos.
 
 - **É esta transação** associa a linha à transação escolhida.
 - **Criar uma nova transação** registra a linha como transação nova.

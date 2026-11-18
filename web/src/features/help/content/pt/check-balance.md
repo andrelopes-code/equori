@@ -19,11 +19,13 @@ A comparação usa o saldo **efetivado** no fim da data: as transações pendent
 
 ## O que pode acontecer
 
-- **Os saldos batem**: a conta fica conferida até essa data. As transações até ali passam a **Conferido**.
-- **Há uma diferença**: ela fica em aberto na aba **Conferência de saldo**, até você escolher o que fazer:
+- Quando os saldos batem, a conta fica conferida até essa data. As transações até ali passam a **Conferido**.
+- Quando há uma diferença, ela fica em aberto na aba **Conferência de saldo**, até você escolher o que fazer:
   - registrar as transações que faltam e escolher **Já registrei o que faltava**;
-  - **Registrar rendimento**, quando a diferença é um rendimento que a instituição pagou;
-  - **Registrar ajuste**, quando a diferença não tem explicação e deve ser aceita.
+  - **Registrar rendimento de …**, quando a diferença é um rendimento que a instituição pagou;
+  - **Registrar ajuste de …**, quando a diferença não tem explicação e deve ser aceita.
+
+Os dois últimos botões trazem o valor da diferença no nome.
 
 ![A aba Conferência de saldo, com as ações da diferença em aberto marcadas](check-difference "A diferença em aberto fica no alto da aba, com as ações que a resolvem.")
 

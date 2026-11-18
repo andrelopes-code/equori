@@ -26,7 +26,7 @@ A comparação achou uma diferença. Falta uma transação, um rendimento não f
 
 1. Abra a conta e a aba **Conferência de saldo**.
 2. Registre as transações que faltam e escolha **Já registrei o que faltava**.
-3. Para um rendimento, escolha **Registrar rendimento**. Para uma diferença sem explicação, escolha **Registrar ajuste**.
+3. Para um rendimento, escolha **Registrar rendimento de …**. Para uma diferença sem explicação, escolha **Registrar ajuste de …**.
 
 Mais: [Conferir o saldo de uma conta](/help/check-balance).
 

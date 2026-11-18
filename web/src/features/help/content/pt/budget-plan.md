@@ -10,7 +10,7 @@ Escolha **de onde vem o valor**:
 - **Média de receitas**: a média do que entrou nos meses anteriores.
 - **Valor fixo**: um valor que você digita.
 
-A barra no topo mostra quanto desse valor já tem destino e quanto **falta distribuir**. Parcelas e poupança programada entram na barra como compromissos.
+A barra no topo mostra quanto desse valor já tem destino e quanto fica em **A distribuir**. Parcelas e poupança programada entram na barra como compromissos.
 
 ## Planejar cada categoria
 
@@ -18,7 +18,7 @@ Digite o valor planejado de cada categoria. Em **Editar em**, escolha **Percentu
 
 As colunas ao lado ajudam a decidir:
 
-- **Gasto em** um mês: o que a categoria gastou no mês anterior.
+- **Gasto em …**: o que a categoria gastou no mês anterior.
 - **Média de 3 meses**: a média dos últimos três meses.
 - **Sugerido**: o valor que o histórico sugere.
 
