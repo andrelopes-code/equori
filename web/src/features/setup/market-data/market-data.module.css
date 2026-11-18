@@ -219,6 +219,8 @@
 
   .toggle {
     justify-self: end;
+    /* Workaround for Slotted issue #145: an invalid switch adds an inset danger ring inside the track and the thumb. */
+    --slotted-switch-invalid-edge-width: 0px;
   }
 
   .coverageNarrow {
