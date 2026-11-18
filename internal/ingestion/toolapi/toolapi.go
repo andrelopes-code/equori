@@ -16,11 +16,12 @@ import (
 // AccountNames returns the names of the book's balance accounts by ID.
 type AccountNames func(ctx context.Context, booksID int64) (map[uuid.UUID]string, error)
 
-func Tools(svc *app.Service, names AccountNames) []tool.Tool {
+func Tools(svc *app.Service, names AccountNames, files ConversationFile) []tool.Tool {
 	return []tool.Tool{
 		getImports(svc, names),
 		manageImports(svc, names),
 		reviewInvestmentMovement(svc),
+		importStatementFile(svc, names, files),
 	}
 }
 

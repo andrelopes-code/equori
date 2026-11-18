@@ -122,6 +122,10 @@ func collectProperties(s *jsonschema.Schema, into map[string]bool) {
 }
 
 var uncoveredFields = map[string][]string{
+	"importFile": {
+		"file",
+		"format",
+	}, // import_statement_file reads file_id, and the format is the kind of the stored file (F7)
 	"requestExport": {
 		"credentials_passphrase",
 	}, // a passphrase would enter a stored conversation; the owner types it on the screen

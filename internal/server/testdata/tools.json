@@ -7099,6 +7099,62 @@
     }
   },
   {
+    "name": "import_statement_file",
+    "description": "Proposes importing an ofx or csv statement file the user attached to the conversation into one account, as the Import statement screen does: each line is deduplicated, matched to an existing transaction or created, and a line already imported creates nothing. A csv file needs the CSV profile of the account. Use it when the user attaches a statement and asks to import it. Do not use it for a PDF or an image: read it and propose record_transaction. The user confirms first.",
+    "effect": "write",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "file_id": {
+          "type": "string",
+          "description": "id of an ofx or csv file the user attached, from the [file ...] line of the message"
+        },
+        "account_id": {
+          "type": "string",
+          "description": "account the statement belongs to, from list_accounts"
+        }
+      },
+      "required": [
+        "file_id",
+        "account_id"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "batch_id": {
+          "type": "string"
+        },
+        "received": {
+          "type": "integer"
+        },
+        "created": {
+          "type": "integer"
+        },
+        "matched": {
+          "type": "integer"
+        },
+        "needs_review": {
+          "type": "integer"
+        },
+        "ignored": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "batch_id",
+        "received",
+        "created",
+        "matched",
+        "needs_review",
+        "ignored"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "list_accounts",
     "description": "Lists the book's accounts and categories by class and then name, with the IDs the other tools take, each account's institution, and the book's base currency. Income and expense accounts are the categories of transactions; a child account carries its parent. Use it to find the ID of an account or category named by the user. Do not use it for balances: get_balances returns them.",
     "effect": "read_only",

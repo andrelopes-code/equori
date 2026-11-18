@@ -2,8 +2,12 @@ package assistant
 
 import (
 	"context"
+	"errors"
+
+	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/assistant/app"
+	"github.com/andrelopes-code/equori/internal/assistant/domain"
 	"github.com/andrelopes-code/equori/internal/assistant/llmapi"
 	"github.com/andrelopes-code/equori/internal/assistant/toolapi"
 	"github.com/andrelopes-code/equori/internal/platform/llm"
@@ -30,6 +34,25 @@ func (m *Module) UseTools(set tool.Set) error {
 // UseFileSummary sets what describes an ofx or csv file to the model (assistant parity design, F4).
 func (m *Module) UseFileSummary(summarize func(kind string, content []byte) string) {
 	m.svc.UseFileSummary(summarize)
+}
+
+// ConversationFile returns the name, the kind and the content of a file the member attached to a
+// conversation; found is false when the member has no such file (assistant parity design, F7).
+func (m *Module) ConversationFile(
+	ctx context.Context,
+	booksID, memberID int64,
+	id uuid.UUID,
+) (name, kind string, content []byte, found bool, err error) {
+	n, k, c, err := m.svc.FileContent(ctx, booksID, memberID, id)
+	if errors.Is(err, domain.ErrFileNotFound) {
+		return "", "", nil, false, nil
+	}
+
+	if err != nil {
+		return "", "", nil, false, err
+	}
+
+	return n, string(k), c, true, nil
 }
 
 // UseNotices sets the lookup of the accounts the system prompt names (P12 A152).

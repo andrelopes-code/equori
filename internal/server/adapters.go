@@ -108,6 +108,7 @@ func (s credentialSource) Reseal(
 func linkAdapters(m *modules) {
 	m.assistant.UseNotices(accountNotices(m.ledger, m.ingestion))
 	m.assistant.UseFileSummary(ingestion.FileSummary)
+	m.ingestion.UseConversationFiles(statementFiles(m.assistant))
 	m.reporting.OnImport(m.portfolio.RebuildBooks)
 	m.reporting.UseCredentials(credentialSource{m.ingestion, m.assistant})
 	m.reporting.UseIndicatorSources(m.planning, m.portfolio)
@@ -253,4 +254,21 @@ func credentialError(err error) error {
 	}
 
 	return err
+}
+
+// statementFiles reads a file the member attached to a conversation for an ingestion tool.
+func statementFiles(a *assistant.Module) func(
+	ctx context.Context,
+	booksID, memberID int64,
+	id uuid.UUID,
+) (ingestion.StatementFile, bool, error) {
+	return func(
+		ctx context.Context,
+		booksID, memberID int64,
+		id uuid.UUID,
+	) (ingestion.StatementFile, bool, error) {
+		name, kind, content, found, err := a.ConversationFile(ctx, booksID, memberID, id)
+
+		return ingestion.StatementFile{Name: name, Kind: kind, Content: content}, found, err
+	}
 }

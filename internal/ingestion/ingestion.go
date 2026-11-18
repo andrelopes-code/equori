@@ -4,9 +4,11 @@
 package ingestion
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/andrelopes-code/equori/internal/classification"
@@ -30,7 +32,15 @@ type Module struct {
 	svc    *app.Service
 	ledger *ledger.Module
 	log    *slog.Logger
+	files  toolapi.ConversationFile
 }
+
+// StatementFile is a file the member attached to the conversation.
+type StatementFile = toolapi.StatementFile
+
+// UseConversationFiles sets how a tool reads a file the member attached to the conversation
+// (assistant parity design, F7).
+func (m *Module) UseConversationFiles(files toolapi.ConversationFile) { m.files = files }
 
 func New(
 	pool *pgxpool.Pool,
@@ -94,7 +104,7 @@ func New(
 // Tools returns the ingestion module's tools for language models (ADR 012).
 func (m *Module) Tools() tool.Group {
 	return tool.Group{
-		Tools:  toolapi.Tools(m.svc, m.accountNames),
+		Tools:  toolapi.Tools(m.svc, m.accountNames, m.conversationFile),
 		Errors: tool.FromProblem(httpapi.ToProblem),
 	}
 }
@@ -105,4 +115,17 @@ func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
 // multipart framing (P4 amendment A16).
 func (m *Module) BodyLimits() []httpserver.BodyLimit {
 	return []httpserver.BodyLimit{{Pattern: "POST /api/v1/accounts/{id}/imports", Bytes: 11 << 20}}
+}
+
+// conversationFile reads the file through the reader the server set; none set finds no file.
+func (m *Module) conversationFile(
+	ctx context.Context,
+	booksID, memberID int64,
+	id uuid.UUID,
+) (toolapi.StatementFile, bool, error) {
+	if m.files == nil {
+		return toolapi.StatementFile{}, false, nil
+	}
+
+	return m.files(ctx, booksID, memberID, id)
 }

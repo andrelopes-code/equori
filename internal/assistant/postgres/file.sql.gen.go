@@ -189,6 +189,38 @@ func (q *Queries) FileBytes(ctx context.Context, arg FileBytesParams) (int64, er
 	return column_1, err
 }
 
+const fileContent = `-- name: FileContent :one
+SELECT
+    name,
+    kind,
+    content
+FROM
+    assistant_conversation_file
+WHERE
+    books_id = $1
+    AND member_id = $2
+    AND id = $3
+`
+
+type FileContentParams struct {
+	BooksID  int64
+	MemberID int64
+	ID       uuid.UUID
+}
+
+type FileContentRow struct {
+	Name    string
+	Kind    string
+	Content []byte
+}
+
+func (q *Queries) FileContent(ctx context.Context, arg FileContentParams) (FileContentRow, error) {
+	row := q.db.QueryRow(ctx, fileContent, arg.BooksID, arg.MemberID, arg.ID)
+	var i FileContentRow
+	err := row.Scan(&i.Name, &i.Kind, &i.Content)
+	return i, err
+}
+
 const filesOfConversation = `-- name: FilesOfConversation :many
 SELECT
     id,

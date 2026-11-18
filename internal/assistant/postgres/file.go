@@ -217,3 +217,25 @@ func (r *Repository) ConversationFiles(
 
 	return files, nil
 }
+
+// FileContent returns the name, the kind and the content of a file of the member;
+// ErrFileNotFound when the member has no such file.
+func (r *Repository) FileContent(
+	ctx context.Context,
+	booksID, memberID int64,
+	id uuid.UUID,
+) (string, domain.FileKind, []byte, error) {
+	row, err := r.q.FileContent(
+		ctx,
+		FileContentParams{BooksID: booksID, MemberID: memberID, ID: id},
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", "", nil, domain.ErrFileNotFound
+	}
+
+	if err != nil {
+		return "", "", nil, fmt.Errorf("read file content: %w", err)
+	}
+
+	return row.Name, domain.FileKind(row.Kind), row.Content, nil
+}

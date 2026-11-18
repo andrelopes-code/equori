@@ -172,6 +172,11 @@ type FileRepository interface {
 		limit int64,
 	) (domain.File, error)
 	DeleteUnsentFile(ctx context.Context, booksID, memberID int64, id uuid.UUID) error
+	FileContent(
+		ctx context.Context,
+		booksID, memberID int64,
+		id uuid.UUID,
+	) (string, domain.FileKind, []byte, error)
 	UnsentFiles(
 		ctx context.Context,
 		booksID, memberID int64,

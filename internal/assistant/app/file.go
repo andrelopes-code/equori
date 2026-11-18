@@ -66,6 +66,16 @@ func (s *Service) CreateFile(
 	)
 }
 
+// FileContent returns the name, the kind and the content of a file of the member, for a tool that
+// writes from it (F7); ErrFileNotFound when the member has no such file.
+func (s *Service) FileContent(
+	ctx context.Context,
+	booksID, memberID int64,
+	id uuid.UUID,
+) (string, domain.FileKind, []byte, error) {
+	return s.repo.FileContent(ctx, booksID, memberID, id)
+}
+
 // DeleteFile removes a file of the member that no turn sent yet (F2).
 func (s *Service) DeleteFile(ctx context.Context, booksID, memberID int64, id uuid.UUID) error {
 	return s.repo.DeleteUnsentFile(ctx, booksID, memberID, id)

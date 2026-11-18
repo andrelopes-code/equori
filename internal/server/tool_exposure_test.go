@@ -238,7 +238,7 @@ var exposure = map[string]string{
 	"getCsvProfile":                    "-file",
 	"saveCsvProfile":                   "-file",
 	"suggestCsvColumns":                "-capture",
-	"importFile":                       "-file",
+	"importFile":                       "import_statement_file",
 	"getImportBatch":                   "get_imports",
 	"listBatchRecords":                 "get_imports",
 	"listUnconfirmed":                  "get_imports",

@@ -130,3 +130,15 @@ WHERE
 ORDER BY
     created_at,
     id;
+
+-- name: FileContent :one
+SELECT
+    name,
+    kind,
+    content
+FROM
+    assistant_conversation_file
+WHERE
+    books_id = @books_id
+    AND member_id = @member_id
+    AND id = @id;
