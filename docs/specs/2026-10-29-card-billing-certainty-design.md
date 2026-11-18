@@ -67,7 +67,7 @@ The search is bounded: at most 20 provisional postings per statement enter it, t
 
 The statement table, the card tile and the chart show for an open statement its **open amount**:
 
-open amount = amount due − unpaid amount of the previous statement, when the previous statement is `closed` or `partially_paid` (not yet due).
+open amount = amount due − unpaid amount of the previous statement, when the previous statement is `open`, `closed` or `partially_paid` (not yet due). A statement after the open one has an `open` previous statement: its open amount is the amount of its own cycle.
 
 When the previous statement is `overdue`, its unpaid amount stays in the open amount, as the institution carries it. Amount due keeps its meaning (the card balance at closing, A89) and its use in settlement. `api/openapi.yaml`, `StatementSummary` and `StatementDetail`: add the required `open_amount` (Money), computed for every statement by the same formula; the web reads it for open statements.
 

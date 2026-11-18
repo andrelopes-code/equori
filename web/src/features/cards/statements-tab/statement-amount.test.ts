@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { statementAmount } from "@/features/cards/statements-tab/statement-amount";
+import {
+  statementAmount,
+  statementUnpaid,
+} from "@/features/cards/statements-tab/statement-amount";
 
 const due = { amount: 159237, currency: "BRL" };
 const open = { amount: 35372, currency: "BRL" };
+const unpaid = { amount: 59237, currency: "BRL" };
 
 describe("statementAmount", () => {
   it.each([
@@ -14,5 +18,17 @@ describe("statementAmount", () => {
     expect(
       statementAmount({ status, amount_due: due, open_amount: open }),
     ).toEqual(want);
+  });
+});
+
+describe("statementUnpaid", () => {
+  it.each([
+    ["open statement", "open", open],
+    ["partially paid statement", "partially_paid", unpaid],
+    ["overdue statement", "overdue", unpaid],
+  ] as const)("%s", (_name, status, want) => {
+    expect(statementUnpaid({ status, unpaid, open_amount: open })).toEqual(
+      want,
+    );
   });
 });

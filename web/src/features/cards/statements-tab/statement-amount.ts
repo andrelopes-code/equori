@@ -9,3 +9,11 @@ export function statementAmount(
 ): StatementSummary["amount_due"] {
   return s.status === "open" ? s.open_amount : s.amount_due;
 }
+
+// An open statement has no payment after closing: its unpaid amount is its open amount, so a
+// statement after the current one does not repeat the bills before it.
+export function statementUnpaid(
+  s: Pick<StatementSummary, "status" | "unpaid" | "open_amount">,
+): StatementSummary["unpaid"] {
+  return s.status === "open" ? s.open_amount : s.unpaid;
+}

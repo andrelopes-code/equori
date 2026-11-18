@@ -67,7 +67,7 @@ type StatementSummary struct {
 	EarlyPayments int64 // payments of the statement beyond what settled the previous one
 	BilledAmount  int64 // AmountDue + EarlyPayments: the bill before early payments
 	// OpenAmount leaves out the previous statement's unpaid amount until it is overdue, as the
-	// institution's open bill does (A138).
+	// institution's open bill does (A138). A statement after the open one counts its own cycle.
 	OpenAmount int64
 
 	// Feed: some posting of the account carries an external record. ConfirmedAmount and
@@ -115,12 +115,16 @@ func Summarize(in []StatementInput, today time.Time) []StatementSummary {
 		out[i].Status = status(s, out[i], today)
 
 		out[i].OpenAmount = out[i].AmountDue
-		if i > 0 && (out[i-1].Status == StatusClosed || out[i-1].Status == StatusPartiallyPaid) {
+		if i > 0 && notYetDue(out[i-1].Status) {
 			out[i].OpenAmount -= out[i-1].Unpaid
 		}
 	}
 
 	return out
+}
+
+func notYetDue(status string) bool {
+	return status == StatusOpen || status == StatusClosed || status == StatusPartiallyPaid
 }
 
 // totalStatements fills out with the opening, the totals by role and the amount due of each statement.

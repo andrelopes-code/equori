@@ -315,6 +315,16 @@ func TestSummarizeOpenAmount(t *testing.T) {
 			today: "2026-11-05", want: 159237,
 		},
 		{
+			name: "previous open",
+			in: []StatementInput{
+				input("2026-11", charge("2026-10-14", 123865)),
+				input("2026-12", charge("2026-11-04", 35372)),
+				input("2027-01", charge("2026-12-04", 20000)),
+			},
+			today: "2026-11-05",
+			want:  20000,
+		},
+		{
 			name:  "first statement",
 			in:    []StatementInput{input("2026-11", charge("2026-10-14", 123865))},
 			today: "2026-11-01",

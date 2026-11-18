@@ -2810,7 +2810,7 @@ schemas:
       unpaid = amount_due − settled, zero for a credit balance; prior_credits are the credits that
       settled the previous statement; early_payments are the payments beyond what settled it;
       billed_amount = amount_due + early_payments; open_amount = amount_due less the unpaid amount of a
-      previous statement not yet due (closed or partially_paid), the institution's open bill (A138). institution and amount_difference (amount_due −
+      previous statement not yet due (open, closed or partially_paid), the institution's open bill (A138). institution and amount_difference (amount_due −
       institution.total) are present when the institution reported the statement (A92). confirmed_amount and
       awaiting_amount split amount_due − opening into the postings an external record confirms and those it
       does not; both are present when some posting of the account carries a record (A170).
