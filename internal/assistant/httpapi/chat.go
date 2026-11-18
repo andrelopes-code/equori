@@ -29,6 +29,7 @@ func (s *Server) getAssistantChat(
 	out := AssistantChat{Available: st.Available}
 	if st.ProviderName != "" {
 		out.ProviderName, out.Model, out.Notice = &st.ProviderName, &st.Model, &st.Notice
+		out.ReadsFiles = &st.ReadsFiles
 	}
 
 	if !st.RetryAt.IsZero() {

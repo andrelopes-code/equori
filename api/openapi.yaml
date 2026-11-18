@@ -388,6 +388,36 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /assistant/files/{id}/content:
+    get:
+      tags: [assistant]
+      operationId: getAssistantFileContent
+      x-book-role: read
+      summary: Open a conversation file of the member; 404 file_not_found.
+      description: |
+        A pdf, image or text file is shown in place (inline); an ofx or csv file is a download. The
+        Content-Security-Policy lets no content of the file run.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: The file, with the media type of its content.
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+            Content-Security-Policy:
+              schema:
+                type: string
+          content:
+            "*/*":
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
   /assistant/files/{id}:
     delete:
       tags: [assistant]
@@ -8356,6 +8386,9 @@ components:
         provider_name: {type: string}
         model: {type: string}
         notice: {type: string, pattern: "^[a-z0-9_]{2,40}$"}
+        reads_files:
+          type: boolean
+          description: A model of the chat reads the content of a pdf, image or text file (F5).
         retry_at: {type: string, format: date-time}
     AssistantFile:
       type: object
@@ -8409,13 +8442,18 @@ components:
     AssistantMessage:
       type: object
       additionalProperties: false
-      required: [id, role, content, created_at, proposals]
+      required: [id, role, content, created_at, proposals, files]
       properties:
         id: {type: string, format: uuid}
         role: {type: string, enum: [user, assistant]}
         content: {type: string}
         outcome: {type: string, enum: [answered, step_limit, failed, canceled]}
         created_at: {type: string, format: date-time}
+        files:
+          type: array
+          description: The files the message carried, in the order uploaded (FU5).
+          items:
+            $ref: "#/components/schemas/AssistantFile"
         proposals:
           type: array
           items:

@@ -212,6 +212,7 @@ func (r *Repository) ConversationFiles(
 			Kind:           domain.FileKind(row.Kind),
 			Size:           int(row.Size),
 			Summary:        row.Summary,
+			CreatedAt:      row.CreatedAt,
 		}
 	}
 

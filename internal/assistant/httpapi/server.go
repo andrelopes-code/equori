@@ -61,6 +61,7 @@ func (s *Server) Register(mux *http.ServeMux) {
 	mux.HandleFunc("DELETE "+BaseURL+"/assistant/conversations/{id}",
 		httpserver.Handle(s.errs, http.StatusOK, s.deleteAssistantConversation))
 	mux.HandleFunc("POST "+BaseURL+"/assistant/files", s.createAssistantFile)
+	mux.HandleFunc("GET "+BaseURL+"/assistant/files/{id}/content", s.getAssistantFileContent)
 	mux.HandleFunc("DELETE "+BaseURL+"/assistant/files/{id}",
 		httpserver.Handle(s.errs, http.StatusOK, s.deleteAssistantFile))
 	mux.HandleFunc("POST "+BaseURL+"/assistant/proposals/{id}/confirm",

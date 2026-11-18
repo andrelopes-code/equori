@@ -7,8 +7,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime"
 	"mime/multipart"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/google/uuid"
 
@@ -94,6 +97,47 @@ func (s *Server) deleteAssistantFile(
 	return httpserver.None{}, err
 }
 
+// getAssistantFileContent is a custom handler: the success body is the file, not JSON (FU5).
+func (s *Server) getAssistantFileContent(w http.ResponseWriter, r *http.Request) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		s.errs.Write(w, r, err)
+
+		return
+	}
+
+	ctx := r.Context()
+
+	name, kind, content, err := s.svc.FileContent(
+		ctx,
+		auth.MustBooksID(ctx),
+		auth.MustMemberID(ctx),
+		id,
+	)
+	if err != nil {
+		s.errs.Write(w, r, err)
+
+		return
+	}
+
+	disposition := "attachment"
+	if kind.Readable() {
+		disposition = "inline"
+	}
+
+	w.Header().Set("Content-Type", contentType(content))
+	w.Header().Set("Content-Length", strconv.Itoa(len(content)))
+	w.Header().Set(
+		"Content-Disposition",
+		mime.FormatMediaType(disposition, map[string]string{"filename": name}),
+	)
+	// The file comes from the member's hands: nothing in it runs, and no other page frames it.
+	w.Header().Set("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(content)
+}
+
 // readFileForm reads the parts "file" and "conversation_id", reading at most one byte past the
 // file limit so the service refuses an oversized file without buffering the rest of it.
 func readFileForm(body *multipart.Reader) (fileForm, error) {
@@ -159,6 +203,22 @@ func toFileAPI(f domain.File) AssistantFile {
 	}
 
 	return out
+}
+
+// contentType is the media type of a stored file read again from its content, with the charset
+// sniffed from a text file.
+func contentType(content []byte) string {
+	_, mediaType, err := domain.DetectFileKind(content)
+	if err != nil {
+		return "application/octet-stream"
+	}
+
+	_, params, err := mime.ParseMediaType(http.DetectContentType(content))
+	if err == nil && params["charset"] != "" && strings.HasPrefix(mediaType, "text/") {
+		return mediaType + "; charset=" + params["charset"]
+	}
+
+	return mediaType
 }
 
 // fileProblem maps the errors of a conversation file to the codes of createAssistantFile and

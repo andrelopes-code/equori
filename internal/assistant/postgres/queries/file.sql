@@ -101,7 +101,8 @@ SELECT
     name,
     kind,
     size,
-    summary
+    summary,
+    created_at
 FROM
     assistant_conversation_file
 WHERE

@@ -31,6 +31,7 @@ var exposure = map[string]string{
 	"deleteAssistantConversation":      "-llm",
 	"createAssistantFile":              "-binary",
 	"deleteAssistantFile":              "-binary",
+	"getAssistantFileContent":          "-binary",
 	"deleteAssistantConversations":     "-llm",
 	"confirmAssistantProposal":         "-llm",
 	"rejectAssistantProposal":          "-llm",

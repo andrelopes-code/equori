@@ -164,11 +164,14 @@ func (e Notice) Valid() bool {
 
 // AssistantChat defines model for AssistantChat.
 type AssistantChat struct {
-	Available    bool       `json:"available"`
-	Model        *string    `json:"model,omitempty"`
-	Notice       *string    `json:"notice,omitempty"`
-	ProviderName *string    `json:"provider_name,omitempty"`
-	RetryAt      *time.Time `json:"retry_at,omitempty"`
+	Available    bool    `json:"available"`
+	Model        *string `json:"model,omitempty"`
+	Notice       *string `json:"notice,omitempty"`
+	ProviderName *string `json:"provider_name,omitempty"`
+
+	// ReadsFiles A model of the chat reads the content of a pdf, image or text file (F5).
+	ReadsFiles *bool      `json:"reads_files,omitempty"`
+	RetryAt    *time.Time `json:"retry_at,omitempty"`
 }
 
 // AssistantConversation defines model for AssistantConversation.
@@ -211,8 +214,11 @@ type AssistantFileKind string
 
 // AssistantMessage defines model for AssistantMessage.
 type AssistantMessage struct {
-	Content   string                   `json:"content"`
-	CreatedAt time.Time                `json:"created_at"`
+	Content   string    `json:"content"`
+	CreatedAt time.Time `json:"created_at"`
+
+	// Files The files the message carried, in the order uploaded (FU5).
+	Files     []AssistantFile          `json:"files"`
 	Id        openapi_types.UUID       `json:"id"`
 	Outcome   *AssistantMessageOutcome `json:"outcome,omitempty"`
 	Proposals []AssistantProposal      `json:"proposals"`

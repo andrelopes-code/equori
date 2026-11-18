@@ -53,6 +53,13 @@ func (s *Service) Conversation(
 		return ConversationDetail{}, err
 	}
 
+	files, err := s.repo.ConversationFiles(ctx, booksID, id)
+	if err != nil {
+		return ConversationDetail{}, err
+	}
+
+	attachFiles(msgs, files)
+
 	ps, err := s.repo.Proposals(ctx, booksID, id)
 	if err != nil {
 		return ConversationDetail{}, err

@@ -31,7 +31,12 @@ func (s *Server) toMessage(
 		Content:   m.Content,
 		CreatedAt: m.CreatedAt,
 		Proposals: []AssistantProposal{},
+		Files:     make([]AssistantFile, len(m.Files)),
 	}
+	for i, f := range m.Files {
+		out.Files[i] = toFileAPI(f)
+	}
+
 	if m.Outcome != domain.OutcomeNone {
 		o := AssistantMessageOutcome(m.Outcome)
 		out.Outcome = &o

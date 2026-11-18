@@ -17,6 +17,7 @@ type chatView struct {
 	ProviderName string     `json:"provider_name"`
 	Model        string     `json:"model"`
 	Notice       string     `json:"notice"`
+	ReadsFiles   bool       `json:"reads_files"`
 	RetryAt      *time.Time `json:"retry_at"`
 }
 

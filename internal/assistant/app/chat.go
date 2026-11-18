@@ -10,7 +10,9 @@ import (
 type ChatState struct {
 	Available                   bool
 	ProviderName, Model, Notice string
-	RetryAt                     time.Time
+	// ReadsFiles tells that a model of the chat reads a pdf, image or text file (F5, FU4).
+	ReadsFiles bool
+	RetryAt    time.Time
 }
 
 func (s *Service) ChatState(ctx context.Context, booksID int64, use Use) (ChatState, error) {
@@ -30,14 +32,22 @@ func (s *Service) ChatState(ctx context.Context, booksID int64, use Use) (ChatSt
 
 	now := s.now()
 	for _, t := range targets {
-		if b.cooling(t, now).IsZero() {
-			return ChatState{
-				Available:    true,
-				ProviderName: t.ProviderName,
-				Model:        t.Model,
-				Notice:       string(notice(t.Preset)),
-			}, nil
+		if !b.cooling(t, now).IsZero() {
+			continue
 		}
+
+		reads, err := s.chatReadsFiles(ctx, booksID)
+		if err != nil {
+			return ChatState{}, err
+		}
+
+		return ChatState{
+			Available:    true,
+			ProviderName: t.ProviderName,
+			Model:        t.Model,
+			Notice:       string(notice(t.Preset)),
+			ReadsFiles:   reads,
+		}, nil
 	}
 
 	return ChatState{}, nil

@@ -241,6 +241,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/assistant/files/{id}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Open a conversation file of the member; 404 file_not_found.
+         * @description A pdf, image or text file is shown in place (inline); an ofx or csv file is a download. The
+         *     Content-Security-Policy lets no content of the file run.
+         */
+        get: operations["getAssistantFileContent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/assistant/files/{id}": {
         parameters: {
             query?: never;
@@ -4866,6 +4887,8 @@ export interface components {
             provider_name?: string;
             model?: string;
             notice?: string;
+            /** @description A model of the chat reads the content of a pdf, image or text file (F5). */
+            reads_files?: boolean;
             /** Format: date-time */
             retry_at?: string;
         };
@@ -4914,6 +4937,8 @@ export interface components {
             outcome?: "answered" | "step_limit" | "failed" | "canceled";
             /** Format: date-time */
             created_at: string;
+            /** @description The files the message carried, in the order uploaded (FU5). */
+            files: components["schemas"]["AssistantFile"][];
             proposals: components["schemas"]["AssistantProposal"][];
         };
         AssistantConversationDetail: {
@@ -9250,6 +9275,32 @@ export interface operations {
             413: components["responses"]["Problem"];
             415: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+        };
+    };
+    getAssistantFileContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The file, with the media type of its content. */
+            200: {
+                headers: {
+                    "Content-Disposition"?: string;
+                    "Content-Security-Policy"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
         };
     };
     deleteAssistantFile: {

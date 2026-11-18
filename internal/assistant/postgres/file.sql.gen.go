@@ -228,7 +228,8 @@ SELECT
     name,
     kind,
     size,
-    summary
+    summary,
+    created_at
 FROM
     assistant_conversation_file
 WHERE
@@ -252,6 +253,7 @@ type FilesOfConversationRow struct {
 	Kind      string
 	Size      int32
 	Summary   string
+	CreatedAt time.Time
 }
 
 func (q *Queries) FilesOfConversation(ctx context.Context, arg FilesOfConversationParams) ([]FilesOfConversationRow, error) {
@@ -270,6 +272,7 @@ func (q *Queries) FilesOfConversation(ctx context.Context, arg FilesOfConversati
 			&i.Kind,
 			&i.Size,
 			&i.Summary,
+			&i.CreatedAt,
 		); err != nil {
 			return nil, err
 		}

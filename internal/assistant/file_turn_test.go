@@ -168,6 +168,11 @@ func TestTurnSendsFileParts(t *testing.T) {
 		}},
 	}, http.StatusOK, nil)
 
+	// FU4: the composer states that the content of a readable file reaches the model.
+	if !chatState(t, h).ReadsFiles {
+		t.Error("chat state reads_files = false, want true for a chain with image_input")
+	}
+
 	answer := textStep("Nota lida.")
 	answer.Model = "vision-1"
 	vision := f.script("kv", answer)
