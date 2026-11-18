@@ -95,7 +95,7 @@ var brFixedIncomeWithholding = domain.WithholdingTable{
 // brExemptFixedIncome are the subtypes whose interest is exempt for an individual; it mirrors
 // subtypeClass of internal/portfolio/jurisdiction/br, and a server test keeps both equal.
 var brExemptFixedIncome = []string{
-	"lci", "lca", "cri", "cra", "debenture_incentivada", "lh", "lcd", "cdca",
+	"lci", "lca", "cri", "cra", "debenture_incentivada", "lh", "lcd", "cdca", "cpr",
 }
 
 // FixedIncomeWithholding returns the withholding table of a fixed income security of a region

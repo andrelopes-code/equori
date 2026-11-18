@@ -26,6 +26,10 @@ func TestBR(t *testing.T) {
 		{"fixed_income", "cdca", "", "fixed_income_exempt"},
 		{"fixed_income", "lig", "", "fixed_income"},
 		{"fixed_income", "dpge", "", "fixed_income"},
+		// Coverage row F-18b: a financial CPR is exempt; a commercial note and a LAM are taxed.
+		{"fixed_income", "cpr", "", "fixed_income_exempt"},
+		{"fixed_income", "nota_comercial", "", "fixed_income"},
+		{"fixed_income", "lam", "", "fixed_income"},
 		{"fixed_income", "debenture", "", "fixed_income"},
 		{"fixed_income", "xyz_bond", "", "fixed_income"},
 		{"fund", "equity_fund", "", "fund_equity"},
@@ -143,7 +147,8 @@ func TestGuarantee(t *testing.T) {
 
 	for subtype, want := range map[string]bool{
 		"cdb": true, "rdb": true, "lc": true, "lh": true, "lci": true, "lca": true, "lcd": true,
-		"lf": false, "debenture": false, "lig": false, "cri": false,
+		"lf": false, "debenture": false, "lig": false, "cri": false, "lam": false, "cpr": false,
+		"nota_comercial": false,
 	} {
 		if got := g.Covered(subtype); got != want {
 			t.Errorf("Covered(%q) = %v, want %v", subtype, got, want)

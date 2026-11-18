@@ -62,7 +62,9 @@ func (Jurisdiction) DeductibleContributions() []string { return []string{"pensio
 // individual: the interest of the incentivized fixed income securities is exempt (Lei 11.033/2004
 // art. 3 and Lei 12.431/2011 art. 2, I). A letter of exchange, a financial letter and a common
 // debenture are taxed like a CDB (Lei 11.033/2004 art. 1). The LH, the LCD and the CDCA are
-// incentivized like the LCI and the LCA; a LIG is taxed like a CDB. A pension plan is the quotas of
+// incentivized like the LCI and the LCA; a LIG is taxed like a CDB. A CPR with financial
+// settlement is exempt (Lei 11.033/2004 art. 3, V); a commercial note (Lei 14.195/2021) and a
+// LAM (Lei 11.882/2008) are taxed like a CDB, and the FGC covers neither. A pension plan is the quotas of
 // the fund of its insurer: a PGBL is taxed on the whole redemption, a VGBL on its gain (Lei
 // 11.053/2004), by the progressive or the regressive table the participant chose.
 var subtypeClass = map[string]map[string]string{
@@ -75,6 +77,9 @@ var subtypeClass = map[string]map[string]string{
 		"debenture":             "fixed_income",
 		"lig":                   "fixed_income",
 		"dpge":                  "fixed_income",
+		"lam":                   "fixed_income",
+		"nota_comercial":        "fixed_income",
+		"cpr":                   "fixed_income_exempt",
 		"lh":                    "fixed_income_exempt",
 		"lcd":                   "fixed_income_exempt",
 		"cdca":                  "fixed_income_exempt",

@@ -91,11 +91,13 @@ func TestInstrumentSubtypesList(t *testing.T) {
 	), []string{
 		"cdb",
 		"cdca",
+		"cpr",
 		"cra",
 		"cri",
 		"debenture",
 		"debenture_incentivada",
 		"dpge",
+		"lam",
 		"lc",
 		"lca",
 		"lcd",
@@ -103,6 +105,7 @@ func TestInstrumentSubtypesList(t *testing.T) {
 		"lf",
 		"lh",
 		"lig",
+		"nota_comercial",
 		"rdb",
 		"tesouro",
 	}; !slices.Equal(

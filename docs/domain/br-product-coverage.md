@@ -35,7 +35,7 @@ Source status:
 | F-16 | CRI, CRA, IPCA plus spread, monthly interest, irregular amortization | partial | subtypes `cri`, `cra`, exempt class; coupons and amortizations as F-14 | as F-03; the explicit schedule is written by `set_payment_schedule` (`TestSetPaymentScheduleTool`); the unit price formula of the registrar was not compared | to read |
 | F-17 | CRI, CRA, percent of CDI, CDI plus spread, pre-fixed | supported | as F-01, F-02, F-04; `TestBRProductMatrix` row F-17 (pre-fixed) against the LTN example of the Tesouro Nacional | none | to read |
 | F-18 | CDCA | supported | subtype `cdca`, exempt class; `TestBRProductMatrix` row F-18 against the LTN example of the Tesouro Nacional | none | to read |
-| F-18b | CPR, commercial note, LAM | unsupported | no subtype | three subtypes with their tax class | to read |
+| F-18b | CPR, commercial note, LAM | supported | subtypes `cpr` (exempt class: financial settlement, Lei 11.033/2004 art. 3, V), `nota_comercial` and `lam` (taxed class); the FGC covers none; the withholding estimate follows the class (`TestWithholdingFollowsTheTaxClass`); `TestBR`, `TestInstrumentSubtypesList` | a CPR settled in goods is not modeled | Lei 11.033/2004 art. 3, V (added by Lei 11.311/2006), camara.leg.br, read 2026-11-18; LAM without FGC: B3 product page, read 2026-11-18 |
 | F-19 | Redemption within 30 days | supported | `brFixedIncomeWithholding`, `estimate_redemption`; `TestBRProductMatrix` row F-19: IOF of day 20 (33%) and income tax 22.5% on the gain less the IOF | none | Decreto 6.306/2007 art. 32 and annex, read 2026-11-18 (planalto.gov.br) |
 | F-20 | Sale before maturity on the secondary market | partial | `record_investment` kind `sell` with the oldest lot first (`CostMethod`) | the tax of a sale at a price other than the accrued one is not estimated apart | to read |
 | F-21 | Indexes IGP-M, Selic, exchange rate | unsupported | the instance stores `cdi` and `ipca` for Brazil | three indexes and their sources | to read |
@@ -90,9 +90,9 @@ Source status:
 
 | Verdict | Rows |
 |---|---|
-| supported | 21 |
+| supported | 22 |
 | partial | 25 |
-| unsupported | 6 |
+| unsupported | 5 |
 
 ## What the assistant says
 
