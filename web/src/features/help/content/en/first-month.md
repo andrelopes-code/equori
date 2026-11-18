@@ -18,7 +18,7 @@ There are three ways, and you can mix them:
 
 - **Import statement**: on the account's page, send the file your bank offers. See [Import a statement](/help/import-statement).
 - **Bank connection**: when your installation has one, transactions arrive on their own. See [Bank connections](/help/bank-connections).
-- **New transaction**: record an expense, an income or a transfer between your accounts by hand.
+- **New transaction**: record an expense, an income or a transfer between your accounts by hand. See [Record a transaction](/help/record-transaction) and, for several at once, [Record transactions as text](/help/text-capture).
 
 ## 3. Give each transaction a category
 
@@ -34,4 +34,4 @@ At the end of the month, compare each account's balance with what the institutio
 
 The [Overview](/) shows the month's balance, spending by category and what needs a decision. In [Reports](/reports), compare months and categories.
 
-Once a full month is recorded, [planning](/planning) starts suggesting budgets from your history.
+Once a full month is recorded, [planning](/planning) starts suggesting budgets from your history. See [Create a budget](/help/create-budget) and, for the bills that repeat, [Create a schedule](/help/schedule).

@@ -26,6 +26,10 @@ Os termos que aparecem nas telas do equori, em ordem alfabética.
 
 **Fechamento**: o dia em que a fatura deixa de receber compras. Uma compra depois dele entra na fatura seguinte.
 
+**Ideal**: no plano de aporte, a parte da carteira que um grupo deveria ter. Veja [O plano de aporte](/help/contribution-plan).
+
+**Liquidação**: o dia em que o dinheiro de uma compra ou venda de investimento sai ou entra na conta da corretora.
+
 **Lucro ou prejuízo atual**: quanto um investimento ganhou ou perdeu até agora, comparando o valor de mercado com o custo.
 
 **Lucro ou prejuízo nas vendas**: quanto as vendas de investimentos de um ano renderam ou perderam em relação ao custo.
@@ -41,6 +45,10 @@ Os termos que aparecem nas telas do equori, em ordem alfabética.
 **Patrimônio líquido**: o que você tem menos o que você deve.
 
 **Pendente**: situação de uma transação que a instituição ainda não confirmou, como uma compra autorizada no cartão.
+
+**Rascunho**: a transação lida de uma linha de texto, antes de ser registrada. Veja [Registrar transações por texto](/help/text-capture).
+
+**Reembolso**: dinheiro que volta por uma despesa já registrada, ligado a essa despesa. Veja [Registrar um reembolso](/help/reimbursement).
 
 **Saldo inicial**: o saldo de uma conta no dia em que o equori começa a acompanhá-la.
 

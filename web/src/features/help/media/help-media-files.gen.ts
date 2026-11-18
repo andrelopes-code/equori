@@ -81,14 +81,14 @@ import f78 from "./contribution-plan/plan-list.en.dark.png?url";
 import f79 from "./contribution-plan/plan-list.pt.dark.png?url";
 import f80 from "./contribution-plan/plan-month.en.dark.png?url";
 import f81 from "./contribution-plan/plan-month.pt.dark.png?url";
-import f82 from "./correct-transaction/0e953114a2bb.png?url";
+import f82 from "./correct-transaction/22129dda55be.png?url";
 import f83 from "./correct-transaction/2cd9058cd61a.png?url";
 import f84 from "./correct-transaction/35d7a233d062.png?url";
-import f85 from "./correct-transaction/391a9229a332.png?url";
-import f86 from "./correct-transaction/421b1b146865.png?url";
-import f87 from "./correct-transaction/4bec437f54ef.png?url";
-import f88 from "./correct-transaction/4db7a441c418.png?url";
-import f89 from "./correct-transaction/87e5c5677e82.png?url";
+import f85 from "./correct-transaction/421b1b146865.png?url";
+import f86 from "./correct-transaction/4bec437f54ef.png?url";
+import f87 from "./correct-transaction/4db7a441c418.png?url";
+import f88 from "./correct-transaction/61bea6a9c21a.png?url";
+import f89 from "./correct-transaction/89d152f2c560.png?url";
 import f90 from "./correct-transaction/correct-choose.en.dark.png?url";
 import f91 from "./correct-transaction/correct-choose.pt.dark.png?url";
 import f92 from "./correct-transaction/correct-fields.en.dark.png?url";
@@ -102,9 +102,9 @@ import f99 from "./correct-transaction/correct-reason.pt.dark.png?url";
 import f100 from "./correct-transaction/correct-save.en.dark.png?url";
 import f101 from "./correct-transaction/correct-save.pt.dark.png?url";
 import f102 from "./correct-transaction/d1e184ef3d4a.png?url";
-import f103 from "./correct-transaction/d47f7df4a9e2.png?url";
-import f104 from "./correct-transaction/e7ff71cebedd.png?url";
-import f105 from "./correct-transaction/e811be77ef41.png?url";
+import f103 from "./correct-transaction/e7ff71cebedd.png?url";
+import f104 from "./correct-transaction/e811be77ef41.png?url";
+import f105 from "./correct-transaction/e84c68522eea.png?url";
 import f106 from "./create-budget/1c6a49d83f3f.png?url";
 import f107 from "./create-budget/8295f9330cfd.png?url";
 import f108 from "./create-budget/8589ce9656d9.png?url";
@@ -357,14 +357,14 @@ export const helpMediaFiles: Partial<Record<string, string>> = {
   "plan-list.pt.dark.png": f79,
   "plan-month.en.dark.png": f80,
   "plan-month.pt.dark.png": f81,
-  "correct-transaction/0e953114a2bb.png": f82,
+  "correct-transaction/22129dda55be.png": f82,
   "correct-transaction/2cd9058cd61a.png": f83,
   "correct-transaction/35d7a233d062.png": f84,
-  "correct-transaction/391a9229a332.png": f85,
-  "correct-transaction/421b1b146865.png": f86,
-  "correct-transaction/4bec437f54ef.png": f87,
-  "correct-transaction/4db7a441c418.png": f88,
-  "correct-transaction/87e5c5677e82.png": f89,
+  "correct-transaction/421b1b146865.png": f85,
+  "correct-transaction/4bec437f54ef.png": f86,
+  "correct-transaction/4db7a441c418.png": f87,
+  "correct-transaction/61bea6a9c21a.png": f88,
+  "correct-transaction/89d152f2c560.png": f89,
   "correct-choose.en.dark.png": f90,
   "correct-choose.pt.dark.png": f91,
   "correct-fields.en.dark.png": f92,
@@ -378,9 +378,9 @@ export const helpMediaFiles: Partial<Record<string, string>> = {
   "correct-save.en.dark.png": f100,
   "correct-save.pt.dark.png": f101,
   "correct-transaction/d1e184ef3d4a.png": f102,
-  "correct-transaction/d47f7df4a9e2.png": f103,
-  "correct-transaction/e7ff71cebedd.png": f104,
-  "correct-transaction/e811be77ef41.png": f105,
+  "correct-transaction/e7ff71cebedd.png": f103,
+  "correct-transaction/e811be77ef41.png": f104,
+  "correct-transaction/e84c68522eea.png": f105,
   "create-budget/1c6a49d83f3f.png": f106,
   "create-budget/8295f9330cfd.png": f107,
   "create-budget/8589ce9656d9.png": f108,

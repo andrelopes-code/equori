@@ -18,7 +18,7 @@ Há três caminhos, e eles podem ser combinados:
 
 - **Importar extrato**: na página da conta, envie o arquivo que o banco oferece. Veja [Importar um extrato](/help/import-statement).
 - **Conexão bancária**: quando a sua instalação tem uma, as transações chegam sozinhas. Veja [Conexões bancárias](/help/bank-connections).
-- **Nova transação**: registre à mão uma despesa, uma receita ou uma transferência entre suas contas.
+- **Nova transação**: registre à mão uma despesa, uma receita ou uma transferência entre suas contas. Veja [Registrar uma transação](/help/record-transaction) e, para várias de uma vez, [Registrar transações por texto](/help/text-capture).
 
 ## 3. Dê uma categoria a cada transação
 
@@ -34,4 +34,4 @@ No fim do mês, compare o saldo de cada conta com o que a instituição mostra. 
 
 A [Visão geral](/) mostra o saldo do mês, os gastos por categoria e o que pede decisão. Em [Relatórios](/reports), compare meses e categorias.
 
-Com um mês completo registrado, o [planejamento](/planning) passa a sugerir orçamentos pelo seu histórico.
+Com um mês completo registrado, o [planejamento](/planning) passa a sugerir orçamentos pelo seu histórico. Veja [Criar um orçamento](/help/create-budget) e, para as contas que se repetem, [Criar um agendamento](/help/schedule).

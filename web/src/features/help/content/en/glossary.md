@@ -16,6 +16,8 @@ The terms on equori's screens, in alphabetical order.
 
 **Closing date**: the day the statement stops taking purchases. A purchase after it goes to the next statement.
 
+**Draft**: the transaction read from one line of text, before it is recorded. See [Record transactions as text](/help/text-capture).
+
 **Due date**: the day the statement must be paid.
 
 **Gain or loss now**: how much an investment has gained or lost so far, comparing its market value with its cost.
@@ -46,11 +48,17 @@ The terms on equori's screens, in alphabetical order.
 
 **Refund**: the return, in full or in part, of a card purchase. The amount comes back as a credit on the statement.
 
+**Reimbursement**: money that comes back for an expense already recorded, linked to that expense. See [Record a reimbursement](/help/reimbursement).
+
 **Schedule**: a bill, income, subscription, transfer or saving that repeats. Each expected repetition is an occurrence.
+
+**Settlement**: the day the money of an investment buy or sale leaves or enters the cash of the brokerage.
 
 **Statement**: the purchases of one credit card cycle, billed at once. See [The statement screen](/help/statement).
 
 **Tag**: a free label that cuts across categories, such as a trip. A transaction can carry several.
+
+**Target**: in the contribution plan, the share of the portfolio a group should hold. See [The contribution plan](/help/contribution-plan).
 
 **Transaction**: a movement of money: an expense, an income or a transfer between your accounts. See [How equori records money](/help/how-money-is-recorded).
 
