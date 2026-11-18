@@ -9927,6 +9927,37 @@
     }
   },
   {
+    "name": "set_base_currency",
+    "description": "Proposes the base currency of the book, the currency of its totals, reports and budgets. It is allowed only while the book has no transaction: after the first one it is refused (settings_locked) and nothing changes it. Use it when the owner sets up a book in another currency; list_accounts shows the current one. Do not use it for the currency of one account: manage_accounts_and_payees does. The user confirms first.",
+    "effect": "write",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "base_currency": {
+          "type": "string",
+          "description": "ISO 4217 code of the currency the book adds its totals in, such as BRL or USD"
+        }
+      },
+      "required": [
+        "base_currency"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "base_currency": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "base_currency"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "settle_statement",
     "description": "Proposes an action on a credit card statement: pay it from an account, finance its unpaid amount in installments, confirm the amount the institution charges, record or remove the institution's due date and total, or move postings the institution billed on the next statement. Use it when the user pays a card bill or reports what the bank's statement says. Do not use it for one purchase: handle_card_purchase does. The user confirms first.",
     "effect": "write",

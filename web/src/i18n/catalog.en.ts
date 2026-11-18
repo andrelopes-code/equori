@@ -145,6 +145,7 @@ export const catalogEn = {
   "help.steps.next": "Next step",
   "help.figure.enlarge": "Enlarge",
   "help.video.close": "Close the video",
+  "help.video.steps": "Steps of the video",
   "help.after.title": "If something went differently",
   "help.after.symptoms": "Symptoms of this task",
   "help.after.cause": "Cause and steps",
@@ -1881,6 +1882,7 @@ export const catalogEn = {
   "assistant.step.reconcile_account": "Preparing a reconciliation",
   "assistant.step.record_investment": "Preparing an investment transaction",
   "assistant.step.transfer_custody": "Preparing a custody transfer",
+  "assistant.step.set_base_currency": "Preparing the base currency change",
   "assistant.step.save_contribution_plan": "Preparing the contribution plan",
   "assistant.step.review_investment_movement":
     "Preparing the review of an investment movement",
@@ -1951,6 +1953,7 @@ export const catalogEn = {
   "assistant.action.record_investment.sell": "Record sale of security",
   "assistant.action.record_investment.income": "Record investment income",
   "assistant.action.transfer_custody": "Transfer custody",
+  "assistant.action.set_base_currency": "Change base currency",
   "assistant.action.save_contribution_plan": "Save contribution plan",
   "assistant.action.review_investment_movement.confirm":
     "Confirm investment movement",

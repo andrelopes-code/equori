@@ -67,7 +67,7 @@ var exposure = map[string]string{
 	"getVersion":                       "-instance",
 	"setUpdateCheck":                   "-instance",
 	"getSettings":                      "list_accounts",
-	"updateSettings":                   "-setup",
+	"updateSettings":                   "set_base_currency",
 	"listInstitutions":                 "list_payees_and_tags",
 	"createInstitution":                "manage_accounts_and_payees",
 	"deleteInstitution":                "manage_accounts_and_payees",

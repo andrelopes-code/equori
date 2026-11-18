@@ -2,7 +2,7 @@ Your language sets the language of the app and of the assistant's answers. It fo
 
 The region of your finances sets how numbers and dates are written and which regional rules apply, such as the business-day calendar and tax rules of investments. The time zone sets which day is today and when each month starts; until one is chosen, the region's zone applies.
 
-The base currency is chosen when your finances are created and can change only before the first transaction. Language model providers, the chain of models of each use and daily limits are in the Assistant section of Settings.
+The base currency is chosen when your finances are created and can change only before the first transaction. The tool set_base_currency changes it for the owner with base_currency, an ISO 4217 code such as BRL or USD; after the first transaction it is refused (settings_locked), and no tool or screen changes it then. Language model providers, the chain of models of each use and daily limits are in the Assistant section of Settings.
 
 Settings, Market data, lists the price sources an admin enables. Each source states how many instruments it quotes and how many history requests are pending. A source marked Not official asks for a confirmation before it is enabled; its quotes fill only the dates that no official source covers.
 

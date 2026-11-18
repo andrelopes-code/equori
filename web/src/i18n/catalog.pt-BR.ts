@@ -148,6 +148,7 @@ export const catalogPtBR: Catalog = {
   "help.steps.next": "Próximo passo",
   "help.figure.enlarge": "Ampliar",
   "help.video.close": "Fechar o vídeo",
+  "help.video.steps": "Passos do vídeo",
   "help.after.title": "Se algo saiu diferente",
   "help.after.symptoms": "Sintomas desta tarefa",
   "help.after.cause": "Causa e passos",
@@ -1894,6 +1895,7 @@ export const catalogPtBR: Catalog = {
   "assistant.step.record_investment":
     "Preparando o registro de um investimento",
   "assistant.step.transfer_custody": "Preparando uma transferência de custódia",
+  "assistant.step.set_base_currency": "Preparando a troca da moeda base",
   "assistant.step.save_contribution_plan": "Preparando o plano de aportes",
   "assistant.step.review_investment_movement":
     "Preparando a revisão de um movimento de investimento",
@@ -1971,6 +1973,7 @@ export const catalogPtBR: Catalog = {
   "assistant.action.record_investment.sell": "Registrar venda de ativo",
   "assistant.action.record_investment.income": "Registrar provento",
   "assistant.action.transfer_custody": "Transferir custódia",
+  "assistant.action.set_base_currency": "Trocar moeda base",
   "assistant.action.save_contribution_plan": "Salvar plano de aportes",
   "assistant.action.review_investment_movement.confirm":
     "Confirmar movimento de investimento",
