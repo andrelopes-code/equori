@@ -54,7 +54,7 @@ export function HelpSearch({
   }, []);
 
   return (
-    <div className={styles.ask} role="search">
+    <div className={styles.ask} data-part="ask" role="search">
       <TextField
         ref={field}
         type="search"

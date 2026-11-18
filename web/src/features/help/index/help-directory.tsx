@@ -31,7 +31,7 @@ export function HelpDirectory({ library }: HelpDirectoryProps) {
       </SectionHeader>
 
       <SectionBody>
-        <div className={styles.areas}>
+        <div className={styles.areas} data-part="areas">
           {helpAreas.map((area) => (
             <HelpArea key={area} area={area} library={library} />
           ))}

@@ -24,6 +24,7 @@ export function AssistantAsk({ question, size = "md" }: AssistantAskProps) {
     <button
       className={styles.assistantAsk}
       data-size={size}
+      data-part="assistant"
       type="button"
       onClick={() => {
         askAssistant(question);

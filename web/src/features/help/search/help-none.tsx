@@ -31,7 +31,7 @@ export function HelpNone({
   ] as const;
 
   return (
-    <div className={styles.found}>
+    <div className={styles.found} data-part="found">
       <div className={styles.none}>
         <h2 className={styles.noneTitle}>
           {t("help.search.none.title", { query })}

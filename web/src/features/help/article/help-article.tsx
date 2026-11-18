@@ -40,7 +40,7 @@ export function HelpArticle({ document, page }: HelpArticleProps) {
   const symptoms = page === "troubleshooting";
 
   return (
-    <div className={styles.guide}>
+    <div className={styles.guide} data-part="guide">
       <div className={styles.rail}>
         {text !== null && (
           <TableOfContents

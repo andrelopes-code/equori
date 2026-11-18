@@ -51,7 +51,7 @@ export function HelpStage({
   const what = plainText(step?.markdown ?? "").replace(/:.*/, ".");
 
   return (
-    <div className={styles.stage}>
+    <div className={styles.stage} data-part="stage">
       <div className={styles.stageBar}>
         {clip !== undefined && (
           <SegmentedControl

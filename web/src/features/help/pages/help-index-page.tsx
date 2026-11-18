@@ -68,7 +68,7 @@ export function HelpIndexPage() {
         )}
 
         {!library.isError && (
-          <div className={styles.help}>
+          <div className={styles.help} data-part="help">
             <HelpSearch
               query={query}
               onQueryChange={search.setQuery}

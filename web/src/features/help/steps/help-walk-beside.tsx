@@ -27,7 +27,7 @@ export function HelpWalkBeside({ steps, video }: HelpWalkBesideProps) {
   };
 
   return (
-    <div className={styles.walk}>
+    <div className={styles.walk} data-part="walk">
       <ol className={[styles.steps, styles.stepsPick].join(" ")}>
         {steps.map((step, index) => (
           <li className={styles.step} key={step.markdown}>

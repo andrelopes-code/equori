@@ -16,7 +16,7 @@ interface HelpWalkStackedProps {
 // steps (help spec, HP5).
 export function HelpWalkStacked({ steps, video }: HelpWalkStackedProps) {
   return (
-    <div className={styles.walk}>
+    <div className={styles.walk} data-part="walk">
       {video !== undefined && (
         <HelpClip video={video} poster={steps[0]?.figure} />
       )}

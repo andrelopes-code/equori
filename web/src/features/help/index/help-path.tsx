@@ -70,7 +70,7 @@ export function HelpPath({ page }: HelpPathProps) {
       </SectionHeader>
 
       <SectionBody>
-        <ol className={styles.pathSteps}>
+        <ol className={styles.pathSteps} data-part="path">
           {page === undefined &&
             WAITING.map((number) => (
               <li className={styles.pathStep} key={number}>

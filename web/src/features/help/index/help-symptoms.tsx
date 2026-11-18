@@ -32,7 +32,7 @@ export function HelpSymptoms({ symptoms }: HelpSymptomsProps) {
       </SectionHeader>
 
       <SectionBody>
-        <ul className={styles.symptoms} role="list">
+        <ul className={styles.symptoms} role="list" data-part="symptoms">
           {symptoms.map((symptom) => (
             <HelpRow
               key={symptom.id}

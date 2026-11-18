@@ -44,7 +44,11 @@ export function HelpBest({ hit, page, query, active }: HelpBestProps) {
   ].filter((part) => typeof part === "string");
 
   return (
-    <div className={styles.best} data-active={active ? "" : undefined}>
+    <div
+      className={styles.best}
+      data-part="best"
+      data-active={active ? "" : undefined}
+    >
       <HelpAnchor className={styles.bestLink} page={hit.page} hash={hit.hash}>
         <span className={styles.resultTitle}>
           <span className={styles.bestTitle}>

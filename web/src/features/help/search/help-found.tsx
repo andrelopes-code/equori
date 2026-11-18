@@ -49,7 +49,7 @@ export function HelpFound({ library, result, active }: HelpFoundProps) {
   const count = numberFormatter(locale).format(result.count);
 
   return (
-    <div className={styles.found}>
+    <div className={styles.found} data-part="found">
       <div className={styles.foundHead}>
         <Text
           size="sm"
