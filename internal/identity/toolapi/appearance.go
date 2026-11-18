@@ -14,12 +14,12 @@ import (
 type setAppearanceIn struct {
 	Scheme         appearanceScheme         `json:"scheme,omitzero"          jsonschema:"colour scheme"`
 	Density        appearanceDensity        `json:"density,omitzero"         jsonschema:"space between controls"`
-	TextSize       appearanceTextSize       `json:"text_size,omitzero"       jsonschema:"text size as a percentage of the browser's own"`
-	Motion         appearanceMotion         `json:"motion,omitzero"          jsonschema:"system follows the device; reduced turns animation off"`
-	Corners        appearanceCorners        `json:"corners,omitzero"         jsonschema:"roundness of corners"`
-	Typeface       appearanceTypeface       `json:"typeface,omitzero"        jsonschema:"typeface of the text"`
-	AmountTone     appearanceAmountTone     `json:"amount_tone,omitzero"     jsonschema:"colour marks an amount by green and red; sign by its sign only"`
-	SummaryAmounts appearanceSummaryAmounts `json:"summary_amounts,omitzero" jsonschema:"summary figures: full with cents, whole without cents, compact as 1.2k"`
+	TextSize       appearanceTextSize       `json:"text_size,omitzero"       jsonschema:"percent of the browser's size"`
+	Motion         appearanceMotion         `json:"motion,omitzero"          jsonschema:"reduced turns animation off"`
+	Corners        appearanceCorners        `json:"corners,omitzero"         jsonschema:"roundness"`
+	Typeface       appearanceTypeface       `json:"typeface,omitzero"        jsonschema:"typeface"`
+	AmountTone     appearanceAmountTone     `json:"amount_tone,omitzero"     jsonschema:"colour is green and red; sign is the sign only"`
+	SummaryAmounts appearanceSummaryAmounts `json:"summary_amounts,omitzero" jsonschema:"full with cents, whole without, compact as 1.2k"`
 	Visual         appearanceVisual         `json:"visual,omitzero"          jsonschema:"visual style"`
 	Accent         string                   `json:"accent,omitzero"          jsonschema:"accent colour: indigo, violet, pink, rose, orange, emerald, cyan, blue, or #rrggbb"`
 }
@@ -49,9 +49,8 @@ type choice struct {
 func setAppearance(svc *app.Service) tool.Tool {
 	return tool.NewWrite(tool.Spec{
 		Name: "set_appearance",
-		Description: "Proposes changing the member's appearance of the app: scheme, density, text size, motion, " +
-			"corners, typeface, amount tone, summary amounts, visual style and accent colour. " +
-			"Only the choices given change; the others, the saved themes and the accents of each book stay. " +
+		Description: "Proposes changing the member's appearance of the app; only the choices given change, " +
+			"and the saved themes and the accents of each book stay. " +
 			"Use it when the user asks to change how the app looks. " +
 			"Do not use it for the colour of one account: manage_accounts_and_payees does. " +
 			"The user confirms first.",
@@ -63,7 +62,7 @@ func getAppearance(svc *app.Service) tool.Tool {
 	return tool.New(tool.Spec{
 		Name: "get_appearance",
 		Description: "Returns the member's appearance choices that set_appearance writes; a choice never made is absent. " +
-			"Use it when the user asks how the app is set to look, before changing it. " +
+			"Use it before changing the look of the app. " +
 			"Do not use it for the language or the region: update_profile and manage_book change them.",
 		Effect: tool.ReadOnly,
 	}, func(ctx context.Context, _ int64, _ getAppearanceIn) (appearanceOut, error) {

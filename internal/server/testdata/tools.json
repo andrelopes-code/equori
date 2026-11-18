@@ -204,7 +204,7 @@
   },
   {
     "name": "detach_attachment",
-    "description": "Proposes removing an attachment from its transaction, as Transaction detail does; the stored file is deleted when no other transaction holds it. Use it when the user asks to remove an attachment. Do not use it to void the transaction: void_transaction does. The user confirms first.",
+    "description": "Proposes removing an attachment from its transaction; the file is deleted when no other transaction holds it. Use it when the user asks to remove an attachment. Do not use it to void the transaction: void_transaction does. The user confirms first.",
     "effect": "destructive",
     "idempotent": false,
     "input_schema": {
@@ -1141,7 +1141,7 @@
   },
   {
     "name": "get_appearance",
-    "description": "Returns the member's appearance choices that set_appearance writes; a choice never made is absent. Use it when the user asks how the app is set to look, before changing it. Do not use it for the language or the region: update_profile and manage_book change them.",
+    "description": "Returns the member's appearance choices that set_appearance writes; a choice never made is absent. Use it before changing the look of the app. Do not use it for the language or the region: update_profile and manage_book change them.",
     "effect": "read_only",
     "idempotent": false,
     "input_schema": {
@@ -2591,7 +2591,7 @@
   },
   {
     "name": "get_csv_profile",
-    "description": "Returns how the csv files of one account are read, as Import statement shows it: delimiter, header and footer rows, the columns of date, amount or debit and credit, description and id, the date layout and the number format. Use it before importing a csv file or changing the profile. Do not use it for an ofx file, which needs no profile.",
+    "description": "Returns how the csv files of one account are read: delimiter, rows, columns, date layout and number format. Use it before importing a csv file. Do not use it for an ofx file.",
     "effect": "read_only",
     "idempotent": false,
     "input_schema": {
@@ -2612,7 +2612,7 @@
       "properties": {
         "account_id": {
           "type": "string",
-          "description": "account whose csv files the profile reads"
+          "description": "account of the profile"
         },
         "delimiter": {
           "type": "string",
@@ -2630,27 +2630,27 @@
         },
         "date_column": {
           "type": "string",
-          "description": "header name of the date column, or its position for a file without a header"
+          "description": "header name, or position without a header; as every column"
         },
         "date_layout": {
           "type": "string",
-          "description": "order and separator of the date, such as DD/MM/YYYY"
+          "description": "such as DD/MM/YYYY"
         },
         "amount_column": {
           "type": "string",
-          "description": "column of a signed amount; or debit_column and credit_column"
+          "description": "signed amount; or debit_column and credit_column"
         },
         "debit_column": {
           "type": "string",
-          "description": "column of debits"
+          "description": "debits"
         },
         "credit_column": {
           "type": "string",
-          "description": "column of credits"
+          "description": "credits"
         },
         "decimal_separator": {
           "type": "string",
-          "description": "decimal separator of amounts",
+          "description": "of amounts",
           "enum": [
             ",",
             "."
@@ -2658,15 +2658,15 @@
         },
         "description_column": {
           "type": "string",
-          "description": "column of the description"
+          "description": "description"
         },
         "id_column": {
           "type": "string",
-          "description": "column of the bank's id of a line"
+          "description": "the bank's id of a line"
         },
         "amount_sign": {
           "type": "string",
-          "description": "inverted flips every sign, for card exports that list charges as positive",
+          "description": "inverted flips every sign",
           "enum": [
             "as_is",
             "inverted"
@@ -2674,11 +2674,11 @@
         },
         "encoding": {
           "type": "string",
-          "description": "text encoding; auto keeps UTF-8 and reads anything else as windows-1252"
+          "description": "auto keeps UTF-8, else windows-1252"
         },
         "group_separator": {
           "type": "string",
-          "description": "digit group separator; the one that is not decimal_separator when absent"
+          "description": "the other separator when absent"
         },
         "footer_rows": {
           "type": "integer",
@@ -2686,11 +2686,11 @@
         },
         "sign_column": {
           "type": "string",
-          "description": "column that says whether a line is a debit; needs debit_marker"
+          "description": "marks a debit; needs debit_marker"
         },
         "debit_marker": {
           "type": "string",
-          "description": "text that marks a debit, compared without case"
+          "description": "compared without case"
         }
       },
       "required": [
@@ -7410,7 +7410,7 @@
   },
   {
     "name": "import_price_file",
-    "description": "Proposes recording the prices of a csv file the user attached to the conversation, as the price import of the instruments screen does: header instrument,quote_instrument,date,value, at most 10,000 lines, all or nothing, as source csv. Use it when the user attaches a price file. Do not use it for a few prices typed in the message: record_price_series does. The user confirms first.",
+    "description": "Proposes recording the prices of a csv file the user attached to the conversation, as the price import of Instruments does: header instrument,quote_instrument,date,value, at most 10,000 lines, all or nothing, as source csv. Use it when the user attaches a price file. Do not use it for a few prices typed in the message: record_price_series does. The user confirms first.",
     "effect": "write",
     "idempotent": false,
     "input_schema": {
@@ -11412,7 +11412,7 @@
   },
   {
     "name": "save_csv_profile",
-    "description": "Proposes setting how the csv files of one account are read, as Import statement does; it replaces the whole profile. Read the masked sample of the [file ...] line of an attached csv to choose the columns by their header names. Use it before import_statement_file when the account has no profile or the file does not match it. Do not use it for an ofx file. The user confirms first.",
+    "description": "Proposes replacing how the csv files of one account are read, as Import statement does; choose the columns from the masked sample of an attached csv. Use it before import_statement_file when the file does not match the profile. Do not use it for an ofx file. The user confirms first.",
     "effect": "write",
     "idempotent": false,
     "input_schema": {
@@ -11420,7 +11420,7 @@
       "properties": {
         "account_id": {
           "type": "string",
-          "description": "account whose csv files the profile reads"
+          "description": "account of the profile"
         },
         "delimiter": {
           "type": "string",
@@ -11438,27 +11438,27 @@
         },
         "date_column": {
           "type": "string",
-          "description": "header name of the date column, or its position for a file without a header"
+          "description": "header name, or position without a header; as every column"
         },
         "date_layout": {
           "type": "string",
-          "description": "order and separator of the date, such as DD/MM/YYYY"
+          "description": "such as DD/MM/YYYY"
         },
         "amount_column": {
           "type": "string",
-          "description": "column of a signed amount; or debit_column and credit_column"
+          "description": "signed amount; or debit_column and credit_column"
         },
         "debit_column": {
           "type": "string",
-          "description": "column of debits"
+          "description": "debits"
         },
         "credit_column": {
           "type": "string",
-          "description": "column of credits"
+          "description": "credits"
         },
         "decimal_separator": {
           "type": "string",
-          "description": "decimal separator of amounts",
+          "description": "of amounts",
           "enum": [
             ",",
             "."
@@ -11466,15 +11466,15 @@
         },
         "description_column": {
           "type": "string",
-          "description": "column of the description"
+          "description": "description"
         },
         "id_column": {
           "type": "string",
-          "description": "column of the bank's id of a line"
+          "description": "the bank's id of a line"
         },
         "amount_sign": {
           "type": "string",
-          "description": "inverted flips every sign, for card exports that list charges as positive",
+          "description": "inverted flips every sign",
           "enum": [
             "as_is",
             "inverted"
@@ -11482,11 +11482,11 @@
         },
         "encoding": {
           "type": "string",
-          "description": "text encoding; auto keeps UTF-8 and reads anything else as windows-1252"
+          "description": "auto keeps UTF-8, else windows-1252"
         },
         "group_separator": {
           "type": "string",
-          "description": "digit group separator; the one that is not decimal_separator when absent"
+          "description": "the other separator when absent"
         },
         "footer_rows": {
           "type": "integer",
@@ -11494,11 +11494,11 @@
         },
         "sign_column": {
           "type": "string",
-          "description": "column that says whether a line is a debit; needs debit_marker"
+          "description": "marks a debit; needs debit_marker"
         },
         "debit_marker": {
           "type": "string",
-          "description": "text that marks a debit, compared without case"
+          "description": "compared without case"
         }
       },
       "required": [
@@ -11515,7 +11515,7 @@
       "properties": {
         "account_id": {
           "type": "string",
-          "description": "account whose csv files the profile reads"
+          "description": "account of the profile"
         },
         "delimiter": {
           "type": "string",
@@ -11533,27 +11533,27 @@
         },
         "date_column": {
           "type": "string",
-          "description": "header name of the date column, or its position for a file without a header"
+          "description": "header name, or position without a header; as every column"
         },
         "date_layout": {
           "type": "string",
-          "description": "order and separator of the date, such as DD/MM/YYYY"
+          "description": "such as DD/MM/YYYY"
         },
         "amount_column": {
           "type": "string",
-          "description": "column of a signed amount; or debit_column and credit_column"
+          "description": "signed amount; or debit_column and credit_column"
         },
         "debit_column": {
           "type": "string",
-          "description": "column of debits"
+          "description": "debits"
         },
         "credit_column": {
           "type": "string",
-          "description": "column of credits"
+          "description": "credits"
         },
         "decimal_separator": {
           "type": "string",
-          "description": "decimal separator of amounts",
+          "description": "of amounts",
           "enum": [
             ",",
             "."
@@ -11561,15 +11561,15 @@
         },
         "description_column": {
           "type": "string",
-          "description": "column of the description"
+          "description": "description"
         },
         "id_column": {
           "type": "string",
-          "description": "column of the bank's id of a line"
+          "description": "the bank's id of a line"
         },
         "amount_sign": {
           "type": "string",
-          "description": "inverted flips every sign, for card exports that list charges as positive",
+          "description": "inverted flips every sign",
           "enum": [
             "as_is",
             "inverted"
@@ -11577,11 +11577,11 @@
         },
         "encoding": {
           "type": "string",
-          "description": "text encoding; auto keeps UTF-8 and reads anything else as windows-1252"
+          "description": "auto keeps UTF-8, else windows-1252"
         },
         "group_separator": {
           "type": "string",
-          "description": "digit group separator; the one that is not decimal_separator when absent"
+          "description": "the other separator when absent"
         },
         "footer_rows": {
           "type": "integer",
@@ -11589,11 +11589,11 @@
         },
         "sign_column": {
           "type": "string",
-          "description": "column that says whether a line is a debit; needs debit_marker"
+          "description": "marks a debit; needs debit_marker"
         },
         "debit_marker": {
           "type": "string",
-          "description": "text that marks a debit, compared without case"
+          "description": "compared without case"
         }
       },
       "required": [
@@ -11746,7 +11746,7 @@
   },
   {
     "name": "set_appearance",
-    "description": "Proposes changing the member's appearance of the app: scheme, density, text size, motion, corners, typeface, amount tone, summary amounts, visual style and accent colour. Only the choices given change; the others, the saved themes and the accents of each book stay. Use it when the user asks to change how the app looks. Do not use it for the colour of one account: manage_accounts_and_payees does. The user confirms first.",
+    "description": "Proposes changing the member's appearance of the app; only the choices given change, and the saved themes and the accents of each book stay. Use it when the user asks to change how the app looks. Do not use it for the colour of one account: manage_accounts_and_payees does. The user confirms first.",
     "effect": "write",
     "idempotent": false,
     "input_schema": {
@@ -11773,7 +11773,7 @@
         },
         "text_size": {
           "type": "string",
-          "description": "text size as a percentage of the browser's own",
+          "description": "percent of the browser's size",
           "enum": [
             "85",
             "90",
@@ -11791,7 +11791,7 @@
         },
         "motion": {
           "type": "string",
-          "description": "system follows the device; reduced turns animation off",
+          "description": "reduced turns animation off",
           "enum": [
             "system",
             "reduced"
@@ -11799,7 +11799,7 @@
         },
         "corners": {
           "type": "string",
-          "description": "roundness of corners",
+          "description": "roundness",
           "enum": [
             "square",
             "soft",
@@ -11809,7 +11809,7 @@
         },
         "typeface": {
           "type": "string",
-          "description": "typeface of the text",
+          "description": "typeface",
           "enum": [
             "geist",
             "system",
@@ -11821,7 +11821,7 @@
         },
         "amount_tone": {
           "type": "string",
-          "description": "colour marks an amount by green and red; sign by its sign only",
+          "description": "colour is green and red; sign is the sign only",
           "enum": [
             "colour",
             "sign"
@@ -11829,7 +11829,7 @@
         },
         "summary_amounts": {
           "type": "string",
-          "description": "summary figures: full with cents, whole without cents, compact as 1.2k",
+          "description": "full with cents, whole without, compact as 1.2k",
           "enum": [
             "full",
             "whole",
@@ -11979,6 +11979,150 @@
       },
       "required": [
         "account_id"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "set_payment_schedule",
+    "description": "Proposes replacing the interest and principal dates of a fixed income instrument with the issuer's schedule; the other terms stay. Use it for irregular dates, such as the amortization of a CRI. Do not use it for a regular period: set_terms takes interest_every_months. The user confirms first.",
+    "effect": "write",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "code of a fixed income instrument with terms"
+        },
+        "payments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "pays_on": {
+                "type": "string",
+                "description": "date",
+                "format": "date"
+              },
+              "amortization_bp": {
+                "type": "integer",
+                "description": "basis points of the principal at issue; 0 for interest only"
+              },
+              "pays_interest": {
+                "type": "boolean",
+                "description": "pays the accrued interest"
+              }
+            },
+            "required": [
+              "pays_on",
+              "amortization_bp",
+              "pays_interest"
+            ],
+            "additionalProperties": false
+          },
+          "description": "every date of interest or principal; at most 400"
+        }
+      },
+      "required": [
+        "code",
+        "payments"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "terms": {
+          "type": "object",
+          "properties": {
+            "issued_on": {
+              "type": "string",
+              "format": "date"
+            },
+            "matures_on": {
+              "type": "string",
+              "format": "date"
+            },
+            "index_id": {
+              "type": "string"
+            },
+            "percent_of_index_bp": {
+              "type": "integer"
+            },
+            "spread_bp": {
+              "type": "integer"
+            },
+            "day_count": {
+              "type": "string"
+            },
+            "face_value": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "type": "string",
+                  "description": "decimal amount in the instrument's scale, such as -1234.56"
+                },
+                "currency": {
+                  "type": "string",
+                  "description": "currency or instrument code"
+                }
+              },
+              "required": [
+                "amount",
+                "currency"
+              ],
+              "additionalProperties": false
+            },
+            "calendar_id": {
+              "type": "string"
+            },
+            "daily_liquidity": {
+              "type": "boolean"
+            },
+            "redeemable_from": {
+              "type": "string",
+              "format": "date"
+            },
+            "payments": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "pays_on": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "amortization_bp": {
+                    "type": "integer"
+                  },
+                  "pays_interest": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "pays_on",
+                  "amortization_bp",
+                  "pays_interest"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "issued_on",
+            "matures_on",
+            "percent_of_index_bp",
+            "spread_bp",
+            "day_count",
+            "face_value",
+            "daily_liquidity"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "terms"
       ],
       "additionalProperties": false
     }

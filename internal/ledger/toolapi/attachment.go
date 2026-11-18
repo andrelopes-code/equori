@@ -81,9 +81,9 @@ func attachFile(svc *app.Service, files ConversationFile) tool.Tool {
 func detachAttachment(svc *app.Service) tool.Tool {
 	return tool.NewWrite(tool.Spec{
 		Name: "detach_attachment",
-		Description: "Proposes removing an attachment from its transaction, as Transaction detail does; the stored " +
-			"file is deleted when no other transaction holds it. Use it when the user asks to remove an " +
-			"attachment. Do not use it to void the transaction: void_transaction does. The user confirms first.",
+		Description: "Proposes removing an attachment from its transaction; the file is deleted when no other " +
+			"transaction holds it. Use it when the user asks to remove an attachment. " +
+			"Do not use it to void the transaction: void_transaction does. The user confirms first.",
 		Effect: tool.Destructive,
 		Role:   auth.RoleWrite,
 	}, func(ctx context.Context, booksID int64, in detachAttachmentIn) (tool.Preview, error) {

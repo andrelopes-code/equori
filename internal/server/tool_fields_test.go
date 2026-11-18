@@ -143,7 +143,7 @@ var uncoveredFields = map[string][]string{
 	}, // the tool reads it as month
 	"putInstrumentTerms": {
 		"payments",
-	}, // explicit payment dates exceed the tool budget; set through the API and the terms dialog (A236 FC16 amended)
+	}, // manage_instrument set_terms leaves it out for its size; set_payment_schedule writes it (F-16)
 	"createFixedIncomeApplication": {
 		"application_id",
 		"contract",

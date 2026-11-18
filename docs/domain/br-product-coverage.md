@@ -30,9 +30,9 @@ Source status:
 | F-11 | LIG | partial | subtype `lig`, classed as taxed and without guarantee | the tax treatment is stated as not confirmed in `fixed_income_br` | to read |
 | F-12 | LH, LCD | supported | subtypes `lh`, `lcd`, exempt class, FGC list | none | Lei 11.033/2004 art. 3, II (LH), read on 2026-11-18; LCD: Lei 14.937/2024, to read |
 | F-13 | DPGE | unsupported | no subtype; `domain.Guarantee` holds one limit per holder | subtype and a second guarantee limit | to read |
-| F-14 | Debenture with half-yearly coupon and amortization | partial | `record_fixed_income` takes `interest_every_months`, `first_payment_on` and `amortizations`; `get_portfolio` view `fixed_income_events` | `manage_instrument set_terms` does not take explicit payment dates (`uncoveredFields`, `putInstrumentTerms.payments`) | to read |
+| F-14 | Debenture with half-yearly coupon and amortization | partial | `record_fixed_income` takes `interest_every_months`, `first_payment_on` and `amortizations`; `get_portfolio` view `fixed_income_events` | none for the schedule: `set_payment_schedule` writes explicit payment dates (`TestSetPaymentScheduleTool`) | to read |
 | F-15 | Incentivized debenture | partial | subtype `debenture_incentivada`, exempt class | the tax rule from 2026 onward was not checked | rate of 0% for an individual: Lei 12.431/2011 art. 2, I, read on 2026-11-18 (planalto.gov.br); 2026 rule: Medida Provisória 1.303/2025 is marked there as expired |
-| F-16 | CRI, CRA, IPCA plus spread, monthly interest, irregular amortization | partial | subtypes `cri`, `cra`, exempt class; coupons and amortizations as F-14 | as F-03 and F-14; the unit price formula of the registrar was not compared | to read |
+| F-16 | CRI, CRA, IPCA plus spread, monthly interest, irregular amortization | partial | subtypes `cri`, `cra`, exempt class; coupons and amortizations as F-14 | as F-03; the explicit schedule is written by `set_payment_schedule` (`TestSetPaymentScheduleTool`); the unit price formula of the registrar was not compared | to read |
 | F-17 | CRI, CRA, percent of CDI, CDI plus spread, pre-fixed | supported | as F-01, F-02, F-04 | none | to read |
 | F-18 | CDCA | supported | subtype `cdca`, exempt class | none | to read |
 | F-18b | CPR, commercial note, LAM | unsupported | no subtype | three subtypes with their tax class | to read |

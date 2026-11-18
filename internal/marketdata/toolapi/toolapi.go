@@ -76,6 +76,7 @@ type Calendars struct {
 func Tools(svc Service, cals Calendars, files ConversationFile) []tool.Tool {
 	return []tool.Tool{
 		importPriceFile(svc, files),
+		setPaymentSchedule(svc),
 		getMarketData(svc, cals),
 		manageInstrument(svc),
 		probeQuote(svc),

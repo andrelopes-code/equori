@@ -36,6 +36,8 @@ var exclusions = map[string]bool{
 var withoutOperation = map[string]string{
 	"get_help":       "answers from the guide and the navigation map, not from an operation",
 	"find_recurring": "derived view for agents over transactions; no screen lists it",
+	// putInstrumentTerms maps to manage_instrument, whose set_terms leaves its payments out.
+	"set_payment_schedule": "writes the payments of putInstrumentTerms (coverage row F-16)",
 }
 
 func operationIDs(t *testing.T) []string {
