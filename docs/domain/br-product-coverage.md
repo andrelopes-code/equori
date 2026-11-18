@@ -66,7 +66,7 @@ Source status:
 | E-05 | Bonus, split, reverse split, fraction | supported | `record_corporate_action`; `TestRecordCorporateActionToolS431` | none | to read |
 | E-06 | Subscription right and receipt | supported | `record_corporate_action` kinds `right_issue` (rights at no cost) and `right_exercise` (rights into the share or the receipt for the price paid); a right is sold with `record_investment` sell; the receipt becomes shares through `conversion`; `TestRightIssueAndExercise`, `TestRightExerciseTool`; the corporate action entry offers both | a partial exercise sells or writes off the rest first (`write_off`, `TestS625RightWrittenOff`) | IN RFB 1.585/2015, art. 58: a right received free has cost zero (owner decision 2026-11-18: zero weight on its units, migration 00126) |
 | E-07 | Merger, spin-off, ticker change | supported | `record_corporate_action` kinds `conversion` and `spin_off`; `TestConversionMovesTheCost`, `TestSpinOffToolSplitsTheCost`; the corporate action entry offers both | the tax of an exchange is not computed; the cost moved by a spin-off is the percent of the notice of the company | IN RFB 1.585/2015 not readable at normas.receita.fazenda.gov.br on 2026-11-18 (the page needs a browser); the percent comes from the notice of the company |
-| E-08 | FII, Fiagro: distribution, amortization, sale | partial | type `reit`; tax class `fii`; exempt distribution | an amortization that lowers the cost has no event; the tax of a sale is computed by `gain_tax` (FII pool, 20%) | distribution: Lei 11.033/2004 art. 3, III and § 1 (100 holders, below 10%); sale: Lei 8.668/1993 art. 18 (20%); both read on 2026-11-18 (planalto.gov.br) |
+| E-08 | FII, Fiagro: distribution, amortization, sale | supported | type `reit`; tax class `fii`; exempt distribution; an amortization is `record_corporate_action` kind `capital_return`, which lowers the cost (`TestCapitalReturnLowersTheCost`, `TestCapitalReturnTool`); the tax of a sale is the FII pool of `gain_tax` | none | distribution: Lei 11.033/2004 art. 3, III and its paragraph; sale: Lei 8.668/1993 art. 18 |
 | E-09 | ETF of stocks, ETF of a foreign index | supported | type `etf`; the ordinary pool of `gain_tax` at 15%, without the exemption of stocks; `TestGainTaxExemptionReadsStocks` | none | Lei 11.033/2004 art. 2, II and art. 3, I (the exemption names stocks only) |
 | E-10 | ETF of fixed income | supported | `etf` subtype `fixed_income_etf`, class `etf_fixed_income`, outside the monthly tax (`TestGainTaxLeavesFixedIncomeETF`); the tax withheld on the sale is recorded as `taxes` | the rate by the term of the portfolio is the one withheld, not estimated | Lei 13.043/2014 art. 2 |
 | E-11 | BDR | partial | tax class `bdr` | the foreign tax of a dividend has no field of its own; a sale is in the ordinary pool of `gain_tax` | sale: Lei 11.033/2004 art. 2, read on 2026-11-18; tax of a foreign dividend: to read |
@@ -91,8 +91,8 @@ Source status:
 
 | Verdict | Rows |
 |---|---|
-| supported | 33 |
-| partial | 21 |
+| supported | 34 |
+| partial | 20 |
 | unsupported | 0 |
 
 ## What the assistant says

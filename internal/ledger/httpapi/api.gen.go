@@ -753,6 +753,7 @@ func (e CategoryIcon) Valid() bool {
 // Defines values for CorporateActionKind.
 const (
 	CorporateActionKindBonus         CorporateActionKind = "bonus"
+	CorporateActionKindCapitalReturn CorporateActionKind = "capital_return"
 	CorporateActionKindConversion    CorporateActionKind = "conversion"
 	CorporateActionKindReverseSplit  CorporateActionKind = "reverse_split"
 	CorporateActionKindRightExercise CorporateActionKind = "right_exercise"
@@ -766,6 +767,8 @@ const (
 func (e CorporateActionKind) Valid() bool {
 	switch e {
 	case CorporateActionKindBonus:
+		return true
+	case CorporateActionKindCapitalReturn:
 		return true
 	case CorporateActionKindConversion:
 		return true
@@ -1687,7 +1690,8 @@ type CorporateAction struct {
 	// the holding and gives units of the subscription right new_instrument at no cost;
 	// right_exercise turns the whole holding of a right into units of new_instrument (the share or
 	// the subscription receipt), whose cost is the cost of the right plus amount, paid from the
-	// cash account.
+	// cash account. capital_return (an amortization of an FII, a reduction of capital) keeps the
+	// units, lowers their cost by amount and pays it into the cash account; ratio 1:1.
 	Kind CorporateActionKind `json:"kind"`
 
 	// NewAccountId The holding of the security a conversion or a spin-off gave; received is in it.
@@ -1703,14 +1707,14 @@ type CorporateAction struct {
 	Value    Money `json:"value"`
 }
 
-// CorporateActionInput A unit tax takes quantity (units of the fund cancelled, below the units held) and amount (income tax withheld, base currency), both required with it. A right_exercise takes amount, the subscription price paid in base currency.
+// CorporateActionInput A unit tax takes quantity (units of the fund cancelled, below the units held) and amount (income tax withheld, base currency), both required with it. A right_exercise takes amount, the subscription price paid in base currency; a capital_return takes amount, the cash returned, below the cost of the holding.
 type CorporateActionInput struct {
 	// AccountId The holding account. Exactly one of account_id or the pair brokerage_id and instrument.
 	AccountId   *openapi_types.UUID `json:"account_id,omitempty"`
 	Amount      *Money              `json:"amount,omitempty"`
 	BrokerageId *openapi_types.UUID `json:"brokerage_id,omitempty"`
 
-	// CashAccountId The account a right_exercise pays amount from; absent, the cash account of the brokerage.
+	// CashAccountId The account a right_exercise pays amount from, or a capital_return pays it into; absent, the cash account of the brokerage.
 	CashAccountId *openapi_types.UUID `json:"cash_account_id,omitempty"`
 
 	// CategoryId Income category of a bonus with unit_cost; required with it.
@@ -1730,7 +1734,8 @@ type CorporateActionInput struct {
 	// the holding and gives units of the subscription right new_instrument at no cost;
 	// right_exercise turns the whole holding of a right into units of new_instrument (the share or
 	// the subscription receipt), whose cost is the cost of the right plus amount, paid from the
-	// cash account.
+	// cash account. capital_return (an amortization of an FII, a reduction of capital) keeps the
+	// units, lowers their cost by amount and pays it into the cash account; ratio 1:1.
 	Kind CorporateActionKind `json:"kind"`
 
 	// NewInstrument The security a conversion or a spin-off gives; required with them. Its holding under the brokerage is created when absent.
@@ -1753,7 +1758,8 @@ type CorporateActionInput struct {
 // the holding and gives units of the subscription right new_instrument at no cost;
 // right_exercise turns the whole holding of a right into units of new_instrument (the share or
 // the subscription receipt), whose cost is the cost of the right plus amount, paid from the
-// cash account.
+// cash account. capital_return (an amortization of an FII, a reduction of capital) keeps the
+// units, lowers their cost by amount and pays it into the cash account; ratio 1:1.
 type CorporateActionKind string
 
 // CorrectionInput defines model for CorrectionInput.

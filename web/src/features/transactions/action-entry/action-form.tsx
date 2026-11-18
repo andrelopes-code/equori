@@ -10,6 +10,7 @@ import {
   offeredKinds,
 } from "@/features/transactions/action-entry/action-kind";
 import { ActionBonusFields } from "@/features/transactions/action-entry/action-bonus-fields";
+import { ActionCapitalReturnFields } from "@/features/transactions/action-entry/action-capital-return-fields";
 import { ActionExchangeFields } from "@/features/transactions/action-entry/action-exchange-fields";
 import { ActionUnitTaxFields } from "@/features/transactions/action-entry/action-unit-tax-fields";
 import type { ActionDraft } from "@/features/transactions/action-entry/action-draft";
@@ -47,6 +48,8 @@ export function ActionForm({
   const t = useT();
   const kinds = offeredKinds(view.fund);
   const unitTax = draft.kind === "unit_tax";
+  // A capital return takes an amount and no ratio (coverage row E-08).
+  const capitalReturn = draft.kind === "capital_return";
 
   function handleChange(patch: Partial<ActionDraft>) {
     onChange({ ...draft, ...patch });
@@ -121,7 +124,7 @@ export function ActionForm({
         />
       )}
 
-      {!unitTax && (
+      {!unitTax && !capitalReturn && (
         <FormRow>
           <Field
             required
@@ -167,7 +170,17 @@ export function ActionForm({
         </FormRow>
       )}
 
-      {!unitTax && <ActionPreviewText view={view} />}
+      {!unitTax && !capitalReturn && <ActionPreviewText view={view} />}
+
+      {capitalReturn && (
+        <ActionCapitalReturnFields
+          draft={draft}
+          base={view.base}
+          scale={scale}
+          errors={errors}
+          onChange={handleChange}
+        />
+      )}
 
       {exchangeKinds.includes(draft.kind) && (
         <ActionExchangeFields

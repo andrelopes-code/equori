@@ -1195,3 +1195,7 @@ The scenarios of `docs/specs/2026-11-18-monthly-gain-tax-design.md`, rules GT1 t
 ### S630 Minimum term of an LCI or an LCA
 
 Coverage row F-07, through the HTTP API in a book of region BR. A new LCI on the CDI issued on 2026-03-02 without `redeemable_from` is redeemable from 2026-09-02; an LCI on IPCA issued that day from 2029-03-02; an LCA issued on 2024-06-03 from 2025-03-03 and an LCI from 2025-06-03. A date the user types stays, and a CDB takes none.
+
+### S631 Capital return
+
+Coverage row E-08, through the HTTP API and the tool `record_corporate_action`. 100 PETR4 bought at 10.00 receive a capital return of 200.00 on 2026-11-10: the holding keeps its 100 units at a cost of 800.00 and the cash account receives 200.00; a return of 800.00 or more is refused with `validation_failed` on amount, and the table refuses a capital return of no value.

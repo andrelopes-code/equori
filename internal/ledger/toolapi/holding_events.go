@@ -17,12 +17,12 @@ type corporateActionKind string
 func (corporateActionKind) Values() []string {
 	return []string{
 		"split", "reverse_split", "bonus", "unit_tax", "conversion", "spin_off", "right_issue",
-		"right_exercise",
+		"right_exercise", "capital_return",
 	}
 }
 
 type recordCorporateActionIn struct {
-	Kind          corporateActionKind `json:"kind"                     jsonschema:"split: more units for each one held; reverse_split: fewer units; bonus: units received for free; unit_tax: units of a fund cancelled for income tax; conversion: the holding becomes new_instrument (merger, ticker change); spin_off: units of new_instrument beside the holding; right_issue: subscription rights new_instrument beside the holding, at no cost; right_exercise: the rights become new_instrument (share or receipt) for amount"`
+	Kind          corporateActionKind `json:"kind"                     jsonschema:"split: more units for each one held; reverse_split: fewer units; bonus: units received for free; unit_tax: units of a fund cancelled for income tax; conversion: the holding becomes new_instrument (merger, ticker change); spin_off: units of new_instrument beside the holding; right_issue: subscription rights new_instrument beside the holding, at no cost; right_exercise: the rights become new_instrument (share or receipt) for amount; capital_return: amount paid back lowers the cost"`
 	AccountID     string              `json:"account_id,omitzero"      jsonschema:"Investment line, from list_accounts; instead of brokerage_id and instrument"`
 	BrokerageID   string              `json:"brokerage_id,omitzero"    jsonschema:"Brokerage that holds the Investment; with instrument, instead of account_id"`
 	Instrument    string              `json:"instrument,omitzero"      jsonschema:"code of the Investment, such as PETR4"`
@@ -92,6 +92,9 @@ func planCorporateAction(
 	switch {
 	case in.Kind == "unit_tax":
 		err = planUnitTax(ctx, svc, booksID, in, holding.instrument, &o, &pv)
+	case in.Kind == "capital_return":
+		o.RatioFrom, o.RatioTo = 1, 1
+		err = planRightPrice(ctx, svc, booksID, in, &o, &pv)
 	case in.NewInstrument != "":
 		err = planExchange(ctx, svc, booksID, in, &o, &pv)
 	default:
@@ -104,23 +107,7 @@ func planCorporateAction(
 }
 
 func checkCorporateActionFields(in recordCorporateActionIn) error {
-	given := map[string]bool{
-		"account_id":     in.AccountID != "",
-		"brokerage_id":   in.BrokerageID != "",
-		"instrument":     in.Instrument != "",
-		"date":           !in.Date.IsZero(),
-		"ratio_from":     in.RatioFrom != 0,
-		"ratio_to":       in.RatioTo != 0,
-		"unit_cost":      in.UnitCost != "",
-		"category_id":    in.CategoryID != "",
-		"quantity":       in.Quantity != "",
-		"amount":         in.Amount != "",
-		"description":    in.Description != "",
-		"new_instrument": in.NewInstrument != "",
-		"cost_percent":   in.CostPercent != "",
-
-		"cash_account_id": in.CashAccountID != "",
-	}
+	given := actionFieldsGiven(in)
 	target := []string{"account_id", "brokerage_id", "instrument", "description"}
 
 	if in.Kind == "unit_tax" {
@@ -139,6 +126,13 @@ func checkCorporateActionFields(in recordCorporateActionIn) error {
 			append(exchange, "amount"),
 			append(target, "cash_account_id")...,
 		)
+	case "capital_return":
+		return checkFields(
+			"capital_return",
+			given,
+			[]string{"date", "amount"},
+			append(target, "cash_account_id")...,
+		)
 	case "spin_off":
 		return checkFields(
 			"spin_off",
@@ -150,6 +144,27 @@ func checkCorporateActionFields(in recordCorporateActionIn) error {
 
 	return checkFields(string(in.Kind), given, []string{"date", "ratio_from", "ratio_to"},
 		append(target, "unit_cost", "category_id")...)
+}
+
+// actionFieldsGiven reports which optional fields of the call carry a value.
+func actionFieldsGiven(in recordCorporateActionIn) map[string]bool {
+	return map[string]bool{
+		"account_id":     in.AccountID != "",
+		"brokerage_id":   in.BrokerageID != "",
+		"instrument":     in.Instrument != "",
+		"date":           !in.Date.IsZero(),
+		"ratio_from":     in.RatioFrom != 0,
+		"ratio_to":       in.RatioTo != 0,
+		"unit_cost":      in.UnitCost != "",
+		"category_id":    in.CategoryID != "",
+		"quantity":       in.Quantity != "",
+		"amount":         in.Amount != "",
+		"description":    in.Description != "",
+		"new_instrument": in.NewInstrument != "",
+		"cost_percent":   in.CostPercent != "",
+
+		"cash_account_id": in.CashAccountID != "",
+	}
 }
 
 // corporateActionHolding is the name shown for the holding and the instrument its units count.

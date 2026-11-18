@@ -34,6 +34,25 @@ describe("actionOrder", () => {
     });
   });
 
+  // Coverage row E-08: a capital return sends the cash returned, ratio 1:1.
+  it("sends a capital return with its amount", () => {
+    const draft = {
+      ...emptyAction("2026-11-10", "b1"),
+      kind: "capital_return" as const,
+      amount: 20000,
+    };
+
+    expect(actionOrder(draft, target)).toEqual({
+      brokerage_id: "b1",
+      instrument: "FUND1",
+      kind: "capital_return",
+      date: "2026-11-10",
+      ratio_from: 1,
+      ratio_to: 1,
+      amount: { amount: 20000, currency: "BRL" },
+    });
+  });
+
   it("sends a split on the brokerage and the investment", () => {
     const draft = {
       ...emptyAction("2026-11-30", "b1"),

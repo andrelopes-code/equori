@@ -12,6 +12,7 @@ export const actionKinds = [
   "spin_off",
   "right_issue",
   "right_exercise",
+  "capital_return",
 ] as const;
 
 // The kinds that give units of another security (coverage rows E-06 and E-07).
@@ -39,4 +40,5 @@ export const actionKindKeys = {
   spin_off: "action.kind.spin_off",
   right_issue: "action.kind.right_issue",
   right_exercise: "action.kind.right_exercise",
+  capital_return: "action.kind.capital_return",
 } satisfies Record<ActionKind, MessageKey>;

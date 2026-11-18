@@ -107,6 +107,8 @@ export function useActionEntry(
     components["schemas"]["Transaction"] | null
   > => {
     const unitTax = draft.kind === "unit_tax";
+    // A capital return takes an amount and no ratio (coverage row E-08).
+    const capitalReturn = draft.kind === "capital_return";
     const problems: Record<string, string> = {};
     if (brokerage === undefined)
       problems.brokerage_id = t("entry.required.account");
@@ -116,6 +118,8 @@ export function useActionEntry(
       if (state.held === undefined)
         problems.instrument = t("trade.required.securityAccount");
       if (draft.quantity <= 0) problems.quantity = t("trade.required.quantity");
+      if (draft.amount <= 0) problems.amount = t("entry.required.amount");
+    } else if (capitalReturn) {
       if (draft.amount <= 0) problems.amount = t("entry.required.amount");
     } else {
       if ((draft.ratioFrom ?? 0) <= 0)
@@ -129,7 +133,9 @@ export function useActionEntry(
       Object.keys(problems).length > 0 ||
       brokerage === undefined ||
       instrument === null ||
-      (!unitTax && (draft.ratioFrom === null || draft.ratioTo === null))
+      (!unitTax &&
+        !capitalReturn &&
+        (draft.ratioFrom === null || draft.ratioTo === null))
     ) {
       setErrors(problems);
       setSummary(t("entry.fixFields"));

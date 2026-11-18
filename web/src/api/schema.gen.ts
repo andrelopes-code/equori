@@ -6794,11 +6794,12 @@ export interface components {
          *     the holding and gives units of the subscription right new_instrument at no cost;
          *     right_exercise turns the whole holding of a right into units of new_instrument (the share or
          *     the subscription receipt), whose cost is the cost of the right plus amount, paid from the
-         *     cash account.
+         *     cash account. capital_return (an amortization of an FII, a reduction of capital) keeps the
+         *     units, lowers their cost by amount and pays it into the cash account; ratio 1:1.
          * @enum {string}
          */
-        CorporateActionKind: "split" | "reverse_split" | "bonus" | "unit_tax" | "conversion" | "spin_off" | "right_issue" | "right_exercise";
-        /** @description A unit tax takes quantity (units of the fund cancelled, below the units held) and amount (income tax withheld, base currency), both required with it. A right_exercise takes amount, the subscription price paid in base currency. */
+        CorporateActionKind: "split" | "reverse_split" | "bonus" | "unit_tax" | "conversion" | "spin_off" | "right_issue" | "right_exercise" | "capital_return";
+        /** @description A unit tax takes quantity (units of the fund cancelled, below the units held) and amount (income tax withheld, base currency), both required with it. A right_exercise takes amount, the subscription price paid in base currency; a capital_return takes amount, the cash returned, below the cost of the holding. */
         CorporateActionInput: {
             /**
              * Format: uuid
@@ -6836,7 +6837,7 @@ export interface components {
             cost_bp?: number;
             /**
              * Format: uuid
-             * @description The account a right_exercise pays amount from; absent, the cash account of the brokerage.
+             * @description The account a right_exercise pays amount from, or a capital_return pays it into; absent, the cash account of the brokerage.
              */
             cash_account_id?: string;
         };

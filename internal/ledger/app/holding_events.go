@@ -70,6 +70,8 @@ func (s *Service) buildCorporateAction(
 		return s.buildUnitTax(ctx, r, booksID, o, security, h, base)
 	case o.Kind.IsExchange():
 		return s.buildExchange(ctx, r, o, security, h, base)
+	case o.Kind == domain.ActionCapitalReturn:
+		return s.buildCapitalReturn(ctx, r, o, security, h, base)
 	}
 
 	postings, action, err := domain.BuildCorporateAction(o, h, base)

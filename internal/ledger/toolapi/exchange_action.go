@@ -58,8 +58,8 @@ func planExchange(
 	return nil
 }
 
-// planRightPrice reads the subscription price of a right exercise in the base currency and the
-// account that pays it.
+// planRightPrice reads the amount of a right exercise or a capital return in the base currency and
+// the cash account that pays or receives it.
 func planRightPrice(
 	ctx context.Context,
 	svc *app.Service,

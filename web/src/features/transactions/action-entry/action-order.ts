@@ -36,6 +36,19 @@ export function actionOrder(
     };
   }
 
+  if (draft.kind === "capital_return") {
+    return {
+      brokerage_id: target.brokerageID,
+      instrument: target.instrument,
+      kind: draft.kind,
+      date: draft.date,
+      ratio_from: 1,
+      ratio_to: 1,
+      amount: { amount: draft.amount, currency: target.base },
+      ...described,
+    };
+  }
+
   const bonus = draft.kind === "bonus";
   const unitCost = bonus ? parseRate(draft.unitCost) : null;
 

@@ -1108,6 +1108,8 @@ export const catalogPtBR: Catalog = {
   "action.kind.spin_off": "Cisão",
   "action.kind.right_issue": "Direito de subscrição",
   "action.kind.right_exercise": "Exercício de direito",
+  "action.kind.capital_return": "Amortização",
+  "action.capitalReturn.amount": "Valor devolvido",
   "action.rightExercise.amount": "Valor pago",
   "action.newInstrument": "Ativo recebido",
   "action.costPercent": "Custo transferido (%)",

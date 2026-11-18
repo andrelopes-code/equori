@@ -10511,7 +10511,7 @@
       "properties": {
         "kind": {
           "type": "string",
-          "description": "split: more units for each one held; reverse_split: fewer units; bonus: units received for free; unit_tax: units of a fund cancelled for income tax; conversion: the holding becomes new_instrument (merger, ticker change); spin_off: units of new_instrument beside the holding; right_issue: subscription rights new_instrument beside the holding, at no cost; right_exercise: the rights become new_instrument (share or receipt) for amount",
+          "description": "split: more units for each one held; reverse_split: fewer units; bonus: units received for free; unit_tax: units of a fund cancelled for income tax; conversion: the holding becomes new_instrument (merger, ticker change); spin_off: units of new_instrument beside the holding; right_issue: subscription rights new_instrument beside the holding, at no cost; right_exercise: the rights become new_instrument (share or receipt) for amount; capital_return: amount paid back lowers the cost",
           "enum": [
             "split",
             "reverse_split",
@@ -10520,7 +10520,8 @@
             "conversion",
             "spin_off",
             "right_issue",
-            "right_exercise"
+            "right_exercise",
+            "capital_return"
           ]
         },
         "account_id": {
