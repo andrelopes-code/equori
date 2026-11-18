@@ -4,6 +4,7 @@
 - Status: approved on 2026-11-18 (the owner delegated the decisions to the planning session)
 - Issue: #57
 - Amends: ADR 025 (a sixth kind of feed, `fund_report`)
+- Amended: 2026-11-18, FR4 and FR15 (link of a fund whose code two funds share), by the planning session under the owner's request of the same date
 
 ## Intent
 
@@ -29,7 +30,6 @@ Non-goals:
 - Measures of price history (volatility, return of twelve months): the stored prices are not adjusted for corporate events.
 - The quarterly report (properties, tenants, vacancy): its columns were not inspected.
 - Tax: the break-even growth is before tax.
-- A fund the source cannot tie to one trading code (FR4): no manual link in this delivery.
 
 Anti-goals:
 
@@ -57,7 +57,7 @@ Research of 2026-11-18, each source read by a real request unless stated.
 
 **FR3 `br_cvm_fii`.** It reads the yearly file `inf_mensal_fii_{YYYY}.zip` of the CVM dataset `fii-doc-inf_mensal` (base address setting `EQUORI_FEED_BR_CVM_FII_URL`, default `https://dados.cvm.gov.br/dados/FII/DOC/INF_MENSAL/DADOS`; licence ODbL): the members `inf_mensal_fii_geral_{YYYY}.csv` and `inf_mensal_fii_complemento_{YYYY}.csv`, Latin-1, separated by `;`, joined by `CNPJ_Fundo_Classe` and `Data_Referencia`; in each member the row of the highest `Versao` of a fund and period is kept. A fetch reads the file of today's year and the file of the year twelve months before today; a file whose twelve periods are all stored is not requested. Checked on 2026-11-18: the file of 2026 answers 200 with 13,103 rows, periods 2026-01-01 to 2026-10-01, and the period 2026-10-01 was delivered on 2026-11-13. Currency `BRL`; exchange `BVMF`. Its lag is 20 days under the monthly rule of ADR 025: the feed is stale when today is after the latest stored period plus two months and 20 days. `SuggestedFeeds("BR")` adds it.
 
-**FR4 Trading code of `br_cvm_fii`.** The file names a fund by its identifier and by `Codigo_ISIN`, never by its trading code. The code is the four characters after `BR` of an ISIN that matches `^BR[A-Z0-9]{4}CTF[0-9A-Z]{3}$`, followed by `11`. A row is read only when `Mercado_Negociacao_Bolsa` is `S` and the ISIN matches. When two funds of one period give the same code, neither is stored. Checked on 2026-11-18: `BRHGLGCTF004` gives `HGLG11`; of 1,366 funds of 2026-10-01, 1,112 hold a matching ISIN, and 28 codes are shared by two or more funds before the exchange filter.
+**FR4 Trading code of `br_cvm_fii`.** The file names a fund by its identifier and by `Codigo_ISIN`, never by its trading code. The code is the four characters after `BR` of an ISIN that matches `^BR[A-Z0-9]{4}CTF[0-9A-Z]{3}$`, followed by `11`. A row is read only when `Mercado_Negociacao_Bolsa` is `S` and the ISIN matches. When two funds of one period give the same code, both are stored and marked shared; a shared row reaches an instrument only through the link of FR15. Checked on 2026-11-18: `BRHGLGCTF004` gives `HGLG11`; of 1,366 funds of 2026-10-01, 1,112 hold a matching ISIN, and 28 codes are shared by two or more funds before the exchange filter.
 
 **FR5 Figures.** Each is null when the source leaves it blank; a null is never read as zero.
 
@@ -73,7 +73,9 @@ Research of 2026-11-18, each source read by a real request unless stated.
 
 Checked on 2026-11-18 for `HGLG11`, period 2026-10-01: unit book value 165.02474631029, month yield 0.006943, 633,787 holders.
 
-**FR6 Storage and API.** Table `marketdata_fund_report (source, exchange, code, period, currency, identifier, name, segment, delivered, net_assets, units, unit_book_value, holders, admin_fee, month_yield, month_amortization)`, primary key `(source, exchange, code, period)`, no `books_id`: market data shared by the instance, as `marketdata_curve_point`. A fetch replaces the rows of each period it read and keeps the 24 latest periods of the source. `GET /fund-reports?code=` (`listFundReports`) returns `items`: one report set per enabled source that stored rows for the exchange and code of that instrument, with source, source address, currency, identifier, name, segment and the periods, newest first. An unknown code, an instrument without rows and a disabled source give an empty list.
+**FR6 Storage and API.** Table `marketdata_fund_report (source, exchange, code, period, currency, identifier, name, segment, delivered, net_assets, units, unit_book_value, holders, admin_fee, month_yield, month_amortization, shared)`, primary key `(source, identifier, period)`, one row per code and period among the rows not shared, no `books_id`: market data shared by the instance, as `marketdata_curve_point`. A fetch replaces the rows of each period it read and keeps the 24 latest periods of the source. `GET /fund-reports?code=` (`listFundReports`) returns `items`: one report set per enabled source that stored rows for the exchange and code of that instrument, with source, source address, currency, identifier, name, segment and the periods, newest first. An unknown code, an instrument without rows and a disabled source give an empty list.
+
+**FR15 Link by identifier.** A fund report source reads the symbol of ADR 025 (`Instrument.Symbols`, key the source ID) as the fund's identifier at the regulator. With a symbol, the report set of that source holds the rows of that identifier, whatever their code and shared mark; without one, the rows of the instrument's exchange and code that are not shared. `GET /fund-reports` also returns `candidates`: for each enabled source whose report set for the instrument is empty, the funds whose shared rows carry the instrument's exchange and code, by identifier, with the name and segment of their latest period, ordered by identifier. The link is written by `updateInstrument` with the symbol, as any symbol; the feed of a fund report source has `symbol_override` true. Checked on 2026-11-18: of the 1,112 funds of 2026-10-01 with a matching ISIN, 28 codes are shared by two or more funds before the exchange filter.
 
 ### Figures of the screen
 
@@ -123,6 +125,10 @@ Checked on 2026-11-18 for `HGLG11`, period 2026-10-01: unit book value 165.02474
 
 A section "Informe do fundo" below the price section, for an instrument whose `GET /fund-reports` list is not empty.
 
+### Choice of the fund (FR15)
+
+On the instrument page, an instrument whose report list is empty and whose `candidates` is not empty shows a section "Informe do fundo" with the line "{count} fundos informam o código {code} em {source}; escolha o deste ativo" and one row per candidate: the name as label, "{segment} · {identifier}" as description, and a button "Vincular". The button writes the symbol through `updateInstrument` with the stored name, exchange, subtype, issuer and symbols of the instrument; the section then shows the report. A failure is written under the list in words. A reader (`read` role) sees the rows without the button. The symbol is also editable in "Editar cadastro", as any symbol.
+
 ### Contribution plan ("This month")
 
 In the purchase table, a row of an instrument with a report gains a text button "Ver informe". It opens a dialog that holds `FundReport`. The dialog changes nothing in the plan or the split. The button is absent while the plan is in edit mode. The row height does not change.
@@ -142,18 +148,18 @@ In the purchase table, a row of an instrument with a report gains a text button 
 - T1: A period is the first day of a month; the delivery date and the price date are calendar dates; "today" for staleness comes from `platform/clock`.
 - T2: Does not apply: no business day is counted.
 - B1: Does not apply: the table is instance market data without `books_id`, as `marketdata_curve_point`.
-- B2: `listFundReports` needs `read`; an HTTP test covers a member, and a request without a session.
+- B2: `listFundReports` needs `read`; an HTTP test covers a member, and a request without a session. The link of FR15 is `updateInstrument`, role `write`, unchanged.
 - B3: No setting beyond the feed switch of ADR 025 and the address `EQUORI_FEED_BR_CVM_FII_URL`.
 - D1: The table is classified as left out of the export: refetched market data.
-- D2: One goose migration for the table.
+- D2: One goose migration for the table; one more for FR15 (primary key by identifier, column `shared`), which empties the table so the next tick refetches both years.
 - D3: Does not apply: no recorded fact changes.
 - D4: Does not apply: public market data, replaced whole per period on each fetch.
 - D5: Does not apply: the diagnostic file gains no field.
-- S1: One operation, `listFundReports`, mapped to `get_market_data` view `fund_reports` in `tool_exposure_test.go`. No new `Problem.code`.
+- S1: One operation, `listFundReports`, mapped to `get_market_data` view `fund_reports` in `tool_exposure_test.go`; the view also returns `candidates` (FR15). No new `Problem.code`; a symbol for a source that reads none keeps its 422 on `symbols.<id>`.
 - S2: The section follows the phone scope of the instrument page. The plan dialog is desktop only, as the plan (ADR 027).
-- S3: `internal/assistant/guide/articles/investments.md` and `contribution_plan.md` gain the report; `investments_br.md` names CVM, FII and Tesouro IPCA+. Same commit as each screen.
+- S3: `internal/assistant/guide/articles/investments.md` and `contribution_plan.md` gain the report, and `investments.md` the choice of the fund (FR15); `investments_br.md` names CVM, FII and Tesouro IPCA+. Same commit as each screen.
 - S4: The assistant reads reports through `get_market_data` view `fund_reports`. It computes no break-even; the guide article states that equori gives no recommendation.
-- X1: S591 `br_cvm_fii` enabled stores, from a fixture, the periods of a fund under its trading code, and keeps the highest version of a period. S592 `GET /fund-reports?code=HGLG11` returns them, newest first, to a member; 401 without a session. S593 with the feed disabled the list is empty. S594 two funds that give one code store nothing, and a row with ISIN `0` or outside the exchange is skipped. S595 the feed is listed with `kind` `fund_report` and its `last`, and is stale after its lag. S596 a book of region `US` has the feed listed with `suggested` false.
+- X1: S591 `br_cvm_fii` enabled stores, from a fixture, the periods of a fund under its trading code, and keeps the highest version of a period. S592 `GET /fund-reports?code=HGLG11` returns them, newest first, to a member; 401 without a session. S593 with the feed disabled the list is empty. S594 two funds that give one code are stored shared and listed by no code, and a row with ISIN `0` or outside the exchange is skipped. S597 an instrument `ABCD11` without a symbol gets an empty list and both funds as `candidates`; with the symbol `br_cvm_fii` of one of them it gets that fund's report and no candidates; the symbol of a fund report source is accepted by `updateInstrument`. S595 the feed is listed with `kind` `fund_report` and its `last`, and is stale after its lag. S596 a book of region `US` has the feed listed with `suggested` false.
 - X2: S596 runs outside Brazil. Web tests: an instrument without a report draws no section; a report in `BRL` on an instrument quoted in `USD` writes no price figure; a book whose curves hold no real curve writes the absence.
 
 ## Approaches

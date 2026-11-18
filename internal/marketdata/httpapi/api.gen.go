@@ -355,9 +355,20 @@ type FundReport struct {
 	SourceUrl string `json:"source_url"`
 }
 
+// FundReportCandidate defines model for FundReportCandidate.
+type FundReportCandidate struct {
+	// Identifier The fund's identifier at the regulator; the value of the symbol that links it.
+	Identifier string `json:"identifier"`
+	Name       string `json:"name"`
+	Segment    string `json:"segment"`
+	Source     string `json:"source"`
+}
+
 // FundReportList defines model for FundReportList.
 type FundReportList struct {
-	Items []FundReport `json:"items"`
+	// Candidates FR15. For each enabled source whose report set for the instrument is empty, the funds that share the instrument's exchange and code; a link by symbol picks one.
+	Candidates []FundReportCandidate `json:"candidates"`
+	Items      []FundReport          `json:"items"`
 }
 
 // FundReportPeriod A null figure is a value the source leaves blank; it is never zero.

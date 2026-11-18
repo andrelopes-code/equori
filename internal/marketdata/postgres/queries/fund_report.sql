@@ -50,7 +50,8 @@ INSERT INTO
         unit_book_value,
         admin_fee,
         month_yield,
-        month_amortization
+        month_amortization,
+        shared
     )
 VALUES
     (
@@ -69,11 +70,13 @@ VALUES
         @unit_book_value,
         @admin_fee,
         @month_yield,
-        @month_amortization
+        @month_amortization,
+        @shared
     );
 
 -- name: ListFundReports :many
--- Newest period first within a source.
+-- FR15: the rows of the identifier when it is given, else the rows of the exchange and code that
+-- are not shared; newest period first.
 SELECT
     source,
     period,
@@ -92,10 +95,35 @@ SELECT
 FROM
     marketdata_fund_report
 WHERE
-    exchange = @exchange
-    AND code = @code
+    source = @source
+    AND (
+        (
+            sqlc.narg (identifier)::text IS NULL
+            AND exchange = @exchange
+            AND code = @code
+            AND NOT shared
+        )
+        OR identifier = sqlc.narg (identifier)::text
+    )
 ORDER BY
-    source,
+    period DESC;
+
+-- name: ListFundReportCandidates :many
+-- FR15: the funds whose shared rows carry the exchange and code, with their latest name and
+-- segment.
+SELECT DISTINCT
+    ON (identifier) identifier,
+    name,
+    segment
+FROM
+    marketdata_fund_report
+WHERE
+    source = @source
+    AND exchange = @exchange
+    AND code = @code
+    AND shared
+ORDER BY
+    identifier,
     period DESC;
 
 -- name: LatestFundReportPeriod :one

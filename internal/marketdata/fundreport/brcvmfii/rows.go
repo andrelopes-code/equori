@@ -148,7 +148,7 @@ func readComplement(zr *zip.Reader, member string) (map[key]complement, error) {
 }
 
 // join pairs each fund and month of general with its complement. A code that two identifiers
-// give in one month is dropped for that month.
+// give in one month is marked shared on each of their reports for that month (FR4).
 func join(general map[key]general, complements map[key]complement) []fundreport.Report {
 	owners := map[codeKey]int{}
 	for k, g := range general {
@@ -158,14 +158,11 @@ func join(general map[key]general, complements map[key]complement) []fundreport.
 	var out []fundreport.Report
 
 	for k, g := range general {
-		if owners[codeKey{k.period, g.code}] > 1 {
-			continue
-		}
-
 		c := complements[k]
 		out = append(out, fundreport.Report{
 			Exchange:          exchange,
 			Code:              g.code,
+			Shared:            owners[codeKey{k.period, g.code}] > 1,
 			Period:            k.period,
 			Identifier:        k.identifier,
 			Name:              g.name,

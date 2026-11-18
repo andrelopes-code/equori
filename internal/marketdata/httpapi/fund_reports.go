@@ -16,13 +16,13 @@ func (s *Server) listFundReports(
 	r *http.Request,
 	_ httpserver.None,
 ) (FundReportList, error) {
-	reports, err := s.svc.FundReports(ctx, r.URL.Query().Get("code"))
+	list, err := s.svc.FundReports(ctx, r.URL.Query().Get("code"))
 	if err != nil {
 		return FundReportList{}, err
 	}
 
-	items := make([]FundReport, len(reports))
-	for i, f := range reports {
+	items := make([]FundReport, len(list.Items))
+	for i, f := range list.Items {
 		periods := make([]FundReportPeriod, len(f.Periods))
 		for j, p := range f.Periods {
 			periods[j] = fundReportPeriod(p)
@@ -41,7 +41,17 @@ func (s *Server) listFundReports(
 		}
 	}
 
-	return FundReportList{Items: items}, nil
+	candidates := make([]FundReportCandidate, len(list.Candidates))
+	for i, c := range list.Candidates {
+		candidates[i] = FundReportCandidate{
+			Source:     c.Source,
+			Identifier: c.Identifier,
+			Name:       c.Name,
+			Segment:    c.Segment,
+		}
+	}
+
+	return FundReportList{Items: items, Candidates: candidates}, nil
 }
 
 func fundReportPeriod(p domain.FundReportPeriod) FundReportPeriod {

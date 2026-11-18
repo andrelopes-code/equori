@@ -151,6 +151,13 @@ type fundReportPeriodView struct {
 	MonthAmortization string           `json:"month_amortization,omitzero"`
 }
 
+type fundReportCandidateView struct {
+	Source     string `json:"source"`
+	Identifier string `json:"identifier"`
+	Name       string `json:"name"`
+	Segment    string `json:"segment"`
+}
+
 type curvePointView struct {
 	Maturity tool.Date `json:"maturity"`
 	Rate     string    `json:"rate"`
@@ -187,6 +194,9 @@ type getMarketDataOut struct {
 	Curves []curveView `json:"curves,omitzero"`
 	// FundReports holds the monthly reports the enabled fund report sources stored for the code.
 	FundReports []fundReportView `json:"fund_reports,omitzero"`
+	// FundReportCandidates holds, for a source without a report of the code, the funds that share
+	// the code; the instrument's symbol for the source, set to an identifier, links one (FR15).
+	FundReportCandidates []fundReportCandidateView `json:"fund_report_candidates,omitzero"`
 }
 
 func toInstrumentView(in domain.Instrument) instrumentView {

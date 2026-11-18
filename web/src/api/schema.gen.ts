@@ -7173,6 +7173,15 @@ export interface components {
         };
         FundReportList: {
             items: components["schemas"]["FundReport"][];
+            /** @description FR15. For each enabled source whose report set for the instrument is empty, the funds that share the instrument's exchange and code; a link by symbol picks one. */
+            candidates: components["schemas"]["FundReportCandidate"][];
+        };
+        FundReportCandidate: {
+            source: string;
+            /** @description The fund's identifier at the regulator; the value of the symbol that links it. */
+            identifier: string;
+            name: string;
+            segment: string;
         };
         FundReport: {
             source: string;

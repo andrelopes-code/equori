@@ -18,7 +18,11 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 )
 
-type FundReport = domain.FundReport
+type (
+	FundReport          = domain.FundReport
+	FundReportList      = domain.FundReportList
+	FundReportCandidate = domain.FundReportCandidate
+)
 
 type fundReportEntry struct {
 	id         string
@@ -70,50 +74,50 @@ func NewFundReportSources(urls map[string]string, hc *http.Client) []fundreport.
 }
 
 // FundReports returns, for the instrument of code, one report set per enabled source that stored
-// rows for its exchange and code, in the order of the registry; periods newest first. An unknown
-// instrument gives an empty list.
-func (m *Module) FundReports(ctx context.Context, code string) ([]FundReport, error) {
+// rows for it, in the order of the registry, periods newest first, and the candidates of each
+// enabled source whose set is empty (FR15). An unknown instrument gives two empty lists.
+func (m *Module) FundReports(ctx context.Context, code string) (FundReportList, error) {
+	out := FundReportList{Items: []FundReport{}, Candidates: []FundReportCandidate{}}
+
 	in, err := m.Instrument(ctx, code)
 	if err == nil && !in.VisibleTo(auth.MustBooksID(ctx)) {
 		err = domain.ErrUnknownInstrument
 	}
 
 	if errors.Is(err, domain.ErrUnknownInstrument) {
-		return []FundReport{}, nil
+		return out, nil
 	}
 
 	if err != nil {
-		return nil, err
+		return FundReportList{}, err
 	}
 
 	on, err := m.enabledFeeds(ctx)
 	if err != nil {
-		return nil, err
+		return FundReportList{}, err
 	}
-
-	rows, err := m.q.ListFundReports(
-		ctx,
-		postgres.ListFundReportsParams{Exchange: in.Exchange, Code: string(in.Code)},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("list the fund reports of %s: %w", in.Code, err)
-	}
-
-	out := []FundReport{}
 
 	for _, src := range m.feeds.FundReports {
 		if !on[src.ID()] {
 			continue
 		}
 
-		r, err := storedFundReport(src, in, rows)
+		r, err := m.storedFundReport(ctx, src, in)
 		if err != nil {
-			return nil, err
+			return FundReportList{}, err
 		}
 
 		if len(r.Periods) > 0 {
-			out = append(out, r)
+			out.Items = append(out.Items, r)
+			continue
 		}
+
+		c, err := m.fundReportCandidates(ctx, src, in)
+		if err != nil {
+			return FundReportList{}, err
+		}
+
+		out.Candidates = append(out.Candidates, c...)
 	}
 
 	return out, nil
@@ -184,19 +188,19 @@ func (m *Module) fundReportFeeds(ctx context.Context, out []Feed, fs feedState) 
 			last = &latest.Latest
 		}
 
-		out = append(
-			out,
-			m.feed(
-				ctx,
-				src.ID(),
-				domain.FeedFundReport,
-				index.PeriodMonth,
-				last,
-				fs.on,
-				fs.suggested,
-				fs.lags,
-			),
+		f := m.feed(
+			ctx,
+			src.ID(),
+			domain.FeedFundReport,
+			index.PeriodMonth,
+			last,
+			fs.on,
+			fs.suggested,
+			fs.lags,
 		)
+		// FR15: the symbol of a fund report source names the fund an instrument reads.
+		f.SymbolOverride = true
+		out = append(out, f)
 	}
 
 	return out, nil
@@ -245,7 +249,7 @@ func fundReportParams(
 	p := postgres.InsertFundReportParams{
 		Source: source, Exchange: r.Exchange, Code: r.Code, Period: r.Period,
 		Currency: currency, Identifier: r.Identifier, Name: r.Name, Segment: r.Segment,
-		Delivered: r.Delivered, NetAssets: r.NetAssets, Holders: r.Holders,
+		Delivered: r.Delivered, NetAssets: r.NetAssets, Holders: r.Holders, Shared: r.Shared,
 	}
 
 	for _, f := range []struct {
@@ -267,21 +271,30 @@ func fundReportParams(
 	return p, nil
 }
 
-// storedFundReport builds the report set of src from the rows of one instrument; Periods is
-// empty when src stored none.
-func storedFundReport(
-	src fundreport.Source, in Instrument, rows []postgres.ListFundReportsRow,
+// storedFundReport builds the report set of src for one instrument: the rows of the fund its
+// symbol for src names, else the rows of its exchange and code that are not shared (FR15).
+// Periods is empty when src stored none.
+func (m *Module) storedFundReport(
+	ctx context.Context, src fundreport.Source, in Instrument,
 ) (FundReport, error) {
+	params := postgres.ListFundReportsParams{
+		Source: src.ID(), Exchange: in.Exchange, Code: string(in.Code),
+	}
+	if identifier, ok := in.Symbols[src.ID()]; ok {
+		params.Identifier = &identifier
+	}
+
+	rows, err := m.q.ListFundReports(ctx, params)
+	if err != nil {
+		return FundReport{}, fmt.Errorf("list the fund reports of %s: %w", in.Code, err)
+	}
+
 	out := FundReport{
 		Source: src.ID(), SourceURL: src.URL(), Exchange: in.Exchange, Code: string(in.Code),
 		Periods: []domain.FundReportPeriod{},
 	}
 
 	for _, r := range rows {
-		if r.Source != src.ID() {
-			continue
-		}
-
 		p, err := fundReportPeriod(r)
 		if err != nil {
 			return FundReport{}, err

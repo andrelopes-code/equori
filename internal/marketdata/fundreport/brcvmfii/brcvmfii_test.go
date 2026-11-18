@@ -172,6 +172,8 @@ func wantReports() []fundreport.Report {
 			MonthYield:        ptr("0.007052"),
 			MonthAmortization: ptr("0"),
 		},
+		shared("22222222000122", "FUNDO B"),
+		shared("33333333000133", "FUNDO C"),
 		{
 			Exchange:          "BVMF",
 			Code:              "HGLG11",
@@ -198,6 +200,31 @@ func wantReports() []fundreport.Report {
 			Delivered:  delivered(date(2026, time.November, 12)),
 			Holders:    num(10),
 		},
+	}
+}
+
+// shared is a fund of 2026-10-01 whose code ABCD11 another fund of the file also gives (FR4).
+func shared(identifier, name string) fundreport.Report {
+	delivered := time.Date(2026, time.November, 12, 0, 0, 0, 0, time.UTC)
+	text := func(s string) *string { return &s }
+	num := func(n int64) *int64 { return &n }
+
+	return fundreport.Report{
+		Exchange:          "BVMF",
+		Code:              "ABCD11",
+		Shared:            true,
+		Period:            time.Date(2026, time.October, 1, 0, 0, 0, 0, time.UTC),
+		Identifier:        identifier,
+		Name:              name,
+		Segment:           "Outros",
+		Delivered:         &delivered,
+		NetAssets:         num(100000),
+		Holders:           num(10),
+		Units:             text("10"),
+		UnitBookValue:     text("100"),
+		AdminFee:          text("0"),
+		MonthYield:        text("0"),
+		MonthAmortization: text("0"),
 	}
 }
 

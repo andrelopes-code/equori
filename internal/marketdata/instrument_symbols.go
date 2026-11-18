@@ -35,14 +35,15 @@ func storeSymbols(
 	return nil
 }
 
-// checkSymbolSources accepts a key only when a registered source of that ID reads a symbol.
+// checkSymbolSources accepts a key only when a registered source of that ID reads a symbol: a
+// price source that overrides its symbol or a fund report source (FR15).
 func (m *Module) checkSymbolSources(symbols map[string]string) error {
 	for _, key := range slices.Sorted(maps.Keys(symbols)) {
 		reads := slices.ContainsFunc(m.feeds.Sources, func(src feed.Source) bool {
 			_, ok := src.(feed.SymbolOverride)
 			return ok && src.ID() == key
 		})
-		if !reads {
+		if !reads && !m.isFundReportSource(key) {
 			return &domain.FieldError{
 				Field:   "symbols." + key,
 				Message: "is not a source that reads a symbol",

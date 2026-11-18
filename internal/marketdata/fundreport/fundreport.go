@@ -15,6 +15,9 @@ type Report struct {
 	// Exchange is the ISO 10383 MIC and Code the trading code of the fund's unit.
 	Exchange string
 	Code     string
+	// Shared is true when another fund of the same period gives Code; such a report reaches an
+	// instrument only through the instrument's symbol for the source (FR15).
+	Shared bool
 	// Period is the first day of the month.
 	Period     time.Time
 	Identifier string

@@ -140,7 +140,8 @@ func wantFundReports() []fundReportAPI {
 	}}
 }
 
-// S591, S594: a tick stores the latest version of each period of the funds the exchange lists.
+// S591, S594: a tick stores the latest version of each period of the funds the exchange lists; the
+// two funds that give ABCD11 are stored marked shared (FR4).
 func TestS591FundReportTick(t *testing.T) {
 	t.Parallel()
 
@@ -152,8 +153,9 @@ func TestS591FundReportTick(t *testing.T) {
 
 	rows, err := h.Pool.Query(
 		t.Context(),
-		`SELECT code || ' ' || period || ' ' || coalesce(holders::text, '') `+
-			`FROM marketdata_fund_report ORDER BY code, period`,
+		`SELECT code || ' ' || period || ' ' || coalesce(holders::text, '') || `+
+			`CASE WHEN shared THEN ' shared ' || identifier ELSE '' END `+
+			`FROM marketdata_fund_report ORDER BY code, period, identifier`,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -171,6 +173,8 @@ func TestS591FundReportTick(t *testing.T) {
 	}
 
 	want := []string{
+		"ABCD11 2026-10-01 10 shared 22222222000122",
+		"ABCD11 2026-10-01 10 shared 33333333000133",
 		"HGLG11 2026-09-01 613837",
 		"HGLG11 2026-10-01 633787",
 		"XPTO11 2026-10-01 10",
@@ -279,6 +283,76 @@ func TestS596FundReportFeedNotSuggestedOutsideBrazil(t *testing.T) {
 	}
 
 	t.Fatal("br_cvm_fii is not listed")
+}
+
+// S597: a code two funds share lists both as candidates; the symbol of the source links one (FR15).
+func TestS597FundReportLink(t *testing.T) {
+	t.Parallel()
+
+	h := fundReportHarness(t, "2026-11-18")
+	setFundReportFeed(t, h, true)
+	h.App.Marketdata.TickFeeds(t.Context())
+
+	def := mxrf11()
+	def["code"] = "ABCD11"
+	h.MustDo(http.MethodPost, "/api/v1/instruments", def, http.StatusCreated, nil)
+
+	type candidate struct {
+		Source     string `json:"source"`
+		Identifier string `json:"identifier"`
+		Name       string `json:"name"`
+		Segment    string `json:"segment"`
+	}
+
+	var unlinked struct {
+		Items      []fundReportAPI `json:"items"`
+		Candidates []candidate     `json:"candidates"`
+	}
+
+	h.MustDo(http.MethodGet, "/api/v1/fund-reports?code=ABCD11", nil, http.StatusOK, &unlinked)
+
+	wantCandidates := []candidate{
+		{"br_cvm_fii", "22222222000122", "FUNDO B", "Outros"},
+		{"br_cvm_fii", "33333333000133", "FUNDO C", "Outros"},
+	}
+	if len(unlinked.Items) != 0 || !reflect.DeepEqual(unlinked.Candidates, wantCandidates) {
+		t.Fatalf("unlinked = %+v, want no item and candidates %+v", unlinked, wantCandidates)
+	}
+
+	var viaTool struct {
+		Candidates []candidate `json:"fund_report_candidates"`
+	}
+
+	toolOutput(
+		t,
+		h,
+		"get_market_data",
+		map[string]any{"view": "fund_reports", "code": "ABCD11"},
+		&viaTool,
+	)
+
+	if !reflect.DeepEqual(viaTool.Candidates, wantCandidates) {
+		t.Fatalf("tool candidates = %+v, want %+v", viaTool.Candidates, wantCandidates)
+	}
+
+	h.MustDo(http.MethodPatch, "/api/v1/instruments/ABCD11", map[string]any{
+		"name":     def["name"],
+		"exchange": "BVMF",
+		"symbols":  map[string]string{"br_cvm_fii": "33333333000133"},
+	}, http.StatusOK, nil)
+
+	var linked struct {
+		Items      []fundReportAPI `json:"items"`
+		Candidates []candidate     `json:"candidates"`
+	}
+
+	h.MustDo(http.MethodGet, "/api/v1/fund-reports?code=ABCD11", nil, http.StatusOK, &linked)
+
+	if len(linked.Items) != 1 || len(linked.Candidates) != 0 ||
+		linked.Items[0].Identifier != "33333333000133" || linked.Items[0].Name != "FUNDO C" ||
+		len(linked.Items[0].Periods) != 1 || linked.Items[0].Periods[0].Period != "2026-10-01" {
+		t.Fatalf("linked = %+v, want the report of 33333333000133 alone", linked)
+	}
 }
 
 // The assistant reads the fund reports through get_market_data.

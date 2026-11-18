@@ -12866,12 +12866,32 @@ components:
           description: The net income of the period in minor units of currency; null when not informed.
     FundReportList:
       type: object
-      required: [items]
+      required: [items, candidates]
       properties:
         items:
           type: array
           items:
             $ref: "#/components/schemas/FundReport"
+        candidates:
+          type: array
+          description: FR15. For each enabled source whose report set for the instrument is empty, the funds that share the instrument's exchange and code; a link by symbol picks one.
+          items:
+            $ref: "#/components/schemas/FundReportCandidate"
+    FundReportCandidate:
+      type: object
+      additionalProperties: false
+      required: [source, identifier, name, segment]
+      properties:
+        source:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
+        identifier:
+          type: string
+          description: The fund's identifier at the regulator; the value of the symbol that links it.
+        name:
+          type: string
+        segment:
+          type: string
     FundReport:
       type: object
       additionalProperties: false

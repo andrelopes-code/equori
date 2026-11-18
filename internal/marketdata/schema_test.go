@@ -196,12 +196,24 @@ func TestSchemaRejectsInvalidFundReports(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// FR15: two funds may give one code when both rows are marked shared.
+	if _, err := pool.Exec(
+		t.Context(),
+		`INSERT INTO marketdata_fund_report `+
+			`(source, exchange, code, period, currency, identifier, name, segment, shared) VALUES `+
+			`('br_cvm_fii', 'BVMF', 'ABCD11', '2026-10-01', 'BRL', '2', 'B', '', true), `+
+			`('br_cvm_fii', 'BVMF', 'ABCD11', '2026-10-01', 'BRL', '3', 'C', '', true)`,
+	); err != nil {
+		t.Fatal(err)
+	}
+
 	for name, sql := range map[string]string{
 		"source outside the pattern": row + `('BR_CVM', 'BVMF', 'HGLG11', '2026-10-01', 'BRL', '1', 'FII', '')`,
 		"exchange in lower case":     row + `('br_cvm_fii', 'bvmf', 'HGLG11', '2026-10-01', 'BRL', '1', 'FII', '')`,
 		"period not the first day":   row + `('br_cvm_fii', 'BVMF', 'HGLG11', '2026-10-02', 'BRL', '1', 'FII', '')`,
 		"empty identifier":           row + `('br_cvm_fii', 'BVMF', 'HGLG11', '2026-10-01', 'BRL', '', 'FII', '')`,
 		"duplicate of a stored fund": row + `('br_cvm_fii', 'BVMF', 'HGLG11', '2026-10-01', 'BRL', '1', 'FII', '')`,
+		"one fund twice in a period": row + `('br_cvm_fii', 'BVMF', 'HGLX11', '2026-10-01', 'BRL', '11728688000147', 'FII', '')`,
 	} {
 		t.Run(name, func(t *testing.T) {
 			if _, err := pool.Exec(t.Context(), sql); err == nil {

@@ -55,7 +55,7 @@ type Service interface {
 	IndexRates(ctx context.Context, id string, from, to time.Time) ([]domain.IndexRate, error)
 	Expectations(ctx context.Context, id string) (domain.IndexExpectations, error)
 	Curves(ctx context.Context) ([]domain.Curve, error)
-	FundReports(ctx context.Context, code string) ([]domain.FundReport, error)
+	FundReports(ctx context.Context, code string) (domain.FundReportList, error)
 	InstitutionIndicators(
 		ctx context.Context, scheme, identifier string,
 	) (domain.InstitutionIndicators, error)

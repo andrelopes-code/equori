@@ -113,7 +113,11 @@ func compareReports(a, b fundreport.Report) int {
 		return c
 	}
 
-	return strings.Compare(a.Code, b.Code)
+	if c := strings.Compare(a.Code, b.Code); c != 0 {
+		return c
+	}
+
+	return strings.Compare(a.Identifier, b.Identifier)
 }
 
 func readArchive(f *os.File, size int64, year int) ([]fundreport.Report, error) {

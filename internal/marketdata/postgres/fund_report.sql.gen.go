@@ -76,7 +76,8 @@ INSERT INTO
         unit_book_value,
         admin_fee,
         month_yield,
-        month_amortization
+        month_amortization,
+        shared
     )
 VALUES
     (
@@ -95,7 +96,8 @@ VALUES
         $13,
         $14,
         $15,
-        $16
+        $16,
+        $17
     )
 `
 
@@ -116,6 +118,7 @@ type InsertFundReportParams struct {
 	AdminFee          pgtype.Numeric
 	MonthYield        pgtype.Numeric
 	MonthAmortization pgtype.Numeric
+	Shared            bool
 }
 
 func (q *Queries) InsertFundReport(ctx context.Context, arg InsertFundReportParams) error {
@@ -136,6 +139,7 @@ func (q *Queries) InsertFundReport(ctx context.Context, arg InsertFundReportPara
 		arg.AdminFee,
 		arg.MonthYield,
 		arg.MonthAmortization,
+		arg.Shared,
 	)
 	return err
 }
@@ -161,6 +165,57 @@ func (q *Queries) LatestFundReportPeriod(ctx context.Context, source string) (La
 	var i LatestFundReportPeriodRow
 	err := row.Scan(&i.Latest, &i.Found)
 	return i, err
+}
+
+const listFundReportCandidates = `-- name: ListFundReportCandidates :many
+SELECT DISTINCT
+    ON (identifier) identifier,
+    name,
+    segment
+FROM
+    marketdata_fund_report
+WHERE
+    source = $1
+    AND exchange = $2
+    AND code = $3
+    AND shared
+ORDER BY
+    identifier,
+    period DESC
+`
+
+type ListFundReportCandidatesParams struct {
+	Source   string
+	Exchange string
+	Code     string
+}
+
+type ListFundReportCandidatesRow struct {
+	Identifier string
+	Name       string
+	Segment    string
+}
+
+// FR15: the funds whose shared rows carry the exchange and code, with their latest name and
+// segment.
+func (q *Queries) ListFundReportCandidates(ctx context.Context, arg ListFundReportCandidatesParams) ([]ListFundReportCandidatesRow, error) {
+	rows, err := q.db.Query(ctx, listFundReportCandidates, arg.Source, arg.Exchange, arg.Code)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListFundReportCandidatesRow
+	for rows.Next() {
+		var i ListFundReportCandidatesRow
+		if err := rows.Scan(&i.Identifier, &i.Name, &i.Segment); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listFundReportPeriods = `-- name: ListFundReportPeriods :many
@@ -213,16 +268,25 @@ SELECT
 FROM
     marketdata_fund_report
 WHERE
-    exchange = $1
-    AND code = $2
+    source = $1
+    AND (
+        (
+            $2::text IS NULL
+            AND exchange = $3
+            AND code = $4
+            AND NOT shared
+        )
+        OR identifier = $2::text
+    )
 ORDER BY
-    source,
     period DESC
 `
 
 type ListFundReportsParams struct {
-	Exchange string
-	Code     string
+	Source     string
+	Identifier *string
+	Exchange   string
+	Code       string
 }
 
 type ListFundReportsRow struct {
@@ -242,9 +306,15 @@ type ListFundReportsRow struct {
 	MonthAmortization pgtype.Numeric
 }
 
-// Newest period first within a source.
+// FR15: the rows of the identifier when it is given, else the rows of the exchange and code that
+// are not shared; newest period first.
 func (q *Queries) ListFundReports(ctx context.Context, arg ListFundReportsParams) ([]ListFundReportsRow, error) {
-	rows, err := q.db.Query(ctx, listFundReports, arg.Exchange, arg.Code)
+	rows, err := q.db.Query(ctx, listFundReports,
+		arg.Source,
+		arg.Identifier,
+		arg.Exchange,
+		arg.Code,
+	)
 	if err != nil {
 		return nil, err
 	}
