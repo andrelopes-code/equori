@@ -109,6 +109,9 @@ export function PlanAllocationBar({
                 <Text size="xs" weight="medium" className={styles.segmentName}>
                   {s.name}
                 </Text>
+                <Text size="xs" numeric="tabular">
+                  {format.money(s.amount)}
+                </Text>
                 <Text size="xs" tone="muted" numeric="tabular">
                   {share}
                 </Text>

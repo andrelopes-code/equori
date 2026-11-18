@@ -303,6 +303,20 @@ describe("Budget plan", () => {
     ).toBeInTheDocument();
   });
 
+  // Spec 5.1: the label under a segment carries its name, amount and share.
+  it("writes the amount of a segment in its label", async () => {
+    await renderPlan();
+    const segment = await screen.findByRole("button", {
+      name: words("plan.segment", {
+        name: "Housing",
+        amount: "R$2,830.00",
+        share: "33.3%",
+      }),
+    });
+
+    expect(within(segment).getByText("R$2,830.00")).toBeInTheDocument();
+  });
+
   it("hides amounts in privacy mode", async () => {
     localStorage.setItem("equori.privacy", "hidden");
     const { container } = await renderPlan();
