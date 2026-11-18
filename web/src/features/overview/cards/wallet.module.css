@@ -80,6 +80,8 @@
     transition:
       block-size var(--slotted-duration-long) var(--slotted-easing-emphasized),
       margin-block-start var(--slotted-duration-long)
+        var(--slotted-easing-emphasized),
+      margin-block-end var(--slotted-duration-long)
         var(--slotted-easing-emphasized);
   }
 
@@ -152,6 +154,12 @@
     display: none;
   }
 
+  /* The last face, when chosen, keeps under it the room its longer strip and the tuck held: the
+     pocket is as tall for every choice, so the detail does not move with the choice. */
+  .cardUnit:last-of-type:has(.pick:checked) .slot {
+    margin-block-end: calc(var(--slotted-space-5) - var(--tuck, 0px));
+  }
+
   /* The last face keeps its whole strip above the edge and ends there: in the narrow form the
      detail stands under it, inside the pocket, and the rest of the face would cover it. The
      negative inset leaves room for the lift. */
@@ -181,8 +189,6 @@
     padding-block-start: var(--slotted-space-4);
     border-block-start: var(--slotted-border-width-thin) solid
       var(--slotted-border-subtle);
-    animation: detail-in var(--slotted-duration-medium)
-      var(--slotted-easing-enter) backwards;
   }
 
   .cardUnit:not(:has(.pick:checked)) .cardDetail {
@@ -296,15 +302,8 @@
     }
   }
 
-  @keyframes detail-in {
-    from {
-      translate: 0 var(--slotted-space-2);
-    }
-  }
-
   @media (prefers-reduced-motion: reduce) {
-    .slot,
-    .cardDetail {
+    .slot {
       animation: none;
     }
 
