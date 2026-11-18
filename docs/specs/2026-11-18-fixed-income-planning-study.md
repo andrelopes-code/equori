@@ -116,11 +116,49 @@ Open before the spec: the field list of `IfDataCadastro` and whether it carries 
 
 The application confirmation of a broker or bank lists several contracts. With files in a conversation (ADR 020, work in progress in the tree), the assistant reads the document and proposes one `record_fixed_income` per contract in one sheet, under "One decision per answer" of `docs/contributing/web.md`. This adds no operation: the `fixed_income` article names the path.
 
+### A8. Reference rate of a rule group (the unknown shelf)
+
+The investor plans without knowing the offers. The amount of each group depends only on the group values and the ideals (CN7), never on a rate, so the plan of the month is complete before the shelf opens. The decision left for the shelf is which offer fills each group, and that decision needs a yardstick. Each rule group of fixed income shows one reference rate for its return kind and its maturity years. Every input comes from data equori already stores:
+
+| Return kind | Reference | Measure of an offer against it | Data |
+|---|---|---|---|
+| `inflation` | Tesouro IPCA+ rate at the maturity nearest to the middle of the group's years | spread in percentage points over the reference, the offer grossed up when exempt | `internal/marketdata/curve/brtesouro` (IC11) |
+| `fixed` | Tesouro Prefixado rate at the same maturity | the same spread, plus the break-even CDI rate of IC4 | `brtesouro`; IC4 |
+| `rate` | 100% of the CDI, taxed, over the days to maturity | percent of the CDI equivalent after tax | Focus path (ADR 026 E2, E7); `fixedIncomeRules(region).taxBp` |
+
+The reference names its source and date ("Tesouro IPCA+ 2033: IPCA + 7,10% em 14/11"). A group without a reference (no curve, a region without the source) shows none and keeps its amount.
+
+The sovereign bond of the reference is itself on offer every business day. When no private offer pays a spread over it, the reference is the purchase, and the plan row says so. The investor can always buy something, and the plan never waits for a shelf.
+
+A4 ranks the offers of one group by the measure of this table, inside that group only. A ranking across groups would reopen the allocation the plan already decided.
+
 ### A7. Plan on the phone (closes F12)
 
 The section "Este mês" (amount, verdict, purchase list with A2's actions) becomes a phone route, read-only. The editor stays desktop-only. The amendment to ADR 027 (S3) lists the route.
 
-## 5. Personas after the approaches
+## 5. Contribution day
+
+What the investor knows at each moment, and what equori shows:
+
+| Moment | Known | equori shows | Approach |
+|---|---|---|---|
+| Plan, a few times a year | Goals, horizon, tolerance | Groups by rule with ideals; no security named | A1 |
+| Day 5, before the shelf | The amount | Per group: amount, the rule in words, reference rate; issuers without FGC headroom | A1, A5, A8 |
+| At the shelf | The offers of the day | Optional: offers typed in rows, each with its group, its spread over the reference and its headroom | A4, A8 |
+| After the purchase | What was bought | The application prefilled from the plan row; the group's remaining amount after each save | A2, A4 |
+| A purchase matching no rule | The contract | At save time: "fora do plano", with the action to add it to a group | A1 |
+
+Registering a security before planning is rejected. A contract exists in equori from its application (FC11, FC14); a security registered in advance and not bought is an unused instrument, and the plan of the month would name an offer the shelf may no longer carry.
+
+Principles the flow rests on:
+
+- Policy apart from selection. Across pension funds, the policy allocation explains about 90% of the variation of returns over time ([Brinson, Hood and Beebower 1986](https://doi.org/10.2469/faj.v42.n4.39); [Ibbotson and Kaplan 2000](https://doi.org/10.2469/faj.v56.n1.2327)). The plan holds the policy (groups and ideals); the shelf choice is the selection, made with the reference of A8.
+- A private security pays for its credit risk through a spread over the sovereign bond of the same index and maturity. The spread over the reference is that premium in one figure.
+- Fewer options at the moment of choice. More options lowered the rate of choosing in [Iyengar and Lepper 2000](https://doi.org/10.1037/0022-3514.79.6.995), and more funds in a 401(k) plan lowered participation in Iyengar, Huberman and Jiang, "How Much Choice Is Too Much?", in *Pension Design and Structure*, Oxford University Press, 2004. The rule of a group narrows the shelf to the offers that fit it.
+
+Progressive depth keeps the first-time investor in one step. CN12 starts with one group per return kind and no maturity condition. Maturity years, guarantee and tax conditions are added by the investor who wants them.
+
+## 6. Personas after the approaches
 
 | Persona | Scenario | Flow |
 |---|---|---|
@@ -132,14 +170,15 @@ The section "Este mês" (amount, verdict, purchase list with A2's actions) becom
 | Open Finance user | Synced applications | FC28 proposals; confirmed contracts join their groups (A1) |
 | Any | Many contracts on one confirmation | A6 |
 
-## 6. Order
+## 7. Order
 
 | Step | Approach | Depends on | Reason for its place |
 |---|---|---|---|
 | 1 | A1 | none | F3 is a wrong amount, the only defect of correctness |
 | 2 | A2 | A1 | Uses the rule to prefill; reuses F8 |
-| 3 | A3 | none | Unblocks the reserve and redemption scenarios |
-| 4 | A4 | A1, A5 for the headroom line | Largest screen change |
-| 5 | A5 | none | Needs the open item of A5 settled |
-| 6 | A7 | A2 | Needs an amendment of ADR 027 |
-| 7 | A6 | files in a conversation | Waits for that work |
+| 3 | A8 | A1 | Gives the shelf decision its yardstick from stored curves |
+| 4 | A3 | none | Unblocks the reserve and redemption scenarios |
+| 5 | A4 | A1, A8; A5 for the headroom line | Largest screen change |
+| 6 | A5 | none | Needs the open item of A5 settled |
+| 7 | A7 | A2 | Needs an amendment of ADR 027 |
+| 8 | A6 | files in a conversation | Waits for that work |
