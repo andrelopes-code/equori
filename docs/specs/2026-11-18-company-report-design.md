@@ -107,7 +107,7 @@ The web computes them from the periods, as the fund report does; each is a pure 
 
 **CR8 Return on equity.** Net income of twelve months over the equity of the latest balance (the period of `Q`, else of `F`). None when the equity is not above zero. Both include the holders of non-controlling interests when the statements are consolidated; the screen says which statements it reads.
 
-**CR9 Net margin; net debt over equity.** Net margin: net income over revenue, both of twelve months; none when the revenue is not above zero. Net debt over equity: `(short_debt + long_debt − cash − short_investments) ÷ equity` of the latest balance; none when the equity is not above zero. Both are "não se aplica ao plano de contas desta companhia" when the chart is `other`.
+**CR9 Net margin; net debt over equity.** Net margin: net income over revenue, both of twelve months; none when the revenue is not above zero. Net debt over equity: `(short_debt + long_debt − cash − short_investments) ÷ equity` of the latest balance; none when the equity is not above zero. Both are "não se aplica" when the chart is `other`, with the note "plano de contas desta companhia".
 
 **CR10 Positive years.** Of the five latest fiscal years, how many have a net income above zero, written "3 de 5". With fewer than five stored, "2 de 3" and the count of years stored.
 
@@ -116,16 +116,16 @@ The web computes them from the periods, as the fund report does; each is a pure 
 | ID | Signal | Holds when |
 |---|---|---|
 | P1 | ROA positive | `net_income(t) ÷ total_assets(t−1) > 0` |
-| P2 | Operating cash flow positive | `operating_cash_flow(t) > 0` |
+| P2 | Operating cash flow positive | `operating_cash_flow(t) ÷ total_assets(t−1) > 0` |
 | P3 | ROA rose | `net_income(t) ÷ total_assets(t−1) > net_income(t−1) ÷ total_assets(t−2)` |
-| P4 | Cash flow above net income | `operating_cash_flow(t) > net_income(t)` |
+| P4 | Cash flow above net income | `operating_cash_flow(t) ÷ total_assets(t−1) > net_income(t) ÷ total_assets(t−1)` |
 | P5 | Leverage fell | `long_debt(t) ÷ mean(total_assets(t), total_assets(t−1)) < long_debt(t−1) ÷ mean(total_assets(t−1), total_assets(t−2))` |
 | P6 | Current ratio rose | `current_assets(t) ÷ current_liabilities(t) > current_assets(t−1) ÷ current_liabilities(t−1)` |
 | P7 | No shares issued | `shares_issued(t) ≤ shares_issued(t−1)` |
 | P8 | Gross margin rose | `gross_profit(t) ÷ revenue(t) > gross_profit(t−1) ÷ revenue(t−1)` |
 | P9 | Asset turnover rose | `revenue(t) ÷ total_assets(t−1) > revenue(t−1) ÷ total_assets(t−2)` |
 
-A ratio whose divisor is not above zero makes its signal "sem dado".
+A ratio whose divisor is not above zero makes its signal "sem dado". P2 and P4 scale the cash flow by the assets at the start of the year, as Piotroski (2000) does, so every value the list writes is a ratio, a percentage or a count of shares.
 
 ### Hand-computed cases
 
@@ -136,7 +136,7 @@ A ratio whose divisor is not above zero makes its signal "sem dado".
 - Net margin (CR9): 120 over 800: 15.00%. Revenue 0: none.
 - Net debt over equity (CR9): debts 100 and 300, cash 50, investments 50, equity 1,000: 0.30. Debts 0, cash 100, investments 0, equity 1,000: −0.10.
 - Positive years (CR10): 10, −5, 3, 0, 7: 3 of 5. 10 and 7 alone: 2 of 2.
-- Signals (CR11): `t−2` total assets 1,000; `t−1` net income 50, cash flow 60, assets 1,100, long debt 300, current assets 400, current liabilities 200, shares 100, revenue 900, gross profit 270; `t` net income 77, cash flow 90, assets 1,200, long debt 280, current assets 450, current liabilities 200, shares 100, revenue 1,000, gross profit 320. P1 sim (7.00%); P2 sim; P3 sim (7.00% against 5.00%); P4 sim (90 against 77); P5 sim (0.2435 against 0.2857); P6 sim (2.25 against 2.00); P7 sim (100 against 100); P8 sim (32.00% against 30.00%); P9 sim (0.9091 against 0.9000). The same years with shares 110 in `t` and gross profit 300 in `t`: P7 não, P8 não (30.00% against 30.00%). Without `t−2`: P3, P5 and P9 sem dado.
+- Signals (CR11): `t−2` total assets 1,000; `t−1` net income 50, cash flow 60, assets 1,100, long debt 300, current assets 400, current liabilities 200, shares 100, revenue 900, gross profit 270; `t` net income 77, cash flow 90, assets 1,200, long debt 280, current assets 450, current liabilities 200, shares 100, revenue 1,000, gross profit 320. P1 sim (7.00%); P2 sim (8.18%); P3 sim (7.00% against 5.00%); P4 sim (8.18% against 7.00%); P5 sim (0.2435 against 0.2857); P6 sim (2.25 against 2.00); P7 sim (100 against 100); P8 sim (32.00% against 30.00%); P9 sim (0.9091 against 0.9000). The same years with shares 110 in `t` and gross profit 300 in `t`: P7 não, P8 não (30.00% against 30.00%). Without `t−2`: P3, P5 and P9 sem dado.
 
 ## Screen
 
@@ -153,7 +153,7 @@ A ratio whose divisor is not above zero makes its signal "sem dado".
 - Signals: a framed list "Sinais de Piotroski, exercício de 2025 contra 2024", nine rows of fixed height: the signal's name as label, the two compared values as description, "sim", "não" or "sem dado" at the end in the text colour. No sum, no colour by value.
 - Fixed text under the figures: each figure is computed from the filings as stated; the signals are facts of the accounts, not a grade; the decision is the investor's.
 - The source as a link to the dataset page ("CVM, Portal de Dados Abertos").
-- A missing figure is written in words: "sem dado", "não se aplica ao plano de contas desta companhia".
+- A missing figure is written in words: "sem dado", or "não se aplica" with the note "plano de contas desta companhia".
 - Privacy mode masks no figure: none is an amount of the book.
 
 ### Instrument page
