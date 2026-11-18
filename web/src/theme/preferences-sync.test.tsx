@@ -65,7 +65,7 @@ describe("theme preferences", () => {
         <DensityProbe id="b" />
       </>,
     );
-    expect(screen.getByTestId("b")).toHaveTextContent("comfortable");
+    expect(screen.getByTestId("b")).toHaveTextContent("compact");
     act(() => {
       screen.getByTestId("a").click();
     });

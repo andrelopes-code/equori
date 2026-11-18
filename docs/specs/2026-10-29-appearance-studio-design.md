@@ -1,6 +1,6 @@
 # Appearance studio
 
-Status: design, 2026-10-29; amended the same day (A7, A9, A11 to A18). Replaces the appearance pane (`web/src/features/setup/settings-appearance.tsx`) with a workspace of its own.
+Status: design, 2026-10-29; amended the same day (A7, A9, A11 to A18) and on 2026-11-18 (A16, A19, the `equori` row). Replaces the appearance pane (`web/src/features/setup/settings-appearance.tsx`) with a workspace of its own.
 
 ## Intent
 
@@ -48,9 +48,10 @@ The appearance studio makes the theme the primary decision and the individual co
 | A13 | `web/src/theme/surface-recipe.ts` holds each value of A11 and A12 as Slotted derivations per scheme, `dark` and `light`. `high-contrast` keeps the compiled theme. `make gen` writes one stylesheet from them with `derivationCss` to `surface.gen.css`, which the application loads beside the compiled theme; only the root attributes change. |
 | A14 | An element that carries `data-equori-<name>` takes that value for itself and for the scheme scopes under it that carry none, so a theme card or the canvas draws its own surfaces. |
 | A15 | `themeConformance` passes for the compiled theme extended with every value of A11 and A12, one at a time and with `depth` × `step`. |
-| A16 | A theme file of version 1 without a surface value reads that value's default. Export writes every surface value. |
+| A16 | A theme file of version 1 without a surface value reads `standard` for `depth` and `step`, `subtle` for `borders`, `soft` for `shadows` and `spectrum` for `chart`. Export writes every surface value. |
 | A17 | Undo restores the values held before the last change made in the studio, up to 50 steps, for the page load. |
 | A18 | The accent and the neutral tone are picked by hue and chroma sliders over OKLCH, written as `#rrggbb`; the presets stay as swatches. |
+| A19 | The defaults, read when storage holds no value: the `equori` row of the table below, `warning` and `info` `theme`, `step` `wide`, `chart` `spectrum`, density `compact`. The compiled theme keeps its seeds (accent indigo, neutral graphite, face geist); a default that differs from a seed is painted on the root like any other choice. Migration 00116 gives these values to a member whose stored theme is the previous default (indigo, graphite, `theme` status seeds, standard corners, geist, standard depth and step), and `compact` when the stored density is `comfortable`. |
 
 ## Curated themes
 
@@ -58,7 +59,7 @@ Hex seeds; `—` keeps the compiled theme's seed.
 
 | ID         | accent    | tone      | success   | danger    | corners  | typeface  | visual   | depth    | borders | shadows |
 | ---------- | --------- | --------- | --------- | --------- | -------- | --------- | -------- | -------- | ------- | ------- |
-| `equori`   | indigo    | graphite  | —         | —         | standard | geist     | standard | standard | subtle  | soft |
+| `equori`   | cyan      | slate     | `#14b8a6` | `#f97066` | round    | grotesque | standard | soft     | subtle  | soft |
 | `ledger`   | `#3d6fd9` | zinc      | `#2f9e5f` | `#d64545` | square   | grotesque | standard | standard | strong  | flat |
 | `paper`    | `#b4532a` | stone     | `#5f8a3a` | `#c2410c` | soft     | humanist  | standard | soft     | subtle  | soft |
 | `forest`   | `#2f9e6e` | sage      | `#65a30d` | `#e0565b` | standard | geist     | standard | standard | subtle  | soft |
@@ -67,7 +68,7 @@ Hex seeds; `—` keeps the compiled theme's seed.
 | `terminal` | `#f59e0b` | zinc      | `#22c55e` | `#ef4444` | square   | mono      | standard | oled     | strong  | flat |
 | `glass`    | violet    | graphite  | —         | —         | round    | geist     | glass    | standard | subtle  | soft |
 
-`warning` and `info` stay `theme`, `step` stays `standard` and `chart` stays `spectrum` in every curated theme.
+`warning` and `info` stay `theme` and `chart` stays `spectrum` in every curated theme. `step` is `wide` in `equori` and `standard` in the others.
 
 ## Region
 

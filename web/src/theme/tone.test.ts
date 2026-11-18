@@ -5,7 +5,7 @@ import { tone } from "@/theme/tone";
 describe("tone", () => {
   beforeEach(() => {
     localStorage.clear();
-    tone.apply(tone.fallback);
+    tone.apply("graphite");
   });
 
   it("marks the document for every tone but the theme's own", () => {
@@ -20,7 +20,7 @@ describe("tone", () => {
 
   it("leaves the theme's own tone unmarked", () => {
     tone.apply("sage");
-    tone.apply(tone.fallback);
+    tone.apply("graphite");
     expect(document.documentElement).not.toHaveAttribute("data-tone");
   });
 });

@@ -11,8 +11,8 @@ describe("corners", () => {
     document.documentElement.removeAttribute("data-slotted-corners");
   });
 
-  it("defaults to the theme's own corners when storage is empty", () => {
-    expect(readCorners()).toBe("standard");
+  it("defaults to round when storage is empty", () => {
+    expect(readCorners()).toBe("round");
   });
 
   it("returns the stored corners", () => {
@@ -22,7 +22,7 @@ describe("corners", () => {
 
   it("ignores a stored value that is not a corner style", () => {
     localStorage.setItem("equori.corners", "blobby");
-    expect(readCorners()).toBe("standard");
+    expect(readCorners()).toBe("round");
   });
 
   it.each(["square", "soft", "standard", "round"] as const)(

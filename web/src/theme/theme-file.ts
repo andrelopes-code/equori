@@ -4,7 +4,7 @@ import { accentSeed, accentSeeds, accents, isAccent } from "@/theme/accent";
 import { isCorners } from "@/theme/corners";
 import { preference } from "@/theme/preference";
 import { statusSeeds } from "@/theme/status";
-import { surfaceDefaults, surfaces, themeSurfaceNames } from "@/theme/surface";
+import { standardSurfaces, surfaces, themeSurfaceNames } from "@/theme/surface";
 import type { ThemeSurfaces } from "@/theme/surface";
 import { tone, toneSeed, toneSeeds, tones } from "@/theme/tone";
 import { typeface } from "@/theme/typeface";
@@ -164,12 +164,12 @@ function themeValues(record: Record<string, unknown>): ThemeValues | null {
   };
 }
 
-// A file of version 1 written before the surface values reads each missing one as its default
+// A file of version 1 written before the surface values reads each missing one as its standard
 // (spec A16); a present value outside its set refuses the file.
 function surfaceValues(record: Record<string, unknown>): ThemeSurfaces | null {
   const values: Record<string, string> = {};
   for (const name of themeSurfaceNames) {
-    const value = record[name] ?? surfaceDefaults[name];
+    const value = record[name] ?? standardSurfaces[name];
     if (typeof value !== "string" || !surfaces[name].accepts(value))
       return null;
     values[name] = value;

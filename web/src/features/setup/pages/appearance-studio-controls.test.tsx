@@ -58,7 +58,7 @@ describe("appearance studio controls", () => {
     });
     expect(
       within(group).getByRole("radio", {
-        name: catalogPtBR["accent.indigo"],
+        name: catalogPtBR["accent.cyan"],
       }),
     ).toBeChecked();
     await userEvent.click(
@@ -79,13 +79,13 @@ describe("appearance studio controls", () => {
     });
     await userEvent.click(
       within(group).getByRole("radio", {
-        name: catalogPtBR["corners.round"],
+        name: catalogPtBR["corners.square"],
       }),
     );
     expect(document.documentElement.getAttribute("data-slotted-corners")).toBe(
-      "round",
+      "square",
     );
-    expect(localStorage.getItem("equori.corners")).toBe("round");
+    expect(localStorage.getItem("equori.corners")).toBe("square");
   });
 
   it("applies the high contrast scheme and remembers it", async () => {
@@ -233,12 +233,12 @@ describe("appearance studio controls", () => {
           name: catalogPtBR["settings.tone"],
         }),
       ).getByRole("radio", {
-        name: catalogPtBR["tone.graphite"],
+        name: catalogPtBR["tone.slate"],
       }),
     ).toBeChecked();
     expect(
       document.documentElement.style.getPropertyValue("--slotted-seed-neutral"),
-    ).toBe("");
+    ).toBe("#64748b");
     expect(document.documentElement.style.fontSize).toBe("");
     expect(localStorage.getItem("equori.textSize")).toBe("100");
   });

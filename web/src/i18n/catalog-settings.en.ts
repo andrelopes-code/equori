@@ -195,7 +195,7 @@ export const settingsEn = {
   "appearance.preview.primary": "Save",
   "appearance.preview.secondary": "Cancel",
   "theme.equori": "equori",
-  "theme.equori.description": "The house look: indigo over graphite.",
+  "theme.equori.description": "The house look: cyan over slate.",
   "theme.ledger": "Ledger",
   "theme.ledger.description": "Square and sober, in ink blue.",
   "theme.paper": "Paper",

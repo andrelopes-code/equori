@@ -29,7 +29,7 @@ describe("theme file", () => {
     });
   });
 
-  it("reads a file without surface values as their defaults", () => {
+  it("reads a file without surface values as the standard ones", () => {
     const file = {
       format: "equori.theme",
       version: 1,
@@ -77,7 +77,7 @@ describe("theme file", () => {
     [
       "a surface value outside its set",
       exportTheme("A", curatedThemes.equori).replace(
-        '"depth": "standard"',
+        '"depth": "soft"',
         '"depth": "abyss"',
       ),
     ],
@@ -92,7 +92,7 @@ describe("theme file", () => {
     [
       "a colour that is not hex",
       exportTheme("A", curatedThemes.equori).replace(
-        '"#7c6cff"',
+        '"#06b6d4"',
         '"red; background: url(x)"',
       ),
     ],

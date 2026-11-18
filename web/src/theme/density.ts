@@ -9,7 +9,7 @@ export const densities: readonly Density[] = [
 ];
 
 const STORAGE_KEY = "equori.density";
-export const defaultDensity: Density = "comfortable";
+export const defaultDensity: Density = "compact";
 
 function isDensity(value: unknown): value is Density {
   return (densities as readonly unknown[]).includes(value);

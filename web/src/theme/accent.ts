@@ -18,7 +18,7 @@ export type AccentPreset =
 export type Accent = AccentPreset | `#${string}`;
 
 // The accent seed of each choice. Every accent token derives from it within the theme's contrast
-// bounds, so a choice keeps the ratios of every scheme. indigo is the seed of equori.theme.ts.
+// bounds, so a choice keeps the ratios of every scheme.
 export const accentSeeds: Readonly<Record<AccentPreset, string>> = {
   indigo: "#7c6cff",
   violet: "#a855f7",
@@ -33,7 +33,9 @@ export const accentSeeds: Readonly<Record<AccentPreset, string>> = {
 export const accents = Object.keys(accentSeeds) as readonly AccentPreset[];
 
 const STORAGE_KEY = "equori.accent";
-export const defaultAccent: Accent = "indigo";
+export const defaultAccent: Accent = "cyan";
+// The seed compiled into equori.theme.ts: it needs no override on the root.
+const compiledAccent: Accent = "indigo";
 
 function isPreset(value: unknown): value is AccentPreset {
   return (accents as readonly unknown[]).includes(value);
@@ -99,7 +101,7 @@ export function repaintAccent(): void {
   for (const [property, value] of Object.entries(
     seedStyle({ accent: accentSeed(accent) }),
   )) {
-    if (accent === defaultAccent) root.removeProperty(property);
+    if (accent === compiledAccent) root.removeProperty(property);
     else root.setProperty(property, value);
   }
 }

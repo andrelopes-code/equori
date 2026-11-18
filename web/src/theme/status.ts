@@ -18,11 +18,14 @@ export const statusNames: readonly StatusName[] = [
 
 const hexColor = /^#[0-9a-f]{6}$/;
 
-function statusSeed(name: StatusName): Preference<StatusSeed> {
+function statusSeed(
+  name: StatusName,
+  fallback: StatusSeed,
+): Preference<StatusSeed> {
   return preference<StatusSeed>(
     `equori.${name}`,
     (value) => value === "theme" || hexColor.test(value),
-    "theme",
+    fallback,
     (value) => {
       const root = document.documentElement.style;
       for (const [property, seed] of Object.entries(
@@ -38,10 +41,10 @@ function statusSeed(name: StatusName): Preference<StatusSeed> {
 // Money in reads the success tone and an overspent figure the danger tone, so these seeds colour them.
 export const statusSeeds: Readonly<Record<StatusName, Preference<StatusSeed>>> =
   {
-    success: statusSeed("success"),
-    danger: statusSeed("danger"),
-    warning: statusSeed("warning"),
-    info: statusSeed("info"),
+    success: statusSeed("success", "#14b8a6"),
+    danger: statusSeed("danger", "#f97066"),
+    warning: statusSeed("warning", "theme"),
+    info: statusSeed("info", "theme"),
   };
 
 export function useStatusSeed(

@@ -8,8 +8,8 @@ describe("density", () => {
     document.documentElement.removeAttribute("data-slotted-density");
   });
 
-  it("defaults to comfortable when storage is empty", () => {
-    expect(readDensity()).toBe("comfortable");
+  it("defaults to compact when storage is empty", () => {
+    expect(readDensity()).toBe("compact");
   });
 
   it("returns the stored density", () => {
@@ -19,7 +19,7 @@ describe("density", () => {
 
   it("ignores a stored value that is not a density", () => {
     localStorage.setItem("equori.density", "roomy");
-    expect(readDensity()).toBe("comfortable");
+    expect(readDensity()).toBe("compact");
   });
 
   it("stores the density and sets it on the document", () => {

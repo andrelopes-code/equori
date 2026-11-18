@@ -10,7 +10,7 @@ export const cornerStyles: readonly Corners[] = [
 ];
 
 const STORAGE_KEY = "equori.corners";
-export const defaultCorners: Corners = "standard";
+export const defaultCorners: Corners = "round";
 
 export function isCorners(value: unknown): value is Corners {
   return (cornerStyles as readonly unknown[]).includes(value);

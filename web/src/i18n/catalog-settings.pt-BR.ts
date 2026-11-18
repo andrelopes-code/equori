@@ -199,7 +199,7 @@ export const settingsPtBR: Record<keyof typeof settingsEn, string> = {
   "appearance.preview.primary": "Salvar",
   "appearance.preview.secondary": "Cancelar",
   "theme.equori": "equori",
-  "theme.equori.description": "O visual da casa: índigo sobre grafite.",
+  "theme.equori.description": "O visual da casa: ciano sobre ardósia.",
   "theme.ledger": "Livro-caixa",
   "theme.ledger.description": "Quadrado e sóbrio, em azul-tinta.",
   "theme.paper": "Papel",

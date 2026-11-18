@@ -88,7 +88,7 @@ describe("book accent storage", () => {
     suspendBookAccent(true);
 
     expect(document.documentElement.style.getPropertyValue(seedProperty)).toBe(
-      "",
+      "#06b6d4",
     );
 
     suspendBookAccent(false);

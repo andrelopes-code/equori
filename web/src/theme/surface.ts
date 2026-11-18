@@ -13,8 +13,8 @@ export type SurfaceValue<N extends SurfaceName> =
 export type SurfaceValues = { [N in SurfaceName]: SurfaceValue<N> };
 
 export const surfaceDefaults: SurfaceValues = {
-  depth: "standard",
-  step: "standard",
+  depth: "soft",
+  step: "wide",
   borders: "subtle",
   shadows: "soft",
   chart: "spectrum",
@@ -26,6 +26,15 @@ export const surfaceNames = Object.keys(surfaceSets) as readonly SurfaceName[];
 // The contrast of secondary text is a reading preference; a theme holds the others (spec A1).
 export type ThemeSurfaceName = Exclude<SurfaceName, "contrast">;
 export type ThemeSurfaces = Pick<SurfaceValues, ThemeSurfaceName>;
+
+// The surfaces of a theme that names none: a curated theme, or a file written before A11.
+export const standardSurfaces: ThemeSurfaces = {
+  depth: "standard",
+  step: "standard",
+  borders: "subtle",
+  shadows: "soft",
+  chart: "spectrum",
+};
 
 export const themeSurfaceNames: readonly ThemeSurfaceName[] = [
   "depth",

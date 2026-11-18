@@ -6,7 +6,7 @@ import { statusNames, statusSeeds, useStatusSeed } from "@/theme/status";
 import type { StatusName, StatusSeed } from "@/theme/status";
 import {
   applySurface,
-  surfaceDefaults,
+  standardSurfaces,
   surfaces,
   themeSurfaceNames,
   useSurface,
@@ -58,24 +58,20 @@ const neutralStatus = {
   info: "theme",
 } as const;
 
-const standardSurfaces: ThemeSurfaces = {
-  depth: surfaceDefaults.depth,
-  step: surfaceDefaults.step,
-  borders: surfaceDefaults.borders,
-  shadows: surfaceDefaults.shadows,
-  chart: surfaceDefaults.chart,
-};
-
 // Each theme pairs its status colours with its own hue, so an amount reads as part of the palette.
 export const curatedThemes: Readonly<Record<CuratedTheme, ThemeValues>> = {
   equori: {
     ...neutralStatus,
     ...standardSurfaces,
-    accent: "indigo",
-    tone: "graphite",
-    corners: "standard",
-    typeface: "geist",
+    accent: "cyan",
+    tone: "slate",
+    success: "#14b8a6",
+    danger: "#f97066",
+    corners: "round",
+    typeface: "grotesque",
     visual: "standard",
+    depth: "soft",
+    step: "wide",
   },
   ledger: {
     ...neutralStatus,

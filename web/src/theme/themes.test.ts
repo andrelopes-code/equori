@@ -71,7 +71,7 @@ describe("themes", () => {
   });
 
   it("matches a preset and its hex seed as the same value", () => {
-    applyThemeValues({ ...curatedThemes.equori, accent: "#7c6cff" });
+    applyThemeValues({ ...curatedThemes.equori, accent: "#06b6d4" });
 
     expect(matchTheme(currentThemeValues(), [])).toBe("equori");
   });

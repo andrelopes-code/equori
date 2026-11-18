@@ -39,8 +39,8 @@ describe("surface values", () => {
 
   it("holds the defaults of the spec", () => {
     expect(surfaceDefaults).toEqual({
-      depth: "standard",
-      step: "standard",
+      depth: "soft",
+      step: "wide",
       borders: "subtle",
       shadows: "soft",
       chart: "spectrum",

@@ -58,17 +58,20 @@ export function typefaceStack(value: Typeface): string {
 
 const PROPERTY = "--slotted-font-family-sans";
 
+// The face compiled into equori.theme.ts: it needs no override on the root.
+const compiledTypeface: Typeface = "geist";
+
 export const typeface = preference<Typeface>(
   "equori.typeface",
   (value) =>
     isPreset(value) ||
     (value.startsWith("custom:") &&
       familyName.test(value.slice("custom:".length))),
-  "geist",
+  "grotesque",
   (value) => {
     loadTypeface(value);
     const root = document.documentElement.style;
-    if (value === typeface.fallback) root.removeProperty(PROPERTY);
+    if (value === compiledTypeface) root.removeProperty(PROPERTY);
     else root.setProperty(PROPERTY, typefaceStack(value));
   },
 );

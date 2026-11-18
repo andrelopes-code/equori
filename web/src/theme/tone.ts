@@ -28,21 +28,24 @@ export function toneSeed(value: Tone): string {
   return isPreset(value) ? toneSeeds[value] : value;
 }
 
+// The neutral seed compiled into equori.theme.ts: it needs no override on the root.
+const compiledTone: Tone = "graphite";
+
 export const tone = preference<Tone>(
   "equori.tone",
   (value) => isPreset(value) || /^#[0-9a-f]{6}$/.test(value),
-  "graphite",
+  "slate",
   (value) => {
     // Any tone but the theme's own lights the glass aurora in its hue (aurora-background).
     document.documentElement.toggleAttribute(
       "data-tone",
-      value !== tone.fallback,
+      value !== compiledTone,
     );
     const root = document.documentElement.style;
     for (const [property, seed] of Object.entries(
       seedStyle({ neutral: toneSeed(value) }),
     )) {
-      if (value === tone.fallback) root.removeProperty(property);
+      if (value === compiledTone) root.removeProperty(property);
       else root.setProperty(property, seed);
     }
   },

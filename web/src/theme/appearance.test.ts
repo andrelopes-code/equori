@@ -5,6 +5,34 @@ import { restoreAppearance, storedAppearance } from "@/theme/appearance";
 import { defaultDensity, densities, readDensity } from "@/theme/density";
 import { applyScheme, readScheme } from "@/theme/scheme";
 import { textSize } from "@/theme/text-size";
+import { currentThemeValues } from "@/theme/themes";
+
+// Spec A19, docs/specs/2026-10-29-appearance-studio-design.md.
+describe("defaults", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it("reads the house look from an empty storage", () => {
+    expect(currentThemeValues()).toEqual({
+      accent: "cyan",
+      tone: "slate",
+      success: "#14b8a6",
+      danger: "#f97066",
+      warning: "theme",
+      info: "theme",
+      corners: "round",
+      typeface: "grotesque",
+      visual: "standard",
+      depth: "soft",
+      step: "wide",
+      borders: "subtle",
+      shadows: "soft",
+      chart: "spectrum",
+    });
+    expect(readDensity()).toBe("compact");
+  });
+});
 
 describe("storedAppearance", () => {
   beforeEach(() => {

@@ -8,8 +8,8 @@ describe("accent", () => {
     document.documentElement.style.removeProperty("--slotted-seed-accent");
   });
 
-  it("defaults to the theme's own accent when storage is empty", () => {
-    expect(readAccent()).toBe("indigo");
+  it("defaults to cyan when storage is empty", () => {
+    expect(readAccent()).toBe("cyan");
   });
 
   it("returns the stored accent", () => {
@@ -19,7 +19,7 @@ describe("accent", () => {
 
   it("ignores a stored value that is not an accent", () => {
     localStorage.setItem("equori.accent", "red");
-    expect(readAccent()).toBe("indigo");
+    expect(readAccent()).toBe("cyan");
   });
 
   it("keeps a custom colour and writes it as the accent seed", () => {

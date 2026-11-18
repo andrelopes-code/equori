@@ -95,9 +95,9 @@ describe("AppFrame layout", () => {
     },
   );
 
-  it("sets the comfortable density when none is stored", async () => {
+  it("sets the compact density when none is stored", async () => {
     await renderApp("/", { width: 390, fetch: newFetch() });
-    expect(html).toHaveAttribute("data-slotted-density", "comfortable");
+    expect(html).toHaveAttribute("data-slotted-density", "compact");
   });
 
   it("sets the stored density", async () => {
