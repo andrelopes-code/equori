@@ -718,4 +718,18 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.indexerComparison.note.credit":
     "O risco de crédito do emissor e a liquidez de cada título não são comparados.",
   "calc.indexerComparison.note.decision": "O equori calcula; a escolha é sua.",
+  "calc.indexer-comparison.title": "Comparar indexadores",
+  "calc.indexer-comparison.question":
+    "Qual título de renda fixa rende mais até o vencimento com as taxas esperadas?",
+  "calc.indexer-comparison.step1":
+    "A taxa anual de cada título segue a trajetória esperada do seu índice até o vencimento.",
+  "calc.indexer-comparison.step2":
+    "Rendimento, imposto e rendimento líquido são os da calculadora de renda fixa.",
+  "calc.indexer-comparison.step3":
+    "O ponto de empate é a taxa constante do índice em que dois títulos rendem o mesmo após o imposto.",
+  "calc.indexer-comparison.formula1": "líquido_j(x) = líquido_ref",
+  "calc.indexer-comparison.assumption1":
+    "Um pagamento no vencimento; sem cupons.",
+  "calc.indexer-comparison.limit1":
+    "Títulos com vencimentos diferentes não são comparados.",
 };

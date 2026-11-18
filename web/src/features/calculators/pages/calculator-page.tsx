@@ -10,6 +10,7 @@ import { CreditCostCalculator } from "@/features/calculators/credit-cost-calcula
 import { DebtPayoffCalculator } from "@/features/calculators/debt-payoff-calculator/debt-payoff-calculator";
 import { FinancingCalculator } from "@/features/calculators/financing-calculator/financing-calculator";
 import { FixedIncomeCalculator } from "@/features/calculators/fixed-income-calculator/fixed-income-calculator";
+import { IndexerComparisonCalculator } from "@/features/calculators/indexer-comparison/indexer-comparison-calculator";
 import { OwnOrRentCalculator } from "@/features/calculators/own-or-rent-calculator/own-or-rent-calculator";
 import { RatesCalculator } from "@/features/calculators/rates-calculator/rates-calculator";
 import { RecurringCostCalculator } from "@/features/calculators/recurring-cost-calculator/recurring-cost-calculator";
@@ -19,6 +20,7 @@ const screens: Partial<Record<CalculatorId, ComponentType>> = {
   rates: RatesCalculator,
   correction: CorrectionCalculator,
   "fixed-income": FixedIncomeCalculator,
+  "indexer-comparison": IndexerComparisonCalculator,
   financing: FinancingCalculator,
   "cash-or-installments": CashOrInstallmentsCalculator,
   "credit-cost": CreditCostCalculator,

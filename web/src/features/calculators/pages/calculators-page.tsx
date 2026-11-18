@@ -24,10 +24,12 @@ import {
   SectionTitle,
 } from "@slotted/react/section";
 
+import { useComparableIndexes } from "@/features/calculators/indexer-comparison/use-comparison-data";
 import {
   calculatorGroups,
   calculators,
 } from "@/features/calculators/model/calculators";
+import { useCalculatorMoney } from "@/features/calculators/fields/use-calculator-money";
 import { useT } from "@/i18n/i18n-provider";
 import { routeTo } from "@/ui/navigation/route-to";
 import { PageStack } from "@/ui/page-layout/page-stack";
@@ -35,6 +37,12 @@ import { PageStack } from "@/ui/page-layout/page-stack";
 // The calculators by group, each with the question it answers (design §4, "Routes").
 export function CalculatorsPage() {
   const t = useT();
+  const currency = useCalculatorMoney()?.currency ?? "";
+  const comparable = useComparableIndexes(currency).length > 0;
+  const listed = calculators.filter(
+    (c) => c.id !== "indexer-comparison" || comparable,
+  );
+
   return (
     <Page width="full">
       <PageHeader size="lg">
@@ -61,7 +69,7 @@ export function CalculatorsPage() {
               </SectionHeader>
               <SectionBody>
                 <List variant="framed">
-                  {calculators
+                  {listed
                     .filter((c) => c.group === group)
                     .map(({ id }) => (
                       <ListItem key={id}>

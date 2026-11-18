@@ -3,6 +3,7 @@ export type CalculatorId =
   | "rates"
   | "correction"
   | "fixed-income"
+  | "indexer-comparison"
   | "financing"
   | "cash-or-installments"
   | "credit-cost"
@@ -29,6 +30,7 @@ export const calculators: readonly {
   { id: "rates", group: "invest" },
   { id: "correction", group: "invest" },
   { id: "fixed-income", group: "invest" },
+  { id: "indexer-comparison", group: "invest" },
   { id: "financing", group: "credit" },
   { id: "cash-or-installments", group: "credit" },
   { id: "credit-cost", group: "credit" },

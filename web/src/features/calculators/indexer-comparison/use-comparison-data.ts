@@ -12,6 +12,7 @@ import type { IndexData } from "@/features/calculators/indexer-comparison/securi
 import { indexCurrency } from "@/features/calculators/rate-source/index-catalog";
 import {
   useIndexes,
+  windowStart,
   type Index,
 } from "@/features/calculators/rate-source/use-index-rate";
 
@@ -41,13 +42,4 @@ export function useComparisonData(indexes: readonly Index[]): {
   const curves = useQuery(curvesQuery(api)).data ?? [];
 
   return { data: indexDataOf(indexes, rates, surveys), curves };
-}
-
-// 13 months before a date, as use-index-rate.ts reads them: the trailing year and the days
-// before its start.
-function windowStart(last: string): string {
-  const d = new Date(`${last}T00:00:00Z`);
-  d.setUTCMonth(d.getUTCMonth() - 13);
-
-  return d.toISOString().slice(0, 10);
 }

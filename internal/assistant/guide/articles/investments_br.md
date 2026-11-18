@@ -17,3 +17,5 @@ Issuer. The CNPJ of the issuer of a contract, numeric or alphanumeric (IN RFB 2.
 Come-cotas. A fixed income or multimarket fund cancels units on the last business day of May and of November for the tax on the gain: 15% for a long-term fund, 20% for a short-term one (Lei 14.754/2023, art. 17 to 19).
 
 Distribution. Exempt for a listed FII or Fiagro under the conditions of Lei 11.033/2004 (exchange traded, holder below 10% of the units); the informe of the fund states them.
+
+Indexer comparison. The sources are the CDI and the IPCA of the instance, the Focus survey of the Banco Central do Brasil for the expected rates, and the curves of Tesouro Direto for the market rate of the term and the inflation implied by government bonds. The tax follows the table of the income tax above, and an exempt security pays none. The screen gives no recommendation and no verdict.

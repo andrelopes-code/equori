@@ -28,7 +28,7 @@ export function useIndexes(): Index[] {
 }
 
 // 13 months before a date: room for the trailing year and the days before its start.
-function windowStart(last: string): string {
+export function windowStart(last: string): string {
   const d = new Date(`${last}T00:00:00Z`);
   d.setUTCMonth(d.getUTCMonth() - 13);
   return d.toISOString().slice(0, 10);

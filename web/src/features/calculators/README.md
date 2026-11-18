@@ -14,6 +14,7 @@ Defined in `web/src/app/router.tsx`.
 - `GET /indexes`
 - `GET /indexes/{id}/rates`
 - `GET /indexes/{id}/expectations`
+- `GET /curves`
 
 ## Guide topics
 
@@ -34,6 +35,7 @@ Defined in `web/src/app/router.tsx`.
 - `debt-payoff-calculator/`: debt payoff, with its maths, region rules and rows.
 - `financing-calculator/`: financing, with its annuity and region rules.
 - `fixed-income-calculator/`: fixed income, with its maths and region rules.
+- `indexer-comparison/`: the comparison of fixed income securities by indexer (`IndexerComparison`, also opened from the contribution plan), its pure functions and its calculator entry; the list shows it only when an index of the base currency has an expected path.
 - `own-or-rent-calculator/`: owning against renting.
 - `rates-calculator/`: conversion between rates.
 - `recurring-cost-calculator/`: cost of a recurring expense.

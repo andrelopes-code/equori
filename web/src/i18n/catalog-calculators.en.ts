@@ -713,4 +713,17 @@ export const calculatorsEn = {
     "The issuer's credit risk and the liquidity of each security are not compared.",
   "calc.indexerComparison.note.decision":
     "equori computes; the choice is yours.",
+  "calc.indexer-comparison.title": "Compare indexers",
+  "calc.indexer-comparison.question":
+    "Which fixed income security pays more to maturity under the expected rates?",
+  "calc.indexer-comparison.step1":
+    "The annual rate of each security follows the expected path of its index to maturity.",
+  "calc.indexer-comparison.step2":
+    "Yield, tax and net yield are those of the fixed income calculator.",
+  "calc.indexer-comparison.step3":
+    "The break-even is the constant rate of the index at which two securities pay the same after tax.",
+  "calc.indexer-comparison.formula1": "net_j(x) = net_ref",
+  "calc.indexer-comparison.assumption1": "One payment at maturity; no coupons.",
+  "calc.indexer-comparison.limit1":
+    "Securities of different maturities are not compared.",
 } as const;
