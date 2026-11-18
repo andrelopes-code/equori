@@ -3,8 +3,11 @@ package portfolio_test
 import (
 	"fmt"
 	"net/http"
+	"net/http/httptest"
+	"reflect"
 	"slices"
 	"testing"
+	"time"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
 	"github.com/andrelopes-code/equori/internal/marketdata"
@@ -61,6 +64,7 @@ type contributionOut struct {
 	Classes      []classOut   `json:"classes"`
 	Outside      []outsideOut `json:"outside"`
 	Missing      []missingOut `json:"missing"`
+	Current      *currentOut  `json:"current"`
 }
 
 type contributionFixture struct {
@@ -70,9 +74,9 @@ type contributionFixture struct {
 
 // contributionFixture holds a CDB (reserve account) of 10,000.00, BOVA11 3,000.00, IVVB11
 // 1,000.00 and MXRF11 4,000.00, all priced on 2026-10-30 (CN14).
-func newContributionFixture(t *testing.T) contributionFixture {
+func newContributionFixture(t *testing.T, opts ...apitest.Option) contributionFixture {
 	t.Helper()
-	f := newFixture(t)
+	f := newFixture(t, opts...)
 
 	for _, code := range []string{"BOVA11", "IVVB11"} {
 		f.h.MustDo(
@@ -242,6 +246,44 @@ func TestS398SavedPlanReturnsValues(t *testing.T) {
 	if member.AccountID != f.cdb || member.Value.Amount != 1000000 || member.ShareBP == nil ||
 		*member.ShareBP != 10000 {
 		t.Fatalf("member = %+v", member)
+	}
+}
+
+// TestContributionTakesCurrentQuotes: at today the plan values MXRF11 at the current quote and
+// states it; a member converted more than once counts once (A248 CQ21, CQ24).
+func TestContributionTakesCurrentQuotes(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/yahoo/MXRF11.SA" {
+			http.NotFound(w, r)
+
+			return
+		}
+
+		_, _ = w.Write([]byte(currentBody("BRL", "America/Sao_Paulo", "10.5")))
+	}))
+	t.Cleanup(srv.Close)
+
+	f := newContributionFixture(
+		t,
+		apitest.Clock(func() time.Time { return time.Date(2026, 11, 3, 15, 13, 0, 0, time.UTC) }),
+		apitest.PriceFeeds(
+			[]string{"yahoo_chart"},
+			map[string]string{"yahoo_chart": srv.URL + "/yahoo"},
+		),
+	)
+	f.save(t, f.plan(150000))
+
+	got := f.get(t)
+	if !slices.Equal(got.values(), []int64{1000000, 300000, 100000, 420000}) ||
+		got.Total.Amount != 1820000 {
+		t.Fatalf("values %v total %d", got.values(), got.Total.Amount)
+	}
+
+	want := &currentOut{Count: 1, Open: true, OldestAt: "2026-11-03T14:58:00Z"}
+	if !reflect.DeepEqual(got.Current, want) {
+		t.Errorf("current = %+v, want %+v", got.Current, want)
 	}
 }
 

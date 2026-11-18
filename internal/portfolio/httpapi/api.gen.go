@@ -234,6 +234,7 @@ type ContributionOutside struct {
 type ContributionPlan struct {
 	Amount       *Money                 `json:"amount,omitempty"`
 	Classes      []ContributionClass    `json:"classes"`
+	Current      *CurrentQuotes         `json:"current,omitempty"`
 	DriftAfterBp *int                   `json:"drift_after_bp,omitempty"`
 	DriftBp      *int                   `json:"drift_bp,omitempty"`
 	Leftover     *Money                 `json:"leftover,omitempty"`

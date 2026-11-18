@@ -61,6 +61,34 @@ func currentQuotes(prices []Price) *CurrentQuotes {
 	return out
 }
 
+// distinctPrices drops the repeats of (Instrument, Quote, Source, At): a member is converted
+// more than once, so its price repeats.
+func distinctPrices(prices []Price) []Price {
+	type key struct {
+		instrument, quote money.Currency
+		source            string
+		at                time.Time
+	}
+
+	seen := map[key]bool{}
+
+	var out []Price
+
+	for _, p := range prices {
+		k := key{instrument: p.Instrument, quote: p.Quote, source: p.Source}
+		if p.At != nil {
+			k.at = *p.At
+		}
+
+		if !seen[k] {
+			seen[k] = true
+			out = append(out, p)
+		}
+	}
+
+	return out
+}
+
 // pricesOf are the prices of every leg of every valued balance.
 func pricesOf(balances []valuedBalance) []Price {
 	var out []Price

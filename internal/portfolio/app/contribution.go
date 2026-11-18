@@ -41,6 +41,7 @@ type ContributionView struct {
 	Classes      []ContributionClass
 	Outside      []ContributionOutside
 	Missing      []ContributionMissing
+	Current      *CurrentQuotes // nil when no value took a current quote (A248 CQ24)
 }
 
 type ContributionClass struct {

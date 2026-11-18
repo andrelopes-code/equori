@@ -122,6 +122,7 @@ func contributionPlan(v app.ContributionView) ContributionPlan {
 		Classes:      make([]ContributionClass, len(v.Classes)),
 		Outside:      make([]ContributionOutside, len(v.Outside)),
 		Missing:      make([]ContributionMissing, len(v.Missing)),
+		Current:      toCurrent(v.Current),
 	}
 	if !v.Complete {
 		out.Status = statusIncomplete

@@ -14724,6 +14724,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ContributionMissing"
+        current:
+          $ref: "#/components/schemas/CurrentQuotes"
     ContributionClass:
       type: object
       required: [name, target_bp, value, members]

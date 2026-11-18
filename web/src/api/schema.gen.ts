@@ -8137,6 +8137,7 @@ export interface components {
             classes: components["schemas"]["ContributionClass"][];
             outside: components["schemas"]["ContributionOutside"][];
             missing: components["schemas"]["ContributionMissing"][];
+            current?: components["schemas"]["CurrentQuotes"];
         };
         ContributionClass: {
             name: string;

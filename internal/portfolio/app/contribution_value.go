@@ -37,14 +37,49 @@ func (s *Service) contributionView(
 		}
 	}
 
-	v := valuer{s: s, ab: ab, held: held, base: base, today: today}
+	s.warm(ctx, today, contributionCodes(balances, p, base))
+
+	v := valuer{s: s, ab: ab, held: held, base: base, today: today, prices: new([]Price)}
 
 	val, err := v.valuate(ctx, p)
 	if err != nil {
 		return ContributionView{}, err
 	}
 
-	return assemble(p, val, base, split)
+	view, err := assemble(p, val, base, split)
+	if err != nil {
+		return ContributionView{}, err
+	}
+
+	view.Current = currentQuotes(distinctPrices(*v.prices))
+
+	return view, nil
+}
+
+// contributionCodes are the instruments the view values: each held balance, each instrument
+// member of p and base.
+func contributionCodes(
+	balances []AccountBalance,
+	p domain.Plan,
+	base money.Currency,
+) []money.Currency {
+	codes := []money.Currency{base}
+
+	for _, b := range balances {
+		if !b.Amount.IsZero() {
+			codes = append(codes, b.Amount.Currency())
+		}
+	}
+
+	for _, c := range p.Classes {
+		for _, m := range c.Members {
+			if m.Instrument != "" {
+				codes = append(codes, m.Instrument)
+			}
+		}
+	}
+
+	return codes
 }
 
 // valuation is the value of every member of a plan in the base currency.
@@ -70,6 +105,9 @@ type valuer struct {
 	held  map[uuid.UUID]money.Money
 	base  money.Currency
 	today time.Time
+
+	// prices collects the prices of every conversion of the view (A248 CQ24).
+	prices *[]Price
 }
 
 func (v valuer) valuate(ctx context.Context, p domain.Plan) (valuation, error) {
@@ -210,7 +248,9 @@ func (v valuer) toBase(
 		return q, false, nil
 	}
 
-	value, _, err = v.s.md.Convert(ctx, q, v.base, v.today)
+	value, prices, err := v.s.value(ctx, q, v.base, v.today)
+	*v.prices = append(*v.prices, prices...)
+
 	if errors.Is(err, ErrPriceMissing) {
 		return money.Money{}, true, nil
 	}
