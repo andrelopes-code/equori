@@ -128,6 +128,7 @@ func TestInstrumentSubtypesList(t *testing.T) {
 		"fixed_income_fund",
 		"multimarket",
 		"pgbl",
+		"short_term_fund",
 		"vgbl",
 	}; !slices.Equal(
 		got,

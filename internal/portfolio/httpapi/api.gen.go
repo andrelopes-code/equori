@@ -315,9 +315,12 @@ type FixedIncomeEvent struct {
 	AccountId openapi_types.UUID `json:"account_id"`
 
 	// Date The payment date, adjusted to the next business day.
-	Date       openapi_types.Date `json:"date"`
-	Gross      *Money             `json:"gross,omitempty"`
-	Instrument string             `json:"instrument"`
+	Date openapi_types.Date `json:"date"`
+
+	// EstimatedTax The come-cotas a unit_tax event takes, estimated on the gain of the units since the later of their average cost and the price of the previous come-cotas, at the rate of the fund's subtype; absent without a price.
+	EstimatedTax *Money `json:"estimated_tax,omitempty"`
+	Gross        *Money `json:"gross,omitempty"`
+	Instrument   string `json:"instrument"`
 
 	// Kind interest, amortization, maturity or unit_tax.
 	Kind     string `json:"kind"`

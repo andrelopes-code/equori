@@ -822,6 +822,10 @@ schemas:
       rate_missing:
         type: boolean
         description: The rate of the index is not published, so gross is absent.
+      estimated_tax:
+        description: The come-cotas a unit_tax event takes, estimated on the gain of the units since the later of their average cost and the price of the previous come-cotas, at the rate of the fund's subtype; absent without a price.
+        allOf:
+          - $ref: "#/components/schemas/Money"
       state:
         type: string
         enum: [upcoming, due, recorded]

@@ -18,6 +18,8 @@ type fixedIncomeEventView struct {
 	Gross       tool.Money `json:"gross,omitzero"`
 	RateMissing bool       `json:"rate_missing,omitzero"`
 	State       string     `json:"state"`
+
+	EstimatedTax tool.Money `json:"estimated_tax,omitzero"`
 }
 
 func fixedIncomeEventsView(
@@ -57,6 +59,10 @@ func fixedIncomeEventsView(
 		}
 		if e.Gross != nil {
 			v.Gross = tool.MoneyOf(*e.Gross)
+		}
+
+		if e.EstimatedTax != nil {
+			v.EstimatedTax = tool.MoneyOf(*e.EstimatedTax)
 		}
 
 		out.FixedIncomeEvents = append(out.FixedIncomeEvents, v)

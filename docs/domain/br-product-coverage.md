@@ -78,7 +78,7 @@ Source status:
 
 | ID | Product | Verdict | Evidence | Missing | Source |
 |---|---|---|---|---|---|
-| U-01 | Fixed income fund, multimarket, come-cotas | partial | subtypes `fixed_income_fund`, `multimarket`; `UnitTax` (Lei 14.754/2023 art. 17 to 19); source `cvmfunds` | long term and short term share one subtype pair, so the rate of 15% or 20% is typed | Lei 14.754/2023 art. 17 to 19, read on 2026-11-18 (planalto.gov.br) |
+| U-01 | Fixed income fund, multimarket, come-cotas | supported | subtypes `fixed_income_fund`, `multimarket` (long term, 15%) and `short_term_fund` (20%); `UnitTax` with `RateBP` (Lei 14.754/2023 art. 17 to 19); `estimated_tax` of each come-cotas (`UnitTaxEstimate`, `TestS634UnitTaxEstimate`); source `cvmfunds` | none | Lei 14.754/2023 art. 17 to 19, read on 2026-11-18 (planalto.gov.br) |
 | U-02 | Equity fund | partial | subtype `equity_fund`, class `fund_equity`, no come-cotas | the tax at redemption is not estimated | to read |
 | U-03 | Exempt funds (FI-Infra, incentivized debenture fund) | supported | fund subtype `fi_infra`, class `fund_exempt`: a distribution is exempt, no come-cotas; `TestBR`, `TestUnitTaxOfClosedFunds` | none | Lei 12.431/2011 art. 3; come-cotas: Lei 14.754/2023 as summarized by law firms, 2026-11-18 |
 | U-04 | FIDC, FIP, closed funds | partial | fund subtypes `fidc` (come-cotas calendar) and `fip`, class `fund`; `TestBR`, `TestUnitTaxOfClosedFunds` | whether a FIDC is an investment entity, which frees it from come-cotas, is not recorded; the tax at a FIP distribution is not estimated | Lei 14.754/2023 as summarized by law firms, 2026-11-18 |
@@ -91,8 +91,8 @@ Source status:
 
 | Verdict | Rows |
 |---|---|
-| supported | 37 |
-| partial | 17 |
+| supported | 38 |
+| partial | 16 |
 | unsupported | 0 |
 
 ## What the assistant says

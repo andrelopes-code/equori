@@ -39,6 +39,8 @@ func (s *Server) listFixedIncomeEvents(
 			Gross:       optionalMoney(e.Gross),
 			RateMissing: e.RateMissing,
 			State:       FixedIncomeEventState(e.State),
+
+			EstimatedTax: optionalMoney(e.EstimatedTax),
 		}
 	}
 

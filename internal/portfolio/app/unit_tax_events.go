@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"slices"
 	"time"
 
@@ -29,8 +30,9 @@ func (s *Service) unitTaxEvents(
 		return nil, nil
 	}
 
-	dates, err := s.unitTaxDates(ctx, rule, from, to)
-	if err != nil || len(dates) == 0 {
+	// The dates start a period earlier: the one before from is the previous come-cotas.
+	dates, err := s.unitTaxDates(ctx, rule, from.AddDate(0, -7, 0), to)
+	if err != nil || len(dates) == 0 || dates[len(dates)-1].Before(from) {
 		return nil, err
 	}
 
@@ -41,10 +43,24 @@ func (s *Service) unitTaxEvents(
 		return nil, err
 	}
 
+	base, err := s.ledger.BaseCurrency(ctx, booksID)
+	if err != nil {
+		return nil, err
+	}
+
+	ut := unitTaxRun{
+		rule:      rule,
+		dates:     dates,
+		from:      from,
+		today:     today,
+		base:      base,
+		positions: positions,
+	}
+
 	var out []FixedIncomeEvent
 
 	for _, h := range holdings {
-		es, err := s.holdingUnitTax(ctx, booksID, h, dates, today, positions)
+		es, err := s.holdingUnitTax(ctx, booksID, h, ut)
 		if err != nil {
 			return nil, err
 		}
@@ -81,14 +97,27 @@ func (s *Service) unitTaxDates(
 	return out, nil
 }
 
+// unitTaxRun is what the unit tax events of every holding share: dates holds the come-cotas from
+// the one before from.
+type unitTaxRun struct {
+	rule        domain.UnitTax
+	dates       []time.Time
+	from, today time.Time
+	base        money.Currency
+	positions   *positionCache
+}
+
 func (s *Service) holdingUnitTax(
 	ctx context.Context,
 	booksID int64,
 	h holding,
-	dates []time.Time,
-	today time.Time,
-	positions *positionCache,
+	ut unitTaxRun,
 ) ([]FixedIncomeEvent, error) {
+	info, err := s.md.InstrumentOf(ctx, h.instrument)
+	if err != nil {
+		return nil, err
+	}
+
 	scale, err := s.md.Scale(ctx, h.instrument)
 	if err != nil {
 		return nil, err
@@ -96,41 +125,101 @@ func (s *Service) holdingUnitTax(
 
 	var out []FixedIncomeEvent
 
-	for _, date := range dates {
-		units, err := positions.held(ctx, h, date.AddDate(0, 0, -1))
+	for i, date := range ut.dates {
+		p, err := ut.positions.position(ctx, h, date.AddDate(0, 0, -1))
 		if err != nil {
 			return nil, err
 		}
 
-		if units <= 0 {
+		if date.Before(ut.from) || p.Quantity <= 0 {
 			continue
 		}
 
-		quantity, err := money.NewOf(units, h.instrument, scale)
+		quantity, err := money.NewOf(p.Quantity, h.instrument, scale)
 		if err != nil {
 			return nil, err
 		}
 
-		recorded, err := s.ledger.UnitTaxDates(
-			ctx,
-			booksID,
-			h.account,
-			date.AddDate(0, 0, -domain.RecordWindowDays),
-			date.AddDate(0, 0, domain.RecordWindowDays),
-		)
+		e, err := s.unitTaxEvent(ctx, booksID, h, ut.today, date, quantity)
 		if err != nil {
 			return nil, err
 		}
 
-		out = append(out, FixedIncomeEvent{
-			AccountID:  h.account,
-			Instrument: h.instrument,
-			Date:       date,
-			Kind:       domain.EventUnitTax,
-			Quantity:   quantity,
-			State:      domain.EventState(date, today, len(recorded) > 0),
-		})
+		if rate, ok := ut.rule.RateBP[info.Subtype]; ok {
+			e.EstimatedTax, err = s.unitTaxEstimate(ctx, ut, i, quantity, p.CostBasis, rate)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		out = append(out, e)
 	}
 
 	return out, nil
+}
+
+// unitTaxEvent is the unit tax of quantity of h on date, recorded when the account holds a unit
+// tax within the window.
+func (s *Service) unitTaxEvent(
+	ctx context.Context,
+	booksID int64,
+	h holding,
+	today, date time.Time,
+	quantity money.Money,
+) (FixedIncomeEvent, error) {
+	recorded, err := s.ledger.UnitTaxDates(
+		ctx,
+		booksID,
+		h.account,
+		date.AddDate(0, 0, -domain.RecordWindowDays),
+		date.AddDate(0, 0, domain.RecordWindowDays),
+	)
+
+	return FixedIncomeEvent{
+		AccountID:  h.account,
+		Instrument: h.instrument,
+		Date:       date,
+		Kind:       domain.EventUnitTax,
+		Quantity:   quantity,
+		State:      domain.EventState(date, today, len(recorded) > 0),
+	}, err
+}
+
+// unitTaxEstimate is the come-cotas of quantity on date i of ut at rate, against its cost and its
+// value at the previous come-cotas; nil when the price of the date is missing.
+func (s *Service) unitTaxEstimate(
+	ctx context.Context,
+	ut unitTaxRun,
+	i int,
+	quantity money.Money,
+	cost int64,
+	rateBP int,
+) (*money.Money, error) {
+	base := ut.base
+
+	now, _, err := s.md.Convert(ctx, quantity, base, ut.dates[i])
+	if errors.Is(err, ErrPriceMissing) {
+		return nil, nil
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	var before int64
+
+	if i > 0 {
+		v, _, err := s.md.Convert(ctx, quantity, base, ut.dates[i-1])
+		if err != nil && !errors.Is(err, ErrPriceMissing) {
+			return nil, err
+		}
+
+		if err == nil {
+			before = v.Amount()
+		}
+	}
+
+	tax, err := money.New(domain.UnitTaxEstimate(now.Amount(), cost, before, rateBP), base)
+
+	return &tax, err
 }

@@ -37,6 +37,8 @@ type UnitTax struct {
 	Calendar string
 	Months   []time.Month
 	Subtypes []string
+	// RateBP is the rate of each subtype in basis points; a subtype absent has no estimate.
+	RateBP map[string]int
 }
 
 // CalendarYear is the tax year of an owner without a jurisdiction.

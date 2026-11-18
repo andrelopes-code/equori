@@ -8631,6 +8631,8 @@ export interface components {
             gross?: components["schemas"]["Money"];
             /** @description The rate of the index is not published, so gross is absent. */
             rate_missing: boolean;
+            /** @description The come-cotas a unit_tax event takes, estimated on the gain of the units since the later of their average cost and the price of the previous come-cotas, at the rate of the fund's subtype; absent without a price. */
+            estimated_tax?: components["schemas"]["Money"];
             /** @enum {string} */
             state: "upcoming" | "due" | "recorded";
         };

@@ -49,7 +49,11 @@ func (Jurisdiction) UnitTax() (domain.UnitTax, bool) {
 		Calendar: "br_banking",
 		Months:   []time.Month{time.May, time.November},
 		// A FIDC pays come-cotas unless it is an investment entity (Lei 14.754/2023).
-		Subtypes: []string{"fixed_income_fund", "multimarket", "fidc"},
+		Subtypes: []string{"fixed_income_fund", "multimarket", "fidc", "short_term_fund"},
+		// 15% for a long-term fund, 20% for a short-term one: Lei 14.754/2023 art. 17.
+		RateBP: map[string]int{
+			"fixed_income_fund": 1500, "multimarket": 1500, "fidc": 1500, "short_term_fund": 2000,
+		},
 	}, true
 }
 
@@ -99,11 +103,17 @@ var subtypeClass = map[string]map[string]string{
 	// 13.043/2014 art. 2), and stays out of the monthly tax of variable income.
 	"etf": {"fixed_income_etf": "etf_fixed_income"},
 	"fund": {
-		"fixed_income_fund": "fund", "multimarket": "fund", "equity_fund": "fund_equity",
-		"pgbl": "pension_pgbl", "vgbl": "pension_vgbl",
+		"fixed_income_fund": "fund",
+		"multimarket":       "fund",
+		"short_term_fund":   "fund",
+		"equity_fund":       "fund_equity",
+		"pgbl":              "pension_pgbl",
+		"vgbl":              "pension_vgbl",
 		// A FI-Infra holds incentivized debentures: its income is exempt for an individual (Lei
 		// 12.431/2011 art. 3); a FIDC and a FIP are taxed as funds (Lei 14.754/2023).
-		"fi_infra": "fund_exempt", "fidc": "fund", "fip": "fund",
+		"fi_infra": "fund_exempt",
+		"fidc":     "fund",
+		"fip":      "fund",
 	},
 }
 

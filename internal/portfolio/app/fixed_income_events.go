@@ -39,7 +39,9 @@ type FixedIncomeEvent struct {
 	Quantity    money.Money
 	Gross       *money.Money // nil with RateMissing
 	RateMissing bool
-	State       string // upcoming, due, recorded
+	// EstimatedTax is the come-cotas a unit_tax event is estimated to take; nil without prices.
+	EstimatedTax *money.Money
+	State        string // upcoming, due, recorded
 }
 
 // FixedIncomeEvents lists the payments dated in [from, to] of the fixed income securities the
@@ -173,6 +175,17 @@ type positionCache struct {
 
 // held is the quantity of an account in an instrument at the end of date.
 func (c *positionCache) held(ctx context.Context, h holding, date time.Time) (int64, error) {
+	p, err := c.position(ctx, h, date)
+
+	return p.Quantity, err
+}
+
+// position is the quantity and the cost of an account in an instrument at the end of date.
+func (c *positionCache) position(
+	ctx context.Context,
+	h holding,
+	date time.Time,
+) (domain.PositionDay, error) {
 	key := date.Format(time.DateOnly)
 
 	rows, ok := c.days[key]
@@ -181,7 +194,7 @@ func (c *positionCache) held(ctx context.Context, h holding, date time.Time) (in
 
 		rows, err = c.repo.PositionsAt(ctx, c.booksID, date)
 		if err != nil {
-			return 0, err
+			return domain.PositionDay{}, err
 		}
 
 		if c.days == nil {
@@ -193,9 +206,9 @@ func (c *positionCache) held(ctx context.Context, h holding, date time.Time) (in
 
 	for _, r := range rows {
 		if r.AccountID == h.account && r.Instrument == h.instrument {
-			return r.Quantity, nil
+			return r, nil
 		}
 	}
 
-	return 0, nil
+	return domain.PositionDay{}, nil
 }

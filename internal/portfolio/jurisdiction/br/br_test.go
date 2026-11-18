@@ -101,6 +101,7 @@ func TestBR(t *testing.T) {
 		"fixed_income_fund",
 		"multimarket",
 		"pgbl",
+		"short_term_fund",
 		"vgbl",
 	}; !slices.Equal(
 		got,
@@ -199,8 +200,14 @@ func TestUnitTax(t *testing.T) {
 		t.Errorf("Months = %v", u.Months)
 	}
 
-	if !slices.Equal(u.Subtypes, []string{"fixed_income_fund", "multimarket", "fidc"}) {
+	want := []string{"fixed_income_fund", "multimarket", "fidc", "short_term_fund"}
+	if !slices.Equal(u.Subtypes, want) {
 		t.Errorf("Subtypes = %v", u.Subtypes)
+	}
+
+	// Coverage row U-01: 15% for a long-term fund, 20% for a short-term one.
+	if u.RateBP["fixed_income_fund"] != 1500 || u.RateBP["short_term_fund"] != 2000 {
+		t.Errorf("RateBP = %v", u.RateBP)
 	}
 }
 

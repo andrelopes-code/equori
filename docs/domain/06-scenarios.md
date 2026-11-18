@@ -1207,3 +1207,7 @@ Coverage rows T-03 and T-05, through the HTTP API. 2.00 units each of NTNF.20290
 ### S633 Monthly payments of an RendA+
 
 Coverage rows T-06 and T-07, through the HTTP API. 240.00 units of RENDA.20491215 bought on 2026-01-12; the events from 2030-01-01 to 2030-03-31 are three amortizations on the 15th of 0.98, 1.01 and 1.01 units, without amount.
+
+### S634 Estimate of the come-cotas
+
+Coverage row U-01, through the HTTP API. 1,000 units of a fund bought at 10.00 on 2026-01-05, priced 10.50 on 2026-05-29 and 10.80 on 2026-11-30: a fixed_income_fund has an estimated_tax of 75.00 and 45.00, a short_term_fund of 100.00 and 60.00.
