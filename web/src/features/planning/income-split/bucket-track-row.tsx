@@ -14,6 +14,8 @@ import { useT } from "@/i18n/i18n-provider";
 
 interface BucketTrackRowProps {
   row: TrackRow;
+  // The income received in the month: the base of the row's target.
+  received: number;
   month: string;
   monthNames: readonly string[];
   money: (amount: number) => string;
@@ -25,6 +27,7 @@ interface BucketTrackRowProps {
 // over in words, and the strip of six months.
 export function BucketTrackRow({
   row,
+  received,
   month,
   monthNames,
   money,
@@ -40,6 +43,16 @@ export function BucketTrackRow({
     row.status === undefined
       ? t("plan.dash")
       : t(`track.${row.status.kind}`, { amount: money(row.status.amount) });
+  // The base of the target, written: its amount and the share of the income it comes from
+  // (planning coherence A258).
+  const base =
+    row.target === undefined
+      ? t("track.targetNoIncome", { share: share(row.targetBp) })
+      : t(targetKey(row.measure), {
+          amount: money(row.target),
+          share: share(row.targetBp),
+          received: money(received),
+        });
   const detail = trackDetail(row);
   const real = t(detail.key, {
     ...Object.fromEntries(
@@ -66,7 +79,7 @@ export function BucketTrackRow({
           {row.name}
         </Button>
         <Text size="xs" tone="muted">
-          {t(targetKey(row.measure), { share: share(row.targetBp) })}
+          {base}
         </Text>
       </div>
 

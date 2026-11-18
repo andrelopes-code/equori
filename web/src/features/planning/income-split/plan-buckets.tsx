@@ -26,6 +26,8 @@ type Bucket = components["schemas"]["BudgetBucket"];
 interface PlanBucketsProps {
   // Undefined while the book has no bucket method.
   totals: BucketTotals | undefined;
+  // What the plan leaves to distribute; undefined without a reference.
+  unassigned: number | undefined;
   format: PlanFormat;
   // The stored method, which the dialog edits; undefined while the book has none.
   stored: readonly Bucket[] | undefined;
@@ -40,6 +42,7 @@ interface PlanBucketsProps {
 // planned amounts, or the invitation to set one up.
 export function PlanBuckets({
   totals,
+  unassigned,
   format,
   stored,
   entries,
@@ -78,7 +81,11 @@ export function PlanBuckets({
 
       {totals !== undefined && (
         <SectionBody>
-          <PlanBucketsTable totals={totals} format={format} />
+          <PlanBucketsTable
+            totals={totals}
+            unassigned={unassigned}
+            format={format}
+          />
           <PlanBucketsOutside
             count={outside}
             onPlace={() => {

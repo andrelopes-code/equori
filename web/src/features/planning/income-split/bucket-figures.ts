@@ -23,9 +23,25 @@ export interface BucketFigure {
   spent: number;
 }
 
+// What the plan commits outside the budgets (planning coherence A253).
+export interface PlanMovements {
+  installments: number;
+  savings: number;
+  goalDeposits: number;
+}
+
+// A figure of the plan that no bucket takes, as a row of its own (A258).
+export interface OutsideRow {
+  key: keyof PlanMovements;
+  amount: number;
+}
+
 export interface BucketTotals {
   buckets: BucketFigure[];
   outsidePlanned: number;
+  // Earlier installments, and the savings and goal deposits no bucket takes, above zero. With
+  // the planned amounts and what is left to distribute they sum to the reference.
+  rows: OutsideRow[];
 }
 
 export const outsideBucket = "outside";
@@ -61,9 +77,9 @@ export function bucketFigures(
   entries: readonly CategoryEntry[],
   rows: readonly PlanDraftRow[],
   reference: number | undefined,
-  savings: number,
-  goalDeposits: number,
+  movements: PlanMovements,
 ): BucketTotals {
+  const { savings, goalDeposits } = movements;
   const resolve = bucketResolver(buckets, entries);
   const targets =
     reference === undefined
@@ -94,7 +110,25 @@ export function bucketFigures(
       spent: b.spent.amount,
     })),
     outsidePlanned,
+    rows: outsideRows(buckets, movements),
   };
+}
+
+// The rows of A258: a figure enters when it is above zero and no bucket takes it. No bucket
+// takes the installments.
+export function outsideRows(
+  buckets: readonly Pick<Bucket, "takes_savings" | "takes_goals">[],
+  movements: PlanMovements,
+): OutsideRow[] {
+  const taken = {
+    installments: false,
+    savings: buckets.some((b) => b.takes_savings),
+    goalDeposits: buckets.some((b) => b.takes_goals),
+  };
+
+  return (["installments", "savings", "goalDeposits"] as const)
+    .filter((key) => movements[key] > 0 && !taken[key])
+    .map((key) => ({ key, amount: movements[key] }));
 }
 
 // The rows of the plan table under their bucket in method order, then the rows outside the

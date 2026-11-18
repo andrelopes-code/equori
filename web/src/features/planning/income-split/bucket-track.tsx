@@ -7,8 +7,6 @@ import {
   SectionHeading,
   SectionTitle,
 } from "@slotted/react/section";
-import { Button } from "@slotted/react/button";
-import { Inline } from "@slotted/react/inline";
 import { Skeleton } from "@slotted/react/skeleton";
 import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
@@ -20,6 +18,7 @@ import { useCategoryEntries } from "@/features/categories";
 import {
   budgetBucketHistoryQuery,
   budgetBucketVersionsQuery,
+  budgetPlanQuery,
 } from "@/features/planning/api";
 import {
   trackMonth,
@@ -28,8 +27,11 @@ import {
 import { BucketEntriesDrawer } from "@/features/planning/income-split/entries/bucket-entries-drawer";
 import { BucketHistoryAction } from "@/features/planning/income-split/versions/bucket-history-action";
 import { BucketTrackLegend } from "@/features/planning/income-split/bucket-track-legend";
+import { BucketTrackNotes } from "@/features/planning/income-split/bucket-track-notes";
 import { BucketTrackRow } from "@/features/planning/income-split/bucket-track-row";
 import styles from "@/features/planning/income-split/bucket-track.module.css";
+import { TrackStrip } from "@/features/planning/income-split/track-strip";
+import { trackStrip } from "@/features/planning/income-split/track-strip-parts";
 import { useBucketEntries } from "@/features/planning/income-split/entries/use-bucket-entries";
 import { useMonthNames } from "@/features/planning/income-split/use-month-names";
 import { useShareText } from "@/features/planning/income-split/use-share-text";
@@ -49,6 +51,7 @@ export function BucketTrack({ month }: BucketTrackProps) {
   const t = useT();
   const api = useApi();
   const history = useQuery(budgetBucketHistoryQuery(api, month));
+  const plan = useQuery(budgetPlanQuery(api, month));
   const versions = useQuery(budgetBucketVersionsQuery(api));
   const accounts = useQuery(accountsQuery(api));
   const entries = useCategoryEntries(accounts.data);
@@ -78,6 +81,7 @@ export function BucketTrack({ month }: BucketTrackProps) {
   );
   if (track.rows.length === 0) return null;
   const verdict = trackVerdict(track);
+  const reference = plan.data?.reference?.amount;
   const monthName = names.long(month);
   const outside =
     history.data.months.find((m) => m.month === month)?.outside.amount ?? 0;
@@ -118,11 +122,29 @@ export function BucketTrack({ month }: BucketTrackProps) {
           )}
         </Stack>
 
+        {reference !== undefined &&
+          track.received > 0 &&
+          reference !== track.received && (
+            <Text size="sm" tone="muted">
+              {t("track.referenceDiffers", {
+                received: money(track.received),
+                reference: money(reference),
+              })}
+            </Text>
+          )}
+
+        <TrackStrip
+          parts={trackStrip(history.data, month)}
+          received={money(track.received)}
+          money={money}
+        />
+
         <div className={styles.rows}>
           {track.rows.map((row) => (
             <BucketTrackRow
               key={row.id}
               row={row}
+              received={track.received}
               month={month}
               monthNames={names.short}
               money={money}
@@ -133,44 +155,16 @@ export function BucketTrack({ month }: BucketTrackProps) {
             />
           ))}
         </div>
-        {outside > 0 && (
-          <Inline align="center" gap={3}>
-            <Text size="sm" tone="muted">
-              {t("track.outside", { amount: money(outside), month: monthName })}
-            </Text>
-            <Button
-              size="sm"
-              variant="ghost"
-              tone="secondary"
-              onClick={() => {
-                drawer.open("outside", month);
-              }}
-            >
-              {t("track.entries.see")}
-            </Button>
-          </Inline>
-        )}
-        {track.retained > 0 && (
-          <Text size="sm" tone="muted">
-            {t("track.retained", { amount: money(track.retained) })}
-          </Text>
-        )}
-        {track.unallocated > 0 && (
-          <Text size="sm" tone="muted">
-            {t("track.unallocated", {
-              amount: money(track.unallocated),
-              month: monthName,
-            })}
-          </Text>
-        )}
-        {track.unallocated < 0 && (
-          <Text size="sm" tone="muted">
-            {t("track.unallocatedNegative", {
-              amount: money(-track.unallocated),
-              month: monthName,
-            })}
-          </Text>
-        )}
+        <BucketTrackNotes
+          outside={outside}
+          retained={track.retained}
+          unallocated={track.unallocated}
+          month={monthName}
+          money={money}
+          onOutside={() => {
+            drawer.open("outside", month);
+          }}
+        />
         <BucketTrackLegend
           changed={track.rows.some((r) => r.months.some((c) => c.changed))}
         />

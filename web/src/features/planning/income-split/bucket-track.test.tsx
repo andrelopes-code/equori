@@ -98,6 +98,23 @@ describe("Income split in Track", () => {
     expect(
       screen.getByText("R$15.00 spent outside the split in October."),
     ).toBeVisible();
+    // Planning coherence A258: each target states its base.
+    expect(
+      screen.getByText("target R$3,000.00 · 60.0% of R$5,000.00"),
+    ).toBeVisible();
+
+    // Section 6: the month as one strip that sums to the income received.
+    const strip = screen.getByRole("group", {
+      name: "Where the R$5,000.00 of the month went",
+    });
+    expect(
+      within(strip)
+        .getAllByRole("definition")
+        .map((d) => d.textContent),
+    ).toEqual(["R$3,200.00", "R$1,800.00", "R$15.00", "−R$15.00"]);
+    expect(
+      within(strip).getByRole("link", { name: "Set aside" }),
+    ).toHaveAttribute("href", "/portfolio/contribution-plan");
 
     const strips = screen.getAllByRole("list");
     const needs = strips.find((s) =>

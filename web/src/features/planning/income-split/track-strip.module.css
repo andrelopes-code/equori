@@ -1,0 +1,62 @@
+@layer app {
+  .strip {
+    display: grid;
+    gap: var(--slotted-space-3);
+  }
+
+  .bar {
+    display: flex;
+    gap: var(--slotted-space-1);
+    block-size: var(--slotted-space-3);
+  }
+
+  .segment {
+    min-inline-size: var(--slotted-space-1);
+    border-radius: var(--slotted-radius-xs);
+    background: var(--strip-tone);
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--slotted-space-2) var(--slotted-space-5);
+    margin: 0;
+  }
+
+  .part {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-2);
+  }
+
+  .part dd {
+    margin: 0;
+  }
+
+  .swatch {
+    inline-size: var(--slotted-space-3);
+    block-size: var(--slotted-space-3);
+    border-radius: var(--slotted-radius-xs);
+    background: var(--strip-tone);
+  }
+
+  [data-part-key="spent"] {
+    --strip-tone: var(--slotted-data-1);
+  }
+
+  [data-part-key="setAside"] {
+    --strip-tone: var(--slotted-data-2);
+  }
+
+  [data-part-key="goalDeposits"] {
+    --strip-tone: var(--slotted-data-3);
+  }
+
+  [data-part-key="outside"] {
+    --strip-tone: var(--slotted-data-4);
+  }
+
+  [data-part-key="unallocated"] {
+    --strip-tone: var(--slotted-tone-neutral-solid);
+  }
+}

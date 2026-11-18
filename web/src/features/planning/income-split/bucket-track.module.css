@@ -6,7 +6,7 @@
   .row {
     display: grid;
     grid-template-columns:
-      minmax(9rem, 12rem) minmax(8rem, 1fr)
+      minmax(9rem, 17rem) minmax(8rem, 1fr)
       15rem 12.5rem 2.5rem;
     align-items: center;
     gap: var(--slotted-space-4);

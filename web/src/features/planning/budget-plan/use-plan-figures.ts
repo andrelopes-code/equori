@@ -56,14 +56,11 @@ export function usePlanFigures(
     buckets:
       plan.buckets === undefined
         ? undefined
-        : bucketFigures(
-            plan.buckets,
-            entries,
-            draft.rows,
-            reference,
-            plan.savings.amount,
-            plan.goal_deposits.amount,
-          ),
+        : bucketFigures(plan.buckets, entries, draft.rows, reference, {
+            installments: plan.installments.amount,
+            savings: plan.savings.amount,
+            goalDeposits: plan.goal_deposits.amount,
+          }),
     lastMonth: format.monthName(previousMonth(month)),
     figure:
       unassigned === undefined
