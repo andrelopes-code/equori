@@ -25,6 +25,7 @@ func TestBR(t *testing.T) {
 		{"fixed_income", "lh", "", "fixed_income_exempt"},
 		{"fixed_income", "cdca", "", "fixed_income_exempt"},
 		{"fixed_income", "lig", "", "fixed_income"},
+		{"fixed_income", "dpge", "", "fixed_income"},
 		{"fixed_income", "debenture", "", "fixed_income"},
 		{"fixed_income", "xyz_bond", "", "fixed_income"},
 		{"fund", "equity_fund", "", "fund_equity"},
@@ -132,6 +133,12 @@ func TestGuarantee(t *testing.T) {
 
 	if g.LimitPerPeriod.Amount() != 100000000 || g.LimitPerPeriod.Currency() != "BRL" {
 		t.Errorf("LimitPerPeriod = %v", g.LimitPerPeriod)
+	}
+
+	// Coverage row F-13: the DPGE has the special guarantee, apart from the ordinary one.
+	if g.SpecialLimit.Amount() != 4000000000 || !g.Special("dpge") || g.Covered("dpge") ||
+		g.Special("cdb") {
+		t.Errorf("special guarantee = %v %v", g.SpecialLimit, g.SpecialSubtypes())
 	}
 
 	for subtype, want := range map[string]bool{

@@ -20,13 +20,17 @@ const bvmf = "BVMF"
 // original of 2013 (bcb.gov.br, res_4222_v1_O) confirms the R$ 250,000.00 and the other letters.
 // A Tesouro Direto security is federal public debt, issued and paid by the Tesouro Nacional
 // (Lei 10.179/2001, art. 1 and 2): the FGC does not cover it and it carries no bank credit.
+//
+// The DPGE (depósito a prazo com garantia especial) has the special guarantee of the FGC: up to
+// R$ 40,000,000.00 per holder per conglomerate, apart from the ordinary guarantee and its
+// four-year ceiling (FGC, material for brokers, December 2025, read 2026-11-18 at fgc.org.br).
 var fgc = domain.NewGuarantee(
 	"FGC",
 	brl(25000000),
 	brl(100000000),
 	4,
 	"cdb", "rdb", "lc", "lh", "lci", "lca", "lcd",
-).WithSovereign("tesouro")
+).WithSovereign("tesouro").WithSpecial(brl(4000000000), "dpge")
 
 type Jurisdiction struct{}
 
@@ -63,12 +67,22 @@ func (Jurisdiction) DeductibleContributions() []string { return []string{"pensio
 // 11.053/2004), by the progressive or the regressive table the participant chose.
 var subtypeClass = map[string]map[string]string{
 	"fixed_income": {
-		"cdb": "fixed_income", "rdb": "fixed_income", "tesouro": "fixed_income",
-		"lc": "fixed_income", "lf": "fixed_income", "debenture": "fixed_income",
-		"lig": "fixed_income", "lh": "fixed_income_exempt", "lcd": "fixed_income_exempt",
-		"cdca": "fixed_income_exempt",
-		"lci":  "fixed_income_exempt", "lca": "fixed_income_exempt", "cri": "fixed_income_exempt",
-		"cra": "fixed_income_exempt", "debenture_incentivada": "fixed_income_exempt",
+		"cdb":                   "fixed_income",
+		"rdb":                   "fixed_income",
+		"tesouro":               "fixed_income",
+		"lc":                    "fixed_income",
+		"lf":                    "fixed_income",
+		"debenture":             "fixed_income",
+		"lig":                   "fixed_income",
+		"dpge":                  "fixed_income",
+		"lh":                    "fixed_income_exempt",
+		"lcd":                   "fixed_income_exempt",
+		"cdca":                  "fixed_income_exempt",
+		"lci":                   "fixed_income_exempt",
+		"lca":                   "fixed_income_exempt",
+		"cri":                   "fixed_income_exempt",
+		"cra":                   "fixed_income_exempt",
+		"debenture_incentivada": "fixed_income_exempt",
 	},
 	"fund": {
 		"fixed_income_fund": "fund", "multimarket": "fund", "equity_fund": "fund_equity",

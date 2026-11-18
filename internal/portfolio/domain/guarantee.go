@@ -15,6 +15,11 @@ type Guarantee struct {
 	PeriodYears    int
 	covered        []string
 	sovereign      []string
+
+	// SpecialLimit covers each issuer's securities of the special subtypes, apart from
+	// LimitPerIssuer and outside LimitPerPeriod; zero when the guarantee has none.
+	SpecialLimit money.Money
+	special      []string
 }
 
 func NewGuarantee(
@@ -39,6 +44,19 @@ func (g Guarantee) WithSovereign(subtypes ...string) Guarantee {
 
 	return g
 }
+
+// WithSpecial gives the subtypes a special guarantee of limit per holder and issuer.
+func (g Guarantee) WithSpecial(limit money.Money, subtypes ...string) Guarantee {
+	g.SpecialLimit, g.special = limit, slices.Clone(subtypes)
+
+	return g
+}
+
+// Special reports whether a security of subtype has the special guarantee.
+func (g Guarantee) Special(subtype string) bool { return slices.Contains(g.special, subtype) }
+
+// SpecialSubtypes lists the subtypes of the special guarantee, in declaration order.
+func (g Guarantee) SpecialSubtypes() []string { return slices.Clone(g.special) }
 
 // Covered reports whether the guarantee covers a security of subtype.
 func (g Guarantee) Covered(subtype string) bool { return slices.Contains(g.covered, subtype) }

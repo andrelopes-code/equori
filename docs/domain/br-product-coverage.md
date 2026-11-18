@@ -29,7 +29,7 @@ Source status:
 | F-10 | LF, senior and subordinated | partial | subtype `lf`, taxed, outside the FGC list | no subordinated variant; no rule on redemption before maturity | to read |
 | F-11 | LIG | partial | subtype `lig`, classed as taxed and without guarantee | the tax treatment is stated as not confirmed in `fixed_income_br` | to read |
 | F-12 | LH, LCD | supported | subtypes `lh`, `lcd`, exempt class, FGC list; `TestBRProductMatrix` row F-12 against the LTN example of the Tesouro Nacional | none | Lei 11.033/2004 art. 3, II (LH), read on 2026-11-18; LCD: Lei 14.937/2024, to read |
-| F-13 | DPGE | unsupported | no subtype; `domain.Guarantee` holds one limit per holder | subtype and a second guarantee limit | to read |
+| F-13 | DPGE | supported | subtype `dpge`, taxed class; the FGC guarantee holds a special limit of R$ 40,000,000.00 per issuer apart from the ordinary one and outside the four-year ceiling; `issuer_exposure` returns `special_value`; `TestExposureOfDPGE`, `TestGuarantee` | none | FGC, material for brokers, December 2025 (fgc.org.br), read 2026-11-18 |
 | F-14 | Debenture with half-yearly coupon and amortization | partial | `record_fixed_income` takes `interest_every_months`, `first_payment_on` and `amortizations`; `get_portfolio` view `fixed_income_events` | none for the schedule: `set_payment_schedule` writes explicit payment dates (`TestSetPaymentScheduleTool`) | to read |
 | F-15 | Incentivized debenture | partial | subtype `debenture_incentivada`, exempt class | the tax rule from 2026 onward was not checked | rate of 0% for an individual: Lei 12.431/2011 art. 2, I, read on 2026-11-18 (planalto.gov.br); 2026 rule: Medida Provisória 1.303/2025 is marked there as expired |
 | F-16 | CRI, CRA, IPCA plus spread, monthly interest, irregular amortization | partial | subtypes `cri`, `cra`, exempt class; coupons and amortizations as F-14 | as F-03; the explicit schedule is written by `set_payment_schedule` (`TestSetPaymentScheduleTool`); the unit price formula of the registrar was not compared | to read |
@@ -90,9 +90,9 @@ Source status:
 
 | Verdict | Rows |
 |---|---|
-| supported | 20 |
+| supported | 21 |
 | partial | 25 |
-| unsupported | 7 |
+| unsupported | 6 |
 
 ## What the assistant says
 

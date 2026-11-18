@@ -47,6 +47,7 @@ func issuerExposureReport(e app.Exposure) IssuerExposureReport {
 			CoveredValue:   toMoney(x.CoveredValue),
 			UncoveredValue: toMoney(x.UncoveredValue),
 			SovereignValue: toMoney(x.SovereignValue),
+			SpecialValue:   toMoney(x.SpecialValue),
 			Limit:          optionalMoney(x.Limit),
 			Excess:         optionalMoney(x.Excess),
 		}
@@ -70,6 +71,10 @@ func issuerExposureReport(e app.Exposure) IssuerExposureReport {
 			LimitPerPeriod: toMoney(g.LimitPerPeriod),
 			PeriodYears:    g.PeriodYears,
 			Covered:        g.CoveredSubtypes(),
+		}
+		if special := g.SpecialSubtypes(); len(special) > 0 {
+			limit := toMoney(g.SpecialLimit)
+			out.Guarantee.SpecialLimit, out.Guarantee.Special = &limit, &special
 		}
 	}
 

@@ -6011,6 +6011,25 @@
                 ],
                 "additionalProperties": false
               },
+              "special_value": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "description": "part of covered_value under the special guarantee (DPGE), with its own limit per issuer",
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
               "limit": {
                 "type": "object",
                 "properties": {

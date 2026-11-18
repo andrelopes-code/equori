@@ -848,8 +848,8 @@ schemas:
           type: string
   IssuerExposure:
     type: object
-    description: sovereign_value is the value of the securities the state of the region issues, to which the guarantee does not apply; uncovered_value is the rest outside the guarantee.
-    required: [market_value, covered_value, uncovered_value, sovereign_value]
+    description: sovereign_value is the value of the securities the state of the region issues, to which the guarantee does not apply; uncovered_value is the rest outside the guarantee. covered_value holds special_value, the part under the special guarantee (a DPGE); limit is the limit per issuer plus the special limit when the issuer holds special securities, and excess what passes each limit.
+    required: [market_value, covered_value, uncovered_value, sovereign_value, special_value]
     properties:
       key:
         type: string
@@ -863,6 +863,8 @@ schemas:
       uncovered_value:
         $ref: "#/components/schemas/Money"
       sovereign_value:
+        $ref: "#/components/schemas/Money"
+      special_value:
         $ref: "#/components/schemas/Money"
       limit:
         $ref: "#/components/schemas/Money"
@@ -883,6 +885,13 @@ schemas:
       covered:
         type: array
         description: The subtypes the guarantee covers.
+        items:
+          type: string
+      special_limit:
+        $ref: "#/components/schemas/Money"
+      special:
+        type: array
+        description: The subtypes of the special guarantee, covered up to special_limit per issuer apart from limit_per_issuer and outside limit_per_period.
         items:
           type: string
   ContributionPlan:

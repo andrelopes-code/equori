@@ -95,6 +95,7 @@ func TestInstrumentSubtypesList(t *testing.T) {
 		"cri",
 		"debenture",
 		"debenture_incentivada",
+		"dpge",
 		"lc",
 		"lca",
 		"lcd",

@@ -55,6 +55,7 @@ const issuer = (
   covered_value: brl(covered),
   uncovered_value: brl(market - covered - sovereign),
   sovereign_value: brl(sovereign),
+  special_value: brl(0),
   limit: brl(25000000),
   excess: brl(excess),
 });
@@ -301,6 +302,7 @@ describe("Fixed income panel", () => {
         covered_value: i.covered_value,
         uncovered_value: i.uncovered_value,
         sovereign_value: i.sovereign_value,
+        special_value: i.special_value,
       })),
     };
     await renderApp("/portfolio", {

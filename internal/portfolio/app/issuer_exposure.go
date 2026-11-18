@@ -12,11 +12,14 @@ import (
 
 // IssuerExposure is the value held with one issuer; Key is empty for holdings without issuer.
 // SovereignValue is the part the state of the jurisdiction issues; UncoveredValue is the rest
-// outside the guarantee. Limit and Excess are nil when the book has no guarantee.
+// outside the guarantee. CoveredValue holds SpecialValue, the part under the special guarantee
+// (a DPGE). Limit, the sum of the limits that apply, and Excess, what passes each of them, are
+// nil when the book has no guarantee.
 type IssuerExposure struct {
 	Key, Issuer               string
 	MarketValue, CoveredValue money.Money
 	SovereignValue            money.Money
+	SpecialValue              money.Money
 	UncoveredValue            money.Money
 	Limit, Excess             *money.Money
 }
@@ -135,6 +138,7 @@ func addHolding(
 				MarketValue:    zero,
 				CoveredValue:   zero,
 				SovereignValue: zero,
+				SpecialValue:   zero,
 				UncoveredValue: zero,
 			},
 			best: zero,
@@ -151,6 +155,10 @@ func addHolding(
 	case guarantee == nil:
 	case guarantee.Covered(info.Subtype):
 		g.CoveredValue, err = g.CoveredValue.Add(value)
+	case guarantee.Special(info.Subtype):
+		if g.CoveredValue, err = g.CoveredValue.Add(value); err == nil {
+			g.SpecialValue, err = g.SpecialValue.Add(value)
+		}
 	case guarantee.Sovereign(info.Subtype):
 		g.SovereignValue, err = g.SovereignValue.Add(value)
 	}
@@ -186,15 +194,9 @@ func issuerRows(
 		}
 
 		if guarantee != nil {
-			limit := guarantee.LimitPerIssuer
-
-			excess, err := row.CoveredValue.Sub(limit)
+			limit, excess, err := issuerLimit(row, *guarantee)
 			if err != nil {
 				return nil, err
-			}
-
-			if excess.IsNegative() {
-				excess, _ = money.New(0, base)
 			}
 
 			row.Limit, row.Excess = &limit, &excess
@@ -231,13 +233,55 @@ func exceedsPeriod(
 		return false, err
 	}
 
+	// The special guarantee stays outside the ceiling of the period.
 	for _, r := range rows {
 		if sum, err = sum.Add(r.CoveredValue); err != nil {
+			return false, err
+		}
+
+		if sum, err = sum.Sub(r.SpecialValue); err != nil {
 			return false, err
 		}
 	}
 
 	return sum.Amount() > guarantee.LimitPerPeriod.Amount(), nil
+}
+
+// issuerLimit returns the limit that applies to an issuer, the ordinary one plus the special one
+// when it holds a special security, and what passes each of them.
+func issuerLimit(row IssuerExposure, g domain.Guarantee) (money.Money, money.Money, error) {
+	ordinary, err := row.CoveredValue.Sub(row.SpecialValue)
+	if err != nil {
+		return money.Money{}, money.Money{}, err
+	}
+
+	excess, err := above(ordinary, g.LimitPerIssuer)
+	if err != nil || row.SpecialValue.IsZero() {
+		return g.LimitPerIssuer, excess, err
+	}
+
+	special, err := above(row.SpecialValue, g.SpecialLimit)
+	if err != nil {
+		return money.Money{}, money.Money{}, err
+	}
+
+	if excess, err = excess.Add(special); err != nil {
+		return money.Money{}, money.Money{}, err
+	}
+
+	limit, err := g.LimitPerIssuer.Add(g.SpecialLimit)
+
+	return limit, excess, err
+}
+
+// above returns what value passes limit, zero when it does not.
+func above(value, limit money.Money) (money.Money, error) {
+	excess, err := value.Sub(limit)
+	if err != nil || !excess.IsNegative() {
+		return excess, err
+	}
+
+	return money.New(0, value.Currency())
 }
 
 func boolInt(b bool) int {

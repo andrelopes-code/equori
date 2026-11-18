@@ -26,6 +26,7 @@ type exposureOut struct {
 		CoveredValue   amount  `json:"covered_value"`
 		UncoveredValue amount  `json:"uncovered_value"`
 		SovereignValue amount  `json:"sovereign_value"`
+		SpecialValue   amount  `json:"special_value"`
 		Limit          *amount `json:"limit"`
 		Excess         *amount `json:"excess"`
 	} `json:"issuers"`
@@ -219,6 +220,41 @@ func TestExposureOfSovereignSecurity(t *testing.T) {
 
 	if credit.SovereignValue.Amount != 0 || credit.UncoveredValue.Amount != 1000000 {
 		t.Fatalf("credit row = %+v, want 0 sovereign and 1000000 uncovered", credit)
+	}
+}
+
+// Coverage row F-13: a DPGE has the special guarantee of the FGC, up to R$ 40,000,000.00 per
+// holder and issuer, beside the ordinary R$ 250,000.00 and outside the four-year ceiling.
+func TestExposureOfDPGE(t *testing.T) {
+	t.Parallel()
+	h := newExposureBook(t, apitest.Brazil(), []exposureHolding{
+		{"DPGEZ", "dpge", "Banco Z", "br_cnpj", "00000000000515", 500000000, false},
+		{"CDBZ", "cdb", "Banco Z", "br_cnpj", "00000000000515", 30000000, false},
+		{"DPGEW", "dpge", "Banco W", "br_cnpj", "00000000000604", 4500000000, false},
+	})
+
+	got := exposureOf(t, h, h.Client)
+
+	if len(got.Issuers) != 2 {
+		t.Fatalf("issuers = %+v, want 2", got.Issuers)
+	}
+
+	w, z := got.Issuers[0], got.Issuers[1]
+	if z.SpecialValue.Amount != 500000000 || z.CoveredValue.Amount != 530000000 ||
+		z.UncoveredValue.Amount != 0 || z.Excess == nil || z.Excess.Amount != 5000000 {
+		t.Errorf(
+			"Banco Z = %+v, want 5,300,000.00 covered and the CDB 50,000.00 above its limit",
+			z,
+		)
+	}
+
+	if w.SpecialValue.Amount != 4500000000 || w.Excess == nil || w.Excess.Amount != 500000000 {
+		t.Errorf("Banco W = %+v, want 5,000,000.00 above the special limit", w)
+	}
+
+	// The special guarantee does not count toward the R$ 1,000,000.00 of four years.
+	if got.PeriodNote {
+		t.Errorf("period_note = true, want false")
 	}
 }
 

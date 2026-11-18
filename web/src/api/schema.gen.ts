@@ -8624,7 +8624,7 @@ export interface components {
             period_note: boolean;
             missing_prices: string[];
         };
-        /** @description sovereign_value is the value of the securities the state of the region issues, to which the guarantee does not apply; uncovered_value is the rest outside the guarantee. */
+        /** @description sovereign_value is the value of the securities the state of the region issues, to which the guarantee does not apply; uncovered_value is the rest outside the guarantee. covered_value holds special_value, the part under the special guarantee (a DPGE); limit is the limit per issuer plus the special limit when the issuer holds special securities, and excess what passes each limit. */
         IssuerExposure: {
             /** @description The issuer identifier or the folded name; absent for holdings without issuer. */
             key?: string;
@@ -8633,6 +8633,7 @@ export interface components {
             covered_value: components["schemas"]["Money"];
             uncovered_value: components["schemas"]["Money"];
             sovereign_value: components["schemas"]["Money"];
+            special_value: components["schemas"]["Money"];
             limit?: components["schemas"]["Money"];
             excess?: components["schemas"]["Money"];
         };
@@ -8643,6 +8644,9 @@ export interface components {
             period_years: number;
             /** @description The subtypes the guarantee covers. */
             covered: string[];
+            special_limit?: components["schemas"]["Money"];
+            /** @description The subtypes of the special guarantee, covered up to special_limit per issuer apart from limit_per_issuer and outside limit_per_period. */
+            special?: string[];
         };
         ContributionPlan: {
             amount?: components["schemas"]["Money"];

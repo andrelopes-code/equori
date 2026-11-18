@@ -295,6 +295,10 @@ type DepositGuarantee struct {
 	LimitPerPeriod Money    `json:"limit_per_period"`
 	Name           string   `json:"name"`
 	PeriodYears    int      `json:"period_years"`
+
+	// Special The subtypes of the special guarantee, covered up to special_limit per issuer apart from limit_per_issuer and outside limit_per_period.
+	Special      *[]string `json:"special,omitempty"`
+	SpecialLimit *Money    `json:"special_limit,omitempty"`
 }
 
 // FieldError defines model for FieldError.
@@ -362,7 +366,7 @@ type IncomeTypeList struct {
 // InstrumentType defines model for InstrumentType.
 type InstrumentType string
 
-// IssuerExposure sovereign_value is the value of the securities the state of the region issues, to which the guarantee does not apply; uncovered_value is the rest outside the guarantee.
+// IssuerExposure sovereign_value is the value of the securities the state of the region issues, to which the guarantee does not apply; uncovered_value is the rest outside the guarantee. covered_value holds special_value, the part under the special guarantee (a DPGE); limit is the limit per issuer plus the special limit when the issuer holds special securities, and excess what passes each limit.
 type IssuerExposure struct {
 	CoveredValue Money   `json:"covered_value"`
 	Excess       *Money  `json:"excess,omitempty"`
@@ -373,6 +377,7 @@ type IssuerExposure struct {
 	Limit          *Money  `json:"limit,omitempty"`
 	MarketValue    Money   `json:"market_value"`
 	SovereignValue Money   `json:"sovereign_value"`
+	SpecialValue   Money   `json:"special_value"`
 	UncoveredValue Money   `json:"uncovered_value"`
 }
 
