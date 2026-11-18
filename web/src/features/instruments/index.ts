@@ -1,6 +1,8 @@
 export { InstrumentsPage } from "@/features/instruments/pages/instruments-page";
 export { InstrumentPage } from "@/features/instruments/pages/instrument-page";
+export { FundReport } from "@/features/instruments/fund-report/fund-report";
 export {
+  fundReportsQuery,
   pricesQuery,
   subtypesQuery,
   termsQuery,

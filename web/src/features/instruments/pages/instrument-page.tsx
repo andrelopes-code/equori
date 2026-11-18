@@ -16,6 +16,7 @@ import { useState } from "react";
 import { useApi } from "@/api/api-context";
 import { instrumentQuery, termsQuery } from "@/features/instruments/api";
 import { InstrumentPagePlaceholder } from "@/features/instruments/pages/instrument-page-placeholder";
+import { FundReport } from "@/features/instruments/fund-report/fund-report";
 import { InstrumentPositions } from "@/features/instruments/positions/instrument-positions";
 import {
   subtypeLabel,
@@ -151,6 +152,9 @@ export function InstrumentPage() {
           <InstrumentPrices instrument={i} quote={quote} />
 
           <InstrumentPositions code={i.code} quote={quote} />
+
+          <FundReport code={i.code} quote={quote} />
+
           {fixedIncome && terms.isError && (
             <QueryError
               error={terms.error}

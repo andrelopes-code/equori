@@ -122,6 +122,19 @@ export function instrumentQuotesQuery(api: Client<paths>, base: string) {
   });
 }
 
+// The monthly reports of a listed fund, newest period first; an empty list when none is stored.
+export function fundReportsQuery(api: Client<paths>, code: string) {
+  return queryOptions({
+    queryKey: [...instrumentKeys.all, "fund-reports", code] as const,
+    queryFn: async () =>
+      (
+        await unwrap(
+          await api.GET("/fund-reports", { params: { query: { code } } }),
+        )
+      ).items,
+  });
+}
+
 export function catalogQuery(api: Client<paths>, q: string) {
   return queryOptions({
     queryKey: [...instrumentKeys.all, "catalog", q] as const,

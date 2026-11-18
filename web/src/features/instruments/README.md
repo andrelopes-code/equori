@@ -13,6 +13,7 @@ Endpoints used by `api.ts` (OpenAPI paths):
 - `POST /instruments/{code}/history`, `POST /instruments/{code}/prices`
 - `GET /instrument-subtypes`, `GET /market-data/catalog`, `POST /market-data/probe`
 - `GET /prices`, `POST /prices`, `POST /prices/import`
+- `GET /fund-reports`, `GET /curves` (through `features/calculators`)
 
 Folders:
 
@@ -26,6 +27,7 @@ Folders:
 - `data/`: the data section and the sources table.
 - `price-import/`: price CSV import dialogs, preview and series parsing.
 - `price-chart/`: the price chart and its axis.
+- `fund-report/`: the fund report section of a listed real estate fund: its figures, the break-even line and their pure functions.
 - `positions/`: the positions that hold the instrument.
 - `quote/`: the quote section, hero, range figures and range control.
 - `sources/`: the "Where to check" section, the external pages that show the instrument (`docs/specs/2026-11-13-instrument-sources-design.md`).

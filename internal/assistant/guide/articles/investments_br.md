@@ -19,3 +19,5 @@ Funds. The subtypes of fund are fixed_income_fund, multimarket and equity_fund (
 Distribution. Exempt for a listed FII or Fiagro under the conditions of Lei 11.033/2004 (exchange traded, holder below 10% of the units); the informe of the fund states them.
 
 Indexer comparison. The sources are the CDI and the IPCA of the instance, the Focus survey of the Banco Central do Brasil for the expected rates, and the curves of Tesouro Direto for the market rate of the term and the inflation implied by government bonds. The tax follows the table of the income tax above, and an exempt security pays none. The screen gives no recommendation and no verdict.
+
+Fund report. The report of a listed FII on the instrument page comes from the CVM (Informe Mensal de FII, feed br_cvm_fii); the break-even is read against the Tesouro IPCA+ curve (feed br_tesouro).
