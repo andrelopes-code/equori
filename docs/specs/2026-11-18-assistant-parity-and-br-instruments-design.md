@@ -1,8 +1,8 @@
 # Assistant parity, complete guides and Brazilian instrument coverage
 
-Status: draft, awaiting the owner's answers to section 8.
+Status: decided by the owner on 2026-11-18 (section 8).
 Date: 2026-11-18.
-Amends on delivery: ADR 012 (T14, exclusion reasons), `docs/specs/2026-11-17-assistant-grounding-design.md` (article ceiling).
+Amends on delivery: ADR 012 (T14, exclusion reasons), ADR 009 (file part of a message), ADR 020 (files of a conversation), `docs/specs/2026-11-17-assistant-grounding-design.md` (article ceiling).
 
 ## 1. Goal
 
@@ -26,6 +26,7 @@ Read from the code at commit `0d22c488`.
 | Existing guide checks | quoted labels exist in the catalog; bold terms exist in the glossary; each topic has a screen |
 | Missing guide check | no test ties an article to the tools or to the input fields of its topic |
 | Excluded operations | 104 entries in 13 classes |
+| Chat input | text of at most 4,000 characters; no file; `llm.Part` holds text, tool call and tool result |
 | Instrument types | `currency`, `stock`, `reit`, `etf`, `depositary_receipt`, `fixed_income`, `fund`, `crypto` |
 | BR fixed income subtypes | `cdb`, `rdb`, `lc`, `lf`, `debenture`, `lig`, `tesouro`, `lci`, `lca`, `lh`, `lcd`, `cdca`, `cri`, `cra`, `debenture_incentivada` |
 | BR fund subtypes | `fixed_income_fund`, `multimarket`, `equity_fund` |
@@ -47,7 +48,10 @@ Defects confirmed:
 | ID | Rule |
 |---|---|
 | G1 | An article is complete when it names, for each tool of its topic: the tool, each required input, each input with a closed value set and its values, the fact the user supplies for each input, and each `Problem.code` the tool returns with its cause. |
-| G2 | The article limit of 6,000 characters is replaced by 16,000. An article above the limit is split by sub-topic into two topics; a fact is never removed to meet the limit. The limit of 200 stays. |
+| G2 | The guide has no limit of total size. The article limit of 6,000 characters is replaced by 16,000. An article above the limit is split by sub-topic into two topics; a fact is never removed to meet the limit. The limit of 200 stays. |
+| G9 | Cost is bounded by loading on demand, not by removing facts. An article enters a model call only as the result of `get_help_topic`. The system prompt holds no article text. |
+| G10 | The description of `get_help_topic` holds one line per topic: the topic and the questions it answers. `TestGuideIndex` fails when a topic has no line. The assistant chooses the topic from that index. |
+| G11 | One topic answers one product family or one screen. `TestBRProductMatrix` records, per row, the topics that hold its facts; a row that needs more than two topics fails. |
 | G3 | `TestGuideCoversTools` fails when a tool of `internal/server/testdata/tools.json` is named in no article, or when a required input or an enumerated value of a tool with effect `Write` or `Destructive` appears in no article that names the tool. |
 | G4 | `TestGuideCoversSubtypes` fails when a subtype returned by a jurisdiction for an instrument type is absent from the article of that region. |
 | G5 | `TestGuideCoversLimits` fails when an exclusion class of section 4.3 is absent from `privacy_and_the_assistant.md`. The article names each action the assistant does not perform and the screen that performs it. |
@@ -77,7 +81,7 @@ Each product row of an article holds: the name in pt-BR and its code, type and s
 | P2 | The exclusion classes `-screen`, `-visual`, `-dialog` and `-setup` are removed. `TestToolExposure` rejects them. |
 | P3 | A write tool keeps the confirmation of ADR 020: the assistant proposes, the member confirms. |
 | P4 | A tool takes the same input the operation takes. No field of the operation is dropped from the tool input. |
-| P5 | An operation that takes a file (`-file`) is covered when the chat accepts an attachment (phase 4). Until then the class stays and G5 lists it. |
+| P5 | An operation that takes a file is covered through a file of the conversation (section 4.4). The class `-file` is removed. |
 | P6 | Each new tool has a test through `apitest.Tool`, and each error code it returns has one (ADR 012 T14). |
 
 ### 4.2 Operations that gain a tool
@@ -103,6 +107,10 @@ Each product row of an article holds: the name in pt-BR and its code, type and s
 | `updateSettings` | `-setup` | `manage_settings` (new) |
 | `probeQuote` | `-dialog` | `get_market_data` |
 | `recordInstrumentPrices` | `-file` | `manage_instrument` (JSON body, no file) |
+| `importFile` | `-file` | `manage_imports`, with `file_id` |
+| `importPrices` | `-file` | `manage_instrument`, with `file_id` |
+| `createAttachment`, `deleteAttachment` | `-file` | `record_transaction`, `get_transaction`, with `file_id` |
+| `getExportContent` | `-file` | `manage_book`; the answer is the download link |
 | `requestExport`, `getExport` | `-file` | `manage_book`; the answer is the download link |
 | `getCsvProfile`, `saveCsvProfile` | `-file` | `manage_imports` |
 
@@ -118,8 +126,41 @@ A tool that would exceed the layout limits of CONTRIBUTING is split by kind in t
 | `-erase` | `deleteCurrentBooks` | Erases the book. |
 | `-binary` | `getAttachmentContent` | The answer is a binary body. |
 | `-capture` | capture preview and suggestions | The operation is itself a model call that the assistant replaces. |
-| `-instance` | backup, diagnostic, feeds, schedules, version | Owner decision Q2. |
-| `-file` | imports, attachments, CSV column suggestion | Until phase 4 (P5). |
+| `-instance` | backup, diagnostic, feeds, schedules, version, account invitation | Administration of the instance, not of a book (owner, 2026-11-18). |
+| `-erase` | `importArchive` | Replaces the content of the book; moved from `-file`. |
+| `-capture` | `suggestCsvColumns` | A model call the assistant replaces: it reads the masked sample of F4 itself; moved from `-file`. |
+
+### 4.4 Files in the conversation
+
+A conversation file is a file a member attaches to a message. A descriptor is what the model receives about a conversation file.
+
+| ID | Rule |
+|---|---|
+| F1 | Table `assistant_conversation_file`: `books_id`, conversation, member, name, media type, kind, size, SHA-256, content, creation time. Deleting the conversation deletes its files. |
+| F2 | `createAssistantFile` (`POST /assistant/files`, multipart, role `read`) stores one file and returns its id, kind and size. `deleteAssistantFile` removes a file not yet sent. `AssistantTurnInput` gains `file_ids`, at most 5. A message with a file may have empty text. |
+| F3 | The kind is detected from the content, never from the name or the declared type: `ofx`, `csv`, `pdf`, `image` (JPEG, PNG, WebP), `text`. Another content returns 415 `file_kind_unsupported`. At most 10 MiB per file (413 `file_too_large`) and 50 MiB per conversation (409 `conversation_files_full`). |
+| F4 | The model receives a descriptor per file: id, name, kind, size. An `ofx` descriptor adds the line count, the period and the currency, parsed by the server. A `csv` descriptor adds the header and up to 12 lines under the masking of `suggestCsvColumns`. The bytes of an `ofx` or `csv` file never leave the instance. |
+| F5 | A `pdf`, `image` or `text` file is sent to the model as a file part when the model of the chain declares `image_input`. Without that capability the descriptor says the content was not read, and the assistant states it; the file can still be attached to a transaction. |
+| F6 | `llm.Part` gains a file part (media type and bytes). Each provider adapter maps it to its own input; an adapter without file input rejects the part with a typed error before the call. |
+| F7 | Tools take a `file_id`, never content: `manage_imports` (import an `ofx` or `csv` file into an account; read and save the CSV profile), `manage_instrument` (import a price CSV), `record_transaction` and `get_transaction` (attach to and detach from a transaction). The tool calls the service of the screen operation with the stored bytes. |
+| F8 | A tool that writes from a file is a proposal (P3). The card shows the file name, the target and what the file holds: account, period and line count for an import; instrument count and line count for prices. The card of a record read from a document shows every field read, editable before confirmation, and attaches the document to the transaction it creates. |
+| F9 | The same content attached twice to one conversation returns the stored file. Importing the same file twice creates nothing (I10). |
+| F10 | Text read from a file is untrusted (ADR 012): it never changes the rules of the assistant, and no write skips confirmation. |
+| F11 | Over MCP the same tools take a `file_id` created through `createAssistantFile` with the access token of the client. |
+
+Composer (web and phone):
+
+| ID | Rule |
+|---|---|
+| FU1 | Three ways to attach: the attach button, a drop onto the panel, a paste of an image or a file. The button opens the file picker; on a phone the picker offers the camera. |
+| FU2 | Each file is one chip of fixed height above the text field: name shortened in the middle, kind, size, a remove button. The chip shows the upload progress, then the stored state. |
+| FU3 | Send is disabled while a file uploads. A failed upload keeps the chip with the cause in words and a retry button; the text typed is kept. |
+| FU4 | Below the chips one line states what leaves the instance: "Only a summary of this file is sent to the provider" for `ofx` and `csv`; "The content of this file is sent to <provider>" for `pdf`, `image` and `text`; "This model does not read files of this kind" under F5. |
+| FU5 | A sent message shows its chips. A chip of a `pdf`, `image` or `text` file opens the file; a chip of a deleted file is not drawn. |
+| FU6 | Every control is reachable by keyboard and has a name for a screen reader; the drop target is announced when a file is over the panel. |
+| FU7 | A file dropped on a screen that has its own import (Import statement) keeps that screen's behavior; the panel takes only a drop on the panel. |
+
+Flows the matrix and the tool tests cover: a statement file imported into an account; a price CSV imported; a brokerage note in PDF read into `record_investment` kind `brokerage_note` with the PDF attached; a receipt photo read into `record_transaction` with the photo attached; a CSV file whose profile the assistant proposes from the masked sample.
 
 ## 5. Brazilian product matrix
 
@@ -229,18 +270,18 @@ Funds and others:
 | 2 | Parity: tools of 4.2, removal of the four classes, G5 article | `TestToolExposure` and `TestToolCatalog` pass without `-screen`, `-visual`, `-dialog`, `-setup` |
 | 3 | Guides: G1 to G4, G6 to G8, split of the regional article | the four guide tests pass |
 | 4 | Matrix test for the rows with the verdict `supported` | `TestBRProductMatrix` passes on both paths |
-| 5 | One vertical slice per issue of phase 1, in the order of Q4; each moves its row into the test | the issue's row passes |
-| 6 | Chat attachments and the `-file` operations | owner decision Q3 |
+| 5 | Files in the conversation (4.4): storage and operations, file part, descriptors, tools with `file_id`, composer | the five flows of 4.4 pass; `-file` is absent from the exposure map |
+| 6 | One vertical slice per issue of phase 1, in the order of section 8; each moves its row into the test | the issue's row passes |
 
-## 8. Open decisions (owner)
+## 8. Decisions
 
-| ID | Question | Recommendation |
+| ID | Decision | Source |
 |---|---|---|
-| Q1 | Article limit: 16,000 characters with a split above it (G2), or no limit | 16,000 with a split |
-| Q2 | Instance operations (`-instance`): tool for an instance administrator, read only, or excluded | read tools for the administrator; writes stay on the screen |
-| Q3 | Files in the chat (imports, attachments): in this spec as phase 6, or a spec of its own | a spec of its own |
-| Q4 | Order of the unsupported products of phase 5 | F-04, F-16, F-14, E-06, U-05, E-12, then the rest by issue |
-| Q5 | Eval run of A4: model and request budget | named by the owner at the time of the run |
+| Q1 | G2, G9, G10 and G11: no limit of total knowledge; an article is loaded on demand and split by family. | owner, 2026-11-18 |
+| Q2 | Instance operations stay excluded. | owner, 2026-11-18 |
+| Q3 | Files in the conversation belong to this delivery (4.4, phase 5). | owner, 2026-11-18 |
+| Q4 | Phase 6 implements the unsupported products in this order: F-04 (CDI plus spread), F-16 and F-14 (coupons with amortization), E-06 and E-07 (subscription, merger), U-05 (pension plans), F-13 and F-18 (missing subtypes), E-12 (derivatives), then the remaining rows by issue number. The order follows how many retail investors hold each product; phase 1 corrects it with the figures of B3 and ANBIMA it reads. | session, 2026-11-18 |
+| Q5 | The eval set of A4 is written in phase 3 and is not run by an agent. It calls a paid model; the owner names the model and the request budget in the message that asks for a run. | project rule |
 
 ## 9. Cross-cutting questions
 
@@ -248,21 +289,22 @@ Funds and others:
 - R2: A region without a jurisdiction returns no subtype; G4 and the matrix test hold no row for it; the assistant reads `investments` and `fixed_income` only.
 - R3: Subtypes and corporate action kinds added in phase 5 follow `^[a-z0-9_]{2,40}$`. The existing `enum` of `CorporateActionKind` and `day_count` is reviewed in the slice that adds a value.
 - R4: A matrix per region is a new extension point; `docs/contributing/regions.md` gains the row in phase 4.
-- R5: Guide articles are English (read by the model). A tool adds no screen text. A slice of phase 5 that adds a screen field adds its catalog keys in pt-BR and en.
-- R6: Does not apply: phases 1 to 4 add no screen. A slice of phase 5 answers it in its plan.
+- R5: Guide articles are English (read by the model). The composer texts of FU1 to FU6, the proposal card texts of F8 and the three problem titles of F3 have catalog keys in pt-BR and en. A slice of phase 6 that adds a screen field adds its keys.
+- R6: The chip writes the file size and the card writes a period and counts, each through `Intl` with the active tag.
 - C1: Expected values of the matrix are integers of minor units in BRL.
 - C2: Does not apply: each row holds one currency, except U-08, whose slice names the rate date and source.
 - C3: The matrix runs with base currency BRL; X2 names the other case.
-- C4: Does not apply: no screen amount is added in phases 1 to 4.
+- C4: An amount on a card of F8 goes through `useMoneyFormat()` with the currency read from the file or the account.
 - T1: Each row fixes its dates through `apitest.Today`.
 - T2: Rows with `bus252` use the calendar `br_banking` of the registry.
-- B1: Does not apply: phases 1 to 4 add no table.
-- B2: A new tool declares the role of the operation it wraps; `manage_settings` and `manage_contribution_plan` follow `updateSettings` and `saveContributionPlan`. No new operation is added in phases 1 to 4.
+- B1: `assistant_conversation_file` holds `books_id`; every query filters by it; a schema test rejects a row without a book.
+- B2: A new tool declares the role of the operation it wraps; `manage_settings` and `manage_contribution_plan` follow `updateSettings` and `saveContributionPlan`. `createAssistantFile` and `deleteAssistantFile` need `read`, as the turn does; the tool that uses the file needs the role of its operation. An HTTP test covers each role and a file of another book.
 - B3: Does not apply: no setting is added.
-- D1: Does not apply: no table is added in phases 1 to 4.
-- D2: Does not apply in phases 1 to 4; a slice of phase 5 that adds a subtype constraint adds a migration.
+- D1: `assistant_conversation_file` is classified as the conversation tables are in `TestEveryTableIsClassified`.
+- D2: One migration for `assistant_conversation_file`; a slice of phase 6 that adds a subtype constraint adds its own.
 - D3: A write through a new tool goes through the same service as the screen and keeps the transaction version.
-- D4: A tool write is a model write: it waits for the member's confirmation (P3).
-- D5: Does not apply: the diagnostic file gains no field.
-- X1: One scenario per matrix row with the verdict `supported`, added to `docs/domain/06-scenarios.md` in phase 4; one scenario per tool of 4.2 in phase 2.
+- D4: A tool write is a model write: it waits for the member's confirmation (P3). A file import keeps the deduplication of I10 (F9).
+- D5: Does not apply: the diagnostic file gains no field. A file name is never logged.
+- S2: The composer of 4.4 is in the phone scope: picker and camera (FU1).
+- X1: One scenario per flow of 4.4 in phase 5. One scenario per matrix row with the verdict `supported`, added to `docs/domain/06-scenarios.md` in phase 4; one scenario per tool of 4.2 in phase 2.
 - X2: Each tool of 4.2 has a test in a book of a region without a jurisdiction. `record_investment` kind `brokerage_note` has a test with a brokerage in a currency other than the base currency.
