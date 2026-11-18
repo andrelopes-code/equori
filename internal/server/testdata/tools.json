@@ -1069,6 +1069,52 @@
     }
   },
   {
+    "name": "get_appearance",
+    "description": "Returns the member's appearance choices that set_appearance writes; a choice never made is absent. Use it when the user asks how the app is set to look, before changing it. Do not use it for the language or the region: update_profile and manage_book change them.",
+    "effect": "read_only",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "scheme": {
+          "type": "string"
+        },
+        "density": {
+          "type": "string"
+        },
+        "textSize": {
+          "type": "string"
+        },
+        "motion": {
+          "type": "string"
+        },
+        "corners": {
+          "type": "string"
+        },
+        "typeface": {
+          "type": "string"
+        },
+        "amountTone": {
+          "type": "string"
+        },
+        "summaryAmounts": {
+          "type": "string"
+        },
+        "visual": {
+          "type": "string"
+        },
+        "accent": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "get_balances",
     "description": "Returns the balance of every asset, liability and equity account at a date, by class and then account name; accounts with a zero balance are omitted. Use it for how much is in accounts, cards owed or net position at a date. Do not use it for spending by category: get_category_totals returns it; nor for a balance over time: get_account_history returns it.",
     "effect": "read_only",
@@ -11043,6 +11089,149 @@
       "required": [
         "transactions"
       ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "set_appearance",
+    "description": "Proposes changing the member's appearance of the app: scheme, density, text size, motion, corners, typeface, amount tone, summary amounts, visual style and accent colour. Only the choices given change; the others, the saved themes and the accents of each book stay. Use it when the user asks to change how the app looks. Do not use it for the colour of one account: manage_accounts_and_payees does. The user confirms first.",
+    "effect": "write",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "scheme": {
+          "type": "string",
+          "description": "colour scheme",
+          "enum": [
+            "dark",
+            "light",
+            "high-contrast",
+            "system"
+          ]
+        },
+        "density": {
+          "type": "string",
+          "description": "space between controls",
+          "enum": [
+            "comfortable",
+            "compact",
+            "dense"
+          ]
+        },
+        "text_size": {
+          "type": "string",
+          "description": "text size as a percentage of the browser's own",
+          "enum": [
+            "85",
+            "90",
+            "95",
+            "100",
+            "105",
+            "110",
+            "115",
+            "120",
+            "125",
+            "130",
+            "135",
+            "140"
+          ]
+        },
+        "motion": {
+          "type": "string",
+          "description": "system follows the device; reduced turns animation off",
+          "enum": [
+            "system",
+            "reduced"
+          ]
+        },
+        "corners": {
+          "type": "string",
+          "description": "roundness of corners",
+          "enum": [
+            "square",
+            "soft",
+            "standard",
+            "round"
+          ]
+        },
+        "typeface": {
+          "type": "string",
+          "description": "typeface of the text",
+          "enum": [
+            "geist",
+            "system",
+            "grotesque",
+            "humanist",
+            "rounded",
+            "mono"
+          ]
+        },
+        "amount_tone": {
+          "type": "string",
+          "description": "colour marks an amount by green and red; sign by its sign only",
+          "enum": [
+            "colour",
+            "sign"
+          ]
+        },
+        "summary_amounts": {
+          "type": "string",
+          "description": "summary figures: full with cents, whole without cents, compact as 1.2k",
+          "enum": [
+            "full",
+            "whole",
+            "compact"
+          ]
+        },
+        "visual": {
+          "type": "string",
+          "description": "visual style",
+          "enum": [
+            "standard"
+          ]
+        },
+        "accent": {
+          "type": "string",
+          "description": "accent colour: indigo, violet, pink, rose, orange, emerald, cyan, blue, or #rrggbb"
+        }
+      },
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "scheme": {
+          "type": "string"
+        },
+        "density": {
+          "type": "string"
+        },
+        "textSize": {
+          "type": "string"
+        },
+        "motion": {
+          "type": "string"
+        },
+        "corners": {
+          "type": "string"
+        },
+        "typeface": {
+          "type": "string"
+        },
+        "amountTone": {
+          "type": "string"
+        },
+        "summaryAmounts": {
+          "type": "string"
+        },
+        "visual": {
+          "type": "string"
+        },
+        "accent": {
+          "type": "string"
+        }
+      },
       "additionalProperties": false
     }
   },

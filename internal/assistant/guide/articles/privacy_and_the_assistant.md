@@ -19,4 +19,3 @@ What the assistant does not do. Every other action a member takes on a screen ha
 - binary: the content of an attachment and of an export archive. The assistant names the file or gives the path that downloads it.
 - capture: the reading of typed lines on the Capture screen. The assistant reads the same text in the conversation and proposes the transactions with record_transaction.
 - file: importing a statement file or a price file, attaching a file to a transaction and the CSV profile of an account. The Import statement screen, the instrument page and Transaction detail hold them.
-- visual: the appearance of the member: scheme, colours, density and text size. The Appearance screen holds it.

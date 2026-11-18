@@ -5,8 +5,10 @@ import {
   useConfirmProposal,
   useRejectProposal,
 } from "@/features/assistant/api";
+import { receiptAppearance } from "@/features/assistant/proposal/receipt-appearance";
 import { defaultMarks } from "@/features/assistant/proposal/sheet-model";
 import type { SheetRow } from "@/features/assistant/proposal/sheet-model";
+import { restoreAppearance } from "@/theme/appearance";
 
 type Proposal = components["schemas"]["AssistantProposal"];
 
@@ -78,6 +80,9 @@ export function useSheetDecisions(
 
       try {
         const result = await act(proposal.id);
+        // The open browser shows the new appearance at once; its next sync sends the same document.
+        const appearance = receiptAppearance(result);
+        if (appearance) restoreAppearance(appearance);
         onDecided(proposal.id, { proposal: result });
         if (confirming && result.status !== "executed") break;
       } catch (error) {
