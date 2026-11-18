@@ -188,7 +188,10 @@ export async function renderVideo(browser, beats, accent, path) {
   const encoder = spawn(ffmpegPath(), [
     "-loglevel", "error", "-y",
     "-f", "image2pipe", "-framerate", String(FPS), "-c:v", "mjpeg", "-i", "pipe:0",
-    "-c:v", "libvpx-vp9", "-crf", "24", "-b:v", "0", "-g", String(FPS * 2),
+    "-c:v", "libvpx-vp9", "-crf", "24", "-b:v", "0",
+    // A screen at rest costs almost nothing between key frames, and a key frame of it costs
+    // about 100 KB: one every ten seconds, not every two.
+    "-g", String(FPS * 10),
     "-cpu-used", "2",
     // Four column tiles on four threads: the multithreading of VP9 that keeps the output the same
     // on every run (row-mt does not). Exact bit streams: the same frames give the same file.

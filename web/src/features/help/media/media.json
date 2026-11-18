@@ -242,8 +242,8 @@
     "check-balance/check-values.en.dark.png": "61e68f5722043258b26ccd80baded6c5c656bd2764b67541f7b780885de96e04",
     "check-balance/check-compare.en.dark.png": "61e68f5722043258b26ccd80baded6c5c656bd2764b67541f7b780885de96e04",
     "check-balance/check-difference.en.dark.png": "72c3f6731e7d835bf74aa0100cbb987bc517df9ad3deb6d647643eabc5a79800",
-    "check-balance/check-balance.pt.dark.webm": "2914dc71cc1c85695d8dabc5e97b11a028e0c6a996ca9e04d28527f900dc987f",
-    "check-balance/check-balance.en.dark.webm": "90eadd1aafbb05ae000e8eca046c01f3164d5f16bd211d7a34b6658d4d9432d8",
+    "check-balance/check-balance.pt.dark.webm": "8973076de29e7f8afa1c5e2698a24f97cc47245cce81f2f0a3c5383fbfc0e043",
+    "check-balance/check-balance.en.dark.webm": "7de535534a1facff73517cece75230d6de3339a0d4672f53cee225c944c98a9f",
     "connect-bank/connect-settings.pt.dark.png": "6ecaa802273dbbd6ee097d69f4defe205f40833342fba9d4262409a815f2ff39",
     "connect-bank/connect-add.pt.dark.png": "26deac138b36d0927e554ec1ef9aede44ba82420b20302bf3ab17e776d7e4f97",
     "connect-bank/connect-credentials.pt.dark.png": "699a3ea81f96029f04795c2640deec3ad1379cf29369bc032a11f340f86c6ca2",
@@ -280,7 +280,7 @@
     "pay-statement/pay-statement.en.dark.webm": "53ef619a29aa7f0151755f60ccb5cf27e118fd5d0fc7b7b0b73778cf3a3f9757"
   },
   "inputs": {
-    "check-balance": "0f6b9be2efc22c35fe3c905f78036d5b68fb669cc9bb60157e53a876d978c9da",
+    "check-balance": "297d03988e57a58ea75ee3afd48c4abd4337fd4ef065b1db562a2708259754da",
     "category-rule": "255982654f6f72333c0129bfc4ee58cc105534ce8d413f5e17e6352df08419fe",
     "connect-bank": "cd077a9b8968de7e8e8dec68ffaa6fe5edc89348d79bfce4d18b3725b547852b",
     "import-statement": "bf3105e37fff9535afe10f1c95b0c49000a339a087bb9e5b51c93d822c778133",

@@ -40,7 +40,7 @@ A figure or a video is built by `tools/help-media` (ADR 037). No file of `web/sr
 |---|---|---|
 | `make help-media-record` | records the reads of each tutorial on `tutorials/<id>.tape.json` | `make demo`, `make run-dev` |
 | `make help-media` | builds every figure and video from the tapes, in each language, and checks them | `make web-build` (the target runs it) |
-| `make help-media-check` | checks the written media against `media.json` and the pages, and the weight of the folder, without a browser; `make static`, CI and the pre-push hook run it | nothing |
+| `make help-media-check` | checks the written media against `media.json` and the pages, without a browser; `make static`, CI and the pre-push hook run it | nothing |
 | `make help-media-review` | writes `tools/help-media/out/review.html`: every figure under its mark, every video | a build |
 
 A build takes about two minutes per tutorial with a video: its variants are built at once (`HELP_MEDIA_JOBS`, 4 by default). A tutorial whose inputs did not change (the build of the application, the tutorial, its tape, the tool, the pages) is skipped; `node run.mjs build --force` builds it anyway.

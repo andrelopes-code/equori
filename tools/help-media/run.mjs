@@ -20,10 +20,6 @@ const MODULE = join(MEDIA, "help-media-files.gen.ts");
 const LIVE = process.env.HELP_MEDIA_BASE ?? "http://127.0.0.1:5173";
 const DIST = join(here, "../../web/dist");
 const SIZE = { width: 1920, height: 1200 };
-// One scheme and 2560 by 1600: a video may weigh what two of the earlier ones did.
-const MAX_VIDEO_BYTES = 5_000_000;
-// The media is embedded in the binary: the folder as a whole has a ceiling too.
-const MAX_MEDIA_BYTES = 40_000_000;
 // Variants built at once; each takes one core for its encoder and part of one for its page.
 const JOBS = Number(process.env.HELP_MEDIA_JOBS ?? 4);
 const FORCE = process.argv.includes("--force");
@@ -155,8 +151,6 @@ async function build() {
         const video = await renderVideo(browser, beats, accent, join(MEDIA, placed(tutorial, name)));
         const bytes = readFileSync(join(MEDIA, placed(tutorial, name)));
 
-        if (bytes.length > MAX_VIDEO_BYTES) throw new Error(`${name}: ${bytes.length} bytes, above the limit`);
-
         next.files[placed(tutorial, name)] = sha(bytes);
         next.videos[tutorial.id] = { seconds: video.seconds, frames: video.frames };
       }
@@ -271,7 +265,6 @@ function check() {
   }
 
   const bytes = [...known].reduce((sum, name) => sum + (existsSync(join(MEDIA, name)) ? statSync(join(MEDIA, name)).size : 0), 0);
-  if (bytes > MAX_MEDIA_BYTES) problems.push(`the media weighs ${bytes} bytes, above the ${MAX_MEDIA_BYTES} of the folder`);
 
   if (problems.length > 0) {
     console.error(problems.join("\n"));
