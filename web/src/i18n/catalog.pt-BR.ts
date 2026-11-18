@@ -1893,6 +1893,7 @@ export const catalogPtBR: Catalog = {
   "assistant.step.reconcile_account": "Preparando uma conferência de saldo",
   "assistant.step.record_investment":
     "Preparando o registro de um investimento",
+  "assistant.step.transfer_custody": "Preparando uma transferência de custódia",
   "assistant.step.get_category_totals": "Somando categorias",
   "assistant.step.get_account_history": "Lendo o histórico da conta",
   "assistant.step.list_schedules": "Lendo agendamentos",
@@ -1964,6 +1965,7 @@ export const catalogPtBR: Catalog = {
   "assistant.action.record_investment.buy": "Registrar compra de ativo",
   "assistant.action.record_investment.sell": "Registrar venda de ativo",
   "assistant.action.record_investment.income": "Registrar provento",
+  "assistant.action.transfer_custody": "Transferir custódia",
   "assistant.action.manage_schedule.create": "Criar agendamento",
   "assistant.action.manage_schedule.change_terms":
     "Alterar condições do agendamento",

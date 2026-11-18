@@ -9150,6 +9150,57 @@
     }
   },
   {
+    "name": "transfer_custody",
+    "description": "Proposes a custody transfer: units of one Investment move to another Brokerage with their cost, and no result is recorded. The receiving Brokerage gets the Investment line when it has none. Use it when the user moved a holding between brokers without selling it. A sale of the holding recorded after the date refuses the transfer (later_sale_exists). Do not use it for money: record_transaction with a transfer does. The user confirms first.",
+    "effect": "write",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "account_id": {
+          "type": "string",
+          "description": "Investment line that gives the units, from list_accounts"
+        },
+        "brokerage_id": {
+          "type": "string",
+          "description": "Brokerage that receives the units, from list_accounts; not the one that holds account_id"
+        },
+        "date": {
+          "type": "string",
+          "description": "date the units arrive at the receiving Brokerage",
+          "format": "date"
+        },
+        "quantity": {
+          "type": "string",
+          "description": "positive quantity of the security to move, at most the quantity held on the date"
+        },
+        "description": {
+          "type": "string",
+          "description": "description of the transaction; a title derived from the investment when empty"
+        }
+      },
+      "required": [
+        "account_id",
+        "brokerage_id",
+        "date",
+        "quantity"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "transaction_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "transaction_id"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "update_profile",
     "description": "Proposes changing the member's language, which sets the language of the app and of these answers. Use it when the user asks to switch language. Do not use it for the region or the base currency of the book, which a book owner changes in settings. The user confirms first.",
     "effect": "write",
