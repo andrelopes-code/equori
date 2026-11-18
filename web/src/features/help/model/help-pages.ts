@@ -27,6 +27,7 @@ export const helpPages: readonly HelpPageEntry[] = [
   { id: "record-transaction", kind: "howto" },
   { id: "text-capture", kind: "howto" },
   { id: "correct-transaction", kind: "howto" },
+  { id: "reimbursement", kind: "howto" },
   { id: "schedule", kind: "howto" },
   { id: "create-budget", kind: "howto" },
   { id: "buy-investment", kind: "howto" },

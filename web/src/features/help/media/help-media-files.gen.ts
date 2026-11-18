@@ -195,46 +195,66 @@ import f192 from "./record-transaction/entry-save.en.dark.png?url";
 import f193 from "./record-transaction/entry-save.pt.dark.png?url";
 import f194 from "./record-transaction/entry-sheet.en.dark.png?url";
 import f195 from "./record-transaction/entry-sheet.pt.dark.png?url";
-import f196 from "./schedule/4050b4b0fffa.png?url";
-import f197 from "./schedule/530ffe5b8add.png?url";
-import f198 from "./schedule/57df711a2268.png?url";
-import f199 from "./schedule/6a3ad26a9858.png?url";
-import f200 from "./schedule/80bcb5e47bca.png?url";
-import f201 from "./schedule/a6a76b4a7029.png?url";
-import f202 from "./schedule/c52babd5f4de.png?url";
-import f203 from "./schedule/c7b4cf18f2ca.png?url";
-import f204 from "./schedule/d90f6d0ca91d.png?url";
-import f205 from "./schedule/fd68b296f082.png?url";
-import f206 from "./schedule/schedule-account.en.dark.png?url";
-import f207 from "./schedule/schedule-account.pt.dark.png?url";
-import f208 from "./schedule/schedule-amount.en.dark.png?url";
-import f209 from "./schedule/schedule-amount.pt.dark.png?url";
-import f210 from "./schedule/schedule-create.en.dark.png?url";
-import f211 from "./schedule/schedule-create.pt.dark.png?url";
-import f212 from "./schedule/schedule-ends.en.dark.png?url";
-import f213 from "./schedule/schedule-ends.pt.dark.png?url";
-import f214 from "./schedule/schedule-kind.en.dark.png?url";
-import f215 from "./schedule/schedule-kind.pt.dark.png?url";
-import f216 from "./schedule/schedule-recurrence.en.dark.png?url";
-import f217 from "./schedule/schedule-recurrence.pt.dark.png?url";
-import f218 from "./text-capture/4b45764d62d3.png?url";
-import f219 from "./text-capture/4ec121301cab.png?url";
-import f220 from "./text-capture/55d591eb0509.png?url";
-import f221 from "./text-capture/684807b29521.png?url";
-import f222 from "./text-capture/728c21cca70e.png?url";
-import f223 from "./text-capture/77562a58b855.png?url";
-import f224 from "./text-capture/bfcb94ace8c9.png?url";
-import f225 from "./text-capture/c6b85643cf72.png?url";
-import f226 from "./text-capture/capture-category.en.dark.png?url";
-import f227 from "./text-capture/capture-category.pt.dark.png?url";
-import f228 from "./text-capture/capture-drafts.en.dark.png?url";
-import f229 from "./text-capture/capture-drafts.pt.dark.png?url";
-import f230 from "./text-capture/capture-record.en.dark.png?url";
-import f231 from "./text-capture/capture-record.pt.dark.png?url";
-import f232 from "./text-capture/capture-text.en.dark.png?url";
-import f233 from "./text-capture/capture-text.pt.dark.png?url";
-import f234 from "./text-capture/fdcf87fe621c.png?url";
-import f235 from "./text-capture/ff19392a8b04.png?url";
+import f196 from "./reimbursement/09118505d450.png?url";
+import f197 from "./reimbursement/36ff243281e0.png?url";
+import f198 from "./reimbursement/38f855f0afd0.png?url";
+import f199 from "./reimbursement/718b767061c8.png?url";
+import f200 from "./reimbursement/830f1415f35a.png?url";
+import f201 from "./reimbursement/a4dd207f8c30.png?url";
+import f202 from "./reimbursement/adb402428482.png?url";
+import f203 from "./reimbursement/d281609b1c59.png?url";
+import f204 from "./reimbursement/d39578a840aa.png?url";
+import f205 from "./reimbursement/f02c1f01d50e.png?url";
+import f206 from "./reimbursement/reimbursement-choose.en.dark.png?url";
+import f207 from "./reimbursement/reimbursement-choose.pt.dark.png?url";
+import f208 from "./reimbursement/reimbursement-expenses.en.dark.png?url";
+import f209 from "./reimbursement/reimbursement-expenses.pt.dark.png?url";
+import f210 from "./reimbursement/reimbursement-menu.en.dark.png?url";
+import f211 from "./reimbursement/reimbursement-menu.pt.dark.png?url";
+import f212 from "./reimbursement/reimbursement-open.en.dark.png?url";
+import f213 from "./reimbursement/reimbursement-open.pt.dark.png?url";
+import f214 from "./reimbursement/reimbursement-submit.en.dark.png?url";
+import f215 from "./reimbursement/reimbursement-submit.pt.dark.png?url";
+import f216 from "./schedule/4050b4b0fffa.png?url";
+import f217 from "./schedule/530ffe5b8add.png?url";
+import f218 from "./schedule/57df711a2268.png?url";
+import f219 from "./schedule/6a3ad26a9858.png?url";
+import f220 from "./schedule/80bcb5e47bca.png?url";
+import f221 from "./schedule/a6a76b4a7029.png?url";
+import f222 from "./schedule/c52babd5f4de.png?url";
+import f223 from "./schedule/c7b4cf18f2ca.png?url";
+import f224 from "./schedule/d90f6d0ca91d.png?url";
+import f225 from "./schedule/fd68b296f082.png?url";
+import f226 from "./schedule/schedule-account.en.dark.png?url";
+import f227 from "./schedule/schedule-account.pt.dark.png?url";
+import f228 from "./schedule/schedule-amount.en.dark.png?url";
+import f229 from "./schedule/schedule-amount.pt.dark.png?url";
+import f230 from "./schedule/schedule-create.en.dark.png?url";
+import f231 from "./schedule/schedule-create.pt.dark.png?url";
+import f232 from "./schedule/schedule-ends.en.dark.png?url";
+import f233 from "./schedule/schedule-ends.pt.dark.png?url";
+import f234 from "./schedule/schedule-kind.en.dark.png?url";
+import f235 from "./schedule/schedule-kind.pt.dark.png?url";
+import f236 from "./schedule/schedule-recurrence.en.dark.png?url";
+import f237 from "./schedule/schedule-recurrence.pt.dark.png?url";
+import f238 from "./text-capture/4b45764d62d3.png?url";
+import f239 from "./text-capture/4ec121301cab.png?url";
+import f240 from "./text-capture/55d591eb0509.png?url";
+import f241 from "./text-capture/684807b29521.png?url";
+import f242 from "./text-capture/728c21cca70e.png?url";
+import f243 from "./text-capture/77562a58b855.png?url";
+import f244 from "./text-capture/bfcb94ace8c9.png?url";
+import f245 from "./text-capture/c6b85643cf72.png?url";
+import f246 from "./text-capture/capture-category.en.dark.png?url";
+import f247 from "./text-capture/capture-category.pt.dark.png?url";
+import f248 from "./text-capture/capture-drafts.en.dark.png?url";
+import f249 from "./text-capture/capture-drafts.pt.dark.png?url";
+import f250 from "./text-capture/capture-record.en.dark.png?url";
+import f251 from "./text-capture/capture-record.pt.dark.png?url";
+import f252 from "./text-capture/capture-text.en.dark.png?url";
+import f253 from "./text-capture/capture-text.pt.dark.png?url";
+import f254 from "./text-capture/fdcf87fe621c.png?url";
+import f255 from "./text-capture/ff19392a8b04.png?url";
 
 export const helpMediaFiles: Partial<Record<string, string>> = {
   "buy-investment/36cad1a09d4c.png": f0,
@@ -433,44 +453,64 @@ export const helpMediaFiles: Partial<Record<string, string>> = {
   "entry-save.pt.dark.png": f193,
   "entry-sheet.en.dark.png": f194,
   "entry-sheet.pt.dark.png": f195,
-  "schedule/4050b4b0fffa.png": f196,
-  "schedule/530ffe5b8add.png": f197,
-  "schedule/57df711a2268.png": f198,
-  "schedule/6a3ad26a9858.png": f199,
-  "schedule/80bcb5e47bca.png": f200,
-  "schedule/a6a76b4a7029.png": f201,
-  "schedule/c52babd5f4de.png": f202,
-  "schedule/c7b4cf18f2ca.png": f203,
-  "schedule/d90f6d0ca91d.png": f204,
-  "schedule/fd68b296f082.png": f205,
-  "schedule-account.en.dark.png": f206,
-  "schedule-account.pt.dark.png": f207,
-  "schedule-amount.en.dark.png": f208,
-  "schedule-amount.pt.dark.png": f209,
-  "schedule-create.en.dark.png": f210,
-  "schedule-create.pt.dark.png": f211,
-  "schedule-ends.en.dark.png": f212,
-  "schedule-ends.pt.dark.png": f213,
-  "schedule-kind.en.dark.png": f214,
-  "schedule-kind.pt.dark.png": f215,
-  "schedule-recurrence.en.dark.png": f216,
-  "schedule-recurrence.pt.dark.png": f217,
-  "text-capture/4b45764d62d3.png": f218,
-  "text-capture/4ec121301cab.png": f219,
-  "text-capture/55d591eb0509.png": f220,
-  "text-capture/684807b29521.png": f221,
-  "text-capture/728c21cca70e.png": f222,
-  "text-capture/77562a58b855.png": f223,
-  "text-capture/bfcb94ace8c9.png": f224,
-  "text-capture/c6b85643cf72.png": f225,
-  "capture-category.en.dark.png": f226,
-  "capture-category.pt.dark.png": f227,
-  "capture-drafts.en.dark.png": f228,
-  "capture-drafts.pt.dark.png": f229,
-  "capture-record.en.dark.png": f230,
-  "capture-record.pt.dark.png": f231,
-  "capture-text.en.dark.png": f232,
-  "capture-text.pt.dark.png": f233,
-  "text-capture/fdcf87fe621c.png": f234,
-  "text-capture/ff19392a8b04.png": f235,
+  "reimbursement/09118505d450.png": f196,
+  "reimbursement/36ff243281e0.png": f197,
+  "reimbursement/38f855f0afd0.png": f198,
+  "reimbursement/718b767061c8.png": f199,
+  "reimbursement/830f1415f35a.png": f200,
+  "reimbursement/a4dd207f8c30.png": f201,
+  "reimbursement/adb402428482.png": f202,
+  "reimbursement/d281609b1c59.png": f203,
+  "reimbursement/d39578a840aa.png": f204,
+  "reimbursement/f02c1f01d50e.png": f205,
+  "reimbursement-choose.en.dark.png": f206,
+  "reimbursement-choose.pt.dark.png": f207,
+  "reimbursement-expenses.en.dark.png": f208,
+  "reimbursement-expenses.pt.dark.png": f209,
+  "reimbursement-menu.en.dark.png": f210,
+  "reimbursement-menu.pt.dark.png": f211,
+  "reimbursement-open.en.dark.png": f212,
+  "reimbursement-open.pt.dark.png": f213,
+  "reimbursement-submit.en.dark.png": f214,
+  "reimbursement-submit.pt.dark.png": f215,
+  "schedule/4050b4b0fffa.png": f216,
+  "schedule/530ffe5b8add.png": f217,
+  "schedule/57df711a2268.png": f218,
+  "schedule/6a3ad26a9858.png": f219,
+  "schedule/80bcb5e47bca.png": f220,
+  "schedule/a6a76b4a7029.png": f221,
+  "schedule/c52babd5f4de.png": f222,
+  "schedule/c7b4cf18f2ca.png": f223,
+  "schedule/d90f6d0ca91d.png": f224,
+  "schedule/fd68b296f082.png": f225,
+  "schedule-account.en.dark.png": f226,
+  "schedule-account.pt.dark.png": f227,
+  "schedule-amount.en.dark.png": f228,
+  "schedule-amount.pt.dark.png": f229,
+  "schedule-create.en.dark.png": f230,
+  "schedule-create.pt.dark.png": f231,
+  "schedule-ends.en.dark.png": f232,
+  "schedule-ends.pt.dark.png": f233,
+  "schedule-kind.en.dark.png": f234,
+  "schedule-kind.pt.dark.png": f235,
+  "schedule-recurrence.en.dark.png": f236,
+  "schedule-recurrence.pt.dark.png": f237,
+  "text-capture/4b45764d62d3.png": f238,
+  "text-capture/4ec121301cab.png": f239,
+  "text-capture/55d591eb0509.png": f240,
+  "text-capture/684807b29521.png": f241,
+  "text-capture/728c21cca70e.png": f242,
+  "text-capture/77562a58b855.png": f243,
+  "text-capture/bfcb94ace8c9.png": f244,
+  "text-capture/c6b85643cf72.png": f245,
+  "capture-category.en.dark.png": f246,
+  "capture-category.pt.dark.png": f247,
+  "capture-drafts.en.dark.png": f248,
+  "capture-drafts.pt.dark.png": f249,
+  "capture-record.en.dark.png": f250,
+  "capture-record.pt.dark.png": f251,
+  "capture-text.en.dark.png": f252,
+  "capture-text.pt.dark.png": f253,
+  "text-capture/fdcf87fe621c.png": f254,
+  "text-capture/ff19392a8b04.png": f255,
 };

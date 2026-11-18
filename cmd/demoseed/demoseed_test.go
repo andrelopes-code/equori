@@ -482,6 +482,24 @@ func TestSeed(t *testing.T) {
 		}
 	})
 
+	t.Run("one repayment waits to be marked as a reimbursement", func(t *testing.T) {
+		// The help page of reimbursements shows a dinner of last week whose repayment is recorded
+		// and not yet linked (docs/specs/2026-11-18-help-catalog-design.md, slice 5).
+		since := iso(s.today.AddDate(0, 0, -7))
+		waiting := 0
+
+		for _, tx := range s.transactions(t) {
+			if tx.Description == "Rafael devolveu a parte do jantar" && tx.Date >= since &&
+				len(tx.Links) == 0 {
+				waiting++
+			}
+		}
+
+		if waiting != 1 {
+			t.Errorf("repayments of the last week without a link = %d, want 1", waiting)
+		}
+	})
+
 	t.Run("pay days skip the holidays", func(t *testing.T) {
 		// Good Friday 2026-04-03 is not a business day: the fifth business day of April 2026 is the 8th, as the schedule expects.
 		found := false

@@ -150,6 +150,8 @@ describe("the words of a reader", () => {
     ["en", "write as text", "text-capture"],
     ["pt", "anular transação", "correct-transaction"],
     ["en", "correct transaction", "correct-transaction"],
+    ["pt", "reembolso", "reimbursement"],
+    ["en", "reimbursement", "reimbursement"],
     ["pt", "criar agendamento", "schedule"],
     ["en", "create schedule", "schedule"],
     ["pt", "criar orçamento", "create-budget"],

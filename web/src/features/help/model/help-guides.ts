@@ -81,6 +81,11 @@ export const helpGuides: Readonly<Record<string, HelpGuide | undefined>> = {
     screen: "/transactions/new",
     related: ["portfolio"],
   },
+  reimbursement: {
+    area: "transactions",
+    screen: "/transactions",
+    related: ["correct-transaction"],
+  },
   installation: {
     area: "installation",
     symptoms: ["second-factor", "backup-late", "copy-late", "not-opening"],

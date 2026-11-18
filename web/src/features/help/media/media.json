@@ -527,6 +527,46 @@
       "en": {
         "spot": [61.59, 89.25, 7.81, 8.67]
       }
+    },
+    "reimbursement-open": {
+      "pt": {
+        "spot": [5.1, 45.36, 89.83, 9.17]
+      },
+      "en": {
+        "spot": [5.1, 45.36, 89.83, 9.17]
+      }
+    },
+    "reimbursement-menu": {
+      "pt": {
+        "spot": [38.12, 31.53, 59.33, 13.31]
+      },
+      "en": {
+        "spot": [38.12, 31.53, 59.33, 13.31]
+      }
+    },
+    "reimbursement-choose": {
+      "pt": {
+        "spot": [39.27, 33.2, 57.03, 33.5]
+      },
+      "en": {
+        "spot": [39.27, 33.2, 57.03, 33.5]
+      }
+    },
+    "reimbursement-expenses": {
+      "pt": {
+        "spot": [20.42, 60.39, 59.16, 7]
+      },
+      "en": {
+        "spot": [20.42, 60.39, 59.16, 7]
+      }
+    },
+    "reimbursement-submit": {
+      "pt": {
+        "spot": [61.67, 88.45, 18.02, 6.33]
+      },
+      "en": {
+        "spot": [61.98, 88.45, 17.71, 6.33]
+      }
     }
   },
   "videos": {
@@ -2793,6 +2833,202 @@
         ],
         "accent": "oklch(0.537962 0.124573 215.224)"
       }
+    },
+    "reimbursement": {
+      "pt": {
+        "parts": [
+          {
+            "start": 0,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 1,
+            "mark": {
+              "x": 279,
+              "y": 662.171875,
+              "width": 862.328125,
+              "height": 55
+            }
+          },
+          {
+            "start": 3.2,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 2,
+            "mark": {
+              "x": 1322.984375,
+              "y": 199.171875,
+              "width": 569.515625,
+              "height": 79.859375
+            },
+            "point": {
+              "x": 1794.75,
+              "y": 221.671875,
+              "width": 28,
+              "height": 28
+            }
+          },
+          {
+            "start": 6.4,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 3,
+            "mark": {
+              "x": 1333.984375,
+              "y": 210.171875,
+              "width": 547.515625,
+              "height": 201
+            },
+            "point": {
+              "x": 1648.25,
+              "y": 313.671875,
+              "width": 170,
+              "height": 28
+            }
+          },
+          {
+            "start": 9.6,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 4,
+            "mark": {
+              "x": 676,
+              "y": 795.359375,
+              "width": 568,
+              "height": 42
+            },
+            "point": {
+              "x": 680,
+              "y": 799.171875,
+              "width": 16,
+              "height": 16
+            }
+          },
+          {
+            "start": 12.8,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 5,
+            "mark": {
+              "x": 1072,
+              "y": 1035.6875,
+              "width": 173,
+              "height": 38
+            }
+          }
+        ],
+        "duration": 16.8,
+        "fade": 0.3,
+        "stills": [
+          "reimbursement/38f855f0afd0.png",
+          "reimbursement/09118505d450.png",
+          "reimbursement/adb402428482.png",
+          "reimbursement/830f1415f35a.png",
+          "reimbursement/d281609b1c59.png"
+        ],
+        "accent": "oklch(0.537962 0.124573 215.224)"
+      },
+      "en": {
+        "parts": [
+          {
+            "start": 0,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 1,
+            "mark": {
+              "x": 279,
+              "y": 662.171875,
+              "width": 862.328125,
+              "height": 55
+            }
+          },
+          {
+            "start": 3.2,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 2,
+            "mark": {
+              "x": 1322.984375,
+              "y": 199.171875,
+              "width": 569.515625,
+              "height": 79.859375
+            },
+            "point": {
+              "x": 1794.75,
+              "y": 221.671875,
+              "width": 28,
+              "height": 28
+            }
+          },
+          {
+            "start": 6.4,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 3,
+            "mark": {
+              "x": 1333.984375,
+              "y": 210.171875,
+              "width": 547.515625,
+              "height": 201
+            },
+            "point": {
+              "x": 1659.25,
+              "y": 313.671875,
+              "width": 159,
+              "height": 28
+            }
+          },
+          {
+            "start": 9.6,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 4,
+            "mark": {
+              "x": 676,
+              "y": 795.359375,
+              "width": 568,
+              "height": 42
+            },
+            "point": {
+              "x": 680,
+              "y": 799.171875,
+              "width": 16,
+              "height": 16
+            }
+          },
+          {
+            "start": 12.8,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 5,
+            "mark": {
+              "x": 1075,
+              "y": 1035.6875,
+              "width": 170,
+              "height": 38
+            }
+          }
+        ],
+        "duration": 16.8,
+        "fade": 0.3,
+        "stills": [
+          "reimbursement/36ff243281e0.png",
+          "reimbursement/a4dd207f8c30.png",
+          "reimbursement/f02c1f01d50e.png",
+          "reimbursement/d39578a840aa.png",
+          "reimbursement/718b767061c8.png"
+        ],
+        "accent": "oklch(0.537962 0.124573 215.224)"
+      }
     }
   },
   "files": {
@@ -2992,6 +3228,26 @@
     "record-transaction/entry-save.pt.dark.png": "d8de24801d0377cee4ccf5723247e87bc975d9e5eed250324dd6fc65cfc6b3ea",
     "record-transaction/entry-sheet.en.dark.png": "81895c3c9c29baa1aef145c9685b2f8e1276580c9d41b2f519d42e7863c4058c",
     "record-transaction/entry-sheet.pt.dark.png": "c4b767c488941b6da28b9779b500ccb4cb7eb5b6a7005213ebe28c5488af1d9d",
+    "reimbursement/09118505d450.png": "09118505d4502c4460b2ea79eeb109f9a679006e759c73406fd0a6df1e86e6ae",
+    "reimbursement/36ff243281e0.png": "36ff243281e08a5e77ae2bb81fa2dd77f5e048b46bc51cb96416526808cfbf99",
+    "reimbursement/38f855f0afd0.png": "38f855f0afd095c6eb61359ef36aed4529f44df1fedb558f4ac3364eaec74994",
+    "reimbursement/718b767061c8.png": "718b767061c89cc763d6736831ce210dfc115efaaa9e88fa88b273eabdd6caa1",
+    "reimbursement/830f1415f35a.png": "830f1415f35ae4889909d9fb7724638ee106214361268b1ed3b887c76d86f3ab",
+    "reimbursement/a4dd207f8c30.png": "a4dd207f8c30e9c4397dad73d37f12e2886424993c1109b492ea3f093b3cac0e",
+    "reimbursement/adb402428482.png": "adb402428482f017716d844c8f06e3cdf975e03d31267c0becffc275cb3db009",
+    "reimbursement/d281609b1c59.png": "d281609b1c59042c3639f2f9f7382aeb8875f467c16dcb829e84e187064b8b4b",
+    "reimbursement/d39578a840aa.png": "d39578a840aa04d5abf6e6255ca62ae51396c9f994791d649666fbcac9c7a10a",
+    "reimbursement/f02c1f01d50e.png": "f02c1f01d50e6b275ddd66003388e79ca5f8154ff9c92af38f2b7e86e80c1d8c",
+    "reimbursement/reimbursement-choose.en.dark.png": "be654b11e8c4957c4f3eeaaace8f0257209f65417d066316efc128332fcf17fc",
+    "reimbursement/reimbursement-choose.pt.dark.png": "87b16c17618ab56e6a0cadb02417c2327694bb5f8981b13def1d49d1f719d68d",
+    "reimbursement/reimbursement-expenses.en.dark.png": "d8b5789152ed6262b24aaf4c9a8538a0bf9e5b52a9c05af952ed661e1377fc92",
+    "reimbursement/reimbursement-expenses.pt.dark.png": "16519b6856ea1ae52ac03d35f27405f56186f1cfbb9f5985efb6754d02d264de",
+    "reimbursement/reimbursement-menu.en.dark.png": "e385bff92d75646df1bc1d9d4a5e273e7beff9e4af0ab9f6b6d091a3e7b02860",
+    "reimbursement/reimbursement-menu.pt.dark.png": "591f70802c42ef0c79a8d870ab9c7a32740f7d60c3ff6bd078ed39d3d2c4c1bf",
+    "reimbursement/reimbursement-open.en.dark.png": "f0827e71f36753130ea00e091bcc4e76678b6f1c596eb6aad1fac7dab9420cde",
+    "reimbursement/reimbursement-open.pt.dark.png": "3c3db18555453fa1419c662f17e64042c4c93ce8fd9ca3e86011d63f91dcced9",
+    "reimbursement/reimbursement-submit.en.dark.png": "1175eafa80c0ee269d13465bf30c2e02a2d6c789b42d76222006e9e2907a2796",
+    "reimbursement/reimbursement-submit.pt.dark.png": "344b70d22163cfb851cd18dbfe6bdd1e5c8971aebc018c908022155ff03c8b8e",
     "schedule/4050b4b0fffa.png": "4050b4b0fffa0aa3ea54cff576fc83138678c4c819da01e3871130a70981579a",
     "schedule/530ffe5b8add.png": "530ffe5b8add12bff2c7705dfae2c77ed460298030b2fe413cd70b28c45e9e1e",
     "schedule/57df711a2268.png": "57df711a2268807d9cdf225184c89b3241e599b0cfdbb408e7e936214a975358",
@@ -3045,6 +3301,7 @@
     "correct-transaction": "ae36953da0dd796f4e46b56b9d48c33a0465d1ab758f359da5f5b4a6365553d9",
     "schedule": "1ed7e2f009e2eb33edb0b232e7cacad5c3cedb927321b8ecaf0da54898d5f8a0",
     "create-budget": "56b8c568a91b9e5c98f729c036baab29fda7c96fb8eaa78e9ce969e52531a196",
-    "buy-investment": "5e1bf05fa61d7bfcc7196161c79cbc27aaf4e21b557421fe1e21c1453614ca89"
+    "buy-investment": "5e1bf05fa61d7bfcc7196161c79cbc27aaf4e21b557421fe1e21c1453614ca89",
+    "reimbursement": "8f1fbdb25d9556fd56da4b21f310df901196d54302735588d87c198bde607f13"
   }
 }

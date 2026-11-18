@@ -232,6 +232,7 @@ describe("helpNeighbours", () => {
         "record-transaction",
         "text-capture",
         "correct-transaction",
+        "reimbursement",
         "schedule",
         "create-budget",
         "buy-investment",

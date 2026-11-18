@@ -77,6 +77,7 @@ func seed(s *seeder, cfg config) error {
 	s.saveSavingsTarget()
 	s.buildRules()
 	s.cashflow()
+	s.pendingRepayment()
 	s.runEvents()
 	s.flushFeeds()
 	s.reopenHistory()

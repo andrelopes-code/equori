@@ -187,6 +187,35 @@ func (s *seeder) reimbursedDinner(d, back time.Time, payee, via string, total, h
 	})
 }
 
+// pendingRepayment records a dinner of last week paid in full on the card and Rafael's Pix for half
+// of it, not yet marked as a reimbursement: the case the help page of reimbursements shows. It
+// draws no random number, so the rest of the book stays as it was.
+func (s *seeder) pendingRepayment() {
+	const total, half = 26400, 13200
+
+	dinner := s.today.AddDate(0, 0, -5)
+	back := s.today.AddDate(0, 0, -2)
+
+	s.at(dinner, func() {
+		s.record(
+			iso(dinner),
+			"Jantar com o Rafael, Coco Bambu",
+			map[string]any{"payee_id": s.id("payee.Coco Bambu"), "tags": []string{"compartilhado"}},
+			post(s.id("card.itau"), -total),
+			post(s.id("food.restaurants"), total),
+		)
+	})
+	s.at(back, func() {
+		s.record(
+			iso(back),
+			"Rafael devolveu a parte do jantar",
+			map[string]any{"payee_id": s.id("payee.Rafael Mendes")},
+			post(s.id("itau.checking"), half),
+			post(s.id("income.refunds"), -half),
+		)
+	})
+}
+
 // occasions schedules the dated expenses of month.
 func (s *seeder) occasions(month time.Time) {
 	for _, o := range occasions {

@@ -282,3 +282,24 @@ After the double press, the description cell of the list keeps a muted ring. It 
 | A shortfall of cash is stated; Move money into … opens a transfer to that account; Save stays enabled | `brokerage-account/shortfall-notice.tsx` (BC8) |
 
 The unit price is a decimal field: "2750" read as 2 750.00, so the tutorial types 27,50 in pt and 27.50 in en.
+
+### Slice 5: reimbursement
+
+| Claim | Source |
+|---|---|
+| A reimbursement links an incoming transaction to the expenses it repays and reduces them in reports | `internal/assistant/guide/articles/refunds_reimbursements_and_disputes.md:3`; `reimbursement.description` |
+| The panel's menu holds "Mark as reimbursement" on an inflow and "Record reimbursement received" on an expense | `transaction-detail/detail-actions.tsx:158-163` |
+| The dialog lists the expenses of the previous 90 days with an amount left; what is not distributed stays as income | `reimbursement.description`, `reimbursement.empty`, `reimbursement.option` |
+| An uncategorized inflow asks "Does this reimburse recent expenses?" with "Match to expenses"; an exact sum is named | `reimbursement/reimbursement-suggestion.tsx:25-69` |
+| From the expense: payments received of the next 90 days with an amount free, and the amount reimbursed | `repayment.description`, `repayment.empty`, `repayment.amount` |
+| Clear reimbursement in the dialog of a payment already linked | `reimbursement/reimbursement-dialog.tsx:207` |
+
+Demo data: the book held no repayment left to link. `cmd/demoseed` gains `pendingRepayment`: a dinner of five days before the seed day on the Itaú card and Rafael's Pix of two days before, in the category Reembolsos and not linked, with a test (`TestSeed/one_repayment_waits_to_be_marked_as_a_reimbursement`). The Pix takes a category: an uncategorized one raised the uncategorized count of the book to 7, above the 3 to 6 of `TestSeed/classification`, so the page shows the menu path and names the prompt of an uncategorized inflow in text.
+
+### Decision: the instance the tapes are recorded from
+
+`make demo-reset` and `make demo` on the development database failed: five fixed income instruments of the instance (CDBXP27, TSELIC29, TIPCA35, LFT.20310301, CRA024002S2) were created before contracts became book-owned and carry no book; `ApplyFixedIncome` refuses them ("is used by another contract", `internal/ledger/app/fixed_income.go:98-101`), and book 3, the owner's, holds an account of CRA024002S2. Its data stays untouched. The partial demo user was removed (`make demo-reset`). The tapes of slices 5 on are recorded from an instance of the production binary on a fresh database of the test server (`helpdemo`), with the index rates copied from the development database and the feeds `br_cdi` and `br_ipca` on, seeded by `cmd/demoseed`. The stage of goals fails there by the server's write timeout of 30 s (`internal/platform/httpserver/httpserver.go:42`; one POST /goals took 37.7 s), after every transaction of the book is recorded; a slice that needs goals or the contribution plan records them as its own step.
+
+### Finding: the mark across the neighbour
+
+A mark of 12 px around a row of a list whose rows stand 6 px apart crossed the text of the rows above and below. Fixed in the tool: `capture.mjs` measures the free room around the target (visible text, controls and pictures outside it, on top at their centre, within 12 px) and `geometry.mjs` shrinks the pad on every side alike to one pixel short of it (`geometry.test.mjs`, "a mark keeps inside the room free around its element").
