@@ -23,12 +23,13 @@ func (getMarketDataView) Values() []string {
 		"index_rates",
 		"index_expectations",
 		"curves",
+		"fund_reports",
 	}
 }
 
 type getMarketDataIn struct {
 	View     getMarketDataView `json:"view"              jsonschema:"what to return"`
-	Code     string            `json:"code,omitzero"     jsonschema:"for instrument and prices: instrument code, such as a ticker or currency code"`
+	Code     string            `json:"code,omitzero"     jsonschema:"for instrument, prices and fund_reports: instrument code, such as a ticker or currency code"`
 	Quote    string            `json:"quote,omitzero"    jsonschema:"for prices: code of the currency the price is quoted in"`
 	From     tool.Date         `json:"from,omitzero"     jsonschema:"for prices and index_rates: first date"`
 	To       tool.Date         `json:"to,omitzero"       jsonschema:"for prices and index_rates: last date; at most 18300 days after from for prices, 7320 for index_rates"`
@@ -126,6 +127,30 @@ type curveView struct {
 	Points   []curvePointView `json:"points"`
 }
 
+type fundReportView struct {
+	Source     string                 `json:"source"`
+	SourceURL  string                 `json:"source_url"`
+	Exchange   string                 `json:"exchange"`
+	Code       string                 `json:"code"`
+	Currency   string                 `json:"currency"`
+	Identifier string                 `json:"identifier"`
+	Name       string                 `json:"name"`
+	Segment    string                 `json:"segment"`
+	Periods    []fundReportPeriodView `json:"periods"`
+}
+
+type fundReportPeriodView struct {
+	Period            tool.Date `json:"period"`
+	Delivered         tool.Date `json:"delivered,omitzero"`
+	NetAssets         int64     `json:"net_assets,omitzero"`
+	Holders           int64     `json:"holders,omitzero"`
+	Units             string    `json:"units,omitzero"`
+	UnitBookValue     string    `json:"unit_book_value,omitzero"`
+	AdminFee          string    `json:"admin_fee,omitzero"`
+	MonthYield        string    `json:"month_yield,omitzero"`
+	MonthAmortization string    `json:"month_amortization,omitzero"`
+}
+
 type curvePointView struct {
 	Maturity tool.Date `json:"maturity"`
 	Rate     string    `json:"rate"`
@@ -160,6 +185,8 @@ type getMarketDataOut struct {
 	IndexExpectations indexExpectationsView `json:"index_expectations,omitzero"`
 	// Curves holds the rates the enabled curve sources report by maturity.
 	Curves []curveView `json:"curves,omitzero"`
+	// FundReports holds the monthly reports the enabled fund report sources stored for the code.
+	FundReports []fundReportView `json:"fund_reports,omitzero"`
 }
 
 func toInstrumentView(in domain.Instrument) instrumentView {

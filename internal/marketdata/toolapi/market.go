@@ -54,6 +54,8 @@ func readMarketData(
 		return marketIndexExpectations(ctx, svc, in)
 	case "curves":
 		return marketCurves(ctx, svc)
+	case "fund_reports":
+		return marketFundReports(ctx, svc, in)
 	case "calendars":
 		out := getMarketDataOut{Calendars: []calendarView{}}
 		for _, c := range cals.List() {
@@ -94,7 +96,7 @@ func checkMarketDataArgs(in getMarketDataIn) error {
 
 	var err error
 	switch in.View {
-	case "instrument":
+	case "instrument", "fund_reports":
 		err = required(name, fields, "code")
 	case "prices":
 		err = required(name, fields, "code", "quote", "from", "to")
@@ -297,4 +299,66 @@ func marketCurves(ctx context.Context, svc Service) (getMarketDataOut, error) {
 	}
 
 	return out, nil
+}
+
+func marketFundReports(
+	ctx context.Context,
+	svc Service,
+	in getMarketDataIn,
+) (getMarketDataOut, error) {
+	reports, err := svc.FundReports(ctx, in.Code)
+	if err != nil {
+		return getMarketDataOut{}, err
+	}
+
+	out := getMarketDataOut{FundReports: make([]fundReportView, len(reports))}
+	for i, r := range reports {
+		v := fundReportView{
+			Source:     r.Source,
+			SourceURL:  r.SourceURL,
+			Exchange:   r.Exchange,
+			Code:       r.Code,
+			Currency:   r.Currency,
+			Identifier: r.Identifier,
+			Name:       r.Name,
+			Segment:    r.Segment,
+			Periods:    make([]fundReportPeriodView, len(r.Periods)),
+		}
+		for j, p := range r.Periods {
+			v.Periods[j] = fundReportPeriodView{
+				Period: tool.DateOf(p.Period),
+			}
+			fillFundReportFigures(&v.Periods[j], p)
+			if p.Delivered != nil {
+				v.Periods[j].Delivered = tool.DateOf(*p.Delivered)
+			}
+		}
+
+		out.FundReports[i] = v
+	}
+
+	return out, nil
+}
+
+// fillFundReportFigures copies the figures the period holds; a nil figure stays absent.
+func fillFundReportFigures(v *fundReportPeriodView, p domain.FundReportPeriod) {
+	if p.NetAssets != nil {
+		v.NetAssets = *p.NetAssets
+	}
+
+	if p.Holders != nil {
+		v.Holders = *p.Holders
+	}
+
+	for _, f := range []struct {
+		from *string
+		into *string
+	}{
+		{p.Units, &v.Units}, {p.UnitBookValue, &v.UnitBookValue}, {p.AdminFee, &v.AdminFee},
+		{p.MonthYield, &v.MonthYield}, {p.MonthAmortization, &v.MonthAmortization},
+	} {
+		if f.from != nil {
+			*f.into = *f.from
+		}
+	}
 }

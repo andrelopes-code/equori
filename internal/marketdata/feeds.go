@@ -88,6 +88,8 @@ func (m *Module) TickFeeds(ctx context.Context) {
 		}
 	}
 
+	m.tickFundReports(ctx, on)
+
 	m.TickAccrual(ctx)
 }
 

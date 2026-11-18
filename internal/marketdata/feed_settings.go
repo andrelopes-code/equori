@@ -75,7 +75,7 @@ func (m *Module) Feeds(ctx context.Context) ([]Feed, error) {
 	return m.registryFeeds(ctx, out, fs)
 }
 
-// registryFeeds appends the index, expectation, curve and institution sources to out.
+// registryFeeds appends the index, expectation, curve, institution and fund report sources to out.
 func (m *Module) registryFeeds(ctx context.Context, out []Feed, fs feedState) ([]Feed, error) {
 	out, err := m.indexFeeds(ctx, out, fs)
 	if err != nil {
@@ -92,7 +92,12 @@ func (m *Module) registryFeeds(ctx context.Context, out []Feed, fs feedState) ([
 		return nil, err
 	}
 
-	return m.institutionFeeds(ctx, out, fs)
+	out, err = m.institutionFeeds(ctx, out, fs)
+	if err != nil {
+		return nil, err
+	}
+
+	return m.fundReportFeeds(ctx, out, fs)
 }
 
 // feedState holds what every feed row of Feeds shares: the enabled ids, the ids suggested for the
@@ -298,6 +303,10 @@ func feedLags() map[string]int {
 	}
 
 	for _, e := range institutionEntries() {
+		lags[e.id] = e.lag
+	}
+
+	for _, e := range fundReportEntries() {
 		lags[e.id] = e.lag
 	}
 

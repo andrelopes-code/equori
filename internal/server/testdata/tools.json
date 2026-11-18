@@ -3786,12 +3786,13 @@
             "indexes",
             "index_rates",
             "index_expectations",
-            "curves"
+            "curves",
+            "fund_reports"
           ]
         },
         "code": {
           "type": "string",
-          "description": "for instrument and prices: instrument code, such as a ticker or currency code"
+          "description": "for instrument, prices and fund_reports: instrument code, such as a ticker or currency code"
         },
         "quote": {
           "type": "string",
@@ -4433,6 +4434,91 @@
               "base_date",
               "source",
               "points"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "fund_reports": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "source": {
+                "type": "string"
+              },
+              "source_url": {
+                "type": "string"
+              },
+              "exchange": {
+                "type": "string"
+              },
+              "code": {
+                "type": "string"
+              },
+              "currency": {
+                "type": "string"
+              },
+              "identifier": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "segment": {
+                "type": "string"
+              },
+              "periods": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "period": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "delivered": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "net_assets": {
+                      "type": "integer"
+                    },
+                    "holders": {
+                      "type": "integer"
+                    },
+                    "units": {
+                      "type": "string"
+                    },
+                    "unit_book_value": {
+                      "type": "string"
+                    },
+                    "admin_fee": {
+                      "type": "string"
+                    },
+                    "month_yield": {
+                      "type": "string"
+                    },
+                    "month_amortization": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "period"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "source",
+              "source_url",
+              "exchange",
+              "code",
+              "currency",
+              "identifier",
+              "name",
+              "segment",
+              "periods"
             ],
             "additionalProperties": false
           }

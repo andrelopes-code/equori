@@ -3203,6 +3203,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/fund-reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The monthly reports the enabled fund report sources stored for an instrument, newest period first (fund report FR6). */
+        get: operations["listFundReports"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/market-data/institution-indicators": {
         parameters: {
             query?: never;
@@ -7154,6 +7171,50 @@ export interface components {
              */
             net_income: number | null;
         };
+        FundReportList: {
+            items: components["schemas"]["FundReport"][];
+        };
+        FundReport: {
+            source: string;
+            /** @description The register's page of the dataset. */
+            source_url: string;
+            exchange: string;
+            code: string;
+            currency: string;
+            /** @description The fund's identifier at the register, as of the newest period. */
+            identifier: string;
+            name: string;
+            /** @description The segment as the source writes it; empty when the source states none. */
+            segment: string;
+            periods: components["schemas"]["FundReportPeriod"][];
+        };
+        /** @description A null figure is a value the source leaves blank; it is never zero. */
+        FundReportPeriod: {
+            /**
+             * Format: date
+             * @description The first day of the month the report covers.
+             */
+            period: string;
+            /** Format: date */
+            delivered: string | null;
+            /**
+             * Format: int64
+             * @description Minor units of the report's currency.
+             */
+            net_assets: number | null;
+            /** Format: int64 */
+            holders: number | null;
+            /** @description Units issued, an exact decimal. */
+            units: string | null;
+            /** @description Book value of one unit in the report's currency, an exact decimal. */
+            unit_book_value: string | null;
+            /** @description Administration fee of the month over the net assets, an exact decimal fraction. */
+            admin_fee: string | null;
+            /** @description Distributions of the month over the book value, an exact decimal fraction. */
+            month_yield: string | null;
+            /** @description Amortization of the month, an exact decimal fraction. */
+            month_amortization: string | null;
+        };
         /** @description The regulatory floors of the jurisdiction of the source (A237 L1). */
         InstitutionLimits: {
             basel: components["schemas"]["InstitutionFloor"];
@@ -7179,7 +7240,7 @@ export interface components {
         MarketDataFeed: {
             id: string;
             /** @enum {string} */
-            kind: "price" | "index" | "expectation" | "curve" | "institution";
+            kind: "price" | "index" | "expectation" | "curve" | "institution" | "fund_report";
             enabled: boolean;
             /** @description Suggested for the calling book's region (ADR 025 F3); a suggestion enables nothing. */
             suggested: boolean;
@@ -14201,6 +14262,31 @@ export interface operations {
                 };
             };
             401: components["responses"]["Problem"];
+        };
+    };
+    listFundReports: {
+        parameters: {
+            query: {
+                /** @description The instrument code, such as a ticker. */
+                code: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FundReportList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
         };
     };
     getInstitutionIndicators: {

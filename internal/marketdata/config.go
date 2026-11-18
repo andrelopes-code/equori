@@ -9,6 +9,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/marketdata/curve"
 	"github.com/andrelopes-code/equori/internal/marketdata/expectation"
 	"github.com/andrelopes-code/equori/internal/marketdata/feed"
+	"github.com/andrelopes-code/equori/internal/marketdata/fundreport"
 	"github.com/andrelopes-code/equori/internal/marketdata/index"
 	"github.com/andrelopes-code/equori/internal/marketdata/institution"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
@@ -30,6 +31,8 @@ type FeedConfig struct {
 	Curves []curve.Source
 	// Institutions are the institution sources (A237).
 	Institutions []institution.Source
+	// FundReports are the fund report sources (fund report FR2).
+	FundReports []fundreport.Source
 	// Seed names the sources enabled while no setting is stored; tests set it through
 	// server.Config, production passes none (ADR 025 F2, ADR 029 BK25).
 	Seed []string

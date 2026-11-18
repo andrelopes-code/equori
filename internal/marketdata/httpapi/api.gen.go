@@ -142,6 +142,7 @@ func (e InstrumentType) Valid() bool {
 const (
 	MarketDataFeedKindCurve       MarketDataFeedKind = "curve"
 	MarketDataFeedKindExpectation MarketDataFeedKind = "expectation"
+	MarketDataFeedKindFundReport  MarketDataFeedKind = "fund_report"
 	MarketDataFeedKindIndex       MarketDataFeedKind = "index"
 	MarketDataFeedKindInstitution MarketDataFeedKind = "institution"
 	MarketDataFeedKindPrice       MarketDataFeedKind = "price"
@@ -153,6 +154,8 @@ func (e MarketDataFeedKind) Valid() bool {
 	case MarketDataFeedKindCurve:
 		return true
 	case MarketDataFeedKindExpectation:
+		return true
+	case MarketDataFeedKindFundReport:
 		return true
 	case MarketDataFeedKindIndex:
 		return true
@@ -332,6 +335,56 @@ type FixedIncomeTermsInput struct {
 
 // FixedIncomeTermsInputInterestEveryMonths Interest paid every n months from first_payment_on up to matures_on; expands into payments.
 type FixedIncomeTermsInputInterestEveryMonths int
+
+// FundReport defines model for FundReport.
+type FundReport struct {
+	Code     string `json:"code"`
+	Currency string `json:"currency"`
+	Exchange string `json:"exchange"`
+
+	// Identifier The fund's identifier at the register, as of the newest period.
+	Identifier string             `json:"identifier"`
+	Name       string             `json:"name"`
+	Periods    []FundReportPeriod `json:"periods"`
+
+	// Segment The segment as the source writes it; empty when the source states none.
+	Segment string `json:"segment"`
+	Source  string `json:"source"`
+
+	// SourceUrl The register's page of the dataset.
+	SourceUrl string `json:"source_url"`
+}
+
+// FundReportList defines model for FundReportList.
+type FundReportList struct {
+	Items []FundReport `json:"items"`
+}
+
+// FundReportPeriod A null figure is a value the source leaves blank; it is never zero.
+type FundReportPeriod struct {
+	// AdminFee Administration fee of the month over the net assets, an exact decimal fraction.
+	AdminFee  *string             `json:"admin_fee"`
+	Delivered *openapi_types.Date `json:"delivered"`
+	Holders   *int64              `json:"holders"`
+
+	// MonthAmortization Amortization of the month, an exact decimal fraction.
+	MonthAmortization *string `json:"month_amortization"`
+
+	// MonthYield Distributions of the month over the book value, an exact decimal fraction.
+	MonthYield *string `json:"month_yield"`
+
+	// NetAssets Minor units of the report's currency.
+	NetAssets *int64 `json:"net_assets"`
+
+	// Period The first day of the month the report covers.
+	Period openapi_types.Date `json:"period"`
+
+	// UnitBookValue Book value of one unit in the report's currency, an exact decimal.
+	UnitBookValue *string `json:"unit_book_value"`
+
+	// Units Units issued, an exact decimal.
+	Units *string `json:"units"`
+}
 
 // Holiday defines model for Holiday.
 type Holiday struct {
@@ -835,6 +888,12 @@ type TagName = string
 // ListHolidaysParams defines parameters for ListHolidays.
 type ListHolidaysParams struct {
 	Year int `form:"year" json:"year"`
+}
+
+// ListFundReportsParams defines parameters for ListFundReports.
+type ListFundReportsParams struct {
+	// Code The instrument code, such as a ticker.
+	Code string `form:"code" json:"code"`
 }
 
 // ListIndexRatesParams defines parameters for ListIndexRates.

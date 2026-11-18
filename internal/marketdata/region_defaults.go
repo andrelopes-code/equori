@@ -68,6 +68,7 @@ func SuggestedFeeds(region string) []string {
 			"br_focus_ipca",
 			"br_ifdata",
 			"br_tesouro",
+			"br_cvm_fii",
 		}
 	case region == "US":
 		return []string{"us_sofr", "us_cpi"}
