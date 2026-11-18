@@ -84,7 +84,9 @@ export function NavDestination({
           {content}
         </SideNavigationLink>
       )}
-      {views !== undefined && !rail && <SideNavigationTrigger />}
+      {views !== undefined && !rail && (
+        <SideNavigationTrigger className="ml-2" />
+      )}
 
       {views !== undefined && (
         <SideNavigationGroup>

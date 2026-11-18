@@ -80,7 +80,7 @@ export function RunningBalance({
       : t("agenda.runningFlat", { close: closeText });
 
   return (
-    <Section>
+    <Section className="mt-6">
       <SectionHeader>
         <SectionTitle>
           <SectionHeading>{label}</SectionHeading>
