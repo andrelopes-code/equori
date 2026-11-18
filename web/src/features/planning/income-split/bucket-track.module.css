@@ -73,6 +73,8 @@
   .entryRow {
     grid-template-columns: 4rem minmax(0, 1fr) 9rem;
     inline-size: 100%;
+    /* The row is a Link, rounded for its focus ring; its rule under the row stays straight. */
+    --slotted-link-radius: 0;
   }
 
   .sumRow > *,
