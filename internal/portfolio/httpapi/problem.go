@@ -28,7 +28,9 @@ func reportProblem(err error) (problem.Details, bool) {
 	case errors.Is(err, app.ErrNotFound):
 		return problem.New(http.StatusNotFound, "not_found", "account not found"), true
 	case errors.Is(err, app.ErrPriceMissing):
-		return problem.New(http.StatusUnprocessableEntity, "price_missing", err.Error()), true
+		d := problem.New(http.StatusUnprocessableEntity, "price_missing", err.Error())
+
+		return problem.WithMissingPrice(d, err), true
 	case errors.Is(err, app.ErrUnknownIndex), errors.Is(err, app.ErrIndexNotDaily):
 		d := problem.New(
 			http.StatusBadRequest,

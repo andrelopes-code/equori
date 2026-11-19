@@ -48,6 +48,13 @@ export function codeText(code: string, fallback: string, t: TFunction): string {
 }
 
 export function problemMessage(problem: Problem, t: TFunction): string {
+  const missing = problem.missing_price;
+  if (problem.code === "price_missing" && missing !== undefined)
+    return t("problem.price_missing.named", {
+      instrument: missing.instrument,
+      quote: missing.quote_instrument,
+    });
+
   return codeText(problem.code, problem.title, t);
 }
 

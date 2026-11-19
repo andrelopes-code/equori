@@ -84,7 +84,9 @@ func rangeProblem(err error) (problem.Details, bool) {
 			"must not be after the current month",
 		), true
 	case errors.Is(err, app.ErrPriceMissing):
-		return problem.New(http.StatusUnprocessableEntity, "price_missing", err.Error()), true
+		d := problem.New(http.StatusUnprocessableEntity, "price_missing", err.Error())
+
+		return problem.WithMissingPrice(d, err), true
 	case errors.Is(err, app.ErrInvalidFlowRange):
 		return invalidField(
 			"from must not be after to, and the range must not exceed 366 days",

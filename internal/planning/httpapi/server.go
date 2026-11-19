@@ -150,7 +150,9 @@ func ToProblem(err error) (problem.Details, bool) {
 	case errors.Is(err, app.ErrMixedInstruments):
 		return problem.New(http.StatusUnprocessableEntity, "mixed_instruments", err.Error()), true
 	case errors.Is(err, app.ErrPriceMissing):
-		return problem.New(http.StatusUnprocessableEntity, "price_missing", err.Error()), true
+		d := problem.New(http.StatusUnprocessableEntity, "price_missing", err.Error())
+
+		return problem.WithMissingPrice(d, err), true
 	case errors.Is(err, app.ErrOccurrenceClosed):
 		return problem.New(http.StatusConflict, "occurrence_closed", err.Error()), true
 	case errors.Is(err, app.ErrTransactionInUse):

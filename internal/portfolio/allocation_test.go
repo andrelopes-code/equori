@@ -132,6 +132,30 @@ func TestAllocationErrors(t *testing.T) {
 	}
 }
 
+// PC22: price_missing names the price it lacks, so the reader records that one price.
+func TestPriceMissingNamesThePrice(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t)
+	f.trade(t, "buy", "2026-10-10", 10, "10.00", 0)
+	f.h.Dispatch()
+
+	r := f.h.Do(http.MethodGet, "/api/v1/reports/net-worth?date=2026-11-01", nil)
+
+	f.h.ExpectProblem(r, http.StatusUnprocessableEntity, "price_missing", "")
+
+	var p struct {
+		MissingPrice map[string]any `json:"missing_price"`
+	}
+	r.Decode(t, &p)
+
+	want := map[string]any{
+		"instrument": "MXRF11", "quote_instrument": "BRL", "date": "2026-11-01",
+	}
+	if fmt.Sprint(p.MissingPrice) != fmt.Sprint(want) {
+		t.Fatalf("missing_price = %v, want %v", p.MissingPrice, want)
+	}
+}
+
 // S129: net worth is the assets minus the liabilities (amendment A125).
 func TestS129NetWorth(t *testing.T) {
 	t.Parallel()

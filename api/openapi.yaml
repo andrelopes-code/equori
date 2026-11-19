@@ -8123,6 +8123,18 @@ components:
         instance_version:
           type: integer
           description: The highest archive_version the instance imports (archive_too_new, ADR 021).
+        missing_price:
+          type: object
+          description: The price of the first conversion that price_missing could not make (PC22).
+          required: [instrument, quote_instrument, date]
+          properties:
+            instrument:
+              type: string
+            quote_instrument:
+              type: string
+            date:
+              type: string
+              format: date
         errors:
           type: array
           items:

@@ -6,6 +6,8 @@ import (
 	"errors"
 	"net/http"
 	"time"
+
+	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
 const ContentType = "application/problem+json"
@@ -22,6 +24,14 @@ type Details struct {
 	// ArchiveVersion and InstanceVersion name the versions of archive_too_new (ADR 021).
 	ArchiveVersion  *int `json:"archive_version,omitempty"`
 	InstanceVersion *int `json:"instance_version,omitempty"`
+	// MissingPrice names the price that price_missing lacks.
+	MissingPrice *MissingPrice `json:"missing_price,omitempty"`
+}
+
+type MissingPrice struct {
+	Instrument      string `json:"instrument"`
+	QuoteInstrument string `json:"quote_instrument"`
+	Date            string `json:"date"`
 }
 
 type FieldError struct {
@@ -44,6 +54,19 @@ func New(status int, code, detail string) Details {
 // WithRetryAt sets the instant after which the request can succeed.
 func WithRetryAt(d Details, at time.Time) Details {
 	d.RetryAt = &at
+	return d
+}
+
+// WithMissingPrice names the price of the first conversion err could not make, when err holds one.
+func WithMissingPrice(d Details, err error) Details {
+	if mp, ok := errors.AsType[*money.MissingPrice](err); ok {
+		d.MissingPrice = &MissingPrice{
+			Instrument:      string(mp.Instrument),
+			QuoteInstrument: string(mp.Quote),
+			Date:            mp.Date.Format(time.DateOnly),
+		}
+	}
+
 	return d
 }
 

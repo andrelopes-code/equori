@@ -129,5 +129,5 @@ func (m *Module) leg(
 }
 
 func missing(from, to money.Currency, date time.Time) error {
-	return fmt.Errorf("%w: %s in %s on %s", ErrPriceMissing, from, to, date.Format(time.DateOnly))
+	return &money.MissingPrice{Instrument: from, Quote: to, Date: date, Err: ErrPriceMissing}
 }

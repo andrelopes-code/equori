@@ -2273,8 +2273,15 @@ type Problem struct {
 	Errors *[]FieldError `json:"errors,omitempty"`
 
 	// InstanceVersion The highest archive_version the instance imports (archive_too_new, ADR 021).
-	InstanceVersion *int    `json:"instance_version,omitempty"`
-	RequestId       *string `json:"request_id,omitempty"`
+	InstanceVersion *int `json:"instance_version,omitempty"`
+
+	// MissingPrice The price of the first conversion that price_missing could not make (PC22).
+	MissingPrice *struct {
+		Date            openapi_types.Date `json:"date"`
+		Instrument      string             `json:"instrument"`
+		QuoteInstrument string             `json:"quote_instrument"`
+	} `json:"missing_price,omitempty"`
+	RequestId *string `json:"request_id,omitempty"`
 
 	// RetryAt Instant after which the same request can succeed.
 	RetryAt *time.Time `json:"retry_at,omitempty"`

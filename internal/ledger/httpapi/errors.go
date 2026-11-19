@@ -45,7 +45,7 @@ func ToProblem(err error) (problem.Details, bool) {
 		d := problem.New(http.StatusUnprocessableEntity, code, fe.Error())
 		d.Errors = []problem.FieldError{{Field: fe.Field, Message: fe.Message}}
 
-		return d, true
+		return problem.WithMissingPrice(d, err), true
 	}
 
 	return sentinelProblem(err)

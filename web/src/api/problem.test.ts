@@ -65,6 +65,31 @@ describe("problemMessage", () => {
     expect(problemMessage(base, t)).toBe(catalogEn["problem.version_conflict"]);
   });
 
+  it("names the price that price_missing lacks", () => {
+    const withVars: TFunction = (key, vars) =>
+      catalogEn[key].replace(/\{(\w+)\}/g, (_, name: string) =>
+        String(vars?.[name]),
+      );
+
+    expect(
+      problemMessage(
+        {
+          ...base,
+          status: 422,
+          code: "price_missing",
+          missing_price: {
+            instrument: "MXRF11",
+            quote_instrument: "BRL",
+            date: "2026-11-01",
+          },
+        },
+        withVars,
+      ),
+    ).toBe(
+      "MXRF11 has no price in BRL. Record its price on the asset page and try again.",
+    );
+  });
+
   it("returns the title for an unknown code", () => {
     expect(
       problemMessage({ ...base, title: "Teapot", code: "foo_bar" }, t),

@@ -4742,6 +4742,13 @@ export interface components {
             archive_version?: number;
             /** @description The highest archive_version the instance imports (archive_too_new, ADR 021). */
             instance_version?: number;
+            /** @description The price of the first conversion that price_missing could not make (PC22). */
+            missing_price?: {
+                instrument: string;
+                quote_instrument: string;
+                /** Format: date */
+                date: string;
+            };
             errors?: components["schemas"]["FieldError"][];
         };
         FieldError: {

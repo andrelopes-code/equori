@@ -642,6 +642,8 @@ export const catalogPtBR: Catalog = {
   "problem.instrument_exists": "Já existe um ativo com este código.",
   "problem.price_missing":
     "O ativo não tem cotação nesta data. Registre uma cotação e tente novamente.",
+  "problem.price_missing.named":
+    "{instrument} não tem cotação em {quote}. Registre a cotação na página do ativo e tente novamente.",
   "problem.attachment_not_inlineable":
     "Só PDF ou imagem é exibido aqui. Baixe o anexo para abri-lo.",
   "problem.archive_invalid": "O arquivo não é uma exportação do equori.",

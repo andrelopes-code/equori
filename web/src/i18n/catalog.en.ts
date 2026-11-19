@@ -633,6 +633,8 @@ export const catalogEn = {
   "problem.instrument_exists": "An asset with this code already exists.",
   "problem.price_missing":
     "The asset has no price for this date. Record a price and try again.",
+  "problem.price_missing.named":
+    "{instrument} has no price in {quote}. Record its price on the asset page and try again.",
   "problem.attachment_not_inlineable":
     "Only a PDF or an image is shown here. Download the attachment to open it.",
   "problem.archive_invalid": "The file is not an export of equori.",
