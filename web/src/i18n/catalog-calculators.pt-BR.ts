@@ -365,9 +365,6 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.cash.total": "Total das parcelas",
   "calc.cash.presentValue":
     "Quanto as parcelas valem hoje, pela taxa de comparação",
-  "calc.cash.cashLower": "O preço à vista é menor em",
-  "calc.cash.installmentsLower": "O valor presente das parcelas é menor em",
-  "calc.cash.same": "Diferença para o preço à vista",
   "calc.cash.noInterest":
     "As parcelas somam o preço à vista ou menos, então não têm juros.",
   "calc.cash.noSolution":
@@ -678,12 +675,22 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
     "Saldo depois da amortização {balance} · juros restantes sem ela {without}",
   "calc.financing.details": "Prestações mês a mês",
   "calc.financing.details.size": "{months} meses, {priceName} e {sacName}",
+  "calc.cash.answer.lead": "Opção mais barata",
+  "calc.cash.answer.leadEqual": "À vista e parcelado custam o mesmo",
+  "calc.cash.answer.leadCash": "À vista sai mais barato",
+  "calc.cash.answer.leadInstallments": "Parcelar sai mais barato",
+  "calc.cash.answer.sentence":
+    "de diferença, trazendo as parcelas a valor presente a {rate} ao mês.",
+  "calc.cash.answer.what": "a opção mais barata",
+  "calc.cash.bars.title": "Preço à vista ou parcelas hoje",
+  "calc.cash.bars.cash": "À vista",
+  "calc.cash.bars.present": "Parcelas a valor presente",
+  "calc.cash.implied.help":
+    "A taxa mensal que iguala as parcelas ao preço à vista.",
+  "calc.cash.present.help":
+    "Quanto as parcelas valem hoje, descontadas à taxa de comparação.",
   "calc.cash.compare.hint":
     "Quanto o dinheiro renderia enquanto as parcelas são pagas. Com ela, o resultado diz qual opção custa menos.",
-  "calc.cash.summary":
-    "Parcelar custa {monthly} ao mês ({annual} ao ano) sobre o preço à vista.",
-  "calc.cash.verdictSummary":
-    "A {rate} ao ano, as parcelas valem hoje {value}.",
   "calc.credit.released.hint": "O que cai na conta.",
   "calc.credit.fees.hint":
     "Tarifas, seguros e impostos pagos no início ou descontados do valor liberado.",

@@ -361,10 +361,6 @@ export const calculatorsEn = {
   "calc.cash.total": "Total of the installments",
   "calc.cash.presentValue":
     "What the installments are worth today, at the comparison rate",
-  "calc.cash.cashLower": "The cash price is lower by",
-  "calc.cash.installmentsLower":
-    "The present value of the installments is lower by",
-  "calc.cash.same": "Difference to the cash price",
   "calc.cash.noInterest":
     "The installments total the cash price or less, so they carry no interest.",
   "calc.cash.noSolution":
@@ -671,12 +667,22 @@ export const calculatorsEn = {
     "Balance after the payment {balance} · remaining interest without it {without}",
   "calc.financing.details": "Installments month by month",
   "calc.financing.details.size": "{months} months, {priceName} and {sacName}",
+  "calc.cash.answer.lead": "Cheaper option",
+  "calc.cash.answer.leadEqual": "Cash and installments cost the same",
+  "calc.cash.answer.leadCash": "Paying cash is cheaper",
+  "calc.cash.answer.leadInstallments": "Installments are cheaper",
+  "calc.cash.answer.sentence":
+    "of difference, with the installments at present value at {rate} a month.",
+  "calc.cash.answer.what": "the cheaper option",
+  "calc.cash.bars.title": "Cash price or installments today",
+  "calc.cash.bars.cash": "Cash",
+  "calc.cash.bars.present": "Installments at present value",
+  "calc.cash.implied.help":
+    "The monthly rate that makes the installments equal the cash price.",
+  "calc.cash.present.help":
+    "What the installments are worth today, discounted at the comparison rate.",
   "calc.cash.compare.hint":
     "What the money would earn meanwhile. With it, the result states which option costs less.",
-  "calc.cash.summary":
-    "Paying in installments costs {monthly} a month ({annual} a year) over the cash price.",
-  "calc.cash.verdictSummary":
-    "At {rate} a year, the installments are worth {value} today.",
   "calc.credit.released.hint": "What reaches the account.",
   "calc.credit.fees.hint":
     "Fees, insurance and taxes paid at the start or taken from the amount released.",
