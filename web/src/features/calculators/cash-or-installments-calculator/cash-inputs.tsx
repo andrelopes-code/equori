@@ -36,7 +36,7 @@ export function CashInputs({ money, compare, firstNow }: CashInputsProps) {
           label={t("calc.cash.count")}
           unit={t("calc.unit.installments")}
           name="count"
-          width="short"
+          width="medium"
           value={search.count ?? ""}
           onChange={(v) => {
             set({ count: v });

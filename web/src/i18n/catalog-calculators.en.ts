@@ -666,7 +666,7 @@ export const calculatorsEn = {
   "calc.cash.present.help":
     "What the installments are worth today, discounted at the comparison rate.",
   "calc.cash.compare.hint":
-    "What the money would earn meanwhile. With it, the result states which option costs less.",
+    "What the money would earn while the installments are paid.",
   "calc.credit.released.hint": "What reaches the account.",
   "calc.credit.fees.hint":
     "Fees, insurance and taxes paid at the start or taken from the amount released.",

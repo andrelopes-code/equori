@@ -673,7 +673,7 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.cash.present.help":
     "Quanto as parcelas valem hoje, descontadas à taxa de comparação.",
   "calc.cash.compare.hint":
-    "Quanto o dinheiro renderia enquanto as parcelas são pagas. Com ela, o resultado diz qual opção custa menos.",
+    "Quanto o dinheiro renderia enquanto as parcelas são pagas.",
   "calc.credit.released.hint": "O que cai na conta.",
   "calc.credit.fees.hint":
     "Tarifas, seguros e impostos pagos no início ou descontados do valor liberado.",

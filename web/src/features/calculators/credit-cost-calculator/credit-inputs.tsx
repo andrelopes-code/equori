@@ -42,7 +42,7 @@ export function CreditInputs({
           label={t("calc.credit.count")}
           unit={t("calc.unit.installments")}
           name="count"
-          width="short"
+          width="medium"
           value={search.count ?? ""}
           onChange={(v) => {
             set({ count: v });

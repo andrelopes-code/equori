@@ -182,7 +182,9 @@
     white-space: nowrap;
   }
 
+  /* The legend spans the grid: inside the name column its unwrapped entries would widen it. */
   .splitLegend {
+    grid-column: 1 / -1;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
