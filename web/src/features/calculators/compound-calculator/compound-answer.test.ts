@@ -4,6 +4,10 @@ import {
   accumulationFacts,
   accumulationResult,
   balanceSpending,
+  delayedBalance,
+  incomeSetup,
+  incomeTotals,
+  monthlyRate,
   emptySentence,
   rateFieldValue,
   realMonthlyRate,
@@ -384,5 +388,92 @@ describe("rateFieldValue", () => {
     },
   ])("$name", ({ typed, indexed, from, text }) => {
     expect(rateFieldValue(typed, indexed, from)).toBe(text);
+  });
+});
+
+describe("delayedBalance", () => {
+  it.each([
+    { name: "no delay keeps the balance", delay: null, balance: 100000000 },
+    // 1,000,000.00 at 1% for 12 months: 1.01^12 = 1.12682503013.
+    { name: "twelve months of 1%", delay: 12, balance: 112682503 },
+    { name: "a delay of zero", delay: 0, balance: 100000000 },
+  ])("$name", ({ delay, balance }) => {
+    expect(delayedBalance(100000000, 0.01, delay)).toBe(balance);
+  });
+});
+
+describe("incomeTotals", () => {
+  it("adds the living and the reinvested parts of every month", () => {
+    const row = { month: 1, opening: 0, income: 0, closing: 0 };
+
+    expect(
+      incomeTotals([
+        { ...row, reinvested: 250, living: 750 },
+        { ...row, month: 2, reinvested: 251, living: 752 },
+      ]),
+    ).toEqual({ living: 1502, reinvested: 501 });
+    expect(incomeTotals([])).toEqual({ living: 0, reinvested: 0 });
+  });
+});
+
+describe("monthlyRate", () => {
+  it.each([
+    { name: "no rate", typed: null, period: "year", rate: null },
+    {
+      name: "a monthly rate as typed",
+      typed: 0.01,
+      period: "month",
+      rate: 0.01,
+    },
+    {
+      name: "a yearly rate as a monthly one",
+      typed: 0.1,
+      period: "year",
+      rate: annualToMonthly(0.1),
+    },
+  ] as const)("$name", ({ typed, period, rate }) => {
+    expect(monthlyRate(typed, period)).toBe(rate);
+  });
+});
+
+describe("incomeSetup", () => {
+  const valid = {
+    balance: 100000000,
+    j: 0.01,
+    inflation: null,
+    months: 2,
+    share: 0.25,
+    delay: null,
+  };
+
+  it("holds the inputs and the net rate when all are valid", () => {
+    expect(incomeSetup(valid)).toEqual({
+      balance: 100000000,
+      j: 0.01,
+      net: 0.01,
+      months: 2,
+      share: 0.25,
+      term: 2,
+    });
+  });
+
+  it("compounds the balance through a delay and counts it in the term", () => {
+    const setup = incomeSetup({ ...valid, delay: 12 });
+
+    expect(setup?.balance).toBe(112682503);
+    expect(setup?.term).toBe(14);
+    expect(setup?.months).toBe(2);
+  });
+
+  it.each([
+    { name: "no balance", patch: { balance: null } },
+    { name: "a zero balance", patch: { balance: 0 } },
+    { name: "no rate", patch: { j: null } },
+    { name: "no term", patch: { months: null } },
+    { name: "an invalid share", patch: { share: null } },
+    { name: "inflation at the return", patch: { inflation: 0.2 } },
+    { name: "a zero rate", patch: { j: 0 } },
+  ])("is null for $name", ({ patch }) => {
+    expect(incomeSetup({ ...valid, ...patch })).toBeNull();
   });
 });

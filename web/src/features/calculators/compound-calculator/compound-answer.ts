@@ -4,6 +4,7 @@ import {
   monthlyIncome,
   splitIncome,
 } from "@/features/calculators/model/compound-math";
+import type { IncomeRow } from "@/features/calculators/model/compound-math";
 import { missingSentence } from "@/features/calculators/calculator-frame/missing-fields";
 import { rateText } from "@/features/calculators/model/format-rate";
 import { annualToMonthly } from "@/features/calculators/model/rate-math";
@@ -104,6 +105,30 @@ interface EmptySentenceInput<K extends string> {
   what: string;
   t: TFunction;
   tag: string;
+}
+
+interface IncomeSetupInput {
+  balance: number | null;
+  // A monthly rate as a fraction.
+  j: number | null;
+  inflation: number | null;
+  months: number | null;
+  // The share of the income reinvested, as a fraction.
+  share: number | null;
+  // Months the balance compounds before the income starts; null without a delay.
+  delay: number | null;
+}
+
+interface IncomeSetup {
+  // The balance when the income starts, in today's money.
+  balance: number;
+  j: number;
+  // The monthly return net of inflation.
+  net: number;
+  months: number;
+  share: number;
+  // The delay and the months of income, up to the term's end.
+  term: number;
 }
 
 interface SplitRowInput {
@@ -323,4 +348,56 @@ export function rateFieldValue(
   if (!indexed) return typed ?? "";
 
   return fromIndex === null ? "" : rateText(fromIndex.rate);
+}
+
+// The balance when the income starts: the balance compounds at the net monthly rate through the
+// delay without any withdrawal.
+export function delayedBalance(
+  balance: number,
+  net: number,
+  delay: number | null,
+): number {
+  return delay === null ? balance : futureValue(balance, net, delay);
+}
+
+// What the months of living on the income paid out in total.
+export function incomeTotals(rows: readonly IncomeRow[]): {
+  living: number;
+  reinvested: number;
+} {
+  return {
+    living: rows.reduce((sum, row) => sum + row.living, 0),
+    reinvested: rows.reduce((sum, row) => sum + row.reinvested, 0),
+  };
+}
+
+// A rate typed per month or per year as a monthly fraction; null without a rate.
+export function monthlyRate(
+  typed: number | null,
+  period: "month" | "year",
+): number | null {
+  if (typed === null) return null;
+
+  return period === "month" ? typed : annualToMonthly(typed);
+}
+
+// The inputs of the income mode once every one is valid and the return beats inflation; null
+// otherwise.
+export function incomeSetup(input: IncomeSetupInput): IncomeSetup | null {
+  const { balance, j, months, share } = input;
+
+  if (balance === null || balance <= 0 || j === null) return null;
+  if (months === null || share === null) return null;
+
+  const net = realMonthlyRate(j, input.inflation);
+  if (net <= 0) return null;
+
+  return {
+    balance: delayedBalance(balance, net, input.delay),
+    j,
+    net,
+    months,
+    share,
+    term: months + (input.delay ?? 0),
+  };
 }

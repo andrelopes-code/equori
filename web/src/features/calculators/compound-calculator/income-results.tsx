@@ -1,6 +1,7 @@
 import {
   Section,
   SectionBody,
+  SectionDescription,
   SectionHeader,
   SectionHeading,
   SectionTitle,
@@ -9,6 +10,7 @@ import {
 import { CalcTable } from "@/features/calculators/calculator-frame/calc-table";
 import { FactRows } from "@/features/calculators/calculator-frame/fact-rows";
 import type { CalculatorMoney } from "@/features/calculators/fields/use-calculator-money";
+import { incomeTotals } from "@/features/calculators/compound-calculator/compound-answer";
 import { yearlyIncome } from "@/features/calculators/model/compound-math";
 import type { IncomeRow } from "@/features/calculators/model/compound-math";
 import { useT } from "@/i18n/i18n-provider";
@@ -17,7 +19,7 @@ interface IncomeResultsProps {
   rows: readonly IncomeRow[];
   // The income that spends the balance over the withdrawal term, in the money of the rows.
   spending: number | null;
-  // The rows are in today's money.
+  // An inflation is set: the rows are in today's money and say so.
   inflation: boolean;
   money: CalculatorMoney;
 }
@@ -36,14 +38,18 @@ export function IncomeResults({
 
   if (first === undefined || last === undefined) return null;
 
-  const living = rows.reduce((sum, r) => sum + r.living, 0);
-  const reinvested = rows.reduce((sum, r) => sum + r.reinvested, 0);
+  const { living, reinvested } = incomeTotals(rows);
 
   return (
     <Section size="lg">
       <SectionHeader>
         <SectionTitle>
           <SectionHeading>{t("calc.compound.live.yearly")}</SectionHeading>
+          {inflation && (
+            <SectionDescription>
+              {t("calc.compound.live.today")}
+            </SectionDescription>
+          )}
         </SectionTitle>
       </SectionHeader>
 
@@ -75,9 +81,6 @@ export function IncomeResults({
               : [
                   {
                     term: t("calc.compound.income.spending"),
-                    ...(inflation
-                      ? { note: t("calc.compound.rows.today") }
-                      : {}),
                     value: money.format(spending),
                   },
                 ]),

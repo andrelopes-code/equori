@@ -1,6 +1,7 @@
 import type { ChartSeries } from "@slotted/core/chart";
 import { Chart } from "@slotted/react/chart";
 import { Stack } from "@slotted/react/stack";
+import { Text } from "@slotted/react/typography";
 
 import { CalcTable } from "@/features/calculators/calculator-frame/calc-table";
 import { CalculatorDetails } from "@/features/calculators/calculator-frame/calculator-details";
@@ -10,11 +11,13 @@ import { useT } from "@/i18n/i18n-provider";
 
 interface IncomeDetailsProps {
   rows: readonly IncomeRow[];
+  // An inflation is set: the rows are in today's money and say so.
+  inflation: boolean;
   money: CalculatorMoney;
 }
 
 // The month-by-month evidence of "live on income": the balance and every month in a table.
-export function IncomeDetails({ rows, money }: IncomeDetailsProps) {
+export function IncomeDetails({ rows, inflation, money }: IncomeDetailsProps) {
   const t = useT();
   const format = (v: number) => money.format(v);
   const series: ChartSeries<"label" | "balance">[] = [
@@ -33,6 +36,12 @@ export function IncomeDetails({ rows, money }: IncomeDetailsProps) {
       size={t("calc.compound.details.size", { months: String(rows.length) })}
     >
       <Stack gap={5}>
+        {inflation && (
+          <Text size="sm" tone="muted">
+            {t("calc.compound.live.today")}
+          </Text>
+        )}
+
         <Chart
           variant="card"
           aria-label={t("calc.compound.live.chart")}

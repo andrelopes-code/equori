@@ -167,6 +167,7 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.compound.live.col.living": "Consumido",
   "calc.compound.live.col.closing": "Patrimônio final",
   "calc.compound.live.year": "Ano {year}",
+  "calc.compound.live.today": "Valores em dinheiro de hoje",
   "calc.compound.step9":
     "Cada mês rende o patrimônio inicial vezes j; a parte reinvestida soma ao patrimônio do mês seguinte e o restante é consumido.",
   "calc.compound.formula8":

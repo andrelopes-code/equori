@@ -165,6 +165,7 @@ export const calculatorsEn = {
   "calc.compound.live.col.living": "Spent",
   "calc.compound.live.col.closing": "Closing balance",
   "calc.compound.live.year": "Year {year}",
+  "calc.compound.live.today": "Amounts in today's money",
   "calc.compound.step9":
     "Each month the opening balance earns j times its value; the reinvested part joins the next month's balance and the rest is spent.",
   "calc.compound.formula8":

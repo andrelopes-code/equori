@@ -3,8 +3,9 @@ import { CalculatorMethod } from "@/features/calculators/calculator-frame/calcul
 import { sources } from "@/features/calculators/compound-calculator/compound-sources";
 import {
   balanceSpending,
+  incomeSetup,
   livingIncome,
-  realMonthlyRate,
+  monthlyRate,
 } from "@/features/calculators/compound-calculator/compound-answer";
 import { IncomeAdjust } from "@/features/calculators/compound-calculator/income-adjust";
 import { IncomeAnswer } from "@/features/calculators/compound-calculator/income-answer";
@@ -21,8 +22,11 @@ import {
   incomeEvolution,
   REINVESTED_SHARE,
 } from "@/features/calculators/model/compound-math";
-import { readMonths, readUnit } from "@/features/calculators/model/duration";
-import { annualToMonthly } from "@/features/calculators/model/rate-math";
+import {
+  readMonths,
+  readUnit,
+  termUnits,
+} from "@/features/calculators/model/duration";
 import { incomeTermUnits } from "@/features/calculators/compound-calculator/income-inputs";
 import { withdrawUnits } from "@/features/calculators/compound-calculator/use-accumulation";
 
@@ -37,36 +41,44 @@ export function IncomeCalculator() {
   const unit = readUnit(search.monthsUnit, incomeTermUnits);
   const months = readMonths(search.months, unit, 1, maxMonths);
   const period = search.period === "month" ? "month" : "year";
-  const typed = readRate(search.rate);
-  const j =
-    typed === null ? null : period === "month" ? typed : annualToMonthly(typed);
+  const j = monthlyRate(readRate(search.rate), period);
   const balance = readMinor(search.initial);
   const share =
     search.share === undefined ? REINVESTED_SHARE : readShare(search.share);
   const inflation = readRate(search.inflation);
   const withdrawUnit = readUnit(search.withdrawUnit, withdrawUnits);
   const withdraw = readMonths(search.withdraw, withdrawUnit, 1, maxMonths);
+  const delayUnit = readUnit(search.delayUnit, termUnits);
+  // No default: a delay exists only once its group is open and holds a value.
+  const delay =
+    search.delay === undefined
+      ? null
+      : readMonths(search.delay, delayUnit, 0, maxMonths);
 
   if (money === null)
     return <CalculatorFrame id="compound" inputs={null} method={null} />;
 
   // The balance keeps its purchasing power at the return net of inflation, so the rows and the
   // answer state the same income, in today's money.
-  const net = j === null ? null : realMonthlyRate(j, inflation);
-  const ready =
-    balance !== null &&
-    balance > 0 &&
-    net !== null &&
-    net > 0 &&
-    months !== null &&
-    share !== null;
-  const rows = ready ? incomeEvolution(balance, net, share, months) : null;
-  const lasting = ready
-    ? livingIncome({ balance, j: j ?? 0, inflation, months, share })
-    : null;
+  const setup = incomeSetup({ balance, j, inflation, months, share, delay });
+  const rows =
+    setup === null
+      ? null
+      : incomeEvolution(setup.balance, setup.net, setup.share, setup.months);
+  const lasting =
+    setup === null
+      ? null
+      : livingIncome({
+          balance: setup.balance,
+          j: setup.j,
+          inflation,
+          months: setup.term,
+          share: setup.share,
+        });
+  const spendingBalance = setup?.balance ?? balance;
   const spending =
-    balance !== null && j !== null && withdraw !== null
-      ? balanceSpending({ balance, j, inflation, withdraw })
+    spendingBalance !== null && j !== null && withdraw !== null
+      ? balanceSpending({ balance: spendingBalance, j, inflation, withdraw })
       : null;
 
   return (
@@ -99,7 +111,13 @@ export function IncomeCalculator() {
       inputs={<IncomeInputs money={money} />}
       optional={<IncomeAdjust />}
       details={
-        rows === null ? undefined : <IncomeDetails rows={rows} money={money} />
+        rows === null ? undefined : (
+          <IncomeDetails
+            rows={rows}
+            inflation={inflation !== null}
+            money={money}
+          />
+        )
       }
       method={
         <CalculatorMethod id="compound" sources={sources} noIndexes={false} />

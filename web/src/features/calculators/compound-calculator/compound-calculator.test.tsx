@@ -434,13 +434,61 @@ describe("Compound interest calculator", () => {
       }),
       "4",
     );
-    // 1% less 0.3274% of inflation a month, on 1,000,000.00.
-    const figure = (await within(region).findByText(/^R\$6,72\d\.\d\d$/))
-      .textContent;
+    // 1.04^(1/12) - 1 = 0.32737398% a month of inflation; 1% less that is 0.67262602%, on
+    // 1,000,000.00 (100000000 minor): 672,626.02 minor, so 6,726.26.
+    await within(region).findByText("R$6,726.26");
     // The evidence states the income of the answer.
     expect(await result(catalogEn["calc.compound.live.firstIncome"])).toBe(
-      figure,
+      "R$6,726.26",
     );
+  });
+
+  it("names the money of the income rows when an inflation is set", async () => {
+    const today = catalogEn["calc.compound.live.today"];
+    const search =
+      "mode=income&initial=100000000&period=month&rate=1&months=2&monthsUnit=month";
+    const { unmount } = await open(`${search}&inflation=4`);
+    await answer();
+    // The evidence and the details carry it.
+    await screen.findAllByText(today);
+    expect(screen.getAllByText(today)).toHaveLength(2);
+    unmount();
+    await open(search);
+    await answer();
+    expect(screen.queryByText(today)).toBeNull();
+  });
+
+  it("starts the income after a delay while the balance compounds (CR7)", async () => {
+    await open(
+      "mode=income&initial=100000000&period=month&rate=1&months=2&monthsUnit=month&delay=12",
+    );
+    const region = await answer();
+    // 1,000,000.00 at 1% for 12 months is 1,126,825.03 (1.01^12 = 1.12682503); 1% of it is
+    // 11,268.25.
+    await within(region).findByText("R$11,268.25");
+    expect(await result(catalogEn["calc.compound.live.firstIncome"])).toBe(
+      "R$11,268.25",
+    );
+  });
+
+  it("opens the delay group in the income mode by its button", async () => {
+    const user = userEvent.setup();
+    await open(
+      "mode=income&initial=100000000&period=month&rate=1&months=2&monthsUnit=month",
+    );
+    const region = await answer();
+    await user.click(
+      screen.getByRole("button", {
+        name: catalogEn["calc.compound.delay.add"],
+      }),
+    );
+    await user.type(
+      await screen.findByRole("textbox", {
+        name: catalogEn["calc.compound.delay"],
+      }),
+      "12",
+    );
+    await within(region).findByText("R$11,268.25");
   });
 
   it("opens the withdrawal group in the income mode", async () => {
