@@ -7,7 +7,10 @@ import { systemNames } from "@/features/calculators/financing-calculator/financi
 import { solves } from "@/features/calculators/financing-calculator/financing-input";
 import type { Solve } from "@/features/calculators/financing-calculator/financing-input";
 import { useCalculatorSearch } from "@/features/calculators/model/calculator-search";
-import { addressKeys } from "@/features/calculators/financing-calculator/address-keys";
+import {
+  addressKeys,
+  choices,
+} from "@/features/calculators/financing-calculator/address-keys";
 import {
   readUnit,
   termUnits,
@@ -26,7 +29,7 @@ export function FinancingInputs({ solve, money }: FinancingInputsProps) {
   const [search, set] = useCalculatorSearch(addressKeys);
 
   const names = systemNames(locale.region);
-  const monthsUnit = readUnit(search.monthsUnit, termUnits);
+  const monthsUnit = readUnit(search.monthsUnit, choices.monthsUnit);
   const period = search.period === "month" ? "month" : "year";
 
   function handleSolve(chosen: Solve) {

@@ -1,6 +1,9 @@
 import { DurationField } from "@/features/calculators/fields/duration-field";
 import { useCalculatorSearch } from "@/features/calculators/model/calculator-search";
-import { addressKeys } from "@/features/calculators/compound-calculator/address-keys";
+import {
+  addressKeys,
+  choices,
+} from "@/features/calculators/compound-calculator/address-keys";
 import {
   readUnit,
   termUnits,
@@ -12,7 +15,7 @@ import { useT } from "@/i18n/i18n-provider";
 export function DelayField() {
   const t = useT();
   const [search, set] = useCalculatorSearch(addressKeys);
-  const unit = readUnit(search.delayUnit, termUnits);
+  const unit = readUnit(search.delayUnit, choices.delayUnit);
 
   return (
     <DurationField

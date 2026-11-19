@@ -26,3 +26,5 @@ manage_instrument acts on a security; action names the operation and code the se
 Instruments and prices are shared by every book of the instance; a contract of record_fixed_income belongs to its book alone.
 
 Opening a calculator. The assistant opens a calculator with its inputs filled through the tool open_calculator, which returns a link to the screen of the calculator. Amounts are read as decimal values in the base currency, a value finer than the currency is rejected, and rates are read in percent. The screen shows the result, the evidence and the method; the link carries no figure computed by the assistant.
+
+The calculators list. The list shows each calculator by the question it answers, and only the calculators with a screen. A calculator shows its answer first, then the inputs, the evidence and the method. An optional input, such as a delayed start, a withdrawal or an extra prepayment, stays closed until a button opens it, and a button that starts with "Remover" closes it and clears its values. The link of open_calculator fills the inputs, and an optional input that the link fills opens by itself.

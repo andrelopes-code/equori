@@ -6,3 +6,5 @@ export const addressKeys = [
   "releaseDate",
   "firstDue",
 ] as const;
+
+export const choices = {} as const;

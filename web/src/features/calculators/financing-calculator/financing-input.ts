@@ -1,23 +1,15 @@
+import { choices } from "@/features/calculators/financing-calculator/address-keys";
 import { solvePrice } from "@/features/calculators/financing-calculator/annuity";
 import {
   readMinor,
   readRate,
 } from "@/features/calculators/model/calculator-search";
-import {
-  readMonths,
-  readUnit,
-  termUnits,
-} from "@/features/calculators/model/duration";
+import { readMonths, readUnit } from "@/features/calculators/model/duration";
 import { annualToMonthly } from "@/features/calculators/model/rate-math";
 
-export type Solve = "installment" | "amount" | "rate" | "months";
+export type Solve = (typeof choices.solve)[number];
 
-export const solves: readonly Solve[] = [
-  "installment",
-  "amount",
-  "rate",
-  "months",
-];
+export const solves = choices.solve;
 
 export const maxMonths = 1200;
 
@@ -34,8 +26,9 @@ export const fieldOrder: readonly Field[] = [
 // The four figures of a loan read from the address, and the one that is solved. A figure that is
 // absent, invalid, or zero where it must be above zero counts as missing.
 export function readFinancing(search: Record<string, string | undefined>) {
-  const monthsUnit = readUnit(search.monthsUnit, termUnits);
-  const solve: Solve = solves.find((s) => s === search.solve) ?? "installment";
+  const monthsUnit = readUnit(search.monthsUnit, choices.monthsUnit);
+  const solve: Solve =
+    choices.solve.find((s) => s === search.solve) ?? "installment";
   const period = search.period === "month" ? "month" : "year";
   const rate = readRate(search.rate);
   const monthly =

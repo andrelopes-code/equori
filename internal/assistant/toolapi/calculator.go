@@ -5,13 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"net/url"
 	"regexp"
 	"slices"
 	"strconv"
 	"strings"
 	"time"
-	"unicode/utf8"
+	"unicode/utf16"
 
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
@@ -33,7 +34,8 @@ const (
 )
 
 const (
-	maxDebtsLength = 2400
+	maxDebtsLength = 2400 // UTF-16 units, as the screen reads it
+	maxMinor       = 1_000_000_000_000_000
 	minRate        = -99.99
 	maxRate        = 1000
 )
@@ -45,31 +47,20 @@ var (
 	idPattern      = regexp.MustCompile(`^[a-z0-9_]{2,40}$`)
 )
 
-// calculatorNames maps the id of a calculator to its English name and the question it answers.
+// calculatorNames maps the id of a calculator to its English name and the question of
+// `calc.<id>.question` in web/src/i18n/catalog-calculators.en.ts.
 var calculatorNames = map[string]struct{ title, question string }{
-	"compound": {
-		"Compound interest",
-		"How does an investment grow or reach a goal?",
-	},
-	"rates": {
-		"Rate conversion",
-		"What is a rate in another period or net of inflation?",
-	},
-	"correction":         {"Index correction", "What is an amount worth after an index?"},
-	"fixed-income":       {"Fixed income", "What does a security pay, net of tax?"},
-	"indexer-comparison": {"Compare indexers", "Which securities pay more, net of tax?"},
-	"financing": {
-		"Financing",
-		"What is the installment, amount, rate or term of a loan?",
-	},
-	"cash-or-installments": {"Cash or installments", "Is cash or installments cheaper?"},
-	"credit-cost":          {"Credit cost", "What is the real rate of a loan with fees?"},
-	"debt-payoff":          {"Debt payoff", "When are the debts paid?"},
-	"recurring-cost": {
-		"Recurring cost",
-		"What does a recurring payment cost?",
-	},
-	"own-or-rent": {"Own or rent", "Is owning or renting a home cheaper?"},
+	"compound":             {"Compound interest", "How much will an investment reach?"},
+	"rates":                {"Rate conversion", "What is a rate per month, per year or real?"},
+	"correction":           {"Index correction", "What is an amount worth corrected by an index?"},
+	"fixed-income":         {"Fixed income", "What is left of a security after tax?"},
+	"indexer-comparison":   {"Compare indexers", "Which security yields more to maturity?"},
+	"financing":            {"Financing", "What does a loan cost, and in which system?"},
+	"cash-or-installments": {"Cash or installments", "Is paying cash or in installments cheaper?"},
+	"credit-cost":          {"Credit cost", "What is the effective annual cost of an offer?"},
+	"debt-payoff":          {"Debt payoff", "In which order to pay the debts, and until when?"},
+	"recurring-cost":       {"Recurring cost", "What does an expense cost over the years?"},
+	"own-or-rent":          {"Own or rent", "Does owning cost less than renting?"},
 }
 
 // CalculatorKey is one address key of a calculator: the kind of its value and, for a choice, the
@@ -89,6 +80,9 @@ type Calculator struct {
 type BaseCurrency func(ctx context.Context, booksID int64) (money.Currency, error)
 
 type calculatorID string
+
+// Values lists the calculators with a screen, for the enum of the input schema.
+func (calculatorID) Values() []string { return slices.Sorted(maps.Keys(calculatorNames)) }
 
 // invalidValue is the reason a value is not accepted for its key; any other error is a failure
 // of the tool.
@@ -191,6 +185,7 @@ func calculatorQuery(
 
 		return cur, nil
 	}
+
 	query := url.Values{}
 
 	for _, in := range inputs {
@@ -243,7 +238,7 @@ func inputValue(
 			return "", invalidValue("must be one of " + strings.Join(k.Values, ", "))
 		}
 	case KindDebts:
-		if utf8.RuneCountInString(v) > maxDebtsLength {
+		if len(utf16.Encode([]rune(v))) > maxDebtsLength {
 			return "", invalidValue(fmt.Sprintf("must have at most %d characters", maxDebtsLength))
 		}
 	}
@@ -268,6 +263,10 @@ func amountValue(readCurrency func() (money.Currency, error), v string) (string,
 
 	if m.IsNegative() {
 		return "", invalidValue("must not be negative")
+	}
+
+	if m.Amount() > maxMinor {
+		return "", invalidValue("must not exceed 10^15 minor units")
 	}
 
 	return strconv.FormatInt(m.Amount(), 10), nil
@@ -340,14 +339,11 @@ func calculatorDescription(calculators []Calculator) string {
 	return b.String()
 }
 
-// keyList groups the keys of a calculator by kind; a choice shows its values.
+// keyList groups the keys of a calculator by kind. The values of a choice stay out of the
+// description to hold the size ceiling of the catalog; a wrong value returns the list.
 func keyList(c Calculator) string {
 	byKind := map[KeyKind][]string{}
 	for key, k := range c.Keys {
-		if k.Kind == KindChoice {
-			key += "=" + strings.Join(k.Values, "|")
-		}
-
 		byKind[k.Kind] = append(byKind[k.Kind], key)
 	}
 

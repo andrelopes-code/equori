@@ -1,4 +1,7 @@
-import { rateSourceKeys } from "@/features/calculators/rate-source/rate-source-keys";
+import {
+  rateSourceChoices,
+  rateSourceKeys,
+} from "@/features/calculators/rate-source/rate-source-keys";
 
 export const addressKeys = [
   "cash",
@@ -7,3 +10,10 @@ export const addressKeys = [
   "first",
   ...rateSourceKeys("compare"),
 ] as const;
+
+export const choices = {
+  first: ["now"],
+  comparePeriod: rateSourceChoices.period,
+  compareForm: rateSourceChoices.form,
+  compareBasis: rateSourceChoices.basis,
+} as const;

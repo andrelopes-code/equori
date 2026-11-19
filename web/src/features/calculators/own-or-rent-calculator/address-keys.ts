@@ -9,3 +9,5 @@ export const addressKeys = [
   "deductibleTax",
   "mortgage",
 ] as const;
+
+export const choices = {} as const;

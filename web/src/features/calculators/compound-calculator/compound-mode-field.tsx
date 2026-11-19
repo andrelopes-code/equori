@@ -1,6 +1,9 @@
 import { SolveGroup } from "@/features/calculators/calculator-frame/solve-group";
 import { useCalculatorSearch } from "@/features/calculators/model/calculator-search";
-import { addressKeys } from "@/features/calculators/compound-calculator/address-keys";
+import {
+  addressKeys,
+  choices,
+} from "@/features/calculators/compound-calculator/address-keys";
 import { useT } from "@/i18n/i18n-provider";
 
 type CompoundMode = "final" | "target" | "income";
@@ -10,9 +13,7 @@ export function CompoundModeField() {
   const t = useT();
   const [search, set] = useCalculatorSearch(addressKeys);
   const mode: CompoundMode =
-    search.mode === "target" || search.mode === "income"
-      ? search.mode
-      : "final";
+    choices.mode.find((m) => m === search.mode) ?? "final";
 
   return (
     <SolveGroup<CompoundMode>

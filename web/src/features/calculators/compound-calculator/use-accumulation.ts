@@ -5,14 +5,12 @@ import {
   readRate,
   useCalculatorSearch,
 } from "@/features/calculators/model/calculator-search";
-import { addressKeys } from "@/features/calculators/compound-calculator/address-keys";
-import { depositForTarget } from "@/features/calculators/model/compound-math";
 import {
-  readMonths,
-  readUnit,
-  termUnits,
-} from "@/features/calculators/model/duration";
-import type { DurationUnit } from "@/features/calculators/model/duration";
+  addressKeys,
+  choices,
+} from "@/features/calculators/compound-calculator/address-keys";
+import { depositForTarget } from "@/features/calculators/model/compound-math";
+import { readMonths, readUnit } from "@/features/calculators/model/duration";
 import {
   annualToMonthly,
   monthlyToAnnual,
@@ -29,7 +27,7 @@ import {
 
 export const maxMonths = 1200;
 // A withdrawal lasts years more often than months.
-export const withdrawUnits: readonly DurationUnit[] = ["year", "month"];
+export const withdrawUnits = choices.withdrawUnit;
 
 export type AccumulationInput = ReturnType<typeof useAccumulation>;
 
@@ -49,7 +47,7 @@ export function useAccumulation() {
     index?.id ?? "",
     index?.expected ?? false,
   );
-  const monthsUnit = readUnit(search.monthsUnit, termUnits);
+  const monthsUnit = readUnit(search.monthsUnit, choices.monthsUnit);
   const months = readMonths(search.months, monthsUnit, 1, maxMonths);
   const fromIndex = useIndexRate(index, floating, months ?? 12);
   const inflationIndex = monthly.find((i) => i.id === search.inflationIndex);
@@ -63,7 +61,7 @@ export function useAccumulation() {
     inflationIndex === undefined
       ? readRate(search.inflation)
       : (fromInflationIndex?.rate ?? null);
-  const delayUnit = readUnit(search.delayUnit, termUnits);
+  const delayUnit = readUnit(search.delayUnit, choices.delayUnit);
   // No default: a delay exists only once its group is open and holds a value.
   const delay =
     search.delay === undefined
@@ -73,7 +71,7 @@ export function useAccumulation() {
   const goal = readMinor(search.target);
   const j = annual === null ? null : annualToMonthly(annual);
   const deposit = depositOf(target, goal, initial, j, months, search.deposit);
-  const withdrawUnit = readUnit(search.withdrawUnit, withdrawUnits);
+  const withdrawUnit = readUnit(search.withdrawUnit, choices.withdrawUnit);
   const withdraw = readMonths(search.withdraw, withdrawUnit, 1, maxMonths);
   // Empty by default: no source gives a volatility (design §2, anti-goals).
   const volatility = readRate(search.volatility);

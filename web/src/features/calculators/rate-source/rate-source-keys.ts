@@ -11,3 +11,11 @@ export function rateSourceKeys<P extends string>(prefix: P) {
     `${prefix}Basis`,
   ] as const;
 }
+
+// The values the address accepts for the period, the form and the basis of a rate that follows an
+// index.
+export const rateSourceChoices = {
+  period: ["month", "year"],
+  form: ["percent", "spread"],
+  basis: ["trailing", "current", "expected"],
+} as const;

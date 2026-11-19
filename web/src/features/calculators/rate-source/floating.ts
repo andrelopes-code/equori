@@ -1,4 +1,5 @@
 import { readRate } from "@/features/calculators/model/calculator-search";
+import { rateSourceChoices } from "@/features/calculators/rate-source/rate-source-keys";
 import { quotedForm } from "@/features/calculators/rate-source/index-catalog";
 import type { Basis } from "@/features/calculators/rate-source/index-rates";
 
@@ -38,15 +39,14 @@ export function readFloating(
   indexId: string,
   expected = false,
 ): Floating {
-  const named = search[keys.form];
-  const form: FloatingForm =
-    named === "percent" || named === "spread"
-      ? named
-      : search[keys.percent] !== undefined
-        ? "percent"
-        : search[keys.spread] !== undefined
-          ? "spread"
-          : quotedForm(indexId);
+  const named = rateSourceChoices.form.find((f) => f === search[keys.form]);
+  const implied: FloatingForm =
+    search[keys.percent] !== undefined
+      ? "percent"
+      : search[keys.spread] !== undefined
+        ? "spread"
+        : quotedForm(indexId);
+  const form = named ?? implied;
   const text =
     form === "percent"
       ? (search[keys.percent] ?? "100")

@@ -10390,7 +10390,7 @@
   },
   {
     "name": "open_calculator",
-    "description": "Use it to link a calculator with its inputs filled. Prefer this link to computing the figure: the screen shows the result, the evidence and the method. Do not use it for the book's data. Keys by kind, amounts in the base currency, rates in percent:\ncash-or-installments: Is cash or installments cheaper? amount cash,installment; choice compareBasis=trailing|current|expected,compareForm=percent|spread,comparePeriod=month|year,first=now; id compareIndex; integer count; rate compare,comparePercent,compareSpread.\ncompound: How does an investment grow or reach a goal? amount deposit,initial,target; choice basis=trailing|current|expected,delayUnit=month|year,form=percent|spread,mode=final|target|income,monthsUnit=month|year,period=month|year,withdrawUnit=year|month; decimal delay,months,withdraw; id index,inflationIndex; rate inflation,percent,rate,share,spread,volatility.\ncorrection: What is an amount worth after an index? amount amount; id index; month from,to.\ncredit-cost: What is the real rate of a loan with fees? amount fees,installment,released; date firstDue,releaseDate; integer count.\ndebt-payoff: When are the debts paid? amount budget; choice ratePeriod=month|year; debts debts.\nfinancing: What is the installment, amount, rate or term of a loan? amount amount,installment,prepayAmount; choice monthsUnit=month|year,period=month|year,solve=installment|amount|rate|months; decimal months; integer prepayMonth; rate rate.\nfixed-income: What does a security pay, net of tax? amount amount; choice daysUnit=day|month|year,kind=taxable|exempt,rateBasis=trailing|current|expected,rateForm=percent|spread,ratePeriod=month|year; decimal days; id rateIndex; rate rate,ratePercent,rateSpread,taxRate.\nindexer-comparison: Which securities pay more, net of tax? No keys.\nown-or-rent: Is owning or renting a home cheaper? amount price,rent; rate appreciation,deductibleTax,maintenance,mortgage,propertyTax,riskFree,riskPremium.\nrates: What is a rate in another period or net of inflation? choice basis=trailing|current|expected,form=percent|spread,period=month|year; id index; rate inflation,percent,rate,spread.\nrecurring-cost: What does a recurring payment cost? amount amount; choice per=month|year; id schedule; integer years; rate rate.\n",
+    "description": "Use it to link a calculator with its inputs filled. Prefer this link to computing the figure: the screen shows the result, the evidence and the method. Do not use it for the book's data. Keys by kind, amounts in the base currency, rates in percent:\ncash-or-installments: Is paying cash or in installments cheaper? amount cash,installment; choice compareBasis,compareForm,comparePeriod,first; id compareIndex; integer count; rate compare,comparePercent,compareSpread.\ncompound: How much will an investment reach? amount deposit,initial,target; choice basis,delayUnit,form,mode,monthsUnit,period,withdrawUnit; decimal delay,months,withdraw; id index,inflationIndex; rate inflation,percent,rate,share,spread,volatility.\ncorrection: What is an amount worth corrected by an index? amount amount; id index; month from,to.\ncredit-cost: What is the effective annual cost of an offer? amount fees,installment,released; date firstDue,releaseDate; integer count.\ndebt-payoff: In which order to pay the debts, and until when? amount budget; choice ratePeriod; debts debts.\nfinancing: What does a loan cost, and in which system? amount amount,installment,prepayAmount; choice monthsUnit,period,solve; decimal months; integer prepayMonth; rate rate.\nfixed-income: What is left of a security after tax? amount amount; choice daysUnit,kind,rateBasis,rateForm,ratePeriod; decimal days; id rateIndex; rate rate,ratePercent,rateSpread,taxRate.\nindexer-comparison: Which security yields more to maturity? No keys.\nown-or-rent: Does owning cost less than renting? amount price,rent; rate appreciation,deductibleTax,maintenance,mortgage,propertyTax,riskFree,riskPremium.\nrates: What is a rate per month, per year or real? choice basis,form,period; id index; rate inflation,percent,rate,spread.\nrecurring-cost: What does an expense cost over the years? amount amount; choice per; id schedule; integer years; rate rate.\n",
     "effect": "read_only",
     "idempotent": true,
     "input_schema": {
@@ -10398,7 +10398,20 @@
       "properties": {
         "calculator": {
           "type": "string",
-          "description": "calculator to open"
+          "description": "calculator to open",
+          "enum": [
+            "cash-or-installments",
+            "compound",
+            "correction",
+            "credit-cost",
+            "debt-payoff",
+            "financing",
+            "fixed-income",
+            "indexer-comparison",
+            "own-or-rent",
+            "rates",
+            "recurring-cost"
+          ]
         },
         "inputs": {
           "type": "array",

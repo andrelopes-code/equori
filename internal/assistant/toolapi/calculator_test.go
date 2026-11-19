@@ -8,6 +8,8 @@ import (
 	"log/slog"
 	"maps"
 	"net/url"
+	"os"
+	"regexp"
 	"slices"
 	"strings"
 	"testing"
@@ -19,21 +21,25 @@ import (
 	"github.com/andrelopes-code/equori/web"
 )
 
+var questionPattern = regexp.MustCompile(`"calc\.([a-z-]+)\.question":\s*"([^"]*)"`)
+
 func TestOpenCalculator(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name      string
-		base      money.Currency
-		calc      string
-		inputs    map[string]string
-		extra     [][2]string // pairs appended after the sorted inputs, to repeat a key
-		baseErr   bool
-		wantPath  string
-		wantTitle string
-		wantField string
-		wantQuery string
-		wantFault bool // an error that is not invalid_arguments
+		name       string
+		base       money.Currency
+		calc       string
+		inputs     map[string]string
+		extra      [][2]string // pairs appended after the sorted inputs, to repeat a key
+		baseErr    bool
+		wantPath   string
+		wantTitle  string
+		wantField  string
+		wantSchema string // a schema rejection: the detail names this property
+		wantQuery  string
+		wantFault  bool // an error that is not invalid_arguments
+		wantReads  int  // base currency reads; checked when above zero
 	}{
 		{
 			name:      "financing",
@@ -72,10 +78,10 @@ func TestOpenCalculator(t *testing.T) {
 			wantTitle: "Compare indexers",
 		},
 		{
-			name:      "unwritten",
-			base:      "BRL",
-			calc:      "reserve",
-			wantField: "calculator",
+			name:       "unwritten",
+			base:       "BRL",
+			calc:       "reserve",
+			wantSchema: "/properties/calculator",
 		},
 		{
 			name:      "debts_encoded",
@@ -175,6 +181,46 @@ func TestOpenCalculator(t *testing.T) {
 			wantField: "inputs.debts",
 		},
 		{
+			name:      "debts_utf16",
+			base:      "BRL",
+			calc:      "debt-payoff",
+			inputs:    map[string]string{"debts": strings.Repeat("\U0001F600", 1200)},
+			wantPath:  "/calculators/debt-payoff",
+			wantTitle: "Debt payoff",
+			wantQuery: strings.Repeat("\U0001F600", 1200),
+		},
+		{
+			name:      "debts_utf16_over_limit",
+			base:      "BRL",
+			calc:      "debt-payoff",
+			inputs:    map[string]string{"debts": strings.Repeat("\U0001F600", 1201)},
+			wantField: "inputs.debts",
+		},
+		{
+			name:      "amount_at_ceiling",
+			base:      "BRL",
+			calc:      "financing",
+			inputs:    map[string]string{"amount": "10000000000000"},
+			wantPath:  "/calculators/financing?amount=1000000000000000",
+			wantTitle: "Financing",
+		},
+		{
+			name:      "amount_ceiling",
+			base:      "BRL",
+			calc:      "financing",
+			inputs:    map[string]string{"amount": "10000000000000.01"},
+			wantField: "inputs.amount",
+		},
+		{
+			name:      "two_amounts",
+			base:      "BRL",
+			calc:      "financing",
+			inputs:    map[string]string{"amount": "100", "installment": "1"},
+			wantPath:  "/calculators/financing?amount=10000&installment=100",
+			wantTitle: "Financing",
+			wantReads: 1,
+		},
+		{
 			name:      "negative_amount",
 			base:      "BRL",
 			calc:      "financing",
@@ -202,9 +248,26 @@ func TestOpenCalculator(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			res := callOpenCalculator(t, baseOf(tt.base, tt.baseErr), tt.calc, tt.inputs, tt.extra)
+			reads := 0
+			base := baseOf(tt.base, tt.baseErr)
+			counted := func(ctx context.Context, booksID int64) (money.Currency, error) {
+				reads++
+
+				return base(ctx, booksID)
+			}
+
+			res := callOpenCalculator(t, counted, tt.calc, tt.inputs, tt.extra)
+			if tt.wantReads > 0 && reads != tt.wantReads {
+				t.Fatalf("base currency reads = %d, want %d", reads, tt.wantReads)
+			}
+
 			if tt.wantFault {
 				checkFault(t, res)
+				return
+			}
+
+			if tt.wantSchema != "" {
+				checkSchemaError(t, res, tt.wantSchema)
 				return
 			}
 
@@ -269,6 +332,8 @@ func TestParseCalculators(t *testing.T) {
 	}) {
 		t.Fatalf("calculators are not sorted by id")
 	}
+
+	checkNames(t, calcs)
 
 	for _, bad := range []string{
 		`{"x":{"k":{"kind":"nope"}}}`,
@@ -343,6 +408,19 @@ func checkToolError(t *testing.T, res tool.Result, field string) {
 	}
 }
 
+func checkSchemaError(t *testing.T, res tool.Result, property string) {
+	t.Helper()
+
+	var e tool.Error
+	if err := json.Unmarshal(res.Content, &e); err != nil {
+		t.Fatal(err)
+	}
+
+	if !res.IsError || e.Code != "invalid_arguments" || !strings.Contains(e.Detail, property) {
+		t.Fatalf("result = %s, want invalid_arguments on %s", res.Content, property)
+	}
+}
+
 func baseOf(currency money.Currency, fail bool) toolapi.BaseCurrency {
 	return func(context.Context, int64) (money.Currency, error) {
 		if fail {
@@ -368,5 +446,47 @@ func checkFault(t *testing.T, res tool.Result) {
 	if e.Code == "invalid_arguments" ||
 		strings.Contains(string(res.Content), "connection refused") {
 		t.Fatalf("error = %s, want a fault without the internal text", res.Content)
+	}
+}
+
+// checkNames ties the names of the tool to the catalog of the screens: every id has a title and
+// the question of its description line is the English "calc.<id>.question".
+func checkNames(t *testing.T, calcs []toolapi.Calculator) {
+	t.Helper()
+
+	src, err := os.ReadFile("../../../web/src/i18n/catalog-calculators.en.ts")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	questions := map[string]string{}
+	for _, m := range questionPattern.FindAllStringSubmatch(string(src), -1) {
+		questions[m[1]] = m[2]
+	}
+
+	description := toolapi.Tools(nil, calcs, baseOf("BRL", false))[1].Spec().Description
+
+	for _, c := range calcs {
+		want, ok := questions[c.ID]
+		if !ok {
+			t.Errorf("%s: no calc.%s.question in the English catalog", c.ID, c.ID)
+
+			continue
+		}
+
+		if !strings.Contains(description, "\n"+c.ID+": "+want+" ") {
+			t.Errorf("%s: description does not hold the catalog question %q", c.ID, want)
+		}
+
+		res := callOpenCalculator(t, baseOf("BRL", false), c.ID, nil, nil)
+
+		var out struct{ Title string }
+		if err := json.Unmarshal(res.Content, &out); err != nil {
+			t.Fatal(err)
+		}
+
+		if out.Title == "" || out.Title == c.ID {
+			t.Errorf("%s: title = %q, want an English name", c.ID, out.Title)
+		}
 	}
 }

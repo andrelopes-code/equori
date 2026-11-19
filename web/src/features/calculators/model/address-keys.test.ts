@@ -5,6 +5,12 @@ import { writtenIds } from "@/features/calculators/model/calculators";
 
 interface Folder {
   addressKeys: readonly string[];
+  choices: Record<string, readonly string[]>;
+}
+
+interface Row {
+  kind: string;
+  values?: string[];
 }
 
 // One module per calculator folder.
@@ -21,6 +27,22 @@ describe("address keys", () => {
       Object.keys(table[id]).sort(),
     );
   });
+
+  it.each(writtenIds)(
+    "%s reads each choice with the values of its row of the table",
+    (id) => {
+      const row: Record<string, Row> = table[id];
+      const want = Object.fromEntries(
+        Object.entries(row)
+          .filter(([, key]) => key.kind === "choice")
+          .map(([name, key]) => [name, key.values]),
+      );
+
+      expect(
+        folders[`../${folderOf(id)}/address-keys.ts`]?.choices ?? {},
+      ).toEqual(want);
+    },
+  );
 
   it("holds a row for every written calculator and no other", () => {
     expect(Object.keys(table).sort()).toEqual([...writtenIds].sort());

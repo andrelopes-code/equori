@@ -9,14 +9,16 @@ import {
   readRate,
   useCalculatorSearch,
 } from "@/features/calculators/model/calculator-search";
-import { addressKeys } from "@/features/calculators/fixed-income-calculator/address-keys";
+import {
+  addressKeys,
+  choices,
+} from "@/features/calculators/fixed-income-calculator/address-keys";
 import { ChoiceField } from "@/features/calculators/fields/choice-field";
 import {
   readDays,
   readUnit,
   unitPatch,
 } from "@/features/calculators/model/duration";
-import type { DurationUnit } from "@/features/calculators/model/duration";
 import { DurationField } from "@/features/calculators/fields/duration-field";
 import {
   equivalentExempt,
@@ -37,7 +39,7 @@ import { useAppLocale, useAppLocaleState, useT } from "@/i18n/i18n-provider";
 
 // Twenty years of days: the longest holding the index history covers.
 const maxDays = 7320;
-const dayUnits: readonly DurationUnit[] = ["day", "month", "year"];
+const dayUnits = choices.daysUnit;
 
 // Design §5, fixed-income: the yield of a security after the tax of the person's region
 // (design §7), and the rate of the other kind that leaves the same yield.

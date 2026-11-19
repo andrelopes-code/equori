@@ -18,18 +18,16 @@ import {
   readRate,
   useCalculatorSearch,
 } from "@/features/calculators/model/calculator-search";
-import { addressKeys } from "@/features/calculators/compound-calculator/address-keys";
+import {
+  addressKeys,
+  choices,
+} from "@/features/calculators/compound-calculator/address-keys";
 import {
   incomeEvolution,
   REINVESTED_SHARE,
 } from "@/features/calculators/model/compound-math";
-import {
-  readMonths,
-  readUnit,
-  termUnits,
-} from "@/features/calculators/model/duration";
+import { readMonths, readUnit } from "@/features/calculators/model/duration";
 import { incomeTermUnits } from "@/features/calculators/compound-calculator/income-inputs";
-import { withdrawUnits } from "@/features/calculators/compound-calculator/use-accumulation";
 
 const maxMonths = 1200;
 
@@ -47,9 +45,9 @@ export function IncomeCalculator() {
   const share =
     search.share === undefined ? REINVESTED_SHARE : readShare(search.share);
   const inflation = readRate(search.inflation);
-  const withdrawUnit = readUnit(search.withdrawUnit, withdrawUnits);
+  const withdrawUnit = readUnit(search.withdrawUnit, choices.withdrawUnit);
   const withdraw = readMonths(search.withdraw, withdrawUnit, 1, maxMonths);
-  const delayUnit = readUnit(search.delayUnit, termUnits);
+  const delayUnit = readUnit(search.delayUnit, choices.delayUnit);
   // No default: a delay exists only once its group is open and holds a value.
   const delay =
     search.delay === undefined

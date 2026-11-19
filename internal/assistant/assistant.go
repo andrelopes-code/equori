@@ -4,6 +4,7 @@ package assistant
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"net/http"
 	"time"
@@ -159,6 +160,10 @@ func navigationScreens(cfg Config) ([]guide.Screen, error) {
 func parseCalculators(cfg Config) ([]toolapi.Calculator, error) {
 	if len(cfg.Calculators) == 0 {
 		return nil, nil
+	}
+
+	if cfg.BaseCurrency == nil {
+		return nil, errors.New("assistant: calculators need a base currency")
 	}
 
 	return toolapi.ParseCalculators(cfg.Calculators)

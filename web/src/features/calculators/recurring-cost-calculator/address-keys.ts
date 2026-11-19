@@ -5,3 +5,5 @@ export const addressKeys = [
   "per",
   "schedule",
 ] as const;
+
+export const choices = { per: ["month", "year"] } as const;

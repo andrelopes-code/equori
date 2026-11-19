@@ -20,7 +20,10 @@ import {
   readRate,
   useCalculatorSearch,
 } from "@/features/calculators/model/calculator-search";
-import { addressKeys } from "@/features/calculators/debt-payoff-calculator/address-keys";
+import {
+  addressKeys,
+  choices,
+} from "@/features/calculators/debt-payoff-calculator/address-keys";
 import { ChoiceField } from "@/features/calculators/fields/choice-field";
 import { payoffPlan } from "@/features/calculators/debt-payoff-calculator/debt-math";
 import type {
@@ -109,9 +112,7 @@ export function DebtPayoffCalculator() {
 
   const quote = debtRateQuote(profile.region);
   const period =
-    search.ratePeriod === "month" || search.ratePeriod === "year"
-      ? search.ratePeriod
-      : quote.period;
+    choices.ratePeriod.find((p) => p === search.ratePeriod) ?? quote.period;
   const budget = readMinor(search.budget);
   const debts: Debt[] = [];
   for (const r of rows) {
