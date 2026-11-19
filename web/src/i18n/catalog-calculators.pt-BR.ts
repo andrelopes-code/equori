@@ -720,6 +720,19 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.debt.avalanche.help": "Paga primeiro a dívida de maior taxa.",
   "calc.debt.snowball.help": "Paga primeiro a dívida de menor saldo.",
   "calc.debt.minimum.help": "O menor pagamento mensal que cada dívida aceita.",
+  "calc.recurring.answer.lead": "Total pago em {years} anos",
+  "calc.recurring.answer.sentence": "{amount} por {per}, sem juros.",
+  "calc.recurring.answer.sentenceRate":
+    "{amount} por {per}; aplicado a {rate} ao ano, viraria {future}.",
+  "calc.recurring.answer.what": "o total pago",
+  "calc.recurring.answer.perMonth": "mês",
+  "calc.recurring.answer.perYear": "ano",
+  "calc.recurring.bars.title": "O que a despesa custa",
+  "calc.recurring.future.help":
+    "O valor que os mesmos pagamentos teriam se aplicados à taxa.",
+  "calc.recurring.rate.add": "Comparar com uma aplicação",
+  "calc.recurring.rate.remove": "Remover taxa",
+  "calc.recurring.rate.legend": "Taxa da aplicação",
   "calc.recurring.rate.hint":
     "Acrescenta quanto os mesmos pagamentos alcançariam se fossem investidos.",
   "calc.recurring.summaryMonth": "{amount} todo mês por {years} anos.",

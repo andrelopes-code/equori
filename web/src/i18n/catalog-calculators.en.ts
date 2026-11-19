@@ -712,6 +712,19 @@ export const calculatorsEn = {
   "calc.debt.avalanche.help": "Pays the highest rate first.",
   "calc.debt.snowball.help": "Pays the smallest balance first.",
   "calc.debt.minimum.help": "The smallest monthly payment each debt accepts.",
+  "calc.recurring.answer.lead": "Total paid in {years} years",
+  "calc.recurring.answer.sentence": "{amount} per {per}, without interest.",
+  "calc.recurring.answer.sentenceRate":
+    "{amount} per {per}; invested at {rate} a year, it would become {future}.",
+  "calc.recurring.answer.what": "the total paid",
+  "calc.recurring.answer.perMonth": "month",
+  "calc.recurring.answer.perYear": "year",
+  "calc.recurring.bars.title": "What the expense costs",
+  "calc.recurring.future.help":
+    "The amount the same payments would reach if invested at the rate.",
+  "calc.recurring.rate.add": "Compare with an investment",
+  "calc.recurring.rate.remove": "Remove the rate",
+  "calc.recurring.rate.legend": "Investment rate",
   "calc.recurring.rate.hint":
     "Adds what the same payments would reach if invested.",
   "calc.recurring.summaryMonth": "{amount} every month for {years} years.",
