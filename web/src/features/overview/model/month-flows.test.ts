@@ -53,6 +53,35 @@ describe("monthFlows", () => {
     );
     expect(flows).toEqual({ income: 840000, spending: 15000, moved: 100000 });
   });
+
+  it("counts only the realized result of a sale as income or spending", () => {
+    const withResults = new Map([
+      ...accounts,
+      ["gains", { id: "gains", class: "income" as const }],
+      ["losses", { id: "losses", class: "expense" as const }],
+    ]);
+
+    const flows = monthFlows(
+      [
+        // A redemption of 10,000.00 with a gain of 2,392.54: the holding gives its cost.
+        tx([
+          ["chk", 1000000],
+          ["out", -760746],
+          ["gains", -239254],
+        ]),
+        // A sale of 4,995.10 at a loss of 517.35.
+        tx([
+          ["chk", 499510],
+          ["out", -551245],
+          ["losses", 51735],
+        ]),
+      ],
+      new Set(["chk"]),
+      withResults,
+    );
+
+    expect(flows).toEqual({ income: 239254, spending: 0, moved: -1260256 });
+  });
 });
 
 describe("budgetPace", () => {

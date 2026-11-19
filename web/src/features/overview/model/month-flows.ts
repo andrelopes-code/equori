@@ -24,18 +24,24 @@ export function monthFlows(
   for (const tx of transactions) {
     if (tx.voided_at !== undefined) continue;
     let scoped = 0;
+    let earned = 0;
+    let spent = 0;
     let category: AccountClass | undefined;
     let outside = false;
     for (const posting of tx.postings) {
       const account = accounts.get(posting.account_id);
       if (account === undefined) continue;
       if (scope.has(account.id)) scoped += posting.amount.amount;
-      else if (account.class === "income" || account.class === "expense")
+      else if (account.class === "income" || account.class === "expense") {
         category = account.class;
-      else outside = true;
+        if (account.class === "income") earned -= posting.amount.amount;
+        else spent += posting.amount.amount;
+      } else outside = true;
     }
     if (scoped === 0) continue;
-    if (
+    if (category !== undefined && outside)
+      addMixed(flows, scoped, earned, spent);
+    else if (
       category === "income" ||
       (category === undefined && !outside && scoped > 0)
     )
@@ -44,6 +50,25 @@ export function monthFlows(
     else flows.moved -= scoped;
   }
   return flows;
+}
+
+// A transaction that also moves another balance account (a sale against its holding, a transfer
+// with a fee) counts only its income or expense postings; the rest of the scoped amount moved.
+function addMixed(
+  flows: MonthFlows,
+  scoped: number,
+  earned: number,
+  spent: number,
+) {
+  let part = 0;
+  if (scoped > 0 && earned > 0) {
+    part = Math.min(scoped, earned);
+    flows.income += part;
+  } else if (scoped < 0 && spent > 0) {
+    part = -Math.min(-scoped, spent);
+    flows.spending -= part;
+  }
+  flows.moved -= scoped - part;
 }
 
 export type Pace = "ok" | "ahead" | "over";
