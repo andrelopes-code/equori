@@ -61,6 +61,7 @@ export function ConversationFeed({
                   created_at: last.created_at,
                   proposals: [],
                   files: [],
+                  views: [],
                 }}
                 onRetry={onRetry}
               />

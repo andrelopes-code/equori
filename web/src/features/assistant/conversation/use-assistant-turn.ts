@@ -120,6 +120,7 @@ export function useAssistantTurn(page: string): AssistantTurn {
             created_at: now,
             proposals: [],
             files,
+            views: [],
           };
           queryClient.setQueryData<ConversationDetail>(
             assistantKeys.conversation(id),

@@ -2,7 +2,9 @@ package httpapi
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/andrelopes-code/equori/internal/assistant/app"
@@ -32,9 +34,19 @@ func (s *Server) toMessage(
 		CreatedAt: m.CreatedAt,
 		Proposals: []AssistantProposal{},
 		Files:     make([]AssistantFile, len(m.Files)),
+		Views:     make([]AssistantView, len(m.Views)),
 	}
 	for i, f := range m.Files {
 		out.Files[i] = toFileAPI(f)
+	}
+
+	for i, v := range m.Views {
+		var payload AssistantViewPayload
+		if err := json.Unmarshal(v.Payload, &payload); err != nil {
+			return AssistantMessage{}, fmt.Errorf("decode view %s: %w", v.ID, err)
+		}
+
+		out.Views[i] = AssistantView{Id: v.ID, Form: v.Form, Payload: payload}
 	}
 
 	if m.Outcome != domain.OutcomeNone {

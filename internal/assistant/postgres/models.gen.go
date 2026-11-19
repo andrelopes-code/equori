@@ -76,3 +76,14 @@ type AssistantUsageLimit struct {
 	RequestsPerDay *int32
 	TokensPerDay   *int64
 }
+
+type AssistantView struct {
+	ID             uuid.UUID
+	BooksID        int64
+	ConversationID uuid.UUID
+	MessageID      uuid.UUID
+	Seq            int32
+	Form           string
+	Payload        []byte
+	CreatedAt      time.Time
+}

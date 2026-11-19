@@ -4998,6 +4998,74 @@ export interface components {
             /** @description The files the message carried, in the order uploaded (FU5). */
             files: components["schemas"]["AssistantFile"][];
             proposals: components["schemas"]["AssistantProposal"][];
+            /** @description The views of an answer, built by the server from reads of its turn (answer views design, V9). */
+            views: components["schemas"]["AssistantView"][];
+        };
+        AssistantView: {
+            /** Format: uuid */
+            id: string;
+            form: string;
+            payload: components["schemas"]["AssistantViewPayload"];
+        };
+        AssistantViewPayload: {
+            title: components["schemas"]["AssistantViewText"];
+            window: components["schemas"]["AssistantViewWindow"];
+            verdict: components["schemas"]["AssistantViewText"];
+            prov?: components["schemas"]["AssistantViewText"];
+            open?: components["schemas"]["AssistantViewLink"];
+            next: string[];
+            rows: components["schemas"]["AssistantViewTable"];
+            /** @description The body of the form; its shape is the form's (answer views design, V6). */
+            data: {
+                [key: string]: unknown;
+            };
+        };
+        AssistantViewText: {
+            key: string;
+            params?: {
+                [key: string]: components["schemas"]["AssistantViewValue"];
+            };
+        };
+        /** @description One typed figure; exactly one property is present (V7). */
+        AssistantViewValue: {
+            text?: string;
+            money?: components["schemas"]["AssistantViewMoney"];
+            /**
+             * Format: int64
+             * @description share in basis points
+             */
+            bp?: number;
+            /** Format: int64 */
+            count?: number;
+            /** Format: date */
+            date?: string;
+        };
+        AssistantViewMoney: {
+            /**
+             * Format: int64
+             * @description minor units of the currency
+             */
+            amount: number;
+            currency: string;
+        };
+        AssistantViewWindow: {
+            /** Format: date */
+            from?: string;
+            /** Format: date */
+            to?: string;
+            /** Format: date */
+            at?: string;
+            label_key?: string;
+        };
+        AssistantViewLink: {
+            screen: string;
+            params?: {
+                [key: string]: string;
+            };
+        };
+        AssistantViewTable: {
+            head: string[];
+            rows: components["schemas"]["AssistantViewValue"][][];
         };
         AssistantConversationDetail: {
             /** Format: uuid */

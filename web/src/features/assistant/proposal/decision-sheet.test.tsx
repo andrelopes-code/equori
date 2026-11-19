@@ -443,6 +443,7 @@ function renderAnswer(proposals: Proposal[], fetch: typeof globalThis.fetch) {
         created_at: "2026-10-23T10:00:01Z",
         proposals,
         files: [],
+        views: [],
       }}
     />,
     { fetch },

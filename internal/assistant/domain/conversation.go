@@ -45,6 +45,8 @@ type Message struct {
 	CreatedAt          time.Time
 	// Files are the files the message carries (assistant parity design, F2).
 	Files []File
+	// Views are the views of an answer, in seq order (answer views design, V9).
+	Views []View
 }
 
 // TextForModel is the content of the message followed by one descriptor per file (F4).

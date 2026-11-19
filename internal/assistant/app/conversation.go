@@ -60,6 +60,13 @@ func (s *Service) Conversation(
 
 	attachFiles(msgs, files)
 
+	views, err := s.repo.Views(ctx, booksID, id)
+	if err != nil {
+		return ConversationDetail{}, err
+	}
+
+	attachViews(msgs, views)
+
 	ps, err := s.repo.Proposals(ctx, booksID, id)
 	if err != nil {
 		return ConversationDetail{}, err

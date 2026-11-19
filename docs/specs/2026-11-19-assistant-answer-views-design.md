@@ -121,7 +121,7 @@ Confidence: medium-high. Invalidated if an owner-run eval shows the cheapest mod
 - B1: New table `assistant_view` with `books_id`; every query filters by it; a schema test rejects a row without a book.
 - B2: No new operation; `show` is read-only and follows the read role of the chat (HA17).
 - B3: Does not apply: no setting.
-- D1: `assistant_view` is archived with the conversation, as `assistant_message` (`internal/reporting`, archive steps and `TestEveryTableIsClassified`); the archive version rises.
+- D1: `assistant_view` stays out of the archive, as `assistant_message` does (households design HA55): `notExported` and `replacedTables` of `internal/reporting/postgres`; the archive version does not change.
 - D2: One goose migration creates `assistant_view`.
 - D3: Does not apply: a view records no fact.
 - D4: Does not apply: a view writes no ledger data; writes stay proposals.

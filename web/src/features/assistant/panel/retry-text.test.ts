@@ -15,6 +15,7 @@ function message(
     created_at: "2026-10-29T10:00:00Z",
     proposals: [],
     files: [],
+    views: [],
     ...(outcome === undefined ? {} : { outcome }),
   };
 }

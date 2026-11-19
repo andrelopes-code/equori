@@ -25,6 +25,7 @@ var notExported = []string{
 	"assistant_message",
 	"assistant_proposal",
 	"assistant_usage",
+	"assistant_view",
 	"capture_category_hint",
 	"identity_access_token",
 	"identity_invitation",

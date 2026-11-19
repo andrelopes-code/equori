@@ -223,6 +223,9 @@ type AssistantMessage struct {
 	Outcome   *AssistantMessageOutcome `json:"outcome,omitempty"`
 	Proposals []AssistantProposal      `json:"proposals"`
 	Role      AssistantMessageRole     `json:"role"`
+
+	// Views The views of an answer, built by the server from reads of its turn (answer views design, V9).
+	Views []AssistantView `json:"views"`
 }
 
 // AssistantMessageOutcome defines model for AssistantMessage.Outcome.
@@ -300,6 +303,69 @@ type AssistantValue struct {
 	Currency *string             `json:"currency,omitempty"`
 	Date     *openapi_types.Date `json:"date,omitempty"`
 	Text     *string             `json:"text,omitempty"`
+}
+
+// AssistantView defines model for AssistantView.
+type AssistantView struct {
+	Form    string               `json:"form"`
+	Id      openapi_types.UUID   `json:"id"`
+	Payload AssistantViewPayload `json:"payload"`
+}
+
+// AssistantViewLink defines model for AssistantViewLink.
+type AssistantViewLink struct {
+	Params *map[string]string `json:"params,omitempty"`
+	Screen string             `json:"screen"`
+}
+
+// AssistantViewMoney defines model for AssistantViewMoney.
+type AssistantViewMoney struct {
+	// Amount minor units of the currency
+	Amount   int64  `json:"amount"`
+	Currency string `json:"currency"`
+}
+
+// AssistantViewPayload defines model for AssistantViewPayload.
+type AssistantViewPayload struct {
+	// Data The body of the form; its shape is the form's (answer views design, V6).
+	Data    map[string]interface{} `json:"data"`
+	Next    []string               `json:"next"`
+	Open    *AssistantViewLink     `json:"open,omitempty"`
+	Prov    *AssistantViewText     `json:"prov,omitempty"`
+	Rows    AssistantViewTable     `json:"rows"`
+	Title   AssistantViewText      `json:"title"`
+	Verdict AssistantViewText      `json:"verdict"`
+	Window  AssistantViewWindow    `json:"window"`
+}
+
+// AssistantViewTable defines model for AssistantViewTable.
+type AssistantViewTable struct {
+	Head []string               `json:"head"`
+	Rows [][]AssistantViewValue `json:"rows"`
+}
+
+// AssistantViewText defines model for AssistantViewText.
+type AssistantViewText struct {
+	Key    string                         `json:"key"`
+	Params *map[string]AssistantViewValue `json:"params,omitempty"`
+}
+
+// AssistantViewValue One typed figure; exactly one property is present (V7).
+type AssistantViewValue struct {
+	// Bp share in basis points
+	Bp    *int64              `json:"bp,omitempty"`
+	Count *int64              `json:"count,omitempty"`
+	Date  *openapi_types.Date `json:"date,omitempty"`
+	Money *AssistantViewMoney `json:"money,omitempty"`
+	Text  *string             `json:"text,omitempty"`
+}
+
+// AssistantViewWindow defines model for AssistantViewWindow.
+type AssistantViewWindow struct {
+	At       *openapi_types.Date `json:"at,omitempty"`
+	From     *openapi_types.Date `json:"from,omitempty"`
+	LabelKey *string             `json:"label_key,omitempty"`
+	To       *openapi_types.Date `json:"to,omitempty"`
 }
 
 // Capability defines model for Capability.

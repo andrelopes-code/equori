@@ -116,6 +116,17 @@ func (s *Service) answerTurn(
 
 	ids := state.take()
 
+	answer.Views = state.takeViews()
+	if err := s.repo.InsertViews(
+		storeCtx,
+		booksID,
+		conversationID,
+		answer.ID,
+		answer.Views,
+	); err != nil {
+		return s.failAfterStream(ctx, ev, err)
+	}
+
 	out := AnsweredMessage{Message: answer}
 	if len(ids) > 0 {
 		if err := s.repo.AttachProposals(storeCtx, booksID, answer.ID, ids); err != nil {

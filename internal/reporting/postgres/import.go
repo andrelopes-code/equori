@@ -309,6 +309,7 @@ func restoreSecrets(
 // replacedTables hold rows that no archive carries and that a replacement deletes, child
 // tables first (export design R3).
 var replacedTables = []string{
+	"assistant_view",
 	"assistant_proposal",
 	"assistant_message",
 	"assistant_conversation_file",

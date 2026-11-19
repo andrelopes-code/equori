@@ -31,6 +31,7 @@ export function scenarioMessage(scenario: Scenario): Message {
     outcome: scenario.outcome ?? "answered",
     created_at: "2026-11-19T10:00:00Z",
     files: [],
+    views: [],
     proposals: scenario.proposals ?? [],
   };
 }

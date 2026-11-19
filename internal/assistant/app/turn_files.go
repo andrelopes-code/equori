@@ -133,6 +133,18 @@ func turnTitle(text string, files []domain.File) string {
 	return domain.Title(text)
 }
 
+// attachViews gives each message the views of its answer.
+func attachViews(messages []domain.Message, views []domain.View) {
+	byMessage := map[uuid.UUID][]domain.View{}
+	for _, v := range views {
+		byMessage[v.MessageID] = append(byMessage[v.MessageID], v)
+	}
+
+	for i := range messages {
+		messages[i].Views = byMessage[messages[i].ID]
+	}
+}
+
 // attachFiles gives each message the files it carried.
 func attachFiles(messages []domain.Message, files []domain.File) {
 	byMessage := map[uuid.UUID][]domain.File{}

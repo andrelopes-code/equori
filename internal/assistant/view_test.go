@@ -102,3 +102,76 @@ func TestShowRefuses(t *testing.T) {
 		})
 	}
 }
+
+type viewAnswer struct {
+	ID    string `json:"id"`
+	Views []struct {
+		ID      string `json:"id"`
+		Form    string `json:"form"`
+		Payload struct {
+			Verdict struct {
+				Key string `json:"key"`
+			} `json:"verdict"`
+			Next []string `json:"next"`
+		} `json:"payload"`
+	} `json:"views"`
+}
+
+// V9: the views of an answer reach the stream and stay with the stored message.
+func TestShowStoresView(t *testing.T) {
+	t.Parallel()
+
+	p := llmtest.New(
+		"aistudio",
+		callStep("get_help", helpArgs),
+		callStep("show", `{"source":["r1"],"form":"help","next":["Onde vejo relatórios?"]}`),
+		textStep("Veja os passos."),
+	)
+	h := turnHarness(t, p)
+
+	r := sendTurn(h, h.Client, map[string]any{"text": "Como vejo relatórios?"})
+	if r.Status != http.StatusOK {
+		t.Fatalf("status = %d: %s", r.Status, r.Body)
+	}
+
+	events := parseSSE(r.Body)
+	last := events[len(events)-1]
+
+	var streamed viewAnswer
+	if err := json.Unmarshal([]byte(last.Data), &streamed); err != nil || last.Name != "answer" {
+		t.Fatalf("last event = %s %s", last.Name, last.Data)
+	}
+
+	var turn struct {
+		ConversationID string `json:"conversation_id"`
+	}
+	if err := json.Unmarshal([]byte(events[0].Data), &turn); err != nil {
+		t.Fatal(err)
+	}
+
+	var d struct {
+		Messages []viewAnswer `json:"messages"`
+	}
+	h.MustDo(
+		http.MethodGet,
+		"/api/v1/assistant/conversations/"+turn.ConversationID,
+		nil,
+		http.StatusOK,
+		&d,
+	)
+
+	stored := d.Messages[1]
+	for _, m := range []viewAnswer{streamed, stored} {
+		if len(m.Views) != 1 || m.Views[0].Form != "help" ||
+			m.Views[0].Payload.Verdict.Key != "assistantView.help.verdict" ||
+			len(
+				m.Views[0].Payload.Next,
+			) != 1 || m.Views[0].Payload.Next[0] != "Onde vejo relatórios?" {
+			t.Fatalf("message views = %+v", m)
+		}
+	}
+
+	if d.Messages[0].Views == nil || len(d.Messages[0].Views) != 0 {
+		t.Fatalf("user message views = %+v, want []", d.Messages[0].Views)
+	}
+}

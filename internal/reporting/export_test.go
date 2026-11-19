@@ -188,7 +188,7 @@ func TestExport(t *testing.T) {
 		}
 	}
 
-	for _, name := range []string{"identity_member", "identity_session", "identity_access_token", "assistant_usage", "assistant_conversation", "assistant_message", "assistant_proposal", "outbox_event", "reporting_account_day", "reporting_export", "capture_category_hint"} {
+	for _, name := range []string{"identity_member", "identity_session", "identity_access_token", "assistant_usage", "assistant_conversation", "assistant_message", "assistant_proposal", "assistant_view", "outbox_event", "reporting_account_day", "reporting_export", "capture_category_hint"} {
 		if _, ok := rows[name]; ok {
 			t.Errorf("%s is exported", name)
 		}

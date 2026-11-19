@@ -108,6 +108,13 @@ type ConversationRepository interface {
 		now time.Time,
 	) (bool, error)
 	AttachProposals(ctx context.Context, booksID int64, messageID uuid.UUID, ids []uuid.UUID) error
+	InsertViews(
+		ctx context.Context,
+		booksID int64,
+		conversationID, messageID uuid.UUID,
+		views []domain.View,
+	) error
+	Views(ctx context.Context, booksID int64, conversationID uuid.UUID) ([]domain.View, error)
 	DiscardProposals(ctx context.Context, booksID int64, ids []uuid.UUID, at time.Time) error
 	// PromoteProposal moves a waiting proposal to pending with the arguments, preview, basis and expiry of p.
 	PromoteProposal(ctx context.Context, booksID int64, p domain.Proposal) (bool, error)

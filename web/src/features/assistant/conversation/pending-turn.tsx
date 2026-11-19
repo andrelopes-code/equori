@@ -64,6 +64,7 @@ export function PendingTurn({
             created_at: "",
             proposals: [],
             files: [],
+            views: [],
           }}
           streaming
         />
