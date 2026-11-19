@@ -32,6 +32,8 @@ export function useIndexes(): Index[] {
 export function useIndexList(): {
   indexes: Index[];
   pending: boolean;
+  // Offline: the read waits for the network, so its result is held but nothing loads.
+  paused: boolean;
   failed: boolean;
 } {
   const api = useApi();
@@ -40,6 +42,7 @@ export function useIndexList(): {
   return {
     indexes: query.data ?? [],
     pending: query.isPending,
+    paused: query.fetchStatus === "paused",
     failed: query.isError,
   };
 }

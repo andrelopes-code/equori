@@ -110,6 +110,23 @@ describe("Calculators page", () => {
     expect(screen.queryByText(catalogEn["calc.list.indexesFailed"])).toBeNull();
   });
 
+  it("holds the comparison row and no note while the base currency loads (M4)", async () => {
+    await renderApp("/calculators", {
+      fetch: fakeApi({
+        ...calculatorApiRoutes([expectedCdi]),
+        "GET /api/v1/settings": () => new Promise<Response>(() => undefined),
+      }),
+    });
+    const invest = await screen.findByRole("region", {
+      name: catalogEn["calc.group.invest"],
+    });
+    expect(
+      within(invest).getByText(catalogEn["calc.indexer-comparison.title"]),
+    ).toBeInTheDocument();
+    expect(invest.parentElement).toHaveAttribute("aria-busy", "true");
+    expect(screen.queryByText(catalogEn["calc.list.indexesAbsent"])).toBeNull();
+  });
+
   it("names the hidden comparison when the indexes fail to load", async () => {
     await renderApp("/calculators", {
       fetch: fakeApi({

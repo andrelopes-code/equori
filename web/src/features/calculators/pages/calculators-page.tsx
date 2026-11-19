@@ -23,15 +23,22 @@ import { PageStack } from "@/ui/page-layout/page-stack";
 // The written calculators by group, each by the question it answers (CR11-CR15).
 export function CalculatorsPage() {
   const t = useT();
-  const currency = useCalculatorMoney()?.currency ?? "";
-  const { indexes, pending, failed } = useComparableIndexList(currency);
+  const money = useCalculatorMoney();
+  const list = useComparableIndexList(money?.currency ?? "");
 
-  // A comparison held while the indexes load keeps the rows in place when they arrive.
-  const comparable = indexes.length > 0 || pending;
+  // The indexes are judged against the base currency, so both reads must answer (M4). A
+  // comparison held while they load keeps the rows in place; a read paused offline holds the
+  // row without marking the list busy.
+  const held = list.pending || money === null;
+  const busy = held && !list.paused;
+  const comparable = list.indexes.length > 0 || held;
   const listed = calculators.filter(
     (c) => written.has(c.id) && (c.id !== "indexer-comparison" || comparable),
   );
-  const noteKey = missingNoteKey(failed, comparable);
+  const noteKey = missingNoteKey(list.failed, comparable);
+  const noteGroup = calculators.find(
+    (c) => c.id === "indexer-comparison",
+  )?.group;
 
   return (
     <Page width="full">
@@ -47,13 +54,13 @@ export function CalculatorsPage() {
       </PageHeader>
       <PageBody>
         <PageStack>
-          <div className={styles.groups} aria-busy={pending || undefined}>
+          <div className={styles.groups} aria-busy={busy || undefined}>
             {calculatorGroups.map((group) => (
               <CalculatorGroup
                 key={group}
                 group={group}
                 ids={listed.filter((c) => c.group === group).map((c) => c.id)}
-                note={group === "invest" && noteKey ? t(noteKey) : undefined}
+                note={group === noteGroup && noteKey ? t(noteKey) : undefined}
               />
             ))}
           </div>

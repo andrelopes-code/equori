@@ -26,9 +26,10 @@ export function useComparableIndexes(currency: string): Index[] {
 export function useComparableIndexList(currency: string): {
   indexes: Index[];
   pending: boolean;
+  paused: boolean;
   failed: boolean;
 } {
-  const { indexes, pending, failed } = useIndexList();
+  const { indexes, pending, paused, failed } = useIndexList();
 
   return {
     indexes: indexes.filter((i) => {
@@ -36,6 +37,7 @@ export function useComparableIndexList(currency: string): {
       return i.expected && (own === undefined || own === currency);
     }),
     pending,
+    paused,
     failed,
   };
 }
