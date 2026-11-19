@@ -50,6 +50,7 @@ func TestEveryTableIsClassified(t *testing.T) {
 	// marketdata_institution_indicator holds the indicators a feed fetches again (A237).
 	// ingestion_instance_settings holds the instance's sync interval (ADR 029 BK23).
 	// instance_settings holds the instance's update check and encrypted copy (protected data design).
+	// portfolio_rebuild_state holds the app version whose rules derived the portfolio rows.
 	// identity_totp, identity_recovery_code, identity_passkey, identity_passkey_challenge and
 	// identity_login_challenge hold a member's second factor (ADR 030); they have no books_id.
 	// identity_account_invitation holds a pending invitation to an account of its own; it has no books_id.
@@ -75,6 +76,7 @@ func TestEveryTableIsClassified(t *testing.T) {
 		"marketdata_index_expectation",
 		"marketdata_institution_indicator",
 		"outbox_delivery",
+		"portfolio_rebuild_state",
 	}
 	for _, table := range all {
 		if !slices.Contains(facts, table) && !slices.Contains(sharedTables, table) &&

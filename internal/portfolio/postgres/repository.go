@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -227,6 +228,23 @@ func (r *Repository) IncomeEvents(
 
 func (r *Repository) BooksToRebuild(ctx context.Context) ([]int64, error) {
 	return r.q.ListRebuildBooks(ctx)
+}
+
+func (r *Repository) ClaimRebuildVersion(ctx context.Context, version string) (bool, error) {
+	n, err := r.q.ClaimRebuildVersion(ctx, version)
+	if err != nil {
+		return false, fmt.Errorf("claim rebuild version: %w", err)
+	}
+
+	return n == 1, nil
+}
+
+func (r *Repository) ForgetRebuildVersion(ctx context.Context) error {
+	if err := r.q.ForgetRebuildVersion(ctx); err != nil {
+		return fmt.Errorf("forget rebuild version: %w", err)
+	}
+
+	return nil
 }
 
 // optional stores the empty string as NULL.

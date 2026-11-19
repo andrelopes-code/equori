@@ -153,6 +153,10 @@ type Repository interface {
 		from, to time.Time,
 	) ([]domain.IncomeEvent, error)
 	BooksToRebuild(ctx context.Context) ([]int64, error)
+	// ClaimRebuildVersion stores version and reports whether it differed from the stored one.
+	ClaimRebuildVersion(ctx context.Context, version string) (bool, error)
+	// ForgetRebuildVersion clears the stored version, so the next start rebuilds again.
+	ForgetRebuildVersion(ctx context.Context) error
 	ContributionPlan(ctx context.Context, booksID int64) (domain.Plan, bool, error)
 	SaveContributionPlan(ctx context.Context, booksID int64, p domain.Plan) error
 }

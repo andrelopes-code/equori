@@ -156,6 +156,49 @@ func TestRebuildAllRestoresTaxData(t *testing.T) {
 	}
 }
 
+// A new version of the app rebuilds the derived rows once at start, so a changed tax rule reaches
+// the rows already derived without an operator running equori portfolio rebuild.
+func TestRebuildForVersionRunsOncePerVersion(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t)
+	f.income(t, f.mxrf11, "dividend", 1000, f.dividends)
+	f.incomeEvents(t)
+
+	steps := []struct {
+		version string
+		want    bool
+	}{
+		{version: "v1.0.0", want: true},
+		{version: "v1.0.0", want: false},
+		{version: "v1.1.0", want: true},
+	}
+
+	for _, s := range steps {
+		if _, err := f.h.Pool.Exec(
+			t.Context(),
+			`UPDATE portfolio_income_event SET tax_treatment = NULL`,
+		); err != nil {
+			t.Fatal(err)
+		}
+
+		if err := f.h.App.Portfolio.RebuildForVersion(t.Context(), s.version); err != nil {
+			t.Fatal(err)
+		}
+
+		es := f.incomeEvents(t)
+		rebuilt := len(es) == 1 && es[0].TaxTreatment != nil && *es[0].TaxTreatment == "exempt"
+		if rebuilt != s.want {
+			t.Fatalf(
+				"version %s: rebuilt = %v, want %v (events %+v)",
+				s.version,
+				rebuilt,
+				s.want,
+				es,
+			)
+		}
+	}
+}
+
 func TestRebuildAllRestoresUserWithoutDerivedRows(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)

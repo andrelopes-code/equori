@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"log/slog"
@@ -143,6 +144,12 @@ func watchPostgres(ctx context.Context, stop context.CancelFunc, db *database) <
 
 func prepareApp(ctx context.Context, app *server.App, cfg config.Config, log *slog.Logger) error {
 	if err := app.Marketdata.ReconcileCurrencies(ctx); err != nil {
+		return err
+	}
+
+	// A release that changes a tax rule reaches the rows already derived without an operator.
+	// A build without a module version (go test) reads as unknown.
+	if err := app.Portfolio.RebuildForVersion(ctx, cmp.Or(buildVersion(), "unknown")); err != nil {
 		return err
 	}
 

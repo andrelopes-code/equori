@@ -15,6 +15,11 @@ import (
 // RebuildAll recomputes every derived row from the ledger (equori portfolio rebuild).
 func (m *Module) RebuildAll(ctx context.Context) error { return m.svc.RebuildAll(ctx) }
 
+// RebuildForVersion runs RebuildAll once per app version, at the start of serve.
+func (m *Module) RebuildForVersion(ctx context.Context, version string) error {
+	return m.svc.RebuildForVersion(ctx, version)
+}
+
 // RebuildBooks recomputes the book's derived rows, after an import of an export archive.
 func (m *Module) RebuildBooks(ctx context.Context, booksID int64) error {
 	return m.svc.RebuildBooks(ctx, booksID)
