@@ -2,6 +2,7 @@ import {
   Section,
   SectionBody,
   SectionHeader,
+  SectionHeading,
   SectionTitle,
 } from "@slotted/react/section";
 import { Stack } from "@slotted/react/stack";
@@ -32,15 +33,21 @@ export function BreakEvenList({
   if (items.length === 0 || base === undefined) return null;
 
   return (
-    <Section>
+    <Section size="lg">
       <SectionHeader>
         <SectionTitle>
-          {t("calc.indexerComparison.breakEven.title")}
+          <SectionHeading>
+            {t("calc.indexerComparison.breakEven.title")}
+          </SectionHeading>
         </SectionTitle>
       </SectionHeader>
 
       <SectionBody>
         <Stack gap={4}>
+          <Text size="sm" tone="muted">
+            {t("calc.indexerComparison.breakEven.help")}
+          </Text>
+
           {items.map((item) => {
             const security = securities[item.position];
 

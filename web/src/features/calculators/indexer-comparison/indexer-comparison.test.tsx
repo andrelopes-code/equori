@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
 import { breakEven } from "@/features/calculators/indexer-comparison/break-even";
+import { compare } from "@/features/calculators/indexer-comparison/compare";
 import { IndexerComparison } from "@/features/calculators/indexer-comparison/indexer-comparison";
 import type { IndexData } from "@/features/calculators/indexer-comparison/security";
 import { expectedIndexRate } from "@/features/calculators/indexer-comparison/security-rate";
@@ -13,7 +14,7 @@ import {
   prefixedCurveFixture,
 } from "@/testing/calculator-api";
 import { fakeApi, json } from "@/testing/fake-api";
-import { renderWithProviders } from "@/testing/render-app";
+import { renderWithRouter } from "@/testing/render-app";
 
 const survey = "2026-11-13";
 const cdi = {
@@ -36,9 +37,10 @@ function open(
   routes = calculatorApiRoutes([cdi], [prefixedCurveFixture()]),
   currency = "BRL",
 ) {
-  return renderWithProviders(
+  return renderWithRouter(
     <IndexerComparison amount={1_000_000} currency={currency} />,
     {
+      path: "/calculators/indexer-comparison",
       today: "2026-11-17",
       fetch: fakeApi({
         ...routes,
@@ -69,6 +71,20 @@ const rateBoxes = () =>
   screen.findAllByRole("textbox", {
     name: catalogPtBR["calc.indexerComparison.rate"],
   });
+
+// A pt-BR amount of minor units, as the screen writes it.
+const brl = (minor: number) =>
+  norm(
+    (minor / 100).toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }),
+  );
+
+async function figure(lead: string): Promise<string> {
+  const node = await screen.findByText(lead);
+  return norm(node.nextElementSibling?.textContent ?? "");
+}
 
 async function typeRates(first: string, second: string) {
   const user = userEvent.setup();
@@ -195,8 +211,95 @@ describe("IndexerComparison", () => {
     open(undefined, "USD");
     await rateBoxes();
 
-    expect(screen.queryByText(/CDI/)).toBeNull();
+    // The method text below the inputs names the CDI; the securities do not offer it.
+    for (const group of screen.getAllByRole("group", { name: /^Título/ }))
+      expect(within(group).queryByText(/CDI/)).toBeNull();
     const table = await screen.findByRole("table");
     expect(within(table).getAllByRole("row")).toHaveLength(3);
+  });
+  describe("answer", () => {
+    it("leads with the security of the largest final value and its gap to the next", async () => {
+      open();
+      await typeRates("5", "200");
+
+      const rows = compare({
+        amount: 1_000_000,
+        days: 731,
+        taxBp: 1500,
+        securities: [
+          { form: "fixed", rate: 0.05, taxed: true },
+          { form: "percent", index: "cdi", rate: 2, taxed: true },
+        ],
+        indexes: new Map([["cdi", cdiData]]),
+      });
+      const first = rows[0]?.net ?? Number.NaN;
+      const second = rows[1]?.net ?? Number.NaN;
+
+      expect(await figure("200% do CDI rende mais")).toBe(
+        brl(1_000_000 + second),
+      );
+      expect(
+        screen.getByText(
+          `${brl(second - first)} a mais que Prefixado 5,00% a.a. no vencimento.`,
+        ),
+      ).toBeInTheDocument();
+      const net = screen.getByText(
+        catalogPtBR["calc.indexerComparison.col.netRate"],
+        { selector: "dt" },
+      );
+      expect(net.parentElement?.querySelector("dd")?.textContent).toMatch(
+        /^\d+,\d{2}%$/,
+      );
+      expect(
+        screen.getByText(
+          catalogPtBR["calc.indexerComparison.breakEven.title"],
+          {
+            selector: "dt",
+          },
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it("names the missing rate before any is typed", async () => {
+      open();
+
+      expect(
+        await screen.findByText(
+          "Preencha taxa para ver o título que rende mais.",
+        ),
+      ).toBeInTheDocument();
+      expect(screen.queryByText(catalogPtBR["calc.options"])).toBeNull();
+    });
+
+    it("asks for another security while only one has a rate", async () => {
+      open();
+      const user = userEvent.setup();
+      const [box] = await rateBoxes();
+      if (box === undefined) throw new Error("no rate box");
+      await user.type(box, "8");
+
+      expect(
+        await screen.findByText(
+          catalogPtBR["calc.indexerComparison.answer.single"],
+        ),
+      ).toBeInTheDocument();
+      expect(
+        await figure(catalogPtBR["calc.indexerComparison.answer.leadEqual"]),
+      ).toBe("—");
+    });
+
+    it("states equal final values of two securities", async () => {
+      open(undefined, "USD");
+      await typeRates("8", "8");
+
+      expect(
+        await screen.findByText(
+          catalogPtBR["calc.indexerComparison.answer.equal"],
+        ),
+      ).toBeInTheDocument();
+      expect(
+        await figure(catalogPtBR["calc.indexerComparison.answer.leadEqual"]),
+      ).toMatch(/11\.416,49/);
+    });
   });
 });

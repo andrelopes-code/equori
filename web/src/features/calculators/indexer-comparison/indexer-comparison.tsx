@@ -1,21 +1,17 @@
-import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
-import { Field, FieldLabel } from "@slotted/react/field";
-import { Stack } from "@slotted/react/stack";
-
-import { AmountField } from "@/features/calculators/fields/amount-field";
-import { RateField } from "@/features/calculators/fields/rate-field";
+import { CalculatorFrame } from "@/features/calculators/calculator-frame/calculator-frame";
+import { CalculatorMethod } from "@/features/calculators/calculator-frame/calculator-method";
 import { fixedIncomeRules } from "@/features/calculators/fixed-income-calculator/fixed-income-region";
-import { BreakEvenList } from "@/features/calculators/indexer-comparison/break-even-list";
 import { breakEvenItems } from "@/features/calculators/indexer-comparison/break-even-items";
 import {
   compare,
   referenceOf,
 } from "@/features/calculators/indexer-comparison/compare";
 import { daysBetween } from "@/features/calculators/indexer-comparison/comparison-dates";
-import { ComparisonNotes } from "@/features/calculators/indexer-comparison/comparison-notes";
-import { ComparisonTable } from "@/features/calculators/indexer-comparison/comparison-table";
+import { indexerAnswer } from "@/features/calculators/indexer-comparison/indexer-comparison-answer";
+import { IndexerComparisonAnswerView } from "@/features/calculators/indexer-comparison/indexer-comparison-answer-view";
+import { IndexerComparisonEvidence } from "@/features/calculators/indexer-comparison/indexer-comparison-evidence";
+import { IndexerComparisonInputs } from "@/features/calculators/indexer-comparison/indexer-comparison-inputs";
 import { resolveSecurity } from "@/features/calculators/indexer-comparison/security-draft";
-import { SecurityList } from "@/features/calculators/indexer-comparison/security-list";
 import { taxBasis } from "@/features/calculators/indexer-comparison/tax-basis";
 import {
   useComparableIndexes,
@@ -26,7 +22,6 @@ import { useScale } from "@/features/setup";
 import { useAppLocaleState, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { DateInput } from "@/ui/form-fields/date-input";
 
 interface IndexerComparisonProps {
   // The initial amount, in minor units of the currency.
@@ -36,7 +31,8 @@ interface IndexerComparisonProps {
 
 // The comparison of fixed income securities by indexer (IC1 to IC5, IC13): two to six
 // securities held to one maturity, their yields after tax under the expected path of each index,
-// and the break-even of each floating one. The inputs live in this component's state.
+// and the break-even of each floating one. The inputs live in this component's state (no address
+// keys, CR17).
 export function IndexerComparison({
   amount,
   currency,
@@ -73,72 +69,82 @@ export function IndexerComparison({
         taxBp,
       })
     : [];
+  const answer = ready
+    ? indexerAnswer({
+        amount: draft.amount,
+        securities,
+        rows,
+        indexes: data,
+        days,
+        taxBp,
+      })
+    : null;
 
   if (scaleOf === null) return null;
   const scale = scaleOf(currency);
+  const money = {
+    currency,
+    scale,
+    format: (minor: number) => fmt.money({ amount: minor, currency }, scale),
+  };
 
   return (
-    <Stack gap={5}>
-      <AmountField
-        label={t("calc.indexerComparison.amount")}
-        value={draft.amount === 0 ? undefined : String(draft.amount)}
-        money={{
-          currency,
-          scale,
-          format: (amount) => fmt.money({ amount, currency }, scale),
-        }}
-        onChange={(minor) => {
-          draft.setAmount(Number(minor ?? 0));
-        }}
-      />
-
-      <Field necessity="none">
-        <FieldLabel>{t("calc.indexerComparison.maturity")}</FieldLabel>
-        <DateInput
-          name="maturity"
-          value={draft.maturity}
-          min={today}
-          onChange={draft.setMaturity}
+    <CalculatorFrame
+      id="indexer-comparison"
+      answer={
+        <IndexerComparisonAnswerView
+          format={money.format}
+          answer={answer}
+          securities={securities}
+          early={early}
+          missing={[
+            {
+              label: t("calc.indexerComparison.amount"),
+              missing: draft.amount <= 0,
+            },
+            {
+              label: t("calc.indexerComparison.maturity"),
+              missing: days <= 0 || early,
+            },
+            {
+              label: t("calc.fixedIncome.taxRate"),
+              missing: rules === null && taxBp === null,
+            },
+            {
+              label: t("calc.indexerComparison.rate"),
+              missing: securities.every((s) => s.rate === null),
+            },
+          ]}
         />
-      </Field>
-
-      {rules === null && (
-        <RateField
-          label={t("calc.fixedIncome.taxRate")}
-          name="taxRate"
-          value={draft.taxRate}
-          onChange={draft.setTaxRate}
-        />
-      )}
-
-      <SecurityList draft={draft} securities={securities} offered={indexes} />
-
-      {early && (
-        <Alert tone="warning">
-          <AlertContent>
-            <AlertDescription>{t("calc.fixedIncome.iof")}</AlertDescription>
-          </AlertContent>
-        </Alert>
-      )}
-
-      {ready && (
-        <>
-          <ComparisonTable
+      }
+      evidence={
+        ready ? (
+          <IndexerComparisonEvidence
             securities={securities}
             rows={rows}
+            items={items}
+            reference={reference}
             currency={currency}
             scale={scale}
           />
-
-          <BreakEvenList
-            items={items}
-            securities={securities}
-            reference={reference}
-          />
-
-          <ComparisonNotes />
-        </>
-      )}
-    </Stack>
+        ) : undefined
+      }
+      inputs={
+        <IndexerComparisonInputs
+          draft={draft}
+          money={money}
+          today={today}
+          securities={securities}
+          offered={indexes}
+          askTax={rules === null}
+        />
+      }
+      method={
+        <CalculatorMethod
+          id="indexer-comparison"
+          sources={rules?.sources ?? []}
+        />
+      }
+    />
   );
 }

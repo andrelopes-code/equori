@@ -759,6 +759,20 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.indexerComparison.note.credit":
     "O risco de crédito do emissor e a liquidez de cada título não são comparados.",
   "calc.indexerComparison.note.decision": "O equori calcula; a escolha é sua.",
+  "calc.indexerComparison.answer.lead": "{name} rende mais",
+  "calc.indexerComparison.answer.sentence":
+    "{difference} a mais que {next} no vencimento.",
+  "calc.indexerComparison.answer.what": "o título que rende mais",
+  "calc.indexerComparison.answer.single":
+    "Adicione outro título para comparar.",
+  "calc.indexerComparison.answer.leadEqual": "Valor final no vencimento",
+  "calc.indexerComparison.answer.equal":
+    "Os títulos rendem o mesmo no vencimento.",
+  "calc.indexerComparison.indexer.help":
+    "O índice que corrige o título: prefixado, percentual do CDI, inflação mais taxa.",
+  "calc.indexerComparison.breakEven.help":
+    "A taxa a partir da qual o outro título passa a render mais.",
+  "calc.indexerComparison.table.title": "Rendimento no vencimento",
   "calc.indexer-comparison.title": "Comparar indexadores",
   "calc.indexer-comparison.question":
     "Qual título rende mais até o vencimento?",

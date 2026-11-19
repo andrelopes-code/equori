@@ -754,6 +754,19 @@ export const calculatorsEn = {
     "The issuer's credit risk and the liquidity of each security are not compared.",
   "calc.indexerComparison.note.decision":
     "equori computes; the choice is yours.",
+  "calc.indexerComparison.answer.lead": "{name} yields more",
+  "calc.indexerComparison.answer.sentence":
+    "{difference} more than {next} at maturity.",
+  "calc.indexerComparison.answer.what": "the security that yields more",
+  "calc.indexerComparison.answer.single": "Add another security to compare.",
+  "calc.indexerComparison.answer.leadEqual": "Final amount at maturity",
+  "calc.indexerComparison.answer.equal":
+    "The securities yield the same at maturity.",
+  "calc.indexerComparison.indexer.help":
+    "The index that moves the security: fixed, percent of an index, inflation plus a rate.",
+  "calc.indexerComparison.breakEven.help":
+    "The rate above which the other security yields more.",
+  "calc.indexerComparison.table.title": "Yield at maturity",
   "calc.indexer-comparison.title": "Compare indexers",
   "calc.indexer-comparison.question": "Which security yields more to maturity?",
   "calc.indexer-comparison.step1":
