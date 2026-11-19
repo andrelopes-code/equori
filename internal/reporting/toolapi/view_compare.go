@@ -38,12 +38,13 @@ func compareView(outputs []json.RawMessage, sel view.Select, _ time.Time) (view.
 	}
 
 	order := compareMerge(sides, currency)
-	verdict := compareVerdict(order, compareDifference(order, currency))
+	diff := compareDifference(order, currency)
+	verdict := compareVerdict(order, diff)
 
 	data := compareData{
 		Periods:    periods,
 		Items:      []compareItem{},
-		Difference: compareDifference(order, currency),
+		Difference: diff,
 	}
 	for i, c := range order {
 		if i == cmp.Or(sel.Limit, compareLimit) {
