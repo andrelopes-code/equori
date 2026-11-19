@@ -11,7 +11,7 @@ import { indexDataOf } from "@/features/calculators/indexer-comparison/index-dat
 import type { IndexData } from "@/features/calculators/indexer-comparison/security";
 import { indexCurrency } from "@/features/calculators/rate-source/index-catalog";
 import {
-  useIndexes,
+  useIndexList,
   windowStart,
   type Index,
 } from "@/features/calculators/rate-source/use-index-rate";
@@ -19,10 +19,25 @@ import {
 // IC1, C3: the indexes with an expected path whose currency is the amount's; an index the
 // catalog has no currency for is offered for any currency.
 export function useComparableIndexes(currency: string): Index[] {
-  return useIndexes().filter((i) => {
-    const own = indexCurrency(i.id);
-    return i.expected && (own === undefined || own === currency);
-  });
+  return useComparableIndexList(currency).indexes;
+}
+
+// The comparable indexes with the state of the read of the index list.
+export function useComparableIndexList(currency: string): {
+  indexes: Index[];
+  pending: boolean;
+  failed: boolean;
+} {
+  const { indexes, pending, failed } = useIndexList();
+
+  return {
+    indexes: indexes.filter((i) => {
+      const own = indexCurrency(i.id);
+      return i.expected && (own === undefined || own === currency);
+    }),
+    pending,
+    failed,
+  };
 }
 
 // The rates and the expected path of each index, and the market curves.

@@ -41,8 +41,9 @@ export const calculators: readonly {
   { id: "own-or-rent", group: "plan" },
 ];
 
-// The calculators with a screen of their own; the list shows only these.
-export const written: ReadonlySet<CalculatorId> = new Set([
+// The calculators with a screen of their own; the list shows only these. `screens` of the
+// calculator page is typed by this tuple, so both hold the same set.
+export const writtenIds = [
   "compound",
   "rates",
   "correction",
@@ -54,7 +55,15 @@ export const written: ReadonlySet<CalculatorId> = new Set([
   "debt-payoff",
   "recurring-cost",
   "own-or-rent",
-]);
+] as const satisfies readonly CalculatorId[];
+
+export type WrittenId = (typeof writtenIds)[number];
+
+export const written: ReadonlySet<CalculatorId> = new Set(writtenIds);
+
+export function isWritten(id: CalculatorId): id is WrittenId {
+  return written.has(id);
+}
 
 export function isCalculatorId(id: string): id is CalculatorId {
   return calculators.some((c) => c.id === id);

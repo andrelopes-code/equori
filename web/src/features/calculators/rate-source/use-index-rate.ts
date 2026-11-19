@@ -24,7 +24,24 @@ export type Index = components["schemas"]["Index"];
 // The indexes the instance stores; none while they load or when the read fails, so a
 // calculator offers fixed rates only (design §4, "Index data").
 export function useIndexes(): Index[] {
-  return useQuery(indexesQuery(useApi())).data ?? [];
+  return useIndexList().indexes;
+}
+
+// The same indexes with the state of the read: the list screen holds a place for what loads and
+// names what failed.
+export function useIndexList(): {
+  indexes: Index[];
+  pending: boolean;
+  failed: boolean;
+} {
+  const api = useApi();
+  const query = useQuery(indexesQuery(api));
+
+  return {
+    indexes: query.data ?? [],
+    pending: query.isPending,
+    failed: query.isError,
+  };
 }
 
 // 13 months before a date: room for the trailing year and the days before its start.

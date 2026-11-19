@@ -79,17 +79,35 @@ describe("Calculators page", () => {
     await renderApp("/calculators", {
       fetch: fakeApi(calculatorApiRoutes([cdiFixture()])),
     });
-    await screen.findByText(catalogEn["calc.fixed-income.title"]);
-    expect(screen.queryByText(title)).not.toBeInTheDocument();
-    const invest = screen.getByRole("region", {
+    const invest = await screen.findByRole("region", {
       name: catalogEn["calc.group.invest"],
     });
     expect(
-      within(invest).getByText(catalogEn["calc.list.indexesAbsent"]),
+      await within(invest).findByText(catalogEn["calc.list.indexesAbsent"]),
     ).toBeInTheDocument();
+    expect(screen.queryByText(title)).not.toBeInTheDocument();
     expect(
       screen.getAllByText(catalogEn["calc.list.indexesAbsent"]),
     ).toHaveLength(1);
+    expect(invest.parentElement).not.toHaveAttribute("aria-busy");
+  });
+
+  it("holds the comparison row and no note while the indexes load", async () => {
+    await renderApp("/calculators", {
+      fetch: fakeApi({
+        ...calculatorApiRoutes(),
+        "GET /api/v1/indexes": () => new Promise<Response>(() => undefined),
+      }),
+    });
+    const invest = await screen.findByRole("region", {
+      name: catalogEn["calc.group.invest"],
+    });
+    expect(
+      within(invest).getByText(catalogEn["calc.indexer-comparison.title"]),
+    ).toBeInTheDocument();
+    expect(invest.parentElement).toHaveAttribute("aria-busy", "true");
+    expect(screen.queryByText(catalogEn["calc.list.indexesAbsent"])).toBeNull();
+    expect(screen.queryByText(catalogEn["calc.list.indexesFailed"])).toBeNull();
   });
 
   it("names the hidden comparison when the indexes fail to load", async () => {
