@@ -5,6 +5,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
@@ -41,19 +42,22 @@ type ListCache struct {
 func NewListCache(now func() time.Time) *ListCache { return &ListCache{now: now} }
 
 // MatchListings returns at most limit listings of all whose code or name contains query, compared
-// in lower case; the listings whose code starts with query come first.
+// in lower case and, for the code, without punctuation or spaces ("NTN-B" finds NTNB.20300815);
+// the listings whose code starts with query come first.
 func MatchListings(all []Listing, query string, limit int) []Listing {
 	query = strings.ToLower(query)
+	key := codeKey(query)
 
 	var first, rest []Listing
 
 	for _, l := range all {
-		code := strings.ToLower(string(l.Code))
+		code := codeKey(string(l.Code))
 
 		switch {
-		case strings.HasPrefix(code, query):
+		case key != "" && strings.HasPrefix(code, key):
 			first = append(first, l)
-		case strings.Contains(code, query) || strings.Contains(strings.ToLower(l.Name), query):
+		case key != "" && strings.Contains(code, key),
+			strings.Contains(strings.ToLower(l.Name), query):
 			rest = append(rest, l)
 		}
 	}
@@ -92,4 +96,15 @@ func (c *ListCache) Last() []Listing {
 	defer c.mu.Unlock()
 
 	return c.list
+}
+
+// codeKey is s in lower case with only its letters and digits.
+func codeKey(s string) string {
+	return strings.Map(func(r rune) rune {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) {
+			return unicode.ToLower(r)
+		}
+
+		return -1
+	}, s)
 }

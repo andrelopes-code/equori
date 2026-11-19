@@ -26,6 +26,9 @@ func TestMatchListings(t *testing.T) {
 		{"pet", 20, []money.Currency{"PETR4", "XPET11"}},
 		{"PET", 1, []money.Currency{"PETR4"}},
 		{"ipca", 20, []money.Currency{"NTNBP.20350515"}},
+		// The code of a bond is written with a hyphen and a space by its issuer: NTN-B Principal 2035.
+		{"NTN-B", 20, []money.Currency{"NTNBP.20350515"}},
+		{"ntn-b p 2035", 20, []money.Currency{"NTNBP.20350515"}},
 		{"zz", 20, nil},
 	}
 
