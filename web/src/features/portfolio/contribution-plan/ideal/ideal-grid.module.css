@@ -1,12 +1,13 @@
 @layer app {
   /* The columns of every row: name, bar, status, outcome. Rows take them as a subgrid, so the
      outcome column is as wide as its widest value and every value ends on one vertical line. The
-     measures have no token: the name ends in an ellipsis past 19rem, which holds a ticker beside
-     the tag of a goal (CN20), and the bar keeps 8rem. */
+     measures have no token: the name column takes its widest name and goal tag (CN20) before the
+     bar takes the rest, the bar keeps 8rem, and only a page too narrow for both ends the name in
+     an ellipsis. */
   .grid {
     display: grid;
     grid-template-columns:
-      minmax(0, 19rem) minmax(8rem, 1fr) minmax(0, 21rem)
+      minmax(0, max-content) minmax(8rem, 1fr) minmax(0, 21rem)
       minmax(9rem, auto);
     column-gap: var(--slotted-space-6);
     margin: 0;
