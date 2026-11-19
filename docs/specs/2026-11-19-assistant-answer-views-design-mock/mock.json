@@ -1,0 +1,220 @@
+{
+  "title": "Assistente · formas de resposta",
+  "slug": "assistant-views",
+  "status": "approved",
+  "round": 2,
+  "approved": "2026-11-19",
+  "source": {
+    "url": "http://127.0.0.1:5173/preview/assistant-answers",
+    "root": "article",
+    "commit": "121d4b3f"
+  },
+  "schemeAttr": "data-slotted-scheme",
+  "schemes": [
+    "dark",
+    "light"
+  ],
+  "themeAttr": "",
+  "themes": [],
+  "widths": {
+    "desktop": 1440,
+    "phone": 390
+  },
+  "stageBackground": "var(--slotted-surface-sunken)",
+  "concepts": [
+    {
+      "id": "a",
+      "name": "Visão com anatomia fixa",
+      "organizes": "Cada resposta é uma visão: título e janela, veredito com o número, gráfico da forma do dado, rodapé com tela, dados em tabela e cópia",
+      "answers": "37 visões de leitura e 22 corpos de escrita por área do app; gráfico ou tabela, R$ ou %, linhas que abrem, perguntas seguintes, resultado no lugar da proposta",
+      "costs": "Um elemento por forma (CSS e SVG sobre tokens), um montador por forma no servidor, ferramenta show",
+      "recommended": true
+    }
+  ],
+  "chosen": "a",
+  "states": [
+    {
+      "id": "data",
+      "name": "Catálogo"
+    },
+    {
+      "id": "flow",
+      "name": "Conversa"
+    },
+    {
+      "id": "loading",
+      "name": "Montando"
+    },
+    {
+      "id": "empty",
+      "name": "Sem dados"
+    },
+    {
+      "id": "error",
+      "name": "Falha"
+    },
+    {
+      "id": "hard",
+      "name": "Dados difíceis",
+      "hard": true
+    }
+  ],
+  "overlays": [],
+  "notes": {
+    "priority": {
+      "order": [
+        "Veredito com o número",
+        "Gráfico da forma do dado",
+        "Rodapé: tela, dados, cópia"
+      ],
+      "confirmed": "Não perguntado: o dono pediu sem perguntas; a ordem segue a regra 'A form per kind' e a quality-bar (conclusão primeiro)."
+    },
+    "questions": [
+      {
+        "question": "Qual é a resposta?",
+        "decision": "Agir ou seguir perguntando",
+        "block": "Veredito"
+      },
+      {
+        "question": "De onde vem esse número?",
+        "decision": "Confiar ou abrir os dados",
+        "block": "Gráfico e Ver dados"
+      },
+      {
+        "question": "Onde mexo nisso?",
+        "decision": "Abrir a tela do registro",
+        "block": "Rodapé"
+      }
+    ],
+    "inventory": [
+      {
+        "datum": "Pergunta do usuário",
+        "now": "Bolha à direita",
+        "destination": "Mantida",
+        "reason": ""
+      },
+      {
+        "datum": "Fontes consultadas",
+        "now": "Linha dobrada com ícones acima da resposta",
+        "destination": "Mantida, fora do mock",
+        "reason": "Componente atual sem mudança"
+      },
+      {
+        "datum": "Texto Markdown da resposta",
+        "now": "Parágrafos e listas",
+        "destination": "Mantido; o veredito da visão substitui a frase que repetia o número",
+        "reason": ""
+      },
+      {
+        "datum": "Comparação de 2 linhas",
+        "now": "Bloco compare",
+        "destination": "Visão 'Setembro × outubro' (pares por categoria)",
+        "reason": ""
+      },
+      {
+        "datum": "Ranking",
+        "now": "Bloco ranking",
+        "destination": "Visão 'Onde foi o dinheiro' com % e link por linha",
+        "reason": ""
+      },
+      {
+        "datum": "Saldo ao longo do tempo",
+        "now": "Bloco series",
+        "destination": "Visão 'Saldo' com projeção dos agendamentos",
+        "reason": ""
+      },
+      {
+        "datum": "Propostas com corpo",
+        "now": "Folha de decisão",
+        "destination": "Mantidas",
+        "reason": "Componente atual sem mudança"
+      },
+      {
+        "datum": "Propostas sem corpo (lista de campos)",
+        "now": "Linhas campo · valor",
+        "destination": "6 corpos novos na seção 'Escritas sem corpo hoje'",
+        "reason": ""
+      }
+    ],
+    "responsive": [
+      {
+        "block": "Visão",
+        "desktop": "Coluna do painel, 461 px",
+        "phone": "376 px; mesma anatomia",
+        "leaves": "Nada sai; nomes longos truncam com reticências e o valor fica inteiro"
+      },
+      {
+        "block": "Gráficos de linha e colunas",
+        "desktop": "Altura 112 a 132 px",
+        "phone": "Mesma altura; eixo X com 2 ou 3 rótulos",
+        "leaves": "Rótulos intermediários do eixo X"
+      },
+      {
+        "block": "Tabela da carteira",
+        "desktop": "4 colunas",
+        "phone": "4 colunas; peso vira barra de 48 px",
+        "leaves": "Nada"
+      }
+    ],
+    "reused": [
+      {
+        "component": "Folha de decisão (propostas)",
+        "draws": "Superfície, cabeçalho com prazo, linhas, rodapé com botões",
+        "nesting": "Os corpos novos ficam dentro da folha, sem superfície própria"
+      },
+      {
+        "component": "Bolha da pergunta (Bubble)",
+        "draws": "Superfície tonal",
+        "nesting": "Nenhum"
+      }
+    ],
+    "decisions": [
+      {
+        "decision": "Os números vêm do servidor: o modelo chama show com o id de uma leitura e a forma; o servidor monta a visão da saída guardada",
+        "reason": "Regra 'Honest values' de docs/contributing/web.md"
+      },
+      {
+        "decision": "Catálogo extensível: uma forma = um tipo no esquema, um montador no servidor, um componente no cliente, uma linha na tabela 'A form per kind'",
+        "reason": "Pedido do dono: adicionar formas conforme a necessidade"
+      },
+      {
+        "decision": "Uma visão tem sempre a mesma anatomia (título, janela, veredito, gráfico, rodapé)",
+        "reason": "Uma forma nova só escreve o corpo; leitura e ações ficam iguais em todas"
+      },
+      {
+        "decision": "Hover e foco em cada marca com dica; clique em linha abre a tela filtrada",
+        "reason": "Pedido do dono: interação real; dataviz: camada de hover por padrão"
+      },
+      {
+        "decision": "Cores categóricas = --slotted-chart-color-1..8 do tema; 'Outros' em neutro",
+        "reason": "Paleta do tema já validada; nona categoria dobra em 'Outros'"
+      },
+      {
+        "decision": "A pergunta acima de cada visão é contexto do mock",
+        "reason": "Mostra o cenário de cada forma"
+      }
+    ],
+    "derivations": [
+      {
+        "value": "Percentual de cada parte e variação entre períodos",
+        "rule": "parte ÷ total; período − referência",
+        "test": "Montador de cada visão no servidor, valores calculados à mão"
+      },
+      {
+        "value": "Saldo previsto",
+        "rule": "Saldo de hoje + agendamentos (project_balance)",
+        "test": "Já testado em planning; a visão só lê"
+      },
+      {
+        "value": "Ritmo da meta e mês de conclusão",
+        "rule": "Faltante ÷ meses até o prazo; faltante ÷ média de 3 meses",
+        "test": "Montador da visão de meta"
+      },
+      {
+        "value": "Gastos por dia do mês",
+        "rule": "Soma das despesas por dia (leitura nova)",
+        "test": "Leitura nova com teste de agregação"
+      }
+    ]
+  }
+}
