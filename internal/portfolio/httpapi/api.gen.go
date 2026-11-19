@@ -847,9 +847,18 @@ type RiskCorrelation struct {
 	Months        int    `json:"months"`
 }
 
+// RiskLeftOut defines model for RiskLeftOut.
+type RiskLeftOut struct {
+	Instrument string `json:"instrument"`
+	Months     int    `json:"months"`
+}
+
 // RiskMonth defines model for RiskMonth.
 type RiskMonth struct {
 	DrawdownBp *int `json:"drawdown_bp,omitempty"`
+
+	// ExcludedBp The share of the value at the end of the month left out of the return for a stale or missing price; above 1000 the month leaves the volatility, the correlations and the risk shares.
+	ExcludedBp *int `json:"excluded_bp,omitempty"`
 
 	// Month The last day of the month.
 	Month    openapi_types.Date `json:"month"`
@@ -870,6 +879,9 @@ type RiskReport struct {
 	Classes      []RiskSeries        `json:"classes"`
 	Correlations []RiskCorrelation   `json:"correlations"`
 	From         *openapi_types.Date `json:"from,omitempty"`
+
+	// LeftOut The securities with a month left out for a stale or missing price, the most months first.
+	LeftOut      []RiskLeftOut       `json:"left_out"`
 	Portfolio    RiskSeries          `json:"portfolio"`
 	To           *openapi_types.Date `json:"to,omitempty"`
 	ValueIn      string              `json:"value_in"`

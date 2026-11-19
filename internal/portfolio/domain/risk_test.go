@@ -185,3 +185,63 @@ func returns(percents ...float64) []MonthRisk {
 
 	return out
 }
+
+// TestRiskAggregate checks RK3: a holding without a fresh price leaves its month, the others
+// still make the month, and the share left out decides whether the month counts as one month.
+func TestRiskAggregate(t *testing.T) {
+	t.Parallel()
+
+	start := day("2025-12-31")
+	stale := Spans(start, 1000, []MonthValue{
+		{End: day("2026-01-31"), Value: 1100},
+		{End: day("2026-02-28"), State: MonthStale, Value: 1100},
+		{End: day("2026-03-31"), Value: 1210},
+	})
+
+	tests := []struct {
+		name     string
+		other    int64
+		excluded int
+		counts   bool
+	}{
+		// 1100 of 10100 is 1089 basis points left out: above the limit of 1000.
+		{"a large share left out", 9000, 1089, false},
+		// 1100 of 100100 is 110 basis points.
+		{"a small share left out", 99000, 110, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			grow := tt.other / 10
+			other := Spans(start, tt.other, []MonthValue{
+				{End: day("2026-01-31"), Value: tt.other},
+				{End: day("2026-02-28"), Value: tt.other},
+				{End: day("2026-03-31"), Value: tt.other + grow},
+			})
+
+			got := Aggregate([][]MonthRisk{stale, other})
+
+			if got[1].State != MonthKnown || BP(got[1].Return) != 0 ||
+				BP(got[1].Excluded) != tt.excluded || got[1].OneMonth() != tt.counts {
+				t.Errorf(
+					"february = %+v, want %d bp left out, counts %v",
+					got[1],
+					tt.excluded,
+					tt.counts,
+				)
+			}
+
+			// March holds the two months of the stale holding: 10% on both.
+			if got[2].Span != 2 || BP(got[2].Return) != 1000 || got[2].OneMonth() {
+				t.Errorf("march = %+v, want 1000 bp over two months", got[2])
+			}
+		})
+	}
+
+	// A month whose every holding lacks a fresh price takes the worst state.
+	alone := Aggregate([][]MonthRisk{stale})
+	if alone[1].State != MonthStale {
+		t.Errorf("february alone = %s, want stale", alone[1].State)
+	}
+}

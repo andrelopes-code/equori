@@ -15,14 +15,16 @@ const (
 )
 
 // RiskWindow is the number of months a volatility, a correlation and a risk share read (RK7);
-// RiskFloor is the fewest one-month returns they need.
+// RiskFloor is the fewest one-month returns they need. MaxExcluded is the largest share of value
+// a month may leave out for a stale or missing price and still count as one month (RK3).
 const (
-	RiskWindow = 36
-	RiskFloor  = 12
+	RiskWindow  = 36
+	RiskFloor   = 12
+	MaxExcluded = 0.10
 )
 
-// MonthValue is a class at the end of one month: its value and the flows of the month in minor
-// units of one currency, or a State that leaves the value unknown.
+// MonthValue is a holding at the end of one month: its value and the flows of the month in minor
+// units of one currency, and a State when the price of the value is stale or missing.
 type MonthValue struct {
 	End   time.Time
 	State string
@@ -31,13 +33,17 @@ type MonthValue struct {
 }
 
 // MonthRisk is the figure of one month. Gain, Base and Return are those of the span that ends
-// at the month (RK5, RK6); Span is its length in months, 0 when the month is not known.
+// at the month (RK5, RK6); Span is its length in months, 0 when the month is not known. Value
+// is the value at the end of the month, priced or not; Excluded is the share of the value of an
+// aggregate left out for a stale or missing price (RK3).
 type MonthRisk struct {
 	End        time.Time
 	State      string
 	Gain, Base float64
 	Return     float64
 	Span       int
+	Value      int64
+	Excluded   float64
 
 	Drawdown    float64
 	HasDrawdown bool
@@ -46,19 +52,40 @@ type MonthRisk struct {
 	VolatilityMonths int
 }
 
-// OneMonth reports whether the month holds a return of a span of one month.
+// OneMonth reports whether the month holds a return of one month that stands for its value:
+// a span of one month that leaves out at most MaxExcluded of the value.
 func (m MonthRisk) OneMonth() bool {
-	return m.State == MonthKnown && m.Span == 1
+	return m.State == MonthKnown && m.Span == 1 && m.Excluded <= MaxExcluded
 }
 
 // Risk computes the spans, the drawdowns and the volatilities of months that follow a value of
 // opening at start (RK5 to RK8).
 func Risk(start time.Time, opening int64, months []MonthValue) []MonthRisk {
-	out := spans(start, opening, months)
-	addDrawdowns(out)
+	return Finish(Spans(start, opening, months))
+}
 
+// Finish adds the drawdowns and the volatilities to months (RK7, RK8).
+func Finish(months []MonthRisk) []MonthRisk {
+	addDrawdowns(months)
+
+	for i := range months {
+		months[i].Volatility, months[i].VolatilityMonths = volatility(months[:i+1])
+	}
+
+	return months
+}
+
+// Aggregate sums holdings that cover the same months into one series (RK3). A holding whose month
+// is stale or missing is left out of that month, and its value counts in Excluded; the others
+// make the month. Span is the longest span among the holdings counted.
+func Aggregate(holdings [][]MonthRisk) []MonthRisk {
+	if len(holdings) == 0 {
+		return nil
+	}
+
+	out := make([]MonthRisk, len(holdings[0]))
 	for i := range out {
-		out[i].Volatility, out[i].VolatilityMonths = volatility(out[:i+1])
+		out[i] = aggregateMonth(holdings, i)
 	}
 
 	return out
@@ -132,8 +159,9 @@ func BP(x float64) int {
 	return int(math.RoundToEven(x * 10000))
 }
 
-// spans computes the modified Dietz return of each span between two known month ends (RK5, RK6).
-func spans(start time.Time, opening int64, months []MonthValue) []MonthRisk {
+// Spans computes the modified Dietz return of each span between two known month ends of one
+// holding (RK5, RK6).
+func Spans(start time.Time, opening int64, months []MonthValue) []MonthRisk {
 	out := make([]MonthRisk, len(months))
 	from, value := start, opening
 
@@ -144,14 +172,14 @@ func spans(start time.Time, opening int64, months []MonthValue) []MonthRisk {
 	for i, m := range months {
 		pending = append(pending, m.Flows...)
 		length++
-		out[i] = MonthRisk{End: m.End, State: m.State}
+		out[i] = MonthRisk{End: m.End, State: m.State, Value: m.Value}
 
 		if m.State == MonthStale || m.State == MonthMissing {
 			continue
 		}
 
 		out[i] = dietz(from, m.End, value, m.Value, pending)
-		out[i].Span = length
+		out[i].Span, out[i].Value = length, m.Value
 		from, value, pending, length = m.End, m.Value, nil, 0
 	}
 
@@ -190,6 +218,61 @@ func dietz(from, to time.Time, opening, closing int64, flows []CashFlow) MonthRi
 	out.Return = out.Gain / out.Base
 
 	return out
+}
+
+// aggregateMonth sums month i of the holdings: the counted ones give the gain and the base, the
+// others the value left out and the state when none is counted.
+func aggregateMonth(holdings [][]MonthRisk, i int) MonthRisk {
+	out := MonthRisk{End: holdings[0][i].End, State: MonthNothingHeld}
+
+	var counted, excluded int64
+
+	for _, h := range holdings {
+		m := h[i]
+
+		switch m.State {
+		case MonthKnown, MonthNoBase:
+			out.Gain += m.Gain
+			out.Base += m.Base
+			out.Span = max(out.Span, m.Span)
+			counted += m.Value
+			out.State = MonthKnown
+		case MonthStale, MonthMissing:
+			excluded += m.Value
+
+			if out.State != MonthKnown {
+				out.State = worseState(out.State, m.State)
+			}
+		}
+	}
+
+	out.Value = counted + excluded
+	if excluded > 0 && out.Value > 0 {
+		out.Excluded = float64(excluded) / float64(out.Value)
+	}
+
+	if out.State != MonthKnown {
+		out.Span, out.Gain, out.Base = 0, 0, 0
+		return out
+	}
+
+	if out.Base <= 0 {
+		out.State = MonthNoBase
+		return out
+	}
+
+	out.Return = out.Gain / out.Base
+
+	return out
+}
+
+// worseState is missing over stale over any other state.
+func worseState(a, b string) string {
+	if a == MonthMissing || b == MonthMissing {
+		return MonthMissing
+	}
+
+	return MonthStale
 }
 
 // addDrawdowns chains the spans into an index and states each month's fall from its peak; a

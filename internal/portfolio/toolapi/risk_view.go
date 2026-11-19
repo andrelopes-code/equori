@@ -16,6 +16,13 @@ type riskView struct {
 	Portfolio    riskSeriesView        `json:"portfolio"`
 	Classes      []riskSeriesView      `json:"classes"`
 	Correlations []riskCorrelationView `json:"correlations"`
+	LeftOut      []riskLeftOutView     `json:"left_out,omitzero"`
+}
+
+// riskLeftOutView is a security whose months had no fresh price.
+type riskLeftOutView struct {
+	Instrument string `json:"instrument"`
+	Months     int    `json:"months"`
 }
 
 type riskSeriesView struct {
@@ -26,7 +33,7 @@ type riskSeriesView struct {
 	WeightBP         int    `json:"weight_bp,omitzero"`
 	RiskShareBP      int    `json:"risk_share_bp,omitzero"     jsonschema:"share of the portfolio variance; above weight_bp swings more than its size"`
 	AccrualBP        int    `json:"accrual_bp,omitzero"        jsonschema:"share of the value priced by accrual, near zero volatility by construction"`
-	UnknownMonths    int    `json:"unknown_months,omitzero"    jsonschema:"months without a fresh price"`
+	UnknownMonths    int    `json:"unknown_months,omitzero"    jsonschema:"months left out: over a tenth of the value without a fresh price"`
 }
 
 type riskCorrelationView struct {
@@ -65,6 +72,10 @@ func riskResult(
 		out.Correlations[i] = riskCorrelationView{c.A, c.B, c.CorrelationBP, c.Months}
 	}
 
+	for _, l := range r.LeftOut {
+		out.LeftOut = append(out.LeftOut, riskLeftOutView{string(l.Instrument), l.Months})
+	}
+
 	return getPortfolioOut{Risk: out}, nil
 }
 
@@ -80,7 +91,8 @@ func riskSeriesOf(s app.RiskSeries) riskSeriesView {
 	}
 
 	for _, m := range s.Months {
-		if m.State == domain.MonthStale || m.State == domain.MonthMissing {
+		if m.State == domain.MonthStale || m.State == domain.MonthMissing ||
+			m.Excluded > domain.MaxExcluded {
 			out.UnknownMonths++
 		}
 	}

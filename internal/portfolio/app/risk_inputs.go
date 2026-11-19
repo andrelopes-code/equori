@@ -17,26 +17,35 @@ import (
 // sourceAccrual is the price source of an accrual (marketdata, return honesty HR1).
 const sourceAccrual = "accrual"
 
+// cashHolding is the holding that gathers every cash account of the portfolio (RK4).
+const cashHolding = "cash"
+
 // riskBook is the portfolio of RK1: the brokerage roots, the class of every account of their
-// trees and the accounts of each class.
+// trees and the holding each account counts in: itself for a security, the cash otherwise.
 type riskBook struct {
-	roots   []uuid.UUID
-	classOf map[uuid.UUID]string
-	members map[string][]uuid.UUID
+	roots        []uuid.UUID
+	classOf      map[uuid.UUID]string
+	holdingOf    map[uuid.UUID]string
+	instrumentOf map[uuid.UUID]money.Currency
 }
 
-// riskInputs are the monthly values and flows of the portfolio and of each class, all covering
-// the same month ends; accrual is the value of each class priced by accrual.
+// riskHolding is the monthly value, flows and value priced by accrual of one holding; the
+// instrument of a security, empty for the cash.
+type riskHolding struct {
+	class      string
+	instrument money.Currency
+	months     []domain.MonthValue
+	accrual    []int64
+}
+
+// riskInputs are the holdings of the portfolio over the same month ends.
 type riskInputs struct {
-	keys      []string
-	ends      []time.Time
-	portfolio []domain.MonthValue
-	classes   map[string][]domain.MonthValue
-	accrual   map[string][]int64
+	ends     []time.Time
+	holdings map[string]*riskHolding
 }
 
-// classMonth is the value of one class at a month end (RK3).
-type classMonth struct {
+// holdingMonth is the value of one account at a month end (RK3).
+type holdingMonth struct {
 	value, accrual int64
 	state          string
 }
@@ -52,7 +61,11 @@ func (s *Service) riskBook(ctx context.Context, booksID int64) (riskBook, error)
 		byID[a.ID] = a
 	}
 
-	book := riskBook{classOf: map[uuid.UUID]string{}, members: map[string][]uuid.UUID{}}
+	book := riskBook{
+		classOf:      map[uuid.UUID]string{},
+		holdingOf:    map[uuid.UUID]string{},
+		instrumentOf: map[uuid.UUID]money.Currency{},
+	}
 	types := map[money.Currency]string{}
 
 	for _, a := range accounts {
@@ -74,13 +87,18 @@ func (s *Service) riskBook(ctx context.Context, booksID int64) (riskBook, error)
 		}
 
 		book.classOf[a.ID] = types[a.Instrument]
-		book.members[types[a.Instrument]] = append(book.members[types[a.Instrument]], a.ID)
+		book.holdingOf[a.ID] = a.ID.String()
+		book.instrumentOf[a.ID] = a.Instrument
+
+		if types[a.Instrument] == typeCurrency {
+			book.holdingOf[a.ID] = cashHolding
+		}
 	}
 
 	return book, nil
 }
 
-// riskInputs values every class at each month end and spreads the flows over the months.
+// riskInputs values every holding at each month end and spreads the flows over the months.
 func (s *Service) riskInputs(
 	ctx context.Context,
 	booksID int64,
@@ -88,15 +106,13 @@ func (s *Service) riskInputs(
 	ends []time.Time,
 	in money.Currency,
 ) (riskInputs, error) {
-	out := riskInputs{
-		keys:      slices.Sorted(maps.Keys(book.members)),
-		ends:      ends,
-		portfolio: make([]domain.MonthValue, len(ends)),
-		classes:   map[string][]domain.MonthValue{},
-		accrual:   map[string][]int64{},
-	}
-	for _, key := range out.keys {
-		out.addClass(key)
+	out := riskInputs{ends: ends, holdings: map[string]*riskHolding{}}
+	for id, holding := range book.holdingOf {
+		out.add(holding, book.classOf[id])
+
+		if holding != cashHolding {
+			out.holdings[holding].instrument = book.instrumentOf[id]
+		}
 	}
 
 	for i, end := range ends {
@@ -115,14 +131,14 @@ func (s *Service) riskInputs(
 	return out, nil
 }
 
-// riskMonth values the own balance of every account of the portfolio at end, by class (RK3).
+// riskMonth values the own balance of every account of the portfolio at end, by holding (RK3).
 func (s *Service) riskMonth(
 	ctx context.Context,
 	booksID int64,
 	book riskBook,
 	end time.Time,
 	in money.Currency,
-) (map[string]classMonth, error) {
+) (map[string]holdingMonth, error) {
 	balances, err := s.ledger.Balances(ctx, booksID, end)
 	if err != nil {
 		return nil, err
@@ -131,42 +147,43 @@ func (s *Service) riskMonth(
 	s.warm(ctx, end, balanceCodes(balances, in))
 
 	start := time.Date(end.Year(), end.Month(), 1, 0, 0, 0, 0, end.Location())
-	out := map[string]classMonth{}
+	out := map[string]holdingMonth{}
 
 	for _, b := range balances {
-		key, ok := book.classOf[b.AccountID]
+		holding, ok := book.holdingOf[b.AccountID]
 		if !ok || b.Amount.IsZero() {
 			continue
 		}
 
-		c := out[key]
-		if err := s.addRiskValue(ctx, &c, b.Amount, in, start, end); err != nil {
+		h := out[holding]
+		if err := s.addRiskValue(ctx, &h, b.Amount, in, start, end); err != nil {
 			return nil, err
 		}
 
-		out[key] = c
+		out[holding] = h
 	}
 
 	return out, nil
 }
 
-// addRiskValue adds amount valued at end to c; a missing price makes c missing, a price dated
+// addRiskValue adds amount valued at end to h; a missing price makes h missing, a price dated
 // before start makes it stale (RK3), and a price of an accrual counts the value as accrued (RK11).
+// A stale value still counts: it measures the share of the value a month leaves out.
 func (s *Service) addRiskValue(
 	ctx context.Context,
-	c *classMonth,
+	h *holdingMonth,
 	amount money.Money,
 	in money.Currency,
 	start, end time.Time,
 ) error {
 	if amount.Currency() == in {
-		c.value += amount.Amount()
+		h.value += amount.Amount()
 		return nil
 	}
 
 	v, prices, err := s.value(ctx, amount, in, end)
 	if errors.Is(err, ErrPriceMissing) {
-		c.state = worse(c.state, domain.MonthMissing)
+		h.state = worse(h.state, domain.MonthMissing)
 		return nil
 	}
 
@@ -174,27 +191,27 @@ func (s *Service) addRiskValue(
 		return err
 	}
 
-	c.value += v.Amount()
+	h.value += v.Amount()
 
 	accrued := false
 	for _, p := range prices {
 		if p.Date.Before(start) {
-			c.state = worse(c.state, domain.MonthStale)
+			h.state = worse(h.state, domain.MonthStale)
 		}
 
 		accrued = accrued || p.Source == sourceAccrual
 	}
 
 	if accrued {
-		c.accrual += v.Amount()
+		h.accrual += v.Amount()
 	}
 
 	return nil
 }
 
-// addRiskFlows adds the flows of the portfolio and of each security class to their months. The
-// flows of the cash are those of the portfolio less those of the security classes, date by date
-// (RK4): a purchase paid from the cash and an income paid into it move money between classes.
+// addRiskFlows adds the flows of each security holding to its months. The flows of the cash are
+// those of the portfolio less those of the securities, date by date (RK4): a purchase paid from
+// the cash and an income paid into it move money between holdings.
 func (s *Service) addRiskFlows(
 	ctx context.Context,
 	booksID int64,
@@ -210,41 +227,41 @@ func (s *Service) addRiskFlows(
 	}
 
 	cash := map[time.Time]int64{}
-	if err := s.spreadFlows(ctx, "", flows, in, out, cash, 1); err != nil {
+	if err := s.spreadFlows(ctx, cashHolding, flows, in, out, cash, 1); err != nil {
 		return err
 	}
 
-	for _, key := range out.keys {
-		if key == typeCurrency {
+	for _, id := range slices.SortedFunc(maps.Keys(book.holdingOf), compareUUID) {
+		if book.holdingOf[id] == cashHolding {
 			continue
 		}
 
-		flows, err := s.ledger.ExternalFlows(ctx, booksID, book.members[key], from, to)
+		flows, err := s.ledger.ExternalFlows(ctx, booksID, []uuid.UUID{id}, from, to)
 		if err != nil {
 			return err
 		}
 
-		if err := s.spreadFlows(ctx, key, flows, in, out, cash, -1); err != nil {
+		if err := s.spreadFlows(ctx, id.String(), flows, in, out, cash, -1); err != nil {
 			return err
 		}
 	}
 
 	for _, date := range slices.SortedFunc(maps.Keys(cash), time.Time.Compare) {
 		if cash[date] != 0 {
-			out.addClass(typeCurrency)
-			out.addFlow(typeCurrency, date, cash[date])
+			out.add(cashHolding, typeCurrency)
+			out.addFlow(cashHolding, date, cash[date])
 		}
 	}
 
 	return nil
 }
 
-// spreadFlows values each flow in in on its date and adds it to the month of key ("" for the
-// portfolio); sign × amount accumulates in cash. A flow without a price makes its month
-// missing for the class and for the portfolio.
+// spreadFlows values each flow in in on its date; sign × amount accumulates in cash, and a
+// security's flow is also a flow of its holding. A flow without a price makes the month of its
+// holding missing, and the month of the cash for a flow of the portfolio.
 func (s *Service) spreadFlows(
 	ctx context.Context,
-	key string,
+	holding string,
 	flows []Flow,
 	in money.Currency,
 	out *riskInputs,
@@ -254,7 +271,9 @@ func (s *Service) spreadFlows(
 	for _, f := range flows {
 		v, err := s.valueIn(ctx, f.Value, in, f.Date)
 		if errors.Is(err, ErrPriceMissing) {
-			out.markMissing(key, f.Date)
+			out.add(holding, typeCurrency)
+			out.month(holding, f.Date).State = domain.MonthMissing
+
 			continue
 		}
 
@@ -262,15 +281,19 @@ func (s *Service) spreadFlows(
 			return err
 		}
 
-		out.addFlow(key, f.Date, v.Amount())
 		cash[f.Date] += sign * v.Amount()
+
+		if holding != cashHolding {
+			out.addFlow(holding, f.Date, v.Amount())
+		}
 	}
 
 	return nil
 }
 
-func (r *riskInputs) addClass(key string) {
-	if _, ok := r.classes[key]; ok {
+// add registers a holding of class; a known holding keeps its class.
+func (r *riskInputs) add(holding, class string) {
+	if _, ok := r.holdings[holding]; ok {
 		return
 	}
 
@@ -279,47 +302,42 @@ func (r *riskInputs) addClass(key string) {
 		months[i].End = end
 	}
 
-	if !slices.Contains(r.keys, key) {
-		r.keys = append(r.keys, key)
-	}
-
-	r.classes[key] = months
-	r.accrual[key] = make([]int64, len(r.ends))
-}
-
-// setMonth stores the class values of month i and their sum as the portfolio's value.
-func (r *riskInputs) setMonth(i int, values map[string]classMonth) {
-	r.portfolio[i].End = r.ends[i]
-
-	for _, key := range r.keys {
-		c := values[key]
-		r.classes[key][i].Value, r.classes[key][i].State = c.value, c.state
-		r.accrual[key][i] = c.accrual
-		r.portfolio[i].Value += c.value
-		r.portfolio[i].State = worse(r.portfolio[i].State, c.state)
+	r.holdings[holding] = &riskHolding{
+		class:   class,
+		months:  months,
+		accrual: make([]int64, len(r.ends)),
 	}
 }
 
-func (r *riskInputs) addFlow(key string, date time.Time, amount int64) {
-	m := r.month(key, date)
+// setMonth stores the values of month i.
+func (r *riskInputs) setMonth(i int, values map[string]holdingMonth) {
+	for holding, h := range r.holdings {
+		v := values[holding]
+		h.months[i].Value, h.months[i].State = v.value, v.state
+		h.accrual[i] = v.accrual
+	}
+}
+
+func (r *riskInputs) addFlow(holding string, date time.Time, amount int64) {
+	m := r.month(holding, date)
 	m.Flows = append(m.Flows, domain.CashFlow{Date: date, Amount: amount})
 }
 
-func (r *riskInputs) markMissing(key string, date time.Time) {
-	m := r.month(key, date)
-	m.State = domain.MonthMissing
-	r.month("", date).State = domain.MonthMissing
+// month is the month of the holding that holds date: the first that ends on or after it.
+func (r *riskInputs) month(holding string, date time.Time) *domain.MonthValue {
+	i := sort.Search(len(r.ends), func(i int) bool { return !r.ends[i].Before(date) })
+
+	return &r.holdings[holding].months[i]
 }
 
-// month is the month of key ("" for the portfolio) that holds date: the first that ends on or
-// after it.
-func (r *riskInputs) month(key string, date time.Time) *domain.MonthValue {
-	i := sort.Search(len(r.ends), func(i int) bool { return !r.ends[i].Before(date) })
-	if key == "" {
-		return &r.portfolio[i]
+// classes lists the classes of the holdings, sorted.
+func (r *riskInputs) classes() []string {
+	set := map[string]bool{}
+	for _, h := range r.holdings {
+		set[h.class] = true
 	}
 
-	return &r.classes[key][i]
+	return slices.Sorted(maps.Keys(set))
 }
 
 // worse is the state of a month with both states: missing wins over stale, stale over known.
@@ -333,6 +351,10 @@ func worse(a, b string) string {
 	}
 
 	return ""
+}
+
+func compareUUID(a, b uuid.UUID) int {
+	return slices.Compare(a[:], b[:])
 }
 
 // inBrokerageTree reports whether a or one of its ancestors is a brokerage account.

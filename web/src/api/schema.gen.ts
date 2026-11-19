@@ -4398,11 +4398,13 @@ export interface paths {
         };
         /**
          * Monthly risk history of the brokerage trees, in total and by class (portfolio risk design, RK1 to RK14).
-         * @description A class is the type of the instrument an account holds; cash is currency. Each month is valued at its last day
-         *     in value_in (the base currency by default) with the chosen price on or before it; a price dated before the
-         *     first day of the month makes the month stale, a missing price missing. The return of a month is the modified
-         *     Dietz return of the span since the last known month end, with the external flows of each class (an income of a
-         *     security paid into the cash of the brokerage is return of the security). volatility_bp is the sample standard
+         * @description A class is the type of the instrument an account holds; cash is currency. Each holding is valued at the last day
+         *     of each month in value_in (the base currency by default) with the chosen price on or before it; a price dated
+         *     before the first day of the month makes the holding's month stale, a missing price missing. The return of a
+         *     holding is the modified Dietz return of the span since its last known month end, with its external flows (an
+         *     income of a security paid into the cash of the brokerage is return of the security). A class and the portfolio
+         *     sum the holdings whose month is known; the others are left out of that month, and excluded_bp states their share
+         *     of the value. volatility_bp is the sample standard
          *     deviation of the one-month returns of the 36 months that end at the month, times the square root of 12, with at
          *     least 12 returns. drawdown_bp is the fall of the chained index from its peak. correlations and risk_share_bp
          *     read the last 36 months with at least 12 common one-month returns; the risk shares are the shares of the
@@ -8521,6 +8523,8 @@ export interface components {
             drawdown_bp?: number;
             volatility_bp?: number;
             volatility_months?: number;
+            /** @description The share of the value at the end of the month left out of the return for a stale or missing price; above 1000 the month leaves the volatility, the correlations and the risk shares. */
+            excluded_bp?: number;
         };
         RiskSeries: {
             /** @description The instrument type of the class; empty for the portfolio. */
@@ -8539,6 +8543,10 @@ export interface components {
             correlation_bp: number;
             months: number;
         };
+        RiskLeftOut: {
+            instrument: string;
+            months: number;
+        };
         RiskReport: {
             value_in: string;
             /** Format: date */
@@ -8549,6 +8557,8 @@ export interface components {
             portfolio: components["schemas"]["RiskSeries"];
             classes: components["schemas"]["RiskSeries"][];
             correlations: components["schemas"]["RiskCorrelation"][];
+            /** @description The securities with a month left out for a stale or missing price, the most months first. */
+            left_out: components["schemas"]["RiskLeftOut"][];
         };
         ReturnFlow: {
             /** Format: date */

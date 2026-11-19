@@ -37,6 +37,7 @@ func (s *Server) getRisk(
 		Portfolio:    toRiskSeries(res.Portfolio),
 		Classes:      make([]RiskSeries, len(res.Classes)),
 		Correlations: make([]RiskCorrelation, len(res.Correlations)),
+		LeftOut:      make([]RiskLeftOut, len(res.LeftOut)),
 	}
 	if !res.From.IsZero() {
 		out.From, out.To = ptr(date(res.From)), ptr(date(res.To))
@@ -53,6 +54,10 @@ func (s *Server) getRisk(
 			CorrelationBp: c.CorrelationBP,
 			Months:        c.Months,
 		}
+	}
+
+	for i, l := range res.LeftOut {
+		out.LeftOut[i] = RiskLeftOut{Instrument: string(l.Instrument), Months: l.Months}
 	}
 
 	return out, nil
@@ -81,6 +86,10 @@ func toRiskSeries(s app.RiskSeries) RiskSeries {
 
 func toRiskMonth(m domain.MonthRisk) RiskMonth {
 	out := RiskMonth{Month: date(m.End), State: RiskMonthState(m.State)}
+	if m.Excluded > 0 {
+		out.ExcludedBp = ptr(domain.BP(m.Excluded))
+	}
+
 	if m.State != domain.MonthKnown {
 		return out
 	}

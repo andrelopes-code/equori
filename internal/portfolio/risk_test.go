@@ -18,6 +18,7 @@ type riskMonthOut struct {
 	DrawdownBP       *int   `json:"drawdown_bp"`
 	VolatilityBP     *int   `json:"volatility_bp"`
 	VolatilityMonths *int   `json:"volatility_months"`
+	ExcludedBP       *int   `json:"excluded_bp"`
 }
 
 type riskSeriesOut struct {
@@ -44,6 +45,10 @@ type riskOut struct {
 		CorrelationBP int    `json:"correlation_bp"`
 		Months        int    `json:"months"`
 	} `json:"correlations"`
+	LeftOut []struct {
+		Instrument string `json:"instrument"`
+		Months     int    `json:"months"`
+	} `json:"left_out"`
 }
 
 // S648: a purchase from the brokerage cash is internal to the portfolio, an income paid into the
@@ -101,15 +106,26 @@ func TestS648MonthlyReturnsByClass(t *testing.T) {
 		{"2026-04-30", "known", 0, 1},
 		{"2026-05-31", "known", 0, 1},
 	})
-	// The portfolio: (101000 − 102000) / 102000, (104000 − 101000) / 101000 and
+	// The portfolio: (101000 − 102000) / 102000, (104000 − 101000) / 101000; April holds the cash
+	// alone, the fund left out (103000 of 104000); May holds the two months of the fund:
 	// (102000 − 104000) / 104000.
 	assertMonths(t, "portfolio", got.Portfolio.Months, []monthWant{
 		{"2026-01-31", "known", 214, 1},
 		{"2026-02-28", "known", -98, 1},
 		{"2026-03-31", "known", 297, 1},
-		{"2026-04-30", "stale", 0, 0},
+		{"2026-04-30", "known", 0, 1},
 		{"2026-05-31", "known", -192, 2},
 	})
+
+	if april := got.Portfolio.Months[3]; intOf(april.ExcludedBP) != 9904 ||
+		reit.Months[3].ExcludedBP == nil || got.Portfolio.Months[2].ExcludedBP != nil {
+		t.Errorf("left out = %+v, reit %+v", april, reit.Months[3])
+	}
+
+	if len(got.LeftOut) != 1 || got.LeftOut[0].Instrument != "MXRF11" ||
+		got.LeftOut[0].Months != 1 {
+		t.Errorf("left out = %+v, want MXRF11 for one month", got.LeftOut)
+	}
 
 	if got.From != "2026-01-31" || got.To != "2026-05-31" || got.WindowMonths != 36 ||
 		got.ValueIn != "BRL" {
@@ -298,7 +314,7 @@ func TestS653RiskRequests(t *testing.T) {
 
 	got := f.risk(t, "")
 	if len(got.Portfolio.Months) != 0 || len(got.Classes) != 0 || len(got.Correlations) != 0 ||
-		got.From != "" {
+		got.LeftOut == nil || got.From != "" {
 		t.Errorf("empty book = %+v", got)
 	}
 

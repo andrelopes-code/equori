@@ -3,6 +3,7 @@ package app
 import (
 	"cmp"
 	"context"
+	"maps"
 	"slices"
 	"time"
 
@@ -30,6 +31,12 @@ type RiskCorrelation struct {
 	Months        int
 }
 
+// RiskLeftOut is a security whose months were left out for a stale or missing price (RK3).
+type RiskLeftOut struct {
+	Instrument money.Currency
+	Months     int
+}
+
 // RiskReport is the risk history of the brokerage trees of a book in one currency; From and To
 // are the first and last month ends, zero without a month.
 type RiskReport struct {
@@ -38,6 +45,7 @@ type RiskReport struct {
 	Portfolio    RiskSeries
 	Classes      []RiskSeries
 	Correlations []RiskCorrelation
+	LeftOut      []RiskLeftOut
 }
 
 // Risk is the monthly risk history of the portfolio and of each class of it, from the month of
@@ -83,23 +91,41 @@ func (s *Service) Risk(
 	report.From, report.To = ends[0], ends[len(ends)-1]
 	report.Portfolio, report.Classes = riskSeries(previousMonthEnd(ends[0]), inputs)
 	report.Correlations = correlations(report.Classes)
+	report.LeftOut = leftOut(inputs)
 
 	return report, nil
 }
 
-// riskSeries computes the portfolio and every class from the monthly inputs, with the weights,
-// the risk shares and the accrual of the last known month of the portfolio (RK10, RK11).
+// riskSeries computes the spans of every holding and aggregates them into each class and into the
+// portfolio (RK3), with the weights, the risk shares and the accrual of the last month the
+// portfolio knows (RK10, RK11).
 func riskSeries(start time.Time, inputs riskInputs) (RiskSeries, []RiskSeries) {
-	portfolio := summarized("", domain.Risk(start, 0, inputs.portfolio))
+	byClass := map[string][][]domain.MonthRisk{}
 
-	classes := make([]RiskSeries, len(inputs.keys))
-	for i, key := range inputs.keys {
-		classes[i] = summarized(key, domain.Risk(start, 0, inputs.classes[key]))
+	var all [][]domain.MonthRisk
+
+	accrual := map[string][]int64{}
+
+	for _, id := range slices.Sorted(maps.Keys(inputs.holdings)) {
+		h := inputs.holdings[id]
+		spans := domain.Spans(start, 0, h.months)
+		byClass[h.class] = append(byClass[h.class], spans)
+		all = append(all, spans)
+		accrual[h.class] = addInts(accrual[h.class], h.accrual)
+	}
+
+	portfolio := summarized("", domain.Finish(domain.Aggregate(all)))
+
+	keys := inputs.classes()
+	classes := make([]RiskSeries, len(keys))
+
+	for i, key := range keys {
+		classes[i] = summarized(key, domain.Finish(domain.Aggregate(byClass[key])))
 	}
 
 	for i, m := range slices.Backward(portfolio.Months) {
 		if m.State == domain.MonthKnown || m.State == domain.MonthNothingHeld {
-			addWeights(&portfolio, classes, inputs, i)
+			addWeights(&portfolio, classes, accrual, i)
 			break
 		}
 	}
@@ -142,21 +168,24 @@ func summarized(key string, months []domain.MonthRisk) RiskSeries {
 }
 
 // addWeights states the share of value and of accrual of each class at month i (RK10, RK11).
-func addWeights(portfolio *RiskSeries, classes []RiskSeries, inputs riskInputs, i int) {
+func addWeights(
+	portfolio *RiskSeries,
+	classes []RiskSeries,
+	accrued map[string][]int64,
+	i int,
+) {
 	holdings := make([]domain.Holding, len(classes))
 
 	var value, accrual int64
 
 	for c, class := range classes {
-		v := inputs.classes[class.Key][i].Value
+		v := class.Months[i].Value
 		holdings[c] = domain.Holding{Key: class.Key, Value: v}
 		value += v
-		accrual += inputs.accrual[class.Key][i]
+		accrual += accrued[class.Key][i]
 
 		if v > 0 {
-			classes[c].AccrualBP = ptr(
-				domain.BP(float64(inputs.accrual[class.Key][i]) / float64(v)),
-			)
+			classes[c].AccrualBP = ptr(domain.BP(float64(accrued[class.Key][i]) / float64(v)))
 		}
 	}
 
@@ -195,6 +224,32 @@ func correlations(classes []RiskSeries) []RiskCorrelation {
 	return out
 }
 
+// leftOut lists the securities with a stale or missing month, the most months first, then by
+// code; a security held by two accounts adds its months.
+func leftOut(inputs riskInputs) []RiskLeftOut {
+	months := map[money.Currency]int{}
+
+	for _, h := range inputs.holdings {
+		for _, m := range h.months {
+			if h.instrument != "" &&
+				(m.State == domain.MonthStale || m.State == domain.MonthMissing) {
+				months[h.instrument]++
+			}
+		}
+	}
+
+	out := make([]RiskLeftOut, 0, len(months))
+	for code, n := range months {
+		out = append(out, RiskLeftOut{Instrument: code, Months: n})
+	}
+
+	slices.SortFunc(out, func(a, b RiskLeftOut) int {
+		return cmp.Or(cmp.Compare(b.Months, a.Months), cmp.Compare(a.Instrument, b.Instrument))
+	})
+
+	return out
+}
+
 // monthEnds are the last days of the months from the month of first to the last month whose
 // last day is on or before to (RK2).
 func monthEnds(first, to time.Time) []time.Time {
@@ -213,6 +268,19 @@ func monthEnd(d time.Time) time.Time {
 
 func previousMonthEnd(end time.Time) time.Time {
 	return time.Date(end.Year(), end.Month(), 0, 0, 0, 0, 0, end.Location())
+}
+
+// addInts adds b to a element by element; a nil a takes the length of b.
+func addInts(a, b []int64) []int64 {
+	if a == nil {
+		a = make([]int64, len(b))
+	}
+
+	for i := range b {
+		a[i] += b[i]
+	}
+
+	return a
 }
 
 func ptr(v int) *int {

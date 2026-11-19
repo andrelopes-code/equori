@@ -6332,7 +6332,7 @@
                 },
                 "unknown_months": {
                   "type": "integer",
-                  "description": "months without a fresh price"
+                  "description": "months left out: over a tenth of the value without a fresh price"
                 }
               },
               "additionalProperties": false
@@ -6369,7 +6369,7 @@
                   },
                   "unknown_months": {
                     "type": "integer",
-                    "description": "months without a fresh price"
+                    "description": "months left out: over a tenth of the value without a fresh price"
                   }
                 },
                 "additionalProperties": false
@@ -6397,6 +6397,25 @@
                   "a",
                   "b",
                   "correlation_bp",
+                  "months"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "left_out": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "instrument": {
+                    "type": "string"
+                  },
+                  "months": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "instrument",
                   "months"
                 ],
                 "additionalProperties": false
