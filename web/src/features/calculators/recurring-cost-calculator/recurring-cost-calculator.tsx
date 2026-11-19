@@ -12,6 +12,7 @@ import {
   readRate,
   useCalculatorSearch,
 } from "@/features/calculators/model/calculator-search";
+import { addressKeys } from "@/features/calculators/recurring-cost-calculator/address-keys";
 import { ChoiceField } from "@/features/calculators/fields/choice-field";
 import { CountField } from "@/features/calculators/fields/count-field";
 import { FilledNote } from "@/features/calculators/fields/filled-note";
@@ -42,7 +43,7 @@ export function RecurringCostCalculator() {
   const t = useT();
   const api = useApi();
   const money = useCalculatorMoney();
-  const [search, set] = useCalculatorSearch();
+  const [search, set] = useCalculatorSearch(addressKeys);
   const schedules = useQuery(schedulesQuery(api)).data ?? [];
   if (money === null)
     return (

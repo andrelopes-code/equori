@@ -6,6 +6,7 @@ import { FilledNote } from "@/features/calculators/fields/filled-note";
 import { rateFieldValue } from "@/features/calculators/compound-calculator/compound-answer";
 import { RateField } from "@/features/calculators/fields/rate-field";
 import { useCalculatorSearch } from "@/features/calculators/model/calculator-search";
+import { addressKeys } from "@/features/calculators/compound-calculator/address-keys";
 import { indexName } from "@/features/calculators/rate-source/index-catalog";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -21,7 +22,7 @@ interface InflationFieldProps {
 export function InflationField({ input }: InflationFieldProps) {
   const t = useT();
   const [locale] = useAppLocale();
-  const [search, set] = useCalculatorSearch();
+  const [search, set] = useCalculatorSearch(addressKeys);
   const { inflationIndex, fromInflationIndex, monthly } = input;
 
   return (

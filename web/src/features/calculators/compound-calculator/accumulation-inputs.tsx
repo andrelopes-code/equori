@@ -11,6 +11,7 @@ import { FilledNote } from "@/features/calculators/fields/filled-note";
 import { RateField } from "@/features/calculators/fields/rate-field";
 import type { CalculatorMoney } from "@/features/calculators/fields/use-calculator-money";
 import { useCalculatorSearch } from "@/features/calculators/model/calculator-search";
+import { addressKeys } from "@/features/calculators/compound-calculator/address-keys";
 import { termUnits, unitPatch } from "@/features/calculators/model/duration";
 import { FloatingFields } from "@/features/calculators/rate-source/floating-fields";
 import { floatingOrigin } from "@/features/calculators/rate-source/floating-origin";
@@ -25,7 +26,7 @@ interface AccumulationInputsProps {
 export function AccumulationInputs({ input, money }: AccumulationInputsProps) {
   const t = useT();
   const [locale] = useAppLocale();
-  const [search, set] = useCalculatorSearch();
+  const [search, set] = useCalculatorSearch(addressKeys);
   const { index, floating, fromIndex, daily, period, monthsUnit } = input;
 
   return (

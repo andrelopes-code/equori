@@ -33,7 +33,7 @@ export function defaultBasis(expected: boolean): RateBasis {
 // The form named in the address; else the one whose value the address holds; else the one the
 // index is quoted in. The basis named in the address, else the default of the index.
 export function readFloating(
-  search: Record<string, string>,
+  search: Partial<Record<string, string>>,
   keys: FloatingKeys,
   indexId: string,
   expected = false,

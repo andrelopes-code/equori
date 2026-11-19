@@ -6,6 +6,7 @@ import {
   readRate,
   useCalculatorSearch,
 } from "@/features/calculators/model/calculator-search";
+import { addressKeys } from "@/features/calculators/rates-calculator/address-keys";
 import {
   clearFloating,
   floatingKeys,
@@ -42,7 +43,7 @@ const sources: Source[] = [
 export function RatesCalculator() {
   const t = useT();
   const [locale] = useAppLocale();
-  const [search, set] = useCalculatorSearch();
+  const [search, set] = useCalculatorSearch(addressKeys);
   const indexes = useIndexes();
   const daily = indexes.filter((i) => i.period === "day");
   const index = daily.find((i) => i.id === search.index);

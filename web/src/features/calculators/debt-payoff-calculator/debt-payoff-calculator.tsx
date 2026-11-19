@@ -20,6 +20,7 @@ import {
   readRate,
   useCalculatorSearch,
 } from "@/features/calculators/model/calculator-search";
+import { addressKeys } from "@/features/calculators/debt-payoff-calculator/address-keys";
 import { ChoiceField } from "@/features/calculators/fields/choice-field";
 import { payoffPlan } from "@/features/calculators/debt-payoff-calculator/debt-math";
 import type {
@@ -64,7 +65,7 @@ export function DebtPayoffCalculator() {
   const api = useApi();
   const today = useToday();
   const money = useCalculatorMoney();
-  const [search, set] = useCalculatorSearch();
+  const [search, set] = useCalculatorSearch(addressKeys);
   const accounts = useQuery(accountsQuery(api)).data;
   const balances = useQuery(balancesQuery(api, today, "booked")).data;
   if (money === null)

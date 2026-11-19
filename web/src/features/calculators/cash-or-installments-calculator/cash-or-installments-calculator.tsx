@@ -10,6 +10,7 @@ import {
   readMinor,
   useCalculatorSearch,
 } from "@/features/calculators/model/calculator-search";
+import { addressKeys } from "@/features/calculators/cash-or-installments-calculator/address-keys";
 import { ChoiceField } from "@/features/calculators/fields/choice-field";
 import { CountField } from "@/features/calculators/fields/count-field";
 import {
@@ -47,7 +48,7 @@ export function CashOrInstallmentsCalculator() {
   const t = useT();
   const [locale] = useAppLocale();
   const money = useCalculatorMoney();
-  const [search, set] = useCalculatorSearch();
+  const [search, set] = useCalculatorSearch(addressKeys);
   const count = readInt(search.count, 1, maxInstallments);
   // ADR 026 E8: one month per installment.
   const compare = useRateSource(search, "compare", count ?? 12);

@@ -14,6 +14,7 @@ import {
   readMonth,
   useCalculatorSearch,
 } from "@/features/calculators/model/calculator-search";
+import { addressKeys } from "@/features/calculators/correction-calculator/address-keys";
 import { ChoiceField } from "@/features/calculators/fields/choice-field";
 import { formatRate } from "@/features/calculators/model/format-rate";
 import { indexName } from "@/features/calculators/rate-source/index-catalog";
@@ -53,7 +54,7 @@ export function CorrectionCalculator() {
   const [locale] = useAppLocale();
   const api = useApi();
   const money = useCalculatorMoney();
-  const [search, set] = useCalculatorSearch();
+  const [search, set] = useCalculatorSearch(addressKeys);
   const indexes = useIndexes();
   const index = indexes.find((i) => i.id === search.index) ?? indexes[0];
   const first = index?.first.slice(0, 7);

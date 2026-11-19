@@ -23,7 +23,9 @@ interface OptionalGroupsProps {
 // Several optional groups: the add buttons of the closed ones stand in one row, the open ones as
 // field groups above it. A group is open while any of its keys is in the address.
 export function OptionalGroups({ groups }: OptionalGroupsProps) {
-  const [search, setSearch] = useCalculatorSearch();
+  const [search, setSearch] = useCalculatorSearch(
+    groups.flatMap((group) => group.keys),
+  );
   const [added, setAdded] = useState<string[]>([]);
 
   const isOpen = (group: OptionalGroupSpec) =>

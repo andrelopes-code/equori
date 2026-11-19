@@ -1,5 +1,6 @@
 import { ChoiceField } from "@/features/calculators/fields/choice-field";
 import { useCalculatorSearch } from "@/features/calculators/model/calculator-search";
+import { addressKeys } from "@/features/calculators/compound-calculator/address-keys";
 import { useT } from "@/i18n/i18n-provider";
 
 type CompoundMode = "final" | "target" | "income";
@@ -7,7 +8,7 @@ type CompoundMode = "final" | "target" | "income";
 // What the calculator answers, with a line that says what the chosen answer is.
 export function CompoundModeField() {
   const t = useT();
-  const [search, set] = useCalculatorSearch();
+  const [search, set] = useCalculatorSearch(addressKeys);
   const mode: CompoundMode =
     search.mode === "target" || search.mode === "income"
       ? search.mode

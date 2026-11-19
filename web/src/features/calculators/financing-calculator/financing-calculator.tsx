@@ -14,6 +14,7 @@ import { FinancingInputs } from "@/features/calculators/financing-calculator/fin
 import { FinancingOptional } from "@/features/calculators/financing-calculator/financing-optional";
 import { systemNames } from "@/features/calculators/financing-calculator/financing-region";
 import { useCalculatorSearch } from "@/features/calculators/model/calculator-search";
+import { addressKeys } from "@/features/calculators/financing-calculator/address-keys";
 import { useAppLocaleState, useT } from "@/i18n/i18n-provider";
 
 const sources: Source[] = [
@@ -30,7 +31,7 @@ export function FinancingCalculator() {
   const t = useT();
   const { locale } = useAppLocaleState();
   const money = useCalculatorMoney();
-  const [search] = useCalculatorSearch();
+  const [search] = useCalculatorSearch(addressKeys);
 
   if (money === null)
     return <CalculatorFrame id="financing" inputs={null} method={null} />;

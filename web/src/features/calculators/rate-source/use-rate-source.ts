@@ -1,5 +1,6 @@
 import { readRate } from "@/features/calculators/model/calculator-search";
 import { readFloating } from "@/features/calculators/rate-source/floating";
+import { rateSourceKeys } from "@/features/calculators/rate-source/rate-source-keys";
 import type {
   Floating,
   FloatingKeys,
@@ -37,21 +38,14 @@ export interface RateSource {
 // A rate typed with its period, or an annual rate taken from a daily index (design §4, "Index
 // basis"), at a percent of it or plus a spread (design §4, "Filled inputs").
 export function useRateSource(
-  search: Record<string, string>,
+  search: Partial<Record<string, string>>,
   rateKey: string,
   months = 12,
 ): RateSource {
-  const keys = {
-    rate: rateKey,
-    period: `${rateKey}Period`,
-    index: `${rateKey}Index`,
-  };
-  const floatingKeys = {
-    form: `${rateKey}Form`,
-    percent: `${rateKey}Percent`,
-    spread: `${rateKey}Spread`,
-    basis: `${rateKey}Basis`,
-  };
+  const [rate, ratePeriod, rateIndex, form, percent, spread, basis] =
+    rateSourceKeys(rateKey);
+  const keys = { rate, period: ratePeriod, index: rateIndex };
+  const floatingKeys = { form, percent, spread, basis };
   const indexes = useIndexes();
   const daily = indexes.filter((i) => i.period === "day");
   const index = daily.find((i) => i.id === search[keys.index]);

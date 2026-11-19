@@ -1,0 +1,311 @@
+{
+  "compound": {
+    "initial": {
+      "kind": "amount"
+    },
+    "deposit": {
+      "kind": "amount"
+    },
+    "target": {
+      "kind": "amount"
+    },
+    "rate": {
+      "kind": "rate"
+    },
+    "inflation": {
+      "kind": "rate"
+    },
+    "volatility": {
+      "kind": "rate"
+    },
+    "share": {
+      "kind": "rate"
+    },
+    "period": {
+      "kind": "choice",
+      "values": ["month", "year"]
+    },
+    "months": {
+      "kind": "decimal"
+    },
+    "delay": {
+      "kind": "decimal"
+    },
+    "withdraw": {
+      "kind": "decimal"
+    },
+    "monthsUnit": {
+      "kind": "choice",
+      "values": ["month", "year"]
+    },
+    "delayUnit": {
+      "kind": "choice",
+      "values": ["month", "year"]
+    },
+    "withdrawUnit": {
+      "kind": "choice",
+      "values": ["year", "month"]
+    },
+    "mode": {
+      "kind": "choice",
+      "values": ["final", "target", "income"]
+    },
+    "index": {
+      "kind": "id"
+    },
+    "inflationIndex": {
+      "kind": "id"
+    },
+    "form": {
+      "kind": "choice",
+      "values": ["percent", "spread"]
+    },
+    "percent": {
+      "kind": "rate"
+    },
+    "spread": {
+      "kind": "rate"
+    },
+    "basis": {
+      "kind": "choice",
+      "values": ["trailing", "current", "expected"]
+    }
+  },
+  "rates": {
+    "rate": {
+      "kind": "rate"
+    },
+    "inflation": {
+      "kind": "rate"
+    },
+    "period": {
+      "kind": "choice",
+      "values": ["month", "year"]
+    },
+    "index": {
+      "kind": "id"
+    },
+    "form": {
+      "kind": "choice",
+      "values": ["percent", "spread"]
+    },
+    "percent": {
+      "kind": "rate"
+    },
+    "spread": {
+      "kind": "rate"
+    },
+    "basis": {
+      "kind": "choice",
+      "values": ["trailing", "current", "expected"]
+    }
+  },
+  "correction": {
+    "amount": {
+      "kind": "amount"
+    },
+    "index": {
+      "kind": "id"
+    },
+    "from": {
+      "kind": "month"
+    },
+    "to": {
+      "kind": "month"
+    }
+  },
+  "fixed-income": {
+    "amount": {
+      "kind": "amount"
+    },
+    "days": {
+      "kind": "decimal"
+    },
+    "daysUnit": {
+      "kind": "choice",
+      "values": ["day", "month", "year"]
+    },
+    "kind": {
+      "kind": "choice",
+      "values": ["taxable", "exempt"]
+    },
+    "taxRate": {
+      "kind": "rate"
+    },
+    "rate": {
+      "kind": "rate"
+    },
+    "ratePeriod": {
+      "kind": "choice",
+      "values": ["month", "year"]
+    },
+    "rateIndex": {
+      "kind": "id"
+    },
+    "rateForm": {
+      "kind": "choice",
+      "values": ["percent", "spread"]
+    },
+    "ratePercent": {
+      "kind": "rate"
+    },
+    "rateSpread": {
+      "kind": "rate"
+    },
+    "rateBasis": {
+      "kind": "choice",
+      "values": ["trailing", "current", "expected"]
+    }
+  },
+  "indexer-comparison": {},
+  "financing": {
+    "amount": {
+      "kind": "amount"
+    },
+    "installment": {
+      "kind": "amount"
+    },
+    "prepayAmount": {
+      "kind": "amount"
+    },
+    "rate": {
+      "kind": "rate"
+    },
+    "period": {
+      "kind": "choice",
+      "values": ["month", "year"]
+    },
+    "months": {
+      "kind": "decimal"
+    },
+    "monthsUnit": {
+      "kind": "choice",
+      "values": ["month", "year"]
+    },
+    "prepayMonth": {
+      "kind": "integer"
+    },
+    "solve": {
+      "kind": "choice",
+      "values": ["installment", "amount", "rate", "months"]
+    }
+  },
+  "cash-or-installments": {
+    "cash": {
+      "kind": "amount"
+    },
+    "installment": {
+      "kind": "amount"
+    },
+    "count": {
+      "kind": "integer"
+    },
+    "first": {
+      "kind": "choice",
+      "values": ["now"]
+    },
+    "compare": {
+      "kind": "rate"
+    },
+    "comparePeriod": {
+      "kind": "choice",
+      "values": ["month", "year"]
+    },
+    "compareIndex": {
+      "kind": "id"
+    },
+    "compareForm": {
+      "kind": "choice",
+      "values": ["percent", "spread"]
+    },
+    "comparePercent": {
+      "kind": "rate"
+    },
+    "compareSpread": {
+      "kind": "rate"
+    },
+    "compareBasis": {
+      "kind": "choice",
+      "values": ["trailing", "current", "expected"]
+    }
+  },
+  "credit-cost": {
+    "released": {
+      "kind": "amount"
+    },
+    "installment": {
+      "kind": "amount"
+    },
+    "fees": {
+      "kind": "amount"
+    },
+    "count": {
+      "kind": "integer"
+    },
+    "releaseDate": {
+      "kind": "date"
+    },
+    "firstDue": {
+      "kind": "date"
+    }
+  },
+  "debt-payoff": {
+    "budget": {
+      "kind": "amount"
+    },
+    "ratePeriod": {
+      "kind": "choice",
+      "values": ["month", "year"]
+    },
+    "debts": {
+      "kind": "debts"
+    }
+  },
+  "recurring-cost": {
+    "amount": {
+      "kind": "amount"
+    },
+    "rate": {
+      "kind": "rate"
+    },
+    "years": {
+      "kind": "integer"
+    },
+    "per": {
+      "kind": "choice",
+      "values": ["month", "year"]
+    },
+    "schedule": {
+      "kind": "id"
+    }
+  },
+  "own-or-rent": {
+    "price": {
+      "kind": "amount"
+    },
+    "rent": {
+      "kind": "amount"
+    },
+    "riskFree": {
+      "kind": "rate"
+    },
+    "propertyTax": {
+      "kind": "rate"
+    },
+    "maintenance": {
+      "kind": "rate"
+    },
+    "appreciation": {
+      "kind": "rate"
+    },
+    "riskPremium": {
+      "kind": "rate"
+    },
+    "deductibleTax": {
+      "kind": "rate"
+    },
+    "mortgage": {
+      "kind": "rate"
+    }
+  }
+}

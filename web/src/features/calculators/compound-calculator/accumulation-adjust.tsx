@@ -12,6 +12,7 @@ import type { AccumulationInput } from "@/features/calculators/compound-calculat
 import { WithdrawField } from "@/features/calculators/compound-calculator/withdraw-field";
 import { RateField } from "@/features/calculators/fields/rate-field";
 import { useCalculatorSearch } from "@/features/calculators/model/calculator-search";
+import { addressKeys } from "@/features/calculators/compound-calculator/address-keys";
 import { useT } from "@/i18n/i18n-provider";
 
 interface AccumulationAdjustProps {
@@ -22,7 +23,7 @@ interface AccumulationAdjustProps {
 // groups, a later start and a withdrawal term.
 export function AccumulationAdjust({ input }: AccumulationAdjustProps) {
   const t = useT();
-  const [search, set] = useCalculatorSearch();
+  const [search, set] = useCalculatorSearch(addressKeys);
 
   return (
     <FieldGroup kind="section">

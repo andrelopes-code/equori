@@ -18,6 +18,7 @@ import {
   readMinor,
   useCalculatorSearch,
 } from "@/features/calculators/model/calculator-search";
+import { addressKeys } from "@/features/calculators/financing-calculator/address-keys";
 import { useAppLocaleState, useT } from "@/i18n/i18n-provider";
 import { FormNotice } from "@/ui/form-layout/form-notice";
 
@@ -30,7 +31,7 @@ interface FinancingPrepayProps {
 export function FinancingPrepay({ loan, money }: FinancingPrepayProps) {
   const t = useT();
   const { locale } = useAppLocaleState();
-  const [search] = useCalculatorSearch();
+  const [search] = useCalculatorSearch(addressKeys);
   const names = systemNames(locale.region);
 
   const month = readInt(search.prepayMonth, 1, maxMonths);

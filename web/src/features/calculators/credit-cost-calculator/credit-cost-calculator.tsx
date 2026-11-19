@@ -13,6 +13,7 @@ import {
   readMinor,
   useCalculatorSearch,
 } from "@/features/calculators/model/calculator-search";
+import { addressKeys } from "@/features/calculators/credit-cost-calculator/address-keys";
 import { CountField } from "@/features/calculators/fields/count-field";
 import {
   effectiveAnnualCost,
@@ -80,7 +81,7 @@ export function CreditCostCalculator() {
   const { locale: profile } = useAppLocaleState();
   const today = useToday();
   const money = useCalculatorMoney();
-  const [search, set] = useCalculatorSearch();
+  const [search, set] = useCalculatorSearch(addressKeys);
   const terms = regionalTerms(profile.region);
   const method = (
     <CalculatorMethod

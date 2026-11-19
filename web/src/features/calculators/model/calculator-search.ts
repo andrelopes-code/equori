@@ -71,10 +71,15 @@ function addressValue(v: string): string | number {
 }
 
 // The inputs of the open calculator and a setter that replaces the address without a history
-// entry per keystroke; a key set to undefined or "" is removed.
-export function useCalculatorSearch(): [
-  Record<string, string>,
-  (patch: Record<string, string | undefined>) => void,
+// entry per keystroke; a key set to undefined or "" is removed. `keys` is the calculator's
+// addressKeys: it types the inputs, so a key outside the table does not compile.
+export function useCalculatorSearch<K extends string>(
+  // The keys only type the result.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _keys: readonly K[],
+): [
+  Partial<Record<K, string>>,
+  (patch: Partial<Record<K, string | undefined>>) => void,
 ] {
   // The route declares its search without keys; validateCalculatorSearch keeps strings only.
   const search = useSearch({
@@ -84,7 +89,7 @@ export function useCalculatorSearch(): [
   const { id } = useParams({ from: "/_authed/calculators/$id" });
   const navigate = useNavigate();
   const set = useCallback(
-    (patch: Record<string, string | undefined>) => {
+    (patch: Partial<Record<K, string | undefined>>) => {
       void navigate({
         to: "/calculators/$id",
         params: { id },
@@ -101,5 +106,5 @@ export function useCalculatorSearch(): [
     },
     [navigate, id],
   );
-  return [search, set];
+  return [search as Partial<Record<K, string>>, set];
 }

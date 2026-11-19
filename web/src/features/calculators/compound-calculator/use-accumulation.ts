@@ -5,6 +5,7 @@ import {
   readRate,
   useCalculatorSearch,
 } from "@/features/calculators/model/calculator-search";
+import { addressKeys } from "@/features/calculators/compound-calculator/address-keys";
 import { depositForTarget } from "@/features/calculators/model/compound-math";
 import {
   readMonths,
@@ -37,7 +38,7 @@ export { clearFloating, floatingKeys };
 // What the address holds for "final amount" and "deposit for a target": the term, the rate (typed
 // or from a daily index), the inflation, the optional delay and withdrawal, and the simulation.
 export function useAccumulation() {
-  const [search] = useCalculatorSearch();
+  const [search] = useCalculatorSearch(addressKeys);
   const indexes = useIndexes();
   const daily = indexes.filter((i) => i.period === "day");
   const monthly = indexes.filter((i) => i.period === "month");

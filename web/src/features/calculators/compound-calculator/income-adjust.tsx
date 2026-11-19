@@ -10,6 +10,7 @@ import { DelayField } from "@/features/calculators/compound-calculator/delay-fie
 import { WithdrawField } from "@/features/calculators/compound-calculator/withdraw-field";
 import { RateField } from "@/features/calculators/fields/rate-field";
 import { useCalculatorSearch } from "@/features/calculators/model/calculator-search";
+import { addressKeys } from "@/features/calculators/compound-calculator/address-keys";
 import { useT } from "@/i18n/i18n-provider";
 
 // The adjustments of the income: the inflation that separates today's money from the term's end,
@@ -17,7 +18,7 @@ import { useT } from "@/i18n/i18n-provider";
 // volatility range is specified for the final amount only.
 export function IncomeAdjust() {
   const t = useT();
-  const [search, set] = useCalculatorSearch();
+  const [search, set] = useCalculatorSearch(addressKeys);
 
   return (
     <FieldGroup kind="section">

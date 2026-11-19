@@ -3,6 +3,7 @@ import { AmountField } from "@/features/calculators/fields/amount-field";
 import { CountField } from "@/features/calculators/fields/count-field";
 import type { CalculatorMoney } from "@/features/calculators/fields/use-calculator-money";
 import { useCalculatorSearch } from "@/features/calculators/model/calculator-search";
+import { addressKeys } from "@/features/calculators/financing-calculator/address-keys";
 import { useT } from "@/i18n/i18n-provider";
 
 interface FinancingOptionalProps {
@@ -11,7 +12,7 @@ interface FinancingOptionalProps {
 
 export function FinancingOptional({ money }: FinancingOptionalProps) {
   const t = useT();
-  const [search, set] = useCalculatorSearch();
+  const [search, set] = useCalculatorSearch(addressKeys);
 
   return (
     <OptionalGroup

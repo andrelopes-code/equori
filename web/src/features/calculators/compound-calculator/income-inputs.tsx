@@ -4,6 +4,7 @@ import { DurationField } from "@/features/calculators/fields/duration-field";
 import { RateField } from "@/features/calculators/fields/rate-field";
 import type { CalculatorMoney } from "@/features/calculators/fields/use-calculator-money";
 import { useCalculatorSearch } from "@/features/calculators/model/calculator-search";
+import { addressKeys } from "@/features/calculators/compound-calculator/address-keys";
 import { readUnit, unitPatch } from "@/features/calculators/model/duration";
 import type { DurationUnit } from "@/features/calculators/model/duration";
 import { useT } from "@/i18n/i18n-provider";
@@ -17,7 +18,7 @@ interface IncomeInputsProps {
 
 export function IncomeInputs({ money }: IncomeInputsProps) {
   const t = useT();
-  const [search, set] = useCalculatorSearch();
+  const [search, set] = useCalculatorSearch(addressKeys);
   const unit = readUnit(search.monthsUnit, incomeTermUnits);
   const period = search.period === "month" ? "month" : "year";
 

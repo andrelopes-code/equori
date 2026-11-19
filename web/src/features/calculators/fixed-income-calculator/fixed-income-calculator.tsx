@@ -9,6 +9,7 @@ import {
   readRate,
   useCalculatorSearch,
 } from "@/features/calculators/model/calculator-search";
+import { addressKeys } from "@/features/calculators/fixed-income-calculator/address-keys";
 import { ChoiceField } from "@/features/calculators/fields/choice-field";
 import {
   readDays,
@@ -45,7 +46,7 @@ export function FixedIncomeCalculator() {
   const [locale] = useAppLocale();
   const { locale: profile } = useAppLocaleState();
   const money = useCalculatorMoney();
-  const [search, set] = useCalculatorSearch();
+  const [search, set] = useCalculatorSearch(addressKeys);
   const today = useToday();
   const daysUnit = readUnit(search.daysUnit, dayUnits);
   const days = readDays(search.days, daysUnit, today, maxDays);

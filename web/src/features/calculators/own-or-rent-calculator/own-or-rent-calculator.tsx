@@ -8,6 +8,7 @@ import {
   readRate,
   useCalculatorSearch,
 } from "@/features/calculators/model/calculator-search";
+import { addressKeys } from "@/features/calculators/own-or-rent-calculator/address-keys";
 import type { Source } from "@/features/calculators/calculator-frame/method-section";
 import { ownershipCost } from "@/features/calculators/model/plan-math";
 import type { OwnershipComponent } from "@/features/calculators/model/plan-math";
@@ -98,7 +99,7 @@ const componentLabels: Record<OwnershipComponent, MessageKey> = {
 export function OwnOrRentCalculator() {
   const t = useT();
   const money = useCalculatorMoney();
-  const [search, set] = useCalculatorSearch();
+  const [search, set] = useCalculatorSearch(addressKeys);
   if (money === null)
     return (
       <CalculatorFrame

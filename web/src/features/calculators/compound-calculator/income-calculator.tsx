@@ -18,6 +18,7 @@ import {
   readRate,
   useCalculatorSearch,
 } from "@/features/calculators/model/calculator-search";
+import { addressKeys } from "@/features/calculators/compound-calculator/address-keys";
 import {
   incomeEvolution,
   REINVESTED_SHARE,
@@ -36,7 +37,7 @@ const maxMonths = 1200;
 // earning each month with a share of the income reinvested and the rest spent.
 export function IncomeCalculator() {
   const money = useCalculatorMoney();
-  const [search] = useCalculatorSearch();
+  const [search] = useCalculatorSearch(addressKeys);
 
   const unit = readUnit(search.monthsUnit, incomeTermUnits);
   const months = readMonths(search.months, unit, 1, maxMonths);
