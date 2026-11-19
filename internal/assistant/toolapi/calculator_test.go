@@ -123,6 +123,21 @@ func TestOpenCalculator(t *testing.T) {
 			wantField: "inputs.rate",
 		},
 		{
+			name:      "value_at_length_limit",
+			base:      "BRL",
+			calc:      "financing",
+			inputs:    map[string]string{"rate": "1." + strings.Repeat("0", 62)},
+			wantPath:  "/calculators/financing?rate=1." + strings.Repeat("0", 62),
+			wantTitle: "Financing",
+		},
+		{
+			name:      "value_over_length_limit",
+			base:      "BRL",
+			calc:      "financing",
+			inputs:    map[string]string{"rate": "1." + strings.Repeat("0", 63)},
+			wantField: "inputs.rate",
+		},
+		{
 			name:      "integer_plus",
 			base:      "BRL",
 			calc:      "financing",

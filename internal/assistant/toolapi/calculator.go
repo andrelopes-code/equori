@@ -34,6 +34,7 @@ const (
 )
 
 const (
+	maxValueLength = 64   // UTF-16 units, as the screen reads every key but debts
 	maxDebtsLength = 2400 // UTF-16 units, as the screen reads it
 	maxMinor       = 1_000_000_000_000_000
 	minRate        = -99.99
@@ -218,6 +219,10 @@ func inputValue(
 	k CalculatorKey,
 	v string,
 ) (string, error) {
+	if k.Kind != KindDebts && utf16Length(v) > maxValueLength {
+		return "", invalidValue(fmt.Sprintf("must have at most %d characters", maxValueLength))
+	}
+
 	switch k.Kind {
 	case KindAmount:
 		return amountValue(readCurrency, v)
@@ -238,12 +243,16 @@ func inputValue(
 			return "", invalidValue("must be one of " + strings.Join(k.Values, ", "))
 		}
 	case KindDebts:
-		if len(utf16.Encode([]rune(v))) > maxDebtsLength {
+		if utf16Length(v) > maxDebtsLength {
 			return "", invalidValue(fmt.Sprintf("must have at most %d characters", maxDebtsLength))
 		}
 	}
 
 	return v, nil
+}
+
+func utf16Length(v string) int {
+	return len(utf16.Encode([]rune(v)))
 }
 
 func amountValue(readCurrency func() (money.Currency, error), v string) (string, error) {
