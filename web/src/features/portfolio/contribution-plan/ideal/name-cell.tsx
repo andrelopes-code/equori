@@ -23,6 +23,10 @@ export function NameCell({
   reserved,
 }: NameCellProps) {
   const t = useT();
+  const tag =
+    reserved === undefined
+      ? undefined
+      : t("contributionPlan.reservedFor", { goal: reserved });
 
   return (
     <div className={styles.name}>
@@ -50,9 +54,9 @@ export function NameCell({
         {name}
       </Text>
 
-      {reserved !== undefined && (
-        <Tag size="sm">
-          {t("contributionPlan.reservedFor", { goal: reserved })}
+      {tag !== undefined && (
+        <Tag size="sm" className={styles.tag} title={tag}>
+          {tag}
         </Tag>
       )}
     </div>

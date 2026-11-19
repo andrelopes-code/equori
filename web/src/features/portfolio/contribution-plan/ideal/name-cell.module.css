@@ -21,4 +21,10 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+
+  /* Workaround for Slotted issue #150: the tag root keeps min-inline-size auto, so it overflows
+     the name column instead of ending its label in an ellipsis. */
+  .tag {
+    min-inline-size: 0;
+  }
 }
