@@ -23,7 +23,7 @@ export type IndexerAnswer =
     };
 
 // IC3 read as an answer: the security with the largest final value and its gap to the second
-// largest. Null while no security has a rate; a single answer while only one has.
+// largest. A single answer while there is one security; null while fewer than two have a rate.
 export function indexerAnswer(input: {
   amount: number;
   securities: readonly Security[];
@@ -32,15 +32,16 @@ export function indexerAnswer(input: {
   days: number;
   taxBp: number;
 }): IndexerAnswer | null {
-  const { amount, rows } = input;
+  const { amount, securities, rows } = input;
+  if (securities.length === 1) return { kind: "single" };
+
   const ranked = rows
     .flatMap((row, position) =>
       row === null ? [] : [{ position, row, final: amount + row.net }],
     )
     .sort((a, b) => b.final - a.final || a.position - b.position);
   const [top, second] = ranked;
-  if (top === undefined) return null;
-  if (second === undefined) return { kind: "single" };
+  if (top === undefined || second === undefined) return null;
 
   const difference = top.final - second.final;
   if (difference === 0)

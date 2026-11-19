@@ -1,5 +1,4 @@
 import { Field, FieldLabel } from "@slotted/react/field";
-import { Text } from "@slotted/react/typography";
 
 import { AmountField } from "@/features/calculators/fields/amount-field";
 import type { CalculatorMoney } from "@/features/calculators/fields/use-calculator-money";
@@ -62,10 +61,6 @@ export function IndexerComparisonInputs({
       )}
 
       <SecurityList draft={draft} securities={securities} offered={offered} />
-
-      <Text size="sm" tone="muted">
-        {t("calc.indexerComparison.indexer.help")}
-      </Text>
     </>
   );
 }

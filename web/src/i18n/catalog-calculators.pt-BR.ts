@@ -721,6 +721,7 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.indexerComparison.form.percent": "% do {index}",
   "calc.indexerComparison.form.spread": "{index} + taxa",
   "calc.indexerComparison.rate": "Taxa",
+  "calc.indexerComparison.rate.of": "Taxa do título {n}",
   "calc.indexerComparison.exempt": "Isento de imposto",
   "calc.indexerComparison.add": "Adicionar título",
   "calc.indexerComparison.remove": "Remover título {n}",

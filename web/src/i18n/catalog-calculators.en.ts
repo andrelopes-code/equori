@@ -715,6 +715,7 @@ export const calculatorsEn = {
   "calc.indexerComparison.form.percent": "% of {index}",
   "calc.indexerComparison.form.spread": "{index} + spread",
   "calc.indexerComparison.rate": "Rate",
+  "calc.indexerComparison.rate.of": "Rate of security {n}",
   "calc.indexerComparison.exempt": "Tax-exempt",
   "calc.indexerComparison.add": "Add security",
   "calc.indexerComparison.remove": "Remove security {n}",

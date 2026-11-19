@@ -1,4 +1,5 @@
 import { IconButton } from "@slotted/react/button";
+import { Field } from "@slotted/react/field";
 import { Glyph, Icon } from "@slotted/react/icon";
 import { Inline } from "@slotted/react/inline";
 import { Switch } from "@slotted/react/switch";
@@ -14,6 +15,7 @@ import {
 import { indexName } from "@/features/calculators/rate-source/index-catalog";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/form-fields/choice-select";
+import { FieldTitle } from "@/ui/form-fields/field-title";
 
 interface SecurityFieldsProps {
   // The position of the row, from 1.
@@ -59,15 +61,21 @@ export function SecurityFields({
       role="group"
       aria-label={t("calc.indexerComparison.security", { n: position })}
     >
-      <ChoiceSelect
-        label={t("calc.indexerComparison.form")}
-        choices={choices}
-        value={securityChoice(security)}
-        multiple={false}
-        onChange={(next) => {
-          if (typeof next === "string") onChange({ choice: next });
-        }}
-      />
+      <Field necessity="none">
+        <FieldTitle
+          label={t("calc.indexerComparison.form")}
+          help={t("calc.indexerComparison.indexer.help")}
+        />
+        <ChoiceSelect
+          label={t("calc.indexerComparison.form")}
+          choices={choices}
+          value={securityChoice(security)}
+          multiple={false}
+          onChange={(next) => {
+            if (typeof next === "string") onChange({ choice: next });
+          }}
+        />
+      </Field>
       <RateField
         label={t("calc.indexerComparison.rate")}
         name={`rate-${String(draft.key)}`}

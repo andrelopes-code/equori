@@ -116,11 +116,13 @@ describe("indexerAnswer", () => {
     expect(got).toEqual({ kind: "equal", final: 1_200_000, netRate: 0.05 });
   });
 
-  it("asks for another security when only one has a rate", () => {
+  it("asks for another security when there is one", () => {
     expect(answer([fixed], [row(fixed, 100_000)])).toEqual({ kind: "single" });
-    expect(answer([fixed, percent], [row(fixed, 100_000), null])).toEqual({
-      kind: "single",
-    });
+    expect(answer([fixed], [null])).toEqual({ kind: "single" });
+  });
+
+  it("is null while one of two securities lacks a rate", () => {
+    expect(answer([fixed, percent], [row(fixed, 100_000), null])).toBeNull();
   });
 
   it("is null while no security has a rate", () => {

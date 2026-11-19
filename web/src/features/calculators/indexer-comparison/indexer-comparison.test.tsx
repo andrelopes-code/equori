@@ -36,6 +36,7 @@ const cdiData: IndexData = {
 function open(
   routes = calculatorApiRoutes([cdi], [prefixedCurveFixture()]),
   currency = "BRL",
+  region = "BR",
 ) {
   return renderWithRouter(
     <IndexerComparison amount={1_000_000} currency={currency} />,
@@ -52,7 +53,7 @@ function open(
             books_id: 1,
             book_role: "owner",
             language: "pt",
-            region: "BR",
+            region,
           }),
         "GET /api/v1/instruments": () =>
           json(200, {
@@ -194,7 +195,7 @@ describe("IndexerComparison", () => {
     ).toBeNull();
   });
 
-  it("names no winner and keeps the typed order when the second pays more", async () => {
+  it("keeps the typed order of the table when the second pays more", async () => {
     open();
     await typeRates("5", "200");
 
@@ -211,9 +212,9 @@ describe("IndexerComparison", () => {
     open(undefined, "USD");
     await rateBoxes();
 
-    // The method text below the inputs names the CDI; the securities do not offer it.
+    // The method and the help texts name the CDI; the indexer select does not offer it.
     for (const group of screen.getAllByRole("group", { name: /^Título/ }))
-      expect(within(group).queryByText(/CDI/)).toBeNull();
+      expect(within(group).getByRole("combobox")).not.toHaveTextContent(/CDI/);
     const table = await screen.findByRole("table");
     expect(within(table).getAllByRole("row")).toHaveLength(3);
   });
@@ -265,13 +266,13 @@ describe("IndexerComparison", () => {
 
       expect(
         await screen.findByText(
-          "Preencha taxa para ver o título que rende mais.",
+          "Preencha taxa do título 1 e taxa do título 2 para ver o título que rende mais.",
         ),
       ).toBeInTheDocument();
       expect(screen.queryByText(catalogPtBR["calc.options"])).toBeNull();
     });
 
-    it("asks for another security while only one has a rate", async () => {
+    it("names the rate still missing while only one security has one", async () => {
       open();
       const user = userEvent.setup();
       const [box] = await rateBoxes();
@@ -280,9 +281,12 @@ describe("IndexerComparison", () => {
 
       expect(
         await screen.findByText(
-          catalogPtBR["calc.indexerComparison.answer.single"],
+          "Preencha taxa do título 2 para ver o título que rende mais.",
         ),
       ).toBeInTheDocument();
+      expect(
+        screen.queryByText(catalogPtBR["calc.indexerComparison.answer.single"]),
+      ).toBeNull();
       expect(
         await figure(catalogPtBR["calc.indexerComparison.answer.leadEqual"]),
       ).toBe("—");
@@ -300,6 +304,37 @@ describe("IndexerComparison", () => {
       expect(
         await figure(catalogPtBR["calc.indexerComparison.answer.leadEqual"]),
       ).toMatch(/11\.416,49/);
+    });
+    it("warns below the minimum holding and asks for another maturity", async () => {
+      open();
+      await typeRates("8", "140");
+      const user = userEvent.setup();
+      const field = await screen.findByRole("group", { name: /Vencimento/ });
+      await user.click(
+        within(field).getByRole("spinbutton", { name: /^(day|dia)$/ }),
+      );
+      await user.keyboard("01122026");
+
+      expect(
+        await screen.findByText(catalogPtBR["calc.fixedIncome.iof"]),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          "Preencha vencimento para ver o título que rende mais.",
+        ),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole("table")).toBeNull();
+    });
+
+    it("names the tax rate in a region without rules", async () => {
+      open(undefined, "BRL", "US");
+      await typeRates("8", "140");
+
+      expect(
+        await screen.findByText(
+          "Preencha imposto sobre o rendimento para ver o título que rende mais.",
+        ),
+      ).toBeInTheDocument();
     });
   });
 });

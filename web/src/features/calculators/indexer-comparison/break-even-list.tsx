@@ -1,8 +1,8 @@
+import { Field } from "@slotted/react/field";
 import {
   Section,
   SectionBody,
   SectionHeader,
-  SectionHeading,
   SectionTitle,
 } from "@slotted/react/section";
 import { Stack } from "@slotted/react/stack";
@@ -13,6 +13,7 @@ import type { BreakEvenItem } from "@/features/calculators/indexer-comparison/br
 import type { Security } from "@/features/calculators/indexer-comparison/security";
 import { securityText } from "@/features/calculators/indexer-comparison/security-text";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { FieldTitle } from "@/ui/form-fields/field-title";
 
 interface BreakEvenListProps {
   items: readonly BreakEvenItem[];
@@ -36,18 +37,17 @@ export function BreakEvenList({
     <Section size="lg">
       <SectionHeader>
         <SectionTitle>
-          <SectionHeading>
-            {t("calc.indexerComparison.breakEven.title")}
-          </SectionHeading>
+          <Field necessity="none">
+            <FieldTitle
+              label={t("calc.indexerComparison.breakEven.title")}
+              help={t("calc.indexerComparison.breakEven.help")}
+            />
+          </Field>
         </SectionTitle>
       </SectionHeader>
 
       <SectionBody>
         <Stack gap={4}>
-          <Text size="sm" tone="muted">
-            {t("calc.indexerComparison.breakEven.help")}
-          </Text>
-
           {items.map((item) => {
             const security = securities[item.position];
 

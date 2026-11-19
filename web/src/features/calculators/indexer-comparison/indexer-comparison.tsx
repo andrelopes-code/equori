@@ -110,10 +110,10 @@ export function IndexerComparison({
               label: t("calc.fixedIncome.taxRate"),
               missing: rules === null && taxBp === null,
             },
-            {
-              label: t("calc.indexerComparison.rate"),
-              missing: securities.every((s) => s.rate === null),
-            },
+            ...securities.map((s, i) => ({
+              label: t("calc.indexerComparison.rate.of", { n: i + 1 }),
+              missing: s.rate === null,
+            })),
           ]}
         />
       }
