@@ -7,6 +7,8 @@ interface RangeStripProps {
   high: number;
   fixed: number;
   max: number;
+  // The accessible name of the strip, with its values.
+  label: string;
   legend: [string, string, string];
   facts: { term: string; value: string }[];
 }
@@ -17,6 +19,7 @@ export function RangeStrip({
   high,
   fixed,
   max,
+  label,
   legend,
   facts,
 }: RangeStripProps) {
@@ -27,11 +30,7 @@ export function RangeStrip({
 
   return (
     <div className={styles.range} data-part="range">
-      <div
-        className={styles.rangeTrack}
-        role="img"
-        aria-label={legend.join(", ")}
-      >
+      <div className={styles.rangeTrack} role="img" aria-label={label}>
         <span
           className={styles.rangeBand}
           style={{ insetInlineStart: start, inlineSize: size }}

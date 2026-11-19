@@ -9,10 +9,12 @@ export function FactRows({ rows }: FactRowsProps) {
     <dl className={styles.rows}>
       {rows.map((row) => (
         <div key={row.term} className={styles.row}>
-          <dt>{row.term}</dt>
-          {row.note !== undefined && (
-            <span className={styles.rowNote}>{row.note}</span>
-          )}
+          <dt>
+            {row.term}
+            {row.note !== undefined && (
+              <span className={styles.rowNote}>{row.note}</span>
+            )}
+          </dt>
           <dd>{row.value}</dd>
         </div>
       ))}

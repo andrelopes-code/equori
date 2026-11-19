@@ -8,6 +8,8 @@ interface ChoiceRowsProps {
     effect: string;
     saved: number;
     savedText: string;
+    // The row's accessible name, with its values.
+    label: string;
   }[];
   note?: string;
 }
@@ -19,7 +21,7 @@ export function ChoiceRows({ head, rows, note }: ChoiceRowsProps) {
   );
 
   return (
-    <div className={styles.choices} data-part="prepay">
+    <div className={styles.choices}>
       <div className={styles.choiceHead}>
         <span>{head[0]}</span>
         <span>{head[1]}</span>
@@ -31,7 +33,7 @@ export function ChoiceRows({ head, rows, note }: ChoiceRowsProps) {
           key={row.name}
           className={styles.choiceRow}
           role="img"
-          aria-label={`${row.name}: ${row.effect}, ${head[2]} ${row.savedText}`}
+          aria-label={row.label}
         >
           <span className={styles.choiceName}>{row.name}</span>
           <span className={styles.choiceMain}>{row.effect}</span>

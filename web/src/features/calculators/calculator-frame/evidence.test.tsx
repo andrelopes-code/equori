@@ -54,12 +54,15 @@ describe("ChoiceRows", () => {
             effect: "Termina em 242 meses",
             saved: 24785559,
             savedText: "R$ 247.855,59",
+            label:
+              "Reduzir o prazo: termina em 242 meses, economia de R$ 247.855,59",
           },
           {
             name: "Reduzir a prestação",
             effect: "Prestação cai para R$ 2.650,91",
             saved: 4428585,
             savedText: "R$ 44.285,85",
+            label: "Reduzir a prestação: economia de R$ 44.285,85",
           },
         ]}
         note="Saldo depois da amortização R$ 277.104,00"
@@ -71,7 +74,7 @@ describe("ChoiceRows", () => {
     const rows = screen.getAllByRole("img");
     expect(rows).toHaveLength(2);
     expect(rows[0]).toHaveAccessibleName(
-      "Reduzir o prazo: Termina em 242 meses, Juros economizados R$ 247.855,59",
+      "Reduzir o prazo: termina em 242 meses, economia de R$ 247.855,59",
     );
     expect(screen.getByText("R$ 44.285,85")).toBeVisible();
     expect(
@@ -97,6 +100,7 @@ describe("RangeStrip", () => {
         high={30392674}
         fixed={22739502}
         max={32000000}
+        label="9 em 10 simulações entre R$ 156.752,36 e R$ 303.926,74"
         legend={["9 em 10 simulações", "Metade acima", "Taxa fixa"]}
         facts={[
           { term: "Desfavorável", value: "R$ 156.752,36" },
@@ -114,7 +118,7 @@ describe("RangeStrip", () => {
       4,
     );
     expect(screen.getByRole("img")).toHaveAccessibleName(
-      "9 em 10 simulações, Metade acima, Taxa fixa",
+      "9 em 10 simulações entre R$ 156.752,36 e R$ 303.926,74",
     );
     expect(container.querySelector("p")).toHaveTextContent(
       "9 em 10 simulaçõesMetade acimaTaxa fixa",
@@ -138,7 +142,10 @@ describe("FactRows", () => {
     const rows = container.querySelectorAll("dl > div");
     expect(rows).toHaveLength(2);
     expect(screen.getByText("Renda").tagName).toBe("DT");
-    expect(screen.getByText("em dinheiro de hoje")).toBeVisible();
+    const note = screen.getByText("em dinheiro de hoje");
+    expect(note.closest("dt")).toBe(screen.getByText("Renda").closest("dt"));
+    expect(note.parentElement?.tagName).toBe("DT");
+    expect(rows[0]?.querySelector("dd")?.textContent).toBe("R$ 629,54");
     expect(screen.getByText("R$ 629,54").tagName).toBe("DD");
     expect(rows[1]?.lastElementChild?.textContent).toBe("R$ 472,16");
     expect(rows[1]?.querySelectorAll("span")).toHaveLength(0);
