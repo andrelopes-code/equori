@@ -667,6 +667,43 @@ describe("overview page", () => {
       ).toBeInTheDocument();
     });
 
+    // FC19: one item per due event; the request reaches back as far as the 400 days of the range.
+    it("lists a maturity left unrecorded for a year", async () => {
+      await renderApp("/", {
+        fetch: api({
+          "GET /api/v1/fixed-income-events": (req) => {
+            const from = new URL(req.url).searchParams.get("from");
+
+            return json(200, {
+              items:
+                from === "2025-09-19"
+                  ? [
+                      {
+                        account_id: reserveID,
+                        instrument: "RF.251020.ABCDE",
+                        date: "2025-10-20",
+                        kind: "maturity",
+                        quantity: {
+                          amount: 1000000,
+                          currency: "RF.251020.ABCDE",
+                        },
+                        gross: money(1000000),
+                        rate_missing: false,
+                        state: "due",
+                      },
+                    ]
+                  : [],
+            });
+          },
+        }),
+      });
+      const region = await screen.findByRole("article", { name: "Attention" });
+
+      expect(
+        await within(region).findByText(/RF\.251020\.ABCDE/),
+      ).toBeInTheDocument();
+    });
+
     it("puts an account's unconfirmed count on its difference row", async () => {
       await renderApp("/", {
         fetch: api({

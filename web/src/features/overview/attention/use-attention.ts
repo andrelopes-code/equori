@@ -30,8 +30,10 @@ import { useToday } from "@/i18n/today";
 // Twelve months back hold every closed statement still owing in practice.
 const lookBackMonths = 12;
 
-// A payment still unrecorded after this many days is no longer listed as due.
-const fixedIncomeLookBackDays = 90;
+// FC19 lists every due payment: the request reaches back as far as the 400 days the range of
+// /fixed-income-events accepts, less the week ahead.
+// shortcut: a payment unrecorded for more than 393 days drops out; past that, page the range.
+const fixedIncomeLookBackDays = 400 - fixedIncomeWeekDays;
 
 export interface Attention {
   items: AttentionItem[];
