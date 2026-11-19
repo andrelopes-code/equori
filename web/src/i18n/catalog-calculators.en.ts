@@ -27,6 +27,51 @@ export const calculatorsEn = {
   "calc.period.year": "per year",
   "calc.compound.title": "Compound interest",
   "calc.compound.question": "How much will an investment reach?",
+  "calc.compound.answer.lead": "Final amount in {months} months",
+  "calc.compound.answer.sentence":
+    "{deposited} deposited earn {interest} of interest at {rate}.",
+  "calc.compound.answer.what": "the final amount",
+  "calc.compound.answer.delayed": "Starting {months} months later",
+  "calc.compound.answer.wait": "Cost of waiting",
+  "calc.compound.target.lead": "Monthly deposit needed",
+  "calc.compound.target.sentence":
+    "to reach {target} in {months} months at {rate}.",
+  "calc.compound.target.what": "the deposit needed",
+  "calc.compound.income.lead": "Monthly income that keeps the assets",
+  "calc.compound.income.sentence":
+    "in today's money; {atEnd} in money of the term's end.",
+  "calc.compound.income.what": "the income",
+  "calc.compound.split.title": "Where the final amount comes from",
+  "calc.compound.range.title": "If the return varies {volatility} a year",
+  "calc.compound.range.description":
+    "Range of {runs} simulations; not a forecast",
+  "calc.compound.range.band": "9 in 10 simulations",
+  "calc.compound.range.median": "Half above",
+  "calc.compound.range.fixed": "Fixed rate {final}",
+  "calc.compound.range.low": "Unfavourable (1 in 10 below)",
+  "calc.compound.range.mid": "Central (half above)",
+  "calc.compound.range.high": "Favourable (1 in 10 above)",
+  "calc.compound.rows.title": "Monthly income after the term",
+  "calc.compound.rows.description":
+    "Withdrawn at each month's end and corrected by inflation",
+  "calc.compound.rows.lasting": "Income that keeps the assets",
+  "calc.compound.rows.today": "in today's money",
+  "calc.compound.rows.same": "The same income",
+  "calc.compound.rows.atEnd": "in money of the term's end",
+  "calc.compound.rows.reinvest": "Part to reinvest ({share})",
+  "calc.compound.rows.living": "Part to live on ({share})",
+  "calc.compound.adjust": "Adjustments",
+  "calc.compound.rate.help": "The expected return, before taxes and fees.",
+  "calc.compound.inflation.help":
+    "Used to show the final amount in today's money.",
+  "calc.compound.volatility.help":
+    "How much the yearly return varies around the rate (standard deviation). It draws a range of 2,000 simulations.",
+  "calc.compound.delay.add": "Start later",
+  "calc.compound.delay.remove": "Remove the later start",
+  "calc.compound.withdraw.add": "Withdraw for a term",
+  "calc.compound.withdraw.remove": "Remove the withdrawal",
+  "calc.compound.details": "Balance month by month",
+  "calc.compound.details.size": "chart and table of {months} months",
   "calc.rates.title": "Rate converter",
   "calc.rates.question":
     "What is this rate per month, per year, or after inflation?",
@@ -59,8 +104,6 @@ export const calculatorsEn = {
     "How large must investments be to pay the expenses, and when are they reached?",
   "calc.own-or-rent.title": "Own or rent",
   "calc.own-or-rent.question": "Does owning cost less per year than renting?",
-  "calc.estimate":
-    "An estimate: the rate is assumed constant, with no tax or fee.",
   "calc.origin.daily": "{percent} of {index} over the 12 months to {date}",
   "calc.origin.spread":
     "{index} + {spread} a year over the 12 months to {date}",
@@ -106,12 +149,7 @@ export const calculatorsEn = {
   "calc.compound.live.term": "Follow for",
   "calc.compound.live.term.hint": "How long the table follows the balance.",
   "calc.compound.live.final": "Balance at the end",
-  "calc.compound.live.summary":
-    "In {months} months: {living} spent and {reinvested} reinvested.",
   "calc.compound.live.firstIncome": "Income of the first month",
-  "calc.compound.live.firstReinvested":
-    "Reinvested in the first month ({share}%)",
-  "calc.compound.live.firstLiving": "Spent in the first month",
   "calc.compound.live.lastLiving": "Spent in the last month",
   "calc.compound.live.totalLiving": "Total spent",
   "calc.compound.live.totalReinvested": "Total reinvested",
@@ -144,39 +182,16 @@ export const calculatorsEn = {
   "calc.compound.final": "Final amount",
   "calc.compound.deposited": "Total deposited",
   "calc.compound.interest": "Interest",
-  "calc.compound.real": "Final amount in today's money",
-  "calc.compound.delayed": "Final amount when starting {months} months later",
-  "calc.compound.difference": "Cost of waiting",
-  "calc.compound.depositNeeded": "Monthly deposit needed",
+  "calc.compound.real": "In today's money",
   "calc.compound.chart": "Balance and deposits by month",
   "calc.compound.chart.balance": "Balance",
   "calc.compound.chart.deposited": "Deposited",
   "calc.compound.chart.month": "Month {month}",
-  "calc.compound.income": "Monthly income after the term",
-  "calc.compound.income.lasting": "Income that keeps the balance",
-  "calc.compound.income.reinvest": "Reinvest to keep the balance ({share}%)",
-  "calc.compound.income.reinvestToday":
-    "Reinvest to keep the balance ({share}%), in today's money",
-  "calc.compound.income.living": "Income to live on ({share}%)",
-  "calc.compound.income.livingToday":
-    "Income to live on ({share}%), in today's money",
-  "calc.compound.income.lastingToday":
-    "Income that keeps the purchasing power, in today's money",
-  "calc.compound.income.lastingAtEnd":
-    "The same income, in money of the term's end",
   "calc.compound.income.spending":
     "Income that spends the balance over the withdrawal term",
-  "calc.compound.income.spendingToday":
-    "Income that spends the balance over the withdrawal term, in today's money",
   "calc.compound.income.none":
     "With inflation at or above the rate, no income keeps the purchasing power; a withdrawal term gives one that spends the balance.",
-  "calc.compound.income.realNote":
-    "Withdrawn at the end of each month and raised each month with the inflation typed; today's money removes that inflation up to the end of the term.",
-  "calc.compound.income.nominalNote":
-    "Without an inflation, the income keeps the balance's nominal value, not its purchasing power.",
   "calc.compound.withdraw": "Withdraw the income for",
-  "calc.compound.withdraw.hint":
-    "Empty: the income lasts and keeps the balance. With a term: the income spends the balance over it.",
   "calc.compound.step8":
     "After the term, the income that keeps the purchasing power is the final amount times (j − g), g being the monthly inflation; over a withdrawal term of n months the income grows with inflation and spends the final amount.",
   "calc.compound.formula7":
@@ -213,9 +228,6 @@ export const calculatorsEn = {
   "calc.compound.limit3":
     "Amounts are rounded to the minor unit; a contract may round differently.",
   "calc.compound.volatility": "Annual volatility",
-  "calc.compound.p10": "Unfavourable case: 9 in 10 simulations end above",
-  "calc.compound.p50": "Middle case: half the simulations end above",
-  "calc.compound.p90": "Favourable case: 9 in 10 simulations end below",
   "calc.compound.step7":
     "With a volatility, 2,000 paths of monthly returns are drawn and the 10th, 50th and 90th percentile of their final amounts are shown.",
   "calc.compound.formula5":
@@ -588,15 +600,6 @@ export const calculatorsEn = {
   "calc.compound.deposit.hint": "Made at the start of each month.",
   "calc.compound.target.hint": "The balance to reach at the end.",
   "calc.compound.rate.hint": "Expected return, before tax and fees.",
-  "calc.compound.inflation.hint": "Adds the final amount in today's money.",
-  "calc.compound.delay.hint":
-    "Adds what the final amount loses when the deposits start this many months later.",
-  "calc.compound.volatility.hint":
-    "How much yearly returns vary (standard deviation). Adds a range of final amounts from 2,000 simulated paths.",
-  "calc.compound.summary":
-    "{deposited} deposited over {months} months earn {interest} in interest.",
-  "calc.compound.targetSummary":
-    "This deposit each month for {months} months reaches {target}.",
   "calc.rates.rate.hint": "The rate as quoted, with its period.",
   "calc.rates.inflation.hint": "Adds the rate after inflation.",
   "calc.rates.index.hint":

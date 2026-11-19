@@ -29,6 +29,52 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.period.year": "ao ano",
   "calc.compound.title": "Juros compostos",
   "calc.compound.question": "Quanto um investimento vai alcançar?",
+  "calc.compound.answer.lead": "Valor final em {months} meses",
+  "calc.compound.answer.sentence":
+    "{deposited} depositados rendem {interest} de juros a {rate}.",
+  "calc.compound.answer.what": "o valor final",
+  "calc.compound.answer.delayed": "Começando {months} meses depois",
+  "calc.compound.answer.wait": "Custo de esperar",
+  "calc.compound.target.lead": "Depósito mensal necessário",
+  "calc.compound.target.sentence":
+    "para chegar a {target} em {months} meses a {rate}.",
+  "calc.compound.target.what": "o depósito necessário",
+  "calc.compound.income.lead": "Renda mensal que mantém o patrimônio",
+  "calc.compound.income.sentence":
+    "em dinheiro de hoje; {atEnd} em dinheiro do fim do prazo.",
+  "calc.compound.income.what": "a renda",
+  "calc.compound.split.title": "De onde vem o valor final",
+  "calc.compound.range.title": "Se o retorno variar {volatility} ao ano",
+  "calc.compound.range.description":
+    "Faixa de {runs} simulações; não é uma previsão",
+  "calc.compound.range.band": "9 em 10 simulações",
+  "calc.compound.range.median": "Metade acima",
+  "calc.compound.range.fixed": "Taxa fixa {final}",
+  "calc.compound.range.low": "Desfavorável (1 em 10 abaixo)",
+  "calc.compound.range.mid": "Central (metade acima)",
+  "calc.compound.range.high": "Favorável (1 em 10 acima)",
+  "calc.compound.rows.title": "Renda mensal depois do prazo",
+  "calc.compound.rows.description":
+    "Sacada no fim de cada mês e corrigida pela inflação",
+  "calc.compound.rows.lasting": "Renda que mantém o patrimônio",
+  "calc.compound.rows.today": "em dinheiro de hoje",
+  "calc.compound.rows.same": "A mesma renda",
+  "calc.compound.rows.atEnd": "em dinheiro do fim do prazo",
+  "calc.compound.rows.reinvest": "Parte para reinvestir ({share})",
+  "calc.compound.rows.living": "Parte para viver ({share})",
+  "calc.compound.adjust": "Ajustes",
+  "calc.compound.rate.help":
+    "A rentabilidade esperada, antes de impostos e tarifas.",
+  "calc.compound.inflation.help":
+    "Usada para mostrar o valor final em dinheiro de hoje.",
+  "calc.compound.volatility.help":
+    "Quanto o retorno anual varia em torno da taxa (desvio padrão). Gera uma faixa de 2.000 simulações.",
+  "calc.compound.delay.add": "Começar mais tarde",
+  "calc.compound.delay.remove": "Remover início adiado",
+  "calc.compound.withdraw.add": "Sacar por um prazo",
+  "calc.compound.withdraw.remove": "Remover saque",
+  "calc.compound.details": "Saldo mês a mês",
+  "calc.compound.details.size": "gráfico e tabela de {months} meses",
   "calc.rates.title": "Conversor de taxas",
   "calc.rates.question":
     "Quanto é esta taxa ao mês, ao ano ou descontada a inflação?",
@@ -60,8 +106,6 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
     "De quanto os investimentos precisam para pagar as despesas, e quando chegam lá?",
   "calc.own-or-rent.title": "Comprar ou alugar",
   "calc.own-or-rent.question": "Ter o imóvel custa menos por ano que alugar?",
-  "calc.estimate":
-    "Uma estimativa: a taxa é suposta constante, sem imposto nem tarifa.",
   "calc.origin.daily": "{percent} do {index} nos 12 meses até {date}",
   "calc.origin.spread": "{index} + {spread} ao ano nos 12 meses até {date}",
   "calc.origin.daily.current":
@@ -107,12 +151,7 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.compound.live.term.hint":
     "Por quanto tempo a tabela mostra o patrimônio.",
   "calc.compound.live.final": "Patrimônio no fim",
-  "calc.compound.live.summary":
-    "Em {months} meses: {living} consumidos e {reinvested} reinvestidos.",
   "calc.compound.live.firstIncome": "Renda do primeiro mês",
-  "calc.compound.live.firstReinvested":
-    "Reinvestido no primeiro mês ({share}%)",
-  "calc.compound.live.firstLiving": "Consumido no primeiro mês",
   "calc.compound.live.lastLiving": "Consumido no último mês",
   "calc.compound.live.totalLiving": "Total consumido",
   "calc.compound.live.totalReinvested": "Total reinvestido",
@@ -145,40 +184,16 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.compound.final": "Valor final",
   "calc.compound.deposited": "Total depositado",
   "calc.compound.interest": "Juros",
-  "calc.compound.real": "Valor final em dinheiro de hoje",
-  "calc.compound.delayed": "Valor final começando {months} meses depois",
-  "calc.compound.difference": "Custo de esperar",
-  "calc.compound.depositNeeded": "Depósito mensal necessário",
+  "calc.compound.real": "Em dinheiro de hoje",
   "calc.compound.chart": "Saldo e depósitos por mês",
   "calc.compound.chart.balance": "Saldo",
   "calc.compound.chart.deposited": "Depositado",
   "calc.compound.chart.month": "Mês {month}",
-  "calc.compound.income": "Renda mensal depois do prazo",
-  "calc.compound.income.lasting": "Renda que mantém o patrimônio",
-  "calc.compound.income.reinvest":
-    "Reinvestir para manter o patrimônio ({share}%)",
-  "calc.compound.income.reinvestToday":
-    "Reinvestir para manter o patrimônio ({share}%), em dinheiro de hoje",
-  "calc.compound.income.living": "Renda para viver ({share}%)",
-  "calc.compound.income.livingToday":
-    "Renda para viver ({share}%), em dinheiro de hoje",
-  "calc.compound.income.lastingToday":
-    "Renda que mantém o poder de compra, em dinheiro de hoje",
-  "calc.compound.income.lastingAtEnd":
-    "A mesma renda, em dinheiro do fim do prazo",
   "calc.compound.income.spending":
     "Renda que consome o patrimônio no prazo de saque",
-  "calc.compound.income.spendingToday":
-    "Renda que consome o patrimônio no prazo de saque, em dinheiro de hoje",
   "calc.compound.income.none":
     "Com a inflação igual ou acima da rentabilidade, nenhuma renda mantém o poder de compra; um prazo de saque dá uma renda que consome o patrimônio.",
-  "calc.compound.income.realNote":
-    "Sacada no fim de cada mês e corrigida todo mês pela inflação informada; em dinheiro de hoje, a inflação até o fim do prazo é descontada.",
-  "calc.compound.income.nominalNote":
-    "Sem uma inflação informada, a renda mantém o valor nominal do patrimônio, não o seu poder de compra.",
   "calc.compound.withdraw": "Sacar a renda por",
-  "calc.compound.withdraw.hint":
-    "Vazio: a renda dura e mantém o patrimônio. Com um prazo: a renda consome o patrimônio nesse prazo.",
   "calc.compound.step8":
     "Depois do prazo, a renda que mantém o poder de compra é o valor final vezes (j − g), sendo g a inflação mensal; num prazo de saque de n meses, a renda cresce com a inflação e consome o valor final.",
   "calc.compound.formula7":
@@ -216,10 +231,6 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.compound.limit3":
     "Os valores são arredondados para a menor unidade; um contrato pode arredondar de outro modo.",
   "calc.compound.volatility": "Volatilidade anual",
-  "calc.compound.p10":
-    "Cenário desfavorável: 9 em 10 simulações terminam acima",
-  "calc.compound.p50": "Cenário central: metade das simulações termina acima",
-  "calc.compound.p90": "Cenário favorável: 9 em 10 simulações terminam abaixo",
   "calc.compound.step7":
     "Com uma volatilidade, 2.000 trajetórias de retornos mensais são sorteadas e os percentis 10, 50 e 90 dos seus valores finais são mostrados.",
   "calc.compound.formula5":
@@ -595,16 +606,6 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.compound.target.hint": "O saldo a alcançar no fim do prazo.",
   "calc.compound.rate.hint":
     "Rentabilidade esperada, antes de impostos e tarifas.",
-  "calc.compound.inflation.hint":
-    "Acrescenta o valor final em dinheiro de hoje.",
-  "calc.compound.delay.hint":
-    "Acrescenta quanto o valor final perde se os depósitos começarem este número de meses depois.",
-  "calc.compound.volatility.hint":
-    "Quanto os retornos anuais variam (desvio padrão). Acrescenta uma faixa de valores finais tirada de 2.000 trajetórias simuladas.",
-  "calc.compound.summary":
-    "{deposited} depositados em {months} meses rendem {interest} de juros.",
-  "calc.compound.targetSummary":
-    "Com este depósito todo mês por {months} meses, o saldo chega a {target}.",
   "calc.rates.rate.hint": "A taxa como foi informada, com o seu período.",
   "calc.rates.inflation.hint": "Acrescenta a taxa descontada a inflação.",
   "calc.rates.index.hint":
