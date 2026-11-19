@@ -186,4 +186,33 @@ export const portfolioEn = {
   "fixedIncome.panel.expand": "Expand {name}",
   "fixedIncome.panel.more": "Show more",
   "fixedIncome.issuers.mark": "Limit per issuer",
+  "portfolio.risk.title": "Risk over time",
+  "portfolio.risk.description":
+    "Swing, fall and share of risk of each class, month by month.",
+  "portfolio.risk.volatility": "Volatility over 36 months",
+  "portfolio.risk.drawdown": "Fall from the peak",
+  "portfolio.risk.portfolio": "Portfolio",
+  "portfolio.risk.deepest": "Deepest fall: {value} in {month}.",
+  "portfolio.risk.classes": "Risk by class",
+  "portfolio.risk.class": "Class",
+  "portfolio.risk.weight": "Weight",
+  "portfolio.risk.share": "Share of risk",
+  "portfolio.risk.volatilityShort": "Volatility",
+  "portfolio.risk.maxDrawdown": "Deepest fall",
+  "portfolio.risk.correlations": "Correlation between classes",
+  "portfolio.risk.pair": "Pair",
+  "portfolio.risk.correlation": "Correlation",
+  "portfolio.risk.months": "Months",
+  "portfolio.risk.pairName": "{a} and {b}",
+  "portfolio.risk.unknown":
+    "Months left out, with over 10% of the value without a fresh price: {count}, in {classes}.",
+  "portfolio.risk.short":
+    "The latest volatility rests on {count} months; the standard is 36.",
+  "portfolio.risk.floor":
+    "The volatility appears after 12 months of history; months so far: {count}.",
+  "portfolio.risk.accrual":
+    "{class}: {share} of the value is priced by accrual, so its volatility stays near zero by method.",
+  "portfolio.risk.leftOut": "Months without a fresh price: {list}.",
+  "portfolio.risk.leftOutItem": "{code} ({months})",
+  "portfolio.risk.error": "The risk of the portfolio could not be computed.",
 } as const;

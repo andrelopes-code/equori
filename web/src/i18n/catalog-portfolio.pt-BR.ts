@@ -190,4 +190,33 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "fixedIncome.panel.expand": "Expandir {name}",
   "fixedIncome.panel.more": "Ver mais",
   "fixedIncome.issuers.mark": "Limite por emissor",
+  "portfolio.risk.title": "Risco ao longo do tempo",
+  "portfolio.risk.description":
+    "Oscilação, queda e parte do risco de cada classe, mês a mês.",
+  "portfolio.risk.volatility": "Volatilidade em 36 meses",
+  "portfolio.risk.drawdown": "Queda desde o pico",
+  "portfolio.risk.portfolio": "Carteira",
+  "portfolio.risk.deepest": "Maior queda: {value} em {month}.",
+  "portfolio.risk.classes": "Risco por classe",
+  "portfolio.risk.class": "Classe",
+  "portfolio.risk.weight": "Peso",
+  "portfolio.risk.share": "Parte do risco",
+  "portfolio.risk.volatilityShort": "Volatilidade",
+  "portfolio.risk.maxDrawdown": "Maior queda",
+  "portfolio.risk.correlations": "Correlação entre classes",
+  "portfolio.risk.pair": "Par",
+  "portfolio.risk.correlation": "Correlação",
+  "portfolio.risk.months": "Meses",
+  "portfolio.risk.pairName": "{a} e {b}",
+  "portfolio.risk.unknown":
+    "Meses fora do cálculo, com mais de 10% do valor sem preço atualizado: {count}, em {classes}.",
+  "portfolio.risk.short":
+    "A volatilidade mais recente usa {count} meses; o padrão é 36.",
+  "portfolio.risk.floor":
+    "A volatilidade aparece com 12 meses de histórico; meses até agora: {count}.",
+  "portfolio.risk.accrual":
+    "{class}: {share} do valor é calculado pela curva de juros, e a volatilidade desse valor fica perto de zero por método.",
+  "portfolio.risk.leftOut": "Meses sem preço atualizado: {list}.",
+  "portfolio.risk.leftOutItem": "{code} ({months})",
+  "portfolio.risk.error": "Não foi possível calcular o risco da carteira.",
 };

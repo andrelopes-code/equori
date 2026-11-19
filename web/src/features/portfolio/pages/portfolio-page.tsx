@@ -9,6 +9,7 @@ import { PortfolioHeader } from "@/features/portfolio/summary/portfolio-header";
 import { PortfolioEmpty } from "@/features/portfolio/notices/portfolio-empty";
 import { PortfolioProblem } from "@/features/portfolio/notices/portfolio-problem";
 import { PortfolioReturn } from "@/features/portfolio/return/portfolio-return";
+import { RiskSection } from "@/features/portfolio/risk/risk-section";
 import type { SearchPatch } from "@/features/portfolio/model/portfolio-search";
 import { PortfolioSummary } from "@/features/portfolio/summary/portfolio-summary";
 import { QuoteWarningsNotice } from "@/features/portfolio/notices/quote-warnings-notice";
@@ -98,6 +99,10 @@ export function PortfolioPage() {
             search={search}
             onChange={change}
           />
+
+          {!empty && !positions.isError && (
+            <RiskSection date={date} valueIn={valueIn} />
+          )}
 
           {!empty && !positions.isError && (
             <WhereMoneySection
