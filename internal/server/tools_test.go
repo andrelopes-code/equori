@@ -39,6 +39,7 @@ var withoutOperation = map[string]string{
 	// putInstrumentTerms maps to manage_instrument, whose set_terms leaves its payments out.
 	"set_payment_schedule": "writes the payments of putInstrumentTerms (coverage row F-16)",
 	"set_rate_steps":       "writes the rate steps of putInstrumentTerms (coverage row F-05)",
+	"open_calculator":      "returns a link to a calculator screen, which computes in the browser",
 }
 
 func operationIDs(t *testing.T) []string {
