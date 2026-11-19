@@ -720,6 +720,20 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.debt.avalanche.help": "Paga primeiro a dívida de maior taxa.",
   "calc.debt.snowball.help": "Paga primeiro a dívida de menor saldo.",
   "calc.debt.minimum.help": "O menor pagamento mensal que cada dívida aceita.",
+  "calc.own.answer.leadOwn": "Ter o imóvel sai mais barato",
+  "calc.own.answer.leadRent": "Alugar sai mais barato",
+  "calc.own.answer.leadEqual": "Ter e alugar custam o mesmo",
+  "calc.own.answer.sentence": "por ano: ter custa {own} e alugar, {rent}.",
+  "calc.own.answer.what": "a opção mais barata",
+  "calc.own.bars.title": "Custo anual de cada opção",
+  "calc.own.forgone.help":
+    "O rendimento que o dinheiro do imóvel teria aplicado.",
+  "calc.own.riskPremium.help": "Um acréscimo pelo risco de ter um único bem.",
+  "calc.own.appreciation.help":
+    "Quanto o imóvel valoriza por ano; reduz o custo de ter.",
+  "calc.own.deductible.add": "Incluir dedução de imposto",
+  "calc.own.deductible.remove": "Remover dedução",
+  "calc.own.deductible.legend": "Dedução de imposto",
   "calc.recurring.answer.lead": "Total pago em {years} anos",
   "calc.recurring.answer.sentence": "{amount} por {per}, sem juros.",
   "calc.recurring.answer.sentenceRate":

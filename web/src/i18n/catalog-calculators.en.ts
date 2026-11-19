@@ -712,6 +712,20 @@ export const calculatorsEn = {
   "calc.debt.avalanche.help": "Pays the highest rate first.",
   "calc.debt.snowball.help": "Pays the smallest balance first.",
   "calc.debt.minimum.help": "The smallest monthly payment each debt accepts.",
+  "calc.own.answer.leadOwn": "Owning is cheaper",
+  "calc.own.answer.leadRent": "Renting is cheaper",
+  "calc.own.answer.leadEqual": "Owning and renting cost the same",
+  "calc.own.answer.sentence": "a year: owning costs {own} and renting, {rent}.",
+  "calc.own.answer.what": "the cheaper option",
+  "calc.own.bars.title": "Yearly cost of each option",
+  "calc.own.forgone.help":
+    "What the money in the property would earn invested.",
+  "calc.own.riskPremium.help": "An addition for the risk of holding one asset.",
+  "calc.own.appreciation.help":
+    "How much the property gains a year; it lowers the cost of owning.",
+  "calc.own.deductible.add": "Include a tax deduction",
+  "calc.own.deductible.remove": "Remove the deduction",
+  "calc.own.deductible.legend": "Tax deduction",
   "calc.recurring.answer.lead": "Total paid in {years} years",
   "calc.recurring.answer.sentence": "{amount} per {per}, without interest.",
   "calc.recurring.answer.sentenceRate":
