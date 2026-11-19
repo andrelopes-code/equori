@@ -175,3 +175,36 @@ func TestShowStoresView(t *testing.T) {
 		t.Fatalf("user message views = %+v, want []", d.Messages[0].Views)
 	}
 }
+
+// V3: the server registers the views of the other modules' reads.
+func TestShowRankingOfReporting(t *testing.T) {
+	t.Parallel()
+
+	p := llmtest.New(
+		"aistudio",
+		callStep(
+			"get_category_totals",
+			`{"class":"expense","from":"2026-10-01","to":"2026-10-31"}`,
+		),
+		callStep("show", `{"source":["r1"],"form":"ranking"}`),
+		textStep("Nada em outubro."),
+	)
+	h := turnHarness(t, p)
+
+	r := sendTurn(h, h.Client, map[string]any{"text": "Onde gastei em outubro?"})
+	if r.Status != http.StatusOK {
+		t.Fatalf("status = %d: %s", r.Status, r.Body)
+	}
+
+	events := parseSSE(r.Body)
+
+	var answer viewAnswer
+	if err := json.Unmarshal([]byte(events[len(events)-1].Data), &answer); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(answer.Views) != 1 || answer.Views[0].Form != "ranking" ||
+		answer.Views[0].Payload.Verdict.Key != "assistantView.ranking.empty" {
+		t.Fatalf("views = %+v; results %+v", answer.Views, toolResults(p))
+	}
+}

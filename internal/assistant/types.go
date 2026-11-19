@@ -7,18 +7,10 @@ import (
 // AccountNotice is an account whose figures an answer qualifies (P12 A152).
 type AccountNotice = app.AccountNotice
 
-// ViewKey, ViewBuilder, ViewSelect and ViewPayload let a module register the views of its reads.
+// ViewKey and ViewBuilder register the views of a module's reads (answer views design, V3).
 type (
 	ViewKey     = app.ViewKey
 	ViewBuilder = app.ViewBuilder
-	ViewSelect  = app.ViewSelect
-	ViewPayload = app.ViewPayload
-	ViewText    = app.ViewText
-	ViewValue   = app.ViewValue
-	ViewMoney   = app.ViewMoney
-	ViewWindow  = app.ViewWindow
-	ViewLink    = app.ViewLink
-	ViewTable   = app.ViewTable
 )
 
 // Signal is evidence the model receives with a proposal.

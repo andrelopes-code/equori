@@ -292,6 +292,8 @@ func (m *modules) buildTools(cfg Config, log *slog.Logger) error {
 		return err
 	}
 
+	m.assistant.UseViews(m.reporting.Views())
+
 	return m.assistant.UseTools(chatTools)
 }
 

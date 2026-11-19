@@ -17,6 +17,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
+	"github.com/andrelopes-code/equori/internal/platform/view"
 	"github.com/andrelopes-code/equori/internal/reporting/app"
 	"github.com/andrelopes-code/equori/internal/reporting/httpapi"
 	"github.com/andrelopes-code/equori/internal/reporting/postgres"
@@ -85,6 +86,9 @@ func (m *Module) Tools() tool.Group {
 		Errors: tool.FromProblem(httpapi.ToProblem),
 	}
 }
+
+// Views returns the builders of the views of the module's reads (answer views design, V3).
+func (m *Module) Views() map[view.Key]view.Builder { return toolapi.Views() }
 
 // RebuildAll recomputes every account's series from its first posting (equori reporting rebuild).
 func (m *Module) RebuildAll(ctx context.Context) error { return m.svc.RebuildAll(ctx) }

@@ -169,10 +169,10 @@ const ranking = view({
     ${rankRow(3, "Restaurantes", "R$ 864,30", "11%", 27)}
     ${rankRow(4, "Transporte", "R$ 412,75", "5%", 12.9)}
     ${rankRow(5, "Assinaturas", "R$ 289,40", "4%", 9)}
-    ${rankRow("", "Outras 6 categorias", "R$ 1.927,60", "24%", 60.2, neutral)}
+    ${rankRow("", "Outras 7 categorias", "R$ 1.927,60", "24%", 60.2, neutral)}
   </ul>`,
   open: "Transações de outubro",
-  data: table(["Categoria", "Total"], [["Moradia", "R$ 3.200,00"], ["Mercado", "R$ 1.497,00"], ["Restaurantes", "R$ 864,30"], ["Transporte", "R$ 412,75"], ["Assinaturas", "R$ 289,40"], ["Outras 6", "R$ 1.927,60"]]),
+  data: table(["Categoria", "Total"], [["Moradia", "R$ 3.200,00"], ["Mercado", "R$ 1.497,00"], ["Restaurantes", "R$ 864,30"], ["Transporte", "R$ 412,75"], ["Assinaturas", "R$ 289,40"], ["Outras 7", "R$ 1.927,60"]]),
 });
 
 function hits(tips) {
