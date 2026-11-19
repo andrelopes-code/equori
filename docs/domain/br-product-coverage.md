@@ -38,7 +38,7 @@ Source status:
 | F-18b | CPR, commercial note, LAM | supported | subtypes `cpr` (exempt class: financial settlement, Lei 11.033/2004 art. 3, V), `nota_comercial` and `lam` (taxed class); the FGC covers none; the withholding estimate follows the class (`TestWithholdingFollowsTheTaxClass`); `TestBR`, `TestInstrumentSubtypesList` | a CPR settled in goods is not modeled | Lei 11.033/2004 art. 3, V (added by Lei 11.311/2006), camara.leg.br, read 2026-11-18; LAM without FGC: B3 product page, read 2026-11-18 |
 | F-19 | Redemption within 30 days | supported | `brFixedIncomeWithholding`, `estimate_redemption`; `TestBRProductMatrix` row F-19: IOF of day 20 (33%) and income tax 22.5% on the gain less the IOF | none | Decreto 6.306/2007 art. 32 and annex, read 2026-11-18 (planalto.gov.br) |
 | F-20 | Sale before maturity on the secondary market | supported | `record_investment` kind `sell` with the oldest lot first (`CostMethod`); `estimate_redemption` takes the proceeds of the sale at any price and taxes the gain of each lot over its cost by its days held (`TestWithholdingOfAnEarlyRedemption`, `TestWithholdingByLot`, `TestWithholdingOfALoss`) | none | Lei 11.033/2004 art. 1 (the table applies to the gain of a sale before maturity as to a redemption) |
-| F-21 | Indexes IGP-M, Selic, exchange rate | partial | index feeds `br_selic` (SGS 11, by business day) and `br_igpm` (SGS 189, monthly), suggested for BR; `TestIndexFeedsSelicAndIGPM`; the exchange rate is the currency price of `bcb_ptax` | a security indexed to the exchange rate has no index: the PTAX is a price, not an index of the terms | BCB SGS series 11 and 189 |
+| F-21 | Indexes IGP-M, Selic, exchange rate | supported | index feeds `br_selic` (SGS 11, by business day), `br_igpm` (SGS 189, monthly) and `br_ptax_usd` (SGS 1, the daily variation of the PTAX selling rate as index `usd_brl`, D-1), suggested for BR; `TestIndexFeedsSelicAndIGPM`, `TestIndexFeedDollar` | none | BCB SGS series 1, 11 and 189 |
 | F-22 | Savings account (poupança) | partial | account kind `savings`; `yield_mode` `auto` books the yield | the yield rule of the norm (0.5% a month plus TR, or 70% of the Selic target plus TR, on each anniversary) is not computed: `yield_mode` `auto` books as yield the positive difference a balance check states, within the bound per 30 days of the currency (`DecideSyncedReserve`, `YieldBound`) | to read |
 
 ## Government bonds
@@ -91,8 +91,8 @@ Source status:
 
 | Verdict | Rows |
 |---|---|
-| supported | 40 |
-| partial | 14 |
+| supported | 41 |
+| partial | 13 |
 | unsupported | 0 |
 
 ## What the assistant says

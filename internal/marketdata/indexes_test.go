@@ -25,6 +25,7 @@ type sgsServer struct {
 	ipca     [][2]string
 	selic    [][2]string
 	igpm     [][2]string
+	ptax     [][2]string // date as dd/MM/yyyy, reais per dollar
 }
 
 func (s *sgsServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -48,6 +49,8 @@ func (s *sgsServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		rows = s.selic
 	case "/dados/serie/bcdata.sgs.189/dados":
 		rows = s.igpm
+	case "/dados/serie/bcdata.sgs.1/dados":
+		rows = s.ptax
 	default:
 		http.NotFound(w, r)
 		return
@@ -92,10 +95,11 @@ func (s *sgsServer) setFail(v bool) {
 
 func indexURLs(srv *httptest.Server) map[string]string {
 	return map[string]string{
-		"br_cdi":   srv.URL,
-		"br_ipca":  srv.URL,
-		"br_selic": srv.URL,
-		"br_igpm":  srv.URL,
+		"br_cdi":      srv.URL,
+		"br_ipca":     srv.URL,
+		"br_selic":    srv.URL,
+		"br_igpm":     srv.URL,
+		"br_ptax_usd": srv.URL,
 	}
 }
 
@@ -280,6 +284,50 @@ func TestIndexFeedsSelicAndIGPM(t *testing.T) {
 	}
 }
 
+// Coverage row F-21: a security indexed to the dollar accrues by the variation of the PTAX selling
+// rate (SGS series 1): the rate of a business day is its quote over the quote of the day before,
+// less one, so the price of a day is the quote of D-1 over the quote of the day before the issue.
+func TestIndexFeedDollar(t *testing.T) {
+	t.Parallel()
+
+	s := &sgsServer{ptax: [][2]string{
+		{"31/12/2025", "5.0000"}, {"02/01/2026", "5.1000"}, {"05/01/2026", "5.0490"},
+		{"06/01/2026", "5.2000"},
+	}}
+	srv := httptest.NewServer(s)
+	t.Cleanup(srv.Close)
+	h := apitest.New(
+		t,
+		apitest.Today("2026-01-06"),
+		apitest.IndexFeeds([]string{"br_ptax_usd"}, indexURLs(srv)),
+	)
+
+	defineFixedIncome(t, h, "USDXPTO")
+	h.MustDo(http.MethodPut, "/api/v1/instruments/USDXPTO/terms", map[string]any{
+		"issued_on":  "2026-01-02",
+		"matures_on": "2031-01-02",
+		"index_id":   "usd_brl",
+		"day_count":  "act365",
+		"face_value": 100000,
+	}, http.StatusOK, nil)
+	h.App.Marketdata.TickFeeds(t.Context())
+
+	want := []indexRateRow{
+		{"2026-01-02", "0.020000000000", "br_ptax_usd"},
+		{"2026-01-05", "-0.010000000000", "br_ptax_usd"},
+		{"2026-01-06", "0.029906912260", "br_ptax_usd"},
+	}
+	if got := indexRates(t, h, "usd_brl"); !slices.Equal(got, want) {
+		t.Errorf("usd_brl = %+v, want %+v", got, want)
+	}
+
+	// 1,000.00 × 5.0490 (2026-01-05) / 5.0000 (2025-12-31).
+	got := pricesBetween(t, h, "USDXPTO", "2026-01-06", "2026-01-06")
+	if got["2026-01-06"].Value != "1009.8" {
+		t.Errorf("price on 2026-01-06 = %+v, want 1009.8", got["2026-01-06"])
+	}
+}
+
 func TestNewIndexSources(t *testing.T) {
 	t.Parallel()
 
@@ -290,6 +338,7 @@ func TestNewIndexSources(t *testing.T) {
 			"br_ipca",
 			"br_selic",
 			"br_igpm",
+			"br_ptax_usd",
 			"eu_estr",
 			"ea_hicp",
 			"us_sofr",

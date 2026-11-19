@@ -64,6 +64,12 @@ func indexEntries() []indexEntry {
 			func(hc *http.Client, url string) index.Source { return brsgs.IGPM(hc, url) },
 		},
 		{
+			"br_ptax_usd",
+			sgs,
+			5,
+			func(hc *http.Client, url string) index.Source { return brsgs.Dollar(hc, url) },
+		},
+		{
 			"eu_estr",
 			"https://data-api.ecb.europa.eu",
 			5,

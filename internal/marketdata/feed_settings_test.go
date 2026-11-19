@@ -53,6 +53,7 @@ func feedsOf(t *testing.T, h *apitest.Harness) map[string]feedAPI {
 		"br_ipca",
 		"br_selic",
 		"br_igpm",
+		"br_ptax_usd",
 		"eu_estr",
 		"ea_hicp",
 		"us_sofr",

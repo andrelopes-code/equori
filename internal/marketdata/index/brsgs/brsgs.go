@@ -23,7 +23,11 @@ const (
 	seriesIPCA  = 433
 	seriesSelic = 11
 	seriesIGPM  = 189
-	decimals    = 12
+	// seriesPTAX is the PTAX selling rate of the dollar in reais, a quote of each business day.
+	seriesPTAX = 1
+	decimals   = 12
+	// quoteLookback reaches the quote before the first day asked, which its variation needs.
+	quoteLookback = 10
 )
 
 // Source is one SGS series seen as an index source.
@@ -36,6 +40,9 @@ type Source struct {
 	period string
 
 	businessDay bool
+	// quotes marks a series of quotes, not of rates: its rate of a day is the quote of that day
+	// over the quote of the business day before, less one.
+	quotes bool
 }
 
 // CDI is the daily CDI rate (identifier br_cdi, index cdi). It compounds by business day
@@ -81,6 +88,18 @@ func IGPM(hc *http.Client, base string) Source {
 	}
 }
 
+// Dollar is the daily variation of the PTAX selling rate of the dollar (identifier br_ptax_usd,
+// index usd_brl), the index of a security indexed to the exchange rate (coverage row F-21). It
+// compounds by business day: the product of the rates from the issue to a day, exclusive, is the
+// quote of the business day before that day over the quote of the business day before the issue,
+// the PTAX of D-1 the market uses.
+func Dollar(hc *http.Client, base string) Source {
+	return Source{
+		hc: hc, base: base, id: "br_ptax_usd", index: "usd_brl", series: seriesPTAX,
+		period: index.PeriodDay, businessDay: true, quotes: true,
+	}
+}
+
 func (s Source) ID() string     { return s.id }
 func (s Source) Index() string  { return s.index }
 func (s Source) Period() string { return s.period }
@@ -93,7 +112,12 @@ type item struct {
 }
 
 func (s Source) Fetch(ctx context.Context, from, to time.Time) ([]index.Rate, error) {
-	req, err := s.newRequest(ctx, from, to)
+	start := from
+	if s.quotes {
+		start = from.AddDate(0, 0, -quoteLookback)
+	}
+
+	req, err := s.newRequest(ctx, start, to)
 	if err != nil {
 		return nil, err
 	}
@@ -115,6 +139,10 @@ func (s Source) Fetch(ctx context.Context, from, to time.Time) ([]index.Rate, er
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes))
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", s.id, err)
+	}
+
+	if s.quotes {
+		return s.parseQuotes(body)
 	}
 
 	return s.parseRates(body)
@@ -158,6 +186,49 @@ func (s Source) parseRates(body []byte) ([]index.Rate, error) {
 	}
 
 	return out, nil
+}
+
+// parseQuotes turns the quotes of the body, which reach before the days asked, into the variation
+// of each quote day from the quote day before, rounded half to even to 12 decimals.
+func (s Source) parseQuotes(body []byte) ([]index.Rate, error) {
+	var items []item
+	if err := json.Unmarshal(body, &items); err != nil {
+		return nil, fmt.Errorf("%s: decode: %w", s.id, err)
+	}
+
+	var out []index.Rate
+
+	for i := 0; i+1 < len(items); i++ {
+		date, err := time.Parse(dateLayout, items[i+1].Date)
+		if err != nil {
+			return out, fmt.Errorf("%s: date %q: %w", s.id, items[i+1].Date, err)
+		}
+
+		now, okNow := new(big.Rat).SetString(items[i].Value)
+		next, okNext := new(big.Rat).SetString(items[i+1].Value)
+		if !okNow || !okNext || now.Sign() <= 0 {
+			return out, fmt.Errorf("%s: quote of %s is not a positive decimal", s.id, items[i].Date)
+		}
+
+		v := new(big.Rat).Sub(new(big.Rat).Quo(next, now), big.NewRat(1, 1))
+		out = append(out, index.Rate{Date: date, Value: roundHalfEven(v)})
+	}
+
+	return out, nil
+}
+
+// roundHalfEven writes r with 12 decimals, a tie to the even last digit.
+func roundHalfEven(r *big.Rat) string {
+	scale := new(big.Int).Exp(big.NewInt(10), big.NewInt(decimals), nil)
+	n := new(big.Int).Mul(r.Num(), scale)
+	q, m := new(big.Int).QuoRem(n, r.Denom(), new(big.Int))
+
+	twice := new(big.Int).Abs(new(big.Int).Lsh(m, 1))
+	if c := twice.Cmp(r.Denom()); c > 0 || c == 0 && q.Bit(0) == 1 {
+		q.Add(q, big.NewInt(int64(n.Sign())))
+	}
+
+	return new(big.Rat).SetFrac(q, scale).FloatString(decimals)
 }
 
 // percentToFraction turns "0.055131" (percent) into "0.000551310000" exactly.
