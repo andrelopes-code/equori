@@ -1,0 +1,13 @@
+@layer app {
+  /* Columns at about the width of the assistant pane, where the answers are drawn. */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 28rem), 1fr));
+    gap: var(--slotted-space-6);
+    align-items: start;
+  }
+
+  .thread {
+    min-width: 0;
+  }
+}

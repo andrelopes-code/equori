@@ -1877,6 +1877,26 @@ export const catalogPtBR: Catalog = {
   "assistant.change.after": "passa a ",
   "assistant.step_limit":
     "O assistente parou no limite de passos; a resposta pode estar incompleta.",
+  "assistantPreview.handled": "Forma própria",
+  "assistantPreview.fallback": "Sem forma própria",
+  "assistantPreview.read": "Respostas de leitura com forma",
+  "assistantPreview.read_description":
+    "Tabelas que answer-blocks.ts converte em bloco, e texto em Markdown.",
+  "assistantPreview.read_fallback": "Respostas de leitura sem forma",
+  "assistantPreview.read_fallback_description":
+    "Perguntas frequentes cuja resposta fica em texto ou tabela de texto.",
+  "assistantPreview.write": "Propostas com corpo próprio",
+  "assistantPreview.write_description":
+    "Ações de escrita listadas em bodies/body-kind.ts.",
+  "assistantPreview.write_fallback": "Propostas sem corpo próprio",
+  "assistantPreview.write_fallback_description":
+    "Ações de escrita que o cartão desenha como lista de campos.",
+  "assistantPreview.outcomes": "Resultados e propostas decididas",
+  "assistantPreview.outcomes_description":
+    "Recibo, executada, falha, expirada e recusada.",
+  "assistantPreview.turns": "Turnos sem resposta completa",
+  "assistantPreview.turns_description":
+    "Limite de passos, turno com falha e turno cancelado.",
   "assistant.proposal.confirm": "Confirmar",
   "assistant.proposal.expires": "Expira às {time}",
   "assistant.proposal.open": "Abrir",

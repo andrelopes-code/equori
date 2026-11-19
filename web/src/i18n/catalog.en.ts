@@ -1865,6 +1865,26 @@ export const catalogEn = {
   "assistant.change.after": "becomes ",
   "assistant.step_limit":
     "The assistant stopped at its step limit; the answer may be incomplete.",
+  "assistantPreview.handled": "Own form",
+  "assistantPreview.fallback": "No own form",
+  "assistantPreview.read": "Read answers with a form",
+  "assistantPreview.read_description":
+    "Tables that answer-blocks.ts turns into a block, and Markdown text.",
+  "assistantPreview.read_fallback": "Read answers without a form",
+  "assistantPreview.read_fallback_description":
+    "Frequent questions whose answer stays as text or a text table.",
+  "assistantPreview.write": "Proposals with a body",
+  "assistantPreview.write_description":
+    "Write actions listed in bodies/body-kind.ts.",
+  "assistantPreview.write_fallback": "Proposals without a body",
+  "assistantPreview.write_fallback_description":
+    "Write actions the card draws as a list of fields.",
+  "assistantPreview.outcomes": "Results and decided proposals",
+  "assistantPreview.outcomes_description":
+    "Receipt, executed, failed, expired and rejected.",
+  "assistantPreview.turns": "Turns without a full answer",
+  "assistantPreview.turns_description":
+    "Step limit, failed turn and canceled turn.",
   "assistant.proposal.confirm": "Confirm",
   "assistant.proposal.expires": "Expires at {time}",
   "assistant.proposal.open": "Open",

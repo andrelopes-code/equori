@@ -1,4 +1,5 @@
 export { AssistantAsk } from "@/features/assistant/ask/assistant-ask";
+export { AnswersPreview } from "@/features/assistant/preview/answers-preview";
 export { AssistantPanel } from "@/features/assistant/panel/assistant-panel";
 export { useBeside } from "@/features/assistant/panel/use-beside";
 export {

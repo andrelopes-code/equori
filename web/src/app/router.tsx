@@ -21,6 +21,7 @@ import { useSessionExpiry } from "@/app/providers";
 import { RouteError } from "@/app/route-error";
 import { RouteNotFound } from "@/app/route-not-found";
 import { AppFrame } from "@/app/shell/app-frame";
+import { AnswersPreview } from "@/features/assistant";
 import {
   AccountPage,
   AccountsLayout,
@@ -585,6 +586,11 @@ const previewRoutes = import.meta.env.DEV
         getParentRoute: () => rootRoute,
         path: "/preview/card-face",
         component: CardFacePreview,
+      }),
+      createRoute({
+        getParentRoute: () => rootRoute,
+        path: "/preview/assistant-answers",
+        component: AnswersPreview,
       }),
     ]
   : [];
