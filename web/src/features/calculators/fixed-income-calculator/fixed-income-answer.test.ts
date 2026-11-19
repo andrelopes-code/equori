@@ -7,7 +7,13 @@ import {
 import { fixedIncomeRules } from "@/features/calculators/fixed-income-calculator/fixed-income-region";
 
 describe("fixedIncomeAnswer", () => {
-  const base = { amount: 1000000, annualRate: 0.12, days: 400, taxBp: 1750 };
+  const base = {
+    amount: 1000000,
+    annualRate: 0.12,
+    days: 400,
+    taxBp: 1750,
+    redemptionBp: 0,
+  };
 
   it("splits the yield into net and tax and gives the rate of the other kind", () => {
     const got = fixedIncomeAnswer({ ...base, exempt: false });
@@ -24,6 +30,20 @@ describe("fixedIncomeAnswer", () => {
     expect(got?.tax).toBe(0);
     expect(got?.net).toBe(132238);
     expect(got?.equivalent).toBeCloseTo(0.12 / (1 - 0.175), 10);
+  });
+
+  it("takes the redemption tax and gives the rate that leaves the same net after both", () => {
+    const got = fixedIncomeAnswer({
+      ...base,
+      days: 20,
+      taxBp: 2250,
+      redemptionBp: 3300,
+      exempt: false,
+    });
+
+    // Spec 2026-11-19 RT2 and RT4.
+    expect([got?.redemption, got?.tax, got?.net]).toEqual([2056, 939, 3234]);
+    expect(got?.equivalent).toBeCloseTo(0.12 * (1 - 0.33) * (1 - 0.225), 10);
   });
 
   it.each([

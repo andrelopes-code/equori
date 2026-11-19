@@ -6,14 +6,21 @@ import type { MessageKey } from "@/i18n/catalog.en";
 export interface FixedIncomeRules {
   // The tax on the yield of a taxable security held this many days, in basis points.
   taxBp(days: number): number;
-  // Below this many days another tax applies that the calculator does not compute.
-  minimumDays: number;
+  // The tax on the yield of a redemption held this many days, taken before the tax above and
+  // deducted from its base, in basis points (spec 2026-11-19 RT1).
+  redemptionBp(days: number): number;
   // The day the rules were last read against their sources.
   checkedOn: string;
   sources: readonly Source[];
   // Words of the region the method states after its steps.
   notes: readonly MessageKey[];
 }
+
+// Percent of the yield by day held, days 1 to 29 (Decreto 6.306/2007, Anexo).
+const iofPercent = [
+  96, 93, 90, 86, 83, 80, 76, 73, 70, 66, 63, 60, 56, 53, 50, 46, 43, 40, 36,
+  33, 30, 26, 23, 20, 16, 13, 10, 6, 3,
+];
 
 // Null for a region without a case: the calculator asks for the tax rate.
 export function fixedIncomeRules(region: string): FixedIncomeRules | null {
@@ -23,9 +30,10 @@ export function fixedIncomeRules(region: string): FixedIncomeRules | null {
         // Lei 11.033/2004, art. 1, in force after Medida Provisória 1.303/2025 expired unvoted.
         taxBp: (days) =>
           days <= 180 ? 2250 : days <= 360 ? 2000 : days <= 720 ? 1750 : 1500,
-        // IOF applies to a redemption within 30 days (Decreto 6.306/2007, art. 32).
-        minimumDays: 30,
-        checkedOn: "2026-10-26",
+        // IOF of a redemption within 30 days (Decreto 6.306/2007, art. 32 and Anexo); the income
+        // tax base is the yield net of it (Lei 8.981/1995, art. 65, § 1º).
+        redemptionBp: (days) => (iofPercent[days - 1] ?? 0) * 100,
+        checkedOn: "2026-11-19",
         sources: [
           {
             title: "Lei nº 11.033, de 21 de dezembro de 2004, art. 1",
@@ -33,11 +41,24 @@ export function fixedIncomeRules(region: string): FixedIncomeRules | null {
           },
           {
             title:
+              "Decreto nº 6.306, de 14 de dezembro de 2007, art. 32 e Anexo",
+            url: "https://www.planalto.gov.br/ccivil_03/_ato2007-2010/2007/decreto/D6306compilado.htm",
+          },
+          {
+            title: "Lei nº 8.981, de 20 de janeiro de 1995, art. 65, § 1º",
+            url: "https://www.planalto.gov.br/ccivil_03/leis/l8981.htm",
+          },
+          {
+            title:
               "PwC, Tributação de aplicações financeiras e ativos virtuais (Ato Declaratório CN nº 67/2025)",
             url: "https://www.pwc.com.br/pt/consultoria-tributaria-societaria/thinking-about-taxes/tax-legis/2025/tributacao-de-aplicacoes-financeiras-e-ativos-virtuais.html",
           },
         ],
-        notes: ["calc.fixedIncome.br.table", "calc.fixedIncome.br.days252"],
+        notes: [
+          "calc.fixedIncome.br.table",
+          "calc.fixedIncome.br.iof",
+          "calc.fixedIncome.br.days252",
+        ],
       };
     case "DE":
       return {
@@ -45,7 +66,7 @@ export function fixedIncomeRules(region: string): FixedIncomeRules | null {
         // allowance on tax withheld at source. Church tax and the yearly saver's allowance
         // depend on the person and are left out (the notes say so).
         taxBp: () => 2637.5,
-        minimumDays: 0,
+        redemptionBp: () => 0,
         checkedOn: "2026-10-27",
         sources: [
           {
@@ -63,7 +84,7 @@ export function fixedIncomeRules(region: string): FixedIncomeRules | null {
       return {
         // CIRS art. 71.º, 1: interest is withheld at the final rate of 28%.
         taxBp: () => 2800,
-        minimumDays: 0,
+        redemptionBp: () => 0,
         checkedOn: "2026-10-27",
         sources: [
           {

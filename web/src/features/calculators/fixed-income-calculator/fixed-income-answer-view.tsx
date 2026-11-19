@@ -15,8 +15,6 @@ interface FixedIncomeAnswerViewProps {
   // The inputs still missing, as lowercase labels.
   missing: { label: string; missing: boolean }[];
   days: number | null;
-  // The rule of the region refuses a holding below its minimum.
-  belowMinimum: boolean;
 }
 
 export function FixedIncomeAnswerView({
@@ -24,21 +22,11 @@ export function FixedIncomeAnswerView({
   answer,
   missing,
   days,
-  belowMinimum,
 }: FixedIncomeAnswerViewProps) {
   const t = useT();
   const [tag] = useAppLocale();
   const count = numberFormatter(tag);
   const lead = t("calc.fixedIncome.answer.lead");
-
-  if (belowMinimum)
-    return (
-      <CalculatorAnswer
-        lead={lead}
-        figure={null}
-        sentence={t("calc.fixedIncome.iof")}
-      />
-    );
 
   if (answer === null || days === null)
     return (
@@ -68,6 +56,14 @@ export function FixedIncomeAnswerView({
           term: t("calc.fixedIncome.gross"),
           value: money.format(answer.gross),
         },
+        ...(answer.redemption > 0
+          ? [
+              {
+                term: t("calc.fixedIncome.redemption"),
+                value: money.format(answer.redemption),
+              },
+            ]
+          : []),
         { term: t("calc.fixedIncome.tax"), value: money.format(answer.tax) },
         {
           term: t("calc.fixedIncome.netRate"),

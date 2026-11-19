@@ -1,4 +1,5 @@
 import {
+  combinedBp,
   equivalentExempt,
   equivalentTaxable,
   fixedIncome,
@@ -8,6 +9,7 @@ import type { FixedIncomeRules } from "@/features/calculators/fixed-income-calcu
 interface FixedIncomeAnswer {
   // Minor units.
   gross: number;
+  redemption: number;
   tax: number;
   net: number;
   netAnnualRate: number;
@@ -29,16 +31,17 @@ export function taxBasisPoints(
   return Math.round(typedTax * 10000);
 }
 
-// Null while an input is missing. An exempt security pays no tax, and its equivalent is the
-// taxed rate that leaves the same net.
+// Null while an input is missing. An exempt security pays neither tax, and its equivalent is
+// the taxed rate that leaves the same net after both (spec 2026-11-19 RT3, RT4).
 export function fixedIncomeAnswer(input: {
   amount: number | null;
   annualRate: number | null;
   days: number | null;
   taxBp: number | null;
+  redemptionBp: number;
   exempt: boolean;
 }): FixedIncomeAnswer | null {
-  const { amount, annualRate, days, taxBp, exempt } = input;
+  const { amount, annualRate, days, taxBp, redemptionBp, exempt } = input;
   if (
     amount === null ||
     amount <= 0 ||
@@ -53,12 +56,14 @@ export function fixedIncomeAnswer(input: {
     annualRate,
     days,
     taxBp: exempt ? 0 : taxBp,
+    redemptionBp: exempt ? 0 : redemptionBp,
   });
+  const share = combinedBp(taxBp, redemptionBp);
 
   return {
     ...got,
     equivalent: exempt
-      ? equivalentTaxable(annualRate, taxBp)
-      : equivalentExempt(annualRate, taxBp),
+      ? equivalentTaxable(annualRate, share)
+      : equivalentExempt(annualRate, share),
   };
 }

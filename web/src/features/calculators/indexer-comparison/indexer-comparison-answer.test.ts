@@ -31,6 +31,7 @@ function row(security: Security, net: number, annualRate = 0.1): ComparisonRow {
     security,
     annualRate,
     gross: net + 100,
+    redemption: 0,
     tax: 100,
     net,
     netAnnualRate: annualRate / 2,

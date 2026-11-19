@@ -59,13 +59,24 @@ describe("Fixed income calculator", () => {
     );
   });
 
-  it("gives no result below 30 days in Brazil, where IOF applies", async () => {
+  it("takes the IOF of day 20 in Brazil, then the tax on what it leaves", async () => {
     await open("amount=1000000&rate=12&days=20", "BR");
+
+    // Spec 2026-11-19 RT2: gross 62.29, IOF 33% 20.56, tax 22.5% of 41.73.
+    expect(await result(catalogEn["calc.fixedIncome.redemption"])).toMatch(
+      /20[.,]56/,
+    );
+    expect(await result(catalogEn["calc.fixedIncome.tax"])).toMatch(/9[.,]39/);
+    expect(await figure()).toMatch(/32[.,]34/);
+  });
+
+  it("states no redemption tax from day 30 in Brazil", async () => {
+    await open("amount=1000000&rate=12&days=30", "BR");
+
+    expect(await figure()).not.toBe("—");
     expect(
-      await screen.findByText(catalogEn["calc.fixedIncome.iof"]),
-    ).toBeInTheDocument();
-    expect(await figure()).toBe("—");
-    expect(screen.queryByText(catalogEn["calc.fixedIncome.gross"])).toBeNull();
+      screen.queryByText(catalogEn["calc.fixedIncome.redemption"]),
+    ).toBeNull();
   });
 
   it("applies the German rate of 26.375% with no tax rate to type", async () => {

@@ -428,12 +428,12 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.fixedIncome.taxRate": "Imposto sobre o rendimento",
   "calc.fixedIncome.gross": "Rendimento bruto",
   "calc.fixedIncome.tax": "Imposto",
+  "calc.fixedIncome.redemption": "Imposto sobre o resgate",
   "calc.fixedIncome.netRate": "Taxa anual líquida",
   "calc.fixedIncome.equivalentTaxable": "Taxa com imposto que rende o mesmo",
   "calc.fixedIncome.equivalentExempt": "Taxa sem imposto que rende o mesmo",
   "calc.fixedIncome.taxShare": "Alíquota aplicada",
-  "calc.fixedIncome.iof":
-    "Abaixo de 30 dias incide um imposto sobre o resgate (IOF), que esta calculadora não calcula.",
+  "calc.fixedIncome.redemptionShare": "Alíquota sobre o resgate",
   "calc.fixedIncome.checked":
     "As regras de imposto da região foram conferidas em {date}.",
   "calc.fixedIncome.de.rate":
@@ -446,6 +446,8 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
     "Uma taxa reduzida pela residência da pessoa ou pelo prazo do depósito não é aplicada.",
   "calc.fixedIncome.br.table":
     "No Brasil o imposto sobre um rendimento tributado é 22,5% até 180 dias, 20% de 181 a 360, 17,5% de 361 a 720 e 15% acima de 720 (Lei 11.033/2004, art. 1).",
+  "calc.fixedIncome.br.iof":
+    "Um resgate em até 30 dias de um título tributado paga primeiro o IOF, de 96% do rendimento no 1º dia a 3% no 29º, e o imposto de renda incide sobre o rendimento líquido dele (Decreto 6.306/2007, art. 32 e Anexo; Lei 8.981/1995, art. 65, § 1º). LCA, CRA, CDCA, debêntures, CRI e letras financeiras têm alíquota zero de IOF (art. 32, § 2º).",
   "calc.fixedIncome.br.days252":
     "Contratos brasileiros cotam taxas em 252 dias úteis ao ano, então o número de um contrato difere deste em 365 dias.",
   "calc.fixed-income.step1":
@@ -616,6 +618,7 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.fixedIncome.split.gross": "Bruto",
   "calc.fixedIncome.split.net": "Líquido",
   "calc.fixedIncome.split.tax": "Imposto",
+  "calc.fixedIncome.split.redemption": "Imposto do resgate",
   "calc.fixedIncome.taxable.help":
     "Título cujo rendimento paga imposto de renda.",
   "calc.fixedIncome.exempt.help":

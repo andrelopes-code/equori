@@ -425,12 +425,12 @@ export const calculatorsEn = {
   "calc.fixedIncome.taxRate": "Tax on the yield",
   "calc.fixedIncome.gross": "Gross yield",
   "calc.fixedIncome.tax": "Tax",
+  "calc.fixedIncome.redemption": "Redemption tax",
   "calc.fixedIncome.netRate": "Net annual rate",
   "calc.fixedIncome.equivalentTaxable": "Taxed rate that yields the same",
   "calc.fixedIncome.equivalentExempt": "Tax-free rate that yields the same",
   "calc.fixedIncome.taxShare": "Tax rate applied",
-  "calc.fixedIncome.iof":
-    "Below 30 days a tax on the redemption (IOF) applies, which this calculator does not compute.",
+  "calc.fixedIncome.redemptionShare": "Redemption tax rate",
   "calc.fixedIncome.checked":
     "The tax rules of the region were checked on {date}.",
   "calc.fixedIncome.de.rate":
@@ -443,6 +443,8 @@ export const calculatorsEn = {
     "A reduced rate that applies to the person's residence or to the deposit's term is not applied.",
   "calc.fixedIncome.br.table":
     "In Brazil the tax on a taxable yield is 22.5% up to 180 days, 20% from 181 to 360, 17.5% from 361 to 720 and 15% above 720 (Lei 11.033/2004, art. 1).",
+  "calc.fixedIncome.br.iof":
+    "A redemption within 30 days of a taxed security pays IOF first, from 96% of the yield on day 1 to 3% on day 29, and the income tax applies to the yield net of it (Decreto 6.306/2007, art. 32 and Anexo; Lei 8.981/1995, art. 65, § 1º). LCA, CRA, CDCA, debentures, CRI and letras financeiras have a zero IOF rate (art. 32, § 2º).",
   "calc.fixedIncome.br.days252":
     "Brazilian contracts quote rates on 252 business days a year, so a contract figure differs from this 365-day figure.",
   "calc.fixed-income.step1":
@@ -610,6 +612,7 @@ export const calculatorsEn = {
   "calc.fixedIncome.split.gross": "Gross",
   "calc.fixedIncome.split.net": "Net",
   "calc.fixedIncome.split.tax": "Tax",
+  "calc.fixedIncome.split.redemption": "Redemption tax",
   "calc.fixedIncome.taxable.help": "A security whose yield pays income tax.",
   "calc.fixedIncome.exempt.help": "A security whose yield pays no income tax.",
   "calc.correction.index.help":

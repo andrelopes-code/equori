@@ -227,6 +227,7 @@ describe("IndexerComparison", () => {
         amount: 1_000_000,
         days: 731,
         taxBp: 1500,
+        redemptionBp: 0,
         securities: [
           { form: "fixed", rate: 0.05, taxed: true },
           { form: "percent", index: "cdi", rate: 2, taxed: true },
@@ -304,7 +305,7 @@ describe("IndexerComparison", () => {
         await figure(catalogPtBR["calc.indexerComparison.answer.leadEqual"]),
       ).toMatch(/11\.416,49/);
     });
-    it("warns below the minimum holding and asks for another maturity", async () => {
+    it("takes the IOF of a maturity within 30 days", async () => {
       open();
       await typeRates("8", "140");
       const user = userEvent.setup();
@@ -314,15 +315,10 @@ describe("IndexerComparison", () => {
       );
       await user.keyboard("01122026");
 
-      expect(
-        await screen.findByText(catalogPtBR["calc.fixedIncome.iof"]),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByText(
-          "Preencha vencimento para ver o título que rende mais.",
-        ),
-      ).toBeInTheDocument();
-      expect(screen.queryByRole("table")).toBeNull();
+      // Spec 2026-11-19 RT5: 14 days at 8%, IOF 53% of 29.56, then 22.5% of 13.89.
+      const table = await screen.findByRole("table");
+      expect(within(table).getByText(brl(1880))).toBeInTheDocument();
+      expect(within(table).getByText(brl(1076))).toBeInTheDocument();
     });
 
     it("names the tax rate in a region without rules", async () => {

@@ -77,15 +77,16 @@ export function FixedIncomeCalculator() {
   const exempt = search.kind === "exempt";
   const typedTax = readRate(search.taxRate);
   const taxBp = taxBasisPoints(rules, days, typedTax);
+  const redemptionBp =
+    rules === null || days === null ? 0 : rules.redemptionBp(days);
   const answer = fixedIncomeAnswer({
     amount,
     annualRate: rate.annual,
     days,
     taxBp,
+    redemptionBp,
     exempt,
   });
-  const belowMinimum =
-    rules !== null && days !== null && days < rules.minimumDays;
 
   return (
     <CalculatorFrame
@@ -93,9 +94,8 @@ export function FixedIncomeCalculator() {
       answer={
         <FixedIncomeAnswerView
           money={money}
-          answer={belowMinimum ? null : answer}
+          answer={answer}
           days={days}
-          belowMinimum={belowMinimum}
           missing={[
             {
               label: t("calc.fixedIncome.amount"),
@@ -114,12 +114,13 @@ export function FixedIncomeCalculator() {
         />
       }
       evidence={
-        answer === null || belowMinimum || taxBp === null ? undefined : (
+        answer === null || taxBp === null ? undefined : (
           <FixedIncomeEvidence
             money={money}
             answer={answer}
             exempt={exempt}
             taxBp={taxBp}
+            redemptionBp={redemptionBp}
           />
         )
       }

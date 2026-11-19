@@ -9,7 +9,6 @@ import type { Security } from "@/features/calculators/indexer-comparison/securit
 import { securityText } from "@/features/calculators/indexer-comparison/security-text";
 import { formatRate } from "@/features/calculators/model/format-rate";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-layout/form-notice";
 
 interface IndexerComparisonAnswerViewProps {
   // An amount in minor units, written with the currency.
@@ -18,8 +17,6 @@ interface IndexerComparisonAnswerViewProps {
   securities: readonly Security[];
   // The inputs still missing.
   missing: { label: string; missing: boolean }[];
-  // The maturity is below the minimum holding of the region.
-  early: boolean;
 }
 
 export function IndexerComparisonAnswerView({
@@ -27,7 +24,6 @@ export function IndexerComparisonAnswerView({
   answer,
   securities,
   missing,
-  early,
 }: IndexerComparisonAnswerViewProps) {
   const t = useT();
   const [tag] = useAppLocale();
@@ -103,10 +99,6 @@ export function IndexerComparisonAnswerView({
             ) ?? ""
           }
         />
-      )}
-
-      {early && (
-        <FormNotice tone="warning">{t("calc.fixedIncome.iof")}</FormNotice>
       )}
     </div>
   );

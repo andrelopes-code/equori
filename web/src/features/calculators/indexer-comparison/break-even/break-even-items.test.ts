@@ -67,7 +67,7 @@ const input = {
 
 describe("breakEvenItems", () => {
   it("gives one item per floating security, with its three figures", () => {
-    const rows = compare({ ...input, amount: 1_000_000 });
+    const rows = compare({ ...input, amount: 1_000_000, redemptionBp: 0 });
 
     const items = breakEvenItems({ ...input, rows });
 
@@ -100,7 +100,12 @@ describe("breakEvenItems", () => {
       { form: "percent", index: "cdi", rate: 1.1, taxed: true },
       { form: "spread", index: "xx", rate: 0.05, taxed: true },
     ];
-    const rows = compare({ ...input, securities: floating, amount: 1_000_000 });
+    const rows = compare({
+      ...input,
+      securities: floating,
+      amount: 1_000_000,
+      redemptionBp: 0,
+    });
 
     const items = breakEvenItems({ ...input, securities: floating, rows });
 

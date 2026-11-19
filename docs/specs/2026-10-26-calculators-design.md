@@ -103,7 +103,7 @@ An extension point in `web/src/features/calculators/fixed-income-region.ts`: `fi
 
 - taxable yield withholds 22.5% up to 180 days, 20% from 181 to 360, 17.5% from 361 to 720, 15% above 720 (Lei 11.033/2004, art. 1, in force after the expiry of MP 1.303/2025);
 - exempt: no tax;
-- below 30 days: no result; the screen states that IOF applies and is not computed;
+- below 30 days: IOF of the redemption, then the tax on what it leaves (amended by `docs/specs/2026-11-19-fixed-income-redemption-tax-design.md`);
 - a note in the explanation states that Brazilian contracts quote rates on 252 business days, so a contract figure differs from the 365-day figure.
 
 The rule lists its sources and the date it was checked, 2026-10-26. `docs/contributing/regions.md` gets a row for this extension point.

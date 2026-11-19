@@ -1,5 +1,6 @@
 import { CalculatorFrame } from "@/features/calculators/calculator-frame/calculator-frame";
 import { CalculatorMethod } from "@/features/calculators/calculator-frame/calculator-method";
+import { combinedBp } from "@/features/calculators/fixed-income-calculator/fixed-income-math";
 import { fixedIncomeRules } from "@/features/calculators/fixed-income-calculator/fixed-income-region";
 import { breakEvenItems } from "@/features/calculators/indexer-comparison/break-even/break-even-items";
 import {
@@ -48,13 +49,23 @@ export function IndexerComparison({
 
   const rules = fixedIncomeRules(profile.region);
   const days = daysBetween(today, draft.maturity);
-  const taxBp = taxBasis(rules, days, draft.taxRate);
+  const incomeBp = taxBasis(rules, days, draft.taxRate);
+  const redemptionBp = rules?.redemptionBp(days) ?? 0;
+  // Spec 2026-11-19 RT4: the break-even and the answer read both taxes as one share.
+  const taxBp = incomeBp === null ? null : combinedBp(incomeBp, redemptionBp);
   const securities = draft.rows.map((r) => resolveSecurity(r, indexes));
   const reference = referenceOf(securities);
-  const early = rules !== null && days < rules.minimumDays;
-  const ready = !early && draft.amount > 0 && days > 0 && taxBp !== null;
+  const ready =
+    draft.amount > 0 && days > 0 && incomeBp !== null && taxBp !== null;
   const rows = ready
-    ? compare({ amount: draft.amount, days, taxBp, securities, indexes: data })
+    ? compare({
+        amount: draft.amount,
+        days,
+        taxBp: incomeBp,
+        redemptionBp,
+        securities,
+        indexes: data,
+      })
     : [];
   const items = ready
     ? breakEvenItems({
@@ -96,7 +107,6 @@ export function IndexerComparison({
           format={money.format}
           answer={answer}
           securities={securities}
-          early={early}
           missing={[
             {
               label: t("calc.indexerComparison.amount"),
@@ -104,7 +114,7 @@ export function IndexerComparison({
             },
             {
               label: t("calc.indexerComparison.maturity"),
-              missing: days <= 0 || early,
+              missing: days <= 0,
             },
             {
               label: t("calc.fixedIncome.taxRate"),

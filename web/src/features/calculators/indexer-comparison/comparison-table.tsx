@@ -14,8 +14,9 @@ interface ComparisonTableProps {
   scale: number;
 }
 
-// IC3: the securities in the order they were typed, with their yields after tax. No row is
-// marked, sorted or worded above another.
+// IC3: the securities in the order they were typed, with their yields after tax; the tax
+// column holds the redemption tax too (spec 2026-11-19 RT5). No row is marked, sorted or
+// worded above another.
 export function ComparisonTable({
   securities,
   rows,
@@ -51,7 +52,7 @@ export function ComparisonTable({
               : [
                   text,
                   money(row.gross),
-                  money(row.tax),
+                  money(row.tax + row.redemption),
                   money(row.net),
                   formatRate(row.netAnnualRate, locale, { min: 2, max: 2 }),
                 ],

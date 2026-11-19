@@ -9,8 +9,11 @@ describe("fixedIncomeRules", () => {
     expect(
       [180, 181, 360, 361, 720, 721].map((days) => br?.taxBp(days)),
     ).toEqual([2250, 2000, 2000, 1750, 1750, 1500]);
-    expect(br?.minimumDays).toBe(30);
-    expect(br?.checkedOn).toBe("2026-10-26");
+    // Decreto 6.306/2007, art. 32 and Anexo.
+    expect(
+      [1, 2, 10, 20, 28, 29, 30, 31, 400].map((days) => br?.redemptionBp(days)),
+    ).toEqual([9600, 9300, 6600, 3300, 600, 300, 0, 0, 0]);
+    expect(br?.checkedOn).toBe("2026-11-19");
     expect(br?.sources.length).toBeGreaterThan(0);
   });
 
@@ -19,7 +22,7 @@ describe("fixedIncomeRules", () => {
     expect([1, 400, 2000].map((days) => de?.taxBp(days))).toEqual([
       2637.5, 2637.5, 2637.5,
     ]);
-    expect(de?.minimumDays).toBe(0);
+    expect(de?.redemptionBp(1)).toBe(0);
   });
 
   it("holds the Portuguese rate of CIRS art. 71", () => {
@@ -27,7 +30,7 @@ describe("fixedIncomeRules", () => {
     expect([1, 400, 2000].map((days) => pt?.taxBp(days))).toEqual([
       2800, 2800, 2800,
     ]);
-    expect(pt?.minimumDays).toBe(0);
+    expect(pt?.redemptionBp(1)).toBe(0);
   });
 
   it("has no rule for a region without a case", () => {

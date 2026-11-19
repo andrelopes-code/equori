@@ -10,6 +10,7 @@ export interface ComparisonRow {
   security: Security;
   annualRate: number;
   gross: number;
+  redemption: number;
   tax: number;
   net: number;
   netAnnualRate: number;
@@ -20,10 +21,11 @@ export function compare(input: {
   amount: number;
   days: number;
   taxBp: number;
+  redemptionBp: number;
   securities: readonly Security[];
   indexes: ReadonlyMap<string, IndexData>;
 }): (ComparisonRow | null)[] {
-  const { amount, days, taxBp, securities, indexes } = input;
+  const { amount, days, taxBp, redemptionBp, securities, indexes } = input;
   const months = horizonMonths(days);
 
   return securities.map((security) => {
@@ -37,6 +39,7 @@ export function compare(input: {
       annualRate,
       days,
       taxBp: security.taxed ? taxBp : 0,
+      redemptionBp: security.taxed ? redemptionBp : 0,
     });
 
     return { security, annualRate, ...result };

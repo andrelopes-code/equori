@@ -10,6 +10,7 @@ import { FactRows } from "@/features/calculators/calculator-frame/fact-rows";
 import { SplitBars } from "@/features/calculators/calculator-frame/split-bars";
 import type { CalculatorMoney } from "@/features/calculators/fields/use-calculator-money";
 import type { fixedIncomeAnswer } from "@/features/calculators/fixed-income-calculator/fixed-income-answer";
+import { splitParts } from "@/features/calculators/fixed-income-calculator/split-parts";
 import { formatRate } from "@/features/calculators/model/format-rate";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
@@ -19,6 +20,8 @@ interface FixedIncomeEvidenceProps {
   exempt: boolean;
   // Basis points of the tax rate applied to the yield.
   taxBp: number;
+  // Basis points of the redemption tax applied to the yield before the tax.
+  redemptionBp: number;
 }
 
 export function FixedIncomeEvidence({
@@ -26,11 +29,21 @@ export function FixedIncomeEvidence({
   answer,
   exempt,
   taxBp,
+  redemptionBp,
 }: FixedIncomeEvidenceProps) {
   const t = useT();
   const [tag] = useAppLocale();
   const name = t("calc.fixedIncome.split.gross");
   const total = money.format(answer.gross);
+  const split = splitParts(
+    answer,
+    {
+      net: t("calc.fixedIncome.split.net"),
+      tax: t("calc.fixedIncome.split.tax"),
+      redemption: t("calc.fixedIncome.split.redemption"),
+    },
+    money.format,
+  );
 
   return (
     <Section size="lg">
@@ -45,15 +58,12 @@ export function FixedIncomeEvidence({
           rows={[
             {
               name,
-              parts: [answer.net, answer.tax],
+              parts: split.map((p) => p.value),
               total,
-              label: `${name} ${total}: ${t("calc.fixedIncome.split.net")} ${money.format(answer.net)}, ${t("calc.fixedIncome.split.tax")} ${money.format(answer.tax)}`,
+              label: `${name} ${total}: ${split.map((p) => p.label).join(", ")}`,
             },
           ]}
-          legend={[
-            t("calc.fixedIncome.split.net"),
-            t("calc.fixedIncome.split.tax"),
-          ]}
+          legend={split.map((p) => p.name)}
         />
 
         <FactRows
@@ -66,6 +76,14 @@ export function FixedIncomeEvidence({
                     value: formatRate(taxBp / 10000, tag),
                   },
                 ]),
+            ...(answer.redemption > 0
+              ? [
+                  {
+                    term: t("calc.fixedIncome.redemptionShare"),
+                    value: formatRate(redemptionBp / 10000, tag),
+                  },
+                ]
+              : []),
             {
               term: t(
                 exempt
