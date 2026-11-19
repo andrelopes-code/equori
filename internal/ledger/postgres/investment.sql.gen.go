@@ -392,7 +392,7 @@ SELECT
         WHERE
             tr.books_id = $1
             AND tr.account_id = ANY ($2::UUID[])
-            AND tr.side = 'sell'
+            AND tr.side IN ('sell', 'write_off')
             AND t.voided_at IS NULL
             AND (
                 t.date > $3
@@ -413,8 +413,8 @@ type LaterSaleExistsParams struct {
 	Exclude    uuid.UUID
 }
 
-// P8 amendment A69, relaxed by A228 IO16: a non-voided sale of one of the accounts dated after
-// on_date, or on it when same_day.
+// P8 amendment A69, relaxed by A228 IO16: a non-voided sale or write-off (listed options W2: it
+// fixes the cost it removes) of one of the accounts dated after on_date, or on it when same_day.
 func (q *Queries) LaterSaleExists(ctx context.Context, arg LaterSaleExistsParams) (bool, error) {
 	row := q.db.QueryRow(ctx, laterSaleExists,
 		arg.BooksID,

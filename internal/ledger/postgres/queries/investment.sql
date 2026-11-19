@@ -87,8 +87,8 @@ ORDER BY
     tr.transaction_id;
 
 -- name: LaterSaleExists :one
--- P8 amendment A69, relaxed by A228 IO16: a non-voided sale of one of the accounts dated after
--- on_date, or on it when same_day.
+-- P8 amendment A69, relaxed by A228 IO16: a non-voided sale or write-off (listed options W2: it
+-- fixes the cost it removes) of one of the accounts dated after on_date, or on it when same_day.
 SELECT
     EXISTS (
         SELECT
@@ -100,7 +100,7 @@ SELECT
         WHERE
             tr.books_id = @books_id
             AND tr.account_id = ANY (@account_ids::UUID[])
-            AND tr.side = 'sell'
+            AND tr.side IN ('sell', 'write_off')
             AND t.voided_at IS NULL
             AND (
                 t.date > @on_date

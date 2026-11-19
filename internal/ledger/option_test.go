@@ -160,6 +160,42 @@ func TestS625RightWrittenOff(t *testing.T) {
 	expectPostings(t, lapse.Postings, [3]any{rights, int64(-10), int64(0)})
 }
 
+// A69 with W2: a write-off fixes the cost it removes, as a sale does, so a change dated before it
+// is refused; otherwise an earlier exercise of every unit leaves the write-off on a negative holding.
+func TestChangeBeforeWriteOffRefused(t *testing.T) {
+	t.Parallel()
+	f := newInvestFixture(t)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/instruments",
+		security("PETRK300", "option"),
+		http.StatusCreated,
+		nil,
+	)
+	option := f.buyOption(t, "PETRK300", 100, "0.50")
+	f.h.MustDo(http.MethodPost, "/api/v1/trades", map[string]any{
+		"account_id": option,
+		"side":       "write_off",
+		"date":       "2026-11-20",
+		"quantity":   units(40, "PETRK300"),
+	}, http.StatusCreated, nil)
+
+	f.h.ExpectProblem(
+		f.h.Do(http.MethodPost, "/api/v1/corporate-actions", map[string]any{
+			"account_id":     option,
+			"kind":           "right_exercise",
+			"date":           "2026-11-16",
+			"ratio_from":     1,
+			"ratio_to":       1,
+			"new_instrument": "PETR4",
+			"amount":         apitest.BRL(300000),
+		}),
+		http.StatusConflict,
+		"later_sale_exists",
+		"",
+	)
+}
+
 // buyOption buys quantity units of code at price from the cash account of the fixture.
 func (f investFixture) buyOption(t *testing.T, code string, quantity int64, price string) string {
 	t.Helper()
