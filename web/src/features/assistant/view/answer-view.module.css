@@ -1,0 +1,298 @@
+/* The anatomy of an assistant view: the approved mock of the answer views design
+   (docs/specs/2026-11-19-assistant-answer-views-design-mock/design.css, round 2). Geometry in px
+   follows the assistant's "Inner space" rule. */
+@layer app {
+  .answer {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-inline-size: 0;
+    margin-block: 12px;
+  }
+
+  .view {
+    composes: edge from "../../../ui/display/panel-edge.module.css";
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    box-sizing: border-box;
+    inline-size: 100%;
+    min-inline-size: 0;
+    padding: 16px;
+    border-radius: 14px;
+    background: var(--slotted-panel-surface, var(--slotted-surface-raised));
+    box-shadow: var(
+      --slotted-panel-shadow,
+      inset 0 1px 0 color-mix(in oklab, var(--slotted-text) 8%, transparent),
+      var(--slotted-shadow-xs)
+    );
+  }
+
+  .head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    block-size: 22px;
+    min-inline-size: 0;
+  }
+
+  .kind {
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    inline-size: 22px;
+    block-size: 22px;
+    border-radius: 6px;
+    background: var(--slotted-tone-accent-surface);
+    color: var(--slotted-tone-accent-text);
+  }
+
+  .kind svg {
+    inline-size: 14px;
+    block-size: 14px;
+  }
+
+  .title {
+    min-inline-size: 0;
+    overflow: hidden;
+    color: var(--slotted-text);
+    font-size: var(--slotted-font-size-sm);
+    font-weight: var(--slotted-font-weight-semibold);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .window {
+    flex: none;
+    margin-inline-start: auto;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .verdict {
+    margin: 0;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-sm);
+    line-height: var(--slotted-line-height-sm);
+  }
+
+  .verdict strong {
+    color: var(--slotted-text);
+    font-weight: var(--slotted-font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .prov {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+    white-space: nowrap;
+  }
+
+  .provText {
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .icon12,
+  .icon14 {
+    display: inline-flex;
+    flex: none;
+  }
+
+  .icon12 {
+    inline-size: 12px;
+    block-size: 12px;
+  }
+
+  .icon14 {
+    inline-size: 14px;
+    block-size: 14px;
+  }
+
+  .foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 16px;
+    min-block-size: 28px;
+    padding-block-start: 10px;
+    border-block-start: 1px solid var(--slotted-border-subtle);
+    font-size: var(--slotted-font-size-xs);
+  }
+
+  .open {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: var(--slotted-font-weight-medium);
+  }
+
+  .footEnd {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-inline-start: auto;
+  }
+
+  .toggle {
+    display: inline-flex;
+    flex: none;
+    padding: 2px;
+    border-radius: 8px;
+    background: color-mix(in oklab, var(--slotted-text) 6%, transparent);
+  }
+
+  .toggleOption {
+    display: inline-grid;
+    place-items: center;
+    min-inline-size: 24px;
+    block-size: 24px;
+    padding: 0 4px;
+    border: 0;
+    border-radius: 6px;
+    background: none;
+    color: var(--slotted-text-muted);
+    font: inherit;
+    font-size: var(--slotted-font-size-xs);
+    font-weight: var(--slotted-font-weight-semibold);
+    cursor: pointer;
+  }
+
+  .toggleOption[aria-checked="true"] {
+    background: var(--slotted-panel-surface, var(--slotted-surface-raised));
+    box-shadow: 0 1px 2px
+      color-mix(in oklab, var(--slotted-text) 18%, transparent);
+    color: var(--slotted-text);
+  }
+
+  .tool {
+    display: inline-grid;
+    place-items: center;
+    inline-size: 28px;
+    block-size: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: none;
+    color: var(--slotted-text-muted);
+    cursor: pointer;
+  }
+
+  .tool svg {
+    inline-size: 14px;
+    block-size: 14px;
+  }
+
+  .tool:hover {
+    background: color-mix(in oklab, var(--slotted-text) 6%, transparent);
+    color: var(--slotted-text);
+  }
+
+  .toggleOption:focus-visible,
+  .tool:focus-visible,
+  .chip:focus-visible {
+    outline: 2px solid var(--slotted-tone-accent-solid);
+    outline-offset: 2px;
+  }
+
+  .table {
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-size: var(--slotted-font-size-xs);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .table th,
+  .table td {
+    block-size: 28px;
+    padding: 0 6px;
+    border-block-end: 1px solid var(--slotted-border-subtle);
+    text-align: start;
+    white-space: nowrap;
+  }
+
+  .table th {
+    color: var(--slotted-text-muted);
+    font-weight: var(--slotted-font-weight-medium);
+  }
+
+  .table th:first-child,
+  .table td:first-child {
+    padding-inline-start: 0;
+  }
+
+  .table .end {
+    padding-inline-end: 0;
+    text-align: end;
+  }
+
+  .next {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-inline-size: 100%;
+    block-size: 28px;
+    padding-inline: 10px;
+    border: 1px solid var(--slotted-border-subtle);
+    border-radius: var(--slotted-radius-full);
+    background: none;
+    color: var(--slotted-text);
+    font: inherit;
+    font-size: var(--slotted-font-size-xs);
+    cursor: pointer;
+    transition:
+      background var(--slotted-duration-short) var(--slotted-easing-standard),
+      border-color var(--slotted-duration-short) var(--slotted-easing-standard);
+  }
+
+  .chip:hover:not(:disabled) {
+    border-color: var(--slotted-tone-accent-border);
+    background: var(--slotted-tone-accent-surface);
+  }
+
+  .chip:disabled {
+    cursor: default;
+  }
+
+  .chipIcon {
+    display: inline-flex;
+    flex: none;
+    inline-size: 12px;
+    block-size: 12px;
+    color: var(--slotted-tone-accent-text);
+  }
+
+  .chipText {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .chip {
+      transition: none;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .toggleOption[aria-checked="true"] {
+      outline: 2px solid Highlight;
+    }
+  }
+}

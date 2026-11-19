@@ -63,7 +63,7 @@ func compareView(outputs []json.RawMessage, sel view.Select, _ time.Time) (view.
 			Params: map[string]view.Value{"count": view.CountValue(int64(len(order)))},
 		},
 		Open: &view.Link{
-			Screen: "reports",
+			Screen: "/reports",
 			Params: map[string]string{"from": periods[1].From, "to": periods[1].To},
 		},
 		Rows: compareRows(data),

@@ -31,6 +31,7 @@ import { usePanelFocus } from "@/features/assistant/panel/use-panel-focus";
 import { usePanelTitle } from "@/features/assistant/panel/use-panel-title";
 import { useRetryAt } from "@/features/assistant/panel/use-retry-at";
 import { useAssistantFiles } from "@/features/assistant/panel/use-composer-files";
+import { AskContext } from "@/features/assistant/view/ask-context";
 import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
 
 interface AssistantPanelProps {
@@ -185,12 +186,14 @@ export function AssistantPanel({
       )}
 
       {!listing && started && (
-        <ConversationFeed
-          messages={messages}
-          turn={turn}
-          orphan={orphan}
-          onRetry={handleRetry}
-        />
+        <AskContext value={ready && !blocked ? send : undefined}>
+          <ConversationFeed
+            messages={messages}
+            turn={turn}
+            orphan={orphan}
+            onRetry={handleRetry}
+          />
+        </AskContext>
       )}
     </div>
   );

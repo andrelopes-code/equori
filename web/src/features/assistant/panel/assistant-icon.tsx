@@ -22,6 +22,10 @@ export type AssistantIconName =
   | "link"
   | "fileDown"
   | "paperclip"
+  | "copy"
+  | "table"
+  | "pie"
+  | "chevron"
   | "dot";
 
 // Lucide geometry (ISC licence) on its 24-unit grid: square-pen, history, sparkles, and the marks
@@ -100,6 +104,21 @@ const PATHS: Record<AssistantIconName, readonly string[]> = {
   paperclip: [
     "m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48",
   ],
+  copy: [
+    "M10 8h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2z",
+    "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2",
+  ],
+  table: [
+    "M12 3v18",
+    "M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z",
+    "M3 9h18",
+    "M3 15h18",
+  ],
+  pie: [
+    "M21 12c.552 0 1.005-.449.95-.998a10 10 0 0 0-8.953-8.951c-.55-.055-.998.398-.998.95v8a1 1 0 0 0 1 1z",
+    "M21.21 15.89A10 10 0 1 1 8 2.83",
+  ],
+  chevron: ["m6 9 6 6 6-6"],
   dot: ["M12 12h.01"],
 };
 

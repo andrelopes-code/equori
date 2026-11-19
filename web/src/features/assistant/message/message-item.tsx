@@ -23,6 +23,7 @@ import type { Decision } from "@/features/assistant/proposal/use-sheet-decisions
 import type { AssistantMessage } from "@/features/assistant/model/sse";
 import { TurnActivity } from "@/features/assistant/message/turn-activity";
 import { UserMessage } from "@/features/assistant/message/user-message";
+import { AnswerView } from "@/features/assistant/view/answer-view";
 import { useT } from "@/i18n/i18n-provider";
 import { usePrivacy } from "@/privacy/privacy-provider";
 import { FormNotice } from "@/ui/form-layout/form-notice";
@@ -87,6 +88,10 @@ export function MessageItem({
           )}
 
           <MessageAnswer tree={tree} />
+
+          {message.views.map((view) => (
+            <AnswerView key={view.id} view={view} />
+          ))}
 
           {(message.outcome === "step_limit" ||
             message.proposals.length > 0) && (

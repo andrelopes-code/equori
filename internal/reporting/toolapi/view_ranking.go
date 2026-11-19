@@ -69,7 +69,7 @@ func rankingView(outputs []json.RawMessage, sel view.Select, _ time.Time) (view.
 			Params: map[string]view.Value{"count": view.CountValue(int64(len(items)))},
 		},
 		Open: &view.Link{
-			Screen: "reports",
+			Screen: "/reports",
 			Params: map[string]string{
 				"from": out.From.Format(time.DateOnly),
 				"to":   out.To.Format(time.DateOnly),
