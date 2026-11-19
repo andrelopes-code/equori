@@ -97,16 +97,19 @@ describe("Own or rent calculator", () => {
   it("draws owning as six parts, renting as one, on one axis", async () => {
     await open(home);
     const [own, rent] = await rows();
-    // The positive components total 7,250,000 minor units: 7 digits, the axis steps by 200,000
-    // and rounds up to 7,400,000. Forgone 5,000,000 is 67.5676%, property tax 6.7568%,
-    // maintenance 10.1351%, risk premium 13.5135%; rent 4,800,000 is 64.8649%.
+    // Owning costs 5,250,000 net, the largest bar: 7 digits, the axis steps by 200,000 and rounds
+    // up to 5,400,000. The positive components (7,250,000) are scaled to the net, so the row is
+    // 5,250,000 / 5,400,000 = 97.2222% long: forgone 3,620,689 is 67.0498%, property tax
+    // 362,068 is 6.7050%, maintenance 543,103 is 10.0575%, risk premium 724,140 is 13.4100%.
+    // Rent 4,800,000 is 88.8889%.
     expect(own).toHaveLength(6);
     expect(rent).toHaveLength(1);
-    expect(own?.[0]).toBeCloseTo(67.5676, 3);
-    expect(own?.[1]).toBeCloseTo(6.7568, 3);
-    expect(own?.[3]).toBeCloseTo(10.1351, 3);
-    expect(own?.[5]).toBeCloseTo(13.5135, 3);
-    expect(rent?.[0]).toBeCloseTo(64.8649, 3);
+    expect(own?.[0]).toBeCloseTo(67.0498, 3);
+    expect(own?.[1]).toBeCloseTo(6.705, 3);
+    expect(own?.[3]).toBeCloseTo(10.0575, 3);
+    expect(own?.[5]).toBeCloseTo(13.41, 3);
+    expect(own?.reduce((sum, width) => sum + width, 0)).toBeCloseTo(97.2222, 3);
+    expect(rent?.[0]).toBeCloseTo(88.8889, 3);
   });
 
   it("draws the appreciation, which lowers the cost, as a zero width", async () => {
@@ -115,6 +118,14 @@ describe("Own or rent calculator", () => {
     expect(own?.[4]).toBe(0);
     expect(own?.[2]).toBe(0);
     expect(own?.every((width) => width >= 0)).toBe(true);
+  });
+
+  it("draws no owning bar when the appreciation exceeds the costs", async () => {
+    await open(home.replace("appreciation=4", "appreciation=20"));
+    const [own, rent] = await rows();
+    // Owning nets -27,500.00: every width is 0; rent 4,800,000 on its own axis is 100%.
+    expect(own).toEqual([0, 0, 0, 0, 0, 0]);
+    expect(rent?.[0]).toBeCloseTo(100, 3);
   });
 
   it("names the six components as the legend of the owning bar", async () => {

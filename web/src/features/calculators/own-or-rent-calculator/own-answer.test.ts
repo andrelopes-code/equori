@@ -54,11 +54,28 @@ describe("ownAnswer", () => {
     });
   });
 
-  it("draws a negative component as a zero part, keeping the order", () => {
+  it("scales the positive components to the net cost, the remainder on the last", () => {
     const got = ownAnswer(home);
     if (got.kind !== "solved") throw new Error("expected a solved answer");
 
-    expect(got.parts).toEqual([5_000_000, 500_000, 0, 750_000, 0, 1_000_000]);
+    // The positive components total 7,250,000; the net is 5,250,000. Each part is
+    // floor(component * 5,250,000 / 7,250,000): 3,620,689, 362,068, 543,103 and 724,137, which
+    // add to 5,249,997. The remainder of 3 goes to the last positive part: 724,140.
+    expect(got.parts).toEqual([3_620_689, 362_068, 0, 543_103, 0, 724_140]);
+    expect(got.parts.reduce((sum, part) => sum + part, 0)).toBe(got.own);
+  });
+
+  it("draws no bar when the appreciation exceeds the costs", () => {
+    // Appreciation of 20% is -10,000,000; the other components total 7,250,000: the net is
+    // -2,750,000.
+    const got = ownAnswer({
+      ...home,
+      rates: { ...home.rates, appreciation: 0.2 },
+    });
+    if (got.kind !== "solved") throw new Error("expected a solved answer");
+
+    expect(got.own).toBe(-2_750_000);
+    expect(got.parts).toEqual([0, 0, 0, 0, 0, 0]);
   });
 
   it("names every input still missing, in screen order", () => {
