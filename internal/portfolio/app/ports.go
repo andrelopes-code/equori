@@ -123,6 +123,8 @@ type MarketData interface {
 	Coupons(ctx context.Context, code money.Currency) ([]Coupon, error)
 	// Maturity returns the maturity date of the terms of code; false when it has none.
 	Maturity(ctx context.Context, code money.Currency) (time.Time, bool, error)
+	// ContractFacts returns the facts of a fixed income security (GR3); false when it has none.
+	ContractFacts(ctx context.Context, code money.Currency) (ContractFacts, bool, error)
 	// Adjust moves d to a business day of the calendar: the preceding one, else the following.
 	Adjust(ctx context.Context, calendar string, d time.Time, preceding bool) (time.Time, error)
 }

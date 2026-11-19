@@ -231,6 +231,22 @@ func (p marketPort) Maturity(ctx context.Context, code money.Currency) (time.Tim
 	return t.MaturesOn, err == nil, err
 }
 
+func (p marketPort) ContractFacts(
+	ctx context.Context,
+	code money.Currency,
+) (app.ContractFacts, bool, error) {
+	f, err := p.md.ContractFacts(ctx, string(code))
+	if errors.Is(err, marketdata.ErrNoTerms) {
+		return app.ContractFacts{}, false, nil
+	}
+
+	if err != nil {
+		return app.ContractFacts{}, false, err
+	}
+
+	return app.ContractFacts(f), true, nil
+}
+
 func (p marketPort) Adjust(
 	ctx context.Context,
 	calendar string,

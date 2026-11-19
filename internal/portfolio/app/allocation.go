@@ -41,6 +41,14 @@ type InstrumentInfo struct {
 	IssuerID      string
 }
 
+// ContractFacts are the facts of a fixed income security that a contribution rule reads (GR3).
+type ContractFacts struct {
+	ReturnKind     string
+	MaturesOn      time.Time
+	DailyLiquidity bool
+	Sovereign      bool
+}
+
 // AllocationGroup is the value held under one key of an allocation and its share in basis points.
 type AllocationGroup struct {
 	Key     string

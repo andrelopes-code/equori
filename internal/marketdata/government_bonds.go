@@ -2,10 +2,12 @@ package marketdata
 
 import (
 	"context"
+	"errors"
 	"regexp"
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/marketdata/domain"
+	"github.com/andrelopes-code/equori/internal/marketdata/index"
 )
 
 const (
@@ -17,6 +19,10 @@ const (
 	// bondHistoryYears bounds the coupons listed before the maturity of a bond.
 	bondHistoryYears = 40
 	fullPrincipalBP  = 10000
+
+	returnKindRate      = "rate"
+	returnKindInflation = "inflation"
+	returnKindFixed     = "fixed"
 )
 
 // monthlyPayments are the monthly payments of the principal of a bond of income: 240 for an
@@ -28,6 +34,62 @@ var monthlyPayments = map[string]int{"RENDA": 240, "EDUCA": 60}
 var governmentBondCode = regexp.MustCompile(
 	`^(LFT|LTN|NTNF|NTNB|NTNBP|NTNC|RENDA|EDUCA)\.([0-9]{8})$`,
 )
+
+// governmentBondReturnKind is the return kind of each government bond kind (contribution rules
+// GR3).
+var governmentBondReturnKind = map[string]string{
+	"LFT":   returnKindRate,
+	"LTN":   returnKindFixed,
+	"NTNF":  returnKindFixed,
+	"NTNB":  returnKindInflation,
+	"NTNBP": returnKindInflation,
+	"NTNC":  returnKindInflation,
+	"RENDA": returnKindInflation,
+	"EDUCA": returnKindInflation,
+}
+
+// ContractFacts are the return kind, maturity and liquidity of a fixed income security
+// (contribution rules GR3); Sovereign is true when they come from a government bond code (GR4).
+type ContractFacts struct {
+	ReturnKind     string // "rate", "inflation" or "fixed"
+	MaturesOn      time.Time
+	DailyLiquidity bool
+	Sovereign      bool
+}
+
+// ContractFacts returns the facts of code from its terms, else from its government bond code;
+// ErrNoTerms when it has neither.
+func (m *Module) ContractFacts(ctx context.Context, code string) (ContractFacts, error) {
+	t, err := m.Terms(ctx, code)
+	if err == nil {
+		return ContractFacts{
+			ReturnKind:     m.termsReturnKind(t),
+			MaturesOn:      t.MaturesOn,
+			DailyLiquidity: t.DailyLiquidity,
+		}, nil
+	}
+
+	if !errors.Is(err, ErrNoTerms) {
+		return ContractFacts{}, err
+	}
+
+	match := governmentBondCode.FindStringSubmatch(code)
+	if match == nil {
+		return ContractFacts{}, ErrNoTerms
+	}
+
+	maturity, err := time.Parse("20060102", match[2])
+	if err != nil {
+		return ContractFacts{}, ErrNoTerms
+	}
+
+	return ContractFacts{
+		ReturnKind:     governmentBondReturnKind[match[1]],
+		MaturesOn:      maturity,
+		DailyLiquidity: match[1] == "LFT",
+		Sovereign:      true,
+	}, nil
+}
 
 // governmentBondCoupons are the payments of one unit of a Brazilian government bond read from its
 // code (coverage rows T-03, T-05), each on the next banking day; nil when code is not one. An NTN-F,
@@ -110,4 +172,20 @@ func (m *Module) monthlyBondCoupons(
 	}
 
 	return out, nil
+}
+
+// termsReturnKind is fixed without an index, inflation when the period of the index is a month and
+// rate otherwise, including an index with no registered source.
+func (m *Module) termsReturnKind(t Terms) string {
+	if t.IndexID == "" {
+		return returnKindFixed
+	}
+
+	for _, src := range m.feeds.Indexes {
+		if src.Index() == t.IndexID && src.Period() == index.PeriodMonth {
+			return returnKindInflation
+		}
+	}
+
+	return returnKindRate
 }
