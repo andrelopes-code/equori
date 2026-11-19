@@ -1219,3 +1219,7 @@ Coverage row U-02, through the HTTP API. 10,000 units of an equity_fund bought a
 ### S636 Estimate of a FIP or a FIDC that is an investment entity
 
 Coverage row U-04, through the HTTP API. 10,000 units of a fip, or of a fidc_entity, bought at 1.00 on 2026-01-05 and priced 1.10 on 2026-07-06: the position has an estimated_tax of 150.00, 15% of the gain; a fidc_entity has no come-cotas event.
+
+### S637 Annual tax abroad
+
+Coverage row U-08, through the tool `get_tax_year` view `abroad_tax`. 10 units of an ETF quoted in USD bought for 500.00 BRL each on 2025-03-03 and sold for 600.00 BRL each on 2025-09-01: the year 2025 has a base of 1,000.00, a tax of 150.00 and 150.00 due.

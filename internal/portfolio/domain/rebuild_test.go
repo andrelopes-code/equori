@@ -39,6 +39,8 @@ func (fixtureJurisdiction) DeductibleContributions() []string { return nil }
 
 func (fixtureJurisdiction) GainTax([]TaxSale) []TaxMonth { return nil }
 
+func (fixtureJurisdiction) AbroadTax([]AbroadItem) []AbroadYear { return nil }
+
 func (fixtureJurisdiction) Treatment(incomeType, _ string) string {
 	if incomeType == "dividend" {
 		return "exempt"

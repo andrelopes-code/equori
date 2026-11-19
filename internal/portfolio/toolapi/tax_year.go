@@ -12,11 +12,13 @@ import (
 
 type getTaxYearView string
 
-func (getTaxYearView) Values() []string { return []string{"sales", "income", "both", "gain_tax"} }
+func (getTaxYearView) Values() []string {
+	return []string{"sales", "income", "both", "gain_tax", "abroad_tax"}
+}
 
 type getTaxYearIn struct {
 	Year int            `json:"year"          jsonschema:"year in which the owner's tax year starts"`
-	View getTaxYearView `json:"view,omitzero" jsonschema:"sales gives realized results, income gives income events, gain_tax the monthly tax on variable income; both when absent"`
+	View getTaxYearView `json:"view,omitzero" jsonschema:"sales gives realized results, income gives income events, gain_tax the monthly tax on variable income, abroad_tax the annual tax on investments held abroad; both when absent"`
 }
 
 type saleView struct {
@@ -50,6 +52,20 @@ type getTaxYearOut struct {
 	DeductibleContributions tool.Money `json:"deductible_contributions,omitzero"`
 
 	GainTax []gainTaxMonthView `json:"gain_tax,omitzero"`
+
+	AbroadTax abroadTaxView `json:"abroad_tax,omitzero"`
+}
+
+// abroadTaxView is the annual tax of the investments quoted in another currency (U-08).
+type abroadTaxView struct {
+	Gains       tool.Money `json:"gains"`
+	Losses      tool.Money `json:"losses"`
+	LossUsed    tool.Money `json:"loss_used"`
+	LossCarried tool.Money `json:"loss_carried"`
+	Base        tool.Money `json:"base"`
+	Tax         tool.Money `json:"tax"`
+	Credit      tool.Money `json:"credit"       jsonschema:"tax paid abroad deducted"`
+	Due         tool.Money `json:"due"          jsonschema:"to pay in the annual return"`
 }
 
 type gainTaxMonthView struct {
@@ -105,10 +121,8 @@ func getTaxYear(svc *app.Service, names AccountNames) tool.Tool {
 			}
 		}
 
-		if in.View == "gain_tax" {
-			out.GainTax, err = gainTaxMonths(ctx, svc, booksID, in.Year)
-
-			return out, err
+		if in.View == "gain_tax" || in.View == "abroad_tax" {
+			return taxView(ctx, svc, booksID, in, out)
 		}
 
 		paid, ok, err := svc.DeductibleContributions(ctx, booksID, in.Year)
@@ -118,6 +132,24 @@ func getTaxYear(svc *app.Service, names AccountNames) tool.Tool {
 
 		return out, err
 	})
+}
+
+// taxView adds to out the monthly tax of variable income or the annual tax abroad that in asks.
+func taxView(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in getTaxYearIn,
+	out getTaxYearOut,
+) (getTaxYearOut, error) {
+	var err error
+	if in.View == "gain_tax" {
+		out.GainTax, err = gainTaxMonths(ctx, svc, booksID, in.Year)
+	} else {
+		out.AbroadTax, err = abroadTax(ctx, svc, booksID, in.Year)
+	}
+
+	return out, err
 }
 
 func taxYearSales(
@@ -229,4 +261,36 @@ func gainTaxMonths(
 	}
 
 	return out, nil
+}
+
+// abroadTax states the annual tax on the investments held abroad; zero when the year has none.
+func abroadTax(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	year int,
+) (abroadTaxView, error) {
+	y, base, ok, err := svc.AbroadTax(ctx, booksID, year)
+	if err != nil || !ok {
+		return abroadTaxView{}, err
+	}
+
+	v := abroadTaxView{}
+	for _, f := range []struct {
+		dst *tool.Money
+		amt int64
+	}{
+		{&v.Gains, y.Gains}, {&v.Losses, y.Losses}, {&v.LossUsed, y.LossUsed},
+		{&v.LossCarried, y.LossCarried}, {&v.Base, y.Base}, {&v.Tax, y.Tax},
+		{&v.Credit, y.Credit}, {&v.Due, y.Due},
+	} {
+		m, err := money.New(f.amt, base)
+		if err != nil {
+			return abroadTaxView{}, err
+		}
+
+		*f.dst = tool.MoneyOf(m)
+	}
+
+	return v, nil
 }

@@ -29,6 +29,9 @@ type Jurisdiction interface {
 	// GainTax returns the monthly tax on the gains of the sales of variable income, in month
 	// order; none in a region without such a tax (monthly gain tax design GT7).
 	GainTax(sales []TaxSale) []TaxMonth
+	// AbroadTax returns the annual tax of the financial investments held abroad, in year order;
+	// none in a region without such a tax (coverage row U-08).
+	AbroadTax(items []AbroadItem) []AbroadYear
 }
 
 // UnitTax is when a fund of the listed subtypes cancels units to withhold income tax: on the last
