@@ -447,6 +447,45 @@ type FixedIncomeEventList struct {
 	Items []FixedIncomeEvent `json:"items"`
 }
 
+// GainTaxLine defines model for GainTaxLine.
+type GainTaxLine struct {
+	Base        Money `json:"base"`
+	Due         Money `json:"due"`
+	Exempt      Money `json:"exempt"`
+	Gross       Money `json:"gross"`
+	LossCarried Money `json:"loss_carried"`
+	LossUsed    Money `json:"loss_used"`
+
+	// Pool ordinary, day_trade, fii or crypto in Brazil.
+	Pool     string `json:"pool"`
+	RateBp   int    `json:"rate_bp"`
+	Result   Money  `json:"result"`
+	Tax      Money  `json:"tax"`
+	Withheld Money  `json:"withheld"`
+}
+
+// GainTaxMonth defines model for GainTaxMonth.
+type GainTaxMonth struct {
+	CarriedIn       Money         `json:"carried_in"`
+	CryptoCarriedIn Money         `json:"crypto_carried_in"`
+	CryptoDarf      Money         `json:"crypto_darf"`
+	Darf            Money         `json:"darf"`
+	Lines           []GainTaxLine `json:"lines"`
+	Month           string        `json:"month"`
+}
+
+// GainTaxMonthList defines model for GainTaxMonthList.
+type GainTaxMonthList struct {
+	// From First day of the tax year.
+	From openapi_types.Date `json:"from"`
+
+	// Items The months with sales, oldest first.
+	Items []GainTaxMonth `json:"items"`
+
+	// To Last day of the tax year, included.
+	To openapi_types.Date `json:"to"`
+}
+
 // IncomeEvent defines model for IncomeEvent.
 type IncomeEvent struct {
 	AccountId     openapi_types.UUID `json:"account_id"`
@@ -788,6 +827,12 @@ type Year = int
 type ListFixedIncomeEventsParams struct {
 	From openapi_types.Date `form:"from" json:"from"`
 	To   openapi_types.Date `form:"to" json:"to"`
+}
+
+// ListGainTaxParams defines parameters for ListGainTax.
+type ListGainTaxParams struct {
+	// Year Year in which the tax year of the owner's jurisdiction starts.
+	Year Year `form:"year" json:"year"`
 }
 
 // ListIncomeEventsParams defines parameters for ListIncomeEvents.

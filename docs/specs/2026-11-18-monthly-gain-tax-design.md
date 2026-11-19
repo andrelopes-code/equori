@@ -18,6 +18,7 @@ For each month of a year, equori states the income tax a Brazilian individual ow
 | GT6 | A sale with both a day-trade and an ordinary part splits its gross value and its withheld tax between them in proportion to their quantities. | The ledger records one gross and one withheld tax per sale. |
 | GT7 | A region without these rules returns no month. | |
 | GT8 | Crypto (class `crypto`) sold on an exchange of the country is a capital gain: a month of R$ 35,000.00 of sales or less is exempt; above it each gain pays 15% up to R$ 5,000,000.00, then 17.5%, 20% and 22.5%; a loss reduces no gain; its DARF (code 4600) is paid apart, with its own minimum. | Lei 13.259/2016 art. 1; IN SRF 84/2001 art. 3 (each sale apart); RFB on crypto assets (small-value exemption); Medida Provisória 1.303/2025, which would have ended the exemption, lost effect. |
+| GT9 | `GET /gain-tax?year=` returns the months of `Jurisdiction.GainTax` for the tax year (`from`, `to`, `items`), each month with `carried_in`, `darf`, `crypto_carried_in`, `crypto_darf` and, per pool, `gross`, `result`, `exempt`, `loss_used`, `loss_carried`, `base`, `rate_bp`, `tax`, `withheld` and `due`, in minor units of the base currency. The page of the tax year gains the tab Monthly tax: a table of what to pay by month (month, carried in, to pay, and crypto paid apart when a month has it) and a table of the tax by pool (month and pool, base, rate, due after withholding). A year without months states that none is due. | Amendment of 2026-11-19: the DARF had no screen, so the user who does not use the assistant could not read it. |
 
 ## 3. Cross-cutting questions
 
@@ -27,19 +28,19 @@ For each month of a year, equori states the income tax a Brazilian individual ow
 | R2 | Another region returns no month (GT7). |
 | R3 | Does not apply: no value set is stored. |
 | R4 | `Jurisdiction.GainTax` is an extension point; `docs/contributing/regions.md` gains its row. |
-| R5 | No screen text in this slice; the tool returns codes and amounts. |
+| R5 | The tab of GT9 names the pools through `taxYear.pool.<pool>`, with the code as fallback; its words name no regional payment form. |
 | R6 | Does not apply. |
 | C1 | Every amount is an integer of minor units of the base currency. |
 | C2 | The realized results hold the base currency; a sum mixes no currency. |
 | C3 | The results are in the base currency of the book. |
-| C4 | Does not apply: no screen. |
+| C4 | The tab of GT9 formats each amount in the base currency through `useMoneyFormat()`. |
 | T1 | A month is the month of the sale date; the year is the tax year of the jurisdiction. |
 | T2 | Does not apply: the due date (the last business day of the next month) is stated in the guide, not computed. |
 | B1 | Does not apply: no table. |
 | B2 | `get_tax_year` keeps its role (`read`). |
 | B3 | Does not apply. |
 | D1 to D5 | Does not apply: nothing is stored. |
-| S1 | No new operation; `get_tax_year` gains the view `gain_tax`. |
+| S1 | `get_tax_year` gains the view `gain_tax`; GT9 adds `listGainTax`, exposed to the assistant through `get_tax_year`. |
 | S2 | Does not apply. |
 | S3 | The guide article `equities_br` describes the computation. |
 | S4 | `get_tax_year` view `gain_tax` returns the months. |

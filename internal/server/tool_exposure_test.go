@@ -114,6 +114,7 @@ var exposure = map[string]string{
 	"correctInvestmentIncome":          "record_investment",
 	"listPositions":                    "get_portfolio",
 	"listRealizedResults":              "get_tax_year",
+	"listGainTax":                      "get_tax_year",
 	"listIncomeEvents":                 "get_tax_year",
 	"listInvestmentIncomeTypes":        "get_portfolio",
 	"listInstrumentSubtypes":           "get_portfolio",

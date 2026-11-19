@@ -103,3 +103,48 @@ func TestGainTaxOutsideBrazil(t *testing.T) {
 		t.Errorf("months = %+v, want none", got.GainTax)
 	}
 }
+
+// GT9: the screen reads the months of S628 and S629 through GET /gain-tax, amounts in cents.
+func TestGainTaxThroughHTTP(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, apitest.Today("2026-05-01"))
+	f.stockTrade(t, "buy", "2026-03-10", 100, "10.00", 0)
+	f.stockTrade(t, "sell", "2026-03-10", 100, "10.40", 40)
+	f.stockTrade(t, "buy", "2026-04-14", 100, "10.00", 0)
+	f.stockTrade(t, "sell", "2026-04-14", 100, "11.00", 100)
+	f.h.Dispatch()
+
+	var got struct {
+		From  string `json:"from"`
+		Items []struct {
+			Month     string         `json:"month"`
+			Darf      map[string]any `json:"darf"`
+			CarriedIn map[string]any `json:"carried_in"`
+			Lines     []struct {
+				Pool   string         `json:"pool"`
+				RateBP int            `json:"rate_bp"`
+				Base   map[string]any `json:"base"`
+				Due    map[string]any `json:"due"`
+			} `json:"lines"`
+		} `json:"items"`
+	}
+
+	f.h.MustDo(http.MethodGet, "/api/v1/gain-tax?year=2026", nil, http.StatusOK, &got)
+
+	if got.From != "2026-01-01" || len(got.Items) != 2 {
+		t.Fatalf("gain tax = %+v", got)
+	}
+
+	march, april := got.Items[0], got.Items[1]
+	if march.Month != "2026-03" || march.Darf["amount"] != float64(0) ||
+		len(march.Lines) != 1 || march.Lines[0].Pool != "day_trade" ||
+		march.Lines[0].RateBP != 2000 || march.Lines[0].Base["amount"] != float64(4000) ||
+		march.Lines[0].Due["amount"] != float64(760) {
+		t.Errorf("march = %+v", march)
+	}
+
+	if april.Month != "2026-04" || april.Darf["amount"] != float64(2660) ||
+		april.CarriedIn["amount"] != float64(760) || april.Darf["currency"] != "BRL" {
+		t.Errorf("april = %+v", april)
+	}
+}

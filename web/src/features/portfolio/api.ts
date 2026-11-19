@@ -95,6 +95,14 @@ export function realizedResultsQuery(api: Client<paths>, year: number) {
   });
 }
 
+export function gainTaxQuery(api: Client<paths>, year: number) {
+  return queryOptions({
+    queryKey: ["gain-tax", year] as const,
+    queryFn: async () =>
+      unwrap(await api.GET("/gain-tax", { params: { query: { year } } })),
+  });
+}
+
 export function incomeEventsQuery(api: Client<paths>, year: number) {
   return queryOptions({
     queryKey: ["income-events", year] as const,

@@ -19,4 +19,10 @@ describe("validateYearSearch", () => {
     expect(validateYearSearch({ tab: "income" })).toEqual({ tab: "income" });
     expect(validateYearSearch({ tab: "realized" })).toEqual({});
   });
+
+  it("keeps the monthly tax tab", () => {
+    expect(validateYearSearch({ tab: "gain_tax" })).toEqual({
+      tab: "gain_tax",
+    });
+  });
 });

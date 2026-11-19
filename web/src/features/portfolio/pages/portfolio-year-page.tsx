@@ -18,9 +18,11 @@ import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useApi } from "@/api/api-context";
 
 import {
+  gainTaxQuery,
   incomeEventsQuery,
   realizedResultsQuery,
 } from "@/features/portfolio/api";
+import { GainTaxTab } from "@/features/portfolio/gain-tax/gain-tax-tab";
 import { IncomeEventsTab } from "@/features/portfolio/income-events/income-events-tab";
 import { RealizedResultsTab } from "@/features/portfolio/realized-results/realized-results-tab";
 import { maxYear, minYear } from "@/features/portfolio/pages/year-search";
@@ -55,7 +57,11 @@ export function PortfolioYearPage() {
     ...incomeEventsQuery(api, year),
     enabled: tab === "income",
   });
-  const period = tab === "realized" ? realized.data : income.data;
+  const gainTax = useQuery({
+    ...gainTaxQuery(api, year),
+    enabled: tab === "gain_tax",
+  });
+  const period = { realized, income, gain_tax: gainTax }[tab].data;
   const change = (patch: YearSearch) => {
     void navigate({
       to: "/portfolio/year",
@@ -66,6 +72,7 @@ export function PortfolioYearPage() {
   const tabs: { tab: YearTab; label: string }[] = [
     { tab: "realized", label: t("taxYear.tab.realized") },
     { tab: "income", label: t("taxYear.tab.income") },
+    { tab: "gain_tax", label: t("taxYear.tab.gainTax") },
   ];
   return (
     <Page width="full">
@@ -118,7 +125,9 @@ export function PortfolioYearPage() {
             onValueChange={(value) => {
               const entry = tabs.find((e) => e.tab === value);
               if (entry !== undefined)
-                change({ tab: entry.tab === "income" ? "income" : undefined });
+                change({
+                  tab: entry.tab === "realized" ? undefined : entry.tab,
+                });
             }}
           >
             <TabList aria-label={t("taxYear.tabs")}>
@@ -133,11 +142,9 @@ export function PortfolioYearPage() {
       </PageHeader>
       <PageBody>
         <PageStack>
-          {tab === "realized" ? (
-            <RealizedResultsTab year={year} />
-          ) : (
-            <IncomeEventsTab year={year} />
-          )}
+          {tab === "realized" && <RealizedResultsTab year={year} />}
+          {tab === "income" && <IncomeEventsTab year={year} />}
+          {tab === "gain_tax" && <GainTaxTab year={year} />}
         </PageStack>
       </PageBody>
     </Page>

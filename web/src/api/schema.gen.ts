@@ -4215,6 +4215,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/gain-tax": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Monthly tax on the gains of variable income of a tax year, with the DARF of each month (GT1 to GT9).
+         * @description Empty for a region whose jurisdiction has no monthly tax on gains.
+         */
+        get: operations["listGainTax"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/fixed-income-events": {
         parameters: {
             query?: never;
@@ -8582,6 +8602,42 @@ export interface components {
             proceeds: components["schemas"]["Money"];
             result: components["schemas"]["Money"];
             tax_class: string | null;
+        };
+        GainTaxMonthList: {
+            /**
+             * Format: date
+             * @description First day of the tax year.
+             */
+            from: string;
+            /**
+             * Format: date
+             * @description Last day of the tax year, included.
+             */
+            to: string;
+            /** @description The months with sales, oldest first. */
+            items: components["schemas"]["GainTaxMonth"][];
+        };
+        GainTaxMonth: {
+            month: string;
+            lines: components["schemas"]["GainTaxLine"][];
+            carried_in: components["schemas"]["Money"];
+            darf: components["schemas"]["Money"];
+            crypto_carried_in: components["schemas"]["Money"];
+            crypto_darf: components["schemas"]["Money"];
+        };
+        GainTaxLine: {
+            /** @description ordinary, day_trade, fii or crypto in Brazil. */
+            pool: string;
+            gross: components["schemas"]["Money"];
+            result: components["schemas"]["Money"];
+            exempt: components["schemas"]["Money"];
+            loss_used: components["schemas"]["Money"];
+            loss_carried: components["schemas"]["Money"];
+            base: components["schemas"]["Money"];
+            rate_bp: number;
+            tax: components["schemas"]["Money"];
+            withheld: components["schemas"]["Money"];
+            due: components["schemas"]["Money"];
         };
         RealizedResultList: {
             /**
@@ -16400,6 +16456,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["IncomeEventList"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+        };
+    };
+    listGainTax: {
+        parameters: {
+            query: {
+                /** @description Year in which the tax year of the owner's jurisdiction starts. */
+                year: components["parameters"]["Year"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GainTaxMonthList"];
                 };
             };
             400: components["responses"]["Problem"];

@@ -7194,6 +7194,26 @@ paths:
           $ref: "#/components/responses/Problem"
         "401":
           $ref: "#/components/responses/Problem"
+  /gain-tax:
+    get:
+      tags: [portfolio]
+      operationId: listGainTax
+      x-book-role: read
+      summary: Monthly tax on the gains of variable income of a tax year, with the DARF of each month (GT1 to GT9).
+      description: Empty for a region whose jurisdiction has no monthly tax on gains.
+      parameters:
+        - $ref: "#/components/parameters/Year"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GainTaxMonthList"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
   /fixed-income-events:
     get:
       tags: [portfolio]
@@ -15371,6 +15391,70 @@ components:
           type: string
           nullable: true
           pattern: "^[a-z0-9_]{2,40}$"
+    GainTaxMonthList:
+      type: object
+      required: [from, to, items]
+      properties:
+        from:
+          type: string
+          format: date
+          description: First day of the tax year.
+        to:
+          type: string
+          format: date
+          description: Last day of the tax year, included.
+        items:
+          type: array
+          description: The months with sales, oldest first.
+          items:
+            $ref: "#/components/schemas/GainTaxMonth"
+    GainTaxMonth:
+      type: object
+      required: [month, lines, carried_in, darf, crypto_carried_in, crypto_darf]
+      properties:
+        month:
+          type: string
+          pattern: "^[0-9]{4}-[0-9]{2}$"
+        lines:
+          type: array
+          items:
+            $ref: "#/components/schemas/GainTaxLine"
+        carried_in:
+          $ref: "#/components/schemas/Money"
+        darf:
+          $ref: "#/components/schemas/Money"
+        crypto_carried_in:
+          $ref: "#/components/schemas/Money"
+        crypto_darf:
+          $ref: "#/components/schemas/Money"
+    GainTaxLine:
+      type: object
+      required: [pool, gross, result, exempt, loss_used, loss_carried, base, rate_bp, tax, withheld, due]
+      properties:
+        pool:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
+          description: ordinary, day_trade, fii or crypto in Brazil.
+        gross:
+          $ref: "#/components/schemas/Money"
+        result:
+          $ref: "#/components/schemas/Money"
+        exempt:
+          $ref: "#/components/schemas/Money"
+        loss_used:
+          $ref: "#/components/schemas/Money"
+        loss_carried:
+          $ref: "#/components/schemas/Money"
+        base:
+          $ref: "#/components/schemas/Money"
+        rate_bp:
+          type: integer
+        tax:
+          $ref: "#/components/schemas/Money"
+        withheld:
+          $ref: "#/components/schemas/Money"
+        due:
+          $ref: "#/components/schemas/Money"
     RealizedResultList:
       type: object
       required: [from, to, items]

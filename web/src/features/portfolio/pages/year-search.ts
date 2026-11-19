@@ -1,4 +1,4 @@
-export type YearTab = "realized" | "income";
+export type YearTab = "realized" | "income" | "gain_tax";
 
 // Every key is absent while it holds its default.
 export interface YearSearch {
@@ -24,6 +24,6 @@ export function validateYearSearch(raw: Record<string, unknown>): YearSearch {
   // would let an invalid year through.
   return {
     year: valid ? year : undefined,
-    tab: raw.tab === "income" ? "income" : undefined,
+    tab: raw.tab === "income" || raw.tab === "gain_tax" ? raw.tab : undefined,
   };
 }
