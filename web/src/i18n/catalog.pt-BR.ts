@@ -2166,6 +2166,7 @@ export const catalogPtBR: Catalog = {
   "assistant.field.summary_amounts": "Valores dos resumos",
   "assistant.field.visual": "Estilo visual",
   "assistant.field.accent": "Cor de destaque",
+  "assistant.field.network": "Bandeira",
   "assistant.body.from": "De",
   "assistant.body.to": "Para",
   "assistant.body.uncategorized": "Sem categoria",

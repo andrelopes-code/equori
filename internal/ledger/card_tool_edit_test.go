@@ -85,6 +85,44 @@ func TestManageCardEditAndRemove(t *testing.T) {
 	c.h.ExpectToolError(c.h.Tool("manage_card", remove), "not_found", "")
 }
 
+func TestManageCardNetwork(t *testing.T) {
+	t.Parallel()
+	c := newCardSetup(t, "2026-10-23")
+
+	var out cardOut
+	toolOutput(t, c.h, "manage_card", map[string]any{
+		"account_id": c.card,
+		"action":     "add_card",
+		"holder":     "Ana",
+		"last_four":  "1234",
+		"network":    "visa",
+	}, &out)
+
+	edit := map[string]any{
+		"account_id": c.card,
+		"action":     "edit_card",
+		"card_id":    out.ID,
+		"network":    "mastercard",
+	}
+	if p := previewTool(t, c.h, "manage_card", edit); p.Changes[1].Before.Text != "visa" ||
+		p.Changes[1].After.Text != "mastercard" {
+		t.Fatalf("edit preview = %+v", p)
+	}
+
+	toolOutput(t, c.h, "manage_card", edit, &out)
+
+	var list struct {
+		Items []struct {
+			Network string `json:"network"`
+		} `json:"items"`
+	}
+	c.h.MustDo(http.MethodGet, "/api/v1/accounts/"+c.card+"/cards", nil, http.StatusOK, &list)
+
+	if len(list.Items) != 1 || list.Items[0].Network != "mastercard" {
+		t.Fatalf("cards after edit = %+v", list.Items)
+	}
+}
+
 func TestManageAccountsDeleteInstitution(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t)

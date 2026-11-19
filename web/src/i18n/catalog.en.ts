@@ -2139,6 +2139,7 @@ export const catalogEn = {
   "assistant.field.summary_amounts": "Summary amounts",
   "assistant.field.visual": "Visual style",
   "assistant.field.accent": "Accent",
+  "assistant.field.network": "Card network",
   "assistant.body.from": "From",
   "assistant.body.to": "To",
   "assistant.body.uncategorized": "Uncategorized",

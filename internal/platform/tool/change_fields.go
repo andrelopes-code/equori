@@ -72,4 +72,5 @@ var ChangeFields = []string{
 	"summary_amounts",
 	"visual",
 	"accent",
+	"network",
 }

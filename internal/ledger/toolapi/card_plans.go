@@ -26,9 +26,22 @@ func planAddCard(
 		return pv, nil, tool.InvalidArgument("last_four", "must be four digits")
 	}
 
-	c := domain.Card{AccountID: a.ID, Holder: in.Holder, LastFour: in.LastFour, Virtual: in.Virtual}
+	c := domain.Card{
+		AccountID: a.ID,
+		Holder:    in.Holder,
+		LastFour:  in.LastFour,
+		Virtual:   in.Virtual,
+		Network:   in.Network,
+	}
 
 	pv.Changes = []tool.Change{{Field: "card", After: tool.TextValue(cardText(c))}}
+	if in.Network != "" {
+		pv.Changes = append(
+			pv.Changes,
+			tool.Change{Field: "network", After: tool.TextValue(in.Network)},
+		)
+	}
+
 	if in.ForeignChargeBP.Set {
 		rate := fmt.Sprintf("%d bp on foreign purchases", in.ForeignChargeBP.N)
 		pv.Changes = append(pv.Changes, tool.Change{Field: "rate", After: tool.TextValue(rate)})
@@ -210,8 +223,11 @@ func planEditCard(
 	pv tool.Preview,
 	out manageCardOut,
 ) (tool.Preview, func() (manageCardOut, error), error) {
-	if in.Holder == "" && in.LastFour == "" {
-		return pv, nil, tool.InvalidArgument("holder", "give the holder, the last_four or both")
+	if in.Holder == "" && in.LastFour == "" && in.Network == "" {
+		return pv, nil, tool.InvalidArgument(
+			"holder",
+			"give at least one of holder, last_four and network",
+		)
 	}
 
 	c, err := cardOf(ctx, svc, booksID, a.ID, cardID)
@@ -247,6 +263,14 @@ func planEditCard(
 			Before: tool.TextValue(cardText(c)),
 			After:  tool.TextValue(cardText(after)),
 		},
+	}
+	if in.Network != "" {
+		edit.Network = &in.Network
+		pv.Changes = append(pv.Changes, tool.Change{
+			Field:  "network",
+			Before: tool.TextValue(c.Network),
+			After:  tool.TextValue(in.Network),
+		})
 	}
 
 	return pv, func() (manageCardOut, error) {
