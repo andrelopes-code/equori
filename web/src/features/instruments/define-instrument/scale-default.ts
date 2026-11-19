@@ -12,6 +12,7 @@ const scales: Record<InstrumentType, number> = {
   fund: 6,
   crypto: 8,
   option: 0,
+  future: 0,
 };
 
 // A223 RM9: the decimal places of a quantity that a type takes when the owner types none.

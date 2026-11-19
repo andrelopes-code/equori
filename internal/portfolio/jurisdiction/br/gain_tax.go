@@ -37,7 +37,8 @@ var poolRate = map[string]int{
 }
 
 // variableIncome are the classes whose sales the monthly tax reads, apart from fii.
-var variableIncome = []string{"stock", "etf", "bdr", "option"}
+// A future pays the tax of variable income on the sum of its results (IN RFB 1.585/2015 art. 54).
+var variableIncome = []string{"stock", "etf", "bdr", "option", "future"}
 
 // GainTax returns the tax of each month with sales of variable income, in order (GT1 to GT5).
 func (Jurisdiction) GainTax(sales []domain.TaxSale) []domain.TaxMonth {

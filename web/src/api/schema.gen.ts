@@ -4658,7 +4658,7 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /** @enum {string} */
-        InstrumentType: "currency" | "stock" | "etf" | "reit" | "depositary_receipt" | "fixed_income" | "fund" | "crypto" | "option";
+        InstrumentType: "currency" | "stock" | "etf" | "reit" | "depositary_receipt" | "fixed_income" | "fund" | "crypto" | "option" | "future";
         /**
          * @description Positive exact decimal with at most 12 decimals (ADR 005).
          * @example 5.4830

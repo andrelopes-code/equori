@@ -4979,7 +4979,8 @@
             "fixed_income",
             "fund",
             "crypto",
-            "option"
+            "option",
+            "future"
           ]
         },
         "amount": {
@@ -9419,7 +9420,8 @@
             "fixed_income",
             "fund",
             "crypto",
-            "option"
+            "option",
+            "future"
           ]
         },
         "quote_currency": {
@@ -10303,7 +10305,8 @@
             "fixed_income",
             "fund",
             "crypto",
-            "option"
+            "option",
+            "future"
           ]
         },
         "quote_currency": {

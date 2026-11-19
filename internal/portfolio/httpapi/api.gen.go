@@ -74,6 +74,7 @@ const (
 	InstrumentTypeEtf               InstrumentType = "etf"
 	InstrumentTypeFixedIncome       InstrumentType = "fixed_income"
 	InstrumentTypeFund              InstrumentType = "fund"
+	InstrumentTypeFuture            InstrumentType = "future"
 	InstrumentTypeOption            InstrumentType = "option"
 	InstrumentTypeReit              InstrumentType = "reit"
 	InstrumentTypeStock             InstrumentType = "stock"
@@ -93,6 +94,8 @@ func (e InstrumentType) Valid() bool {
 	case InstrumentTypeFixedIncome:
 		return true
 	case InstrumentTypeFund:
+		return true
+	case InstrumentTypeFuture:
 		return true
 	case InstrumentTypeOption:
 		return true

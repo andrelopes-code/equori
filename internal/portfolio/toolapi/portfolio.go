@@ -42,6 +42,7 @@ func (getPortfolioInstrumentType) Values() []string {
 		"fund",
 		"crypto",
 		"option",
+		"future",
 	}
 }
 

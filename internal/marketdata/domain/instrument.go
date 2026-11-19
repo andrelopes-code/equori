@@ -24,6 +24,8 @@ var SecurityTypes = []string{
 	// An option listed on an exchange; its terms live in the code and the name (listed options
 	// design O1).
 	"option",
+	// A future listed on an exchange, traded at its value per contract (coverage row E-12).
+	"future",
 }
 
 // ReclassifiableTypes are the types a security changes among: the same scale, no terms and the

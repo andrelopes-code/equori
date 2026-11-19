@@ -13,6 +13,7 @@ export const instrumentTypes = [
   "fund",
   "crypto",
   "option",
+  "future",
 ] as const satisfies readonly components["schemas"]["InstrumentType"][];
 
 export function latestPrice(prices: readonly Price[]): Price | undefined {
