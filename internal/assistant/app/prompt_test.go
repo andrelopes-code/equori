@@ -59,8 +59,9 @@ func TestPromptAnswersInTheLanguageOfTheMessage(t *testing.T) {
 	}
 }
 
-// Spec amendment of 2026-10-26: a comparison of three or more rows on two or more columns is
-// one GFM table; any other table, headings, code blocks and charts stay out.
+// Answer views design S4: a figure, comparison, share, trend, schedule or list of records is a view
+// that show builds; a comparison no form presents is one GFM table; headings, code blocks and charts
+// stay out of the text.
 func TestPromptAllowsOneTableForAComparison(t *testing.T) {
 	t.Parallel()
 
@@ -71,8 +72,10 @@ func TestPromptAllowsOneTableForAComparison(t *testing.T) {
 		},
 	)
 	for _, want := range []string{
-		"When the answer compares three or more rows on two or more columns, write it as one Markdown table with a header row.",
-		"No other table, and no headings, code blocks or charts.",
+		"When the answer has a figure, a comparison, a share, a trend, a schedule or a list of records, call show with the view_source of the read and a form show lists for that read.",
+		"The text then states only what the view does not show: it never repeats the view's figures,",
+		"When no form presents the data and the answer compares three or more rows on two or more columns, write it as one Markdown table with a header row.",
+		"No other table, and no headings, code blocks or charts in the text.",
 	} {
 		if !strings.Contains(got, want) {
 			t.Errorf("prompt lacks %q", want)

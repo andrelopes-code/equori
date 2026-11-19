@@ -8,6 +8,8 @@ Files in the conversation. The paperclip of the assistant's composer, a paste or
 
 Identify columns with AI, on Import statement, sends the header and up to 12 lines of the CSV file to the language model of the use ingestion.csv_columns. Each digit in a line is replaced by 9. A run of three or more letters is replaced by A for each letter; a run of one or two letters is kept. A header cell with a digit is masked the same way.
 
+Views in an answer. When an answer has a figure, a comparison, a share, a trend, a schedule or a list of records, the assistant shows it as a view: a chart, a list or a table that equori builds from the data the assistant read, so its figures are the book's own. Each view states its conclusion first, then the chart, the period it covers and what it was built from. The buttons at its foot open the screen that holds the records, switch between the chart and a table of the same figures, and copy the view as text. A view of shares switches between amounts and percentages at its top. Hovering or focusing a bar, a point or a cell shows its value. Under a view, up to 3 follow-up questions send themselves when clicked. Privacy mode hides the amounts of a view as it hides every other amount.
+
 The assistant also suggests changes your request implies, such as a category that does not exist yet or a rule for a payee you categorize often. A suggestion shows the label Suggestion and the reason. A card that uses what another card creates waits until you confirm that card; Confirm all confirms the group in order.
 
 What the assistant does not do. Every other action a member takes on a screen has a tool. For each line below the assistant says so and names the screen; it does not look for a tool that comes close.
