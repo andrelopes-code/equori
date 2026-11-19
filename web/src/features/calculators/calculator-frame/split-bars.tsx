@@ -1,5 +1,4 @@
 import { Fragment } from "react";
-import type { CSSProperties } from "react";
 
 import {
   axisMax,
@@ -19,12 +18,18 @@ interface SplitBarsProps {
   legend?: string[];
 }
 
-// Steps of the accent ramp for the parts after the first two.
-const ramp = [
-  "var(--slotted-tone-accent-border)",
-  "var(--slotted-tone-accent-solid-hover)",
-  "var(--slotted-tone-accent-solid-active)",
-  "var(--slotted-tone-accent-text)",
+const partSteps = [
+  styles.splitStep0,
+  styles.splitStep1,
+  styles.splitStep2,
+  styles.splitStep3,
+];
+
+const keySteps = [
+  styles.keyStep0,
+  styles.keyStep1,
+  styles.keyStep2,
+  styles.keyStep3,
 ];
 
 export function SplitBars({ rows, legend }: SplitBarsProps) {
@@ -48,7 +53,7 @@ export function SplitBars({ rows, legend }: SplitBarsProps) {
                 <span
                   key={index}
                   className={partClass(index, "part")}
-                  style={{ inlineSize: width, ...partColor(index) }}
+                  style={{ inlineSize: width }}
                 />
               ))}
             </span>
@@ -60,12 +65,8 @@ export function SplitBars({ rows, legend }: SplitBarsProps) {
       {legend !== undefined && (
         <p className={styles.splitLegend} data-part="legend">
           {legend.map((entry, index) => (
-            <Fragment key={entry}>
-              <span
-                className={partClass(index, "key")}
-                data-part="key"
-                style={partColor(index)}
-              />
+            <Fragment key={index}>
+              <span className={partClass(index, "key")} data-part="key" />
               {entry}
             </Fragment>
           ))}
@@ -79,17 +80,16 @@ function sum(parts: number[]): number {
   return parts.reduce((total, part) => total + part, 0);
 }
 
-// Parts 0 and 1 take the principal and interest looks; later parts take a step of the ramp.
+// Parts 0 and 1 take the principal and interest looks; later parts take a step of the accent ramp
+// declared in the module.
 function partClass(index: number, kind: "part" | "key"): string | undefined {
-  if (index >= 2) return kind === "part" ? styles.splitPart : styles.keyPart;
+  if (index >= 2) {
+    const steps = kind === "part" ? partSteps : keySteps;
+
+    return steps[(index - 2) % steps.length];
+  }
   if (kind === "part")
     return index % 2 === 0 ? styles.splitPrincipal : styles.splitInterest;
 
   return index % 2 === 0 ? styles.keyPrincipal : styles.keyInterest;
-}
-
-function partColor(index: number): CSSProperties {
-  if (index < 2) return {};
-
-  return { "--part": ramp[(index - 2) % ramp.length] } as CSSProperties;
 }

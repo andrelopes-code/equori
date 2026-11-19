@@ -126,22 +126,40 @@
 
   .splitTrack {
     display: flex;
+    overflow: hidden;
+    border-radius: var(
+      --slotted-radius-xs
+    ); /* rounds the first and the last part of the row */
     block-size: 0.875rem; /* literal: bar thickness, one step under the text line */
   }
 
   .splitPrincipal {
     background: var(--slotted-text-muted);
-    border-radius: var(--slotted-radius-xs) 0 0 var(--slotted-radius-xs);
   }
 
   .splitInterest {
     background: var(--slotted-tone-accent-solid);
-    border-radius: 0 var(--slotted-radius-xs) var(--slotted-radius-xs) 0;
   }
 
-  /* Parts after the first two: the step of the accent ramp comes inline in --part. */
-  .splitPart {
-    background: var(--part);
+  /* Parts after the first two take a step of the accent ramp, bar and legend key alike. */
+  .splitStep0,
+  .keyStep0 {
+    background: var(--slotted-tone-accent-border);
+  }
+
+  .splitStep1,
+  .keyStep1 {
+    background: var(--slotted-tone-accent-solid-hover);
+  }
+
+  .splitStep2,
+  .keyStep2 {
+    background: var(--slotted-tone-accent-solid-active);
+  }
+
+  .splitStep3,
+  .keyStep3 {
+    background: var(--slotted-tone-accent-text);
   }
 
   .splitTotal {
@@ -161,7 +179,11 @@
   }
 
   .keyPrincipal,
-  .keyInterest {
+  .keyInterest,
+  .keyStep0,
+  .keyStep1,
+  .keyStep2,
+  .keyStep3 {
     inline-size: 0.625rem; /* literal: legend key square */
     block-size: 0.625rem; /* literal: legend key square */
     border-radius: var(--slotted-radius-xs);
@@ -176,9 +198,11 @@
     background: var(--slotted-tone-accent-solid);
   }
 
-  .keyPart {
+  .keyStep0,
+  .keyStep1,
+  .keyStep2,
+  .keyStep3 {
     margin-inline-start: var(--slotted-space-4);
-    background: var(--part);
   }
 
   /* The two answers to a prepayment, on one axis of interest saved. */

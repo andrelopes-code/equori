@@ -70,8 +70,10 @@ interface IncomeSetup {
   // The balance when the income starts, in today's money.
   balance: number;
   j: number;
-  // The monthly return net of inflation.
+  // The monthly return net of inflation, by the Fisher relation: it compounds the delay.
   net: number;
+  // The rate of the lasting income, j - g: the income is balance × lasting (method formula7).
+  lasting: number;
   months: number;
   share: number;
   // The delay and the months of income, up to the term's end.
@@ -162,8 +164,8 @@ export function termIncomeRows(
   ];
 }
 
-// The monthly return net of the monthly inflation, by the Fisher relation: the rate at which a balance
-// keeps its purchasing power.
+// The monthly return net of the monthly inflation, by the Fisher relation: the rate at which a
+// balance compounds in today's money. The lasting income does not use it: W = F (j - g).
 export function realMonthlyRate(j: number, inflation: number | null): number {
   return inflation === null
     ? j
@@ -214,10 +216,13 @@ export function incomeSetup(input: IncomeSetupInput): IncomeSetup | null {
   const net = realMonthlyRate(j, input.inflation);
   if (net <= 0) return null;
 
+  const g = input.inflation === null ? 0 : annualToMonthly(input.inflation);
+
   return {
     balance: delayedBalance(balance, net, input.delay),
     j,
     net,
+    lasting: j - g,
     months,
     share,
     term: months + (input.delay ?? 0),

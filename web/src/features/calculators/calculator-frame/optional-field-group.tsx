@@ -16,7 +16,8 @@ interface OptionalFieldGroupProps {
   children: ReactNode;
 }
 
-// The open state of an optional group: its inputs under a legend and a ghost button that removes them.
+// The open state of an optional group: its inputs under a legend and a ghost button that
+// removes them.
 export function OptionalFieldGroup({
   ref,
   legend,

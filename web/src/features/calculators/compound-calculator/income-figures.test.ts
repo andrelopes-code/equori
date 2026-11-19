@@ -234,10 +234,19 @@ describe("incomeSetup", () => {
       balance: 100000000,
       j: 0.01,
       net: 0.01,
+      lasting: 0.01,
       months: 2,
       share: 0.25,
       term: 2,
     });
+  });
+
+  // The lasting income is W = F (j - g); the Fisher net rate only compounds the delay.
+  it("keeps the subtracted rate for the income and the Fisher rate for the balance", () => {
+    const setup = incomeSetup({ ...valid, inflation: 0.04 });
+
+    expect(setup?.lasting).toBeCloseTo(0.01 - annualToMonthly(0.04), 12);
+    expect(setup?.net).toBeCloseTo(1.01 / (1 + annualToMonthly(0.04)) - 1, 12);
   });
 
   it("compounds the balance through a delay and counts it in the term", () => {

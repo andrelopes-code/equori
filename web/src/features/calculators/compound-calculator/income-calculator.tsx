@@ -59,13 +59,18 @@ export function IncomeCalculator() {
   if (money === null)
     return <CalculatorFrame id="compound" inputs={null} method={null} />;
 
-  // The balance keeps its purchasing power at the return net of inflation, so the rows and the
-  // answer state the same income, in today's money.
+  // The rows pay the balance at j - g, the rate of the lasting income, so the first row and the
+  // answer state the same income. The Fisher rate only compounds the delay.
   const setup = incomeSetup({ balance, j, inflation, months, share, delay });
   const rows =
     setup === null
       ? null
-      : incomeEvolution(setup.balance, setup.net, setup.share, setup.months);
+      : incomeEvolution(
+          setup.balance,
+          setup.lasting,
+          setup.share,
+          setup.months,
+        );
   const lasting =
     setup === null
       ? null
