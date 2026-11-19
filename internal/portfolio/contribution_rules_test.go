@@ -284,6 +284,13 @@ func TestS643MatchedWithoutPrice(t *testing.T) {
 	f.fund(t, 1000000)
 	code := f.applyContract(t, "cdb", "2027-01-04", false, 1000000)
 
+	// The application accrues the contract at once; removing its prices leaves it without one.
+	if _, err := f.h.Pool.Exec(
+		t.Context(), `DELETE FROM marketdata_price WHERE instrument = $1`, code,
+	); err != nil {
+		t.Fatal(err)
+	}
+
 	got := contributionFixture{fixture: f}.save(t, map[string]any{"classes": []any{
 		ruleClass("Pós", 10000, map[string]any{"instrument_type": "fixed_income"}),
 	}})

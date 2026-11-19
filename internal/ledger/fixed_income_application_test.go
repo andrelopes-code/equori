@@ -117,6 +117,40 @@ func TestSelicContractTakesTheRegionCalendar(t *testing.T) {
 	}
 }
 
+// A new contract is priced by accrual when it is defined, not at the next feed tick: a pre-fixed
+// 12% contract applied on 2026-03-02 reads its accrued price on 2026-03-10.
+func TestNewContractAccruesAtOnce(t *testing.T) {
+	t.Parallel()
+	f := newInvestFixture(t, apitest.Today("2026-03-10"))
+	body := f.newContractBody("2026-03-02", 1000000)
+	contract := body["contract"].(map[string]any)
+	delete(contract, "index_id")
+	delete(contract, "percent_of_index_bp")
+	contract["spread_bp"] = 1200
+
+	f.h.MustDo(http.MethodPost, fixedIncomePath, body, http.StatusCreated, nil)
+
+	var prices struct {
+		Items []struct {
+			Date   string `json:"date"`
+			Source string `json:"source"`
+		} `json:"items"`
+	}
+
+	f.h.MustDo(
+		http.MethodGet,
+		"/api/v1/prices?instrument="+fixedIncomeCode+"&quote_instrument=BRL"+
+			"&from=2026-03-10&to=2026-03-10",
+		nil,
+		http.StatusOK,
+		&prices,
+	)
+
+	if len(prices.Items) != 1 || prices.Items[0].Source != "accrual" {
+		t.Fatalf("prices on 2026-03-10 = %+v, want one accrued price", prices.Items)
+	}
+}
+
 func TestS480ReplayedApplication(t *testing.T) {
 	t.Parallel()
 	f := newInvestFixture(t)

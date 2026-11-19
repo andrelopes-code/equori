@@ -91,7 +91,22 @@ func (m *Module) DefineContract(ctx context.Context, booksID int64, c Contract) 
 		return errors.Join(err, m.DiscardContract(ctx, booksID, c.Code))
 	}
 
+	m.accrueNow(ctx, string(c.Code))
+
 	return nil
+}
+
+// accrueNow prices a new contract at once instead of at the next feed tick; a failure is logged
+// and the tick tries again.
+func (m *Module) accrueNow(ctx context.Context, code string) {
+	row, err := m.q.GetTerms(ctx, code)
+	if err == nil {
+		err = m.accrue(ctx, row)
+	}
+
+	if err != nil {
+		m.logFeed(ctx, err, "source", sourceAccrual, "instrument", code)
+	}
 }
 
 // DiscardContract deletes the instrument of booksID; a contract that an account uses stays and
