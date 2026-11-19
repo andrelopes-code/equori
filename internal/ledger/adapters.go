@@ -204,19 +204,22 @@ func (c contracts) Check(
 	applicationID uuid.UUID,
 ) (app.Contract, error) {
 	checked, err := c.md.CheckContract(ctx, booksID, toMarketContract(ct), applicationID)
-	if fe, ok := errors.AsType[*marketdata.FieldError](err); ok {
-		return app.Contract{}, &domain.FieldError{
-			Field:   fe.Field,
-			Message: fe.Message,
-			Err:     app.ErrContractInvalid,
-		}
-	}
 
-	return fromMarketContract(checked), err
+	return fromMarketContract(checked), contractProblem(err)
 }
 
+// Define reports a refusal of the stored terms as the invalid contract that Check reports.
 func (c contracts) Define(ctx context.Context, booksID int64, ct app.Contract) error {
-	return c.md.DefineContract(ctx, booksID, toMarketContract(ct))
+	return contractProblem(c.md.DefineContract(ctx, booksID, toMarketContract(ct)))
+}
+
+func contractProblem(err error) error {
+	fe, ok := errors.AsType[*marketdata.FieldError](err)
+	if !ok {
+		return err
+	}
+
+	return &domain.FieldError{Field: fe.Field, Message: fe.Message, Err: app.ErrContractInvalid}
 }
 
 func (c contracts) Discard(ctx context.Context, booksID int64, code money.Currency) error {

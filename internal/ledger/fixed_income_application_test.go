@@ -93,6 +93,30 @@ func TestS496InterestSchedule(t *testing.T) {
 	}
 }
 
+// A236 FC12: a contract on another index that compounds by business day, such as the Selic,
+// counts bus252 on the calendar of its region, which the stored terms require.
+func TestSelicContractTakesTheRegionCalendar(t *testing.T) {
+	t.Parallel()
+	f := newInvestFixture(t)
+	body := f.newContractBody("2026-03-02", 1000000)
+	body["contract"].(map[string]any)["index_id"] = "selic"
+
+	f.h.MustDo(http.MethodPost, fixedIncomePath, body, http.StatusCreated, nil)
+
+	var terms struct {
+		DayCount   string `json:"day_count"`
+		CalendarID string `json:"calendar_id"`
+	}
+
+	f.h.MustDo(
+		http.MethodGet, "/api/v1/instruments/"+fixedIncomeCode+"/terms", nil, http.StatusOK, &terms,
+	)
+
+	if terms.DayCount != "bus252" || terms.CalendarID != "br_banking" {
+		t.Fatalf("terms = %+v, want bus252 on br_banking", terms)
+	}
+}
+
 func TestS480ReplayedApplication(t *testing.T) {
 	t.Parallel()
 	f := newInvestFixture(t)

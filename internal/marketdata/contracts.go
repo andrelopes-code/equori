@@ -18,6 +18,10 @@ const (
 	contractScale     = 6
 	contractFieldRoot = "contract."
 	defaultPercentBP  = 10000
+
+	// calendarFreeIndex is the one index whose terms count bus252 without a calendar_id
+	// (constraint marketdata_fixed_income_terms_business_days, migration 00103).
+	calendarFreeIndex = "cdi"
 )
 
 // Contract is a fixed income application's security (A236 FC11, FC12). Code is set by
@@ -80,6 +84,10 @@ func (m *Module) DefineContract(ctx context.Context, booksID int64, c Contract) 
 	}
 
 	if _, err := m.PutTerms(ctx, string(c.Code), terms); err != nil {
+		if _, ok := errors.AsType[*domain.FieldError](err); ok {
+			err = prefixField(err)
+		}
+
 		return errors.Join(err, m.DiscardContract(ctx, booksID, c.Code))
 	}
 
@@ -123,7 +131,7 @@ func (m *Module) withContractDefaults(c Contract, applicationID uuid.UUID) Contr
 		}
 	}
 
-	if c.CalendarID == "" && c.DayCount == domain.DayCountBus252 && !daily {
+	if c.CalendarID == "" && c.DayCount == domain.DayCountBus252 && c.IndexID != calendarFreeIndex {
 		c.CalendarID = calendar
 	}
 
