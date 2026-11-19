@@ -110,6 +110,45 @@ func TestRightIssueAndExercise(t *testing.T) {
 	}
 }
 
+// An exercise takes every unit held (listed options design O4): a quantity, read only by a unit
+// tax (A236 FC25), is refused instead of left unread.
+func TestRightExerciseRefusesQuantity(t *testing.T) {
+	t.Parallel()
+	f := newInvestFixture(t)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/instruments",
+		security("PETR12", "stock"),
+		http.StatusCreated,
+		nil,
+	)
+	f.buyPETR4(t, "2026-11-01", map[string]any{"unit_price": "10.00"})
+	f.h.MustDo(http.MethodPost, "/api/v1/corporate-actions", map[string]any{
+		"account_id":     f.petr4,
+		"kind":           "right_issue",
+		"date":           "2026-11-10",
+		"ratio_from":     10,
+		"ratio_to":       1,
+		"new_instrument": "PETR12",
+	}, http.StatusCreated, nil)
+
+	f.h.ExpectProblem(
+		f.h.Do(http.MethodPost, "/api/v1/corporate-actions", map[string]any{
+			"account_id":     holdingOf(t, f, "PETR12"),
+			"kind":           "right_exercise",
+			"date":           "2026-11-20",
+			"ratio_from":     1,
+			"ratio_to":       1,
+			"new_instrument": "PETR4",
+			"quantity":       units(5, "PETR12"),
+			"amount":         apitest.BRL(5000),
+		}),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"quantity",
+	)
+}
+
 // Coverage row E-06: the tool records a right issue and an exercise paid from the cash account of
 // the brokerage, and asks for the price of an exercise.
 func TestRightExerciseTool(t *testing.T) {

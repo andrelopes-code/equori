@@ -313,6 +313,8 @@ func checkExchange(o ActionOrder) error {
 		return invalid("amount", "is for a right_exercise only")
 	case o.UnitCost != nil:
 		return invalid("unit_cost", "is for a bonus only")
+	case !o.Quantity.IsZero():
+		return invalid("quantity", "is for a unit_tax only; an exchange takes every unit held")
 	}
 
 	return nil
