@@ -184,4 +184,57 @@ export const contributionPlanEn = {
   "contributionPlan.rule.guarantee.uncovered": "no guarantee",
   "contributionPlan.rule.guarantee.unavailable":
     "no guarantee in the book's region",
+  "contributionPlan.rule.mode.label": "How the group gathers its assets",
+  "contributionPlan.rule.mode.chosen": "Chosen assets",
+  "contributionPlan.rule.mode.byRule": "By rule",
+  "contributionPlan.rule.mode.dropMembersOne":
+    "The chosen asset leaves the group.",
+  "contributionPlan.rule.mode.dropMembersMany":
+    "The {count} chosen assets leave the group.",
+  "contributionPlan.rule.mode.dropRulesOne": "The rule leaves the group.",
+  "contributionPlan.rule.mode.dropRulesMany":
+    "The {count} rules leave the group.",
+  "contributionPlan.rule.mode.confirm": "Switch",
+  "contributionPlan.rule.mode.keep": "Keep",
+  "contributionPlan.rule.intro":
+    "Every asset that meets one of the rules joins the group, including the ones you buy later.",
+  "contributionPlan.rule.add": "Add rule",
+  "contributionPlan.rule.edit": "Edit rule",
+  "contributionPlan.rule.remove": "Remove rule",
+  "contributionPlan.rule.countOne": "1 asset · {value}",
+  "contributionPlan.rule.countMany": "{count} assets · {value}",
+  "contributionPlan.rule.none": "no asset today",
+  "contributionPlan.rule.dialog.title": "Rule of the group {name}",
+  "contributionPlan.rule.dialog.type": "Kind of investment",
+  "contributionPlan.rule.dialog.any": "Any",
+  "contributionPlan.rule.dialog.subtypes": "Subtypes",
+  "contributionPlan.rule.dialog.returnKind": "Form of return",
+  "contributionPlan.rule.dialog.maturity": "Maturity",
+  "contributionPlan.rule.dialog.from": "From",
+  "contributionPlan.rule.dialog.to": "To",
+  "contributionPlan.rule.dialog.liquidity": "Daily liquidity",
+  "contributionPlan.rule.dialog.yes": "Yes",
+  "contributionPlan.rule.dialog.no": "No",
+  "contributionPlan.rule.dialog.guarantee": "Guarantee",
+  "contributionPlan.rule.dialog.covered": "Covered by {name}",
+  "contributionPlan.rule.dialog.sovereign": "Government bond",
+  "contributionPlan.rule.dialog.uncovered": "No guarantee",
+  "contributionPlan.rule.dialog.currency": "Quote currency",
+  "contributionPlan.rule.dialog.save": "Save rule",
+  "contributionPlan.rule.dialog.cancel": "Cancel",
+  "contributionPlan.rule.dialog.needCondition":
+    "Choose at least one condition.",
+  "contributionPlan.rule.dialog.yearRange": "A year from 1900 to 2200.",
+  "contributionPlan.rule.dialog.yearOrder":
+    "The last year cannot come before the first.",
+  "contributionPlan.rule.dialog.entersOne":
+    "Joins this group today: 1 asset · {value}",
+  "contributionPlan.rule.dialog.entersMany":
+    "Join this group today: {count} assets · {value}",
+  "contributionPlan.rule.dialog.entersNone":
+    "No asset joins this group today. The ones you buy later will.",
+  "contributionPlan.help.rules":
+    "An asset chosen in a group counts before any rule. Among rules, an asset joins the first group of the list.",
+  "problem.contribution_rule_invalid":
+    "A group holds chosen assets or 1 to 5 rules, and each rule needs valid conditions.",
 } as const;

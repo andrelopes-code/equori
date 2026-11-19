@@ -8,6 +8,7 @@ import {
   PopoverLayer,
   PopoverTrigger,
 } from "@slotted/react/popover";
+import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
 
 import { useT } from "@/i18n/i18n-provider";
@@ -36,7 +37,10 @@ export function EditHelp() {
       <PopoverLayer>
         <PopoverContent aria-label={t("contributionPlan.helpLabel")}>
           <PopoverBody>
-            <Text size="sm">{t("contributionPlan.help")}</Text>
+            <Stack gap={3}>
+              <Text size="sm">{t("contributionPlan.help")}</Text>
+              <Text size="sm">{t("contributionPlan.help.rules")}</Text>
+            </Stack>
           </PopoverBody>
         </PopoverContent>
         <PopoverArrow />

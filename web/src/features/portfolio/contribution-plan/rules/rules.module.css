@@ -1,0 +1,62 @@
+@layer app {
+  /* The rows of the rule panel start at the indent of the asset names (no token holds it). */
+  .intro,
+  .add {
+    display: flex;
+    grid-column: 1 / -1;
+    align-items: center;
+    border-block-start: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+    padding-inline-start: calc(
+      2 * var(--slotted-space-4) + 0.5625rem + var(--slotted-space-6)
+    );
+    white-space: nowrap;
+  }
+
+  .intro {
+    block-size: 2.25rem;
+  }
+
+  .add {
+    block-size: 2.75rem;
+  }
+
+  .rules {
+    grid-column: 1 / -1;
+  }
+
+  /* One height for every rule: the summary, the count (12rem) and the two buttons. */
+  .rule {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 12rem auto;
+    align-items: center;
+    column-gap: var(--slotted-space-4);
+    block-size: 2.75rem;
+    border-block-start: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+    padding-inline-start: calc(
+      2 * var(--slotted-space-4) + 0.5625rem + var(--slotted-space-6)
+    );
+    white-space: nowrap;
+  }
+
+  .summary,
+  .count {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .count,
+  .matchedValue {
+    text-align: end;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* The value of a matched security stands in the amount column of the list. */
+  .matchedValue {
+    grid-column: 6;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+}

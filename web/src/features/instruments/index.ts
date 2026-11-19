@@ -16,6 +16,7 @@ export {
   subtypeLabel,
   typeLabel,
 } from "@/features/instruments/model/instrument-labels";
+export { instrumentTypes } from "@/features/instruments/model/instrument-groups";
 export { formatRate, parseRate } from "@/features/instruments/model/rate";
 export { PaymentsFields } from "@/features/instruments/terms/payments-fields";
 export {

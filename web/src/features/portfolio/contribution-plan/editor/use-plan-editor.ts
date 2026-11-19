@@ -6,12 +6,16 @@ import {
   toDraft,
   toInput,
 } from "@/features/portfolio/contribution-plan/model/plan-draft";
-import type { PlanDraft } from "@/features/portfolio/contribution-plan/model/plan-draft";
+import type {
+  PlanDraft,
+  Rule,
+} from "@/features/portfolio/contribution-plan/model/plan-draft";
 import * as edits from "@/features/portfolio/contribution-plan/model/plan-edits";
 import type {
   EditDraft,
   MemberRef,
 } from "@/features/portfolio/contribution-plan/model/plan-edits";
+import * as rules from "@/features/portfolio/contribution-plan/model/rule-edits";
 import * as questions from "@/features/portfolio/contribution-plan/model/question-edits";
 
 type Plan = components["schemas"]["ContributionPlan"];
@@ -110,6 +114,18 @@ export function usePlanEditor(plan: Plan | undefined) {
     },
     removeMember: (index: number, at: number) => {
       change((d) => edits.removeMember(d, index, at));
+    },
+    setByRule: (index: number, on: boolean) => {
+      change((d) => rules.setByRule(d, index, on));
+    },
+    addRule: (index: number, rule: Rule) => {
+      change((d) => rules.addRule(d, index, rule));
+    },
+    replaceRule: (index: number, at: number, rule: Rule) => {
+      change((d) => rules.replaceRule(d, index, at, rule));
+    },
+    removeRule: (index: number, at: number) => {
+      change((d) => rules.removeRule(d, index, at));
     },
   };
 }

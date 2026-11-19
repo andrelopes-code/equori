@@ -8,6 +8,9 @@ import { MemberQuestionRow } from "@/features/portfolio/contribution-plan/editor
 import { QuestionList } from "@/features/portfolio/contribution-plan/editor/question-list";
 import type { PlanEditor } from "@/features/portfolio/contribution-plan/editor/use-plan-editor";
 import type { EditClass } from "@/features/portfolio/contribution-plan/model/plan-edits";
+import { MatchedRow } from "@/features/portfolio/contribution-plan/rules/matched-row";
+import { RuleList } from "@/features/portfolio/contribution-plan/rules/rule-list";
+import { RuleModeChoice } from "@/features/portfolio/contribution-plan/rules/rule-mode-choice";
 import { useT } from "@/i18n/i18n-provider";
 
 type Group = components["schemas"]["ContributionClass"];
@@ -50,55 +53,75 @@ export function GroupAssetsPanel({
 
   return (
     <div role="group" id={id} aria-label={edit.name} className={styles.panel}>
-      {asked && (
-        <QuestionList
-          index={index}
-          questions={edit.questions}
-          editor={editor}
-        />
-      )}
-
-      {group.members.map((member, at) =>
-        asked ? (
-          <MemberQuestionRow
-            key={`group-${String(index)}-${String(at)}`}
-            index={index}
-            at={at}
-            member={member}
-            name={memberName(member)}
-            questions={edit.questions}
-            ideals={group.question_ideals}
-            editor={editor}
-          />
-        ) : (
-          <MemberEditRow
-            key={`group-${String(index)}-${String(at)}`}
-            index={index}
-            at={at}
-            member={member}
-            name={memberName(member)}
-            edit={edit}
-            editor={editor}
-          />
-        ),
-      )}
-
-      {noYes && (
-        <Text size="sm" tone="muted" className={styles.noYes}>
-          {t("contributionPlan.questions.noYes")}
-        </Text>
-      )}
-
-      <GroupAssetsFooter
-        empty={group.members.length === 0}
-        split={edit.split}
-        byQuestions={edit.byQuestions}
-        onSplit={(on) => {
-          editor.setSplit(index, on);
+      <RuleModeChoice
+        byRule={edit.byRule}
+        members={edit.members.length}
+        rules={edit.rules.length}
+        onChange={(on) => {
+          editor.setByRule(index, on);
         }}
-        onByQuestions={handleByQuestions}
-        onAdd={onAddAsset}
       />
+
+      {edit.byRule && <RuleList index={index} edit={edit} editor={editor} />}
+
+      {edit.byRule &&
+        group.matched.map((matched) => (
+          <MatchedRow key={matched.instrument} matched={matched} />
+        ))}
+
+      {!edit.byRule && (
+        <>
+          {asked && (
+            <QuestionList
+              index={index}
+              questions={edit.questions}
+              editor={editor}
+            />
+          )}
+
+          {group.members.map((member, at) =>
+            asked ? (
+              <MemberQuestionRow
+                key={`group-${String(index)}-${String(at)}`}
+                index={index}
+                at={at}
+                member={member}
+                name={memberName(member)}
+                questions={edit.questions}
+                ideals={group.question_ideals}
+                editor={editor}
+              />
+            ) : (
+              <MemberEditRow
+                key={`group-${String(index)}-${String(at)}`}
+                index={index}
+                at={at}
+                member={member}
+                name={memberName(member)}
+                edit={edit}
+                editor={editor}
+              />
+            ),
+          )}
+
+          {noYes && (
+            <Text size="sm" tone="muted" className={styles.noYes}>
+              {t("contributionPlan.questions.noYes")}
+            </Text>
+          )}
+
+          <GroupAssetsFooter
+            empty={group.members.length === 0}
+            split={edit.split}
+            byQuestions={edit.byQuestions}
+            onSplit={(on) => {
+              editor.setSplit(index, on);
+            }}
+            onByQuestions={handleByQuestions}
+            onAdd={onAddAsset}
+          />
+        </>
+      )}
     </div>
   );
 }

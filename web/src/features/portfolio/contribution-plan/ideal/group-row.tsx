@@ -42,7 +42,7 @@ export function GroupRow({
         <NameCell
           name={group.name}
           position={index}
-          {...(group.members.length > 0
+          {...(group.members.length + group.matched.length > 0
             ? { expander: { open, controls: `${key}-0`, onToggle } }
             : {})}
         />
@@ -76,6 +76,19 @@ export function GroupRow({
             id={`${key}-${String(at)}`}
             member={member}
             name={memberName(member)}
+            position={index}
+            hasAmount={hasAmount}
+            waiting={waiting}
+          />
+        ))}
+
+      {open &&
+        group.matched.map((matched, at) => (
+          <MemberRow
+            key={`${key}-${String(at)}`}
+            id={`${key}-${String(at)}`}
+            member={matched}
+            name={memberName({ instrument: matched.instrument })}
             position={index}
             hasAmount={hasAmount}
             waiting={waiting}

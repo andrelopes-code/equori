@@ -185,4 +185,57 @@ export const contributionPlanPtBR: Record<
   "contributionPlan.rule.guarantee.uncovered": "sem garantia",
   "contributionPlan.rule.guarantee.unavailable":
     "garantia indisponível na região do livro",
+  "contributionPlan.rule.mode.label": "Como o grupo reúne seus ativos",
+  "contributionPlan.rule.mode.chosen": "Ativos escolhidos",
+  "contributionPlan.rule.mode.byRule": "Por regra",
+  "contributionPlan.rule.mode.dropMembersOne":
+    "O ativo escolhido sai do grupo.",
+  "contributionPlan.rule.mode.dropMembersMany":
+    "Os {count} ativos escolhidos saem do grupo.",
+  "contributionPlan.rule.mode.dropRulesOne": "A regra sai do grupo.",
+  "contributionPlan.rule.mode.dropRulesMany":
+    "As {count} regras saem do grupo.",
+  "contributionPlan.rule.mode.confirm": "Trocar",
+  "contributionPlan.rule.mode.keep": "Manter",
+  "contributionPlan.rule.intro":
+    "Entra no grupo todo ativo que atende uma das regras, inclusive os que você comprar depois.",
+  "contributionPlan.rule.add": "Adicionar regra",
+  "contributionPlan.rule.edit": "Editar regra",
+  "contributionPlan.rule.remove": "Remover regra",
+  "contributionPlan.rule.countOne": "1 ativo · {value}",
+  "contributionPlan.rule.countMany": "{count} ativos · {value}",
+  "contributionPlan.rule.none": "nenhum ativo hoje",
+  "contributionPlan.rule.dialog.title": "Regra do grupo {name}",
+  "contributionPlan.rule.dialog.type": "Tipo de investimento",
+  "contributionPlan.rule.dialog.any": "Qualquer",
+  "contributionPlan.rule.dialog.subtypes": "Subtipos",
+  "contributionPlan.rule.dialog.returnKind": "Forma do retorno",
+  "contributionPlan.rule.dialog.maturity": "Vencimento",
+  "contributionPlan.rule.dialog.from": "De",
+  "contributionPlan.rule.dialog.to": "Até",
+  "contributionPlan.rule.dialog.liquidity": "Liquidez diária",
+  "contributionPlan.rule.dialog.yes": "Sim",
+  "contributionPlan.rule.dialog.no": "Não",
+  "contributionPlan.rule.dialog.guarantee": "Garantia",
+  "contributionPlan.rule.dialog.covered": "Coberto pelo {name}",
+  "contributionPlan.rule.dialog.sovereign": "Título público",
+  "contributionPlan.rule.dialog.uncovered": "Sem garantia",
+  "contributionPlan.rule.dialog.currency": "Moeda de cotação",
+  "contributionPlan.rule.dialog.save": "Salvar regra",
+  "contributionPlan.rule.dialog.cancel": "Cancelar",
+  "contributionPlan.rule.dialog.needCondition":
+    "Escolha ao menos uma condição.",
+  "contributionPlan.rule.dialog.yearRange": "Um ano de 1900 a 2200.",
+  "contributionPlan.rule.dialog.yearOrder":
+    "O ano final não pode vir antes do inicial.",
+  "contributionPlan.rule.dialog.entersOne":
+    "Entra neste grupo hoje: 1 ativo · {value}",
+  "contributionPlan.rule.dialog.entersMany":
+    "Entram neste grupo hoje: {count} ativos · {value}",
+  "contributionPlan.rule.dialog.entersNone":
+    "Nenhum ativo entra neste grupo hoje. Os que você comprar depois entram.",
+  "contributionPlan.help.rules":
+    "Um ativo escolhido em um grupo vale antes das regras. Entre regras, o ativo entra no primeiro grupo da lista.",
+  "problem.contribution_rule_invalid":
+    "Um grupo tem ativos escolhidos ou de 1 a 5 regras, e cada regra precisa de condições válidas.",
 };
