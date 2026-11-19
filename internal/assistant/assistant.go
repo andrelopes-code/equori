@@ -15,6 +15,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/assistant/httpapi"
 	"github.com/andrelopes-code/equori/internal/assistant/llmapi"
 	"github.com/andrelopes-code/equori/internal/assistant/postgres"
+	"github.com/andrelopes-code/equori/internal/assistant/toolapi"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/llm"
@@ -24,17 +25,19 @@ import (
 )
 
 type Module struct {
-	svc      *app.Service
-	resolver *llmapi.Resolver
-	http     *httpapi.Server
-	screens  []guide.Screen
+	svc         *app.Service
+	resolver    *llmapi.Resolver
+	http        *httpapi.Server
+	screens     []guide.Screen
+	calculators []toolapi.Calculator
 
 	// The agent needs the chat set and the router, which are built after the module.
-	chat   tool.Set
-	tools  app.Tools
-	locale func(context.Context, int64) (locale.Locale, error)
-	router *llm.Router
-	wait   func(ctx context.Context, until time.Time) error
+	chat         tool.Set
+	tools        app.Tools
+	baseCurrency toolapi.BaseCurrency
+	locale       func(context.Context, int64) (locale.Locale, error)
+	router       *llm.Router
+	wait         func(ctx context.Context, until time.Time) error
 }
 
 func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*Module, error) {
@@ -56,6 +59,11 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*Module, error) {
 		return nil, err
 	}
 
+	calculators, err := parseCalculators(cfg)
+	if err != nil {
+		return nil, err
+	}
+
 	// assistant_usage days are instance days, in UTC (BK19).
 	today := func() time.Time { return clock.DateOf(cfg.Clock.Now(), time.UTC) }
 
@@ -71,12 +79,14 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*Module, error) {
 	)
 
 	return &Module{
-		svc:      svc,
-		resolver: llmapi.NewResolver(svc, cfg.Instance, build, log),
-		http:     httpapi.NewServer(svc, log),
-		screens:  screens,
-		locale:   cfg.Locale,
-		wait:     waitUntil(cfg),
+		svc:          svc,
+		resolver:     llmapi.NewResolver(svc, cfg.Instance, build, log),
+		http:         httpapi.NewServer(svc, log),
+		screens:      screens,
+		calculators:  calculators,
+		baseCurrency: cfg.BaseCurrency,
+		locale:       cfg.Locale,
+		wait:         waitUntil(cfg),
 	}, nil
 }
 
@@ -144,6 +154,14 @@ func navigationScreens(cfg Config) ([]guide.Screen, error) {
 	}
 
 	return screens, nil
+}
+
+func parseCalculators(cfg Config) ([]toolapi.Calculator, error) {
+	if len(cfg.Calculators) == 0 {
+		return nil, nil
+	}
+
+	return toolapi.ParseCalculators(cfg.Calculators)
 }
 
 func waitUntil(cfg Config) func(ctx context.Context, until time.Time) error {

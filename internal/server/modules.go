@@ -144,11 +144,13 @@ func (m *modules) addAssistant(pool *pgxpool.Pool, cfg Config, log *slog.Logger)
 			ingestion.SuggestColumnsUse,
 			assistant.ChatUse,
 		},
-		Navigation:  web.NavigationMap(),
-		Locale:      m.identity.Profile,
-		Clock:       m.clock,
-		NewProvider: cfg.LLMFactory,
-		Wait:        cfg.LLMWait,
+		Navigation:   web.NavigationMap(),
+		Calculators:  web.CalculatorKeys(),
+		BaseCurrency: m.ledger.BaseCurrency,
+		Locale:       m.identity.Profile,
+		Clock:        m.clock,
+		NewProvider:  cfg.LLMFactory,
+		Wait:         cfg.LLMWait,
 	}, log)
 	if err != nil {
 		return err

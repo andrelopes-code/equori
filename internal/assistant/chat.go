@@ -15,7 +15,9 @@ import (
 )
 
 // Tools returns the assistant's own tools for language models (ADR 012).
-func (m *Module) Tools() tool.Group { return tool.Group{Tools: toolapi.Tools(m.screens)} }
+func (m *Module) Tools() tool.Group {
+	return tool.Group{Tools: toolapi.Tools(m.screens, m.calculators, m.baseCurrency)}
+}
 
 // UseTools sets the chat's tools; it fails when a tool that writes has no preview (spec 8.1).
 func (m *Module) UseTools(set tool.Set) error {

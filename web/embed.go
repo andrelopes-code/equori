@@ -27,3 +27,10 @@ var navigationMap []byte
 
 // NavigationMap returns the screens the assistant links to (spec 9).
 func NavigationMap() []byte { return navigationMap }
+
+//go:embed src/features/calculators/model/address-keys.json
+var calculatorKeys []byte
+
+// CalculatorKeys returns the address keys of each calculator, the table the assistant validates
+// the inputs of a link against.
+func CalculatorKeys() []byte { return calculatorKeys }

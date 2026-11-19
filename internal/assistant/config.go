@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/andrelopes-code/equori/internal/assistant/toolapi"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/llm"
 	"github.com/andrelopes-code/equori/internal/platform/locale"
@@ -31,6 +32,11 @@ type Config struct {
 	Uses     []llm.Use
 	// Navigation is web/src/navigation/navigation-map.json (spec 9); empty means no screens.
 	Navigation []byte
+	// Calculators is web/src/features/calculators/model/address-keys.json; empty means no
+	// calculator can be opened.
+	Calculators []byte
+	// BaseCurrency returns the base currency of a book; open_calculator reads amounts in it.
+	BaseCurrency toolapi.BaseCurrency
 	// Locale returns the language of the member and the region of the book for the system prompt.
 	Locale func(context.Context, int64) (locale.Locale, error)
 	Clock  clock.Clock
