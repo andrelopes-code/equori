@@ -174,4 +174,15 @@ export const contributionPlanPtBR: Record<
   "contributionPlan.questions.noYes":
     "Nenhum sim: o grupo recebe o valor sem divisão entre os ativos.",
   "contributionPlan.questions.noFacts": "Uma conta não tem informe.",
+  "contributionPlan.rule.currency": "em {code}",
+  "contributionPlan.rule.years.between": "vence de {from} a {to}",
+  "contributionPlan.rule.years.from": "vence a partir de {from}",
+  "contributionPlan.rule.years.to": "vence até {to}",
+  "contributionPlan.rule.liquidity.yes": "liquidez diária",
+  "contributionPlan.rule.liquidity.no": "sem liquidez diária",
+  "contributionPlan.rule.guarantee.covered": "coberto pelo {name}",
+  "contributionPlan.rule.guarantee.sovereign": "título público",
+  "contributionPlan.rule.guarantee.uncovered": "sem garantia",
+  "contributionPlan.rule.guarantee.unavailable":
+    "garantia indisponível na região do livro",
 };

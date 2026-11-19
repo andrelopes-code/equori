@@ -13,6 +13,8 @@ export interface EditClass extends ClassDraft {
   locked: boolean;
   // Whether the members of the class carry targets of their own.
   split: boolean;
+  // The group gathers its assets by rule (GR1), even while it holds none yet.
+  byRule: boolean;
   memberLocks: boolean[];
 }
 
@@ -35,6 +37,7 @@ export function startEditing(draft: PlanDraft): EditDraft {
         cls.byQuestions ||
         (cls.members.length > 0 &&
           cls.members.every((m) => m.targetBp !== undefined)),
+      byRule: cls.rules.length > 0,
       memberLocks: cls.members.map(() => false),
     })),
   };
@@ -90,8 +93,10 @@ export function addClass(draft: EditDraft): EditDraft {
     byQuestions: false,
     questions: [],
     members: [],
+    rules: [],
     locked: false,
     split: false,
+    byRule: false,
     memberLocks: [],
   };
 
@@ -222,8 +227,9 @@ export function updateClass(
   };
 }
 
-// The saved view with the draft laid over it: names, targets and members come from the draft;
-// the figures come from the view row at the same position, and a row the view lacks reads zero.
+// The saved view with the draft laid over it: names, targets, members and rules come from the
+// draft; the figures and the matched securities come from the view row at the same position, and
+// a row the view lacks reads zero.
 export function overlayDraft(view: Plan, draft: EditDraft): Plan {
   const zero: Money = { amount: 0, currency: view.total.currency };
 
@@ -235,12 +241,12 @@ export function overlayDraft(view: Plan, draft: EditDraft): Plan {
       return {
         value: zero,
         question_ideals: false,
-        rules: [],
-        matched: [],
         ...row,
         name: cls.name,
         target_bp: cls.targetBp,
         questions: cls.questions,
+        rules: cls.rules,
+        matched: row?.matched ?? [],
         members: cls.members.map((m) => {
           const found = row?.members.find(
             (v) =>

@@ -4,6 +4,8 @@ type Plan = components["schemas"]["ContributionPlan"];
 type Input = components["schemas"]["ContributionPlanInput"];
 type Money = components["schemas"]["Money"];
 
+export type Rule = components["schemas"]["ContributionRule"];
+
 export interface MemberDraft {
   accountId?: string;
   instrument?: string;
@@ -19,6 +21,8 @@ export interface ClassDraft {
   byQuestions: boolean;
   questions: string[];
   members: MemberDraft[];
+  // The conditions of a group by rule (GR1); empty for a group of members.
+  rules: Rule[];
 }
 
 export interface PlanDraft {
@@ -33,6 +37,7 @@ export function toDraft(view: Plan): PlanDraft {
       targetBp: cls.target_bp,
       byQuestions: cls.questions.length > 0,
       questions: cls.questions,
+      rules: cls.rules,
       members: cls.members.map((m) => ({
         ...(m.account_id === undefined ? {} : { accountId: m.account_id }),
         ...(m.instrument === undefined ? {} : { instrument: m.instrument }),
@@ -56,14 +61,22 @@ export function toInput(draft: PlanDraft): Input {
         name: cls.name,
         target_bp: cls.targetBp,
         ...(asked ? { questions: cls.questions } : {}),
-        members: cls.members.map((m) => ({
-          ...(m.accountId === undefined ? {} : { account_id: m.accountId }),
-          ...(m.instrument === undefined ? {} : { instrument: m.instrument }),
-          ...(cls.byQuestions || m.targetBp === undefined
-            ? {}
-            : { target_bp: m.targetBp }),
-          ...(asked ? { answers: m.answers ?? [] } : {}),
-        })),
+        ...(cls.rules.length > 0 ? { rules: cls.rules } : {}),
+        members:
+          cls.rules.length > 0
+            ? []
+            : cls.members.map((m) => ({
+                ...(m.accountId === undefined
+                  ? {}
+                  : { account_id: m.accountId }),
+                ...(m.instrument === undefined
+                  ? {}
+                  : { instrument: m.instrument }),
+                ...(cls.byQuestions || m.targetBp === undefined
+                  ? {}
+                  : { target_bp: m.targetBp }),
+                ...(asked ? { answers: m.answers ?? [] } : {}),
+              })),
       };
     }),
   };

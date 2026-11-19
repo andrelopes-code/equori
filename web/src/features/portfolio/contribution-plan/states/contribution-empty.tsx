@@ -39,8 +39,12 @@ export function ContributionEmpty({ view, onStart }: ContributionEmptyProps) {
         view.outside.map((entry) => ({
           entry,
           type: typeOfEntry(entry, types),
+          ...(entry.return_kind === undefined
+            ? {}
+            : { returnKind: entry.return_kind }),
         })),
         (type) => typeLabel(t, type),
+        (kind) => t(`fixedIncome.kind.${kind}`),
       ),
     );
   }
@@ -53,6 +57,7 @@ export function ContributionEmpty({ view, onStart }: ContributionEmptyProps) {
           targetBp: 10000,
           byQuestions: false,
           questions: [],
+          rules: [],
           members: [],
         },
       ],

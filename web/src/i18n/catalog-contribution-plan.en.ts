@@ -173,4 +173,15 @@ export const contributionPlanEn = {
   "contributionPlan.questions.noYes":
     "No yes: the group receives its amount without a split between the assets.",
   "contributionPlan.questions.noFacts": "An account has no report.",
+  "contributionPlan.rule.currency": "in {code}",
+  "contributionPlan.rule.years.between": "matures {from} to {to}",
+  "contributionPlan.rule.years.from": "matures from {from}",
+  "contributionPlan.rule.years.to": "matures by {to}",
+  "contributionPlan.rule.liquidity.yes": "daily liquidity",
+  "contributionPlan.rule.liquidity.no": "no daily liquidity",
+  "contributionPlan.rule.guarantee.covered": "covered by {name}",
+  "contributionPlan.rule.guarantee.sovereign": "government bond",
+  "contributionPlan.rule.guarantee.uncovered": "no guarantee",
+  "contributionPlan.rule.guarantee.unavailable":
+    "no guarantee in the book's region",
 } as const;

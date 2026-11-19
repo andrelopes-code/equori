@@ -21,6 +21,8 @@ const cls = (
   target_bp: target,
   questions: [],
   question_ideals: false,
+  rules: [],
+  matched: [],
   value: brl(value),
   share_bp: share,
   ...(after === undefined ? {} : { after_share_bp: after }),

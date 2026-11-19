@@ -16,6 +16,7 @@ const draft = () =>
         targetBp: 10000,
         byQuestions: false,
         questions: [],
+        rules: [],
         members: [
           { instrument: "PETR4", targetBp: 5000 },
           { instrument: "VALE3", targetBp: 5000 },

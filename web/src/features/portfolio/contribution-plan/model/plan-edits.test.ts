@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  addClass,
   addMember,
   overlayDraft,
   removeMember,
@@ -16,7 +17,7 @@ import {
   setByQuestions,
 } from "@/features/portfolio/contribution-plan/model/question-edits";
 
-const plain = { byQuestions: false, questions: [] };
+const plain = { byQuestions: false, questions: [], rules: [] };
 
 const plan = () =>
   startEditing({
@@ -106,6 +107,30 @@ describe("plan edits", () => {
         (m) => m.targetBp,
       ),
     ).toEqual([7000, 3000]);
+  });
+});
+
+describe("plan edits by rule", () => {
+  const rule = {
+    instrument_type: "fixed_income",
+    return_kind: "rate",
+  } as const;
+
+  it("starts a class with rules as by rule", () => {
+    const draft = startEditing({
+      classes: [
+        { ...plain, name: "A", targetBp: 5000, rules: [rule], members: [] },
+        { ...plain, name: "B", targetBp: 5000, members: [] },
+      ],
+    });
+
+    expect(draft.classes.map((c) => c.byRule)).toEqual([true, false]);
+  });
+
+  it("adds a class with no rules and by chosen assets", () => {
+    const added = addClass(plan()).classes.at(-1);
+
+    expect(added).toMatchObject({ rules: [], byRule: false, members: [] });
   });
 });
 
@@ -219,6 +244,27 @@ describe("overlayDraft", () => {
         members: [],
       },
     ]);
+  });
+
+  it("takes the rules from the draft and the matched securities from the view row", () => {
+    const rule = { instrument_type: "fixed_income" } as const;
+    const matched = [
+      { instrument: "CDB1", value: money(600), share_bp: 10000 },
+    ];
+    const withMatched = {
+      ...view,
+      classes: view.classes.map((c) => ({ ...c, matched })),
+    };
+    const draft = startEditing({
+      classes: [
+        { ...plain, name: "New A", targetBp: 3000, rules: [rule], members: [] },
+        { ...plain, name: "New B", targetBp: 7000, rules: [rule], members: [] },
+      ],
+    });
+    const got = overlayDraft(withMatched, draft).classes;
+
+    expect(got.map((c) => c.rules)).toEqual([[rule], [rule]]);
+    expect(got.map((c) => c.matched)).toEqual([matched, []]);
   });
 
   it("keeps the target the preview derived for a class divided by questions", () => {

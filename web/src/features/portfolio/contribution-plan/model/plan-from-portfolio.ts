@@ -2,43 +2,53 @@ import type { components } from "@/api/schema.gen";
 import type {
   ClassDraft,
   PlanDraft,
+  Rule,
 } from "@/features/portfolio/contribution-plan/model/plan-draft";
 import type { MemberRef } from "@/features/portfolio/contribution-plan/model/plan-edits";
 
 type Outside = components["schemas"]["ContributionOutside"];
+type Kind = NonNullable<Outside["return_kind"]>;
 
 export interface TypedEntry {
   entry: Outside;
   type: string;
+  // The return kind of a fixed income entry (GR3), from `entry.return_kind`.
+  returnKind?: Kind;
+}
+
+interface Group {
+  name: string;
+  rules: Rule[];
+  entries: TypedEntry[];
 }
 
 const total = 10000n;
 
-// CN12: one class per instrument type in order of first appearance, each entry a member of its
-// type's class, each class target its share of the values in basis points. Shares round down; the
-// remainder goes to the largest class, the first of equals. An entry without a value is a member
-// with no weight in the shares.
+// GR9 over CN12: a fixed income entry with a return kind joins the class of its kind, which holds
+// the rule `{instrument_type: fixed_income, return_kind}` and no member; any other entry joins
+// the class of its type as a member. Classes come in order of first appearance, each target its
+// share of the values in basis points. Shares round down; the remainder goes to the largest
+// class, the first of equals. An entry without a value is a member with no weight in the shares.
 export function planFromPortfolio(
   entries: readonly TypedEntry[],
   label: (type: string) => string,
+  kindLabel: (kind: Kind) => string,
 ): PlanDraft {
-  const types = [...new Set(entries.map((e) => e.type))];
-  const values = types.map((type) =>
-    entries
-      .filter((e) => e.type === type)
-      .reduce((sum, e) => sum + BigInt(e.entry.value?.amount ?? 0), 0n),
+  const groups = groupEntries(entries, label, kindLabel);
+  const values = groups.map((g) =>
+    g.entries.reduce((sum, e) => sum + BigInt(e.entry.value?.amount ?? 0), 0n),
   );
   const shares = shareBasisPoints(values);
 
   return {
-    classes: types.map((type, i): ClassDraft => ({
-      name: label(type),
+    classes: groups.map((g, i): ClassDraft => ({
+      name: g.name,
       targetBp: shares[i] ?? 0,
       byQuestions: false,
       questions: [],
-      members: entries
-        .filter((e) => e.type === type)
-        .map((e) => memberRefOf(e.entry)),
+      rules: g.rules,
+      members:
+        g.rules.length > 0 ? [] : g.entries.map((e) => memberRefOf(e.entry)),
     })),
   };
 }
@@ -58,6 +68,32 @@ export function memberRefOf(entry: Outside): MemberRef {
     ...(entry.account_id === undefined ? {} : { accountId: entry.account_id }),
     ...(entry.instrument === undefined ? {} : { instrument: entry.instrument }),
   };
+}
+
+function groupEntries(
+  entries: readonly TypedEntry[],
+  label: (type: string) => string,
+  kindLabel: (kind: Kind) => string,
+): Group[] {
+  const groups = new Map<string, Group>();
+
+  for (const e of entries) {
+    const kind = e.type === "fixed_income" ? e.returnKind : undefined;
+    const key = kind === undefined ? `type:${e.type}` : `kind:${kind}`;
+    const group = groups.get(key) ?? {
+      name: kind === undefined ? label(e.type) : kindLabel(kind),
+      rules:
+        kind === undefined
+          ? []
+          : [{ instrument_type: "fixed_income", return_kind: kind }],
+      entries: [],
+    };
+
+    group.entries.push(e);
+    groups.set(key, group);
+  }
+
+  return [...groups.values()];
 }
 
 function shareBasisPoints(values: readonly bigint[]): number[] {

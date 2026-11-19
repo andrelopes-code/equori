@@ -35,6 +35,8 @@ const cls = (name: string, target: number, members: unknown[] = []) => ({
   share_bp: 2500,
   questions: [],
   question_ideals: false,
+  rules: [],
+  matched: [],
   members,
 });
 
@@ -492,6 +494,8 @@ const fundGroup = (ideals: boolean, share: number) => ({
   share_bp: 10000,
   questions: [],
   question_ideals: ideals,
+  rules: [],
+  matched: [],
   members: [
     { instrument: hglgID, target_bp: share, value: brl(100000) },
     { account_id: cdbID, target_bp: 10000 - share, value: brl(0) },

@@ -19,9 +19,22 @@ const entry = (
 });
 
 const label = (type: string) => `L:${type}`;
+const kindLabel = (kind: string) => `K:${kind}`;
+
+const contract = (
+  instrument: string,
+  value: number,
+  returnKind?: "rate" | "inflation" | "fixed",
+): TypedEntry => ({
+  ...entry(instrument, "fixed_income", value),
+  ...(returnKind === undefined ? {} : { returnKind }),
+});
 
 const targets = (entries: TypedEntry[]) =>
-  planFromPortfolio(entries, label).classes.map((c) => [c.name, c.targetBp]);
+  planFromPortfolio(entries, label, kindLabel).classes.map((c) => [
+    c.name,
+    c.targetBp,
+  ]);
 
 describe("planFromPortfolio", () => {
   it("makes one class per type in order of first appearance, with the shares of the values", () => {
@@ -35,13 +48,14 @@ describe("planFromPortfolio", () => {
       entry("VALE3", "stock", 3000),
     ];
 
-    expect(planFromPortfolio(entries, label)).toEqual({
+    expect(planFromPortfolio(entries, label, kindLabel)).toEqual({
       classes: [
         {
           name: "L:stock",
           targetBp: 8000,
           byQuestions: false,
           questions: [],
+          rules: [],
           members: [{ instrument: "PETR4" }, { instrument: "VALE3" }],
         },
         {
@@ -49,6 +63,7 @@ describe("planFromPortfolio", () => {
           targetBp: 500,
           byQuestions: false,
           questions: [],
+          rules: [],
           members: [{ accountId: "acc-1" }],
         },
         {
@@ -56,6 +71,7 @@ describe("planFromPortfolio", () => {
           targetBp: 1500,
           byQuestions: false,
           questions: [],
+          rules: [],
           members: [{ instrument: "MXRF11" }],
         },
       ],
@@ -92,6 +108,7 @@ describe("planFromPortfolio", () => {
         entry("D", "fund"),
       ],
       label,
+      kindLabel,
     );
 
     expect(draft.classes.map((c) => [c.targetBp, c.members.length])).toEqual([
@@ -113,9 +130,83 @@ describe("planFromPortfolio", () => {
     const sum = planFromPortfolio(
       [entry("A", "stock", big), entry("B", "reit", big * 2 + 1)],
       label,
+      kindLabel,
     ).classes.reduce((acc, c) => acc + c.targetBp, 0);
 
     expect(sum).toBe(10000);
+  });
+});
+
+describe("planFromPortfolio by return kind", () => {
+  const entries: TypedEntry[] = [
+    contract("CDB1", 3000, "rate"),
+    contract("NTNB.20350515", 2000, "inflation"),
+    contract("CDB2", 1000, "rate"),
+    contract("CRI1", 1000),
+    entry("PETR4", "stock", 3000),
+  ];
+
+  it("makes one class per return kind with its rule and no member", () => {
+    const classes = planFromPortfolio(entries, label, kindLabel).classes;
+
+    expect(classes.slice(0, 2)).toEqual([
+      {
+        name: "K:rate",
+        targetBp: 4000,
+        byQuestions: false,
+        questions: [],
+        rules: [{ instrument_type: "fixed_income", return_kind: "rate" }],
+        members: [],
+      },
+      {
+        name: "K:inflation",
+        targetBp: 2000,
+        byQuestions: false,
+        questions: [],
+        rules: [{ instrument_type: "fixed_income", return_kind: "inflation" }],
+        members: [],
+      },
+    ]);
+  });
+
+  it("keeps a contract without a return kind as a member of its type class", () => {
+    const classes = planFromPortfolio(entries, label, kindLabel).classes;
+
+    expect(classes.slice(2)).toEqual([
+      {
+        name: "L:fixed_income",
+        targetBp: 1000,
+        byQuestions: false,
+        questions: [],
+        rules: [],
+        members: [{ instrument: "CRI1" }],
+      },
+      {
+        name: "L:stock",
+        targetBp: 3000,
+        byQuestions: false,
+        questions: [],
+        rules: [],
+        members: [{ instrument: "PETR4" }],
+      },
+    ]);
+  });
+
+  it("sums the targets to 10000", () => {
+    const sum = planFromPortfolio(entries, label, kindLabel).classes.reduce(
+      (acc, c) => acc + c.targetBp,
+      0,
+    );
+
+    expect(sum).toBe(10000);
+  });
+
+  it("does not make a rule of a stock that carries a return kind", () => {
+    const stock = { ...entry("X", "stock", 1), returnKind: "rate" } as const;
+
+    expect(
+      planFromPortfolio([stock], label, kindLabel).classes[0]?.rules,
+    ).toEqual([]);
   });
 });
 

@@ -17,6 +17,8 @@ const cls = (
   target_bp: target,
   questions: [],
   question_ideals: false,
+  rules: [],
+  matched: [],
   value: brl(1000),
   share_bp: share,
   members: [],

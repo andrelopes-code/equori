@@ -68,6 +68,7 @@ describe("plan draft", () => {
           targetBp: 6000,
           byQuestions: false,
           questions: [],
+          rules: [],
           members: [
             { instrument: "PETR4", targetBp: 7000 },
             {
@@ -81,9 +82,29 @@ describe("plan draft", () => {
           targetBp: 4000,
           byQuestions: false,
           questions: [],
+          rules: [],
           members: [],
         },
       ],
+    });
+  });
+
+  it("reads the rules of a class and sends them with no members", () => {
+    const rule = {
+      instrument_type: "fixed_income",
+      return_kind: "rate",
+    } as const;
+    const view: Plan = {
+      ...saved,
+      classes: saved.classes.slice(1).map((c) => ({ ...c, rules: [rule] })),
+    };
+
+    expect(toDraft(view).classes[0]?.rules).toEqual([rule]);
+    expect(toInput(toDraft(view)).classes[0]).toEqual({
+      name: "Cash",
+      target_bp: 4000,
+      members: [],
+      rules: [rule],
     });
   });
 
@@ -123,6 +144,7 @@ describe("plan draft", () => {
           targetBp: 10000,
           byQuestions: false,
           questions: [],
+          rules: [],
           members: [{ instrument: "X" }],
         },
       ],
@@ -166,6 +188,7 @@ describe("plan draft", () => {
       targetBp: 10000,
       byQuestions: true,
       questions: ["Q1"],
+      rules: [],
       members: [{ instrument: "PETR4", targetBp: 10000, answers: [true] }],
     });
   });
@@ -178,6 +201,7 @@ describe("plan draft", () => {
           targetBp: 10000,
           byQuestions: true,
           questions: ["Q1", "Q2"],
+          rules: [],
           members: [
             { instrument: "X", targetBp: 5000, answers: [true, false] },
             { instrument: "Y", answers: [false, false] },
@@ -209,6 +233,7 @@ describe("plan draft", () => {
           targetBp: 10000,
           byQuestions: true,
           questions: [],
+          rules: [],
           members: [{ instrument: "X", targetBp: 5000, answers: [] }],
         },
       ],

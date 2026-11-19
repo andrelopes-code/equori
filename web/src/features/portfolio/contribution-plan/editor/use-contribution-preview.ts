@@ -15,8 +15,9 @@ const debounceMs = 250;
 
 // The amount of the strip and the draft of the targets (the saved plan outside edit mode) with the
 // plan they produce: the preview for the amount, or the saved plan itself while the amount is
-// zero. A change of either is sent after 250 ms; the figures keep the previous answer until the
-// next one arrives, and `pending` says so. A draft with a blank class name is not sent.
+// zero and no group has rules (GR8: a group with rules sends the preview without the amount). A
+// change of either is sent after 250 ms; the figures keep the previous answer until the next one
+// arrives, and `pending` says so. A draft with a blank class name is not sent.
 export function useContributionPreview(
   plan: Plan | undefined,
   draft?: PlanDraft,
@@ -34,6 +35,8 @@ export function useContributionPreview(
   const asked = JSON.parse(askedKey) as { amount: number; classes: Classes };
   const ready =
     classes.length > 0 && classes.every((c) => c.name.trim() !== "");
+  const byRule = asked.classes.some((c) => (c.rules?.length ?? 0) > 0);
+  const sends = asked.amount > 0 || byRule;
   const currency = plan?.total.currency;
 
   useEffect(() => {
@@ -47,19 +50,22 @@ export function useContributionPreview(
   }, [key]);
 
   useEffect(() => {
-    if (!ready || currency === undefined || asked.amount <= 0) return;
+    if (!ready || currency === undefined || !sends) return;
 
+    // Without an amount the preview values the draft with no split (GR8).
     mutate({
-      amount: { amount: asked.amount, currency },
+      ...(asked.amount > 0
+        ? { amount: { amount: asked.amount, currency } }
+        : {}),
       classes: asked.classes,
     });
     // askedKey stands for asked: the parsed copy changes identity on every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [askedKey, ready, currency, mutate]);
 
-  const previewed = ready && asked.amount > 0 && preview.data !== undefined;
+  const previewed = ready && sends && preview.data !== undefined;
   const view = previewed ? preview.data : plan;
-  const pending = key !== askedKey || (asked.amount > 0 && preview.isPending);
+  const pending = key !== askedKey || (sends && preview.isPending);
 
   return { amount, setAmount: setTyped, view, pending };
 }
