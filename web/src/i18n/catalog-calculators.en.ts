@@ -577,6 +577,7 @@ export const calculatorsEn = {
   "calc.own-or-rent.limit2":
     "Expected appreciation and the risk premium are estimates the person chooses.",
   "calc.results.emptyTitle": "The result appears here",
+  "calc.answer.missing": "Fill in {fields} to see {what}.",
   "calc.options": "Optional adjustments",
   "calc.method.description": "Steps, formula, assumptions, limits and sources",
   "calc.term": "Term",

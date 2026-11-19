@@ -583,6 +583,7 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.own-or-rent.limit2":
     "A valorização esperada e o prêmio de risco são estimativas escolhidas pela pessoa.",
   "calc.results.emptyTitle": "O resultado aparece aqui",
+  "calc.answer.missing": "Preencha {fields} para ver {what}.",
   "calc.options": "Ajustes opcionais",
   "calc.method.description": "Passos, fórmula, premissas, limites e fontes",
   "calc.term": "Prazo",
