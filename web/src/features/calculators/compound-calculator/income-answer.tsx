@@ -1,6 +1,6 @@
 import { CalculatorAnswer } from "@/features/calculators/calculator-frame/calculator-answer";
-import { emptySentence } from "@/features/calculators/compound-calculator/compound-answer";
-import type { livingIncome } from "@/features/calculators/compound-calculator/compound-answer";
+import { emptySentence } from "@/features/calculators/compound-calculator/compound-fields";
+import type { livingIncome } from "@/features/calculators/compound-calculator/income-figures";
 import type { CalculatorMoney } from "@/features/calculators/fields/use-calculator-money";
 import type { IncomeRow } from "@/features/calculators/model/compound-math";
 import { formatRate } from "@/features/calculators/model/format-rate";

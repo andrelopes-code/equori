@@ -179,7 +179,7 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.compound.rate": "Taxa de juros",
   "calc.compound.percent": "Percentual do índice",
   "calc.compound.inflation": "Inflação anual",
-  "calc.compound.delay": "Começar mais tarde",
+  "calc.compound.delay": "Tempo de espera",
   "calc.compound.final": "Valor final",
   "calc.compound.deposited": "Total depositado",
   "calc.compound.interest": "Juros",

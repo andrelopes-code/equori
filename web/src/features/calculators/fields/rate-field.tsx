@@ -2,6 +2,8 @@ import { Field, FieldDescription } from "@slotted/react/field";
 import type { ReactNode } from "react";
 
 import design from "@/features/calculators/calculator-frame/calculator-design.module.css";
+import { rateFieldValue } from "@/features/calculators/fields/rate-field-value";
+import { useAppLocale } from "@/i18n/i18n-provider";
 import { FieldTitle } from "@/ui/form-fields/field-title";
 import { RateInput } from "@/ui/money/rate-input";
 import type { RatePeriod } from "@/ui/money/rate-input";
@@ -31,12 +33,14 @@ export function RateField({
   compact?: boolean;
   children?: ReactNode;
 }) {
+  const [tag] = useAppLocale();
+
   return (
     <Field necessity="none" {...(compact ? { width: "medium" } : {})}>
       <FieldTitle label={label} {...(help === undefined ? {} : { help })} />
       <RateInput
         name={name}
-        value={value}
+        value={rateFieldValue(value, tag)}
         onChange={onChange}
         {...(compact
           ? {

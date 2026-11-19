@@ -7,7 +7,7 @@ import {
 } from "@slotted/react/section";
 
 import { SplitBars } from "@/features/calculators/calculator-frame/split-bars";
-import { splitRow } from "@/features/calculators/compound-calculator/compound-answer";
+import { splitRow } from "@/features/calculators/compound-calculator/accumulation-figures";
 import { CompoundRange } from "@/features/calculators/compound-calculator/compound-range";
 import { TermIncomeRows } from "@/features/calculators/compound-calculator/term-income-rows";
 import type { AccumulationInput } from "@/features/calculators/compound-calculator/use-accumulation";

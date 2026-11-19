@@ -1,4 +1,4 @@
-import { rateFieldValue } from "@/features/calculators/compound-calculator/compound-answer";
+import { indexedRateText } from "@/features/calculators/compound-calculator/compound-fields";
 import { CompoundModeField } from "@/features/calculators/compound-calculator/compound-mode-field";
 import {
   clearFloating,
@@ -116,7 +116,7 @@ export function AccumulationInputs({ input, money }: AccumulationInputsProps) {
         label={t("calc.compound.rate")}
         help={t("calc.compound.rate.help")}
         name="rate"
-        value={rateFieldValue(search.rate, index !== undefined, fromIndex)}
+        value={indexedRateText(search.rate, index !== undefined, fromIndex)}
         onChange={(v) => {
           set({ ...clearFloating(floatingKeys), rate: v, index: undefined });
         }}

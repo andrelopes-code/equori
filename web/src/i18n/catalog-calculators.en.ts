@@ -177,7 +177,7 @@ export const calculatorsEn = {
   "calc.compound.rate": "Interest rate",
   "calc.compound.percent": "Percent of the index",
   "calc.compound.inflation": "Annual inflation",
-  "calc.compound.delay": "Start later",
+  "calc.compound.delay": "Waiting time",
   "calc.compound.final": "Final amount",
   "calc.compound.deposited": "Total deposited",
   "calc.compound.interest": "Interest",

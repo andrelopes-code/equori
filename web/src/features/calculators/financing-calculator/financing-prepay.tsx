@@ -19,7 +19,8 @@ import {
   useCalculatorSearch,
 } from "@/features/calculators/model/calculator-search";
 import { addressKeys } from "@/features/calculators/financing-calculator/address-keys";
-import { useAppLocaleState, useT } from "@/i18n/i18n-provider";
+import { numberFormatter } from "@/i18n/format";
+import { useAppLocale, useAppLocaleState, useT } from "@/i18n/i18n-provider";
 import { FormNotice } from "@/ui/form-layout/form-notice";
 
 interface FinancingPrepayProps {
@@ -30,7 +31,9 @@ interface FinancingPrepayProps {
 // What an extra payment saves; null while its month and amount are not both entered.
 export function FinancingPrepay({ loan, money }: FinancingPrepayProps) {
   const t = useT();
+  const [tag] = useAppLocale();
   const { locale } = useAppLocaleState();
+  const count = numberFormatter(tag);
   const [search] = useCalculatorSearch(addressKeys);
   const names = systemNames(locale.region);
 
@@ -39,11 +42,11 @@ export function FinancingPrepay({ loan, money }: FinancingPrepayProps) {
   if (month === null || extra === null) return null;
 
   const input = { ...loan, month, extra };
-  const choices = prepayChoices(input);
   const change = prepay(loan.amount, loan.rate, loan.months, month, extra);
+  const choices = prepayChoices(input, change);
   if (choices === null || change === null)
     return (
-      <FormNotice tone="warning" hideIcon>
+      <FormNotice tone="warning">
         {t("calc.financing.prepay.invalid")}
       </FormNotice>
     );
@@ -53,8 +56,8 @@ export function FinancingPrepay({ loan, money }: FinancingPrepayProps) {
   const termName = t("calc.financing.prepay.term");
   const lowerName = t("calc.financing.prepay.lower");
   const termEffect = t("calc.financing.prepay.termEffect", {
-    months: String(choices.keepInstallment.months),
-    fewer: String(choices.keepInstallment.fewer),
+    months: count.format(choices.keepInstallment.months),
+    fewer: count.format(choices.keepInstallment.fewer),
   });
   const lowerEffect = t("calc.financing.prepay.lowerEffect", {
     installment: money.format(choices.keepTerm.installment),
@@ -68,7 +71,7 @@ export function FinancingPrepay({ loan, money }: FinancingPrepayProps) {
           <SectionDescription>
             {t("calc.financing.prepay.summary", {
               amount: money.format(extra),
-              month: String(month),
+              month: count.format(month),
               priceName: t(names.price),
             })}
           </SectionDescription>

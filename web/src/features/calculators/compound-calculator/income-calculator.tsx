@@ -5,8 +5,8 @@ import {
   balanceSpending,
   incomeSetup,
   livingIncome,
-  monthlyRate,
-} from "@/features/calculators/compound-calculator/compound-answer";
+} from "@/features/calculators/compound-calculator/income-figures";
+import { monthlyRate } from "@/features/calculators/compound-calculator/compound-fields";
 import { IncomeAdjust } from "@/features/calculators/compound-calculator/income-adjust";
 import { IncomeAnswer } from "@/features/calculators/compound-calculator/income-answer";
 import { IncomeDetails } from "@/features/calculators/compound-calculator/income-details";

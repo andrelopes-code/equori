@@ -1,8 +1,6 @@
 import { CalculatorAnswer } from "@/features/calculators/calculator-frame/calculator-answer";
-import {
-  accumulationFacts,
-  emptySentence,
-} from "@/features/calculators/compound-calculator/compound-answer";
+import { accumulationFacts } from "@/features/calculators/compound-calculator/accumulation-figures";
+import { emptySentence } from "@/features/calculators/compound-calculator/compound-fields";
 import type { AccumulationInput } from "@/features/calculators/compound-calculator/use-accumulation";
 import type { CalculatorMoney } from "@/features/calculators/fields/use-calculator-money";
 import { formatRate } from "@/features/calculators/model/format-rate";

@@ -1,4 +1,7 @@
-import { missingSentence } from "@/features/calculators/calculator-frame/missing-fields";
+import {
+  lowerFirst,
+  missingSentence,
+} from "@/features/calculators/calculator-frame/missing-fields";
 import { prepay } from "@/features/calculators/financing-calculator/annuity";
 import type { AmortizationRow } from "@/features/calculators/financing-calculator/annuity";
 import { fieldOrder } from "@/features/calculators/financing-calculator/financing-input";
@@ -34,15 +37,12 @@ export function financingFacts(
   };
 }
 
-// What a prepayment saves in each of its two uses; null for a month outside 1 to the term minus one.
-export function prepayChoices(input: PrepayInput): PrepayChoices | null {
-  const change = prepay(
-    input.amount,
-    input.rate,
-    input.months,
-    input.month,
-    input.extra,
-  );
+// What a prepayment saves in each of its two uses; null for a month outside 1 to the term
+// minus one.
+export function prepayChoices(
+  input: PrepayInput,
+  change: ReturnType<typeof prepay>,
+): PrepayChoices | null {
   if (change === null) return null;
 
   return {
@@ -76,7 +76,7 @@ export function emptySentence(input: EmptySentenceInput): string {
   if (input.complete) return input.noSolution;
 
   const fields = fieldOrder.map((field) => ({
-    label: input.labels[field].toLocaleLowerCase(input.tag),
+    label: lowerFirst(input.labels[field], input.tag),
     missing: input.missing[field],
   }));
 

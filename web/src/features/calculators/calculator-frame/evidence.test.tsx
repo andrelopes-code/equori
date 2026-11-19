@@ -10,13 +10,13 @@ describe("SplitBars", () => {
   const rows = [
     {
       name: "Price",
-      parts: [30000000, 72319789] as [number, number],
+      parts: [30000000, 72319789],
       total: "R$ 1.023.197,89",
       label: "Price: total R$ 1.023.197,89, juros R$ 723.197,89",
     },
     {
       name: "SAC",
-      parts: [30000000, 49344212] as [number, number],
+      parts: [30000000, 49344212],
       total: "R$ 793.442,12",
       label: "SAC: total R$ 793.442,12, juros R$ 493.442,12",
     },
@@ -40,6 +40,38 @@ describe("SplitBars", () => {
     expect((segments[1] as HTMLElement).style.inlineSize).toBe(
       "60.26649083333333%",
     );
+  });
+
+  it("draws one part and one legend entry for each of three parts", () => {
+    const { container } = render(
+      <SplitBars
+        rows={[
+          { name: "Own", parts: [5, 3, 2], total: "10", label: "Own: 10" },
+        ]}
+        legend={["A", "B", "C"]}
+      />,
+    );
+
+    const parts = screen.getByRole("img").querySelectorAll("span > span");
+
+    expect(parts).toHaveLength(3);
+    expect((parts[0] as HTMLElement).style.inlineSize).toBe("50%");
+    expect((parts[2] as HTMLElement).style.inlineSize).toBe("20%");
+    expect(container.querySelectorAll('[data-part="key"]')).toHaveLength(3);
+    expect(container.querySelector("p")).toHaveTextContent("ABC");
+  });
+
+  it("draws no legend for a single part without one", () => {
+    const { container } = render(
+      <SplitBars
+        rows={[{ name: "Own", parts: [5], total: "5", label: "Own: 5" }]}
+      />,
+    );
+
+    expect(
+      screen.getByRole("img").querySelectorAll("span > span"),
+    ).toHaveLength(1);
+    expect(container.querySelector('[data-part="legend"]')).toBeNull();
   });
 });
 

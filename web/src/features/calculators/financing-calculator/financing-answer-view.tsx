@@ -8,6 +8,7 @@ import {
 import type { readFinancing } from "@/features/calculators/financing-calculator/financing-input";
 import { systemNames } from "@/features/calculators/financing-calculator/financing-region";
 import { formatRate } from "@/features/calculators/model/format-rate";
+import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useAppLocaleState, useT } from "@/i18n/i18n-provider";
 
 const whatKeys = {
@@ -32,6 +33,7 @@ export function FinancingAnswerView({
   const t = useT();
   const [tag] = useAppLocale();
   const { locale } = useAppLocaleState();
+  const count = numberFormatter(tag);
   const names = systemNames(locale.region);
   const { solve, solved } = input;
 
@@ -69,7 +71,7 @@ export function FinancingAnswerView({
     installment: money.format(solved.installment),
     amount: money.format(solved.amount),
     rate: formatRate(solved.rate, tag, { min: 4 }),
-    months: String(solved.months),
+    months: count.format(solved.months),
   }[solve];
 
   return (
@@ -77,7 +79,7 @@ export function FinancingAnswerView({
       lead={solvedLead}
       figure={figure}
       sentence={t("calc.financing.answer.sentence", {
-        months: String(solved.months),
+        months: count.format(solved.months),
         sacName: t(names.sac),
         sacFirst: money.format(sac[0]?.installment ?? 0),
         sacLast: money.format(sac.at(-1)?.installment ?? 0),

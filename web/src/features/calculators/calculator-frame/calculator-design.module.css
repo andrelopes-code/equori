@@ -139,6 +139,11 @@
     border-radius: 0 var(--slotted-radius-xs) var(--slotted-radius-xs) 0;
   }
 
+  /* Parts after the first two: the step of the accent ramp comes inline in --part. */
+  .splitPart {
+    background: var(--part);
+  }
+
   .splitTotal {
     font-size: var(--slotted-font-size-sm);
     font-variant-numeric: tabular-nums;
@@ -169,6 +174,11 @@
   .keyInterest {
     margin-inline-start: var(--slotted-space-4);
     background: var(--slotted-tone-accent-solid);
+  }
+
+  .keyPart {
+    margin-inline-start: var(--slotted-space-4);
+    background: var(--part);
   }
 
   /* The two answers to a prepayment, on one axis of interest saved. */
@@ -318,13 +328,15 @@
     font-variant-numeric: tabular-nums;
   }
 
-  /* Slotted's select and text field fill their row (inline-size 100%): the pair fixes both, or the
-     select takes the row and the value shrinks to its content (owner review, 2026-11-19). */
+  /* Workaround for Slotted issue #151: a select in an Inline row takes the whole row, so the
+     select keeps its content width. */
   .unitSelect {
     flex: none;
     inline-size: auto;
   }
 
+  /* Workaround for Slotted issue #151: the text field beside the select is squeezed, so it keeps
+     a fixed width. */
   .unitValue {
     flex: none;
     inline-size: 7rem; /* literal: value part of a value-and-unit pair, medium step minus the unit select */

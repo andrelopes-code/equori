@@ -11,8 +11,6 @@ interface FormNoticeProps {
   // The primary action is the default Button; any other is `variant="ghost"`.
   actions?: ReactNode;
   tone?: ComponentProps<typeof Alert>["tone"];
-  // Draws no mark: the warning tone's triangle is forbidden.
-  hideIcon?: boolean;
   className?: string | undefined;
 }
 
@@ -23,14 +21,12 @@ export function FormNotice({
   children,
   actions,
   tone = "danger",
-  hideIcon,
   className,
 }: FormNoticeProps) {
   return (
     <Alert
       tone={tone}
       live={tone === "danger" ? "assertive" : "polite"}
-      hideIcon={hideIcon}
       className={className}
     >
       <AlertContent>

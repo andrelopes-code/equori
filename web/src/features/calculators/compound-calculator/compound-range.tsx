@@ -9,7 +9,7 @@ import {
 
 import { axisMax } from "@/features/calculators/calculator-frame/axis";
 import { RangeStrip } from "@/features/calculators/calculator-frame/range-strip";
-import { rangeOf } from "@/features/calculators/compound-calculator/compound-answer";
+import { rangeOf } from "@/features/calculators/compound-calculator/accumulation-figures";
 import type { CalculatorMoney } from "@/features/calculators/fields/use-calculator-money";
 import { formatRate } from "@/features/calculators/model/format-rate";
 import { numberFormatter } from "@/i18n/format";

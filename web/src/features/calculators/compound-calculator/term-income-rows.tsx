@@ -12,7 +12,7 @@ import { FactRows } from "@/features/calculators/calculator-frame/fact-rows";
 import {
   termIncome,
   termIncomeRows,
-} from "@/features/calculators/compound-calculator/compound-answer";
+} from "@/features/calculators/compound-calculator/income-figures";
 import type { CalculatorMoney } from "@/features/calculators/fields/use-calculator-money";
 import { REINVESTED_SHARE } from "@/features/calculators/model/compound-math";
 import { formatRate } from "@/features/calculators/model/format-rate";
@@ -71,7 +71,7 @@ export function TermIncomeRows({
 
       <SectionBody>
         {income.lasting === null && (
-          <Alert tone="warning" hideIcon>
+          <Alert tone="warning">
             <AlertContent>
               <AlertDescription>
                 {t("calc.compound.income.none")}

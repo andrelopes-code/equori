@@ -203,7 +203,7 @@ describe("Financing calculator", () => {
     );
   });
 
-  it("draws the invalid prepayment notice without a mark", async () => {
+  it("draws the invalid prepayment notice with the warning mark", async () => {
     await open(`${loan}&prepayMonth=400&prepayAmount=200000`);
     const text = await screen.findByText(
       catalogEn["calc.financing.prepay.invalid"],
@@ -211,7 +211,7 @@ describe("Financing calculator", () => {
     const alert = text.closest('[data-ui="alert"]');
 
     expect(alert).not.toBeNull();
-    expect(alert?.querySelector('[data-part="icon"]')).toBeNull();
+    expect(alert?.querySelector('[data-part="icon"]')).not.toBeNull();
   });
 
   // Mock fidelity (Task 9), D4: the labels of the extra payment, with no line under the first.
@@ -280,6 +280,26 @@ describe("Financing calculator", () => {
       ),
     ).toBeVisible();
     expect(screen.getByText("R$ 247.855,59")).toBeVisible();
+  });
+
+  // M5 of the plan 1 review: a rate read from the address shows the locale's separator.
+  it("shows a rate from the address with the comma of pt-BR", async () => {
+    await open("amount=30000000&rate=11.5&months=360", "BR", "pt");
+    expect(
+      await screen.findByText("R$ 2.842,24", { selector: "p" }),
+    ).toBeVisible();
+    expect(screen.getByDisplayValue("11,5")).toBeVisible();
+  });
+
+  // M6: a count reads with the grouping of the locale, in the sentence and in the prepay effect.
+  it("groups a count of 1200 months in pt-BR", async () => {
+    await open(
+      "amount=30000000&rate=1&period=month&months=1200&prepayMonth=1&prepayAmount=100",
+      "BR",
+      "pt",
+    );
+    expect(await screen.findByText(/^por 1\.200 meses\./)).toBeVisible();
+    expect(screen.getByText(/^Termina em \d\.\d{3} meses, /)).toBeVisible();
   });
 
   // CR4: the empty answer names the inputs still missing, in reading order.

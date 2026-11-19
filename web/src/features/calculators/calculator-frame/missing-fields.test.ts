@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { missingSentence } from "@/features/calculators/calculator-frame/missing-fields";
+import {
+  lowerFirst,
+  missingSentence,
+} from "@/features/calculators/calculator-frame/missing-fields";
 import { catalogEn } from "@/i18n/catalog.en";
 import { catalogPtBR } from "@/i18n/catalog.pt-BR";
 import type { TFunction } from "@/i18n/i18n-provider";
@@ -66,5 +69,17 @@ describe("missingSentence", () => {
     const what = tag === "en" ? "the payment" : "a prestação";
 
     expect(missingSentence(fields, what, t, tag)).toBe(want);
+  });
+});
+
+describe("lowerFirst", () => {
+  it.each([
+    { label: "Taxa CDI", tag: "pt-BR", want: "taxa CDI" },
+    { label: "IPCA rate", tag: "en", want: "IPCA rate" },
+    { label: "Prazo", tag: "pt-BR", want: "prazo" },
+    { label: "Term", tag: "en", want: "term" },
+    { label: "", tag: "en", want: "" },
+  ])("$label in $tag", ({ label, tag, want }) => {
+    expect(lowerFirst(label, tag)).toBe(want);
   });
 });

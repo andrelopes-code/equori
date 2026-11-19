@@ -22,3 +22,12 @@ export function missingSentence(
 
   return t("calc.answer.missing", { fields: list.format(names), what });
 }
+
+// A label in the middle of a sentence: its first letter lowercased with the locale, unless the
+// second letter is uppercase (an acronym such as "IPCA rate" stays).
+export function lowerFirst(label: string, tag: string): string {
+  const [first = "", second = ""] = label;
+  if (second !== second.toLocaleLowerCase(tag)) return label;
+
+  return first.toLocaleLowerCase(tag) + label.slice(1);
+}

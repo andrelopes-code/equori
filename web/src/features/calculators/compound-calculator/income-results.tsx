@@ -10,7 +10,7 @@ import {
 import { CalcTable } from "@/features/calculators/calculator-frame/calc-table";
 import { FactRows } from "@/features/calculators/calculator-frame/fact-rows";
 import type { CalculatorMoney } from "@/features/calculators/fields/use-calculator-money";
-import { incomeTotals } from "@/features/calculators/compound-calculator/compound-answer";
+import { incomeTotals } from "@/features/calculators/compound-calculator/income-figures";
 import { yearlyIncome } from "@/features/calculators/model/compound-math";
 import type { IncomeRow } from "@/features/calculators/model/compound-math";
 import { useT } from "@/i18n/i18n-provider";

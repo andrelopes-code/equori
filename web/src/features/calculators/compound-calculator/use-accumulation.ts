@@ -1,4 +1,4 @@
-import { accumulationResult } from "@/features/calculators/compound-calculator/compound-answer";
+import { accumulationResult } from "@/features/calculators/compound-calculator/accumulation-figures";
 import { useSimulation } from "@/features/calculators/compound-calculator/use-simulation";
 import {
   readMinor,

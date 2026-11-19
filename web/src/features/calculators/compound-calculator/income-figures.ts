@@ -1,36 +1,11 @@
 import {
-  depositsValue,
   futureValue,
   monthlyIncome,
   splitIncome,
 } from "@/features/calculators/model/compound-math";
 import type { IncomeRow } from "@/features/calculators/model/compound-math";
-import { missingSentence } from "@/features/calculators/calculator-frame/missing-fields";
-import { rateText } from "@/features/calculators/model/format-rate";
 import { annualToMonthly } from "@/features/calculators/model/rate-math";
 import { roundHalfEven } from "@/features/calculators/model/round";
-import type { TFunction } from "@/i18n/i18n-provider";
-
-interface AccumulationInput {
-  initial: number;
-  deposit: number;
-  // A monthly rate as a fraction.
-  j: number;
-  months: number;
-  // A yearly rate as a fraction; null without one.
-  inflation: number | null;
-  // Months the deposits start later; null without a delay.
-  delay: number | null;
-}
-
-interface AccumulationResult {
-  final: number;
-  deposited: number;
-  // The final amount in today's money; null without an inflation.
-  today: number | null;
-  // The final amount when the deposits start later; null without a delay.
-  delayed: number | null;
-}
 
 interface TermIncomeInput {
   final: number;
@@ -63,23 +38,6 @@ interface LivingIncomeInput {
   share: number;
 }
 
-interface FactsInput {
-  target: boolean;
-  deposited: number;
-  final: number;
-  today: number | null;
-  delayed: number | null;
-  format: (minor: number) => string;
-  labels: {
-    deposited: string;
-    interest: string;
-    today: string;
-    // Already names the delay.
-    delayed: string;
-    wait: string;
-  };
-}
-
 interface TermIncomeRowsInput {
   income: TermIncome;
   // An inflation is set: the rows carry the money they are in.
@@ -94,17 +52,6 @@ interface TermIncomeRowsInput {
     living: string;
     spending: string;
   };
-}
-
-interface EmptySentenceInput<K extends string> {
-  // The inputs in reading order.
-  order: readonly K[];
-  labels: Record<K, string>;
-  missing: Record<K, boolean>;
-  // What the answer will show, after "to see".
-  what: string;
-  t: TFunction;
-  tag: string;
 }
 
 interface IncomeSetupInput {
@@ -131,33 +78,6 @@ interface IncomeSetup {
   term: number;
 }
 
-interface SplitRowInput {
-  name: string;
-  deposited: number;
-  final: number;
-  format: (minor: number) => string;
-  depositedLabel: string;
-  interestLabel: string;
-}
-
-// Amounts are minor units; the cost is an integer subtraction (web O7).
-export function waitingCost(final: number, delayed: number): number {
-  return final - delayed;
-}
-
-// The 10th, 50th and 90th percentile of a simulation as the low, mid and high of a range.
-export function rangeOf(simulation: {
-  p10: number;
-  p50: number;
-  p90: number;
-}): {
-  low: number;
-  mid: number;
-  high: number;
-} {
-  return { low: simulation.p10, mid: simulation.p50, high: simulation.p90 };
-}
-
 // An income of today's money in the money of the term's end, with a yearly inflation.
 export function incomeAtEnd(
   income: number,
@@ -167,25 +87,6 @@ export function incomeAtEnd(
   if (inflation === null) return income;
 
   return roundHalfEven(income * (1 + inflation) ** (months / 12));
-}
-
-export function accumulationResult(
-  input: AccumulationInput,
-): AccumulationResult {
-  const { initial, deposit, j, months, inflation, delay } = input;
-  const grow = (term: number) =>
-    futureValue(initial, j, term) + depositsValue(deposit, j, term);
-  const final = grow(months);
-
-  return {
-    final,
-    deposited: initial + deposit * months,
-    today:
-      inflation === null
-        ? null
-        : roundHalfEven(final / (1 + inflation) ** (months / 12)),
-    delayed: delay === null ? null : grow(Math.max(months - delay, 0)),
-  };
 }
 
 // The monthly income of a final amount from the month after the term, in today's money and in
@@ -230,53 +131,6 @@ export function livingIncome(input: LivingIncomeInput): TermIncome["lasting"] {
   };
 }
 
-// One bar: what was deposited and the interest on it, the final amount at the end, and the
-// accessible name with both values.
-export function splitRow(input: SplitRowInput) {
-  const interest = input.final - input.deposited;
-  const total = input.format(input.final);
-
-  return {
-    name: input.name,
-    parts: [input.deposited, interest] as [number, number],
-    total,
-    label: `${input.name}: ${input.depositedLabel} ${input.format(input.deposited)}, ${input.interestLabel} ${input.format(interest)}`,
-  };
-}
-
-// The facts under the figure, at most three: for a target the deposited amount and the interest,
-// then today's money, the delayed amount and the cost of waiting.
-export function accumulationFacts(
-  input: FactsInput,
-): { term: string; value: string }[] {
-  const { format, labels } = input;
-  const facts = [
-    ...(input.target
-      ? [
-          { term: labels.deposited, value: format(input.deposited) },
-          {
-            term: labels.interest,
-            value: format(input.final - input.deposited),
-          },
-        ]
-      : []),
-    ...(input.today === null
-      ? []
-      : [{ term: labels.today, value: format(input.today) }]),
-    ...(input.delayed === null
-      ? []
-      : [
-          { term: labels.delayed, value: format(input.delayed) },
-          {
-            term: labels.wait,
-            value: format(waitingCost(input.final, input.delayed)),
-          },
-        ]),
-  ];
-
-  return facts.slice(0, 3);
-}
-
 // The labelled rows of the income after the term; a note names the money when an inflation is set.
 export function termIncomeRows(
   input: TermIncomeRowsInput,
@@ -308,23 +162,12 @@ export function termIncomeRows(
   ];
 }
 
-// The sentence of an answer without a figure: the inputs still missing, in reading order; empty
-// when none is missing.
-export function emptySentence<K extends string>(
-  input: EmptySentenceInput<K>,
-): string {
-  const fields = input.order.map((key) => ({
-    label: input.labels[key].toLocaleLowerCase(input.tag),
-    missing: input.missing[key],
-  }));
-
-  return missingSentence(fields, input.what, input.t, input.tag) ?? "";
-}
-
-// The monthly return net of the monthly inflation: the rate at which a balance keeps its purchasing
-// power, so its income agrees with livingIncome.
+// The monthly return net of the monthly inflation, by the Fisher relation: the rate at which a balance
+// keeps its purchasing power.
 export function realMonthlyRate(j: number, inflation: number | null): number {
-  return inflation === null ? j : j - annualToMonthly(inflation);
+  return inflation === null
+    ? j
+    : (1 + j) / (1 + annualToMonthly(inflation)) - 1;
 }
 
 // The monthly income that spends a balance of today over a withdrawal term, in today's money.
@@ -337,17 +180,6 @@ export function balanceSpending(input: {
   const g = input.inflation === null ? 0 : annualToMonthly(input.inflation);
 
   return monthlyIncome(input.balance, input.j, g, input.withdraw);
-}
-
-// The text of a rate field: what is typed, or the rate an index fills in (empty while it loads).
-export function rateFieldValue(
-  typed: string | undefined,
-  indexed: boolean,
-  fromIndex: { rate: number } | null,
-): string {
-  if (!indexed) return typed ?? "";
-
-  return fromIndex === null ? "" : rateText(fromIndex.rate);
 }
 
 // The balance when the income starts: the balance compounds at the net monthly rate through the
@@ -369,16 +201,6 @@ export function incomeTotals(rows: readonly IncomeRow[]): {
     living: rows.reduce((sum, row) => sum + row.living, 0),
     reinvested: rows.reduce((sum, row) => sum + row.reinvested, 0),
   };
-}
-
-// A rate typed per month or per year as a monthly fraction; null without a rate.
-export function monthlyRate(
-  typed: number | null,
-  period: "month" | "year",
-): number | null {
-  if (typed === null) return null;
-
-  return period === "month" ? typed : annualToMonthly(typed);
 }
 
 // The inputs of the income mode once every one is valid and the return beats inflation; null

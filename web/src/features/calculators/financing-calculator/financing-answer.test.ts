@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  prepay,
   priceSchedule,
   sacSchedule,
 } from "@/features/calculators/financing-calculator/annuity";
@@ -36,9 +37,17 @@ describe("financingFacts", () => {
 
 describe("prepayChoices", () => {
   const input = { amount, rate, months, month: 24, extra: 2000000 };
+  const choices = (patch: Partial<typeof input> = {}) => {
+    const given = { ...input, ...patch };
+
+    return prepayChoices(
+      given,
+      prepay(given.amount, given.rate, given.months, given.month, given.extra),
+    );
+  };
 
   it("states what shortening the term and lowering the installment save", () => {
-    expect(prepayChoices(input)).toEqual({
+    expect(choices()).toEqual({
       // 65788013 - 41002454; (360 - 24) - 242
       keepInstallment: { months: 242, fewer: 94, saved: 24785559 },
       // 65788013 - 61359428
@@ -47,8 +56,8 @@ describe("prepayChoices", () => {
   });
 
   it("returns null for a month outside 1 to the term minus one", () => {
-    expect(prepayChoices({ ...input, month: 0 })).toBeNull();
-    expect(prepayChoices({ ...input, month: months })).toBeNull();
+    expect(choices({ month: 0 })).toBeNull();
+    expect(choices({ month: months })).toBeNull();
   });
 });
 
@@ -110,6 +119,7 @@ describe("emptySentence", () => {
     );
   });
 
+  // M5: only the first letter is lowercased, so "Price" keeps its capital.
   it("names the figure being solved", () => {
     expect(
       emptySentence({
@@ -122,7 +132,7 @@ describe("emptySentence", () => {
         },
         what: tPt("calc.financing.answer.what.rate"),
       }),
-    ).toBe("Preencha prazo e prestação price para ver a taxa.");
+    ).toBe("Preencha prazo e prestação Price para ver a taxa.");
   });
 
   it("states that a complete loan has no solution", () => {

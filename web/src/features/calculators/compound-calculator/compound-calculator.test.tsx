@@ -396,12 +396,14 @@ describe("Compound interest calculator", () => {
     // Both add buttons stand in one row.
     expect(add.parentElement).toBe(withdraw.parentElement);
     await user.click(add);
+    // The field is the waiting time; the button and the legend keep "Start later".
     await user.type(
-      await screen.findByRole("textbox", {
-        name: catalogEn["calc.compound.delay"],
-      }),
+      await screen.findByRole("textbox", { name: "Waiting time" }),
       "12",
     );
+    expect(
+      screen.getByText(catalogEn["calc.compound.delay.add"]),
+    ).toBeVisible();
     const delayed = catalogEn["calc.compound.answer.delayed"].replace(
       "{months}",
       "12",
@@ -444,7 +446,7 @@ describe("Compound interest calculator", () => {
     await within(region).findByText("R$10,000.00");
   });
 
-  it("reads the inflation typed in the income mode and keeps one income (CR3)", async () => {
+  it("reads the inflation typed in the income mode (CR3)", async () => {
     const user = userEvent.setup();
     await open(
       "mode=income&initial=100000000&period=month&rate=1&months=2&monthsUnit=month",
@@ -460,9 +462,11 @@ describe("Compound interest calculator", () => {
     // 1.04^(1/12) - 1 = 0.32737398% a month of inflation; 1% less that is 0.67262602%, on
     // 1,000,000.00 (100000000 minor): 672,626.02 minor, so 6,726.26.
     await within(region).findByText("R$6,726.26");
-    // The evidence states the income of the answer.
+    // M3: the evidence pays the balance at the real rate, (1.01 / 1.0032737398) - 1 =
+    // 0.67043120%, on 100000000 minor: 670,431.20 minor, so 6,704.31 (it was 6,726.26 with the
+    // subtracted rate). The answer keeps W = F (j - g) of the method, 6,726.26.
     expect(await result(catalogEn["calc.compound.live.firstIncome"])).toBe(
-      "R$6,726.26",
+      "R$6,704.31",
     );
   });
 
@@ -560,14 +564,14 @@ describe("Compound interest calculator", () => {
     expect(region).toHaveTextContent(/to reach R\$1,000\.00 in 7 months/);
   });
 
-  it("draws the warning of no lasting income without a mark", async () => {
+  it("draws the warning of no lasting income with the warning mark", async () => {
     await open("initial=100000&months=12&rate=3&inflation=4");
     const text = await screen.findByText(
       catalogEn["calc.compound.income.none"],
     );
     const alert = text.closest('[data-ui="alert"]');
     expect(alert).not.toBeNull();
-    expect(alert?.querySelector('[data-part="icon"]')).toBeNull();
+    expect(alert?.querySelector('[data-part="icon"]')).not.toBeNull();
   });
 });
 
