@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/andrelopes-code/equori/internal/marketdata/domain"
 	"github.com/andrelopes-code/equori/internal/marketdata/postgres"
@@ -47,7 +48,21 @@ func (m *Module) PutTerms(ctx context.Context, code string, t Terms) (Terms, err
 		return storeTerms(ctx, m.q.WithTx(tx), code, t)
 	})
 
-	return t, err
+	return t, businessDaysProblem(err)
+}
+
+// businessDaysProblem reports the refusal of the stored terms to count bus252 for an index other
+// than the CDI without a calendar_id as a problem on day_count; other errors pass.
+func businessDaysProblem(err error) error {
+	pgErr, ok := errors.AsType[*pgconn.PgError](err)
+	if !ok || pgErr.ConstraintName != "marketdata_fixed_income_terms_business_days" {
+		return err
+	}
+
+	return &domain.FieldError{
+		Field:   "day_count",
+		Message: "bus252 of an index other than cdi needs calendar_id; use act365 or set calendar_id",
+	}
 }
 
 // Terms returns the terms of an instrument; ErrUnknownInstrument when it has none.

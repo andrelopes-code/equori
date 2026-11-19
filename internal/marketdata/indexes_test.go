@@ -366,3 +366,25 @@ func TestNewIndexSources(t *testing.T) {
 		t.Fatalf("sources = %v, %v", got, err)
 	}
 }
+
+// A business-day index other than the CDI counts bus252 only with a calendar_id: the stored terms
+// refuse it, and the answer is a validation problem on day_count, not an internal error.
+func TestTermsRefuseBus252OfAnotherIndex(t *testing.T) {
+	t.Parallel()
+
+	h := apitest.New(t, apitest.Today("2026-01-06"))
+	defineFixedIncome(t, h, "LFTBUS")
+
+	h.ExpectProblem(
+		h.Do(http.MethodPut, "/api/v1/instruments/LFTBUS/terms", map[string]any{
+			"issued_on":  "2026-01-02",
+			"matures_on": "2031-01-02",
+			"index_id":   "selic",
+			"day_count":  "bus252",
+			"face_value": 100000,
+		}),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"day_count",
+	)
+}
