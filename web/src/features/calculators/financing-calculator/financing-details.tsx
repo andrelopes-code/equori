@@ -5,7 +5,8 @@ import { CalculatorDetails } from "@/features/calculators/calculator-frame/calcu
 import type { CalculatorMoney } from "@/features/calculators/fields/use-calculator-money";
 import type { AmortizationRow } from "@/features/calculators/financing-calculator/annuity";
 import { systemNames } from "@/features/calculators/financing-calculator/financing-region";
-import { useAppLocaleState, useT } from "@/i18n/i18n-provider";
+import { numberFormatter } from "@/i18n/format";
+import { useAppLocale, useAppLocaleState, useT } from "@/i18n/i18n-provider";
 
 interface FinancingDetailsProps {
   price: AmortizationRow[];
@@ -15,6 +16,7 @@ interface FinancingDetailsProps {
 
 export function FinancingDetails({ price, sac, money }: FinancingDetailsProps) {
   const t = useT();
+  const [tag] = useAppLocale();
   const { locale } = useAppLocaleState();
   const names = systemNames(locale.region);
 
@@ -39,7 +41,7 @@ export function FinancingDetails({ price, sac, money }: FinancingDetailsProps) {
     <CalculatorDetails
       title={t("calc.financing.details")}
       size={t("calc.financing.details.size", {
-        months: String(price.length),
+        months: numberFormatter(tag).format(price.length),
         priceName: t(names.price),
         sacName: t(names.sac),
       })}

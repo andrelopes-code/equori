@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { calculatorApiRoutes, cdiFixture } from "@/testing/calculator-api";
-import { fakeApi } from "@/testing/fake-api";
+import { fakeApi, json } from "@/testing/fake-api";
 import { expectNoAmounts, hideAmounts } from "@/testing/privacy";
 import { renderApp } from "@/testing/render-app";
 
@@ -26,12 +26,45 @@ async function openDetails() {
   );
 }
 
-const open = (search: string, indexes = calculatorApiRoutes()) =>
-  renderApp(`/calculators/compound?${search}`, { fetch: fakeApi(indexes) });
+const open = (
+  search: string,
+  indexes = calculatorApiRoutes(),
+  language = "en",
+) =>
+  renderApp(`/calculators/compound?${search}`, {
+    fetch: fakeApi({
+      ...indexes,
+      ...(language === "en"
+        ? {}
+        : {
+            "GET /api/v1/me": () =>
+              json(200, {
+                id: 1,
+                email: "a@b.c",
+                role: "admin",
+                language,
+                region: "BR",
+              }),
+          }),
+    }),
+  });
 
 describe("Compound interest calculator", () => {
   afterEach(() => {
     localStorage.removeItem("equori.privacy");
+    // The profile locale of a pt-BR test is kept in the browser; the next test starts in English.
+    localStorage.removeItem("equori.locale");
+  });
+
+  // I1: a count reads with the grouping of the locale, in the lead and in the details size.
+  it("groups 1200 months in pt-BR", async () => {
+    await open(
+      "initial=100000&deposit=0&months=1200&rate=12",
+      calculatorApiRoutes(),
+      "pt",
+    );
+    expect(await screen.findByText("Valor final em 1.200 meses")).toBeVisible();
+    expect(screen.getByText("gráfico e tabela de 1.200 meses")).toBeVisible();
   });
 
   it("answers the final amount of a capital first (M1, CR3)", async () => {

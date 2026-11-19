@@ -6,7 +6,8 @@ import { CalcTable } from "@/features/calculators/calculator-frame/calc-table";
 import { CalculatorDetails } from "@/features/calculators/calculator-frame/calculator-details";
 import type { CalculatorMoney } from "@/features/calculators/fields/use-calculator-money";
 import { balances } from "@/features/calculators/model/compound-math";
-import { useT } from "@/i18n/i18n-provider";
+import { numberFormatter } from "@/i18n/format";
+import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
 interface AccumulationDetailsProps {
   initial: number;
@@ -24,6 +25,7 @@ export function AccumulationDetails({
   money,
 }: AccumulationDetailsProps) {
   const t = useT();
+  const [tag] = useAppLocale();
   const rows = balances(initial, deposit, j, months);
   const format = (v: number) => money.format(v);
   const series: ChartSeries<"label" | "balance" | "deposited">[] = [
@@ -46,7 +48,9 @@ export function AccumulationDetails({
   return (
     <CalculatorDetails
       title={t("calc.compound.details")}
-      size={t("calc.compound.details.size", { months: String(months) })}
+      size={t("calc.compound.details.size", {
+        months: numberFormatter(tag).format(months),
+      })}
     >
       <Stack gap={5}>
         <Chart

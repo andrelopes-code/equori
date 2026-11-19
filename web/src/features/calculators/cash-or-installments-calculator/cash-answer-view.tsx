@@ -31,13 +31,9 @@ export function CashAnswerView({
   const [tag] = useAppLocale();
   const { comparison, implied } = answer ?? { comparison: null, implied: null };
   const noRate = answer !== null && typeof implied !== "number";
-  const notice = noRate
-    ? t(
-        implied === "no_interest"
-          ? "calc.cash.noInterest"
-          : "calc.cash.noSolution",
-      )
-    : null;
+  const noticeKey =
+    implied === "no_interest" ? "calc.cash.noInterest" : "calc.cash.noSolution";
+  const notice = noRate ? t(noticeKey) : null;
 
   if (comparison === null || compareMonthly === null) {
     // Without a comparison, the message of the implied rate is the sentence.

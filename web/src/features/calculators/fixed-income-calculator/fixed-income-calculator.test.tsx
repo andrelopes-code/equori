@@ -28,7 +28,7 @@ async function parts(): Promise<string[]> {
   );
 }
 
-const open = (search: string, region: string) =>
+const open = (search: string, region: string, language = "en") =>
   renderApp(`/calculators/fixed-income?${search}`, {
     fetch: fakeApi({
       ...calculatorApiRoutes(),
@@ -37,7 +37,7 @@ const open = (search: string, region: string) =>
           id: 1,
           email: "a@b.c",
           role: "admin",
-          language: "en",
+          language,
           region,
         }),
     }),
@@ -126,5 +126,16 @@ describe("Fixed income calculator", () => {
     expect(
       await screen.findByText(/^Fill in .*amount.* to see the net yield\.$/),
     ).toBeInTheDocument();
+  });
+
+  // I1: a count reads with the grouping of the locale, in the sentence and in the days hint.
+  it("groups 1095 days in pt-BR", async () => {
+    await open("amount=1000000&rate=12&days=1095", "BR", "pt");
+    expect(await screen.findByText(/^em 1\.095 dias, /)).toBeVisible();
+  });
+
+  it("groups the days of a term in years in pt-BR", async () => {
+    await open("amount=1000000&rate=12&days=3&daysUnit=year", "BR", "pt");
+    expect(await screen.findByText(/^1\.096 dias corridos /)).toBeVisible();
   });
 });

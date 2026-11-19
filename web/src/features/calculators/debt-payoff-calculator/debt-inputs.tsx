@@ -33,6 +33,10 @@ export function DebtInputs({
   const t = useT();
   const [search, set] = useCalculatorSearch(addressKeys);
 
+  const periodHintKey = quote.nominal
+    ? "calc.debt.ratePeriod.nominal"
+    : "calc.debt.ratePeriod.effective";
+
   function handleAdd() {
     setRows([
       ...rows,
@@ -59,15 +63,7 @@ export function DebtInputs({
 
       <ChoiceField
         label={t("calc.debt.ratePeriod")}
-        {...(period === "year"
-          ? {
-              hint: t(
-                quote.nominal
-                  ? "calc.debt.ratePeriod.nominal"
-                  : "calc.debt.ratePeriod.effective",
-              ),
-            }
-          : {})}
+        {...(period === "year" ? { hint: t(periodHintKey) } : {})}
         choices={[
           { value: "month", label: t("calc.period.month") },
           { value: "year", label: t("calc.period.year") },

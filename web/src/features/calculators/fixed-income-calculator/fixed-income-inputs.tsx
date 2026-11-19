@@ -11,7 +11,8 @@ import { useCalculatorSearch } from "@/features/calculators/model/calculator-sea
 import { unitPatch } from "@/features/calculators/model/duration";
 import { RateSourceFields } from "@/features/calculators/rate-source/rate-source-fields";
 import type { useRateSource } from "@/features/calculators/rate-source/use-rate-source";
-import { useT } from "@/i18n/i18n-provider";
+import { numberFormatter } from "@/i18n/format";
+import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
 const dayUnits = choices.daysUnit;
 
@@ -35,6 +36,8 @@ export function FixedIncomeInputs({
   askTax,
 }: FixedIncomeInputsProps) {
   const t = useT();
+  const [tag] = useAppLocale();
+  const count = numberFormatter(tag);
   const [search, set] = useCalculatorSearch(addressKeys);
 
   return (
@@ -62,7 +65,9 @@ export function FixedIncomeInputs({
         label={t("calc.fixedIncome.days")}
         hint={
           daysUnit !== "day" && days !== null
-            ? t("calc.fixedIncome.days.equivalent", { days: String(days) })
+            ? t("calc.fixedIncome.days.equivalent", {
+                days: count.format(days),
+              })
             : t("calc.fixedIncome.days.hint")
         }
         name="days"

@@ -7,7 +7,8 @@ import { CalcTable } from "@/features/calculators/calculator-frame/calc-table";
 import { CalculatorDetails } from "@/features/calculators/calculator-frame/calculator-details";
 import type { CalculatorMoney } from "@/features/calculators/fields/use-calculator-money";
 import type { IncomeRow } from "@/features/calculators/model/compound-math";
-import { useT } from "@/i18n/i18n-provider";
+import { numberFormatter } from "@/i18n/format";
+import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
 interface IncomeDetailsProps {
   rows: readonly IncomeRow[];
@@ -19,6 +20,7 @@ interface IncomeDetailsProps {
 // The month-by-month evidence of "live on income": the balance and every month in a table.
 export function IncomeDetails({ rows, inflation, money }: IncomeDetailsProps) {
   const t = useT();
+  const [tag] = useAppLocale();
   const format = (v: number) => money.format(v);
   const series: ChartSeries<"label" | "balance">[] = [
     {
@@ -33,7 +35,9 @@ export function IncomeDetails({ rows, inflation, money }: IncomeDetailsProps) {
   return (
     <CalculatorDetails
       title={t("calc.compound.details")}
-      size={t("calc.compound.details.size", { months: String(rows.length) })}
+      size={t("calc.compound.details.size", {
+        months: numberFormatter(tag).format(rows.length),
+      })}
     >
       <Stack gap={5}>
         {inflation && (

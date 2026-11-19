@@ -6,6 +6,7 @@ import {
 import type { fixedIncomeAnswer } from "@/features/calculators/fixed-income-calculator/fixed-income-answer";
 import type { CalculatorMoney } from "@/features/calculators/fields/use-calculator-money";
 import { formatRate } from "@/features/calculators/model/format-rate";
+import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
 interface FixedIncomeAnswerViewProps {
@@ -27,6 +28,7 @@ export function FixedIncomeAnswerView({
 }: FixedIncomeAnswerViewProps) {
   const t = useT();
   const [tag] = useAppLocale();
+  const count = numberFormatter(tag);
   const lead = t("calc.fixedIncome.answer.lead");
 
   if (belowMinimum)
@@ -58,7 +60,9 @@ export function FixedIncomeAnswerView({
     <CalculatorAnswer
       lead={lead}
       figure={money.format(answer.net)}
-      sentence={t("calc.fixedIncome.answer.sentence", { days })}
+      sentence={t("calc.fixedIncome.answer.sentence", {
+        days: count.format(days),
+      })}
       facts={[
         {
           term: t("calc.fixedIncome.gross"),

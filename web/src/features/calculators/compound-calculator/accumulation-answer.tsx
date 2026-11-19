@@ -4,6 +4,7 @@ import { emptySentence } from "@/features/calculators/compound-calculator/compou
 import type { AccumulationInput } from "@/features/calculators/compound-calculator/use-accumulation";
 import type { CalculatorMoney } from "@/features/calculators/fields/use-calculator-money";
 import { formatRate } from "@/features/calculators/model/format-rate";
+import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
 interface AccumulationAnswerProps {
@@ -14,6 +15,7 @@ interface AccumulationAnswerProps {
 export function AccumulationAnswer({ input, money }: AccumulationAnswerProps) {
   const t = useT();
   const [tag] = useAppLocale();
+  const count = numberFormatter(tag);
   const { target, months, annual, goal, run } = input;
 
   if (run === null || months === null || annual === null) {
@@ -55,7 +57,7 @@ export function AccumulationAnswer({ input, money }: AccumulationAnswerProps) {
       interest: t("calc.compound.interest"),
       today: t("calc.compound.real"),
       delayed: t("calc.compound.answer.delayed", {
-        months: String(input.delay),
+        months: count.format(input.delay ?? 0),
       }),
       wait: t("calc.compound.answer.wait"),
     },
@@ -68,7 +70,7 @@ export function AccumulationAnswer({ input, money }: AccumulationAnswerProps) {
         figure={money.format(run.deposit)}
         sentence={t("calc.compound.target.sentence", {
           target: money.format(goal ?? run.final),
-          months: String(months),
+          months: count.format(months),
           rate,
         })}
         facts={facts}
@@ -77,7 +79,7 @@ export function AccumulationAnswer({ input, money }: AccumulationAnswerProps) {
 
   return (
     <CalculatorAnswer
-      lead={t("calc.compound.answer.lead", { months: String(months) })}
+      lead={t("calc.compound.answer.lead", { months: count.format(months) })}
       figure={money.format(run.final)}
       sentence={t("calc.compound.answer.sentence", {
         deposited: money.format(run.deposited),
