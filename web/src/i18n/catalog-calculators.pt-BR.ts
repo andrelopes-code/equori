@@ -694,8 +694,21 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.credit.released.hint": "O que cai na conta.",
   "calc.credit.fees.hint":
     "Tarifas, seguros e impostos pagos no início ou descontados do valor liberado.",
-  "calc.credit.cost": "Juros e tarifas",
-  "calc.credit.summary": "{paid} pagos por {released} recebidos.",
+  "calc.credit.answer.sentence":
+    "de {released} liberados em {count} parcelas de {installment}.",
+  "calc.credit.answer.what": "o custo efetivo",
+  "calc.credit.split.title": "O que a oferta custa",
+  "calc.credit.split.released": "Valor liberado",
+  "calc.credit.split.cost": "Custo",
+  "calc.credit.annual.help":
+    "A taxa anual que iguala o valor liberado às parcelas e tarifas, dia a dia.",
+  "calc.credit.fees.help":
+    "Tarifas pagas na liberação, que reduzem o valor recebido.",
+  "calc.credit.fees.add": "Incluir tarifas na liberação",
+  "calc.credit.fees.remove": "Remover tarifas",
+  "calc.credit.fees.legend": "Tarifas na liberação",
+  "calc.credit.details": "Fluxos da operação",
+  "calc.credit.details.size": "{count} fluxos",
   "calc.debt.budget.hint":
     "Tudo o que vai para as dívidas por mês, somando os mínimos.",
   "calc.debt.list": "Dívidas",

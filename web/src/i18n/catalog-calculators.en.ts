@@ -686,8 +686,21 @@ export const calculatorsEn = {
   "calc.credit.released.hint": "What reaches the account.",
   "calc.credit.fees.hint":
     "Fees, insurance and taxes paid at the start or taken from the amount released.",
-  "calc.credit.cost": "Interest and fees",
-  "calc.credit.summary": "{paid} paid back for {released} received.",
+  "calc.credit.answer.sentence":
+    "on {released} released in {count} installments of {installment}.",
+  "calc.credit.answer.what": "the effective cost",
+  "calc.credit.split.title": "What the offer costs",
+  "calc.credit.split.released": "Amount released",
+  "calc.credit.split.cost": "Cost",
+  "calc.credit.annual.help":
+    "The yearly rate that makes the amount released equal the installments and fees, day by day.",
+  "calc.credit.fees.help":
+    "Fees paid at release, which reduce the amount received.",
+  "calc.credit.fees.add": "Include fees at release",
+  "calc.credit.fees.remove": "Remove the fees",
+  "calc.credit.fees.legend": "Fees at release",
+  "calc.credit.details": "Flows of the operation",
+  "calc.credit.details.size": "{count} flows",
   "calc.debt.budget.hint":
     "All that goes to the debts each month, minimums included.",
   "calc.debt.list": "Debts",
