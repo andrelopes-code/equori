@@ -10,6 +10,7 @@ export const contributionPlanEn = {
     "The month plan sends {savings} of scheduled savings and {goals} of goal deposits to the brokerage.",
   "contributionPlan.usePlan": "Use {amount}",
   "contributionPlan.reservedFor": "reserved for {goal}",
+  "contributionPlan.reservedPrefix": "reserved for",
   "contributionPlan.colTarget": "Target",
   "contributionPlan.colGroup": "Group",
   "contributionPlan.colGets": "Gets",

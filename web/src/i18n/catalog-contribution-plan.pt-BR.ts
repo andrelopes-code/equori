@@ -14,6 +14,7 @@ export const contributionPlanPtBR: Record<
     "O plano do mês envia {savings} de poupança agendada e {goals} de depósitos em metas à corretora.",
   "contributionPlan.usePlan": "Usar {amount}",
   "contributionPlan.reservedFor": "reservado para {goal}",
+  "contributionPlan.reservedPrefix": "reservado para",
   "contributionPlan.colTarget": "Ideal",
   "contributionPlan.colGroup": "Grupo",
   "contributionPlan.colGets": "Recebe",

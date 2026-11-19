@@ -24,7 +24,9 @@
 
   /* Workaround for Slotted issue #150: the tag root keeps min-inline-size auto, so it overflows
      the name column instead of ending its label in an ellipsis. */
+  /* The ticker keeps its width before the goal tag gives up any. */
   .tag {
+    flex-shrink: 8;
     min-inline-size: 0;
   }
 }

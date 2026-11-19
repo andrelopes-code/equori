@@ -2,6 +2,7 @@ import { IconButton } from "@slotted/react/button";
 import { Glyph, Icon } from "@slotted/react/icon";
 import { Tag } from "@slotted/react/tag";
 import { Text } from "@slotted/react/typography";
+import { VisuallyHidden } from "@slotted/react/visually-hidden";
 
 import styles from "@/features/portfolio/contribution-plan/ideal/name-cell.module.css";
 import { GroupDot } from "@/features/portfolio/contribution-plan/month/group-dot";
@@ -23,10 +24,9 @@ export function NameCell({
   reserved,
 }: NameCellProps) {
   const t = useT();
-  const tag =
-    reserved === undefined
-      ? undefined
-      : t("contributionPlan.reservedFor", { goal: reserved });
+
+  // The space joins the hidden words to the goal for a screen reader.
+  const prefix = `${t("contributionPlan.reservedPrefix")} `;
 
   return (
     <div className={styles.name}>
@@ -54,9 +54,15 @@ export function NameCell({
         {name}
       </Text>
 
-      {tag !== undefined && (
-        <Tag size="sm" className={styles.tag} title={tag}>
-          {tag}
+      {reserved !== undefined && (
+        <Tag
+          size="sm"
+          className={styles.tag}
+          title={t("contributionPlan.reservedFor", { goal: reserved })}
+          start={<Glyph name="lock" />}
+        >
+          <VisuallyHidden>{prefix}</VisuallyHidden>
+          {reserved}
         </Tag>
       )}
     </div>
