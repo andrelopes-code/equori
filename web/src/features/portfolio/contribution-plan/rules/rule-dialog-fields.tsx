@@ -1,34 +1,25 @@
 import { Checkbox } from "@slotted/react/checkbox";
 import { CheckboxGroup } from "@slotted/react/checkbox-group";
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldLabel,
-} from "@slotted/react/field";
-import { NumberField } from "@slotted/react/number-field";
+import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
 import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
-import {
-  instrumentTypes,
-  subtypeLabel,
-  subtypesQuery,
-  typeLabel,
-} from "@/features/instruments";
+import { subtypeLabel, subtypesQuery } from "@/features/instruments";
 import { RuleChoice } from "@/features/portfolio/contribution-plan/rules/rule-choice";
 import {
-  kindLabel,
-  kinds,
-  takesKind,
-} from "@/features/portfolio/contribution-plan/rules/rule-form";
+  currencyChoices,
+  guaranteeChoices,
+  kindChoices,
+  liquidityChoices,
+  typeChoices,
+} from "@/features/portfolio/contribution-plan/rules/rule-choices";
+import { takesKind } from "@/features/portfolio/contribution-plan/rules/rule-form";
+import { RuleMaturityFields } from "@/features/portfolio/contribution-plan/rules/rule-maturity-fields";
 import type { useRuleDialog } from "@/features/portfolio/contribution-plan/rules/use-rule-dialog";
 import { instrumentsQuery } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/form-fields/choice-select";
-import { FormRow } from "@/ui/form-layout/form-row";
-import { FormSection } from "@/ui/form-layout/form-section";
 
 type InstrumentType = components["schemas"]["InstrumentType"];
 
@@ -55,42 +46,6 @@ export function RuleDialogFields({
     enabled: form.type !== "",
   });
 
-  const any = t("contributionPlan.rule.dialog.any");
-  const types = [
-    { value: "", label: any },
-    ...instrumentTypes
-      .filter((type) => type !== "currency")
-      .map((type) => ({ value: type, label: typeLabel(t, type) })),
-  ];
-  const currencies = [
-    { value: "", label: any },
-    ...(instruments.data?.items ?? [])
-      .filter((i) => i.type === "currency")
-      .map((i) => ({ value: i.code, label: i.code })),
-  ];
-  const kindChoices = [
-    { value: "", label: any },
-    ...kinds.map((kind) => ({
-      value: kind,
-      label: kindLabel(t, kind),
-    })),
-  ];
-  const liquidity = [
-    { value: "any", label: any },
-    { value: "yes", label: t("contributionPlan.rule.dialog.yes") },
-    { value: "no", label: t("contributionPlan.rule.dialog.no") },
-  ];
-  const guarantees = [
-    { value: "", label: any },
-    {
-      value: "covered",
-      label: t("contributionPlan.rule.dialog.covered", {
-        name: guaranteeName ?? "",
-      }),
-    },
-    { value: "sovereign", label: t("contributionPlan.rule.dialog.sovereign") },
-    { value: "uncovered", label: t("contributionPlan.rule.dialog.uncovered") },
-  ];
   const subtypeItems = form.type === "" ? [] : (subtypes.data ?? []);
 
   return (
@@ -99,7 +54,7 @@ export function RuleDialogFields({
         <FieldLabel>{t("contributionPlan.rule.dialog.type")}</FieldLabel>
         <ChoiceSelect
           label={t("contributionPlan.rule.dialog.type")}
-          choices={types}
+          choices={typeChoices(t)}
           value={form.type}
           multiple={false}
           onChange={(value) => {
@@ -130,7 +85,7 @@ export function RuleDialogFields({
       {takesKind(form.type) && (
         <RuleChoice
           legend={t("contributionPlan.rule.dialog.returnKind")}
-          choices={kindChoices}
+          choices={kindChoices(t)}
           value={form.kind}
           onChange={(kind) => {
             change({ kind });
@@ -138,40 +93,21 @@ export function RuleDialogFields({
         />
       )}
 
-      <FormSection legend={t("contributionPlan.rule.dialog.maturity")}>
-        <FormRow>
-          <Field invalid={problem !== undefined}>
-            <FieldLabel>{t("contributionPlan.rule.dialog.from")}</FieldLabel>
-            <NumberField
-              value={form.from}
-              format={{ useGrouping: false }}
-              onValueChange={(from) => {
-                change({ from });
-              }}
-            />
-          </Field>
-
-          <Field invalid={problem !== undefined}>
-            <FieldLabel>{t("contributionPlan.rule.dialog.to")}</FieldLabel>
-            <NumberField
-              value={form.to}
-              format={{ useGrouping: false }}
-              onValueChange={(to) => {
-                change({ to });
-              }}
-            />
-            {problem !== undefined && (
-              <FieldError>
-                {t(`contributionPlan.rule.dialog.${problem}`)}
-              </FieldError>
-            )}
-          </Field>
-        </FormRow>
-      </FormSection>
+      <RuleMaturityFields
+        from={form.from}
+        to={form.to}
+        problem={problem}
+        onFrom={(from) => {
+          change({ from });
+        }}
+        onTo={(to) => {
+          change({ to });
+        }}
+      />
 
       <RuleChoice
         legend={t("contributionPlan.rule.dialog.liquidity")}
-        choices={liquidity}
+        choices={liquidityChoices(t)}
         value={form.liquidity}
         onChange={(value) => {
           change({
@@ -183,7 +119,7 @@ export function RuleDialogFields({
       {guaranteeName !== undefined && (
         <RuleChoice
           legend={t("contributionPlan.rule.dialog.guarantee")}
-          choices={guarantees}
+          choices={guaranteeChoices(t, guaranteeName)}
           value={form.guarantee}
           onChange={(guarantee) => {
             change({ guarantee });
@@ -195,7 +131,7 @@ export function RuleDialogFields({
         <FieldLabel>{t("contributionPlan.rule.dialog.currency")}</FieldLabel>
         <ChoiceSelect
           label={t("contributionPlan.rule.dialog.currency")}
-          choices={currencies}
+          choices={currencyChoices(t, instruments.data?.items ?? [])}
           value={form.currency}
           multiple={false}
           onChange={(value) => {
