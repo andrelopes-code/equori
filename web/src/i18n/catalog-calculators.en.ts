@@ -355,8 +355,7 @@ export const calculatorsEn = {
   "calc.cash.monthly": "Monthly interest built into the installments",
   "calc.cash.annual": "Yearly interest built into the installments",
   "calc.cash.total": "Total of the installments",
-  "calc.cash.presentValue":
-    "What the installments are worth today, at the comparison rate",
+  "calc.cash.presentValue": "Present value of the installments",
   "calc.cash.noInterest":
     "The installments total the cash price or less, so they carry no interest.",
   "calc.cash.noSolution":
@@ -608,12 +607,11 @@ export const calculatorsEn = {
   "calc.fixedIncome.answer.sentence": "over {days} days, after tax.",
   "calc.fixedIncome.answer.what": "the net yield",
   "calc.fixedIncome.split.title": "Where the yield goes",
+  "calc.fixedIncome.split.gross": "Gross",
   "calc.fixedIncome.split.net": "Net",
   "calc.fixedIncome.split.tax": "Tax",
   "calc.fixedIncome.taxable.help": "A security whose yield pays income tax.",
   "calc.fixedIncome.exempt.help": "A security whose yield pays no income tax.",
-  "calc.fixedIncome.equivalent.help":
-    "The rate the other kind of security must pay to yield the same net.",
   "calc.correction.index.help":
     "The price index that corrects the amount, month by month.",
   "calc.fixedIncome.days.hint":
@@ -662,7 +660,7 @@ export const calculatorsEn = {
   "calc.cash.answer.what": "the cheaper option",
   "calc.cash.bars.title": "Cash price or installments today",
   "calc.cash.bars.cash": "Cash",
-  "calc.cash.bars.present": "Installments at present value",
+  "calc.cash.bars.present": "Installments",
   "calc.cash.implied.help":
     "The monthly rate that makes the installments equal the cash price.",
   "calc.cash.present.help":
@@ -709,6 +707,14 @@ export const calculatorsEn = {
   "calc.own.answer.sentence": "a year: owning costs {own} and renting, {rent}.",
   "calc.own.answer.what": "the cheaper option",
   "calc.own.bars.title": "Yearly cost of each option",
+  "calc.own.bars.own": "Owning",
+  "calc.own.bars.rent": "Renting",
+  "calc.own.legend.forgone": "Forgone interest",
+  "calc.own.legend.propertyTax": "Tax",
+  "calc.own.legend.deduction": "Deduction",
+  "calc.own.legend.maintenance": "Upkeep",
+  "calc.own.legend.appreciation": "Appreciation",
+  "calc.own.legend.riskPremium": "Risk",
   "calc.own.forgone.help":
     "What the money in the property would earn invested.",
   "calc.own.riskPremium.help": "An addition for the risk of holding one asset.",
@@ -751,7 +757,8 @@ export const calculatorsEn = {
   "calc.indexerComparison.form.spread": "{index} + spread",
   "calc.indexerComparison.rate": "Rate",
   "calc.indexerComparison.rate.of": "Rate of security {n}",
-  "calc.indexerComparison.exempt": "Tax-exempt",
+  "calc.indexerComparison.exempt": "Exempt",
+  "calc.indexerComparison.exempt.of": "Security {n} tax-exempt",
   "calc.indexerComparison.add": "Add security",
   "calc.indexerComparison.remove": "Remove security {n}",
   "calc.indexerComparison.text.fixed": "Fixed {rate} a year",
@@ -800,8 +807,6 @@ export const calculatorsEn = {
     "The securities yield the same at maturity.",
   "calc.indexerComparison.indexer.help":
     "The index that moves the security: fixed, percent of an index, inflation plus a rate.",
-  "calc.indexerComparison.breakEven.help":
-    "The rate above which the other security yields more.",
   "calc.indexerComparison.table.title": "Yield at maturity",
   "calc.indexer-comparison.title": "Compare indexers",
   "calc.indexer-comparison.question": "Which security yields more to maturity?",

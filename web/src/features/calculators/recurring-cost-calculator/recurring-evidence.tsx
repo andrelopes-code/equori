@@ -1,15 +1,14 @@
-import { Field } from "@slotted/react/field";
 import {
   Section,
   SectionBody,
   SectionHeader,
+  SectionHeading,
   SectionTitle,
 } from "@slotted/react/section";
 
 import { SplitBars } from "@/features/calculators/calculator-frame/split-bars";
 import type { CalculatorMoney } from "@/features/calculators/fields/use-calculator-money";
 import { useT } from "@/i18n/i18n-provider";
-import { FieldTitle } from "@/ui/form-fields/field-title";
 
 interface RecurringEvidenceProps {
   money: CalculatorMoney;
@@ -33,12 +32,7 @@ export function RecurringEvidence({
     <Section size="lg">
       <SectionHeader>
         <SectionTitle>
-          <Field necessity="none">
-            <FieldTitle
-              label={t("calc.recurring.bars.title")}
-              help={t("calc.recurring.future.help")}
-            />
-          </Field>
+          <SectionHeading>{t("calc.recurring.bars.title")}</SectionHeading>
         </SectionTitle>
       </SectionHeader>
 

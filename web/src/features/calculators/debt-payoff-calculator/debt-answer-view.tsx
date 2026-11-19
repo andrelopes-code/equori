@@ -104,7 +104,7 @@ function lastPayments(
     value:
       plans[key] === null
         ? t("calc.debt.notClosedCell")
-        : count.format(plans[key].months),
+        : `${count.format(plans[key].months)} ${t("calc.unit.months")}`,
   });
 
   return [fact("avalanche"), fact("snowball")];

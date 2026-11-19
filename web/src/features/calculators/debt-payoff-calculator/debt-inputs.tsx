@@ -45,6 +45,10 @@ export function DebtInputs({
       <AmountField
         label={t("calc.debt.budget")}
         hint={t("calc.debt.budget.hint")}
+        help={[
+          `${t("calc.debt.avalanche")}: ${t("calc.debt.avalanche.help")}`,
+          `${t("calc.debt.snowball")}: ${t("calc.debt.snowball.help")}`,
+        ].join(" ")}
         width="medium"
         value={search.budget}
         money={money}

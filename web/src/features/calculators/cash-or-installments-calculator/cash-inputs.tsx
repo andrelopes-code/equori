@@ -36,6 +36,7 @@ export function CashInputs({ money, compare, firstNow }: CashInputsProps) {
           label={t("calc.cash.count")}
           unit={t("calc.unit.installments")}
           name="count"
+          width="short"
           value={search.count ?? ""}
           onChange={(v) => {
             set({ count: v });
@@ -68,6 +69,7 @@ export function CashInputs({ money, compare, firstNow }: CashInputsProps) {
       <RateSourceFields
         label={t("calc.cash.compare")}
         hint={t("calc.cash.compare.hint")}
+        help={`${t("calc.cash.implied.help")} ${t("calc.cash.present.help")}`}
         sourceLabel={t("calc.cash.rateSource")}
         source={compare}
         set={set}

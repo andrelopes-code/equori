@@ -1,8 +1,8 @@
-import { Field } from "@slotted/react/field";
 import {
   Section,
   SectionBody,
   SectionHeader,
+  SectionHeading,
   SectionTitle,
 } from "@slotted/react/section";
 
@@ -13,7 +13,6 @@ import type { CalculatorMoney } from "@/features/calculators/fields/use-calculat
 import { formatRate } from "@/features/calculators/model/format-rate";
 import { monthlyToAnnual } from "@/features/calculators/model/rate-math";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { FieldTitle } from "@/ui/form-fields/field-title";
 
 interface CashEvidenceProps {
   money: CalculatorMoney;
@@ -43,12 +42,7 @@ export function CashEvidence({ money, answer, cash }: CashEvidenceProps) {
       {comparison !== null && (
         <SectionHeader>
           <SectionTitle>
-            <Field necessity="none">
-              <FieldTitle
-                label={t("calc.cash.bars.title")}
-                help={`${t("calc.cash.implied.help")} ${t("calc.cash.present.help")}`}
-              />
-            </Field>
+            <SectionHeading>{t("calc.cash.bars.title")}</SectionHeading>
           </SectionTitle>
         </SectionHeader>
       )}

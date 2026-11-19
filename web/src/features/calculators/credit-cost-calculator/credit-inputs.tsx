@@ -42,6 +42,7 @@ export function CreditInputs({
           label={t("calc.credit.count")}
           unit={t("calc.unit.installments")}
           name="count"
+          width="short"
           value={search.count ?? ""}
           onChange={(v) => {
             set({ count: v });
@@ -50,6 +51,7 @@ export function CreditInputs({
 
         <AmountField
           label={t("calc.credit.installment")}
+          help={t("calc.credit.annual.help")}
           width="medium"
           value={search.installment}
           money={money}
@@ -60,7 +62,7 @@ export function CreditInputs({
       </div>
 
       <div className={styles.pair}>
-        <Field necessity="none">
+        <Field necessity="none" width="medium">
           <FieldLabel>{t("calc.credit.releaseDate")}</FieldLabel>
           <DateInput
             name="releaseDate"
@@ -72,7 +74,7 @@ export function CreditInputs({
           />
         </Field>
 
-        <Field necessity="none">
+        <Field necessity="none" width="medium">
           <FieldLabel>{t("calc.credit.firstDue")}</FieldLabel>
           <DateInput
             name="firstDue"

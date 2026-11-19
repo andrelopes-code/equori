@@ -21,6 +21,7 @@ export function RecurringOptional() {
             <RateField
               label={t("calc.recurring.rate")}
               hint={t("calc.recurring.rate.hint")}
+              help={t("calc.recurring.future.help")}
               compact
               name="rate"
               value={search.rate ?? ""}

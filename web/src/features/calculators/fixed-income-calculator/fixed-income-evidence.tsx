@@ -29,7 +29,7 @@ export function FixedIncomeEvidence({
 }: FixedIncomeEvidenceProps) {
   const t = useT();
   const [tag] = useAppLocale();
-  const name = t("calc.fixedIncome.gross");
+  const name = t("calc.fixedIncome.split.gross");
   const total = money.format(answer.gross);
 
   return (
@@ -72,7 +72,6 @@ export function FixedIncomeEvidence({
                   ? "calc.fixedIncome.equivalentTaxable"
                   : "calc.fixedIncome.equivalentExempt",
               ),
-              note: t("calc.fixedIncome.equivalent.help"),
               value: formatRate(answer.equivalent, tag),
             },
           ]}

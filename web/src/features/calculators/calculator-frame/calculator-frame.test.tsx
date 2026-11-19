@@ -14,7 +14,7 @@ vi.mock("@tanstack/react-router", async (importOriginal) => ({
 
 type FrameProps = ComponentProps<typeof CalculatorFrame>;
 
-function renderFrame(evidence?: React.ReactNode) {
+function renderFrame(evidence?: React.ReactNode | null) {
   return renderWithProviders(
     <CalculatorFrame
       id="financing"
@@ -52,6 +52,27 @@ describe("CalculatorFrame with an answer", () => {
     const calc = calcOf();
 
     expect(calc.children).toHaveLength(3);
+  });
+});
+
+describe("CalculatorFrame layout", () => {
+  it("marks the grid when there is no evidence, so the inputs card starts at the first column", () => {
+    renderFrame();
+
+    expect(calcOf().className).toMatch(/noEvidence/);
+  });
+
+  it("marks the grid for a null evidence as for an absent one", () => {
+    renderFrame(null);
+
+    expect(calcOf().className).toMatch(/noEvidence/);
+    expect(calcOf().children).toHaveLength(3);
+  });
+
+  it("leaves the grid unmarked with evidence", () => {
+    renderFrame(<p>evidence</p>);
+
+    expect(calcOf().className).not.toMatch(/noEvidence/);
   });
 });
 

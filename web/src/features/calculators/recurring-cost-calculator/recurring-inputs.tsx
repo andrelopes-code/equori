@@ -96,6 +96,7 @@ export function RecurringInputs({
         label={t("calc.recurring.years")}
         unit={t("calc.unit.years")}
         name="years"
+        width="short"
         value={search.years ?? ""}
         onChange={(v) => {
           set({ years: v });

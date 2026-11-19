@@ -65,6 +65,7 @@ export function DebtRowCard({
 
           <AmountField
             label={t("calc.debt.balance", { n })}
+            width="medium"
             value={row.balance === "" ? undefined : row.balance}
             money={money}
             onChange={(v) => {
@@ -92,6 +93,7 @@ export function DebtRowCard({
 
           <AmountField
             label={t("calc.debt.minimum", { n })}
+            width="medium"
             help={t("calc.debt.minimum.help")}
             value={row.minimum === "" ? undefined : row.minimum}
             money={money}

@@ -13,6 +13,7 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 export function RateSourceFields({
   label,
   hint,
+  help,
   sourceLabel,
   source,
   set,
@@ -20,6 +21,8 @@ export function RateSourceFields({
   label: string;
   // What the rate is, while the reader types it.
   hint?: string;
+  // The definition of a term the answer names, beside the label.
+  help?: string;
   sourceLabel: string;
   source: RateSource;
   set: (patch: Record<string, string | undefined>) => void;
@@ -59,6 +62,7 @@ export function RateSourceFields({
       )}
       <RateField
         label={label}
+        {...(help === undefined ? {} : { help })}
         {...(hint === undefined || index !== undefined ? {} : { hint })}
         name={keys.rate}
         value={source.text}

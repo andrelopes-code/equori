@@ -1,8 +1,8 @@
-import { Field } from "@slotted/react/field";
 import {
   Section,
   SectionBody,
   SectionHeader,
+  SectionHeading,
   SectionTitle,
 } from "@slotted/react/section";
 
@@ -14,7 +14,6 @@ import type { OwnAnswer } from "@/features/calculators/own-or-rent-calculator/ow
 import type { OwnershipComponent } from "@/features/calculators/model/plan-math";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useT } from "@/i18n/i18n-provider";
-import { FieldTitle } from "@/ui/form-fields/field-title";
 
 interface OwnEvidenceProps {
   money: CalculatorMoney;
@@ -30,12 +29,21 @@ const componentLabels: Record<OwnershipComponent, MessageKey> = {
   riskPremium: "calc.own.riskPremium",
 };
 
+const legendLabels: Record<OwnershipComponent, MessageKey> = {
+  forgone: "calc.own.legend.forgone",
+  propertyTax: "calc.own.legend.propertyTax",
+  deduction: "calc.own.legend.deduction",
+  maintenance: "calc.own.legend.maintenance",
+  appreciation: "calc.own.legend.appreciation",
+  riskPremium: "calc.own.legend.riskPremium",
+};
+
 export function OwnEvidence({ money, answer }: OwnEvidenceProps) {
   const t = useT();
   const own = money.format(answer.own);
   const rent = money.format(answer.rent);
-  const ownName = t("calc.own.total");
-  const rentName = t("calc.own.rentYear");
+  const ownName = t("calc.own.bars.own");
+  const rentName = t("calc.own.bars.rent");
   const parts = componentOrder.map((component) => ({
     term: t(componentLabels[component]),
     value: money.format(answer.components[component]),
@@ -45,9 +53,7 @@ export function OwnEvidence({ money, answer }: OwnEvidenceProps) {
     <Section size="lg">
       <SectionHeader>
         <SectionTitle>
-          <Field necessity="none">
-            <FieldTitle label={t("calc.own.bars.title")} />
-          </Field>
+          <SectionHeading>{t("calc.own.bars.title")}</SectionHeading>
         </SectionTitle>
       </SectionHeader>
 
@@ -67,7 +73,7 @@ export function OwnEvidence({ money, answer }: OwnEvidenceProps) {
               label: `${rentName} ${rent}`,
             },
           ]}
-          legend={parts.map((p) => p.term)}
+          legend={componentOrder.map((component) => t(legendLabels[component]))}
         />
 
         <FactRows rows={parts} />

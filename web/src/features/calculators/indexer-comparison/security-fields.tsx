@@ -86,6 +86,7 @@ export function SecurityFields({
       />
       <Switch
         size="sm"
+        aria-label={t("calc.indexerComparison.exempt.of", { n: position })}
         checked={!draft.taxed}
         onCheckedChange={(exempt) => {
           onChange({ taxed: !exempt });

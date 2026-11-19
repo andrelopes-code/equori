@@ -61,6 +61,29 @@ describe("SplitBars", () => {
     expect(container.querySelector("p")).toHaveTextContent("ABC");
   });
 
+  it("renders the full name of each row and each legend entry as one element", () => {
+    const names = ["Ter o imóvel", "Alugar", "Parcelas a valor presente"];
+    const entries = ["Juros perdidos", "Imposto"];
+
+    const { container } = render(
+      <SplitBars
+        rows={names.map((name) => ({
+          name,
+          parts: [5],
+          total: "5",
+          label: `${name}: 5`,
+        }))}
+        legend={entries}
+      />,
+    );
+
+    names.forEach((name) => {
+      expect(screen.getByText(name)).toBeVisible();
+    });
+    const legend = container.querySelectorAll('[data-part="legend"] > span');
+    expect(Array.from(legend, (entry) => entry.textContent)).toEqual(entries);
+  });
+
   it("draws no legend for a single part without one", () => {
     const { container } = render(
       <SplitBars

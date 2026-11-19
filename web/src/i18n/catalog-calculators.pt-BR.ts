@@ -358,8 +358,7 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.cash.monthly": "Juros por mês embutidos nas parcelas",
   "calc.cash.annual": "Juros por ano embutidos nas parcelas",
   "calc.cash.total": "Total das parcelas",
-  "calc.cash.presentValue":
-    "Quanto as parcelas valem hoje, pela taxa de comparação",
+  "calc.cash.presentValue": "Valor presente das parcelas",
   "calc.cash.noInterest":
     "As parcelas somam o preço à vista ou menos, então não têm juros.",
   "calc.cash.noSolution":
@@ -614,14 +613,13 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.fixedIncome.answer.sentence": "em {days} dias, depois do imposto.",
   "calc.fixedIncome.answer.what": "o rendimento líquido",
   "calc.fixedIncome.split.title": "Para onde vai o rendimento",
+  "calc.fixedIncome.split.gross": "Bruto",
   "calc.fixedIncome.split.net": "Líquido",
   "calc.fixedIncome.split.tax": "Imposto",
   "calc.fixedIncome.taxable.help":
     "Título cujo rendimento paga imposto de renda.",
   "calc.fixedIncome.exempt.help":
     "Título cujo rendimento não paga imposto de renda.",
-  "calc.fixedIncome.equivalent.help":
-    "A taxa que o outro tipo de título precisa pagar para render o mesmo líquido.",
   "calc.correction.index.help":
     "O índice de preços que corrige o valor, mês a mês.",
   "calc.fixedIncome.days.hint": "Dias corridos da aplicação ao resgate.",
@@ -669,7 +667,7 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.cash.answer.what": "a opção mais barata",
   "calc.cash.bars.title": "Preço à vista ou parcelas hoje",
   "calc.cash.bars.cash": "À vista",
-  "calc.cash.bars.present": "Parcelas a valor presente",
+  "calc.cash.bars.present": "Parcelado",
   "calc.cash.implied.help":
     "A taxa mensal que iguala as parcelas ao preço à vista.",
   "calc.cash.present.help":
@@ -716,6 +714,14 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.own.answer.sentence": "por ano: ter custa {own} e alugar, {rent}.",
   "calc.own.answer.what": "a opção mais barata",
   "calc.own.bars.title": "Custo anual de cada opção",
+  "calc.own.bars.own": "Ter o imóvel",
+  "calc.own.bars.rent": "Alugar",
+  "calc.own.legend.forgone": "Juros perdidos",
+  "calc.own.legend.propertyTax": "Imposto",
+  "calc.own.legend.deduction": "Dedução",
+  "calc.own.legend.maintenance": "Manutenção",
+  "calc.own.legend.appreciation": "Valorização",
+  "calc.own.legend.riskPremium": "Risco",
   "calc.own.forgone.help":
     "O rendimento que o dinheiro do imóvel teria aplicado.",
   "calc.own.riskPremium.help": "Um acréscimo pelo risco de ter um único bem.",
@@ -757,7 +763,8 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.indexerComparison.form.spread": "{index} + taxa",
   "calc.indexerComparison.rate": "Taxa",
   "calc.indexerComparison.rate.of": "Taxa do título {n}",
-  "calc.indexerComparison.exempt": "Isento de imposto",
+  "calc.indexerComparison.exempt": "Isento",
+  "calc.indexerComparison.exempt.of": "Título {n} isento de imposto",
   "calc.indexerComparison.add": "Adicionar título",
   "calc.indexerComparison.remove": "Remover título {n}",
   "calc.indexerComparison.text.fixed": "Prefixado {rate} a.a.",
@@ -806,8 +813,6 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
     "Os títulos rendem o mesmo no vencimento.",
   "calc.indexerComparison.indexer.help":
     "O índice que corrige o título: prefixado, percentual do CDI, inflação mais taxa.",
-  "calc.indexerComparison.breakEven.help":
-    "A taxa a partir da qual o outro título passa a render mais.",
   "calc.indexerComparison.table.title": "Rendimento no vencimento",
   "calc.indexer-comparison.title": "Comparar indexadores",
   "calc.indexer-comparison.question":

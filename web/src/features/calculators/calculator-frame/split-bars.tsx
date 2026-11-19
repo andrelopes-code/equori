@@ -1,5 +1,3 @@
-import { Fragment } from "react";
-
 import {
   axisMax,
   barWidths,
@@ -65,10 +63,10 @@ export function SplitBars({ rows, legend }: SplitBarsProps) {
       {legend !== undefined && (
         <p className={styles.splitLegend} data-part="legend">
           {legend.map((entry, index) => (
-            <Fragment key={index}>
+            <span key={index} className={styles.splitLegendEntry}>
               <span className={partClass(index, "key")} data-part="key" />
               {entry}
-            </Fragment>
+            </span>
           ))}
         </p>
       )}

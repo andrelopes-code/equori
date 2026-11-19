@@ -73,8 +73,8 @@ describe("Debt payoff calculator", () => {
     await open(debts);
     const months = (order: string) =>
       result(catalogEn["calc.debt.answer.months"].replace("{order}", order));
-    expect(await months(catalogEn["calc.debt.avalanche"])).toBe("17");
-    expect(await months(catalogEn["calc.debt.snowball"])).toBe("17");
+    expect(await months(catalogEn["calc.debt.avalanche"])).toBe("17 months");
+    expect(await months(catalogEn["calc.debt.snowball"])).toBe("17 months");
   });
 
   it("draws the interest of each order and the month each debt closes", async () => {
@@ -107,7 +107,7 @@ describe("Debt payoff calculator", () => {
     const months = catalogEn["calc.debt.answer.months"];
     expect(
       await result(months.replace("{order}", catalogEn["calc.debt.snowball"])),
-    ).toBe("4");
+    ).toBe("4 months");
   });
 
   it("makes no plan below the sum of the minimums", async () => {

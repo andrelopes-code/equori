@@ -51,6 +51,10 @@ type CalculatorFrameProps = AnswerFrameProps | UnavailableFrameProps;
 // their card), then the details and "How it is calculated".
 export function CalculatorFrame(props: CalculatorFrameProps) {
   const t = useT();
+  const hasEvidence =
+    !props.unavailable &&
+    props.evidence !== undefined &&
+    props.evidence !== null;
 
   return (
     <Page width="full">
@@ -83,10 +87,10 @@ export function CalculatorFrame(props: CalculatorFrameProps) {
               </ResultStateContent>
             </ResultState>
           ) : (
-            <div className={design.calc}>
+            <div className={gridClass(hasEvidence)}>
               {props.answer}
 
-              {props.evidence !== undefined && (
+              {hasEvidence && (
                 <div className={design.evidence}>{props.evidence}</div>
               )}
 
@@ -111,4 +115,9 @@ export function CalculatorFrame(props: CalculatorFrameProps) {
       </PageBody>
     </Page>
   );
+}
+
+// Without evidence the inputs card takes the first column, under the answer.
+function gridClass(hasEvidence: boolean): string | undefined {
+  return hasEvidence ? design.calc : [design.calc, design.noEvidence].join(" ");
 }

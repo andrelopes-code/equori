@@ -41,7 +41,7 @@ export function IndexerComparisonInputs({
         }}
       />
 
-      <Field necessity="none">
+      <Field necessity="none" width="medium">
         <FieldLabel>{t("calc.indexerComparison.maturity")}</FieldLabel>
         <DateInput
           name="maturity"

@@ -134,12 +134,12 @@ describe("Own or rent calculator", () => {
       '[data-part="split"] [data-part="legend"]',
     );
     for (const key of [
-      "calc.own.forgone",
-      "calc.own.propertyTaxCost",
-      "calc.own.deduction",
-      "calc.own.maintenance",
-      "calc.own.appreciation",
-      "calc.own.riskPremium",
+      "calc.own.legend.forgone",
+      "calc.own.legend.propertyTax",
+      "calc.own.legend.deduction",
+      "calc.own.legend.maintenance",
+      "calc.own.legend.appreciation",
+      "calc.own.legend.riskPremium",
     ] as const)
       expect(legend?.textContent).toContain(catalogEn[key]);
   });

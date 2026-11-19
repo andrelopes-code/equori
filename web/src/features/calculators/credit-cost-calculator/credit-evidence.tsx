@@ -1,8 +1,8 @@
-import { Field } from "@slotted/react/field";
 import {
   Section,
   SectionBody,
   SectionHeader,
+  SectionHeading,
   SectionTitle,
 } from "@slotted/react/section";
 
@@ -13,7 +13,6 @@ import { regionalTerms } from "@/features/calculators/credit-cost-calculator/cre
 import type { CalculatorMoney } from "@/features/calculators/fields/use-calculator-money";
 import { formatRate } from "@/features/calculators/model/format-rate";
 import { useAppLocale, useAppLocaleState, useT } from "@/i18n/i18n-provider";
-import { FieldTitle } from "@/ui/form-fields/field-title";
 
 interface CreditEvidenceProps {
   money: CalculatorMoney;
@@ -42,12 +41,7 @@ export function CreditEvidence({
     <Section size="lg">
       <SectionHeader>
         <SectionTitle>
-          <Field necessity="none">
-            <FieldTitle
-              label={t("calc.credit.split.title")}
-              help={t("calc.credit.annual.help")}
-            />
-          </Field>
+          <SectionHeading>{t("calc.credit.split.title")}</SectionHeading>
         </SectionTitle>
       </SectionHeader>
 

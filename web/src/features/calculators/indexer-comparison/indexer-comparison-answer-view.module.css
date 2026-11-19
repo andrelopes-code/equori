@@ -3,6 +3,10 @@
   .area {
     grid-area: answer;
     display: grid;
+    /* The answer card inside names the area `answer`; without a template here the name makes an
+       implicit column and the card starts at the middle of the page. */
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "answer";
     gap: var(--slotted-space-4);
   }
 }

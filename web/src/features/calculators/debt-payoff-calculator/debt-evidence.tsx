@@ -1,8 +1,8 @@
-import { Field } from "@slotted/react/field";
 import {
   Section,
   SectionBody,
   SectionHeader,
+  SectionHeading,
   SectionTitle,
 } from "@slotted/react/section";
 
@@ -14,7 +14,6 @@ import type { PayoffPlan } from "@/features/calculators/debt-payoff-calculator/d
 import type { CalculatorMoney } from "@/features/calculators/fields/use-calculator-money";
 import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { FieldTitle } from "@/ui/form-fields/field-title";
 
 interface DebtEvidenceProps {
   money: CalculatorMoney;
@@ -30,10 +29,6 @@ export function DebtEvidence({ money, answer, debts }: DebtEvidenceProps) {
     { name: t("calc.debt.avalanche"), plan: answer.avalanche },
     { name: t("calc.debt.snowball"), plan: answer.snowball },
   ];
-  const help = [
-    `${orders[0]?.name ?? ""}: ${t("calc.debt.avalanche.help")}`,
-    `${orders[1]?.name ?? ""}: ${t("calc.debt.snowball.help")}`,
-  ].join(" ");
   const closed = (plan: PayoffPlan | null, name: string) =>
     plan === null
       ? t("calc.debt.notClosedCell")
@@ -43,9 +38,7 @@ export function DebtEvidence({ money, answer, debts }: DebtEvidenceProps) {
     <Section size="lg">
       <SectionHeader>
         <SectionTitle>
-          <Field necessity="none">
-            <FieldTitle label={t("calc.debt.bars.title")} help={help} />
-          </Field>
+          <SectionHeading>{t("calc.debt.bars.title")}</SectionHeading>
         </SectionTitle>
       </SectionHeader>
 
