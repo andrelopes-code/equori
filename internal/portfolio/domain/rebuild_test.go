@@ -326,6 +326,48 @@ func TestRebuildFullSaleKeepsAZeroRow(t *testing.T) {
 	}
 }
 
+// An income the jurisdiction exempts but whose payer withheld tax reads taxable: the recorded
+// withholding comes before the rule (a dividend under a new law before the rule is updated).
+func TestRebuildExemptIncomeWithWithholdingReadsTaxable(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		withheld int64
+		want     string
+	}{
+		{name: "no withholding", withheld: 0, want: "exempt"},
+		{name: "withholding recorded", withheld: 600000, want: "taxable"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			a := uuid.New()
+
+			got := Rebuild(Facts{
+				Currency:   "BRL",
+				Securities: []Security{{AccountID: a, Instrument: "PETR4", Type: "stock"}},
+				Incomes: []Income{
+					{
+						TransactionID: uuid.New(),
+						AccountID:     a,
+						Date:          day("2026-10-26"),
+						Type:          "dividend",
+						Gross:         6000000,
+						Withheld:      tt.withheld,
+					},
+				},
+			}, fixtureJurisdiction{})
+
+			if len(got.Incomes) != 1 || got.Incomes[0].TaxTreatment != tt.want {
+				t.Fatalf("incomes = %+v, want treatment %q", got.Incomes, tt.want)
+			}
+		})
+	}
+}
+
 func TestRebuildWithoutJurisdiction(t *testing.T) {
 	t.Parallel()
 

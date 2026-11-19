@@ -240,6 +240,12 @@ func incomeEvents(f Facts, securities map[uuid.UUID]Security, j Jurisdiction) []
 			treatment = j.Treatment(in.Type, j.TaxClass(s.Type, s.Subtype, s.Exchange))
 		}
 
+		// The recorded withholding comes before the rule: a payer that withholds on an income
+		// the rule exempts follows a law the rule does not hold yet.
+		if treatment == "exempt" && in.Withheld > 0 {
+			treatment = "taxable"
+		}
+
 		events = append(events, IncomeEvent{
 			TransactionID: in.TransactionID,
 			AccountID:     in.AccountID,
