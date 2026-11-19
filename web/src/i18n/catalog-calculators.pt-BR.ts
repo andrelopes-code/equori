@@ -439,7 +439,6 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.fixedIncome.tax": "Imposto",
   "calc.fixedIncome.net": "Rendimento líquido",
   "calc.fixedIncome.netRate": "Taxa anual líquida",
-  "calc.fixedIncome.taxShare": "Alíquota aplicada",
   "calc.fixedIncome.equivalentTaxable": "Taxa com imposto que rende o mesmo",
   "calc.fixedIncome.equivalentExempt": "Taxa sem imposto que rende o mesmo",
   "calc.fixedIncome.iof":
@@ -628,13 +627,21 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.correction.answer.lead": "Valor corrigido",
   "calc.correction.answer.sentence": "de {from} a {to} pelo {index}.",
   "calc.correction.answer.what": "o valor corrigido",
+  "calc.fixedIncome.answer.lead": "Rendimento líquido",
+  "calc.fixedIncome.answer.sentence": "em {days} dias, depois do imposto.",
+  "calc.fixedIncome.answer.what": "o rendimento líquido",
+  "calc.fixedIncome.split.title": "Para onde vai o rendimento",
+  "calc.fixedIncome.split.net": "Líquido",
+  "calc.fixedIncome.split.tax": "Imposto",
+  "calc.fixedIncome.taxable.help":
+    "Título cujo rendimento paga imposto de renda.",
+  "calc.fixedIncome.exempt.help":
+    "Título cujo rendimento não paga imposto de renda.",
+  "calc.fixedIncome.equivalent.help":
+    "A taxa que o outro tipo de título precisa pagar para render o mesmo líquido.",
   "calc.correction.index.help":
     "O índice de preços que corrige o valor, mês a mês.",
   "calc.fixedIncome.days.hint": "Dias corridos da aplicação ao resgate.",
-  "calc.fixedIncome.kind.hint":
-    "Isento: o rendimento não paga imposto de renda.",
-  "calc.fixedIncome.summary":
-    "Rendimento bruto de {gross}, menos {tax} de imposto ({share}), em {days} dias.",
   "calc.financing.solve.hint": "Preencha os outros três valores.",
   "calc.financing.installment.hint": "A prestação que fica igual todo mês.",
   "calc.financing.prepay.title": "Amortização extra",

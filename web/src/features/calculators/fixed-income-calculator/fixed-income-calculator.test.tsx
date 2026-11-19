@@ -11,6 +11,23 @@ async function result(label: string): Promise<string> {
   return term.parentElement?.querySelector("dd")?.textContent ?? "";
 }
 
+// The figure of the answer.
+async function figure(): Promise<string> {
+  const lead = await screen.findByText(
+    catalogEn["calc.fixedIncome.answer.lead"],
+  );
+  return lead.nextElementSibling?.textContent ?? "";
+}
+
+// The widths of the parts of the first bar row.
+async function parts(): Promise<string[]> {
+  const row = (await screen.findAllByRole("img"))[0];
+  const track = row?.children[1];
+  return Array.from(track?.children ?? []).map(
+    (part) => (part as HTMLElement).style.inlineSize,
+  );
+}
+
 const open = (search: string, region: string) =>
   renderApp(`/calculators/fixed-income?${search}`, {
     fetch: fakeApi({
@@ -29,15 +46,14 @@ const open = (search: string, region: string) =>
 describe("Fixed income calculator", () => {
   it("takes the Brazilian tax of the holding period", async () => {
     await open("amount=1000000&rate=12&days=400", "BR");
+    expect(await figure()).toMatch(/1[.,]090[.,]96/);
     expect(await result(catalogEn["calc.fixedIncome.gross"])).toMatch(
       /1[.,]322[.,]38/,
     );
     expect(await result(catalogEn["calc.fixedIncome.tax"])).toMatch(
       /231[.,]42/,
     );
-    expect(await result(catalogEn["calc.fixedIncome.net"])).toMatch(
-      /1[.,]090[.,]96/,
-    );
+    expect(screen.queryByText(catalogEn["calc.options"])).toBeNull();
   });
 
   it("gives no result below 30 days in Brazil, where IOF applies", async () => {
@@ -45,6 +61,7 @@ describe("Fixed income calculator", () => {
     expect(
       await screen.findByText(catalogEn["calc.fixedIncome.iof"]),
     ).toBeInTheDocument();
+    expect(await figure()).toBe("—");
     expect(screen.queryByText(catalogEn["calc.fixedIncome.gross"])).toBeNull();
   });
 
@@ -81,5 +98,26 @@ describe("Fixed income calculator", () => {
     expect(
       await result(catalogEn["calc.fixedIncome.equivalentTaxable"]),
     ).not.toBe("");
+    // The tax part of the bar is empty: one part is visible.
+    const widths = await parts();
+    expect(widths).toHaveLength(2);
+    expect(widths[0]).not.toBe("0%");
+    expect(widths[1]).toBe("0%");
+  });
+
+  it("splits the yield into net and tax in one bar", async () => {
+    await open("amount=1000000&rate=12&days=400", "BR");
+    const [net, tax] = await parts();
+    // 109,096 net and 23,142 tax of a 132,238 yield.
+    expect(parseFloat(net ?? "")).toBeGreaterThan(parseFloat(tax ?? ""));
+    expect(parseFloat(tax ?? "")).toBeGreaterThan(0);
+  });
+
+  it("names the fields to fill in while the answer is empty", async () => {
+    await open("rate=12", "BR");
+    expect(await figure()).toBe("—");
+    expect(
+      await screen.findByText(/^Fill in .*amount.* to see the net yield\.$/),
+    ).toBeInTheDocument();
   });
 });

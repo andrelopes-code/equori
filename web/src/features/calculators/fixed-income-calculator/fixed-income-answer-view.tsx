@@ -1,0 +1,75 @@
+import { CalculatorAnswer } from "@/features/calculators/calculator-frame/calculator-answer";
+import {
+  lowerFirst,
+  missingSentence,
+} from "@/features/calculators/calculator-frame/missing-fields";
+import type { fixedIncomeAnswer } from "@/features/calculators/fixed-income-calculator/fixed-income-answer";
+import type { CalculatorMoney } from "@/features/calculators/fields/use-calculator-money";
+import { formatRate } from "@/features/calculators/model/format-rate";
+import { useAppLocale, useT } from "@/i18n/i18n-provider";
+
+interface FixedIncomeAnswerViewProps {
+  money: CalculatorMoney;
+  answer: ReturnType<typeof fixedIncomeAnswer>;
+  // The inputs still missing, as lowercase labels.
+  missing: { label: string; missing: boolean }[];
+  days: number | null;
+  // The rule of the region refuses a holding below its minimum.
+  belowMinimum: boolean;
+}
+
+export function FixedIncomeAnswerView({
+  money,
+  answer,
+  missing,
+  days,
+  belowMinimum,
+}: FixedIncomeAnswerViewProps) {
+  const t = useT();
+  const [tag] = useAppLocale();
+  const lead = t("calc.fixedIncome.answer.lead");
+
+  if (belowMinimum)
+    return (
+      <CalculatorAnswer
+        lead={lead}
+        figure={null}
+        sentence={t("calc.fixedIncome.iof")}
+      />
+    );
+
+  if (answer === null || days === null)
+    return (
+      <CalculatorAnswer
+        lead={lead}
+        figure={null}
+        sentence={
+          missingSentence(
+            missing.map((m) => ({ ...m, label: lowerFirst(m.label, tag) })),
+            t("calc.fixedIncome.answer.what"),
+            t,
+            tag,
+          ) ?? ""
+        }
+      />
+    );
+
+  return (
+    <CalculatorAnswer
+      lead={lead}
+      figure={money.format(answer.net)}
+      sentence={t("calc.fixedIncome.answer.sentence", { days })}
+      facts={[
+        {
+          term: t("calc.fixedIncome.gross"),
+          value: money.format(answer.gross),
+        },
+        { term: t("calc.fixedIncome.tax"), value: money.format(answer.tax) },
+        {
+          term: t("calc.fixedIncome.netRate"),
+          value: formatRate(answer.netAnnualRate, tag),
+        },
+      ]}
+    />
+  );
+}

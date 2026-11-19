@@ -436,7 +436,6 @@ export const calculatorsEn = {
   "calc.fixedIncome.tax": "Tax",
   "calc.fixedIncome.net": "Net yield",
   "calc.fixedIncome.netRate": "Net annual rate",
-  "calc.fixedIncome.taxShare": "Tax rate applied",
   "calc.fixedIncome.equivalentTaxable": "Taxed rate that yields the same",
   "calc.fixedIncome.equivalentExempt": "Tax-free rate that yields the same",
   "calc.fixedIncome.iof":
@@ -622,13 +621,20 @@ export const calculatorsEn = {
   "calc.correction.answer.lead": "Corrected amount",
   "calc.correction.answer.sentence": "from {from} to {to} by {index}.",
   "calc.correction.answer.what": "the corrected amount",
+  "calc.fixedIncome.answer.lead": "Net yield",
+  "calc.fixedIncome.answer.sentence": "over {days} days, after tax.",
+  "calc.fixedIncome.answer.what": "the net yield",
+  "calc.fixedIncome.split.title": "Where the yield goes",
+  "calc.fixedIncome.split.net": "Net",
+  "calc.fixedIncome.split.tax": "Tax",
+  "calc.fixedIncome.taxable.help": "A security whose yield pays income tax.",
+  "calc.fixedIncome.exempt.help": "A security whose yield pays no income tax.",
+  "calc.fixedIncome.equivalent.help":
+    "The rate the other kind of security must pay to yield the same net.",
   "calc.correction.index.help":
     "The price index that corrects the amount, month by month.",
   "calc.fixedIncome.days.hint":
     "Calendar days from the investment to the redemption.",
-  "calc.fixedIncome.kind.hint": "Exempt: the yield pays no income tax.",
-  "calc.fixedIncome.summary":
-    "{gross} of gross yield, less {tax} of tax ({share}), over {days} days.",
   "calc.financing.solve.hint": "Fill in the other three figures.",
   "calc.financing.installment.hint":
     "The installment that stays the same every month.",
