@@ -15,21 +15,24 @@ func TestCustodyFee(t *testing.T) {
 	lots := []Lot{{AcquiredOn: day("2026-01-05"), Quantity: 100, Cost: 100000}}
 	sale := day("2026-07-04")
 
+	paidTo := func(time.Time) time.Time { return day("2026-07-01") }
+
 	for _, tc := range []struct {
-		name string
-		rule CustodyRule
-		want int64
+		name       string
+		rule       CustodyRule
+		pool, want int64
 	}{
-		{"180 days at 0.20%", CustodyRule{RateBP: 20}, 108},
-		{"only above the exemption", CustodyRule{RateBP: 20, ExemptMinor: 100000}, 10},
-		{"below the exemption", CustodyRule{RateBP: 20, ExemptMinor: 200000}, 0},
+		{name: "180 days at 0.20%", rule: CustodyRule{RateBP: 20}, want: 108},
+		{name: "above the exemption", rule: CustodyRule{RateBP: 20, ExemptMinor: 100000}, want: 10},
+		{name: "below the exemption", rule: CustodyRule{RateBP: 20, ExemptMinor: 200000}},
+		{name: "paid to a coupon", rule: CustodyRule{RateBP: 20, PaidTo: paidTo}, want: 2},
+		// 600.00 of 10,600.00 above the exemption: 62.26 of the 1,100.00 charged over 180 days.
 		{
-			"paid to a coupon",
-			CustodyRule{RateBP: 20, PaidTo: func(time.Time) time.Time { return day("2026-07-01") }},
-			2,
+			name: "pooled", rule: CustodyRule{RateBP: 20, ExemptMinor: 1000000},
+			pool: 1060000, want: 6,
 		},
 	} {
-		if got := CustodyFee(tc.rule, lots, 110000, sale); got != tc.want {
+		if got := CustodyFee(tc.rule, lots, 110000, tc.pool, sale); got != tc.want {
 			t.Errorf("%s: CustodyFee = %d, want %d", tc.name, got, tc.want)
 		}
 	}

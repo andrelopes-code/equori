@@ -285,7 +285,7 @@ func withVNA(
 // vnaReader reads the rates of the indexes of the bonds once per call.
 type vnaReader struct {
 	m     *Module
-	rates map[string][]postgres.ListIndexRatesRow
+	rates map[string][]domain.IndexRate
 }
 
 // on is the VNA of kind on date d with 12 decimals; false when the index of a month or a day it
@@ -307,7 +307,7 @@ func (r *vnaReader) on(ctx context.Context, kind string, d time.Time) (string, b
 	if bi.daily {
 		rates, ok, err = r.daily(ctx, rows, d)
 	} else {
-		rates, ok = monthly(rows, d)
+		rates, ok = domain.MonthlyRates(rows, vnaBase, d)
 	}
 
 	if err != nil || !ok {
@@ -319,9 +319,9 @@ func (r *vnaReader) on(ctx context.Context, kind string, d time.Time) (string, b
 	return vna, err == nil, err
 }
 
-func (r *vnaReader) read(ctx context.Context, idx string) ([]postgres.ListIndexRatesRow, error) {
-	if rows, ok := r.rates[idx]; ok {
-		return rows, nil
+func (r *vnaReader) read(ctx context.Context, idx string) ([]domain.IndexRate, error) {
+	if rates, ok := r.rates[idx]; ok {
+		return rates, nil
 	}
 
 	rows, err := r.m.q.ListIndexRates(
@@ -332,44 +332,30 @@ func (r *vnaReader) read(ctx context.Context, idx string) ([]postgres.ListIndexR
 		return nil, err
 	}
 
+	rates := make([]domain.IndexRate, len(rows))
+	for i, row := range rows {
+		v, err := row.Rate.Value()
+		if err != nil {
+			return nil, fmt.Errorf("rate of %s: %w", row.Date.Format(time.DateOnly), err)
+		}
+
+		rates[i] = domain.IndexRate{Date: row.Date, Rate: fmt.Sprint(v)}
+	}
+
 	if r.rates == nil {
-		r.rates = map[string][]postgres.ListIndexRatesRow{}
+		r.rates = map[string][]domain.IndexRate{}
 	}
 
-	r.rates[idx] = rows
+	r.rates[idx] = rates
 
-	return rows, nil
-}
-
-// monthly are the rates of the months from vnaBase to the month before d; false when one is not
-// stored.
-func monthly(rows []postgres.ListIndexRatesRow, d time.Time) ([]string, bool) {
-	end := time.Date(d.Year(), d.Month(), 1, 0, 0, 0, 0, time.UTC)
-
-	var out []string
-
-	want := vnaBase
-	for _, row := range rows {
-		if !row.Date.Before(end) {
-			break
-		}
-
-		if !row.Date.Equal(want) {
-			return nil, false
-		}
-
-		out = append(out, rateText(row))
-		want = want.AddDate(0, 1, 0)
-	}
-
-	return out, want.Equal(end) && len(out) > 0
+	return rates, nil
 }
 
 // daily are the rates of the business days from vnaBase to the day before d; false when the rate
 // of the business day before d is not stored.
 func (r *vnaReader) daily(
 	ctx context.Context,
-	rows []postgres.ListIndexRatesRow,
+	rows []domain.IndexRate,
 	d time.Time,
 ) ([]string, bool, error) {
 	last, err := r.m.Adjust(ctx, CalendarBRBanking, d.AddDate(0, 0, -1), AdjustPreceding)
@@ -386,18 +372,9 @@ func (r *vnaReader) daily(
 			break
 		}
 
-		out = append(out, rateText(row))
+		out = append(out, row.Rate)
 		reached = reached || row.Date.Equal(last)
 	}
 
 	return out, reached, nil
-}
-
-func rateText(row postgres.ListIndexRatesRow) string {
-	v, err := row.Rate.Value()
-	if err != nil {
-		return "x"
-	}
-
-	return fmt.Sprint(v)
 }

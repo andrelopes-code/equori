@@ -51,3 +51,46 @@ func TestCustodyFeeOfATesouroSale(t *testing.T) {
 		})
 	}
 }
+
+// S642 (coverage row T-09): the R$ 10,000.00 a holder keeps free of the custody fee of the Tesouro
+// Selic counts all of the holder's Tesouro Selic: with 9,500.00 in another LFT, a sale of 1,100.00
+// pays the fee on its share of the 600.00 above the exemption, 62.26, over 180 days.
+func TestCustodyExemptionCountsTheHoldersTesouroSelic(t *testing.T) {
+	t.Parallel()
+	f := newLotFixtureOf(t, "LFT.20300301", "fixed_income", "tesouro")
+	f.trade(t, "buy", "2026-01-05", 100, "10.00")
+
+	other := security("LFT.20310301", "fixed_income")
+	delete(other, "exchange")
+	other["subtype"] = "tesouro"
+	f.h.MustDo(http.MethodPost, "/api/v1/instruments", other, http.StatusCreated, nil)
+
+	account := f.h.Account("XP LFT 2031", "asset", "brokerage", map[string]any{
+		"institution_id": f.institution, "parent_id": f.xp, "currency": "LFT.20310301",
+	})
+	f.h.MustDo(http.MethodPost, "/api/v1/trades", map[string]any{
+		"account_id": account, "cash_account_id": f.cash, "side": "buy", "date": "2026-01-05",
+		"quantity": units(950, "LFT.20310301"), "unit_price": "10.00",
+	}, http.StatusCreated, nil)
+	f.h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{
+		"instrument":       "LFT.20310301",
+		"quote_instrument": "BRL",
+		"date":             "2026-07-04",
+		"value":            "10.00",
+	}, http.StatusCreated, nil)
+
+	var out struct {
+		CustodyFee map[string]any `json:"custody_fee"`
+	}
+	f.h.MustDo(
+		http.MethodGet,
+		f.withholdingPath("2026-07-04", 100, 110000),
+		nil,
+		http.StatusOK,
+		&out,
+	)
+
+	if out.CustodyFee == nil || out.CustodyFee["amount"] != float64(6) {
+		t.Errorf("custody_fee = %v, want 6", out.CustodyFee)
+	}
+}

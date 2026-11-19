@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"time"
 )
 
 // errNoRates is the VNA of an index that holds no rate for its period.
@@ -32,6 +33,30 @@ func VNA(rates []string) (string, error) {
 	rounded := roundRat(factor, 16)
 
 	return truncRat(rounded.Mul(rounded, big.NewRat(1000, 1)), 6).FloatString(12), nil
+}
+
+// MonthlyRates are the rates of rates dated on the first day of each month from base to the month
+// before d, the months a VNA on d counts; false when one of them is missing.
+func MonthlyRates(rates []IndexRate, base, d time.Time) ([]string, bool) {
+	end := time.Date(d.Year(), d.Month(), 1, 0, 0, 0, 0, time.UTC)
+
+	var out []string
+
+	want := base
+	for _, r := range rates {
+		if !r.Date.Before(end) {
+			break
+		}
+
+		if !r.Date.Equal(want) {
+			return nil, false
+		}
+
+		out = append(out, r.Rate)
+		want = want.AddDate(0, 1, 0)
+	}
+
+	return out, want.Equal(end) && len(out) > 0
 }
 
 // BondInterest is the coupon of one unit of a bond: vna times the interest factor of the half

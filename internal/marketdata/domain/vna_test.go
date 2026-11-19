@@ -1,6 +1,9 @@
 package domain
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
 
 // The examples of the Metodologia de Cálculo dos Títulos Públicos Federais (Tesouro Nacional,
 // version of 2024-04-29): the VNA of an NTN-B on 2008-05-15 from the IPCA numbers of June 2000
@@ -24,5 +27,34 @@ func TestVNAAndBondInterest(t *testing.T) {
 
 	if _, err := VNA(nil); err == nil {
 		t.Error("VNA of no rate: no error")
+	}
+}
+
+// A VNA on a day counts the months from the base to the month before; a missing month leaves no VNA.
+func TestMonthlyRates(t *testing.T) {
+	t.Parallel()
+
+	base := time.Date(2000, time.July, 1, 0, 0, 0, 0, time.UTC)
+	rates := []IndexRate{
+		{Date: base, Rate: "0.01"},
+		{Date: base.AddDate(0, 1, 0), Rate: "0.02"},
+		{Date: base.AddDate(0, 2, 0), Rate: "0.03"},
+	}
+
+	got, ok := MonthlyRates(rates, base, time.Date(2000, time.September, 15, 0, 0, 0, 0, time.UTC))
+	if !ok || len(got) != 2 || got[1] != "0.02" {
+		t.Errorf("MonthlyRates = %v, %v; want July and August", got, ok)
+	}
+
+	if _, ok := MonthlyRates(rates[1:], base, base.AddDate(0, 3, 0)); ok {
+		t.Error("a missing July gave a VNA")
+	}
+
+	if _, ok := MonthlyRates(
+		rates,
+		base,
+		time.Date(2001, time.January, 15, 0, 0, 0, 0, time.UTC),
+	); ok {
+		t.Error("months not yet stored gave a VNA")
 	}
 }

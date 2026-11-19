@@ -1243,3 +1243,7 @@ Coverage row T-05, through the HTTP API. The IPCA numbers of June 2000 (1,614.62
 ### S641 Coupon of the NTN-C of 2031 and maturity of an LFT
 
 Coverage rows T-08 and T-01, through the HTTP API. An IGP-M factor of 2.102805518521 from July 2000 to June 2026: the coupon of 2026-07-01 on 2.00 units of NTNC.20310101 is 245.19 (12% a year, 122.594655 a unit). A Selic of 0.07% on each business day of July 2000: 1.00 unit of LFT.20000801 pays 1,014.80 at maturity.
+
+### S642 Custody exemption of the holder's Tesouro Selic
+
+Coverage row T-09, through the HTTP API. 100 units of an LFT bought at 10.00 on 2026-01-05 beside 950 units of another LFT priced 10.00: a sale of the first for 1,100.00 on 2026-07-04 pays a custody fee of 0.06, on its share (62.26) of the 600.00 the 10,600.00 of Tesouro Selic hold above the exemption.

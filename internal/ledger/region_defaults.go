@@ -142,10 +142,9 @@ var (
 
 // CustodyFee returns the custody fee rule of a security of a region (coverage row T-09). In BR a
 // Tesouro bond sold from 2024-12-31 pays B3 0.20% a year of its value, pro rata and deducted at a
-// sale, a coupon or the maturity; a Tesouro Selic pays it only on the value above R$ 10,000.00
-// (B3, tariffs of Tesouro Direto). An earlier sale, under the half-yearly charge, has no estimate. shortcut: the exemption of the Tesouro Selic is read per sale, not
-// per holder; upgrade when the estimate sums the holder's Tesouro Selic. An RendA+ or an Educa+,
-// whose own table is not modelled, has no rule.
+// sale, a coupon or the maturity; a Tesouro Selic pays it only on the value above R$ 10,000.00 of
+// all the holder's Tesouro Selic (B3, tariffs of Tesouro Direto). An earlier sale, under the
+// half-yearly charge, has no estimate. An RendA+ or an Educa+ follows its own table, not this rule.
 func CustodyFee(region, instrumentType, subtype, code string) (domain.CustodyRule, bool) {
 	match := brCustodyBond.FindStringSubmatch(code)
 	if region != "BR" || instrumentType != "fixed_income" || subtype != "tesouro" || match == nil {
@@ -154,7 +153,13 @@ func CustodyFee(region, instrumentType, subtype, code string) (domain.CustodyRul
 
 	rule := domain.CustodyRule{RateBP: 20, From: brCustodyFrom}
 	if match[1] == "LFT" {
+		// The exemption is per holder: it counts all of the holder's Tesouro Selic.
 		rule.ExemptMinor = 1000000
+		rule.Pooled = func(code string) bool {
+			m := brCustodyBond.FindStringSubmatch(code)
+
+			return m != nil && m[1] == "LFT"
+		}
 	}
 
 	maturity, err := time.Parse("20060102", match[2])

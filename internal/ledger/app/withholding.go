@@ -2,7 +2,9 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"math/big"
 	"time"
 
 	"github.com/google/uuid"
@@ -67,14 +69,113 @@ func (s *Service) EstimateWithholding(
 
 	w := domain.EstimateWithholding(table, consumed, proceedsMinor, date)
 
-	var fee *int64
-
-	if custody.Applies(date) {
-		v := domain.CustodyFee(custody, consumed, proceedsMinor, date)
-		fee = &v
+	fee, err := s.custodyFee(ctx, booksID, security, custody, consumed, base, date, proceedsMinor)
+	if err != nil {
+		return WithholdingEstimate{}, err
 	}
 
 	return withholdingMoney(w, fee, proceedsMinor, base)
+}
+
+// custodyFee is the custody fee of the sale of the consumed lots of security for proceeds under
+// rule; nil when the rule does not apply on date.
+func (s *Service) custodyFee(
+	ctx context.Context,
+	booksID int64,
+	security domain.Account,
+	rule domain.CustodyRule,
+	consumed []domain.Lot,
+	base money.Currency,
+	date time.Time,
+	proceeds int64,
+) (*int64, error) {
+	if !rule.Applies(date) {
+		return nil, nil
+	}
+
+	var units int64
+	for _, l := range consumed {
+		units += l.Quantity
+	}
+
+	pool, err := s.custodyPool(ctx, booksID, security, rule, base, date, units, proceeds)
+	if err != nil {
+		return nil, err
+	}
+
+	fee := domain.CustodyFee(rule, consumed, proceeds, pool, date)
+
+	return &fee, nil
+}
+
+// custodyPool is the value on date of the book's securities that share the custody exemption of
+// security, the book read as one holder: security valued as the sale of units for proceeds scales
+// to its whole holding, each other one at its price, or at its cost when it has none; zero when
+// the rule shares the exemption with none.
+func (s *Service) custodyPool(
+	ctx context.Context,
+	booksID int64,
+	security domain.Account,
+	rule domain.CustodyRule,
+	base money.Currency,
+	date time.Time,
+	units, proceeds int64,
+) (int64, error) {
+	if rule.Pooled == nil || rule.ExemptMinor <= 0 {
+		return 0, nil
+	}
+
+	all, err := s.repo.AllAccounts(ctx, booksID)
+	if err != nil {
+		return 0, err
+	}
+
+	var pool int64
+
+	for _, a := range all {
+		if !a.HoldsSecurity() || !rule.Pooled(string(a.Instrument)) {
+			continue
+		}
+
+		h, err := s.readHolding(ctx, s.repo, booksID, a, base, date, uuid.Nil)
+		if err != nil {
+			return 0, err
+		}
+
+		if h.Quantity.Amount() <= 0 {
+			continue
+		}
+
+		if a.ID == security.ID {
+			pool += share(proceeds, h.Quantity.Amount(), units)
+
+			continue
+		}
+
+		c, err := s.prices.Convert(ctx, h.Quantity, base, date)
+		switch {
+		case errors.Is(err, ErrPriceMissing):
+			pool += h.CostBasis.Amount()
+		case err != nil:
+			return 0, err
+		default:
+			pool += c.Value.Amount()
+		}
+	}
+
+	return pool, nil
+}
+
+// share is amount × part ÷ whole, rounded down; amount when whole is zero.
+func share(amount, part, whole int64) int64 {
+	if whole == 0 {
+		return amount
+	}
+
+	return new(big.Int).Div(
+		new(big.Int).Mul(big.NewInt(amount), big.NewInt(part)),
+		big.NewInt(whole),
+	).Int64()
 }
 
 // consumedLots returns the open lots a sale of units of the security on date consumes, oldest
