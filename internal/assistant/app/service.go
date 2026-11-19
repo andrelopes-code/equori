@@ -16,6 +16,7 @@ import (
 
 type Service struct {
 	repo     Repository
+	views    map[ViewKey]ViewBuilder
 	box      Sealer // nil without EQUORI_SECRET_KEY
 	models   ModelLister
 	instance []Instance

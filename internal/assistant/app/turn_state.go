@@ -5,15 +5,19 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
+
+	"github.com/andrelopes-code/equori/internal/assistant/domain"
 )
 
 type turnKey struct{}
 
-// turnState collects the proposals a turn creates and names its conversation for the write handlers.
+// turnState collects the proposals, reads and views of a turn and names its conversation for the handlers.
 type turnState struct {
 	conversationID uuid.UUID
 	mu             sync.Mutex
 	proposals      []uuid.UUID
+	reads          []turnRead
+	views          []domain.View
 }
 
 func (t *turnState) add(id uuid.UUID) {

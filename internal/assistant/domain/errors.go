@@ -12,6 +12,8 @@ var (
 
 	ErrConversationNotFound = errors.New("conversation not found")
 	ErrProposalNotFound     = errors.New("proposal not found")
+
+	ErrTooManyViews = errors.New("an answer holds at most 3 views")
 )
 
 // FieldError names the request field a rule rejected.
