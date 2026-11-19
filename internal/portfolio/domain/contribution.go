@@ -43,6 +43,8 @@ type PlanClass struct {
 	// Questions are the investor's yes-or-no questions (CQ1); empty for a class without them.
 	Questions []string
 	Members   []PlanMember
+	// Rules gather the securities of the class by their facts (GR1); empty for a class by members.
+	Rules []PlanRule
 }
 
 // PlanMember names exactly one of AccountID and Instrument; TargetBP is nil without member targets.
@@ -214,7 +216,7 @@ func (c PlanClass) checkShape() error {
 		}
 	}
 
-	return nil
+	return c.checkRules()
 }
 
 func (c PlanClass) checkMemberTargets() error {
