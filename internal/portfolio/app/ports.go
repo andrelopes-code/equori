@@ -67,6 +67,15 @@ type Ledger interface {
 		date time.Time,
 		units, proceedsMinor int64,
 	) (tax, net money.Money, ok bool, err error)
+	// ReceiptCustodyFee is the custody fee a receipt of amount of instrument on date pays; nil
+	// when it pays none by receipt.
+	ReceiptCustodyFee(
+		ctx context.Context,
+		booksID int64,
+		instrument money.Currency,
+		amount money.Money,
+		date time.Time,
+	) (*money.Money, error)
 }
 
 // Jurisdictions gives the tax jurisdiction of a book; a nil result means none applies.

@@ -89,6 +89,16 @@ func (p ledgerPort) EstimateWithholding(
 	return tax, w.Net, err == nil, err
 }
 
+func (p ledgerPort) ReceiptCustodyFee(
+	ctx context.Context,
+	booksID int64,
+	instrument money.Currency,
+	amount money.Money,
+	date time.Time,
+) (*money.Money, error) {
+	return p.l.ReceiptCustodyFee(ctx, booksID, instrument, amount, date)
+}
+
 func (p ledgerPort) Today(ctx context.Context) time.Time { return p.l.Today(ctx) }
 
 func (p ledgerPort) InvestmentFacts(

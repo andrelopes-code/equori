@@ -20,6 +20,7 @@ type fixedIncomeEventView struct {
 	State       string     `json:"state"`
 
 	EstimatedTax tool.Money `json:"estimated_tax,omitzero"`
+	CustodyFee   tool.Money `json:"custody_fee,omitzero"`
 }
 
 func fixedIncomeEventsView(
@@ -63,6 +64,10 @@ func fixedIncomeEventsView(
 
 		if e.EstimatedTax != nil {
 			v.EstimatedTax = tool.MoneyOf(*e.EstimatedTax)
+		}
+
+		if e.CustodyFee != nil {
+			v.CustodyFee = tool.MoneyOf(*e.CustodyFee)
 		}
 
 		out.FixedIncomeEvents = append(out.FixedIncomeEvents, v)

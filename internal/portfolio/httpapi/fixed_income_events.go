@@ -41,6 +41,7 @@ func (s *Server) listFixedIncomeEvents(
 			State:       FixedIncomeEventState(e.State),
 
 			EstimatedTax: optionalMoney(e.EstimatedTax),
+			CustodyFee:   optionalMoney(e.CustodyFee),
 		}
 	}
 

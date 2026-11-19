@@ -197,6 +197,81 @@ func TestS640NTNBCouponFromTheIPCA(t *testing.T) {
 	}
 }
 
+// S644 (coverage rows T-06, T-09): a monthly payment of an RendA+ pays its units at the VNI and
+// the custody fee of B3, 0.10% of the amount above 6 minimum wages, R$ 9,726.00 in 2026.
+func TestS644IncomeBondPaymentAndItsFee(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(ipcaNumbers("202512", "2788.33"))
+	t.Cleanup(srv.Close)
+
+	f := newFixture(
+		t,
+		apitest.Today("2026-01-20"),
+		apitest.IndexFeeds([]string{"br_ipca"}, map[string]string{"br_ipca": srv.URL}),
+	)
+	code := "RENDA.20451215"
+	f.h.MustDo(http.MethodPost, "/api/v1/instruments", map[string]any{
+		"code": code, "type": "fixed_income", "subtype": "tesouro", "scale": 2, "name": code,
+		"quote_currency": "BRL",
+	}, http.StatusCreated, nil)
+
+	account := f.h.Account(code, "asset", "brokerage", map[string]any{
+		"institution_id": f.institution, "parent_id": f.xp, "currency": code,
+	})
+	f.h.MustDo(http.MethodPost, "/api/v1/trades", map[string]any{
+		"account_id": account, "cash_account_id": f.cash, "side": "buy", "date": "2026-01-05",
+		"quantity": units(300000, code), "unit_price": "1.00",
+	}, http.StatusCreated, nil)
+	f.h.App.Marketdata.TickFeeds(t.Context())
+	f.h.Dispatch()
+
+	var out struct {
+		Items []struct {
+			eventOut
+
+			CustodyFee *amount `json:"custody_fee"`
+		} `json:"items"`
+	}
+	f.h.MustDo(
+		http.MethodGet,
+		"/api/v1/fixed-income-events?from=2026-01-01&to=2026-01-31",
+		nil,
+		http.StatusOK,
+		&out,
+	)
+
+	// 12.50 units (one part in 240) × 1,726.926459 = 21,586.58; (21,586.58 − 9,726.00) × 0.10%.
+	if len(out.Items) != 1 || out.Items[0].Gross == nil || out.Items[0].Gross.Amount != 2158658 ||
+		out.Items[0].Quantity.Amount != 1250 || out.Items[0].CustodyFee == nil ||
+		out.Items[0].CustodyFee.Amount != 1186 {
+		t.Fatalf("events = %+v, want 12.50 units, 21,586.58 and a fee of 11.86", out.Items)
+	}
+}
+
+// ipcaNumbers answers the IBGE IPCA numbers from June 2000 at 1,614.62, the month last at level.
+func ipcaNumbers(last, level string) http.Handler {
+	var levels []string
+	for m := time.Date(2000, time.June, 1, 0, 0, 0, 0, time.UTC); m.Format("200601") < last; m = m.AddDate(0, 1, 0) {
+		levels = append(levels, fmt.Sprintf(`{"V":"1614.62","D3C":%q}`, m.Format("200601")))
+	}
+
+	levels = append(levels, fmt.Sprintf(`{"V":%q,"D3C":%q}`, level, last))
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		first, end, _ := strings.Cut(r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:], "-")
+		out := []string{`{"V":"Valor","D3C":"Mês (Código)"}`}
+
+		for _, l := range levels {
+			if m := l[len(l)-8 : len(l)-2]; m >= first && m <= end {
+				out = append(out, l)
+			}
+		}
+
+		fmt.Fprintf(w, "[%s]", strings.Join(out, ","))
+	})
+}
+
 // S641 (coverage rows T-08, T-01): the coupon of the NTN-C of 2031 is 12% a year on its VNA by the
 // IGP-M of SGS series 28655, 1.12^½ − 1 = 0.05830052; an LFT pays at maturity its VNA by the Selic
 // of each business day from 2000-07-01 (Tesouro Nacional, Metodologia de Cálculo).

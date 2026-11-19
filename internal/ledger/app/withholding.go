@@ -93,6 +93,15 @@ func (s *Service) custodyFee(
 		return nil, nil
 	}
 
+	if rule.ReceiptBP > 0 {
+		fee, ok := domain.ReceiptFee(rule, proceeds, date)
+		if !ok {
+			return nil, nil
+		}
+
+		return &fee, nil
+	}
+
 	var units int64
 	for _, l := range consumed {
 		units += l.Quantity
@@ -176,6 +185,46 @@ func share(amount, part, whole int64) int64 {
 		new(big.Int).Mul(big.NewInt(amount), big.NewInt(part)),
 		big.NewInt(whole),
 	).Int64()
+}
+
+// ReceiptCustodyFee is the custody fee a receipt of amount of instrument on date pays, such as a
+// monthly payment of an RendA+ (coverage row T-09); nil when the instrument has no fee by receipt
+// in the book's region or the exemption of date is not known.
+func (s *Service) ReceiptCustodyFee(
+	ctx context.Context,
+	booksID int64,
+	instrument money.Currency,
+	amount money.Money,
+	date time.Time,
+) (*money.Money, error) {
+	profile, err := s.profiles.Profile(ctx, booksID)
+	if err != nil {
+		return nil, fmt.Errorf("read profile: %w", err)
+	}
+
+	in, err := s.ins.Instrument(ctx, instrument)
+	if err != nil {
+		return nil, err
+	}
+
+	subtype, err := s.ins.Subtype(ctx, instrument)
+	if err != nil {
+		return nil, err
+	}
+
+	rule, _ := s.defaults.CustodyFee(profile.Region, in.Type, subtype, string(instrument))
+	if rule.ReceiptBP <= 0 {
+		return nil, nil
+	}
+
+	v, ok := domain.ReceiptFee(rule, amount.Amount(), date)
+	if !ok {
+		return nil, nil
+	}
+
+	fee, err := money.New(v, amount.Currency())
+
+	return &fee, err
 }
 
 // consumedLots returns the open lots a sale of units of the security on date consumes, oldest

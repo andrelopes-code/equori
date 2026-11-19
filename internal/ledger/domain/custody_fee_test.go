@@ -37,3 +37,36 @@ func TestCustodyFee(t *testing.T) {
 		}
 	}
 }
+
+// Coverage row T-09: a fee by receipt takes its rate of the amount above the exemption of its
+// date, nothing on its maturity, and no estimate for a date whose exemption is unknown.
+func TestReceiptFee(t *testing.T) {
+	t.Parallel()
+
+	maturity := time.Date(2049, time.December, 15, 0, 0, 0, 0, time.UTC)
+	rule := CustodyRule{
+		ReceiptBP: 10,
+		HeldTo:    maturity,
+		ReceiptExempt: func(d time.Time) (int64, bool) {
+			return 972600, d.Year() == 2026
+		},
+	}
+	sale := time.Date(2026, time.July, 4, 0, 0, 0, 0, time.UTC)
+
+	for _, tc := range []struct {
+		name   string
+		amount int64
+		date   time.Time
+		want   int64
+		ok     bool
+	}{
+		{"above", 2000000, sale, 1027, true},
+		{"below", 900000, sale, 0, true},
+		{"at maturity", 2000000, maturity, 0, true},
+		{"unknown year", 2000000, time.Date(2027, time.July, 4, 0, 0, 0, 0, time.UTC), 0, false},
+	} {
+		if got, ok := ReceiptFee(rule, tc.amount, tc.date); got != tc.want || ok != tc.ok {
+			t.Errorf("%s: ReceiptFee = %d, %v; want %d, %v", tc.name, got, ok, tc.want, tc.ok)
+		}
+	}
+}

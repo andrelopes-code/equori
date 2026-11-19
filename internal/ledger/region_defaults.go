@@ -130,7 +130,19 @@ func FixedIncomeWithholding(
 
 // brCustodyBond is the listing code of a Tesouro bond: its kind and its maturity as YYYYMMDD; it
 // mirrors governmentBondCode of internal/marketdata.
-var brCustodyBond = regexp.MustCompile(`^(LFT|LTN|NTNF|NTNB|NTNBP|NTNC)\.([0-9]{8})$`)
+var brCustodyBond = regexp.MustCompile(`^(LFT|LTN|NTNF|NTNB|NTNBP|NTNC|RENDA|EDUCA)\.([0-9]{8})$`)
+
+// brIncomeBondWages are the minimum wages a redemption or a receipt of an RendA+ or an Educa+
+// keeps free of its custody fee of 0.10% (B3, tariffs of Tesouro Direto, read 2026-11-19).
+var brIncomeBondWages = map[string]int64{"RENDA": 6, "EDUCA": 4}
+
+// brMinimumWage is the national minimum wage of each year in cents, by the decree that fixed it;
+// a year not listed has no custody estimate of an RendA+ or an Educa+ until its decree is added.
+var brMinimumWage = map[int]int64{
+	2024: 141200, // Decreto 11.864/2023
+	2025: 151800, // Decreto 12.342/2024
+	2026: 162100, // Decreto 12.797/2025
+}
 
 // brCustodyFrom is the day the custody fee of Tesouro Direto became pro rata, deducted at a sale, a
 // coupon or the maturity; brCustodyCharged the last half-yearly charge before it, from which it
@@ -144,11 +156,25 @@ var (
 // Tesouro bond sold from 2024-12-31 pays B3 0.20% a year of its value, pro rata and deducted at a
 // sale, a coupon or the maturity; a Tesouro Selic pays it only on the value above R$ 10,000.00 of
 // all the holder's Tesouro Selic (B3, tariffs of Tesouro Direto). An earlier sale, under the
-// half-yearly charge, has no estimate. An RendA+ or an Educa+ follows its own table, not this rule.
+// half-yearly charge, has no estimate. A redemption or a receipt of an RendA+ or an Educa+ before
+// its maturity pays 0.10% of its amount above 6 or 4 minimum wages of its year.
 func CustodyFee(region, instrumentType, subtype, code string) (domain.CustodyRule, bool) {
 	match := brCustodyBond.FindStringSubmatch(code)
 	if region != "BR" || instrumentType != "fixed_income" || subtype != "tesouro" || match == nil {
 		return domain.CustodyRule{}, false
+	}
+
+	maturity, err := time.Parse("20060102", match[2])
+	if wages, ok := brIncomeBondWages[match[1]]; ok && err == nil {
+		return domain.CustodyRule{
+			ReceiptBP: 10,
+			HeldTo:    maturity,
+			ReceiptExempt: func(date time.Time) (int64, bool) {
+				wage, ok := brMinimumWage[date.Year()]
+
+				return wages * wage, ok
+			},
+		}, true
 	}
 
 	rule := domain.CustodyRule{RateBP: 20, From: brCustodyFrom}
@@ -162,7 +188,6 @@ func CustodyFee(region, instrumentType, subtype, code string) (domain.CustodyRul
 		}
 	}
 
-	maturity, err := time.Parse("20060102", match[2])
 	coupons := err == nil && (match[1] == "NTNF" || match[1] == "NTNB" || match[1] == "NTNC")
 
 	rule.PaidTo = func(date time.Time) time.Time {

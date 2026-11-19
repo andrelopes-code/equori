@@ -1247,3 +1247,11 @@ Coverage rows T-08 and T-01, through the HTTP API. An IGP-M factor of 2.10280551
 ### S642 Custody exemption of the holder's Tesouro Selic
 
 Coverage row T-09, through the HTTP API. 100 units of an LFT bought at 10.00 on 2026-01-05 beside 950 units of another LFT priced 10.00: a sale of the first for 1,100.00 on 2026-07-04 pays a custody fee of 0.06, on its share (62.26) of the 600.00 the 10,600.00 of Tesouro Selic hold above the exemption.
+
+### S643 Custody fee of a sale of an RendA+ or an Educa+
+
+Coverage row T-09, through the HTTP API. 100 units bought at 100.00 on 2026-01-05 and sold for 20,000.00 on 2026-07-04: an RendA+ pays a custody fee of 10.27 (0.10% above 9,726.00, 6 minimum wages of 2026), an Educa+ 13.52 (above 6,484.00, 4 minimum wages).
+
+### S644 Monthly payment of an RendA+ and its custody fee
+
+Coverage rows T-06 and T-09, through the HTTP API. 3,000.00 units of RENDA.20451215 bought on 2026-01-05 and a VNI of 1,726.926459 on 2026-01-15: the payment of that day amortizes 12.50 units for 21,586.58 and carries a custody fee of 11.86.

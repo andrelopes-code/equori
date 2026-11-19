@@ -53,7 +53,7 @@ Source status:
 | T-06 | Tesouro RendA+ | supported | code `RENDA`; `fixed_income_events` lists the 240 monthly amortizations on the 15th ending on the maturity, each one part in the payments left of the units held, at the VNI by the IPCA from 2000-07-15 (`monthlyBondCoupons`, `TestS633IncomeBondEvents`) | none | Tesouro Direto, Tesouro RendA+ (NTN-B1: VNI of 1,000.00 on 2000-07-15 updated by the IPCA; principal paid from the conversion date to the maturity); Tesouro Nacional, Metodologia de Cálculo dos Títulos Públicos Federais, version of 2024-04-29, read 2026-11-19 (VNA: factor A16, VNA T6; coupon factor 0.02956301; examples of 2008-05-15 and 2008-05-01) |
 | T-07 | Tesouro Educa+ | supported | code `EDUCA`; as T-06 with 60 monthly payments | none | as T-06 (Tesouro Educa+, 60 monthly payments) |
 | T-08 | Tesouro IGPM+ (NTNC) | supported | code `NTNC` in `internal/marketdata/feed/tesourodireto`; `TestBRProductMatrix` row T-08 with the published buying and selling prices | none | Tesouro Transparente, PrecoTaxaTesouroDireto.csv, fetched 2026-11-18 |
-| T-09 | Custody fee of B3 | partial | `estimate_redemption` and the position net deduct `custody_fee`, 0.20% a year pro rata since the purchase, the last coupon or the charge of July 2024, the Tesouro Selic exempt to R$ 10,000.00 of all the book's Tesouro Selic, a sale paying on its share of the excess (`CustodyFee`, `TestCustodyFeeOfATesouroSale`, `TestCustodyFee`, `TestCustodyExemptionCountsTheHoldersTesouroSelic`; the nets of `TestBRProductMatrix` T-01, T-04, T-08) | the table of RendA+ and Educa+ is not modelled | B3, tarifas de Tesouro Direto (b3.com.br, read 2026-11-19); B3 and Tesouro Nacional on the pro rata charge from 2024-12-31 (December 2024) |
+| T-09 | Custody fee of B3 | supported | `estimate_redemption` and the position net deduct `custody_fee`, 0.20% a year pro rata since the purchase, the last coupon or the charge of July 2024, the Tesouro Selic exempt to R$ 10,000.00 of all the book's Tesouro Selic, a sale paying on its share of the excess (`CustodyFee`, `TestCustodyFeeOfATesouroSale`, `TestCustodyFee`, `TestCustodyExemptionCountsTheHoldersTesouroSelic`; the nets of `TestBRProductMatrix` T-01, T-04, T-08); a redemption or a monthly payment of an RendA+ or an Educa+ pays 0.10% above 6 or 4 minimum wages of its year (`ReceiptFee`, `TestCustodyFeeOfAnIncomeBond`, `TestReceiptFee`, `TestS644IncomeBondPaymentAndItsFee`) | none | B3, tarifas de Tesouro Direto (b3.com.br, read 2026-11-19); B3 and Tesouro Nacional on the pro rata charge from 2024-12-31 (December 2024); minimum wage: Decretos 11.864/2023, 12.342/2024 and 12.797/2025 |
 
 ## Listed securities
 
@@ -91,8 +91,8 @@ Source status:
 
 | Verdict | Rows |
 |---|---|
-| supported | 44 |
-| partial | 10 |
+| supported | 45 |
+| partial | 9 |
 | unsupported | 0 |
 
 ## What the assistant says

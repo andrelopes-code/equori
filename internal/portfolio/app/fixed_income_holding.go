@@ -36,6 +36,9 @@ func (s *Service) holdingEvents(
 	}
 
 	b.today, b.positions = today, positions
+	b.receiptFee = func(amount money.Money, date time.Time) (*money.Money, error) {
+		return s.ledger.ReceiptCustodyFee(ctx, booksID, h.instrument, amount, date)
+	}
 
 	atMaturity := false
 
@@ -116,6 +119,9 @@ type eventBuilder struct {
 	released   int64
 	residualBP int
 	out        []FixedIncomeEvent
+
+	// receiptFee is the custody fee of a payment of amount on date, nil when it pays none.
+	receiptFee func(amount money.Money, date time.Time) (*money.Money, error)
 }
 
 func (b *eventBuilder) coupon(ctx context.Context, c Coupon) error {
@@ -233,6 +239,12 @@ func (b *eventBuilder) add(
 		}
 
 		e.Gross = &gross
+
+		if kind == domain.EventAmortization && b.receiptFee != nil {
+			if e.CustodyFee, err = b.receiptFee(gross, date); err != nil {
+				return false, err
+			}
+		}
 	}
 
 	return b.finish(e), nil

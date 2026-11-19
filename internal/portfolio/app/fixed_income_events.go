@@ -42,7 +42,9 @@ type FixedIncomeEvent struct {
 	RateMissing bool
 	// EstimatedTax is the come-cotas a unit_tax event is estimated to take; nil without prices.
 	EstimatedTax *money.Money
-	State        string // upcoming, due, recorded
+	// CustodyFee is the custody fee a payment pays on its receipt (an RendA+); nil when none.
+	CustodyFee *money.Money
+	State      string // upcoming, due, recorded
 }
 
 // FixedIncomeEvents lists the payments dated in [from, to] of the fixed income securities the

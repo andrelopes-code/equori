@@ -419,6 +419,9 @@ type FieldError struct {
 type FixedIncomeEvent struct {
 	AccountId openapi_types.UUID `json:"account_id"`
 
+	// CustodyFee The custody fee a payment pays on its receipt, such as the 0.10% of a monthly payment of an RendA+ above 6 minimum wages; absent when it pays none.
+	CustodyFee *Money `json:"custody_fee,omitempty"`
+
 	// Date The payment date, adjusted to the next business day.
 	Date openapi_types.Date `json:"date"`
 
