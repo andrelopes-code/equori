@@ -52,7 +52,7 @@ func TestSecurityType(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			if got := feed.SecurityType(tc.mic, tc.listing, tc.kind); got != tc.want {
+			if got := feed.SecurityType(tc.mic, "", tc.listing, tc.kind); got != tc.want {
 				t.Errorf(
 					"SecurityType(%q, %q, %q) = %q, want %q",
 					tc.mic,
@@ -63,5 +63,34 @@ func TestSecurityType(t *testing.T) {
 				)
 			}
 		})
+	}
+}
+
+// A BDR of the B3 is named after its issuer abroad ("Apple Inc."): its code says what it is, a
+// number of 31 to 35 for a receipt of shares and 39 for a receipt of an ETF.
+func TestSecurityTypeOfAReceipt(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct{ mic, code, kind, want string }{
+		{"BVMF", "AAPL34", "stock", "depositary_receipt"},
+		{"BVMF", "ROXO34", "stock", "depositary_receipt"},
+		{"BVMF", "BIVB39", "stock", "depositary_receipt"},
+		{"BVMF", "ITUB31", "stock", "depositary_receipt"},
+		{"BVMF", "PETR3", "stock", "stock"},
+		{"BVMF", "TAEE11", "stock", "stock"},
+		{"BVMF", "AAPL34", "etf", "etf"},
+		{"XNAS", "AAPL34", "stock", "stock"},
+	}
+	for _, tc := range tests {
+		if got := feed.SecurityType(tc.mic, tc.code, "Apple Inc.", tc.kind); got != tc.want {
+			t.Errorf(
+				"SecurityType(%q, %q, %q) = %q, want %q",
+				tc.mic,
+				tc.code,
+				tc.kind,
+				got,
+				tc.want,
+			)
+		}
 	}
 }

@@ -27,7 +27,7 @@ func (m *Module) SuggestTypeFixes(ctx context.Context) ([]TypeFix, error) {
 	var fixes []TypeFix
 
 	for _, in := range shares {
-		if to := feed.SecurityType(in.Exchange, in.Name, in.Type); to != in.Type {
+		if to := feed.SecurityType(in.Exchange, string(in.Code), in.Name, in.Type); to != in.Type {
 			fixes = append(fixes, TypeFix{Code: in.Code, Name: in.Name, From: in.Type, To: to})
 		}
 	}
