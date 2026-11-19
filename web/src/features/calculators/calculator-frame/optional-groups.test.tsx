@@ -9,7 +9,8 @@ import { OptionalGroups } from "@/features/calculators/calculator-frame/optional
 const address = vi.hoisted(() => {
   const empty: Record<string, string> = {};
 
-  return { initial: empty, current: empty };
+  // deferred: the router commits a navigation after the render that asked for it.
+  return { initial: empty, current: empty, deferred: false };
 });
 
 vi.mock("@/features/calculators/model/calculator-search", () => ({
@@ -20,13 +21,18 @@ vi.mock("@/features/calculators/model/calculator-search", () => ({
     return [
       search,
       (patch: Record<string, string | undefined>) => {
-        setSearch((prev) =>
-          Object.fromEntries(
-            Object.entries({ ...prev, ...patch }).filter(
-              (entry): entry is [string, string] => entry[1] !== undefined,
+        const apply = () => {
+          setSearch((prev) =>
+            Object.fromEntries(
+              Object.entries({ ...prev, ...patch }).filter(
+                (entry): entry is [string, string] => entry[1] !== undefined,
+              ),
             ),
-          ),
-        );
+          );
+        };
+
+        if (address.deferred) setTimeout(apply, 0);
+        else apply();
       },
     ];
   },
@@ -34,8 +40,9 @@ vi.mock("@/features/calculators/model/calculator-search", () => ({
 
 const addressKeys = ["delay", "withdraw", "withdrawUnit"] as const;
 
-function renderGroups(search: Record<string, string>) {
+function renderGroups(search: Record<string, string>, deferred = false) {
   address.initial = search;
+  address.deferred = deferred;
 
   return render(
     <OptionalGroups
@@ -120,6 +127,15 @@ describe("OptionalGroups", () => {
     await userEvent.click(screen.getByRole("button", { name: "Remove delay" }));
 
     expect(screen.getByRole("button", { name: "Add delay" })).toHaveFocus();
+  });
+
+  it("moves focus to the add button once the router commits the removal", async () => {
+    renderGroups({ delay: "12" }, true);
+
+    await userEvent.click(screen.getByRole("button", { name: "Remove delay" }));
+
+    const add = await screen.findByRole("button", { name: "Add delay" });
+    expect(add).toHaveFocus();
   });
 
   it("keeps focus where it is when the address opens a group", () => {

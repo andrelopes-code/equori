@@ -23,8 +23,9 @@ interface OptionalGroupsProps<K extends string> {
   addressKeys: readonly K[];
 }
 
-// Where focus goes after the next render: the first control of a group that opened, or the add
-// button of a group that closed.
+// Where focus goes once its element exists: the first control of a group that opened, or the add
+// button of a group that closed. The router commits a removal after the render that asked for it,
+// so the target waits for the render that draws the element.
 interface FocusTarget {
   group: string;
   to: "fields" | "add";
@@ -47,14 +48,17 @@ export function OptionalGroups<K extends string>({
   useEffect(() => {
     const next = target.current;
     if (next === null) return;
-    target.current = null;
+
     const el =
       next.to === "add"
         ? adds.current.get(next.group)
         : fields.current
             .get(next.group)
             ?.querySelector<HTMLElement>(controlSelector);
-    el?.focus();
+    if (el === undefined || el === null) return;
+
+    target.current = null;
+    el.focus();
   });
 
   const isOpen = (group: OptionalGroupSpec<K>) =>
