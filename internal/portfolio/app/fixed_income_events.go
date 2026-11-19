@@ -26,6 +26,7 @@ type Coupon struct {
 	Interest       string
 	Principal      string
 	AmortizationBP int
+	AmortizeOneOf  int // one part in this many of the units held; zero when AmortizationBP states it
 	PaysInterest   bool
 	RateMissing    bool
 }

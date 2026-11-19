@@ -49,9 +49,9 @@ Source status:
 | T-02 | Tesouro Prefixado (LTN) | supported | as T-01; `TestBRProductMatrix` row T-02: LTN of the Metodologia de Cálculo example, 37,002.70 of income tax, sovereign 1,000,000.00 | none | Metodologia de Cálculo of the Tesouro Nacional, LTN example, read 2026-11-18 |
 | T-03 | Tesouro Prefixado with half-yearly interest (NTNF) | supported | as T-01; `fixed_income_events` lists the coupons every 6 months back from the maturity, 48.81 a unit, and 1,000.00 at maturity (`governmentBondCoupons`, `TestS632GovernmentBondEvents`); a coupon is an income of type coupon | none | Metodologia de Cálculo dos Títulos Públicos Federais, Tesouro Nacional (coupon of 10% a year, 1,000.00 × (1.10^½ − 1)) |
 | T-04 | Tesouro IPCA+ (NTNBP) | supported | as T-01; `TestBRProductMatrix` row T-04 with the published buying and selling prices | none | Tesouro Transparente, PrecoTaxaTesouroDireto.csv, fetched 2026-11-18 |
-| T-05 | Tesouro IPCA+ with half-yearly interest (NTNB) | partial | as T-03: the coupon dates of 6% a year come from the maturity; their amount is missing | the nominal value (VNA) is not published by the source, so a coupon carries no amount until it is recorded | Metodologia de Cálculo dos Títulos Públicos Federais, Tesouro Nacional (coupon of 6% a year on the VNA) |
-| T-06 | Tesouro RendA+ | partial | code `RENDA`; `fixed_income_events` lists the 240 monthly amortizations on the 15th ending on the maturity (`monthlyBondCoupons`, `TestS633IncomeBondEvents`) | the nominal value (VNA) is not published by the source, so a payment carries no amount; the units of a payment are a share of whole basis points, within 2% of one of those left | Tesouro Direto, Tesouro RendA+ (240 monthly payments from the conversion date to the maturity) |
-| T-07 | Tesouro Educa+ | partial | code `EDUCA`; as T-06 with 60 monthly payments | as T-06 | Tesouro Direto, Tesouro Educa+ (60 monthly payments) |
+| T-05 | Tesouro IPCA+ with half-yearly interest (NTNB) | supported | as T-03: each coupon is the VNA by the IPCA numbers of the IBGE from 2000-07-15 times 0.02956301, the principal the VNA (`governmentBondCoupons`, `VNA`, `TestVNAAndBondInterest`, `TestS640NTNBCouponFromTheIPCA`, `TestIndexFeedIPCAFromIBGE`); a payment whose IPCA is not yet published has no amount, as any unpublished period | none | Tesouro Nacional, Metodologia de Cálculo dos Títulos Públicos Federais, version of 2024-04-29, read 2026-11-19 (VNA: factor A16, VNA T6; coupon factor 0.02956301; examples of 2008-05-15 and 2008-05-01); IBGE SIDRA table 1737, variable 2266 |
+| T-06 | Tesouro RendA+ | supported | code `RENDA`; `fixed_income_events` lists the 240 monthly amortizations on the 15th ending on the maturity, each one part in the payments left of the units held, at the VNI by the IPCA from 2000-07-15 (`monthlyBondCoupons`, `TestS633IncomeBondEvents`) | none | Tesouro Direto, Tesouro RendA+ (NTN-B1: VNI of 1,000.00 on 2000-07-15 updated by the IPCA; principal paid from the conversion date to the maturity); Tesouro Nacional, Metodologia de Cálculo dos Títulos Públicos Federais, version of 2024-04-29, read 2026-11-19 (VNA: factor A16, VNA T6; coupon factor 0.02956301; examples of 2008-05-15 and 2008-05-01) |
+| T-07 | Tesouro Educa+ | supported | code `EDUCA`; as T-06 with 60 monthly payments | none | as T-06 (Tesouro Educa+, 60 monthly payments) |
 | T-08 | Tesouro IGPM+ (NTNC) | supported | code `NTNC` in `internal/marketdata/feed/tesourodireto`; `TestBRProductMatrix` row T-08 with the published buying and selling prices | none | Tesouro Transparente, PrecoTaxaTesouroDireto.csv, fetched 2026-11-18 |
 | T-09 | Custody fee of B3 | partial | `estimate_redemption` and the position net deduct `custody_fee`, 0.20% a year pro rata since the purchase, the last coupon or the charge of July 2024, the Tesouro Selic exempt to R$ 10,000.00 (`CustodyFee`, `TestCustodyFeeOfATesouroSale`, `TestCustodyFee`; the nets of `TestBRProductMatrix` T-01, T-04, T-08) | the exemption is read per sale, not across the holder's Tesouro Selic; the table of RendA+ and Educa+ is not modelled | B3, tarifas de Tesouro Direto (b3.com.br, read 2026-11-19); B3 and Tesouro Nacional on the pro rata charge from 2024-12-31 (December 2024) |
 
@@ -91,8 +91,8 @@ Source status:
 
 | Verdict | Rows |
 |---|---|
-| supported | 41 |
-| partial | 13 |
+| supported | 44 |
+| partial | 10 |
 | unsupported | 0 |
 
 ## What the assistant says

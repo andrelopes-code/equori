@@ -11,8 +11,11 @@ type Coupon struct {
 	Interest       string    // per unit, 12 decimals; empty when RateMissing
 	Principal      string    // face × I(p) per unit, 12 decimals; empty when RateMissing
 	AmortizationBP int
-	PaysInterest   bool
-	RateMissing    bool
+	// AmortizeOneOf amortizes one part in this many of the units held, zero when AmortizationBP
+	// states the share: the monthly payments of an RendA+ or an Educa+ (coverage row T-06).
+	AmortizeOneOf int
+	PaysInterest  bool
+	RateMissing   bool
 }
 
 // Coupons is the coupon of each payment of t, in the order of t.Payments. It runs the state of

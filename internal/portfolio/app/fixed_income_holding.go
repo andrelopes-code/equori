@@ -145,11 +145,14 @@ func (b *eventBuilder) coupon(ctx context.Context, c Coupon) error {
 		return err
 	}
 
-	if c.AmortizationBP <= 0 {
+	if c.AmortizationBP <= 0 && c.AmortizeOneOf <= 0 {
 		return nil
 	}
 
 	amortized := domain.AmortizedUnits(units, c.AmortizationBP, b.residualBP)
+	if c.AmortizeOneOf > 0 {
+		amortized = domain.AmortizedUnits(units, 1, c.AmortizeOneOf)
+	}
 
 	recorded, err := b.add(
 		ctx, domain.EventAmortization, c.Date, amortized, c.Principal, c.RateMissing,

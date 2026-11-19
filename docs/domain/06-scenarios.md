@@ -1206,7 +1206,7 @@ Coverage rows T-03 and T-05, through the HTTP API. 2.00 units each of NTNF.20290
 
 ### S633 Monthly payments of an RendA+
 
-Coverage rows T-06 and T-07, through the HTTP API. 240.00 units of RENDA.20491215 bought on 2026-01-12; the events from 2030-01-01 to 2030-03-31 are three amortizations on the 15th of 0.98, 1.01 and 1.01 units, without amount.
+Coverage rows T-06 and T-07, through the HTTP API. 240.00 units of RENDA.20491215 bought on 2026-01-12; the events from 2030-01-01 to 2030-03-31 are three amortizations on the 15th of 1.00 unit each (one part in 240, 239 and 238 of the units held), without amount while the IPCA of their VNA is not stored.
 
 ### S634 Estimate of the come-cotas
 
@@ -1235,3 +1235,11 @@ Coverage row E-12, through the HTTP API and the tool `get_tax_year`. One WINZ26 
 ### S640–S647 Contribution groups by rule
 
 The scenarios of `docs/specs/2026-11-19-contribution-rules-design.md`, rules GR1 to GR8, through the HTTP API. The book holds, in one brokerage, a CDB of 10,000.00 (`rate`, matures 2027), an LCI of 5,000.00 (`rate`, matures 2028, daily liquidity), `NTNB.20350515` of 3,000.00 and BOVA11 of 2,000.00, with the cash funded to the cent. `PUT /contribution-plan` with the plan of GR12 ("Reserva" `{daily_liquidity: true}`, "Pós" `{instrument_type: fixed_income, return_kind: rate}`, "IPCA+" `{return_kind: inflation, matures_from_year: 2031, matures_to_year: 2040}`, "Ações" with the member BOVA11) returns the class values 5,000.00, 10,000.00, 3,000.00 and 2,000.00, `matched` of "Pós" with the CDB at 10,000.00 and a share of 10000, and no outside entry; with "IPCA+" removed, the outside list holds `NTNB.20350515` with `return_kind` `inflation` (S640; `TestS640RuleClassValuesItsContracts`). With an `instrument` member of the CDB in "Ações", the CDB counts in "Ações" and "Pós" has no `matched`; the LCI stays in "Reserva", the first group it meets (S641; `TestS641MemberAndOrderWin`). With `LFT.20290301` held, a group `{return_kind: rate, daily_liquidity: true}` takes it, `NTNB.20350515` is taken by `{return_kind: inflation, matures_from_year: 2035}`, and `{daily_liquidity: true}` leaves `NTNB.20350515` outside (S642; `TestS642GovernmentBondFacts`). A matched contract without a price makes the response `incomplete` with its instrument in `missing` (S643; `TestS643MatchedWithoutPrice`). `GET` of a BR book returns `guarantee_name` `FGC`; a book of region `DE` refuses `{guarantee: covered}` with 422 `contribution_rule_invalid` (S644; `TestS644GuaranteeOutsideBrazil`). A group with members and rules, a rule with no condition, `subtypes` without `instrument_type` and a maturity from 2035 to 2030 return 422 `contribution_rule_invalid`; six rules return 400 `invalid_request` (S645; `TestS645InvalidRules`). `POST /contribution-plan/preview` of the plan of GR12 with 2,000.00 returns the class amounts 0.00, 0.00, 0.00 and 2,000.00; without `amount` it returns 200 with `matched` and no class `amount` (S646; `TestS646PreviewOfRules`). In a book with base `USD`, a BRL contract of 1,000.00 at a stored BRL to USD rate of 0.20 gives its group the value 200.00 (S647; `TestS647RuleClassForeignBase`).
+
+### S640 Coupon of an NTN-B by the IPCA
+
+Coverage row T-05, through the HTTP API. The IPCA numbers of June 2000 (1,614.62) and October 2026 (2,788.33, the months between holding June's): the VNA of 2026-11-15 is 1,726.926459 and the coupon of 2026-11-16 on 2.00 units of NTNB.20350515 is 102.11 (51.053144 a unit), as the example of the Tesouro's methodology.
+
+### S641 Coupon of the NTN-C of 2031 and maturity of an LFT
+
+Coverage rows T-08 and T-01, through the HTTP API. An IGP-M factor of 2.102805518521 from July 2000 to June 2026: the coupon of 2026-07-01 on 2.00 units of NTNC.20310101 is 245.19 (12% a year, 122.594655 a unit). A Selic of 0.07% on each business day of July 2000: 1.00 unit of LFT.20000801 pays 1,014.80 at maturity.
