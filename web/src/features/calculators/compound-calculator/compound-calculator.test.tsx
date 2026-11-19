@@ -317,6 +317,187 @@ describe("Compound interest calculator", () => {
       }),
     ).toBeNull();
   });
+
+  // The inputs of the screen change the answer when typed into.
+  it("reads the inflation typed into its field", async () => {
+    const user = userEvent.setup();
+    await open("initial=100000&deposit=0&months=12&rate=12.682503");
+    await answer();
+    await user.type(
+      await screen.findByRole("textbox", {
+        name: catalogEn["calc.compound.inflation"],
+      }),
+      "4",
+    );
+    expect(await result(catalogEn["calc.compound.real"])).toContain("1,083.49");
+  });
+
+  it("draws the range once a volatility is typed", async () => {
+    const user = userEvent.setup();
+    await open("initial=100000&deposit=10000&months=12&rate=12");
+    await answer();
+    expect(screen.queryByText(catalogEn["calc.compound.range.low"])).toBeNull();
+    await user.type(
+      await screen.findByRole("textbox", {
+        name: catalogEn["calc.compound.volatility"],
+      }),
+      "20",
+    );
+    expect(
+      await screen.findByText(catalogEn["calc.compound.range.low"]),
+    ).toBeInTheDocument();
+  });
+
+  it("answers once the term is typed", async () => {
+    const user = userEvent.setup();
+    await open("initial=100000&deposit=0&rate=12.682503");
+    const region = await answer();
+    expect(region).toHaveTextContent("—");
+    await user.type(
+      await screen.findByRole("textbox", { name: catalogEn["calc.term"] }),
+      "12",
+    );
+    await within(region).findByText("R$1,126.83");
+  });
+
+  it("opens the delay group by its button and reads the delay typed (CR7)", async () => {
+    const user = userEvent.setup();
+    await open("initial=0&deposit=10000&months=24&rate=12.682503");
+    await answer();
+    const withdraw = screen.getByRole("button", {
+      name: catalogEn["calc.compound.withdraw.add"],
+    });
+    const add = screen.getByRole("button", {
+      name: catalogEn["calc.compound.delay.add"],
+    });
+    // Both add buttons stand in one row.
+    expect(add.parentElement).toBe(withdraw.parentElement);
+    await user.click(add);
+    await user.type(
+      await screen.findByRole("textbox", {
+        name: catalogEn["calc.compound.delay"],
+      }),
+      "12",
+    );
+    const delayed = catalogEn["calc.compound.answer.delayed"].replace(
+      "{months}",
+      "12",
+    );
+    expect(await result(delayed)).toContain("1,280.93");
+  });
+
+  it("opens the withdrawal group by its button and reads the term typed (CR7)", async () => {
+    const user = userEvent.setup();
+    await open("initial=100000&months=12&rate=12.682503&inflation=4");
+    await answer();
+    await user.click(
+      screen.getByRole("button", {
+        name: catalogEn["calc.compound.withdraw.add"],
+      }),
+    );
+    await user.type(
+      await screen.findByRole("textbox", {
+        name: catalogEn["calc.compound.withdraw"],
+      }),
+      "10",
+    );
+    expect(await result(catalogEn["calc.compound.income.spending"])).toContain(
+      "13.21",
+    );
+  });
+
+  it("reads the rate typed in the income mode", async () => {
+    const user = userEvent.setup();
+    await open(
+      "mode=income&initial=100000000&months=2&monthsUnit=month&period=month",
+    );
+    const region = await answer();
+    await user.type(
+      await screen.findByRole("textbox", {
+        name: catalogEn["calc.compound.rate"],
+      }),
+      "1",
+    );
+    await within(region).findByText("R$10,000.00");
+  });
+
+  it("reads the inflation typed in the income mode and keeps one income (CR3)", async () => {
+    const user = userEvent.setup();
+    await open(
+      "mode=income&initial=100000000&period=month&rate=1&months=2&monthsUnit=month",
+    );
+    const region = await answer();
+    await within(region).findByText("R$10,000.00");
+    await user.type(
+      await screen.findByRole("textbox", {
+        name: catalogEn["calc.compound.inflation"],
+      }),
+      "4",
+    );
+    // 1% less 0.3274% of inflation a month, on 1,000,000.00.
+    const figure = (await within(region).findByText(/^R\$6,72\d\.\d\d$/))
+      .textContent;
+    // The evidence states the income of the answer.
+    expect(await result(catalogEn["calc.compound.live.firstIncome"])).toBe(
+      figure,
+    );
+  });
+
+  it("opens the withdrawal group in the income mode", async () => {
+    const user = userEvent.setup();
+    await open(
+      "mode=income&initial=100000000&period=month&rate=1&months=2&monthsUnit=month",
+    );
+    await answer();
+    await user.click(
+      screen.getByRole("button", {
+        name: catalogEn["calc.compound.withdraw.add"],
+      }),
+    );
+    await user.type(
+      await screen.findByRole("textbox", {
+        name: catalogEn["calc.compound.withdraw"],
+      }),
+      "10",
+    );
+    expect(await result(catalogEn["calc.compound.income.spending"])).toMatch(
+      /R\$[1-9][\d,]*\.\d\d/,
+    );
+  });
+
+  it("states that no income keeps the assets in the income mode", async () => {
+    await open(
+      "mode=income&initial=100000000&period=month&rate=0.1&months=2&monthsUnit=month&inflation=4",
+    );
+    expect(await answer()).toHaveTextContent(
+      catalogEn["calc.compound.income.none"],
+    );
+  });
+
+  it("names the invalid share in the answer", async () => {
+    await open("mode=income&initial=100000000&rate=12&months=2&share=101");
+    expect(await answer()).toHaveTextContent(
+      catalogEn["calc.compound.live.share"].toLocaleLowerCase("en"),
+    );
+  });
+
+  it("states the typed target in the sentence of the deposit", async () => {
+    // The deposit of 140.55 reaches 1,000.01; the sentence names the 1,000.00 asked for.
+    await open("mode=target&target=100000&initial=0&months=7&rate=5");
+    const region = await answer();
+    await within(region).findByText("R$140.55");
+    expect(region).toHaveTextContent(/to reach R\$1,000\.00 in 7 months/);
+  });
+
+  it("draws the warning of no lasting income without a mark", async () => {
+    await open("initial=100000&months=12&rate=3&inflation=4");
+    const text = await screen.findByText(
+      catalogEn["calc.compound.income.none"],
+    );
+    const alert = text.closest('[data-ui="alert"]');
+    expect(alert).not.toBeNull();
+    expect(alert?.querySelector('[data-part="icon"]')).toBeNull();
+  });
 });
 
 // The text of each cell of one row of a table, in order.

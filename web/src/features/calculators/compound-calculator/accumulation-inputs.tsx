@@ -1,3 +1,4 @@
+import { rateFieldValue } from "@/features/calculators/compound-calculator/compound-answer";
 import { CompoundModeField } from "@/features/calculators/compound-calculator/compound-mode-field";
 import {
   clearFloating,
@@ -11,7 +12,6 @@ import { RateField } from "@/features/calculators/fields/rate-field";
 import type { CalculatorMoney } from "@/features/calculators/fields/use-calculator-money";
 import { useCalculatorSearch } from "@/features/calculators/model/calculator-search";
 import { termUnits, unitPatch } from "@/features/calculators/model/duration";
-import { rateText } from "@/features/calculators/model/format-rate";
 import { FloatingFields } from "@/features/calculators/rate-source/floating-fields";
 import { floatingOrigin } from "@/features/calculators/rate-source/floating-origin";
 import { IndexChoice } from "@/features/calculators/rate-source/index-choice";
@@ -113,13 +113,7 @@ export function AccumulationInputs({ input, money }: AccumulationInputsProps) {
         label={t("calc.compound.rate")}
         help={t("calc.compound.rate.help")}
         name="rate"
-        value={
-          index === undefined
-            ? (search.rate ?? "")
-            : fromIndex === null
-              ? ""
-              : rateText(fromIndex.rate)
-        }
+        value={rateFieldValue(search.rate, index !== undefined, fromIndex)}
         onChange={(v) => {
           set({ ...clearFloating(floatingKeys), rate: v, index: undefined });
         }}

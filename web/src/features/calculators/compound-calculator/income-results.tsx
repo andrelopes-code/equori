@@ -15,12 +15,21 @@ import { useT } from "@/i18n/i18n-provider";
 
 interface IncomeResultsProps {
   rows: readonly IncomeRow[];
+  // The income that spends the balance over the withdrawal term, in the money of the rows.
+  spending: number | null;
+  // The rows are in today's money.
+  inflation: boolean;
   money: CalculatorMoney;
 }
 
 // The evidence of "live on income": the first month's income, the totals and the years in one
 // short table.
-export function IncomeResults({ rows, money }: IncomeResultsProps) {
+export function IncomeResults({
+  rows,
+  spending,
+  inflation,
+  money,
+}: IncomeResultsProps) {
   const t = useT();
   const first = rows[0];
   const last = rows[rows.length - 1];
@@ -61,6 +70,17 @@ export function IncomeResults({ rows, money }: IncomeResultsProps) {
               term: t("calc.compound.live.growth"),
               value: money.format(last.closing - first.opening),
             },
+            ...(spending === null
+              ? []
+              : [
+                  {
+                    term: t("calc.compound.income.spending"),
+                    ...(inflation
+                      ? { note: t("calc.compound.rows.today") }
+                      : {}),
+                    value: money.format(spending),
+                  },
+                ]),
           ]}
         />
 

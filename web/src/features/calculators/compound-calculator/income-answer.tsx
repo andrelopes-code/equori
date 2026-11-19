@@ -1,5 +1,5 @@
 import { CalculatorAnswer } from "@/features/calculators/calculator-frame/calculator-answer";
-import { missingSentence } from "@/features/calculators/calculator-frame/missing-fields";
+import { emptySentence } from "@/features/calculators/compound-calculator/compound-answer";
 import type { livingIncome } from "@/features/calculators/compound-calculator/compound-answer";
 import type { CalculatorMoney } from "@/features/calculators/fields/use-calculator-money";
 import type { IncomeRow } from "@/features/calculators/model/compound-math";
@@ -11,7 +11,7 @@ interface IncomeAnswerProps {
   rows: readonly IncomeRow[] | null;
   lasting: ReturnType<typeof livingIncome>;
   share: number;
-  missing: { balance: boolean; rate: boolean; term: boolean };
+  missing: { balance: boolean; rate: boolean; term: boolean; share: boolean };
   money: CalculatorMoney;
 }
 
@@ -28,19 +28,26 @@ export function IncomeAnswer({
   const last = rows?.at(-1);
 
   if (rows === null) {
-    const fields = [
-      { label: t("calc.compound.live.balance"), missing: missing.balance },
-      { label: t("calc.compound.rate"), missing: missing.rate },
-      { label: t("calc.compound.live.term"), missing: missing.term },
-    ].map((f) => ({ ...f, label: f.label.toLocaleLowerCase(tag) }));
+    const sentence = emptySentence({
+      order: ["balance", "rate", "term", "share"],
+      labels: {
+        balance: t("calc.compound.live.balance"),
+        rate: t("calc.compound.rate"),
+        term: t("calc.compound.live.term"),
+        share: t("calc.compound.live.share"),
+      },
+      missing,
+      what: t("calc.compound.income.what"),
+      t,
+      tag,
+    });
 
     return (
       <CalculatorAnswer
         lead={lead}
         figure={null}
-        sentence={
-          missingSentence(fields, t("calc.compound.income.what"), t, tag) ?? ""
-        }
+        // Nothing missing: the return does not beat the inflation.
+        sentence={sentence === "" ? t("calc.compound.income.none") : sentence}
       />
     );
   }

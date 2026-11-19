@@ -3,9 +3,9 @@ import { Inline } from "@slotted/react/inline";
 
 import type { AccumulationInput } from "@/features/calculators/compound-calculator/use-accumulation";
 import { FilledNote } from "@/features/calculators/fields/filled-note";
+import { rateFieldValue } from "@/features/calculators/compound-calculator/compound-answer";
 import { RateField } from "@/features/calculators/fields/rate-field";
 import { useCalculatorSearch } from "@/features/calculators/model/calculator-search";
-import { rateText } from "@/features/calculators/model/format-rate";
 import { indexName } from "@/features/calculators/rate-source/index-catalog";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -30,13 +30,11 @@ export function InflationField({ input }: InflationFieldProps) {
       label={t("calc.compound.inflation")}
       help={t("calc.compound.inflation.help")}
       name="inflation"
-      value={
-        inflationIndex === undefined
-          ? (search.inflation ?? "")
-          : fromInflationIndex === null
-            ? ""
-            : rateText(fromInflationIndex.rate)
-      }
+      value={rateFieldValue(
+        search.inflation,
+        inflationIndex !== undefined,
+        fromInflationIndex,
+      )}
       onChange={(v) => {
         set({ inflation: v, inflationIndex: undefined });
       }}

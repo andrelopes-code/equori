@@ -1,15 +1,10 @@
 import { Button } from "@slotted/react/button";
-import {
-  FieldGroup,
-  FieldGroupContent,
-  FieldGroupLegend,
-} from "@slotted/react/field-group";
 import { Glyph } from "@slotted/react/icon";
 import { Inline } from "@slotted/react/inline";
-import { Stack } from "@slotted/react/stack";
 import { useState } from "react";
 import type { ReactNode } from "react";
 
+import { OptionalFieldGroup } from "@/features/calculators/calculator-frame/optional-field-group";
 import { useCalculatorSearch } from "@/features/calculators/model/calculator-search";
 
 interface OptionalGroupProps {
@@ -57,24 +52,8 @@ export function OptionalGroup({
   }
 
   return (
-    <FieldGroup kind="section">
-      <FieldGroupLegend>{legend}</FieldGroupLegend>
-      <FieldGroupContent>
-        <Stack gap={8}>
-          {children}
-
-          <Inline>
-            <Button
-              size="sm"
-              variant="ghost"
-              tone="secondary"
-              onClick={handleRemove}
-            >
-              {remove}
-            </Button>
-          </Inline>
-        </Stack>
-      </FieldGroupContent>
-    </FieldGroup>
+    <OptionalFieldGroup legend={legend} remove={remove} onRemove={handleRemove}>
+      {children}
+    </OptionalFieldGroup>
   );
 }

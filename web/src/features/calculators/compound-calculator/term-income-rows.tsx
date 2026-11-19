@@ -9,7 +9,10 @@ import {
 } from "@slotted/react/section";
 
 import { FactRows } from "@/features/calculators/calculator-frame/fact-rows";
-import { termIncome } from "@/features/calculators/compound-calculator/compound-answer";
+import {
+  termIncome,
+  termIncomeRows,
+} from "@/features/calculators/compound-calculator/compound-answer";
 import type { CalculatorMoney } from "@/features/calculators/fields/use-calculator-money";
 import { REINVESTED_SHARE } from "@/features/calculators/model/compound-math";
 import { formatRate } from "@/features/calculators/model/format-rate";
@@ -35,58 +38,25 @@ export function TermIncomeRows({
 }: TermIncomeRowsProps) {
   const t = useT();
   const [tag] = useAppLocale();
-  const { lasting, spending } = termIncome({
-    final,
-    j,
-    inflation,
-    months,
-    withdraw,
+  const income = termIncome({ final, j, inflation, months, withdraw });
+  const rows = termIncomeRows({
+    income,
+    inflation: inflation !== null,
+    format: money.format,
+    labels: {
+      lasting: t("calc.compound.rows.lasting"),
+      same: t("calc.compound.rows.same"),
+      atEnd: t("calc.compound.rows.atEnd"),
+      today: t("calc.compound.rows.today"),
+      reinvest: t("calc.compound.rows.reinvest", {
+        share: formatRate(REINVESTED_SHARE, tag),
+      }),
+      living: t("calc.compound.rows.living", {
+        share: formatRate(1 - REINVESTED_SHARE, tag),
+      }),
+      spending: t("calc.compound.income.spending"),
+    },
   });
-  const today = inflation === null ? undefined : t("calc.compound.rows.today");
-  const note = (text: string | undefined) =>
-    text === undefined ? {} : { note: text };
-  const living = formatRate(1 - REINVESTED_SHARE, tag);
-  const reinvested = formatRate(REINVESTED_SHARE, tag);
-
-  const rows = [
-    ...(lasting === null
-      ? []
-      : [
-          {
-            term: t("calc.compound.rows.lasting"),
-            ...note(today),
-            value: money.format(lasting.today),
-          },
-          ...(inflation === null
-            ? []
-            : [
-                {
-                  term: t("calc.compound.rows.same"),
-                  note: t("calc.compound.rows.atEnd"),
-                  value: money.format(lasting.atEnd),
-                },
-              ]),
-          {
-            term: t("calc.compound.rows.reinvest", { share: reinvested }),
-            ...note(today),
-            value: money.format(lasting.reinvested),
-          },
-          {
-            term: t("calc.compound.rows.living", { share: living }),
-            ...note(today),
-            value: money.format(lasting.living),
-          },
-        ]),
-    ...(spending === null
-      ? []
-      : [
-          {
-            term: t("calc.compound.income.spending"),
-            ...note(today),
-            value: money.format(spending),
-          },
-        ]),
-  ];
 
   return (
     <Section size="lg">
@@ -100,8 +70,8 @@ export function TermIncomeRows({
       </SectionHeader>
 
       <SectionBody>
-        {lasting === null && (
-          <Alert tone="warning">
+        {income.lasting === null && (
+          <Alert tone="warning" hideIcon>
             <AlertContent>
               <AlertDescription>
                 {t("calc.compound.income.none")}

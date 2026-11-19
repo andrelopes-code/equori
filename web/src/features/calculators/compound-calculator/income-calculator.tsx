@@ -1,7 +1,11 @@
 import { CalculatorFrame } from "@/features/calculators/calculator-frame/calculator-frame";
 import { CalculatorMethod } from "@/features/calculators/calculator-frame/calculator-method";
 import { sources } from "@/features/calculators/compound-calculator/compound-sources";
-import { livingIncome } from "@/features/calculators/compound-calculator/compound-answer";
+import {
+  balanceSpending,
+  livingIncome,
+  realMonthlyRate,
+} from "@/features/calculators/compound-calculator/compound-answer";
 import { IncomeAdjust } from "@/features/calculators/compound-calculator/income-adjust";
 import { IncomeAnswer } from "@/features/calculators/compound-calculator/income-answer";
 import { IncomeDetails } from "@/features/calculators/compound-calculator/income-details";
@@ -20,6 +24,7 @@ import {
 import { readMonths, readUnit } from "@/features/calculators/model/duration";
 import { annualToMonthly } from "@/features/calculators/model/rate-math";
 import { incomeTermUnits } from "@/features/calculators/compound-calculator/income-inputs";
+import { withdrawUnits } from "@/features/calculators/compound-calculator/use-accumulation";
 
 const maxMonths = 1200;
 
@@ -39,21 +44,30 @@ export function IncomeCalculator() {
   const share =
     search.share === undefined ? REINVESTED_SHARE : readShare(search.share);
   const inflation = readRate(search.inflation);
+  const withdrawUnit = readUnit(search.withdrawUnit, withdrawUnits);
+  const withdraw = readMonths(search.withdraw, withdrawUnit, 1, maxMonths);
 
   if (money === null)
     return <CalculatorFrame id="compound" inputs={null} method={null} />;
 
+  // The balance keeps its purchasing power at the return net of inflation, so the rows and the
+  // answer state the same income, in today's money.
+  const net = j === null ? null : realMonthlyRate(j, inflation);
   const ready =
     balance !== null &&
     balance > 0 &&
-    j !== null &&
-    j > 0 &&
+    net !== null &&
+    net > 0 &&
     months !== null &&
     share !== null;
-  const rows = ready ? incomeEvolution(balance, j, share, months) : null;
+  const rows = ready ? incomeEvolution(balance, net, share, months) : null;
   const lasting = ready
-    ? livingIncome({ balance, j, inflation, months, share })
+    ? livingIncome({ balance, j: j ?? 0, inflation, months, share })
     : null;
+  const spending =
+    balance !== null && j !== null && withdraw !== null
+      ? balanceSpending({ balance, j, inflation, withdraw })
+      : null;
 
   return (
     <CalculatorFrame
@@ -67,12 +81,20 @@ export function IncomeCalculator() {
             balance: balance === null || balance === 0,
             rate: j === null || j <= 0,
             term: months === null,
+            share: share === null,
           }}
           money={money}
         />
       }
       evidence={
-        rows === null ? undefined : <IncomeResults rows={rows} money={money} />
+        rows === null ? undefined : (
+          <IncomeResults
+            rows={rows}
+            spending={spending}
+            inflation={inflation !== null}
+            money={money}
+          />
+        )
       }
       inputs={<IncomeInputs money={money} />}
       optional={<IncomeAdjust />}

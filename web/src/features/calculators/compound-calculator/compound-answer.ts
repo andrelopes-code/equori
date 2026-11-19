@@ -4,8 +4,11 @@ import {
   monthlyIncome,
   splitIncome,
 } from "@/features/calculators/model/compound-math";
+import { missingSentence } from "@/features/calculators/calculator-frame/missing-fields";
+import { rateText } from "@/features/calculators/model/format-rate";
 import { annualToMonthly } from "@/features/calculators/model/rate-math";
 import { roundHalfEven } from "@/features/calculators/model/round";
+import type { TFunction } from "@/i18n/i18n-provider";
 
 interface AccumulationInput {
   initial: number;
@@ -57,6 +60,50 @@ interface LivingIncomeInput {
   months: number;
   // The share of the income reinvested, as a fraction.
   share: number;
+}
+
+interface FactsInput {
+  target: boolean;
+  deposited: number;
+  final: number;
+  today: number | null;
+  delayed: number | null;
+  format: (minor: number) => string;
+  labels: {
+    deposited: string;
+    interest: string;
+    today: string;
+    // Already names the delay.
+    delayed: string;
+    wait: string;
+  };
+}
+
+interface TermIncomeRowsInput {
+  income: TermIncome;
+  // An inflation is set: the rows carry the money they are in.
+  inflation: boolean;
+  format: (minor: number) => string;
+  labels: {
+    lasting: string;
+    same: string;
+    atEnd: string;
+    today: string;
+    reinvest: string;
+    living: string;
+    spending: string;
+  };
+}
+
+interface EmptySentenceInput<K extends string> {
+  // The inputs in reading order.
+  order: readonly K[];
+  labels: Record<K, string>;
+  missing: Record<K, boolean>;
+  // What the answer will show, after "to see".
+  what: string;
+  t: TFunction;
+  tag: string;
 }
 
 interface SplitRowInput {
@@ -170,4 +217,110 @@ export function splitRow(input: SplitRowInput) {
     total,
     label: `${input.name}: ${input.depositedLabel} ${input.format(input.deposited)}, ${input.interestLabel} ${input.format(interest)}`,
   };
+}
+
+// The facts under the figure, at most three: for a target the deposited amount and the interest,
+// then today's money, the delayed amount and the cost of waiting.
+export function accumulationFacts(
+  input: FactsInput,
+): { term: string; value: string }[] {
+  const { format, labels } = input;
+  const facts = [
+    ...(input.target
+      ? [
+          { term: labels.deposited, value: format(input.deposited) },
+          {
+            term: labels.interest,
+            value: format(input.final - input.deposited),
+          },
+        ]
+      : []),
+    ...(input.today === null
+      ? []
+      : [{ term: labels.today, value: format(input.today) }]),
+    ...(input.delayed === null
+      ? []
+      : [
+          { term: labels.delayed, value: format(input.delayed) },
+          {
+            term: labels.wait,
+            value: format(waitingCost(input.final, input.delayed)),
+          },
+        ]),
+  ];
+
+  return facts.slice(0, 3);
+}
+
+// The labelled rows of the income after the term; a note names the money when an inflation is set.
+export function termIncomeRows(
+  input: TermIncomeRowsInput,
+): { term: string; note?: string; value: string }[] {
+  const { income, format, labels } = input;
+  const note = input.inflation ? { note: labels.today } : {};
+  const { lasting, spending } = income;
+
+  return [
+    ...(lasting === null
+      ? []
+      : [
+          { term: labels.lasting, ...note, value: format(lasting.today) },
+          ...(input.inflation
+            ? [
+                {
+                  term: labels.same,
+                  note: labels.atEnd,
+                  value: format(lasting.atEnd),
+                },
+              ]
+            : []),
+          { term: labels.reinvest, ...note, value: format(lasting.reinvested) },
+          { term: labels.living, ...note, value: format(lasting.living) },
+        ]),
+    ...(spending === null
+      ? []
+      : [{ term: labels.spending, ...note, value: format(spending) }]),
+  ];
+}
+
+// The sentence of an answer without a figure: the inputs still missing, in reading order; empty
+// when none is missing.
+export function emptySentence<K extends string>(
+  input: EmptySentenceInput<K>,
+): string {
+  const fields = input.order.map((key) => ({
+    label: input.labels[key].toLocaleLowerCase(input.tag),
+    missing: input.missing[key],
+  }));
+
+  return missingSentence(fields, input.what, input.t, input.tag) ?? "";
+}
+
+// The monthly return net of the monthly inflation: the rate at which a balance keeps its purchasing
+// power, so its income agrees with livingIncome.
+export function realMonthlyRate(j: number, inflation: number | null): number {
+  return inflation === null ? j : j - annualToMonthly(inflation);
+}
+
+// The monthly income that spends a balance of today over a withdrawal term, in today's money.
+export function balanceSpending(input: {
+  balance: number;
+  j: number;
+  inflation: number | null;
+  withdraw: number;
+}): number | null {
+  const g = input.inflation === null ? 0 : annualToMonthly(input.inflation);
+
+  return monthlyIncome(input.balance, input.j, g, input.withdraw);
+}
+
+// The text of a rate field: what is typed, or the rate an index fills in (empty while it loads).
+export function rateFieldValue(
+  typed: string | undefined,
+  indexed: boolean,
+  fromIndex: { rate: number } | null,
+): string {
+  if (!indexed) return typed ?? "";
+
+  return fromIndex === null ? "" : rateText(fromIndex.rate);
 }
