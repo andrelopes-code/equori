@@ -2,7 +2,7 @@
 
 - Date: 2026-11-19
 - Status: approved on 2026-11-19 (the owner delegated the decisions to the planning session)
-- Module: `portfolio`; rules GR1 to GR12; scenarios S639 to S646; issue #64
+- Module: `portfolio`; rules GR1 to GR12; scenarios S640 to S647; issue #64
 - Amends: `docs/specs/2026-11-12-contribution-plan-design.md` (CN3, CN5, CN6, CN12, API, Storage, Edit mode)
 - Study: `docs/specs/2026-11-18-fixed-income-planning-study.md`, approach A1
 
@@ -200,12 +200,12 @@ In the section "Carteira contra o ideal", the members of an expanded group by ru
 - D3: Does not apply: the plan changes no transaction.
 - D4: Does not apply: no data from a bank, a file or a model.
 - D5: Does not apply: the diagnostic file gains no field.
-- S1: No new operation. `contribution_rule_invalid` has an HTTP test (S644). `TestToolCatalog` runs with `-update`, and the declaration of `save_contribution_plan` stays within 3,500 bytes (`internal/server/catalog_quality_test.go`).
+- S1: No new operation. `contribution_rule_invalid` has an HTTP test (S645). `TestToolCatalog` runs with `-update`, and the declaration of `save_contribution_plan` stays within 3,500 bytes (`internal/server/catalog_quality_test.go`).
 - S2: Does not appear on a phone (CN, ADR 027).
 - S3: `internal/assistant/guide/articles/contribution_plan.md` describes groups by rule, the order of GR5 and the guarantee words, in the commit of the screen.
 - S4: The assistant reads and writes rules through `get_portfolio` view `contribution` and `save_contribution_plan` (GR11).
-- X1: S639 a class by rule values the contracts it meets and the outside list excludes them (GR12). S640 an instrument member wins over a rule, and the first class wins among rules (GR12, LCI B). S641 `LFT.20290301` meets `{return_kind: rate, daily_liquidity: true}`; `NTNB.20350515` meets `{return_kind: inflation, matures_from_year: 2035}` and not `{daily_liquidity: true}`. S642 a matched security without a price gives `incomplete` with its instrument. S643 a book of region `DE` saving a rule with `guarantee` receives `contribution_rule_invalid`. S644 a class with members and rules, a rule with no condition, `subtypes` without `instrument_type`, `matures_from_year` after `matures_to_year`, and six rules each receive `contribution_rule_invalid`. S645 the preview of GR12 with 2,000.00 returns 0, 0, 0, 2,000.00. S646 a book with base `USD` values a BRL contract of a class by rule at today's rate. `guarantee: uncovered` meets a debenture and not `NTNB.20350515` or a CDB (domain test of GR4).
-- X2: S643 runs in region `DE`; S646 runs with a base currency other than the contract's.
+- X1: S640 a class by rule values the contracts it meets and the outside list excludes them (GR12). S641 an instrument member wins over a rule, and the first class wins among rules (GR12, LCI B). S642 `LFT.20290301` meets `{return_kind: rate, daily_liquidity: true}`; `NTNB.20350515` meets `{return_kind: inflation, matures_from_year: 2035}` and not `{daily_liquidity: true}`. S643 a matched security without a price gives `incomplete` with its instrument. S644 a book of region `DE` saving a rule with `guarantee` receives `contribution_rule_invalid`. S645 a class with members and rules, a rule with no condition, `subtypes` without `instrument_type`, `matures_from_year` after `matures_to_year`, each receive `contribution_rule_invalid`; six rules receive 400 `invalid_request` (the `maxItems` of the OpenAPI schema, as the other limits of the plan). S646 the preview of GR12 with 2,000.00 returns 0, 0, 0, 2,000.00. S647 a book with base `USD` values a BRL contract of a class by rule at today's rate. `guarantee: uncovered` meets a debenture and not `NTNB.20350515` or a CDB (domain test of GR4).
+- X2: S644 runs in region `DE`; S647 runs with a base currency other than the contract's.
 
 ## Left to the builder
 
