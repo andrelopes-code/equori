@@ -15,6 +15,17 @@ const open = (search = "") =>
 const debts =
   "?debts=card~100000~3~5000;loan~300000~1~10000;store~50000~2~2500&budget=30000&ratePeriod=month";
 
+async function result(label: string): Promise<string> {
+  const term = await screen.findByText(label, { selector: "dt" });
+  return term.parentElement?.querySelector("dd")?.textContent ?? "";
+}
+
+// The figure of the answer, after the lead the screen states.
+async function figure(lead: string): Promise<string> {
+  const node = await screen.findByText(lead);
+  return node.nextElementSibling?.textContent ?? "";
+}
+
 const label = (key: "calc.debt.name" | "calc.debt.rate", n: number) =>
   catalogEn[key].replace("{n}", String(n));
 
@@ -40,35 +51,97 @@ describe("Debt payoff calculator", () => {
     ).toHaveValue("");
   });
 
-  it("compares the avalanche and the snowball", async () => {
+  it("opens filled from the address and names the order with less interest", async () => {
     await open(debts);
-    const table = await screen.findByRole("table", {
+    // Avalanche 52780 and snowball 55652 minor units: 55652 - 52780 = 2872.
+    expect(
+      await figure(
+        catalogEn["calc.debt.answer.lead"].replace(
+          "{order}",
+          catalogEn["calc.debt.avalanche"],
+        ),
+      ),
+    ).toContain("28.72");
+    expect(
+      screen.getByText(
+        /less than snowball, with the last payment in 17 months\./,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(catalogEn["calc.options"])).toBeNull();
+  });
+
+  it("states the last payment of each order as a fact", async () => {
+    await open(debts);
+    const months = (order: string) =>
+      result(catalogEn["calc.debt.answer.months"].replace("{order}", order));
+    expect(await months(catalogEn["calc.debt.avalanche"])).toBe("17");
+    expect(await months(catalogEn["calc.debt.snowball"])).toBe("17");
+  });
+
+  it("draws the interest of each order and the month each debt closes", async () => {
+    await open(debts);
+    expect(
+      await screen.findByRole("img", { name: /^Avalanche .*527\.80/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("img", { name: /^Snowball .*556\.52/ }),
+    ).toBeInTheDocument();
+    const table = screen.getByRole("table", {
       name: catalogEn["calc.debt.compare"],
     });
-    const row = (name: string) =>
-      within(table).getByRole("rowheader", { name }).closest("tr")
-        ?.textContent ?? "";
-    expect(row(catalogEn["calc.debt.months"])).toBe(
-      `${catalogEn["calc.debt.months"]}1717`,
+    const closes = catalogEn["calc.debt.closes"].replace("{name}", "card");
+    expect(
+      within(table).getByRole("rowheader", { name: closes }).closest("tr")
+        ?.textContent,
+    ).toBe(`${closes}79`);
+  });
+
+  it("states that the orders pay the same interest for one debt", async () => {
+    // 3000 + 2190 + 1356 + 496 = 7042 minor units in 4 months, in both orders.
+    await open("?debts=card~100000~3~5000&budget=30000&ratePeriod=month");
+    expect(await figure(catalogEn["calc.debt.answer.leadEqual"])).toContain(
+      "70.42",
     );
-    expect(row(catalogEn["calc.debt.interest"])).toContain("527.80");
-    expect(row(catalogEn["calc.debt.interest"])).toContain("556.52");
-    expect(row(catalogEn["calc.debt.closes"].replace("{name}", "card"))).toBe(
-      `${catalogEn["calc.debt.closes"].replace("{name}", "card")}79`,
-    );
-    const term = await screen.findByText(
-      catalogEn["calc.debt.avalancheLower"],
-      {
-        selector: "dt",
-      },
-    );
-    expect(term.parentElement?.textContent).toContain("28.72");
+    expect(
+      screen.getByText(catalogEn["calc.debt.answer.equal"]),
+    ).toBeInTheDocument();
+    const months = catalogEn["calc.debt.answer.months"];
+    expect(
+      await result(months.replace("{order}", catalogEn["calc.debt.snowball"])),
+    ).toBe("4");
   });
 
   it("makes no plan below the sum of the minimums", async () => {
     await open(debts.replace("budget=30000", "budget=17000"));
     expect(
       await screen.findByText(catalogEn["calc.debt.belowMinimums"]),
+    ).toBeInTheDocument();
+    expect(await figure(catalogEn["calc.debt.answer.leadEqual"])).toBe("—");
+  });
+
+  it("warns under the answer when a debt is never closed", async () => {
+    // 3% of 1000.00 is 30.00, the whole budget.
+    await open("?debts=card~100000~3~3000&budget=3000&ratePeriod=month");
+    expect(
+      await screen.findByText(catalogEn["calc.debt.notClosed"]),
+    ).toBeInTheDocument();
+    expect(await figure(catalogEn["calc.debt.answer.leadEqual"])).toBe("—");
+    expect(
+      await result(
+        catalogEn["calc.debt.answer.months"].replace(
+          "{order}",
+          catalogEn["calc.debt.avalanche"],
+        ),
+      ),
+    ).toBe(catalogEn["calc.debt.notClosedCell"]);
+  });
+
+  it("names every missing input before the answer", async () => {
+    await open("?debts=");
+    expect(
+      await screen.findByText(
+        /^Fill in monthly budget for the debts and debts to see/,
+      ),
     ).toBeInTheDocument();
   });
 

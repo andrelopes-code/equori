@@ -492,13 +492,8 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.debt.figure": "Valor",
   "calc.debt.avalanche": "Avalanche",
   "calc.debt.snowball": "Bola de neve",
-  "calc.debt.months": "Meses até o último pagamento",
-  "calc.debt.interest": "Total de juros",
   "calc.debt.closes": "{name} termina no mês",
   "calc.debt.notClosedCell": "não termina",
-  "calc.debt.avalancheLower": "A avalanche paga menos juros em",
-  "calc.debt.snowballLower": "A bola de neve paga menos juros em",
-  "calc.debt.sameInterest": "Diferença de juros",
   "calc.debt.belowMinimums":
     "O orçamento é menor que a soma dos pagamentos mínimos, então nenhum plano paga todas as dívidas.",
   "calc.debt.notClosed":
@@ -712,8 +707,19 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.debt.budget.hint":
     "Tudo o que vai para as dívidas por mês, somando os mínimos.",
   "calc.debt.list": "Dívidas",
-  "calc.debt.summary":
-    "A última dívida termina no mês {avalanche} com a avalanche e no mês {snowball} com a bola de neve.",
+  "calc.debt.answer.lead": "{order} paga menos juros",
+  "calc.debt.answer.leadEqual": "Juros totais",
+  "calc.debt.answer.sentence":
+    "a menos que {other}, com a última parcela em {months} meses.",
+  "calc.debt.answer.equal": "As duas ordens pagam os mesmos juros.",
+  "calc.debt.answer.open":
+    "Uma das ordens não quita as dívidas em 1.200 meses.",
+  "calc.debt.answer.what": "a ordem que paga menos juros",
+  "calc.debt.answer.months": "Última parcela, {order}",
+  "calc.debt.bars.title": "Juros de cada ordem",
+  "calc.debt.avalanche.help": "Paga primeiro a dívida de maior taxa.",
+  "calc.debt.snowball.help": "Paga primeiro a dívida de menor saldo.",
+  "calc.debt.minimum.help": "O menor pagamento mensal que cada dívida aceita.",
   "calc.recurring.rate.hint":
     "Acrescenta quanto os mesmos pagamentos alcançariam se fossem investidos.",
   "calc.recurring.summaryMonth": "{amount} todo mês por {years} anos.",

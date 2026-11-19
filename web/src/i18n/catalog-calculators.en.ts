@@ -487,13 +487,8 @@ export const calculatorsEn = {
   "calc.debt.figure": "Figure",
   "calc.debt.avalanche": "Avalanche",
   "calc.debt.snowball": "Snowball",
-  "calc.debt.months": "Months to the last payment",
-  "calc.debt.interest": "Total interest",
   "calc.debt.closes": "{name} closes in month",
   "calc.debt.notClosedCell": "not closed",
-  "calc.debt.avalancheLower": "The avalanche pays less interest by",
-  "calc.debt.snowballLower": "The snowball pays less interest by",
-  "calc.debt.sameInterest": "Difference in interest",
   "calc.debt.belowMinimums":
     "The budget is below the sum of the minimum payments, so no plan pays every debt.",
   "calc.debt.notClosed":
@@ -704,8 +699,19 @@ export const calculatorsEn = {
   "calc.debt.budget.hint":
     "All that goes to the debts each month, minimums included.",
   "calc.debt.list": "Debts",
-  "calc.debt.summary":
-    "The last debt closes in month {avalanche} with the avalanche and in month {snowball} with the snowball.",
+  "calc.debt.answer.lead": "{order} pays less interest",
+  "calc.debt.answer.leadEqual": "Total interest",
+  "calc.debt.answer.sentence":
+    "less than {other}, with the last payment in {months} months.",
+  "calc.debt.answer.equal": "Both orders pay the same interest.",
+  "calc.debt.answer.open":
+    "One of the orders does not pay off the debts in 1,200 months.",
+  "calc.debt.answer.what": "the order that pays less interest",
+  "calc.debt.answer.months": "Last payment, {order}",
+  "calc.debt.bars.title": "Interest of each order",
+  "calc.debt.avalanche.help": "Pays the highest rate first.",
+  "calc.debt.snowball.help": "Pays the smallest balance first.",
+  "calc.debt.minimum.help": "The smallest monthly payment each debt accepts.",
   "calc.recurring.rate.hint":
     "Adds what the same payments would reach if invested.",
   "calc.recurring.summaryMonth": "{amount} every month for {years} years.",
