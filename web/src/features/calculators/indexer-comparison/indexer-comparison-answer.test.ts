@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { breakEven } from "@/features/calculators/indexer-comparison/break-even";
+import { breakEven } from "@/features/calculators/indexer-comparison/break-even/break-even";
 import type { ComparisonRow } from "@/features/calculators/indexer-comparison/compare";
 import { indexerAnswer } from "@/features/calculators/indexer-comparison/indexer-comparison-answer";
 import type {

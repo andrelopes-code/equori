@@ -1,4 +1,4 @@
-import { breakEven } from "@/features/calculators/indexer-comparison/break-even";
+import { breakEven } from "@/features/calculators/indexer-comparison/break-even/break-even";
 import type { ComparisonRow } from "@/features/calculators/indexer-comparison/compare";
 import type {
   IndexData,

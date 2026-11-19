@@ -1,7 +1,7 @@
 import { CalculatorFrame } from "@/features/calculators/calculator-frame/calculator-frame";
 import { CalculatorMethod } from "@/features/calculators/calculator-frame/calculator-method";
 import { fixedIncomeRules } from "@/features/calculators/fixed-income-calculator/fixed-income-region";
-import { breakEvenItems } from "@/features/calculators/indexer-comparison/break-even-items";
+import { breakEvenItems } from "@/features/calculators/indexer-comparison/break-even/break-even-items";
 import {
   compare,
   referenceOf,

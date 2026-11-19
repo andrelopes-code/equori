@@ -6,8 +6,8 @@ import {
   SectionTitle,
 } from "@slotted/react/section";
 
-import { BreakEvenList } from "@/features/calculators/indexer-comparison/break-even-list";
-import type { BreakEvenItem } from "@/features/calculators/indexer-comparison/break-even-items";
+import { BreakEvenList } from "@/features/calculators/indexer-comparison/break-even/break-even-list";
+import type { BreakEvenItem } from "@/features/calculators/indexer-comparison/break-even/break-even-items";
 import type { ComparisonRow } from "@/features/calculators/indexer-comparison/compare";
 import { ComparisonNotes } from "@/features/calculators/indexer-comparison/comparison-notes";
 import { ComparisonTable } from "@/features/calculators/indexer-comparison/comparison-table";

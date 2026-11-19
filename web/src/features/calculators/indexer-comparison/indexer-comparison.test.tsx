@@ -2,7 +2,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
-import { breakEven } from "@/features/calculators/indexer-comparison/break-even";
+import { breakEven } from "@/features/calculators/indexer-comparison/break-even/break-even";
 import { compare } from "@/features/calculators/indexer-comparison/compare";
 import { IndexerComparison } from "@/features/calculators/indexer-comparison/indexer-comparison";
 import type { IndexData } from "@/features/calculators/indexer-comparison/security";
