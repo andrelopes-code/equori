@@ -13,8 +13,12 @@ type Jurisdiction interface {
 	// A subtype the jurisdiction does not know takes the class of its type.
 	TaxClass(instrumentType, subtype, exchange string) string
 	// Treatment is the tax treatment of an income of a security of taxClass; "" when the type
-	// has no treatment.
-	Treatment(incomeType, taxClass string) string
+	// has no treatment. withheld reports tax recorded as withheld on the income: it comes before
+	// the rule, which may not hold yet a law that taxes the income.
+	Treatment(incomeType, taxClass string, withheld bool) string
+	// WithheldClass is the tax class of a sale of taxClass whose note withheld tax: the class
+	// the rule exempts gives way to the taxed one; a class taxed at every sale keeps its class.
+	WithheldClass(taxClass string) string
 	// Subtypes lists the subtypes the jurisdiction knows for an instrument type, sorted.
 	Subtypes(instrumentType string) []string
 	// TaxYear is the tax year that starts in year: from inclusive, to exclusive, in UTC.

@@ -136,7 +136,37 @@ func (Jurisdiction) TaxClass(instrumentType, subtype, exchange string) string {
 	return instrumentType
 }
 
-func (Jurisdiction) Treatment(incomeType, taxClass string) string {
+// Treatment: a withholding recorded on an income the rules exempt follows a law the rules do not
+// hold yet. A dividend is withheld in advance of the annual return, as the 10% of Lei 15.270/2025
+// above R$ 50,000.00 a month from one company; any other income is withheld at source.
+func (Jurisdiction) Treatment(incomeType, taxClass string, withheld bool) string {
+	t := treatment(incomeType, taxClass)
+	if !withheld || t != "exempt" {
+		return t
+	}
+
+	if incomeType == "dividend" || incomeType == "bonus_shares" {
+		return "taxable"
+	}
+
+	return "exclusive"
+}
+
+// WithheldClass: a sale of an exempt fixed income security or fund whose note withholds tax
+// takes the taxed class. A stock or a FII keeps its class: every sale of it withholds 0.005% at
+// source (Lei 11.033/2004 art. 2, §1).
+func (Jurisdiction) WithheldClass(taxClass string) string {
+	switch taxClass {
+	case "fixed_income_exempt":
+		return "fixed_income"
+	case "fund_exempt":
+		return "fund"
+	}
+
+	return taxClass
+}
+
+func treatment(incomeType, taxClass string) string {
 	switch incomeType {
 	case "dividend", "bonus_shares":
 		// The dividend of a BDR is paid by a company abroad: taxable by the progressive table

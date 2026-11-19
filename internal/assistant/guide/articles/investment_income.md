@@ -15,4 +15,4 @@ Outside the regions that have an article, the types and the default withholding 
 
 A correction of an income is a correction of the whole record, with a reason. Before recording, search_transactions for that date and Investment avoids a duplicate.
 
-The tax treatment of each income reads exempt, exclusive (taxed at source) or taxable (declared in the annual return by the progressive table) in the Portfolio screen and in get_tax_year; the label does not change the amount recorded. An income the rules exempt but recorded with tax withheld reads taxable: the withholding recorded from the statement comes before the rule.
+The tax treatment of each income reads exempt, exclusive (taxed at source) or taxable (declared in the annual return by the progressive table) in the Portfolio screen and in get_tax_year; the label does not change the amount recorded. The tax recorded from the statement comes before the rule: an income the rules exempt but recorded with tax withheld reads taxable when it is a dividend, as the 10% of Lei 15.270/2025, and exclusive otherwise; a sale of an exempt fixed income security or fund whose note records tax takes the taxed class.

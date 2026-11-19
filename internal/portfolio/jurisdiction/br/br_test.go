@@ -68,7 +68,7 @@ func TestBR(t *testing.T) {
 		// Coverage row E-12: the fee of a securities lending is withheld at source like interest.
 		"lending_fee": "exclusive",
 	} {
-		if got := j.Treatment(incomeType, ""); got != want {
+		if got := j.Treatment(incomeType, "", false); got != want {
 			t.Errorf("Treatment(%q) = %q, want %q", incomeType, got, want)
 		}
 	}
@@ -86,8 +86,47 @@ func TestBR(t *testing.T) {
 		{"dividend", "bdr", "taxable"},
 		{"dividend", "stock", "exempt"},
 	} {
-		if got := j.Treatment(c.incomeType, c.taxClass); got != c.want {
+		if got := j.Treatment(c.incomeType, c.taxClass, false); got != c.want {
 			t.Errorf("Treatment(%q, %q) = %q, want %q", c.incomeType, c.taxClass, got, c.want)
+		}
+	}
+
+	// A withholding on an income the rules exempt comes from a law the rules do not hold yet: a
+	// dividend above the monthly limit of Lei 15.270/2025 is withheld in advance of the annual
+	// return; any other income is withheld at source.
+	for _, c := range []struct{ incomeType, taxClass, want string }{
+		{"dividend", "stock", "taxable"},
+		{"bonus_shares", "stock", "taxable"},
+		{"coupon", "fixed_income_exempt", "exclusive"},
+		{"interest", "fixed_income_exempt", "exclusive"},
+		{"distribution", "fii", "exclusive"},
+		{"distribution", "fund_exempt", "exclusive"},
+		{"jcp", "stock", "exclusive"},
+		{"dividend", "bdr", "taxable"},
+		{"other", "", ""},
+	} {
+		if got := j.Treatment(c.incomeType, c.taxClass, true); got != c.want {
+			t.Errorf(
+				"Treatment(%q, %q, withheld) = %q, want %q",
+				c.incomeType,
+				c.taxClass,
+				got,
+				c.want,
+			)
+		}
+	}
+
+	// A sale whose note withholds income tax on a class the rules exempt takes the taxed class; a
+	// stock or a FII pays 0.005% at source on every sale and keeps its class.
+	for class, want := range map[string]string{
+		"fixed_income_exempt": "fixed_income",
+		"fund_exempt":         "fund",
+		"stock":               "stock",
+		"fii":                 "fii",
+		"fixed_income":        "fixed_income",
+	} {
+		if got := j.WithheldClass(class); got != want {
+			t.Errorf("WithheldClass(%q) = %q, want %q", class, got, want)
 		}
 	}
 

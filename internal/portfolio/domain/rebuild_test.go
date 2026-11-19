@@ -41,12 +41,23 @@ func (fixtureJurisdiction) GainTax([]TaxSale) []TaxMonth { return nil }
 
 func (fixtureJurisdiction) AbroadTax([]AbroadItem) []AbroadYear { return nil }
 
-func (fixtureJurisdiction) Treatment(incomeType, _ string) string {
-	if incomeType == "dividend" {
+func (fixtureJurisdiction) Treatment(incomeType, _ string, withheld bool) string {
+	switch {
+	case incomeType == "dividend" && withheld:
+		return "taxable"
+	case incomeType == "dividend":
 		return "exempt"
 	}
 
 	return "exclusive"
+}
+
+func (fixtureJurisdiction) WithheldClass(taxClass string) string {
+	if taxClass == "fixed_income_exempt" {
+		return "fixed_income"
+	}
+
+	return taxClass
 }
 
 func TestRebuild(t *testing.T) {
@@ -363,6 +374,52 @@ func TestRebuildExemptIncomeWithWithholdingReadsTaxable(t *testing.T) {
 
 			if len(got.Incomes) != 1 || got.Incomes[0].TaxTreatment != tt.want {
 				t.Fatalf("incomes = %+v, want treatment %q", got.Incomes, tt.want)
+			}
+		})
+	}
+}
+
+// A sale of a class the jurisdiction exempts whose note withheld tax takes the class the
+// jurisdiction gives a withheld sale: the recorded tax comes before the rule.
+func TestRebuildExemptSaleWithTaxesTakesWithheldClass(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name  string
+		taxes int64
+		want  string
+	}{
+		{name: "no tax on the note", taxes: 0, want: "fixed_income_exempt"},
+		{name: "tax on the note", taxes: 750, want: "fixed_income"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			a := uuid.New()
+
+			got := Rebuild(Facts{
+				Currency: "BRL",
+				Securities: []Security{
+					{AccountID: a, Instrument: "LCI1", Type: "fixed_income_exempt"},
+				},
+				Trades: []Trade{
+					{
+						TransactionID: uuid.New(),
+						AccountID:     a,
+						Date:          day("2026-10-20"),
+						Side:          "sell",
+						Quantity:      1,
+						Gross:         110000,
+						Taxes:         tt.taxes,
+						Cost:          100000,
+					},
+				},
+			}, fixtureJurisdiction{})
+
+			if len(got.Results) != 1 || got.Results[0].TaxClass != tt.want {
+				t.Fatalf("results = %+v, want tax class %q", got.Results, tt.want)
 			}
 		})
 	}

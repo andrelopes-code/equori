@@ -159,6 +159,9 @@ func realizedResults(f Facts, securities map[uuid.UUID]Security, j Jurisdiction)
 		var taxClass string
 		if j != nil {
 			taxClass = j.TaxClass(s.Type, s.Subtype, s.Exchange)
+			if t.Taxes > 0 {
+				taxClass = j.WithheldClass(taxClass)
+			}
 		}
 
 		base := RealizedResult{
@@ -237,13 +240,11 @@ func incomeEvents(f Facts, securities map[uuid.UUID]Security, j Jurisdiction) []
 		var treatment string
 		if j != nil {
 			s := securities[in.AccountID]
-			treatment = j.Treatment(in.Type, j.TaxClass(s.Type, s.Subtype, s.Exchange))
-		}
-
-		// The recorded withholding comes before the rule: a payer that withholds on an income
-		// the rule exempts follows a law the rule does not hold yet.
-		if treatment == "exempt" && in.Withheld > 0 {
-			treatment = "taxable"
+			treatment = j.Treatment(
+				in.Type,
+				j.TaxClass(s.Type, s.Subtype, s.Exchange),
+				in.Withheld > 0,
+			)
 		}
 
 		events = append(events, IncomeEvent{
