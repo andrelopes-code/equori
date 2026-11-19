@@ -318,11 +318,15 @@
     font-variant-numeric: tabular-nums;
   }
 
+  /* Slotted's select and text field fill their row (inline-size 100%): the pair fixes both, or the
+     select takes the row and the value shrinks to its content (owner review, 2026-11-19). */
   .unitSelect {
     flex: none;
+    inline-size: auto;
   }
 
   .unitValue {
+    flex: none;
     inline-size: 7rem; /* literal: value part of a value-and-unit pair, medium step minus the unit select */
   }
 }
