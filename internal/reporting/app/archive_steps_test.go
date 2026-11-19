@@ -854,3 +854,24 @@ func TestAddContributionQuestions(t *testing.T) {
 		t.Fatalf("ArchiveVersion = %d, want at least 29", ArchiveVersion)
 	}
 }
+
+// A version 30 archive holds no rule of a contribution group; the step leaves its rows as they
+// are (migration 00131).
+func TestAddContributionRules(t *testing.T) {
+	t.Parallel()
+
+	v30 := []ArchiveTable{
+		{Name: "portfolio_contribution_class", Rows: [][]byte{[]byte(`{"id":"a"}`)}},
+	}
+
+	got, err := addContributionRules(v30)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assertTables(t, got, v30)
+
+	if ArchiveVersion < 31 {
+		t.Fatalf("ArchiveVersion = %d, want at least 31", ArchiveVersion)
+	}
+}
