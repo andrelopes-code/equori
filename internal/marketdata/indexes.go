@@ -47,9 +47,9 @@ func indexEntries() []indexEntry {
 		},
 		{
 			"br_ipca",
-			sgs,
+			"https://apisidra.ibge.gov.br",
 			20,
-			func(hc *http.Client, url string) index.Source { return brsgs.IPCA(hc, url) },
+			func(hc *http.Client, url string) index.Source { return cpi.IPCA(hc, url) },
 		},
 		{
 			"br_selic",
@@ -155,21 +155,35 @@ func NewIndexSources(
 }
 
 // tickIndex fetches the rates of an index from the day after the latest stored one to today; a
-// first fetch starts 20 years before today, or at the earliest issue date of a security that
-// follows the index when that is earlier. On a failure the next tick fetches the same days again.
+// first fetch starts 20 years before today, at the earliest issue date of a security that follows
+// the index, or at the history start of the source, whichever is earliest. A store that starts
+// after a declared history start is filled back to it first. On a failure the next tick fetches
+// the same days.
 func (m *Module) tickIndex(ctx context.Context, src index.Source) error {
-	followed := src.Index()
+	start, err := m.indexStart(ctx, src)
+	if err != nil {
+		return err
+	}
 
-	issued, err := m.q.IndexTermsStart(ctx, &followed)
+	earliest, err := m.q.EarliestIndexRate(ctx, src.Index())
 	if err != nil {
 		return err
 	}
 
 	today := m.feeds.Clock.Today(ctx)
+	if !earliest.Found {
+		return m.fetchRates(ctx, src, start, today)
+	}
 
-	from := today.AddDate(-indexHistoryYears, 0, 0)
-	if issued.N > 0 && issued.IssuedOn.Before(from) {
-		from = issued.IssuedOn
+	// Only a declared history start is filled back; a month of slack covers a start that falls on
+	// a day without a rate.
+	if since := historySince(
+		src,
+	); !since.IsZero() &&
+		earliest.Earliest.After(since.AddDate(0, 1, 0)) {
+		if err := m.fetchRates(ctx, src, since, earliest.Earliest.AddDate(0, 0, -1)); err != nil {
+			return err
+		}
 	}
 
 	latest, err := m.q.LatestIndexRate(ctx, src.Index())
@@ -177,17 +191,48 @@ func (m *Module) tickIndex(ctx context.Context, src index.Source) error {
 		return err
 	}
 
-	if latest.Found && latest.Latest.AddDate(0, 0, 1).After(from) {
-		from = latest.Latest.AddDate(0, 0, 1)
+	return m.fetchRates(ctx, src, latest.Latest.AddDate(0, 0, 1), today)
+}
+
+// indexStart is the first day the store of src holds.
+func (m *Module) indexStart(ctx context.Context, src index.Source) (time.Time, error) {
+	followed := src.Index()
+
+	issued, err := m.q.IndexTermsStart(ctx, &followed)
+	if err != nil {
+		return time.Time{}, err
 	}
 
-	for !from.After(today) {
-		to := from.AddDate(0, 0, indexWindowDays)
-		if to.After(today) {
-			to = today
+	from := m.feeds.Clock.Today(ctx).AddDate(-indexHistoryYears, 0, 0)
+	if issued.N > 0 && issued.IssuedOn.Before(from) {
+		from = issued.IssuedOn
+	}
+
+	if since := historySince(src); !since.IsZero() && since.Before(from) {
+		from = since
+	}
+
+	return from, nil
+}
+
+// historySince is the history start src declares, zero when it declares none.
+func historySince(src index.Source) time.Time {
+	if h, ok := src.(index.HistoryStart); ok {
+		return h.HistorySince()
+	}
+
+	return time.Time{}
+}
+
+// fetchRates fetches and stores the rates of src in [from, to], one window at a time.
+func (m *Module) fetchRates(ctx context.Context, src index.Source, from, to time.Time) error {
+	for !from.After(to) {
+		end := from.AddDate(0, 0, indexWindowDays)
+		if end.After(to) {
+			end = to
 		}
 
-		rates, err := src.Fetch(ctx, from, to)
+		rates, err := src.Fetch(ctx, from, end)
 		if storeErr := m.storeRates(ctx, src, rates); err == nil {
 			err = storeErr
 		}
@@ -196,7 +241,7 @@ func (m *Module) tickIndex(ctx context.Context, src index.Source) error {
 			return err
 		}
 
-		from = to.AddDate(0, 0, 1)
+		from = end.AddDate(0, 0, 1)
 	}
 
 	return nil

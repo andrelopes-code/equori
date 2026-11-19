@@ -2,6 +2,7 @@ package marketdata_test
 
 import (
 	"fmt"
+	"math/big"
 	"net/http"
 	"net/http/httptest"
 	"slices"
@@ -26,6 +27,9 @@ type sgsServer struct {
 	selic    [][2]string
 	igpm     [][2]string
 	ptax     [][2]string // date as dd/MM/yyyy, reais per dollar
+	// ipcaLevels are IBGE index numbers of the IPCA as YYYYMM and level; empty, the levels follow
+	// from ipca, starting at 1000 the month before its first.
+	ipcaLevels [][2]string
 }
 
 func (s *sgsServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -39,6 +43,12 @@ func (s *sgsServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if strings.HasPrefix(r.URL.Path, "/values/t/1737/n1/all/v/2266/p/") {
+		s.serveSIDRA(w, strings.TrimPrefix(r.URL.Path, "/values/t/1737/n1/all/v/2266/p/"))
+
+		return
+	}
+
 	var rows [][2]string
 	switch r.URL.Path {
 	case "/dados/serie/bcdata.sgs.12/dados":
@@ -47,7 +57,7 @@ func (s *sgsServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		rows = s.ipca
 	case "/dados/serie/bcdata.sgs.11/dados":
 		rows = s.selic
-	case "/dados/serie/bcdata.sgs.189/dados":
+	case "/dados/serie/bcdata.sgs.28655/dados":
 		rows = s.igpm
 	case "/dados/serie/bcdata.sgs.1/dados":
 		rows = s.ptax
@@ -75,6 +85,41 @@ func (s *sgsServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, _ = fmt.Fprintf(w, "[%s]", strings.Join(items, ","))
+}
+
+// serveSIDRA answers the IPCA index numbers of the months in span (YYYYMM-YYYYMM) as the IBGE
+// SIDRA API does: a header row, then one row per month.
+func (s *sgsServer) serveSIDRA(w http.ResponseWriter, span string) {
+	first, last, _ := strings.Cut(span, "-")
+	items := []string{`{"V":"Valor","D3C":"Mês (Código)"}`}
+
+	for _, l := range s.levels() {
+		if l[0] >= first && l[0] <= last {
+			items = append(items, fmt.Sprintf(`{"V":%q,"D3C":%q}`, l[1], l[0]))
+		}
+	}
+
+	_, _ = fmt.Fprintf(w, "[%s]", strings.Join(items, ","))
+}
+
+// levels are ipcaLevels, or the levels the percents of ipca compound from 1000.
+func (s *sgsServer) levels() [][2]string {
+	if len(s.ipcaLevels) > 0 || len(s.ipca) == 0 {
+		return s.ipcaLevels
+	}
+
+	first, _ := time.Parse("02/01/2006", s.ipca[0][0])
+	level := big.NewRat(1000, 1)
+	out := [][2]string{{first.AddDate(0, -1, 0).Format("200601"), "1000"}}
+
+	for _, row := range s.ipca {
+		d, _ := time.Parse("02/01/2006", row[0])
+		p, _ := new(big.Rat).SetString(row[1])
+		level.Mul(level, new(big.Rat).Add(big.NewRat(1, 1), p.Quo(p, big.NewRat(100, 1))))
+		out = append(out, [2]string{d.Format("200601"), level.FloatString(20)})
+	}
+
+	return out
 }
 
 func (s *sgsServer) take() []string {
@@ -325,6 +370,66 @@ func TestIndexFeedDollar(t *testing.T) {
 	got := pricesBetween(t, h, "USDXPTO", "2026-01-06", "2026-01-06")
 	if got["2026-01-06"].Value != "1009.8" {
 		t.Errorf("price on 2026-01-06 = %+v, want 1009.8", got["2026-01-06"])
+	}
+}
+
+// Coverage rows T-05 and F-03: the IPCA comes from the index numbers of the IBGE (SIDRA table 1737,
+// variable 2266), each month the exact ratio of its number to the number before, so the product of
+// the months is the ratio of the numbers the Tesouro Nacional uses for the VNA of an NTN-B.
+func TestIndexFeedIPCAFromIBGE(t *testing.T) {
+	t.Parallel()
+
+	s := &sgsServer{ipcaLevels: [][2]string{
+		{"200006", "1614.62"}, {"200007", "1640.62"}, {"200008", "1662.11"},
+	}}
+	srv := httptest.NewServer(s)
+	t.Cleanup(srv.Close)
+	h := apitest.New(
+		t,
+		apitest.Today("2000-09-05"),
+		apitest.IndexFeeds([]string{"br_ipca"}, indexURLs(srv)),
+	)
+	h.App.Marketdata.TickFeeds(t.Context())
+
+	want := []indexRateRow{
+		{"2000-07-01", "0.01610286011569285652", "br_ipca"},
+		{"2000-08-01", "0.01309870658653435896", "br_ipca"},
+	}
+	if got := indexRates(t, h, "ipca"); !slices.Equal(got, want) {
+		t.Errorf("ipca = %+v, want %+v", got, want)
+	}
+}
+
+// The VNA of a Tesouro bond counts the index from July 2000, more than 20 years back: the IPCA is
+// read from that base even on a first fetch, and a store that starts later is filled back to it.
+func TestIndexFeedReachesTheBondBase(t *testing.T) {
+	t.Parallel()
+
+	s := &sgsServer{ipcaLevels: [][2]string{
+		{"200006", "1614.62"}, {"200007", "1640.62"}, {"202511", "7400.00"}, {"202512", "7437.00"},
+	}}
+	srv := httptest.NewServer(s)
+	t.Cleanup(srv.Close)
+	h := apitest.New(
+		t,
+		apitest.Today("2026-01-06"),
+		apitest.IndexFeeds([]string{"br_ipca"}, indexURLs(srv)),
+	)
+
+	if _, err := h.Pool.Exec(
+		t.Context(),
+		`INSERT INTO marketdata_index_rate (index_id, date, rate, source)
+		VALUES ('ipca', '2025-12-01', 0.005, 'br_ipca')`,
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	h.App.Marketdata.TickFeeds(t.Context())
+
+	got := indexRates(t, h, "ipca")
+	if len(got) != 2 ||
+		got[0] != (indexRateRow{"2000-07-01", "0.01610286011569285652", "br_ipca"}) {
+		t.Errorf("ipca = %+v, want the rate of 2000-07 filled back and 2025-12", got)
 	}
 }
 

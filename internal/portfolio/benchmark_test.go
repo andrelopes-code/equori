@@ -1822,10 +1822,12 @@ func buildBook(t *testing.T, s bookSpec) benchmarkBook {
 		switch r.URL.Path {
 		case "/dados/serie/bcdata.sgs.12/dados":
 			fmt.Fprint(w, "["+strings.Join(rows, ",")+"]")
-		case "/dados/serie/bcdata.sgs.433/dados":
+		case "/values/t/1737/n1/all/v/2266/p/" + strings.TrimPrefix(r.URL.Path, "/values/t/1737/n1/all/v/2266/p/"):
+			// The IBGE index numbers of the IPCA: 0.50% in November 2025 and 0.40% in December.
 			fmt.Fprint(
 				w,
-				`[{"data":"01/11/2025","valor":"0.50"},{"data":"01/12/2025","valor":"0.40"}]`,
+				`[{"V":"Valor","D3C":"Mês (Código)"},{"V":"1000","D3C":"202510"},`+
+					`{"V":"1005","D3C":"202511"},{"V":"1009.02","D3C":"202512"}]`,
 			)
 		default:
 			http.NotFound(w, r)

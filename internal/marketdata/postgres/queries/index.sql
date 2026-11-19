@@ -8,6 +8,16 @@ SET
     rate = EXCLUDED.rate,
     source = EXCLUDED.source;
 
+-- name: EarliestIndexRate :one
+-- found is false, and earliest meaningless, when the index has no rate.
+SELECT
+    coalesce(min(date), DATE '0001-01-01')::date AS earliest,
+    (count(*) > 0)::boolean AS found
+FROM
+    marketdata_index_rate
+WHERE
+    index_id = @index_id;
+
 -- name: LatestIndexRate :one
 -- found is false, and latest meaningless, when the index has no rate.
 SELECT

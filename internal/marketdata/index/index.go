@@ -27,6 +27,13 @@ type BusinessDayCompounding interface {
 	CompoundsByBusinessDay() bool
 }
 
+// HistoryStart is implemented by a Source whose index a security of its region counts from a date
+// more than the default history back, such as the base of the VNA of a government bond: the store
+// holds its rates from that date.
+type HistoryStart interface {
+	HistorySince() time.Time
+}
+
 // Source reads the rates of one index from one public source.
 type Source interface {
 	// ID identifies the source; it is the id of its marketdata_feed row.

@@ -53,8 +53,10 @@ func TestS157IndexHistory(t *testing.T) {
 		}
 	}
 
+	// Coverage row T-05: the IPCA, read from the index numbers of the IBGE, starts at the base of
+	// the VNA of an NTN-B, the level of June 2000 giving the rate of July.
 	if len(cdi) == 0 || !strings.Contains(cdi[0], "dataInicial=15%2F03%2F2006") || len(ipca) == 0 ||
-		!strings.Contains(ipca[0], "dataInicial=15%2F03%2F2006") {
+		!strings.Contains(ipca[0], "/p/200006-") {
 		t.Fatalf("requests: cdi %v, ipca %v", cdi, ipca)
 	}
 

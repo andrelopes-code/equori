@@ -17,18 +17,22 @@ import (
 const (
 	dateLayout       = "02/01/2006"
 	maxResponseBytes = 16 << 20
-	// SGS series: 12 is the CDI in percent a day, 433 the IPCA in percent a month, 11 the Selic
-	// in percent a day and 189 the IGP-M in percent a month.
+	// SGS series: 12 is the CDI in percent a day, 11 the Selic in percent a day and 28655 the IGP-M
+	// in percent a month with 10 decimals, from the index numbers of the FGV; series 189 rounds it
+	// to 2 decimals, which drifts from the factor of an NTN-C (coverage row T-05).
 	seriesCDI   = 12
-	seriesIPCA  = 433
 	seriesSelic = 11
-	seriesIGPM  = 189
+	seriesIGPM  = 28655
 	// seriesPTAX is the PTAX selling rate of the dollar in reais, a quote of each business day.
 	seriesPTAX = 1
 	decimals   = 12
 	// quoteLookback reaches the quote before the first day asked, which its variation needs.
 	quoteLookback = 10
 )
+
+// bondBase is the base date of the VNA of the LFT and of the NTN-C, 2000-07-01 (Tesouro Nacional,
+// Metodologia de Cálculo dos Títulos Públicos Federais, read 2026-11-19).
+var bondBase = time.Date(2000, time.July, 1, 0, 0, 0, 0, time.UTC)
 
 // Source is one SGS series seen as an index source.
 type Source struct {
@@ -43,6 +47,8 @@ type Source struct {
 	// quotes marks a series of quotes, not of rates: its rate of a day is the quote of that day
 	// over the quote of the business day before, less one.
 	quotes bool
+	// since is the first day the store holds, zero for the default history.
+	since time.Time
 }
 
 // CDI is the daily CDI rate (identifier br_cdi, index cdi). It compounds by business day
@@ -54,24 +60,12 @@ func CDI(hc *http.Client, base string) Source {
 	}
 }
 
-// IPCA is the monthly IPCA variation (identifier br_ipca, index ipca).
-func IPCA(hc *http.Client, base string) Source {
-	return Source{
-		hc:     hc,
-		base:   base,
-		id:     "br_ipca",
-		index:  "ipca",
-		series: seriesIPCA,
-		period: index.PeriodMonth,
-	}
-}
-
 // Selic is the daily Selic rate (identifier br_selic, index selic), the rate of the Tesouro Selic
 // (LFT). It compounds by business day.
 func Selic(hc *http.Client, base string) Source {
 	return Source{
 		hc: hc, base: base, id: "br_selic", index: "selic", series: seriesSelic,
-		period: index.PeriodDay, businessDay: true,
+		period: index.PeriodDay, businessDay: true, since: bondBase,
 	}
 }
 
@@ -85,6 +79,7 @@ func IGPM(hc *http.Client, base string) Source {
 		index:  "igpm",
 		series: seriesIGPM,
 		period: index.PeriodMonth,
+		since:  bondBase,
 	}
 }
 
@@ -100,9 +95,13 @@ func Dollar(hc *http.Client, base string) Source {
 	}
 }
 
-func (s Source) ID() string     { return s.id }
-func (s Source) Index() string  { return s.index }
-func (s Source) Period() string { return s.period }
+func (s Source) ID() string { return s.id }
+
+// HistorySince is the first day the store holds: the base of the VNA of a bond that follows the
+// index (index.HistoryStart).
+func (s Source) HistorySince() time.Time { return s.since }
+func (s Source) Index() string           { return s.index }
+func (s Source) Period() string          { return s.period }
 
 func (s Source) CompoundsByBusinessDay() bool { return s.businessDay }
 

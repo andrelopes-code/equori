@@ -12,6 +12,29 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const earliestIndexRate = `-- name: EarliestIndexRate :one
+SELECT
+    coalesce(min(date), DATE '0001-01-01')::date AS earliest,
+    (count(*) > 0)::boolean AS found
+FROM
+    marketdata_index_rate
+WHERE
+    index_id = $1
+`
+
+type EarliestIndexRateRow struct {
+	Earliest time.Time
+	Found    bool
+}
+
+// found is false, and earliest meaningless, when the index has no rate.
+func (q *Queries) EarliestIndexRate(ctx context.Context, indexID string) (EarliestIndexRateRow, error) {
+	row := q.db.QueryRow(ctx, earliestIndexRate, indexID)
+	var i EarliestIndexRateRow
+	err := row.Scan(&i.Earliest, &i.Found)
+	return i, err
+}
+
 const indexRange = `-- name: IndexRange :one
 SELECT
     coalesce(min(date), DATE '0001-01-01')::date AS first,
