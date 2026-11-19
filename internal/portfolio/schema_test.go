@@ -169,3 +169,54 @@ func TestSchemaRejectsInvalidContributionQuestions(t *testing.T) {
 		})
 	}
 }
+
+// withRule adds the rule at position 0 of the class of withMember; columns names the conditions
+// that the rule sets and values holds their values.
+func withRule(columns, values string) string {
+	return withMember + `INSERT INTO portfolio_contribution_rule
+		(books_id, class_id, position, ` + columns + `) SELECT books_id, id, 0, ` + values + ` FROM c`
+}
+
+func TestSchemaRejectsInvalidContributionRules(t *testing.T) {
+	t.Parallel()
+	pool := pgtest.New(t)
+	ctx := t.Context()
+	user := pgtest.CreateBooks(t, pool)
+	control := pgtest.CreateBooks(t, pool)
+
+	// The statements that the cases below break in one place accept the valid row.
+	valid := withRule("return_kind, matures_from_year, matures_to_year", "'rate', 2030, 2035")
+	if _, err := pool.Exec(ctx, valid, control); err != nil {
+		t.Fatalf("valid row: %v", err)
+	}
+
+	tests := map[string]string{
+		"rule without books_id": withMember + `INSERT INTO portfolio_contribution_rule
+			(books_id, class_id, position, return_kind) SELECT NULL, id, 0, 'rate' FROM c`,
+		"rule with every condition null": withRule("instrument_type", "NULL"),
+		"rule from 2035 to 2030": withRule(
+			"matures_from_year, matures_to_year",
+			"2035, 2030",
+		),
+		"rule at position 5": withMember + `INSERT INTO portfolio_contribution_rule
+			(books_id, class_id, position, return_kind) SELECT books_id, id, 5, 'rate' FROM c`,
+		"rule of an unknown return kind":      withRule("return_kind", "'float'"),
+		"rule of a malformed instrument type": withRule("instrument_type", "'Fixed'"),
+		"rule of an empty subtypes list":      withRule("subtypes", "ARRAY[]::text[]"),
+		"rule of an unknown guarantee":        withRule("guarantee", "'fgc'"),
+		"rule of a year before 1900":          withRule("matures_from_year", "1899"),
+		"rule without a class": `INSERT INTO portfolio_contribution_rule
+			(books_id, class_id, position, return_kind)
+			SELECT $1::bigint, gen_random_uuid(), 0, 'rate'`,
+	}
+	for name, sql := range tests {
+		t.Run(name, func(t *testing.T) {
+			_, err := pool.Exec(ctx, sql, user)
+
+			var pgErr *pgconn.PgError
+			if !errors.As(err, &pgErr) || !strings.HasPrefix(pgErr.Code, "23") {
+				t.Fatalf("want an integrity constraint violation, got %v", err)
+			}
+		})
+	}
+}

@@ -61,6 +61,10 @@ func (r *Repository) ContributionPlan(
 		return domain.Plan{}, false, err
 	}
 
+	if err := r.attachRules(ctx, booksID, plan, index); err != nil {
+		return domain.Plan{}, false, err
+	}
+
 	return plan, true, nil
 }
 
@@ -153,6 +157,10 @@ func saveContributionPlan(ctx context.Context, q *Queries, booksID int64, p doma
 		}
 
 		if err := saveContributionQuestions(ctx, q, booksID, id, c); err != nil {
+			return err
+		}
+
+		if err := saveContributionRules(ctx, q, booksID, id, c); err != nil {
 			return err
 		}
 	}

@@ -175,6 +175,68 @@ func (q *Queries) InsertContributionQuestion(ctx context.Context, arg InsertCont
 	return err
 }
 
+const insertContributionRule = `-- name: InsertContributionRule :exec
+INSERT INTO
+    portfolio_contribution_rule (
+        books_id,
+        class_id,
+        position,
+        instrument_type,
+        subtypes,
+        quote_currency,
+        return_kind,
+        matures_from_year,
+        matures_to_year,
+        daily_liquidity,
+        guarantee
+    )
+VALUES
+    (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7,
+        $8,
+        $9,
+        $10,
+        $11
+    )
+`
+
+type InsertContributionRuleParams struct {
+	BooksID         int64
+	ClassID         uuid.UUID
+	Position        int32
+	InstrumentType  *string
+	Subtypes        []string
+	QuoteCurrency   *string
+	ReturnKind      *string
+	MaturesFromYear *int32
+	MaturesToYear   *int32
+	DailyLiquidity  *bool
+	Guarantee       *string
+}
+
+func (q *Queries) InsertContributionRule(ctx context.Context, arg InsertContributionRuleParams) error {
+	_, err := q.db.Exec(ctx, insertContributionRule,
+		arg.BooksID,
+		arg.ClassID,
+		arg.Position,
+		arg.InstrumentType,
+		arg.Subtypes,
+		arg.QuoteCurrency,
+		arg.ReturnKind,
+		arg.MaturesFromYear,
+		arg.MaturesToYear,
+		arg.DailyLiquidity,
+		arg.Guarantee,
+	)
+	return err
+}
+
 const listContributionAnswers = `-- name: ListContributionAnswers :many
 SELECT
     class_id,
@@ -349,6 +411,73 @@ func (q *Queries) ListContributionQuestions(ctx context.Context, booksID int64) 
 	for rows.Next() {
 		var i ListContributionQuestionsRow
 		if err := rows.Scan(&i.ClassID, &i.Position, &i.Text); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listContributionRules = `-- name: ListContributionRules :many
+SELECT
+    r.class_id,
+    r.position,
+    r.instrument_type,
+    r.subtypes,
+    r.quote_currency,
+    r.return_kind,
+    r.matures_from_year,
+    r.matures_to_year,
+    r.daily_liquidity,
+    r.guarantee
+FROM
+    portfolio_contribution_rule AS r
+    JOIN portfolio_contribution_class AS c ON c.books_id = r.books_id
+    AND c.id = r.class_id
+WHERE
+    r.books_id = $1
+ORDER BY
+    c.position,
+    r.position
+`
+
+type ListContributionRulesRow struct {
+	ClassID         uuid.UUID
+	Position        int32
+	InstrumentType  *string
+	Subtypes        []string
+	QuoteCurrency   *string
+	ReturnKind      *string
+	MaturesFromYear *int32
+	MaturesToYear   *int32
+	DailyLiquidity  *bool
+	Guarantee       *string
+}
+
+func (q *Queries) ListContributionRules(ctx context.Context, booksID int64) ([]ListContributionRulesRow, error) {
+	rows, err := q.db.Query(ctx, listContributionRules, booksID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListContributionRulesRow
+	for rows.Next() {
+		var i ListContributionRulesRow
+		if err := rows.Scan(
+			&i.ClassID,
+			&i.Position,
+			&i.InstrumentType,
+			&i.Subtypes,
+			&i.QuoteCurrency,
+			&i.ReturnKind,
+			&i.MaturesFromYear,
+			&i.MaturesToYear,
+			&i.DailyLiquidity,
+			&i.Guarantee,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
