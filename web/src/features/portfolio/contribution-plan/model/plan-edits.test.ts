@@ -155,6 +155,8 @@ describe("overlayDraft", () => {
         share_bp: 6000,
         questions: [],
         question_ideals: false,
+        rules: [],
+        matched: [],
         members: [
           {
             instrument: "PETR4",
@@ -194,6 +196,8 @@ describe("overlayDraft", () => {
         share_bp: 6000,
         questions: [],
         question_ideals: false,
+        rules: [],
+        matched: [],
         members: [
           {
             account_id: "a1",
@@ -210,6 +214,8 @@ describe("overlayDraft", () => {
         value: money(0),
         questions: [],
         question_ideals: false,
+        rules: [],
+        matched: [],
         members: [],
       },
     ]);

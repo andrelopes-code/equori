@@ -23,6 +23,8 @@ const view = {
       amount: brl(5000),
       questions: [],
       question_ideals: false,
+      rules: [],
+      matched: [],
       members: [],
     },
     {
@@ -33,6 +35,8 @@ const view = {
       amount: brl(0),
       questions: [],
       question_ideals: false,
+      rules: [],
+      matched: [],
     },
   ],
   outside: [],

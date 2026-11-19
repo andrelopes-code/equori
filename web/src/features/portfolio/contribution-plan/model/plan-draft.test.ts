@@ -23,6 +23,8 @@ const saved: Plan = {
       share_bp: 6000,
       questions: [],
       question_ideals: false,
+      rules: [],
+      matched: [],
       members: [
         {
           instrument: "PETR4",
@@ -46,6 +48,8 @@ const saved: Plan = {
       share_bp: 4000,
       questions: [],
       question_ideals: false,
+      rules: [],
+      matched: [],
       members: [],
     },
   ],
@@ -142,6 +146,8 @@ describe("plan draft", () => {
           share_bp: 0,
           questions: ["Q1"],
           question_ideals: true,
+          rules: [],
+          matched: [],
           members: [
             {
               instrument: "PETR4",

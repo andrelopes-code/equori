@@ -235,6 +235,8 @@ export function overlayDraft(view: Plan, draft: EditDraft): Plan {
       return {
         value: zero,
         question_ideals: false,
+        rules: [],
+        matched: [],
         ...row,
         name: cls.name,
         target_bp: cls.targetBp,
