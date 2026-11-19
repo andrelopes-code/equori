@@ -195,11 +195,17 @@ func (s *Server) getAccountWithholding(
 		return WithholdingEstimate{}, err
 	}
 
-	return WithholdingEstimate{
+	out := WithholdingEstimate{
 		AccountId: id,
 		Date:      params.Date,
 		IncomeTax: toMoneyAPI(w.IncomeTax),
 		Iof:       toMoneyAPI(w.IOF),
 		Net:       toMoneyAPI(w.Net),
-	}, nil
+	}
+	if w.CustodyFee != nil {
+		fee := toMoneyAPI(*w.CustodyFee)
+		out.CustodyFee = &fee
+	}
+
+	return out, nil
 }

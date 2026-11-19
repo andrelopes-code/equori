@@ -1,6 +1,7 @@
 package ledger
 
 import (
+	"regexp"
 	"slices"
 	"time"
 
@@ -125,4 +126,59 @@ func FixedIncomeWithholding(
 	}
 
 	return brFixedIncomeWithholding, true
+}
+
+// brCustodyBond is the listing code of a Tesouro bond: its kind and its maturity as YYYYMMDD; it
+// mirrors governmentBondCode of internal/marketdata.
+var brCustodyBond = regexp.MustCompile(`^(LFT|LTN|NTNF|NTNB|NTNBP|NTNC)\.([0-9]{8})$`)
+
+// brCustodyFrom is the day the custody fee of Tesouro Direto became pro rata, deducted at a sale, a
+// coupon or the maturity; brCustodyCharged the last half-yearly charge before it, from which it
+// accrues (the charge of 2025-01-02 was not made; B3 and Tesouro Nacional, December 2024).
+var (
+	brCustodyFrom    = time.Date(2024, time.December, 31, 0, 0, 0, 0, time.UTC)
+	brCustodyCharged = time.Date(2024, time.July, 1, 0, 0, 0, 0, time.UTC)
+)
+
+// CustodyFee returns the custody fee rule of a security of a region (coverage row T-09). In BR a
+// Tesouro bond sold from 2024-12-31 pays B3 0.20% a year of its value, pro rata and deducted at a
+// sale, a coupon or the maturity; a Tesouro Selic pays it only on the value above R$ 10,000.00
+// (B3, tariffs of Tesouro Direto). An earlier sale, under the half-yearly charge, has no estimate. shortcut: the exemption of the Tesouro Selic is read per sale, not
+// per holder; upgrade when the estimate sums the holder's Tesouro Selic. An RendA+ or an Educa+,
+// whose own table is not modelled, has no rule.
+func CustodyFee(region, instrumentType, subtype, code string) (domain.CustodyRule, bool) {
+	match := brCustodyBond.FindStringSubmatch(code)
+	if region != "BR" || instrumentType != "fixed_income" || subtype != "tesouro" || match == nil {
+		return domain.CustodyRule{}, false
+	}
+
+	rule := domain.CustodyRule{RateBP: 20, From: brCustodyFrom}
+	if match[1] == "LFT" {
+		rule.ExemptMinor = 1000000
+	}
+
+	maturity, err := time.Parse("20060102", match[2])
+	coupons := err == nil && (match[1] == "NTNF" || match[1] == "NTNB" || match[1] == "NTNC")
+
+	rule.PaidTo = func(date time.Time) time.Time {
+		if coupons {
+			if c := lastCoupon(maturity, date); c.After(brCustodyCharged) {
+				return c
+			}
+		}
+
+		return brCustodyCharged
+	}
+
+	return rule, true
+}
+
+// lastCoupon is the latest half-yearly coupon date of a bond maturing on maturity before date.
+func lastCoupon(maturity, date time.Time) time.Time {
+	d := maturity
+	for !d.Before(date) {
+		d = d.AddDate(0, -6, 0)
+	}
+
+	return d
 }

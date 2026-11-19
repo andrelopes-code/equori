@@ -12,8 +12,11 @@ import (
 )
 
 // WithholdingEstimate is the tax a broker withholds on a sale of a taxed fixed income security.
+// CustodyFee is the fee of the custodian the sale deducts, nil when the security has no rule; Net
+// is the proceeds less the tax and the fee.
 type WithholdingEstimate struct {
 	IncomeTax, IOF, Net money.Money
+	CustodyFee          *money.Money
 }
 
 // EstimateWithholding returns the income tax and the IOF a sale of quantity units of a security
@@ -36,7 +39,7 @@ func (s *Service) EstimateWithholding(
 		return WithholdingEstimate{}, err
 	}
 
-	table, ok, err := s.withholdingTable(ctx, booksID, security)
+	table, custody, ok, err := s.withholdingTable(ctx, booksID, security)
 	if err != nil {
 		return WithholdingEstimate{}, err
 	}
@@ -64,7 +67,14 @@ func (s *Service) EstimateWithholding(
 
 	w := domain.EstimateWithholding(table, consumed, proceedsMinor, date)
 
-	return withholdingMoney(w, proceedsMinor, base)
+	var fee *int64
+
+	if custody.Applies(date) {
+		v := domain.CustodyFee(custody, consumed, proceedsMinor, date)
+		fee = &v
+	}
+
+	return withholdingMoney(w, fee, proceedsMinor, base)
 }
 
 // consumedLots returns the open lots a sale of units of the security on date consumes, oldest
@@ -111,50 +121,65 @@ func (s *Service) withholdingTable(
 	ctx context.Context,
 	booksID int64,
 	security domain.Account,
-) (table domain.WithholdingTable, ok bool, err error) {
+) (table domain.WithholdingTable, custody domain.CustodyRule, ok bool, err error) {
 	if !security.HoldsSecurity() {
-		return table, false, nil
+		return table, custody, false, nil
 	}
 
 	profile, err := s.profiles.Profile(ctx, booksID)
 	if err != nil {
-		return table, false, fmt.Errorf("read profile: %w", err)
+		return table, custody, false, fmt.Errorf("read profile: %w", err)
 	}
 
 	in, err := s.ins.Instrument(ctx, security.Instrument)
 	if err != nil {
-		return table, false, err
+		return table, custody, false, err
 	}
 
 	subtype, err := s.ins.Subtype(ctx, security.Instrument)
 	if err != nil {
-		return table, false, err
+		return table, custody, false, err
 	}
 
 	table, ok = s.defaults.FixedIncomeWithholding(profile.Region, in.Type, subtype)
+	custody, _ = s.defaults.CustodyFee(
+		profile.Region,
+		in.Type,
+		subtype,
+		string(security.Instrument),
+	)
 
-	return table, ok, nil
+	return table, custody, ok, nil
 }
 
 func withholdingMoney(
 	w domain.Withholding,
+	fee *int64,
 	proceeds int64,
 	base money.Currency,
 ) (WithholdingEstimate, error) {
-	tax, err := money.New(w.IncomeTax, base)
-	if err != nil {
-		return WithholdingEstimate{}, err
+	var out WithholdingEstimate
+
+	net := proceeds - w.IncomeTax - w.IOF
+	if fee != nil {
+		f, err := money.New(*fee, base)
+		if err != nil {
+			return WithholdingEstimate{}, err
+		}
+
+		out.CustodyFee = &f
+		net -= *fee
 	}
 
-	iof, err := money.New(w.IOF, base)
-	if err != nil {
-		return WithholdingEstimate{}, err
+	var err error
+	for _, m := range []struct {
+		dst *money.Money
+		v   int64
+	}{{&out.IncomeTax, w.IncomeTax}, {&out.IOF, w.IOF}, {&out.Net, net}} {
+		if *m.dst, err = money.New(m.v, base); err != nil {
+			return WithholdingEstimate{}, err
+		}
 	}
 
-	net, err := money.New(proceeds-w.IncomeTax-w.IOF, base)
-	if err != nil {
-		return WithholdingEstimate{}, err
-	}
-
-	return WithholdingEstimate{IncomeTax: tax, IOF: iof, Net: net}, nil
+	return out, nil
 }

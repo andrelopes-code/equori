@@ -253,7 +253,7 @@ func (s *Service) OpenLots(
 		return HoldingLots{}, err
 	}
 
-	_, estimates, err := s.withholdingTable(ctx, booksID, security)
+	_, _, estimates, err := s.withholdingTable(ctx, booksID, security)
 	if err != nil {
 		return HoldingLots{}, err
 	}

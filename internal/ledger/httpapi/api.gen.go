@@ -2702,13 +2702,16 @@ type VoidInput struct {
 	Reason string `json:"reason"`
 }
 
-// WithholdingEstimate Proceeds less income tax and IOF is net.
+// WithholdingEstimate Proceeds less income tax, IOF and custody fee is net.
 type WithholdingEstimate struct {
 	AccountId openapi_types.UUID `json:"account_id"`
-	Date      openapi_types.Date `json:"date"`
-	IncomeTax Money              `json:"income_tax"`
-	Iof       Money              `json:"iof"`
-	Net       Money              `json:"net"`
+
+	// CustodyFee The fee of the custodian the sale deducts, pro rata since the purchase or the last coupon; absent when the security has no custody rule in the book's region.
+	CustodyFee *Money             `json:"custody_fee,omitempty"`
+	Date       openapi_types.Date `json:"date"`
+	IncomeTax  Money              `json:"income_tax"`
+	Iof        Money              `json:"iof"`
+	Net        Money              `json:"net"`
 }
 
 // Cursor defines model for Cursor.

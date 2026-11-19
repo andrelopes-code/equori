@@ -58,14 +58,15 @@ type Ledger interface {
 		from, to time.Time,
 	) ([]time.Time, error)
 	// EstimateWithholding is the income tax and IOF a sale of units of the security for
-	// proceedsMinor would withhold on date; ok is false when the account has no withholding table.
+	// proceedsMinor would withhold on date, and the net it leaves after them and the custody fee;
+	// ok is false when the account has no withholding table.
 	EstimateWithholding(
 		ctx context.Context,
 		booksID int64,
 		accountID uuid.UUID,
 		date time.Time,
 		units, proceedsMinor int64,
-	) (tax money.Money, ok bool, err error)
+	) (tax, net money.Money, ok bool, err error)
 }
 
 // Jurisdictions gives the tax jurisdiction of a book; a nil result means none applies.

@@ -6589,7 +6589,7 @@ export interface components {
             /** Format: date */
             closed_on: string;
         };
-        /** @description Proceeds less income tax and IOF is net. */
+        /** @description Proceeds less income tax, IOF and custody fee is net. */
         WithholdingEstimate: {
             /** Format: uuid */
             account_id: string;
@@ -6597,6 +6597,8 @@ export interface components {
             date: string;
             income_tax: components["schemas"]["Money"];
             iof: components["schemas"]["Money"];
+            /** @description The fee of the custodian the sale deducts, pro rata since the purchase or the last coupon; absent when the security has no custody rule in the book's region. */
+            custody_fee?: components["schemas"]["Money"];
             net: components["schemas"]["Money"];
         };
         AccountLots: {

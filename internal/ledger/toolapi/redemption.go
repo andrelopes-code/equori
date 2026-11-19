@@ -19,7 +19,9 @@ type estimateRedemptionIn struct {
 type estimateRedemptionOut struct {
 	IncomeTax tool.Money `json:"income_tax" jsonschema:"estimated income tax withheld at source"`
 	IOF       tool.Money `json:"iof"        jsonschema:"estimated IOF on a redemption within 30 days"`
-	Net       tool.Money `json:"net"        jsonschema:"proceeds less income tax and IOF"`
+	Net       tool.Money `json:"net"        jsonschema:"proceeds less income tax, IOF and custody fee"`
+
+	CustodyFee tool.Money `json:"custody_fee,omitzero" jsonschema:"B3 custody fee of a Tesouro bond"`
 }
 
 func estimateRedemption(svc *app.Service) tool.Tool {
@@ -59,11 +61,16 @@ func runEstimateRedemption(
 		return estimateRedemptionOut{}, err
 	}
 
-	return estimateRedemptionOut{
+	out := estimateRedemptionOut{
 		IncomeTax: tool.MoneyOf(w.IncomeTax),
 		IOF:       tool.MoneyOf(w.IOF),
 		Net:       tool.MoneyOf(w.Net),
-	}, nil
+	}
+	if w.CustodyFee != nil {
+		out.CustodyFee = tool.MoneyOf(*w.CustodyFee)
+	}
+
+	return out, nil
 }
 
 // redemptionAmounts reads the units in the scale of the security and the proceeds in the scale

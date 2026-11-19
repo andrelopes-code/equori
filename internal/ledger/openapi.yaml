@@ -3542,7 +3542,7 @@ schemas:
         format: date
   WithholdingEstimate:
     type: object
-    description: Proceeds less income tax and IOF is net.
+    description: Proceeds less income tax, IOF and custody fee is net.
     required: [account_id, date, income_tax, iof, net]
     properties:
       account_id:
@@ -3555,6 +3555,10 @@ schemas:
         $ref: "#/components/schemas/Money"
       iof:
         $ref: "#/components/schemas/Money"
+      custody_fee:
+        description: The fee of the custodian the sale deducts, pro rata since the purchase or the last coupon; absent when the security has no custody rule in the book's region.
+        allOf:
+          - $ref: "#/components/schemas/Money"
       net:
         $ref: "#/components/schemas/Money"
   AccountLots:

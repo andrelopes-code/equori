@@ -1223,3 +1223,7 @@ Coverage row U-04, through the HTTP API. 10,000 units of a fip, or of a fidc_ent
 ### S637 Annual tax abroad
 
 Coverage row U-08, through the tool `get_tax_year` view `abroad_tax`. 10 units of an ETF quoted in USD bought for 500.00 BRL each on 2025-03-03 and sold for 600.00 BRL each on 2025-09-01: the year 2025 has a base of 1,000.00, a tax of 150.00 and 150.00 due.
+
+### S638 Custody fee of a Tesouro sale
+
+Coverage row T-09, through the HTTP API. 100 units of a Tesouro bond bought at 10.00 on 2026-01-05 and sold for 1,100.00: an LTN sold on 2026-07-04 deducts a custody fee of 1.08 (0.20% a year over 180 days); an NTNF sold on 2026-08-03 deducts 0.20, the fee since its coupon of 2026-07-01; an LFT sold for 1,100.00 deducts none, below the exemption of R$ 10,000.00.

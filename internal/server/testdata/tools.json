@@ -320,7 +320,26 @@
               "description": "currency or instrument code"
             }
           },
-          "description": "proceeds less income tax and IOF",
+          "description": "proceeds less income tax, IOF and custody fee",
+          "required": [
+            "amount",
+            "currency"
+          ],
+          "additionalProperties": false
+        },
+        "custody_fee": {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "string",
+              "description": "decimal amount in the instrument's scale, such as -1234.56"
+            },
+            "currency": {
+              "type": "string",
+              "description": "currency or instrument code"
+            }
+          },
+          "description": "B3 custody fee of a Tesouro bond",
           "required": [
             "amount",
             "currency"

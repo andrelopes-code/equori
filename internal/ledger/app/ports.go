@@ -179,6 +179,7 @@ type RegionDefaults interface {
 	SeparatesDayTrades(region string) bool
 	CostMethod(region, instrumentType string) string
 	FixedIncomeWithholding(region, instrumentType, subtype string) (domain.WithholdingTable, bool)
+	CustodyFee(region, instrumentType, subtype, code string) (domain.CustodyRule, bool)
 }
 
 // Repository stores the ledger tables; postgres/ implements it.

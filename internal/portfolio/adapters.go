@@ -74,19 +74,19 @@ func (p ledgerPort) EstimateWithholding(
 	accountID uuid.UUID,
 	date time.Time,
 	units, proceedsMinor int64,
-) (money.Money, bool, error) {
+) (money.Money, money.Money, bool, error) {
 	w, err := p.l.EstimateWithholding(ctx, booksID, accountID, date, units, proceedsMinor)
 	if errors.Is(err, ledger.ErrValidation) {
-		return money.Money{}, false, nil
+		return money.Money{}, money.Money{}, false, nil
 	}
 
 	if err != nil {
-		return money.Money{}, false, err
+		return money.Money{}, money.Money{}, false, err
 	}
 
 	tax, err := w.IncomeTax.Add(w.IOF)
 
-	return tax, err == nil, err
+	return tax, w.Net, err == nil, err
 }
 
 func (p ledgerPort) Today(ctx context.Context) time.Time { return p.l.Today(ctx) }

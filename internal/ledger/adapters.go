@@ -35,6 +35,12 @@ func (regionDefaults) FixedIncomeWithholding(
 	return FixedIncomeWithholding(region, instrumentType, subtype)
 }
 
+func (regionDefaults) CustodyFee(
+	region, instrumentType, subtype, code string,
+) (domain.CustodyRule, bool) {
+	return CustodyFee(region, instrumentType, subtype, code)
+}
+
 func (regionDefaults) SeparatesDayTrades(region string) bool { return SeparatesDayTrades(region) }
 
 func (regionDefaults) CostMethod(region, instrumentType string) string {

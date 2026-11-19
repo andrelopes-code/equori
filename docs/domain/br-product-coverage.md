@@ -53,7 +53,7 @@ Source status:
 | T-06 | Tesouro RendA+ | partial | code `RENDA`; `fixed_income_events` lists the 240 monthly amortizations on the 15th ending on the maturity (`monthlyBondCoupons`, `TestS633IncomeBondEvents`) | the nominal value (VNA) is not published by the source, so a payment carries no amount; the units of a payment are a share of whole basis points, within 2% of one of those left | Tesouro Direto, Tesouro RendA+ (240 monthly payments from the conversion date to the maturity) |
 | T-07 | Tesouro Educa+ | partial | code `EDUCA`; as T-06 with 60 monthly payments | as T-06 | Tesouro Direto, Tesouro Educa+ (60 monthly payments) |
 | T-08 | Tesouro IGPM+ (NTNC) | supported | code `NTNC` in `internal/marketdata/feed/tesourodireto`; `TestBRProductMatrix` row T-08 with the published buying and selling prices | none | Tesouro Transparente, PrecoTaxaTesouroDireto.csv, fetched 2026-11-18 |
-| T-09 | Custody fee of B3 | partial | a fee is recorded as an expense | no event ties the fee to the bond; the exemption band is not computed | to read |
+| T-09 | Custody fee of B3 | partial | `estimate_redemption` and the position net deduct `custody_fee`, 0.20% a year pro rata since the purchase, the last coupon or the charge of July 2024, the Tesouro Selic exempt to R$ 10,000.00 (`CustodyFee`, `TestCustodyFeeOfATesouroSale`, `TestCustodyFee`; the nets of `TestBRProductMatrix` T-01, T-04, T-08) | the exemption is read per sale, not across the holder's Tesouro Selic; the table of RendA+ and Educa+ is not modelled | B3, tarifas de Tesouro Direto (b3.com.br, read 2026-11-19); B3 and Tesouro Nacional on the pro rata charge from 2024-12-31 (December 2024) |
 
 ## Listed securities
 

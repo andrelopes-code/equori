@@ -16,15 +16,10 @@ func (s *Service) estimate(
 	value money.Money,
 	date time.Time,
 ) error {
-	tax, ok, err := s.ledger.EstimateWithholding(
+	tax, net, ok, err := s.ledger.EstimateWithholding(
 		ctx, booksID, p.AccountID, date, p.Quantity.Amount(), value.Amount(),
 	)
 	if err != nil || !ok {
-		return err
-	}
-
-	net, err := value.Sub(tax)
-	if err != nil {
 		return err
 	}
 
