@@ -43,15 +43,22 @@ export function FinancingPrepay({ loan, money }: FinancingPrepayProps) {
   const change = prepay(loan.amount, loan.rate, loan.months, month, extra);
   if (choices === null || change === null)
     return (
-      <FormNotice tone="warning">
+      <FormNotice tone="warning" hideIcon>
         {t("calc.financing.prepay.invalid")}
       </FormNotice>
     );
 
-  const saved = (name: string, amount: number) =>
-    `${name}: ${t("calc.choice.saved")} ${money.format(amount)}`;
+  const saved = (name: string, effect: string, amount: number) =>
+    `${name}: ${effect}, ${t("calc.choice.saved")} ${money.format(amount)}`;
   const termName = t("calc.financing.prepay.term");
   const lowerName = t("calc.financing.prepay.lower");
+  const termEffect = t("calc.financing.prepay.termEffect", {
+    months: String(choices.keepInstallment.months),
+    fewer: String(choices.keepInstallment.fewer),
+  });
+  const lowerEffect = t("calc.financing.prepay.lowerEffect", {
+    installment: money.format(choices.keepTerm.installment),
+  });
 
   return (
     <Section size="lg">
@@ -78,22 +85,17 @@ export function FinancingPrepay({ loan, money }: FinancingPrepayProps) {
           rows={[
             {
               name: termName,
-              effect: t("calc.financing.prepay.termEffect", {
-                months: String(choices.keepInstallment.months),
-                fewer: String(choices.keepInstallment.fewer),
-              }),
+              effect: termEffect,
               saved: choices.keepInstallment.saved,
               savedText: money.format(choices.keepInstallment.saved),
-              label: saved(termName, choices.keepInstallment.saved),
+              label: saved(termName, termEffect, choices.keepInstallment.saved),
             },
             {
               name: lowerName,
-              effect: t("calc.financing.prepay.lowerEffect", {
-                installment: money.format(choices.keepTerm.installment),
-              }),
+              effect: lowerEffect,
               saved: choices.keepTerm.saved,
               savedText: money.format(choices.keepTerm.saved),
-              label: saved(lowerName, choices.keepTerm.saved),
+              label: saved(lowerName, lowerEffect, choices.keepTerm.saved),
             },
           ]}
           note={t("calc.financing.prepay.note", {

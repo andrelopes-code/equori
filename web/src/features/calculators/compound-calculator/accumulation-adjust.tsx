@@ -44,6 +44,7 @@ export function AccumulationAdjust({ input }: AccumulationAdjustProps) {
           />
 
           <OptionalGroups
+            addressKeys={addressKeys}
             groups={[
               {
                 keys: ["delay", "delayUnit"],

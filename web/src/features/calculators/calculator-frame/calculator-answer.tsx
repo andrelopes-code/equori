@@ -21,6 +21,8 @@ export function CalculatorAnswer({
     <section
       className={styles.answer}
       aria-label={t("calc.results")}
+      aria-live="polite"
+      aria-atomic="true"
       data-part="answer"
     >
       <p className={styles.answerLead}>{lead}</p>

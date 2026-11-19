@@ -32,18 +32,21 @@ vi.mock("@/features/calculators/model/calculator-search", () => ({
   },
 }));
 
+const addressKeys = ["delay", "withdraw", "withdrawUnit"] as const;
+
 function renderGroups(search: Record<string, string>) {
   address.initial = search;
 
   return render(
     <OptionalGroups
+      addressKeys={addressKeys}
       groups={[
         {
           keys: ["delay"],
           add: "Add delay",
           legend: "Delay",
           remove: "Remove delay",
-          children: <p>delay fields</p>,
+          children: <input aria-label="Delay months" />,
         },
         {
           keys: ["withdraw", "withdrawUnit"],
@@ -65,7 +68,7 @@ describe("OptionalGroups", () => {
     const withdraw = screen.getByRole("button", { name: "Add withdrawal" });
 
     expect(delay.parentElement).toBe(withdraw.parentElement);
-    expect(screen.queryByText("delay fields")).toBeNull();
+    expect(screen.queryByLabelText("Delay months")).toBeNull();
   });
 
   it("opens one group and keeps the other's button", async () => {
@@ -73,7 +76,7 @@ describe("OptionalGroups", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Add delay" }));
 
-    expect(screen.getByText("delay fields")).toBeVisible();
+    expect(screen.getByLabelText("Delay months")).toBeVisible();
     expect(screen.getByText("Delay")).toBeVisible();
     expect(screen.queryByRole("button", { name: "Add delay" })).toBeNull();
     expect(
@@ -85,7 +88,7 @@ describe("OptionalGroups", () => {
     renderGroups({ withdrawUnit: "month" });
 
     expect(screen.getByText("withdraw fields")).toBeVisible();
-    expect(screen.queryByText("delay fields")).toBeNull();
+    expect(screen.queryByLabelText("Delay months")).toBeNull();
   });
 
   it("removes the keys of one group and closes only it", async () => {
@@ -96,10 +99,52 @@ describe("OptionalGroups", () => {
     );
 
     expect(screen.queryByText("withdraw fields")).toBeNull();
-    expect(screen.getByText("delay fields")).toBeVisible();
+    expect(screen.getByLabelText("Delay months")).toBeVisible();
     expect(address.current).toEqual({ delay: "12" });
     expect(
       screen.getByRole("button", { name: "Add withdrawal" }),
     ).toBeVisible();
+  });
+
+  it("moves focus to the first control of the group that opens", async () => {
+    renderGroups({});
+
+    await userEvent.click(screen.getByRole("button", { name: "Add delay" }));
+
+    expect(screen.getByLabelText("Delay months")).toHaveFocus();
+  });
+
+  it("moves focus to the add button of the group that closes", async () => {
+    renderGroups({ delay: "12" });
+
+    await userEvent.click(screen.getByRole("button", { name: "Remove delay" }));
+
+    expect(screen.getByRole("button", { name: "Add delay" })).toHaveFocus();
+  });
+
+  it("keeps focus where it is when the address opens a group", () => {
+    renderGroups({ delay: "12" });
+
+    expect(document.body).toHaveFocus();
+  });
+
+  it("does not compile a key the address does not declare", () => {
+    const element = (
+      <OptionalGroups
+        addressKeys={addressKeys}
+        groups={[
+          {
+            // @ts-expect-error "delai" is not in addressKeys.
+            keys: ["delai"],
+            add: "a",
+            legend: "l",
+            remove: "r",
+            children: null,
+          },
+        ]}
+      />
+    );
+
+    expect(element).toBeDefined();
   });
 });

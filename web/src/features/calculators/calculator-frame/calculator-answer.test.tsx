@@ -46,4 +46,13 @@ describe("CalculatorAnswer", () => {
     // A CSS module class is _<name>_<hash>: the exact name, not answerLead.
     expect(root.className).toMatch(/^_answer_\w+$/);
   });
+
+  it("announces a changed answer as one message", () => {
+    render(<CalculatorAnswer lead="a" figure="1" sentence="b" />);
+
+    const region = screen.getByRole("region");
+
+    expect(region).toHaveAttribute("aria-live", "polite");
+    expect(region).toHaveAttribute("aria-atomic", "true");
+  });
 });

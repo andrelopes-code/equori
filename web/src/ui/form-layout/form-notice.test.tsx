@@ -22,4 +22,18 @@ describe("FormNotice", () => {
       tone,
     );
   });
+
+  it("draws no mark with hideIcon", () => {
+    const { rerender } = render(<FormNotice tone="warning">Text</FormNotice>);
+
+    expect(document.querySelector('[data-part="icon"]')).not.toBeNull();
+
+    rerender(
+      <FormNotice tone="warning" hideIcon>
+        Text
+      </FormNotice>,
+    );
+
+    expect(document.querySelector('[data-part="icon"]')).toBeNull();
+  });
 });

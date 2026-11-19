@@ -16,6 +16,7 @@ export function FinancingOptional({ money }: FinancingOptionalProps) {
 
   return (
     <OptionalGroup
+      addressKeys={addressKeys}
       keys={["prepayMonth", "prepayAmount"]}
       add={t("calc.financing.prepay.add")}
       legend={t("calc.financing.prepay.title")}

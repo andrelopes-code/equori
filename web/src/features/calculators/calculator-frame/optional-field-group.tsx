@@ -6,9 +6,10 @@ import {
 } from "@slotted/react/field-group";
 import { Inline } from "@slotted/react/inline";
 import { Stack } from "@slotted/react/stack";
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 
 interface OptionalFieldGroupProps {
+  ref?: Ref<HTMLFieldSetElement>;
   legend: string;
   remove: string;
   onRemove: () => void;
@@ -17,13 +18,14 @@ interface OptionalFieldGroupProps {
 
 // The open state of an optional group: its inputs under a legend and a ghost button that removes them.
 export function OptionalFieldGroup({
+  ref,
   legend,
   remove,
   onRemove,
   children,
 }: OptionalFieldGroupProps) {
   return (
-    <FieldGroup kind="section">
+    <FieldGroup ref={ref} kind="section">
       <FieldGroupLegend>{legend}</FieldGroupLegend>
       <FieldGroupContent>
         <Stack gap={8}>

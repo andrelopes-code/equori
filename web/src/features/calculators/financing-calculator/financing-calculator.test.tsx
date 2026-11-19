@@ -121,7 +121,9 @@ describe("Financing calculator", () => {
     expect(rows).toHaveLength(2);
     // 181.72 - 74.20
     expect(rows[0]).toHaveAccessibleName(
-      `${catalogEn["calc.financing.prepay.term"]}: ${catalogEn["calc.choice.saved"]} R$107.52`,
+      new RegExp(
+        `^${catalogEn["calc.financing.prepay.term"]}: .*${catalogEn["calc.choice.saved"]} R\\$107\\.52$`,
+      ),
     );
     expect(
       screen.getByText("Ends in 4 months, 2 fewer", { exact: false }),
@@ -185,6 +187,31 @@ describe("Financing calculator", () => {
       catalogEn["calc.financing.compare"],
     );
     expect(caption.closest('[data-ui="visually-hidden"]')).not.toBeNull();
+  });
+
+  it("names the effect of each prepayment option for assistive technology", async () => {
+    await open(`${loan}&prepayMonth=6&prepayAmount=200000`);
+    const rows = await screen.findAllByRole("img", {
+      name: new RegExp(catalogEn["calc.choice.saved"]),
+    });
+
+    expect(rows[0]).toHaveAccessibleName(
+      `${catalogEn["calc.financing.prepay.term"]}: Ends in 4 months, 2 fewer, ${catalogEn["calc.choice.saved"]} R$107.52`,
+    );
+    expect(rows[1]).toHaveAccessibleName(
+      /Installment falls to R\$543\.39, Interest saved/,
+    );
+  });
+
+  it("draws the invalid prepayment notice without a mark", async () => {
+    await open(`${loan}&prepayMonth=400&prepayAmount=200000`);
+    const text = await screen.findByText(
+      catalogEn["calc.financing.prepay.invalid"],
+    );
+    const alert = text.closest('[data-ui="alert"]');
+
+    expect(alert).not.toBeNull();
+    expect(alert?.querySelector('[data-part="icon"]')).toBeNull();
   });
 
   // Mock fidelity (Task 9), D4: the labels of the extra payment, with no line under the first.

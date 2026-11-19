@@ -37,6 +37,7 @@ function renderGroup(search: Record<string, string>) {
 
   return render(
     <OptionalGroup
+      addressKeys={["prepayMonth", "prepayAmount", "months"] as const}
       keys={["prepayMonth", "prepayAmount"]}
       add="Add extra payment"
       legend="Extra payment"
