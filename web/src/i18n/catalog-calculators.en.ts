@@ -598,6 +598,23 @@ export const calculatorsEn = {
   "calc.compound.deposit.hint": "Made at the start of each month.",
   "calc.compound.target.hint": "The balance to reach at the end.",
   "calc.compound.rate.hint": "Expected return, before tax and fees.",
+  "calc.rates.answer.leadYear": "Equivalent per year",
+  "calc.rates.answer.leadMonth": "Equivalent per month",
+  "calc.rates.answer.sentenceYear":
+    "{rate} a month equals {equivalent} a year.",
+  "calc.rates.answer.sentenceMonth":
+    "{rate} a year equals {equivalent} a month.",
+  "calc.rates.answer.what": "the equivalent rate",
+  "calc.rates.real.help":
+    "The rate without inflation: (1 + rate) / (1 + inflation) − 1.",
+  "calc.rates.ofIndex.help":
+    "A rate given as a percent of an index, such as 110% of a daily index.",
+  "calc.rates.inflation.add": "Discount inflation",
+  "calc.rates.inflation.remove": "Remove inflation",
+  "calc.rates.inflation.legend": "Inflation",
+  "calc.rates.index.add": "Use a percent of an index",
+  "calc.rates.index.remove": "Remove the index",
+  "calc.rates.index.legend": "Percent of an index",
   "calc.rates.rate.hint": "The rate as quoted, with its period.",
   "calc.rates.inflation.hint": "Adds the rate after inflation.",
   "calc.rates.index.hint":

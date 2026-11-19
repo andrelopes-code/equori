@@ -604,6 +604,23 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.compound.target.hint": "O saldo a alcançar no fim do prazo.",
   "calc.compound.rate.hint":
     "Rentabilidade esperada, antes de impostos e tarifas.",
+  "calc.rates.answer.leadYear": "Equivalente ao ano",
+  "calc.rates.answer.leadMonth": "Equivalente ao mês",
+  "calc.rates.answer.sentenceYear":
+    "{rate} ao mês equivale a {equivalent} ao ano.",
+  "calc.rates.answer.sentenceMonth":
+    "{rate} ao ano equivale a {equivalent} ao mês.",
+  "calc.rates.answer.what": "a taxa equivalente",
+  "calc.rates.real.help":
+    "A taxa sem a inflação: (1 + taxa) / (1 + inflação) − 1.",
+  "calc.rates.ofIndex.help":
+    "Uma taxa dada como percentual de um índice, como 110% de um índice diário.",
+  "calc.rates.inflation.add": "Descontar a inflação",
+  "calc.rates.inflation.remove": "Remover inflação",
+  "calc.rates.inflation.legend": "Inflação",
+  "calc.rates.index.add": "Usar percentual de um índice",
+  "calc.rates.index.remove": "Remover índice",
+  "calc.rates.index.legend": "Percentual de um índice",
   "calc.rates.rate.hint": "A taxa como foi informada, com o seu período.",
   "calc.rates.inflation.hint": "Acrescenta a taxa descontada a inflação.",
   "calc.rates.index.hint":

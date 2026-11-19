@@ -20,6 +20,7 @@ export function FloatingFields({
   floating,
   keys,
   percentLabel,
+  percentHelp,
   set,
 }: {
   indexId: string;
@@ -28,6 +29,7 @@ export function FloatingFields({
   floating: Floating;
   keys: FloatingKeys;
   percentLabel: string;
+  percentHelp?: string;
   set: (patch: Record<string, string | undefined>) => void;
 }) {
   const t = useT();
@@ -51,6 +53,7 @@ export function FloatingFields({
       {floating.form === "percent" ? (
         <RateField
           label={percentLabel}
+          {...(percentHelp === undefined ? {} : { help: percentHelp })}
           hint={t("calc.percent.hint")}
           name={keys.percent}
           value={floating.text}
