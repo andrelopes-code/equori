@@ -44,9 +44,10 @@ func NewAgent(
 	decls, handlers := ChatHandlers(svc, tools, set, app.TurnConversation)
 	slices.SortFunc(decls, func(a, b llm.Tool) int { return strings.Compare(a.Name, b.Name) })
 
+	// show only reads the turn, so it runs with the reads and reaches every role.
 	concurrent := func(name string) bool {
 		e, ok := tools.Effect(name)
-		return ok && e == tool.ReadOnly
+		return name == showName || ok && e == tool.ReadOnly
 	}
 
 	// A tool above the owner's role never reaches the model of a member below it.

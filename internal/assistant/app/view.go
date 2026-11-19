@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/assistant/domain"
@@ -28,7 +29,60 @@ type ViewSelect struct {
 }
 
 // ViewBuilder turns the outputs of one or two reads into the payload of a view (V4).
-type ViewBuilder func(outputs []json.RawMessage, sel ViewSelect, today time.Time) (json.RawMessage, error)
+type ViewBuilder func(outputs []json.RawMessage, sel ViewSelect, today time.Time) (ViewPayload, error)
+
+// ViewPayload is a view as the client draws it (V6). Figures are typed values, never formatted text (V7).
+type ViewPayload struct {
+	Title   ViewText   `json:"title"`
+	Window  ViewWindow `json:"window"`
+	Verdict ViewText   `json:"verdict"`
+	Prov    *ViewText  `json:"prov,omitempty"`
+	Open    *ViewLink  `json:"open,omitempty"`
+	Next    []string   `json:"next"`
+	Rows    ViewTable  `json:"rows"`
+	Data    any        `json:"data"`
+}
+
+// ViewText is a catalog key and its typed params.
+type ViewText struct {
+	Key    string               `json:"key"`
+	Params map[string]ViewValue `json:"params,omitempty"`
+}
+
+// ViewValue is one typed figure: text, an amount, a share in basis points, a count or a date.
+type ViewValue struct {
+	Text  string     `json:"text,omitempty"`
+	Money *ViewMoney `json:"money,omitempty"`
+	BP    *int64     `json:"bp,omitempty"`
+	Count *int64     `json:"count,omitempty"`
+	Date  string     `json:"date,omitempty"`
+}
+
+// ViewMoney is an amount in minor units of its currency.
+type ViewMoney struct {
+	Amount   int64  `json:"amount"`
+	Currency string `json:"currency"`
+}
+
+// ViewWindow is the period or instant a view covers, as calendar dates.
+type ViewWindow struct {
+	From     string `json:"from,omitempty"`
+	To       string `json:"to,omitempty"`
+	At       string `json:"at,omitempty"`
+	LabelKey string `json:"label_key,omitempty"`
+}
+
+// ViewLink names the screen that holds the records of a view.
+type ViewLink struct {
+	Screen string            `json:"screen"`
+	Params map[string]string `json:"params,omitempty"`
+}
+
+// ViewTable is the view as rows: the table the client shows in place of the chart and copies.
+type ViewTable struct {
+	Head []string      `json:"head"`
+	Rows [][]ViewValue `json:"rows"`
+}
 
 // UseViews sets the registry of view builders.
 func (s *Service) UseViews(builders map[ViewKey]ViewBuilder) { s.views = builders }
@@ -97,6 +151,22 @@ func (t *turnState) takeViews() []domain.View {
 	t.views = nil
 
 	return views
+}
+
+func (t *turnState) handles() string {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	if len(t.reads) == 0 {
+		return "none"
+	}
+
+	hs := make([]string, len(t.reads))
+	for i, r := range t.reads {
+		hs[i] = fmt.Sprintf("r%d (%s)", i+1, r.tool)
+	}
+
+	return strings.Join(hs, ", ")
 }
 
 type turnRead struct {

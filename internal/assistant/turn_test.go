@@ -198,6 +198,9 @@ func TestTurnRead(t *testing.T) {
 		want = append(want, tl.Spec().Name)
 	}
 
+	// show is the chat's own presentation tool, outside the tool set (answer views design, V2).
+	want = append(want, "show")
+
 	for _, tl := range req.Tools {
 		got = append(got, tl.Name)
 	}
@@ -241,6 +244,8 @@ func TestTurnReadMemberTools(t *testing.T) {
 		}
 	}
 
+	// A reader presents its reads too (answer views design, V2).
+	want = append(want, "show")
 	slices.Sort(want)
 
 	var got []string

@@ -51,6 +51,7 @@ func ChatHandlers(
 	for i, d := range decls {
 		name := d.Name
 		if e, _ := tools.Effect(name); e == tool.ReadOnly {
+			handlers[name] = stamped(svc, name, handlers[name])
 			continue
 		}
 
@@ -78,7 +79,29 @@ func ChatHandlers(
 		}
 	}
 
+	decls = append(decls, showDecl(svc, decls))
+	handlers[showName] = func(ctx context.Context, args json.RawMessage) (json.RawMessage, error) {
+		out, err := svc.Show(ctx, args)
+		if tf, ok := errors.AsType[*app.ToolFailure](err); ok {
+			return nil, &llm.ToolError{Content: tf.Content}
+		}
+
+		return out, err
+	}
+
 	return decls, handlers
+}
+
+// stamped wraps a read handler so its output carries the handle a view names (answer views design, V1).
+func stamped(svc *app.Service, name string, h llm.ToolHandler) llm.ToolHandler {
+	return func(ctx context.Context, args json.RawMessage) (json.RawMessage, error) {
+		out, err := h(ctx, args)
+		if err != nil {
+			return out, err
+		}
+
+		return svc.StampRead(ctx, name, out), nil
+	}
 }
 
 // proposalProperty is the schema of the chat property proposal (spec 2026-11-03 §4.1).

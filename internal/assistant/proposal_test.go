@@ -856,7 +856,8 @@ func TestChatDeclarationsCarryProposal(t *testing.T) {
 		}
 
 		p, has := schema.Properties["proposal"]
-		if effects[d.Name] == tool.ReadOnly {
+		// show reads the turn; it is the chat's own tool, outside the set (answer views design, V2).
+		if d.Name == "show" || effects[d.Name] == tool.ReadOnly {
 			reads++
 
 			if has {

@@ -57,6 +57,17 @@ func (m *Module) ConversationFile(
 	return n, string(k), c, true, nil
 }
 
+// UseViews adds the view builders of the other modules to the assistant's own (answer views design, V3).
+func (m *Module) UseViews(builders map[ViewKey]ViewBuilder) {
+	all := toolapi.Views()
+	for k, b := range builders {
+		all[k] = b
+	}
+
+	m.svc.UseViews(all)
+	m.bindAgent(nil)
+}
+
 // UseNotices sets the lookup of the accounts the system prompt names (P12 A152).
 func (m *Module) UseNotices(n func(context.Context, int64) ([]AccountNotice, error)) {
 	m.svc.UseNotices(n)

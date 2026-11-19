@@ -79,6 +79,8 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*Module, error) {
 		log,
 	)
 
+	svc.UseViews(toolapi.Views())
+
 	return &Module{
 		svc:          svc,
 		resolver:     llmapi.NewResolver(svc, cfg.Instance, build, log),
