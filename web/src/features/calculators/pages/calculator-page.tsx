@@ -2,7 +2,10 @@ import { useParams } from "@tanstack/react-router";
 import type { ComponentType } from "react";
 
 import { CalculatorFrame } from "@/features/calculators/calculator-frame/calculator-frame";
-import type { CalculatorId } from "@/features/calculators/model/calculators";
+import {
+  written,
+  type CalculatorId,
+} from "@/features/calculators/model/calculators";
 import { CashOrInstallmentsCalculator } from "@/features/calculators/cash-or-installments-calculator/cash-or-installments-calculator";
 import { CompoundCalculator } from "@/features/calculators/compound-calculator/compound-calculator";
 import { CorrectionCalculator } from "@/features/calculators/correction-calculator/correction-calculator";
@@ -15,7 +18,7 @@ import { OwnOrRentCalculator } from "@/features/calculators/own-or-rent-calculat
 import { RatesCalculator } from "@/features/calculators/rates-calculator/rates-calculator";
 import { RecurringCostCalculator } from "@/features/calculators/recurring-cost-calculator/recurring-cost-calculator";
 
-const screens: Partial<Record<CalculatorId, ComponentType>> = {
+export const screens: Partial<Record<CalculatorId, ComponentType>> = {
   compound: CompoundCalculator,
   rates: RatesCalculator,
   correction: CorrectionCalculator,
@@ -33,7 +36,7 @@ const screens: Partial<Record<CalculatorId, ComponentType>> = {
 export function CalculatorPage() {
   const { id } = useParams({ from: "/_authed/calculators/$id" });
   const calculatorId = id as CalculatorId;
-  const Screen = screens[calculatorId];
+  const Screen = written.has(calculatorId) ? screens[calculatorId] : undefined;
   return Screen === undefined ? (
     <CalculatorFrame
       id={calculatorId}

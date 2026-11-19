@@ -1,0 +1,22 @@
+@layer app {
+  /* The three groups side by side from 1024 px of the page, one column below. */
+  .groups {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--slotted-space-10);
+    align-items: start;
+  }
+
+  @container slotted-page (min-width: 1024px) {
+    /* literal: breakpoint of the calculator frame */
+    .groups {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--slotted-space-8);
+    }
+  }
+
+  .missing {
+    display: block;
+    margin-block-start: var(--slotted-space-3);
+  }
+}

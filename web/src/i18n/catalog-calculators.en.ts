@@ -3,10 +3,14 @@ export const calculatorsEn = {
   "nav.calculators": "Calculators",
   "calc.title": "Calculators",
   "calc.subtitle":
-    "Published methods applied to your inputs, each with its formula and sources.",
+    "Published methods, each with its formula, assumptions and sources.",
   "calc.group.invest": "Invest",
   "calc.group.credit": "Credit and debt",
   "calc.group.plan": "Plan",
+  "calc.list.indexesAbsent":
+    "Compare indexers needs market indexes on this instance.",
+  "calc.list.indexesFailed":
+    "The indexes did not load; Compare indexers is hidden.",
   "calc.back": "Calculators",
   "calc.results": "Result",
   "calc.results.empty": "Fill in the inputs; the result updates as you type.",
@@ -73,37 +77,31 @@ export const calculatorsEn = {
   "calc.compound.details": "Balance month by month",
   "calc.compound.details.size": "chart and table of {months} months",
   "calc.rates.title": "Rate converter",
-  "calc.rates.question":
-    "What is this rate per month, per year, or after inflation?",
+  "calc.rates.question": "What is a rate per month, per year or real?",
   "calc.correction.title": "Correction by an index",
-  "calc.correction.question":
-    "What is an amount from one month worth in another?",
+  "calc.correction.question": "What is an amount worth corrected by an index?",
   "calc.fixed-income.title": "Fixed income after tax",
-  "calc.fixed-income.question":
-    "What remains after tax, and which exempt rate matches a taxable one?",
+  "calc.fixed-income.question": "What is left of a security after tax?",
   "calc.financing.title": "Financing",
-  "calc.financing.question":
-    "What does a loan cost with a fixed installment or a fixed amortization, and what does a prepayment change?",
+  "calc.financing.question": "What does a loan cost, and in which system?",
   "calc.cash-or-installments.title": "Cash or installments",
   "calc.cash-or-installments.question":
-    "Is the cash price or the installment plan cheaper?",
+    "Is paying cash or in installments cheaper?",
   "calc.credit-cost.title": "Cost of credit",
-  "calc.credit-cost.question":
-    "What is the effective annual cost of a credit offer?",
+  "calc.credit-cost.question": "What is the effective annual cost of an offer?",
   "calc.debt-payoff.title": "Debt payoff",
   "calc.debt-payoff.question":
-    "In what order should debts be paid, and when do they end?",
+    "In which order to pay the debts, and until when?",
   "calc.reserve.title": "Emergency reserve",
   "calc.reserve.question":
     "How many months of expenses do liquid balances cover?",
   "calc.recurring-cost.title": "Recurring cost",
-  "calc.recurring-cost.question":
-    "What does a recurring expense cost over the years?",
+  "calc.recurring-cost.question": "What does an expense cost over the years?",
   "calc.independence.title": "Financial independence",
   "calc.independence.question":
     "How large must investments be to pay the expenses, and when are they reached?",
   "calc.own-or-rent.title": "Own or rent",
-  "calc.own-or-rent.question": "Does owning cost less per year than renting?",
+  "calc.own-or-rent.question": "Does owning cost less than renting?",
   "calc.origin.daily": "{percent} of {index} over the 12 months to {date}",
   "calc.origin.spread":
     "{index} + {spread} a year over the 12 months to {date}",
@@ -686,12 +684,6 @@ export const calculatorsEn = {
   "calc.unavailable": "This calculator is not available yet",
   "calc.unavailable.description":
     "It reads figures of your accounts that this version does not compute yet.",
-  "calc.group.invest.description":
-    "How an amount grows, what a rate means and what is left after tax.",
-  "calc.group.credit.description":
-    "What a loan or an installment plan costs, and how to pay debts off.",
-  "calc.group.plan.description":
-    "Recurring costs, reserves and the choice between owning and renting.",
   "calc.indexerComparison.amount": "Amount invested",
   "calc.indexerComparison.maturity": "Maturity",
   "calc.indexerComparison.security": "Security {n}",
@@ -740,8 +732,7 @@ export const calculatorsEn = {
   "calc.indexerComparison.note.decision":
     "equori computes; the choice is yours.",
   "calc.indexer-comparison.title": "Compare indexers",
-  "calc.indexer-comparison.question":
-    "Which fixed income security pays more to maturity under the expected rates?",
+  "calc.indexer-comparison.question": "Which security yields more to maturity?",
   "calc.indexer-comparison.step1":
     "The annual rate of each security follows the expected path of its index to maturity.",
   "calc.indexer-comparison.step2":

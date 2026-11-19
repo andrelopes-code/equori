@@ -4,10 +4,14 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "nav.calculators": "Calculadoras",
   "calc.title": "Calculadoras",
   "calc.subtitle":
-    "Métodos publicados aplicados aos seus dados, cada um com sua fórmula e suas fontes.",
+    "Métodos publicados, cada um com fórmula, premissas e fontes.",
   "calc.group.invest": "Investir",
   "calc.group.credit": "Crédito e dívidas",
   "calc.group.plan": "Planejar",
+  "calc.list.indexesAbsent":
+    "Comparar indexadores exige índices de mercado na instância.",
+  "calc.list.indexesFailed":
+    "Os índices não carregaram; Comparar indexadores ficou oculto.",
   "calc.back": "Calculadoras",
   "calc.results": "Resultado",
   "calc.results.empty":
@@ -76,36 +80,30 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.compound.details": "Saldo mês a mês",
   "calc.compound.details.size": "gráfico e tabela de {months} meses",
   "calc.rates.title": "Conversor de taxas",
-  "calc.rates.question":
-    "Quanto é esta taxa ao mês, ao ano ou descontada a inflação?",
+  "calc.rates.question": "Quanto é uma taxa ao mês, ao ano ou real?",
   "calc.correction.title": "Correção por um índice",
-  "calc.correction.question": "Quanto vale em outro mês um valor de um mês?",
+  "calc.correction.question": "Quanto vale um valor corrigido por um índice?",
   "calc.fixed-income.title": "Renda fixa após o imposto",
-  "calc.fixed-income.question":
-    "Quanto sobra após o imposto, e que taxa isenta equivale a uma tributada?",
+  "calc.fixed-income.question": "Quanto sobra de um título depois do imposto?",
   "calc.financing.title": "Financiamento",
-  "calc.financing.question":
-    "Quanto custa um empréstimo com prestação fixa ou com amortização fixa, e o que muda uma amortização extra?",
+  "calc.financing.question": "Quanto custa um empréstimo, e em qual sistema?",
   "calc.cash-or-installments.title": "À vista ou parcelado",
   "calc.cash-or-installments.question":
-    "O preço à vista ou o parcelamento sai mais barato?",
+    "Pagar à vista ou parcelar sai mais barato?",
   "calc.credit-cost.title": "Custo do crédito",
-  "calc.credit-cost.question":
-    "Qual é o custo efetivo anual de uma oferta de crédito?",
+  "calc.credit-cost.question": "Qual é o custo efetivo anual de uma oferta?",
   "calc.debt-payoff.title": "Quitação de dívidas",
-  "calc.debt-payoff.question":
-    "Em que ordem pagar as dívidas, e quando elas terminam?",
+  "calc.debt-payoff.question": "Em que ordem pagar as dívidas, e até quando?",
   "calc.reserve.title": "Reserva de emergência",
   "calc.reserve.question":
     "Quantos meses de despesas os saldos líquidos cobrem?",
   "calc.recurring-cost.title": "Custo recorrente",
-  "calc.recurring-cost.question":
-    "Quanto custa uma despesa recorrente ao longo dos anos?",
+  "calc.recurring-cost.question": "Quanto custa uma despesa ao longo dos anos?",
   "calc.independence.title": "Independência financeira",
   "calc.independence.question":
     "De quanto os investimentos precisam para pagar as despesas, e quando chegam lá?",
   "calc.own-or-rent.title": "Comprar ou alugar",
-  "calc.own-or-rent.question": "Ter o imóvel custa menos por ano que alugar?",
+  "calc.own-or-rent.question": "Ter o imóvel custa menos que alugar?",
   "calc.origin.daily": "{percent} do {index} nos 12 meses até {date}",
   "calc.origin.spread": "{index} + {spread} ao ano nos 12 meses até {date}",
   "calc.origin.daily.current":
@@ -691,12 +689,6 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.unavailable": "Esta calculadora ainda não está disponível",
   "calc.unavailable.description":
     "Ela lê valores das suas contas que esta versão ainda não calcula.",
-  "calc.group.invest.description":
-    "Como um valor cresce, o que uma taxa significa e o que sobra após o imposto.",
-  "calc.group.credit.description":
-    "Quanto custa um empréstimo ou um parcelamento, e como quitar dívidas.",
-  "calc.group.plan.description":
-    "Custos recorrentes, reservas e a escolha entre comprar e alugar.",
   "calc.indexerComparison.amount": "Valor aplicado",
   "calc.indexerComparison.maturity": "Vencimento",
   "calc.indexerComparison.security": "Título {n}",
@@ -745,7 +737,7 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.indexerComparison.note.decision": "O equori calcula; a escolha é sua.",
   "calc.indexer-comparison.title": "Comparar indexadores",
   "calc.indexer-comparison.question":
-    "Qual título de renda fixa rende mais até o vencimento com as taxas esperadas?",
+    "Qual título rende mais até o vencimento?",
   "calc.indexer-comparison.step1":
     "A taxa anual de cada título segue a trajetória esperada do seu índice até o vencimento.",
   "calc.indexer-comparison.step2":

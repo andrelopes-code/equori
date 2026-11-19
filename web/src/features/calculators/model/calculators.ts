@@ -41,6 +41,21 @@ export const calculators: readonly {
   { id: "own-or-rent", group: "plan" },
 ];
 
+// The calculators with a screen of their own; the list shows only these.
+export const written: ReadonlySet<CalculatorId> = new Set([
+  "compound",
+  "rates",
+  "correction",
+  "fixed-income",
+  "indexer-comparison",
+  "financing",
+  "cash-or-installments",
+  "credit-cost",
+  "debt-payoff",
+  "recurring-cost",
+  "own-or-rent",
+]);
+
 export function isCalculatorId(id: string): id is CalculatorId {
   return calculators.some((c) => c.id === id);
 }
