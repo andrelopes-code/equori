@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"maps"
-	"slices"
 	"time"
 
 	"github.com/google/uuid"
@@ -30,16 +28,23 @@ func (s *Service) contributionView(
 		return ContributionView{}, err
 	}
 
-	held := map[uuid.UUID]money.Money{}
-	for _, b := range balances {
-		if !b.Amount.IsZero() {
-			held[b.AccountID] = b.Amount
-		}
+	guarantee, err := s.guaranteeIn(ctx, booksID, base)
+	if err != nil {
+		return ContributionView{}, err
 	}
 
 	s.warm(ctx, today, contributionCodes(balances, p, base))
 
-	v := valuer{s: s, ab: ab, held: held, base: base, today: today, prices: new([]Price)}
+	v := valuer{
+		s:         s,
+		ab:        ab,
+		held:      heldBalances(balances),
+		base:      base,
+		today:     today,
+		prices:    new([]Price),
+		guarantee: guarantee,
+		facts:     map[money.Currency]domain.SecurityFacts{},
+	}
 
 	val, err := v.valuate(ctx, p)
 	if err != nil {
@@ -52,8 +57,23 @@ func (s *Service) contributionView(
 	}
 
 	view.Current = currentQuotes(distinctPrices(*v.prices))
+	if guarantee != nil {
+		view.GuaranteeName = guarantee.Name
+	}
 
 	return view, nil
+}
+
+func heldBalances(balances []AccountBalance) map[uuid.UUID]money.Money {
+	held := map[uuid.UUID]money.Money{}
+
+	for _, b := range balances {
+		if !b.Amount.IsZero() {
+			held[b.AccountID] = b.Amount
+		}
+	}
+
+	return held
 }
 
 // contributionCodes are the instruments the view values: each held balance, each instrument
@@ -87,6 +107,7 @@ type valuation struct {
 	values  [][]money.Money
 	units   [][]*money.Money
 	scales  [][]int
+	matched [][]ContributionMatched // one slice per class: the securities its rules take (GR5)
 	outside []ContributionOutside
 	missing []ContributionMissing
 }
@@ -108,38 +129,58 @@ type valuer struct {
 
 	// prices collects the prices of every conversion of the view (A248 CQ24).
 	prices *[]Price
+
+	guarantee *domain.Guarantee // nil without a guarantee in the base currency (GR4)
+	facts     map[money.Currency]domain.SecurityFacts
 }
 
 func (v valuer) valuate(ctx context.Context, p domain.Plan) (valuation, error) {
-	var val valuation
+	val := valuation{matched: make([][]ContributionMatched, len(p.Classes))}
 
 	for _, c := range p.Classes {
-		values := make([]money.Money, len(c.Members))
-		units := make([]*money.Money, len(c.Members))
-		scales := make([]int, len(c.Members))
-
-		for j, m := range c.Members {
-			mv, err := v.member(ctx, m)
-			if err != nil {
-				return valuation{}, err
-			}
-
-			values[j], units[j], scales[j] = mv.value, mv.unit, mv.scale
-			if mv.missing != nil {
-				val.missing = append(val.missing, *mv.missing)
-			}
+		if err := v.classMembers(ctx, c, &val); err != nil {
+			return valuation{}, err
 		}
-
-		val.values, val.units = append(val.values, values), append(val.units, units)
-		val.scales = append(val.scales, scales)
 	}
 
-	var err error
-	if val.outside, err = v.outside(ctx, p); err != nil {
+	assigned, err := v.assign(ctx, p)
+	if err != nil {
+		return valuation{}, err
+	}
+
+	if err := v.matched(ctx, assigned, &val); err != nil {
+		return valuation{}, err
+	}
+
+	if val.outside, err = v.outside(ctx, p, assigned); err != nil {
 		return valuation{}, err
 	}
 
 	return val, nil
+}
+
+// classMembers values the members of c and appends them to val.
+func (v valuer) classMembers(ctx context.Context, c domain.PlanClass, val *valuation) error {
+	values := make([]money.Money, len(c.Members))
+	units := make([]*money.Money, len(c.Members))
+	scales := make([]int, len(c.Members))
+
+	for j, m := range c.Members {
+		mv, err := v.member(ctx, m)
+		if err != nil {
+			return err
+		}
+
+		values[j], units[j], scales[j] = mv.value, mv.unit, mv.scale
+		if mv.missing != nil {
+			val.missing = append(val.missing, *mv.missing)
+		}
+	}
+
+	val.values, val.units = append(val.values, values), append(val.units, units)
+	val.scales = append(val.scales, scales)
+
+	return nil
 }
 
 func (v valuer) member(ctx context.Context, m domain.PlanMember) (memberValue, error) {
@@ -159,14 +200,7 @@ func (v valuer) member(ctx context.Context, m domain.PlanMember) (memberValue, e
 		)
 	}
 
-	var holdings []Account
-	for _, a := range v.ab.accounts {
-		if a.Instrument == m.Instrument && a.Class == classAsset {
-			holdings = append(holdings, a)
-		}
-	}
-
-	mv, err := v.sum(ctx, holdings, zero, ContributionMissing{Instrument: m.Instrument})
+	mv, err := v.instrumentValue(ctx, m.Instrument)
 	if err != nil {
 		return memberValue{}, err
 	}
@@ -260,12 +294,20 @@ func (v valuer) toBase(
 
 // outside lists the accounts and holdings that match no member (CN6); a holding is summed by
 // instrument.
-func (v valuer) outside(ctx context.Context, p domain.Plan) ([]ContributionOutside, error) {
+func (v valuer) outside(
+	ctx context.Context,
+	p domain.Plan,
+	assigned map[money.Currency]int,
+) ([]ContributionOutside, error) {
 	accountIn, instrumentIn := map[uuid.UUID]bool{}, map[money.Currency]bool{}
 	for _, c := range p.Classes {
 		for _, m := range c.Members {
 			accountIn[m.AccountID], instrumentIn[m.Instrument] = true, true
 		}
+	}
+
+	for code := range assigned {
+		instrumentIn[code] = true
 	}
 
 	var out []ContributionOutside
@@ -295,11 +337,9 @@ func (v valuer) outside(ctx context.Context, p domain.Plan) ([]ContributionOutsi
 		}
 	}
 
-	for _, code := range slices.Sorted(maps.Keys(holdings)) {
-		out = append(out, ContributionOutside{Instrument: code, Value: holdings[code]})
-	}
+	entries, err := v.holdingEntries(ctx, holdings)
 
-	return out, nil
+	return append(out, entries...), err
 }
 
 // mergeValue adds b to the sum a of earlier holding accounts (found); a holding account without a

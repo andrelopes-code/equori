@@ -61,7 +61,18 @@ func (s *Server) previewContributionPlan(
 	_ *http.Request,
 	in ContributionPreviewInput,
 ) (ContributionPlan, error) {
-	amount, err := inputAmount(in.Amount)
+	p := domain.Plan{Classes: planClasses(in.Classes)}
+
+	if in.Amount == nil {
+		view, err := s.svc.PreviewDraft(ctx, auth.MustBooksID(ctx), p)
+		if err != nil {
+			return ContributionPlan{}, err
+		}
+
+		return contributionPlan(view), nil
+	}
+
+	amount, err := inputAmount(*in.Amount)
 	if err != nil {
 		return ContributionPlan{}, err
 	}
@@ -69,7 +80,7 @@ func (s *Server) previewContributionPlan(
 	view, err := s.svc.PreviewContribution(
 		ctx,
 		auth.MustBooksID(ctx),
-		domain.Plan{Classes: planClasses(in.Classes)},
+		p,
 		amount,
 	)
 	if err != nil {
@@ -108,7 +119,12 @@ func planClasses(in []ContributionClassInput) []domain.PlanClass {
 			}
 		}
 
-		out[i] = domain.PlanClass{Name: c.Name, TargetBP: c.TargetBp, Members: members}
+		out[i] = domain.PlanClass{
+			Name:     c.Name,
+			TargetBP: c.TargetBp,
+			Members:  members,
+			Rules:    planRules(c.Rules),
+		}
 		if c.Questions != nil {
 			out[i].Questions = *c.Questions
 		}
@@ -130,6 +146,8 @@ func contributionPlan(v app.ContributionView) ContributionPlan {
 		Outside:      make([]ContributionOutside, len(v.Outside)),
 		Missing:      make([]ContributionMissing, len(v.Missing)),
 		Current:      toCurrent(v.Current),
+
+		GuaranteeName: optional(v.GuaranteeName),
 	}
 	if !v.Complete {
 		out.Status = statusIncomplete
@@ -144,6 +162,7 @@ func contributionPlan(v app.ContributionView) ContributionPlan {
 			AccountId:  optionalID(o.AccountID),
 			Instrument: optional(string(o.Instrument)),
 			Value:      optionalMoney(o.Value),
+			ReturnKind: outsideReturnKind(o.ReturnKind),
 		}
 	}
 
@@ -170,6 +189,8 @@ func contributionClass(c app.ContributionClass) ContributionClass {
 		Amount:         optionalMoney(c.Amount),
 		Cost:           optionalMoney(c.Cost),
 		Members:        make([]ContributionMember, len(c.Members)),
+		Rules:          contributionRules(c.Rules),
+		Matched:        contributionMatched(c.Matched),
 	}
 
 	for i, m := range c.Members {

@@ -32,19 +32,22 @@ type memberOut struct {
 }
 
 type classOut struct {
-	Name     string      `json:"name"`
-	TargetBP int         `json:"target_bp"`
-	Value    moneyOut    `json:"value"`
-	ShareBP  *int        `json:"share_bp"`
-	Amount   *moneyOut   `json:"amount"`
-	Cost     *moneyOut   `json:"cost"`
-	Members  []memberOut `json:"members"`
+	Name     string       `json:"name"`
+	TargetBP int          `json:"target_bp"`
+	Value    moneyOut     `json:"value"`
+	ShareBP  *int         `json:"share_bp"`
+	Amount   *moneyOut    `json:"amount"`
+	Cost     *moneyOut    `json:"cost"`
+	Members  []memberOut  `json:"members"`
+	Rules    []ruleOut    `json:"rules"`
+	Matched  []matchedOut `json:"matched"`
 }
 
 type outsideOut struct {
 	AccountID  string    `json:"account_id"`
 	Instrument string    `json:"instrument"`
 	Value      *moneyOut `json:"value"`
+	ReturnKind string    `json:"return_kind"`
 }
 
 type missingOut struct {
@@ -54,17 +57,18 @@ type missingOut struct {
 }
 
 type contributionOut struct {
-	Amount       *moneyOut    `json:"amount"`
-	Status       string       `json:"status"`
-	Total        moneyOut     `json:"total"`
-	TotalAfter   *moneyOut    `json:"total_after"`
-	DriftBP      *int         `json:"drift_bp"`
-	DriftAfterBP *int         `json:"drift_after_bp"`
-	Leftover     *moneyOut    `json:"leftover"`
-	Classes      []classOut   `json:"classes"`
-	Outside      []outsideOut `json:"outside"`
-	Missing      []missingOut `json:"missing"`
-	Current      *currentOut  `json:"current"`
+	Amount        *moneyOut    `json:"amount"`
+	Status        string       `json:"status"`
+	Total         moneyOut     `json:"total"`
+	TotalAfter    *moneyOut    `json:"total_after"`
+	DriftBP       *int         `json:"drift_bp"`
+	DriftAfterBP  *int         `json:"drift_after_bp"`
+	Leftover      *moneyOut    `json:"leftover"`
+	Classes       []classOut   `json:"classes"`
+	Outside       []outsideOut `json:"outside"`
+	Missing       []missingOut `json:"missing"`
+	Current       *currentOut  `json:"current"`
+	GuaranteeName string       `json:"guarantee_name"`
 }
 
 type contributionFixture struct {

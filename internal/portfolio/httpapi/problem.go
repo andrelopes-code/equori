@@ -97,6 +97,11 @@ var contributionProblems = []struct {
 		"each member of a group with questions answers every question and has no target",
 	},
 	{
+		domain.ErrRuleInvalid, http.StatusUnprocessableEntity,
+		"contribution_rule_invalid",
+		"a group holds members or 1 to 5 rules, and each rule sets valid conditions",
+	},
+	{
 		app.ErrContributionAmountInvalid, http.StatusUnprocessableEntity,
 		"contribution_amount_invalid", "the amount must be positive and in the base currency",
 	},

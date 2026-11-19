@@ -23,6 +23,7 @@ var (
 	ErrContributionClassNameDuplicate = domain.ErrClassNameDuplicate
 	ErrContributionMemberDuplicate    = domain.ErrMemberDuplicate
 	ErrContributionPlanInvalid        = domain.ErrPlanInvalid
+	ErrContributionRuleInvalid        = domain.ErrRuleInvalid
 
 	ErrContributionMemberInvalid = errors.New("invalid contribution member")
 	ErrContributionAmountInvalid = errors.New("invalid contribution amount")
@@ -42,6 +43,8 @@ type ContributionView struct {
 	Outside      []ContributionOutside
 	Missing      []ContributionMissing
 	Current      *CurrentQuotes // nil when no value took a current quote (A248 CQ24)
+
+	GuaranteeName string // empty without a guarantee in the base currency (GR8)
 }
 
 type ContributionClass struct {
@@ -55,6 +58,15 @@ type ContributionClass struct {
 	Amount         *money.Money
 	Cost           *money.Money // cash-like class: the amount of its order (CN17)
 	Members        []ContributionMember
+	Rules          []domain.PlanRule
+	Matched        []ContributionMatched
+}
+
+// ContributionMatched is a security that a rule of a group takes (GR5, GR8).
+type ContributionMatched struct {
+	Instrument money.Currency
+	Value      money.Money
+	ShareBP    *int // inside its class; nil when the class value is zero or the view incomplete
 }
 
 type ContributionMember struct {
@@ -75,6 +87,7 @@ type ContributionOutside struct {
 	AccountID  uuid.UUID      // set for a CN3 account
 	Instrument money.Currency // set for a holding, summed across holding accounts
 	Value      *money.Money   // nil without a price path
+	ReturnKind string         // GR8; empty without one
 }
 
 type ContributionMissing struct {
@@ -141,6 +154,10 @@ func (s *Service) SaveContributionPlan(
 		return ContributionView{}, err
 	}
 
+	if err := s.validateRules(ctx, ab, p, base); err != nil {
+		return ContributionView{}, err
+	}
+
 	if err := s.repo.SaveContributionPlan(ctx, booksID, p); err != nil {
 		return ContributionView{}, fmt.Errorf("store the contribution plan: %w", err)
 	}
@@ -182,9 +199,49 @@ func (s *Service) PreviewContribution(
 		return ContributionView{}, err
 	}
 
+	if err := s.validateRules(ctx, ab, p, base); err != nil {
+		return ContributionView{}, err
+	}
+
 	p.Amount = &amount
 
 	return s.contributionView(ctx, booksID, ab, p, base, true)
+}
+
+// PreviewDraft values the plan p without an amount, a split or a store (GR8).
+func (s *Service) PreviewDraft(
+	ctx context.Context,
+	booksID int64,
+	p domain.Plan,
+) (ContributionView, error) {
+	p, err := p.WithIdeals()
+	if err != nil {
+		return ContributionView{}, err
+	}
+
+	if err := p.Check(); err != nil {
+		return ContributionView{}, err
+	}
+
+	base, err := s.ledger.BaseCurrency(ctx, booksID)
+	if err != nil {
+		return ContributionView{}, err
+	}
+
+	ab, err := s.loadAccountBook(ctx, booksID)
+	if err != nil {
+		return ContributionView{}, err
+	}
+
+	if err := s.validateMembers(ctx, ab, p); err != nil {
+		return ContributionView{}, err
+	}
+
+	if err := s.validateRules(ctx, ab, p, base); err != nil {
+		return ContributionView{}, err
+	}
+
+	return s.contributionView(ctx, booksID, ab, p, base, false)
 }
 
 // PreviewSavedContribution is PreviewContribution of the stored plan; a book without a plan gets

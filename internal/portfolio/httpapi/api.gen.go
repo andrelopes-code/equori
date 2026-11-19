@@ -27,6 +27,27 @@ func (e ContributionMissingKind) Valid() bool {
 	}
 }
 
+// Defines values for ContributionOutsideReturnKind.
+const (
+	ContributionOutsideReturnKindFixed     ContributionOutsideReturnKind = "fixed"
+	ContributionOutsideReturnKindInflation ContributionOutsideReturnKind = "inflation"
+	ContributionOutsideReturnKindRate      ContributionOutsideReturnKind = "rate"
+)
+
+// Valid indicates whether the value is a known member of the ContributionOutsideReturnKind enum.
+func (e ContributionOutsideReturnKind) Valid() bool {
+	switch e {
+	case ContributionOutsideReturnKindFixed:
+		return true
+	case ContributionOutsideReturnKindInflation:
+		return true
+	case ContributionOutsideReturnKindRate:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ContributionPlanStatus.
 const (
 	Complete   ContributionPlanStatus = "complete"
@@ -39,6 +60,48 @@ func (e ContributionPlanStatus) Valid() bool {
 	case Complete:
 		return true
 	case Incomplete:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ContributionRuleGuarantee.
+const (
+	Covered   ContributionRuleGuarantee = "covered"
+	Sovereign ContributionRuleGuarantee = "sovereign"
+	Uncovered ContributionRuleGuarantee = "uncovered"
+)
+
+// Valid indicates whether the value is a known member of the ContributionRuleGuarantee enum.
+func (e ContributionRuleGuarantee) Valid() bool {
+	switch e {
+	case Covered:
+		return true
+	case Sovereign:
+		return true
+	case Uncovered:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ContributionRuleReturnKind.
+const (
+	ContributionRuleReturnKindFixed     ContributionRuleReturnKind = "fixed"
+	ContributionRuleReturnKindInflation ContributionRuleReturnKind = "inflation"
+	ContributionRuleReturnKindRate      ContributionRuleReturnKind = "rate"
+)
+
+// Valid indicates whether the value is a known member of the ContributionRuleReturnKind enum.
+func (e ContributionRuleReturnKind) Valid() bool {
+	switch e {
+	case ContributionRuleReturnKindFixed:
+		return true
+	case ContributionRuleReturnKindInflation:
+		return true
+	case ContributionRuleReturnKindRate:
 		return true
 	default:
 		return false
@@ -181,20 +244,24 @@ type AllocationGroup struct {
 
 // ContributionClass defines model for ContributionClass.
 type ContributionClass struct {
-	AfterShareBp *int                 `json:"after_share_bp,omitempty"`
-	Amount       *Money               `json:"amount,omitempty"`
-	Cost         *Money               `json:"cost,omitempty"`
-	Members      []ContributionMember `json:"members"`
-	Name         string               `json:"name"`
+	AfterShareBp *int   `json:"after_share_bp,omitempty"`
+	Amount       *Money `json:"amount,omitempty"`
+	Cost         *Money `json:"cost,omitempty"`
+
+	// Matched The securities a rule of the group takes (GR5, GR8).
+	Matched []ContributionMatched `json:"matched"`
+	Members []ContributionMember  `json:"members"`
+	Name    string                `json:"name"`
 
 	// QuestionIdeals True when the group divides its target by the answers and one answer is yes (CQ3).
 	QuestionIdeals bool `json:"question_ideals"`
 
 	// Questions The investor's yes-or-no questions of the group (CQ1); empty without them.
-	Questions []string `json:"questions"`
-	ShareBp   *int     `json:"share_bp,omitempty"`
-	TargetBp  int      `json:"target_bp"`
-	Value     Money    `json:"value"`
+	Questions []string           `json:"questions"`
+	Rules     []ContributionRule `json:"rules"`
+	ShareBp   *int               `json:"share_bp,omitempty"`
+	TargetBp  int                `json:"target_bp"`
+	Value     Money              `json:"value"`
 }
 
 // ContributionClassInput defines model for ContributionClassInput.
@@ -204,7 +271,17 @@ type ContributionClassInput struct {
 
 	// Questions The investor's yes-or-no questions of the group (CQ1); empty without them.
 	Questions *[]string `json:"questions,omitempty"`
-	TargetBp  int       `json:"target_bp"`
+
+	// Rules The rules of a group by rule (GR1); absent or empty for a group of members.
+	Rules    *[]ContributionRule `json:"rules,omitempty"`
+	TargetBp int                 `json:"target_bp"`
+}
+
+// ContributionMatched defines model for ContributionMatched.
+type ContributionMatched struct {
+	Instrument string `json:"instrument"`
+	ShareBp    *int   `json:"share_bp,omitempty"`
+	Value      Money  `json:"value"`
 }
 
 // ContributionMember defines model for ContributionMember.
@@ -246,24 +323,31 @@ type ContributionMissingKind string
 
 // ContributionOutside defines model for ContributionOutside.
 type ContributionOutside struct {
-	AccountId  *openapi_types.UUID `json:"account_id,omitempty"`
-	Instrument *string             `json:"instrument,omitempty"`
-	Value      *Money              `json:"value,omitempty"`
+	AccountId  *openapi_types.UUID            `json:"account_id,omitempty"`
+	Instrument *string                        `json:"instrument,omitempty"`
+	ReturnKind *ContributionOutsideReturnKind `json:"return_kind,omitempty"`
+	Value      *Money                         `json:"value,omitempty"`
 }
+
+// ContributionOutsideReturnKind defines model for ContributionOutside.ReturnKind.
+type ContributionOutsideReturnKind string
 
 // ContributionPlan defines model for ContributionPlan.
 type ContributionPlan struct {
-	Amount       *Money                 `json:"amount,omitempty"`
-	Classes      []ContributionClass    `json:"classes"`
-	Current      *CurrentQuotes         `json:"current,omitempty"`
-	DriftAfterBp *int                   `json:"drift_after_bp,omitempty"`
-	DriftBp      *int                   `json:"drift_bp,omitempty"`
-	Leftover     *Money                 `json:"leftover,omitempty"`
-	Missing      []ContributionMissing  `json:"missing"`
-	Outside      []ContributionOutside  `json:"outside"`
-	Status       ContributionPlanStatus `json:"status"`
-	Total        Money                  `json:"total"`
-	TotalAfter   *Money                 `json:"total_after,omitempty"`
+	Amount       *Money              `json:"amount,omitempty"`
+	Classes      []ContributionClass `json:"classes"`
+	Current      *CurrentQuotes      `json:"current,omitempty"`
+	DriftAfterBp *int                `json:"drift_after_bp,omitempty"`
+	DriftBp      *int                `json:"drift_bp,omitempty"`
+
+	// GuaranteeName Name of the deposit guarantee of the book's region in the base currency; absent without one (GR8).
+	GuaranteeName *string                `json:"guarantee_name,omitempty"`
+	Leftover      *Money                 `json:"leftover,omitempty"`
+	Missing       []ContributionMissing  `json:"missing"`
+	Outside       []ContributionOutside  `json:"outside"`
+	Status        ContributionPlanStatus `json:"status"`
+	Total         Money                  `json:"total"`
+	TotalAfter    *Money                 `json:"total_after,omitempty"`
 }
 
 // ContributionPlanStatus defines model for ContributionPlan.Status.
@@ -277,9 +361,27 @@ type ContributionPlanInput struct {
 
 // ContributionPreviewInput defines model for ContributionPreviewInput.
 type ContributionPreviewInput struct {
-	Amount  Money                    `json:"amount"`
+	Amount  *Money                   `json:"amount,omitempty"`
 	Classes []ContributionClassInput `json:"classes"`
 }
+
+// ContributionRule A conjunction of the conditions it sets (contribution rules GR2); at least one.
+type ContributionRule struct {
+	DailyLiquidity  *bool                       `json:"daily_liquidity,omitempty"`
+	Guarantee       *ContributionRuleGuarantee  `json:"guarantee,omitempty"`
+	InstrumentType  *string                     `json:"instrument_type,omitempty"`
+	MaturesFromYear *int                        `json:"matures_from_year,omitempty"`
+	MaturesToYear   *int                        `json:"matures_to_year,omitempty"`
+	QuoteCurrency   *string                     `json:"quote_currency,omitempty"`
+	ReturnKind      *ContributionRuleReturnKind `json:"return_kind,omitempty"`
+	Subtypes        *[]string                   `json:"subtypes,omitempty"`
+}
+
+// ContributionRuleGuarantee defines model for ContributionRule.Guarantee.
+type ContributionRuleGuarantee string
+
+// ContributionRuleReturnKind defines model for ContributionRule.ReturnKind.
+type ContributionRuleReturnKind string
 
 // CurrentQuotes defines model for CurrentQuotes.
 type CurrentQuotes struct {

@@ -4383,7 +4383,7 @@ export interface paths {
         get: operations["getContributionPlan"];
         /**
          * Replaces the contribution plan and returns it as getContributionPlan does.
-         * @description 422 contribution_target_sum, contribution_member_target_sum, contribution_class_name_duplicate, contribution_member_duplicate, contribution_member_invalid, contribution_amount_invalid, contribution_question_invalid or contribution_answers_invalid; 400 invalid_request when the plan breaks a limit (CN2 to CN4, CN11, CQ1 to CQ3).
+         * @description 422 contribution_target_sum, contribution_member_target_sum, contribution_class_name_duplicate, contribution_member_duplicate, contribution_member_invalid, contribution_amount_invalid, contribution_question_invalid, contribution_answers_invalid or contribution_rule_invalid; 400 invalid_request when the plan breaks a limit (CN2 to CN4, CN11, CQ1 to CQ3, GR1).
          */
         put: operations["saveContributionPlan"];
         post?: never;
@@ -4404,7 +4404,7 @@ export interface paths {
         put?: never;
         /**
          * The split of an amount over the plan in the request, with the drift before and after, without storing either (CN13).
-         * @description The amount is positive and in the base currency, else 422 contribution_amount_invalid; a draft with questions breaks CQ1 to CQ3 with 422 contribution_question_invalid or contribution_answers_invalid. The plan rules are those of saveContributionPlan.
+         * @description When set, the amount is positive and in the base currency, else 422 contribution_amount_invalid; a draft with questions breaks CQ1 to CQ3 with 422 contribution_question_invalid or contribution_answers_invalid, and a draft with invalid rules returns 422 contribution_rule_invalid. Without amount, the draft is valued with no split (GR8). The plan rules are those of saveContributionPlan.
          */
         post: operations["previewContributionPlan"];
         delete?: never;
@@ -8685,6 +8685,8 @@ export interface components {
             outside: components["schemas"]["ContributionOutside"][];
             missing: components["schemas"]["ContributionMissing"][];
             current?: components["schemas"]["CurrentQuotes"];
+            /** @description Name of the deposit guarantee of the book's region in the base currency; absent without one (GR8). */
+            guarantee_name?: string;
         };
         ContributionClass: {
             name: string;
@@ -8699,6 +8701,27 @@ export interface components {
             amount?: components["schemas"]["Money"];
             cost?: components["schemas"]["Money"];
             members: components["schemas"]["ContributionMember"][];
+            rules: components["schemas"]["ContributionRule"][];
+            /** @description The securities a rule of the group takes (GR5, GR8). */
+            matched: components["schemas"]["ContributionMatched"][];
+        };
+        /** @description A conjunction of the conditions it sets (contribution rules GR2); at least one. */
+        ContributionRule: {
+            instrument_type?: string;
+            subtypes?: string[];
+            quote_currency?: string;
+            /** @enum {string} */
+            return_kind?: "rate" | "inflation" | "fixed";
+            matures_from_year?: number;
+            matures_to_year?: number;
+            daily_liquidity?: boolean;
+            /** @enum {string} */
+            guarantee?: "covered" | "sovereign" | "uncovered";
+        };
+        ContributionMatched: {
+            instrument: string;
+            value: components["schemas"]["Money"];
+            share_bp?: number;
         };
         ContributionMember: {
             /** Format: uuid */
@@ -8720,6 +8743,8 @@ export interface components {
             account_id?: string;
             instrument?: string;
             value?: components["schemas"]["Money"];
+            /** @enum {string} */
+            return_kind?: "rate" | "inflation" | "fixed";
         };
         ContributionMissing: {
             /** Format: uuid */
@@ -8738,6 +8763,8 @@ export interface components {
             /** @description The investor's yes-or-no questions of the group (CQ1); empty without them. */
             questions?: string[];
             members: components["schemas"]["ContributionMemberInput"][];
+            /** @description The rules of a group by rule (GR1); absent or empty for a group of members. */
+            rules?: components["schemas"]["ContributionRule"][];
         };
         ContributionMemberInput: {
             /** Format: uuid */
@@ -8748,7 +8775,7 @@ export interface components {
             answers?: boolean[];
         };
         ContributionPreviewInput: {
-            amount: components["schemas"]["Money"];
+            amount?: components["schemas"]["Money"];
             classes: components["schemas"]["ContributionClassInput"][];
         };
         BalanceSeries: {

@@ -31,7 +31,7 @@ func assemble(
 	}
 
 	for i, c := range p.Classes {
-		view.Classes[i] = a.class(c, val.values[i], val.units[i])
+		view.Classes[i] = a.class(c, val.values[i], val.units[i], val.matched[i])
 	}
 
 	view.Total = a.money(sumOf(classValues(&view)))
@@ -57,12 +57,13 @@ func (a *assembler) money(n int64) money.Money {
 	return m
 }
 
-// class sums the members that have a value; a member without a price or rate counts zero and is
-// listed in Missing (CN10).
+// class sums the members and the matched securities that have a value; one without a price or rate
+// counts zero and is listed in Missing (CN10).
 func (a *assembler) class(
 	c domain.PlanClass,
 	values []money.Money,
 	units []*money.Money,
+	matched []ContributionMatched,
 ) ContributionClass {
 	out := ContributionClass{
 		Name:           c.Name,
@@ -70,9 +71,15 @@ func (a *assembler) class(
 		Questions:      c.Questions,
 		QuestionIdeals: c.QuestionIdeals(),
 		Members:        make([]ContributionMember, len(c.Members)),
+		Rules:          c.Rules,
+		Matched:        matched,
 	}
 
 	var sum int64
+
+	for _, m := range matched {
+		sum += m.Value.Amount()
+	}
 
 	for j, m := range c.Members {
 		value := values[j]
@@ -111,6 +118,10 @@ func (a *assembler) shares(view *ContributionView) {
 
 		for j, bp := range sharesOf(memberValues(c)) {
 			c.Members[j].ShareBP = &bp
+		}
+
+		for j, bp := range sharesOf(matchedValues(c)) {
+			c.Matched[j].ShareBP = &bp
 		}
 	}
 
@@ -196,6 +207,15 @@ func classValues(view *ContributionView) []int64 {
 func memberValues(c *ContributionClass) []int64 {
 	out := make([]int64, len(c.Members))
 	for j, m := range c.Members {
+		out[j] = m.Value.Amount()
+	}
+
+	return out
+}
+
+func matchedValues(c *ContributionClass) []int64 {
+	out := make([]int64, len(c.Matched))
+	for j, m := range c.Matched {
 		out[j] = m.Value.Amount()
 	}
 
