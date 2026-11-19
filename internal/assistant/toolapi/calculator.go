@@ -72,11 +72,14 @@ var calculatorNames = map[string]struct{ title, question string }{
 	"own-or-rent": {"Own or rent", "Is owning or renting a home cheaper?"},
 }
 
+// CalculatorKey is one address key of a calculator: the kind of its value and, for a choice, the
+// accepted values.
 type CalculatorKey struct {
 	Kind   KeyKind  `json:"kind"`
 	Values []string `json:"values,omitempty"`
 }
 
+// Calculator is the screen of one calculator with the address keys its route accepts.
 type Calculator struct {
 	ID   string
 	Keys map[string]CalculatorKey
@@ -86,6 +89,12 @@ type Calculator struct {
 type BaseCurrency func(ctx context.Context, booksID int64) (money.Currency, error)
 
 type calculatorID string
+
+// invalidValue is the reason a value is not accepted for its key; any other error is a failure
+// of the tool.
+type invalidValue string
+
+func (e invalidValue) Error() string { return string(e) }
 
 type openCalculatorIn struct {
 	Calculator calculatorID      `json:"calculator" jsonschema:"calculator to open"`
@@ -165,6 +174,23 @@ func calculatorQuery(
 	c Calculator,
 	inputs []calculatorInput,
 ) (string, error) {
+	var currency money.Currency
+
+	// The base currency is read at most once per call, when the first amount asks for it.
+	readCurrency := func() (money.Currency, error) {
+		if currency != "" {
+			return currency, nil
+		}
+
+		cur, err := base(ctx, booksID)
+		if err != nil {
+			return "", fmt.Errorf("read base currency: %w", err)
+		}
+
+		currency = cur
+
+		return cur, nil
+	}
 	query := url.Values{}
 
 	for _, in := range inputs {
@@ -177,9 +203,13 @@ func calculatorQuery(
 			return "", tool.InvalidArgument("inputs."+in.Key, "is given twice")
 		}
 
-		value, err := inputValue(ctx, booksID, base, k, in.Value)
+		value, err := inputValue(readCurrency, k, in.Value)
+		if reason, ok := errors.AsType[invalidValue](err); ok {
+			return "", tool.InvalidArgument("inputs."+in.Key, string(reason))
+		}
+
 		if err != nil {
-			return "", tool.InvalidArgument("inputs."+in.Key, err.Error())
+			return "", err
 		}
 
 		query.Set(in.Key, value)
@@ -189,15 +219,13 @@ func calculatorQuery(
 }
 
 func inputValue(
-	ctx context.Context,
-	booksID int64,
-	base BaseCurrency,
+	readCurrency func() (money.Currency, error),
 	k CalculatorKey,
 	v string,
 ) (string, error) {
 	switch k.Kind {
 	case KindAmount:
-		return amountValue(ctx, booksID, base, v)
+		return amountValue(readCurrency, v)
 	case KindRate:
 		return v, checkRate(v)
 	case KindInteger:
@@ -212,30 +240,34 @@ func inputValue(
 		return v, matches(idPattern, v, "must be an id of 2 to 40 characters a-z, 0-9 or _")
 	case KindChoice:
 		if !slices.Contains(k.Values, v) {
-			return "", fmt.Errorf("must be one of %s", strings.Join(k.Values, ", "))
+			return "", invalidValue("must be one of " + strings.Join(k.Values, ", "))
 		}
 	case KindDebts:
 		if utf8.RuneCountInString(v) > maxDebtsLength {
-			return "", fmt.Errorf("must have at most %d characters", maxDebtsLength)
+			return "", invalidValue(fmt.Sprintf("must have at most %d characters", maxDebtsLength))
 		}
 	}
 
 	return v, nil
 }
 
-func amountValue(ctx context.Context, booksID int64, base BaseCurrency, v string) (string, error) {
-	currency, err := base(ctx, booksID)
+func amountValue(readCurrency func() (money.Currency, error), v string) (string, error) {
+	currency, err := readCurrency()
 	if err != nil {
-		return "", fmt.Errorf("read the base currency: %w", err)
+		return "", err
 	}
 
 	m, err := money.ParseDecimal(v, currency, currency.MinorUnits())
 	if err != nil {
-		return "", fmt.Errorf(
+		return "", invalidValue(fmt.Sprintf(
 			"must be a decimal such as 125.90 with at most %d decimals in %s",
 			currency.MinorUnits(),
 			currency,
-		)
+		))
+	}
+
+	if m.IsNegative() {
+		return "", invalidValue("must not be negative")
 	}
 
 	return strconv.FormatInt(m.Amount(), 10), nil
@@ -247,7 +279,7 @@ func checkRate(v string) error {
 	}
 
 	if f, err := strconv.ParseFloat(v, 64); err != nil || f < minRate || f > maxRate {
-		return fmt.Errorf("must be between %v and %v", minRate, maxRate)
+		return invalidValue(fmt.Sprintf("must be between %v and %v", minRate, maxRate))
 	}
 
 	return nil
@@ -255,7 +287,7 @@ func checkRate(v string) error {
 
 func matches(p *regexp.Regexp, v, message string) error {
 	if !p.MatchString(v) {
-		return errors.New(message)
+		return invalidValue(message)
 	}
 
 	return nil
@@ -263,7 +295,7 @@ func matches(p *regexp.Regexp, v, message string) error {
 
 func checkTime(layout, v, message string) error {
 	if _, err := time.Parse(layout, v); err != nil {
-		return errors.New(message)
+		return invalidValue(message)
 	}
 
 	return nil

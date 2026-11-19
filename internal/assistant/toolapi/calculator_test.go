@@ -3,6 +3,7 @@ package toolapi_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"log/slog"
 	"maps"
@@ -26,10 +27,13 @@ func TestOpenCalculator(t *testing.T) {
 		base      money.Currency
 		calc      string
 		inputs    map[string]string
+		extra     [][2]string // pairs appended after the sorted inputs, to repeat a key
+		baseErr   bool
 		wantPath  string
 		wantTitle string
 		wantField string
 		wantQuery string
+		wantFault bool // an error that is not invalid_arguments
 	}{
 		{
 			name:      "financing",
@@ -82,13 +86,128 @@ func TestOpenCalculator(t *testing.T) {
 			wantTitle: "Debt payoff",
 			wantQuery: "a~1~2&3",
 		},
+		{
+			name:      "duplicate_key",
+			base:      "BRL",
+			calc:      "financing",
+			inputs:    map[string]string{"rate": "1"},
+			extra:     [][2]string{{"rate", "2"}},
+			wantField: "inputs.rate",
+		},
+		{
+			name:      "rate_lower_bound",
+			base:      "BRL",
+			calc:      "financing",
+			inputs:    map[string]string{"rate": "-99.99"},
+			wantPath:  "/calculators/financing?rate=-99.99",
+			wantTitle: "Financing",
+		},
+		{
+			name:      "rate_below_bound",
+			base:      "BRL",
+			calc:      "financing",
+			inputs:    map[string]string{"rate": "-100"},
+			wantField: "inputs.rate",
+		},
+		{
+			name:      "rate_above_bound",
+			base:      "BRL",
+			calc:      "financing",
+			inputs:    map[string]string{"rate": "1000.01"},
+			wantField: "inputs.rate",
+		},
+		{
+			name:      "integer_plus",
+			base:      "BRL",
+			calc:      "financing",
+			inputs:    map[string]string{"prepayMonth": "+3"},
+			wantField: "inputs.prepayMonth",
+		},
+		{
+			name:      "integer_minus",
+			base:      "BRL",
+			calc:      "financing",
+			inputs:    map[string]string{"prepayMonth": "-3"},
+			wantField: "inputs.prepayMonth",
+		},
+		{
+			name:      "decimal_trailing_point",
+			base:      "BRL",
+			calc:      "financing",
+			inputs:    map[string]string{"months": "2."},
+			wantField: "inputs.months",
+		},
+		{
+			name:      "month_invalid",
+			base:      "BRL",
+			calc:      "correction",
+			inputs:    map[string]string{"from": "2026-13"},
+			wantField: "inputs.from",
+		},
+		{
+			name:      "date_invalid",
+			base:      "BRL",
+			calc:      "credit-cost",
+			inputs:    map[string]string{"firstDue": "2026-02-30"},
+			wantField: "inputs.firstDue",
+		},
+		{
+			name:      "id_uppercase",
+			base:      "BRL",
+			calc:      "compound",
+			inputs:    map[string]string{"index": "A"},
+			wantField: "inputs.index",
+		},
+		{
+			name:      "debts_at_limit",
+			base:      "BRL",
+			calc:      "debt-payoff",
+			inputs:    map[string]string{"debts": strings.Repeat("a", 2400)},
+			wantPath:  "/calculators/debt-payoff",
+			wantTitle: "Debt payoff",
+			wantQuery: strings.Repeat("a", 2400),
+		},
+		{
+			name:      "debts_over_limit",
+			base:      "BRL",
+			calc:      "debt-payoff",
+			inputs:    map[string]string{"debts": strings.Repeat("a", 2401)},
+			wantField: "inputs.debts",
+		},
+		{
+			name:      "negative_amount",
+			base:      "BRL",
+			calc:      "financing",
+			inputs:    map[string]string{"amount": "-1"},
+			wantField: "inputs.amount",
+		},
+		{
+			name:      "base_currency_error",
+			calc:      "financing",
+			inputs:    map[string]string{"amount": "1"},
+			baseErr:   true,
+			wantFault: true,
+		},
+		{
+			name:      "base_currency_unused",
+			calc:      "financing",
+			inputs:    map[string]string{"rate": "1"},
+			baseErr:   true,
+			wantPath:  "/calculators/financing?rate=1",
+			wantTitle: "Financing",
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			res := callOpenCalculator(t, tt.base, tt.calc, tt.inputs)
+			res := callOpenCalculator(t, baseOf(tt.base, tt.baseErr), tt.calc, tt.inputs, tt.extra)
+			if tt.wantFault {
+				checkFault(t, res)
+				return
+			}
+
 			if tt.wantField != "" {
 				checkToolError(t, res, tt.wantField)
 				return
@@ -163,9 +282,10 @@ func TestParseCalculators(t *testing.T) {
 
 func callOpenCalculator(
 	t *testing.T,
-	base money.Currency,
+	base toolapi.BaseCurrency,
 	calc string,
 	inputs map[string]string,
+	extra [][2]string,
 ) tool.Result {
 	t.Helper()
 
@@ -176,11 +296,7 @@ func callOpenCalculator(
 
 	reg, err := tool.NewRegistry(
 		slog.New(slog.NewTextHandler(io.Discard, nil)),
-		tool.Group{
-			Tools: toolapi.Tools(nil, calcs, func(context.Context, int64) (money.Currency, error) {
-				return base, nil
-			}),
-		},
+		tool.Group{Tools: toolapi.Tools(nil, calcs, base)},
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -189,6 +305,10 @@ func callOpenCalculator(
 	list := []map[string]string{}
 	for _, key := range slices.Sorted(maps.Keys(inputs)) {
 		list = append(list, map[string]string{"key": key, "value": inputs[key]})
+	}
+
+	for _, kv := range extra {
+		list = append(list, map[string]string{"key": kv[0], "value": kv[1]})
 	}
 
 	args, err := json.Marshal(map[string]any{"calculator": calc, "inputs": list})
@@ -220,5 +340,33 @@ func checkToolError(t *testing.T, res tool.Result, field string) {
 
 	if e.Code != "invalid_arguments" || len(e.Errors) == 0 || e.Errors[0].Field != field {
 		t.Fatalf("error = %+v, want invalid_arguments on %s", e, field)
+	}
+}
+
+func baseOf(currency money.Currency, fail bool) toolapi.BaseCurrency {
+	return func(context.Context, int64) (money.Currency, error) {
+		if fail {
+			return "", errors.New("connection refused by the ledger store")
+		}
+
+		return currency, nil
+	}
+}
+
+func checkFault(t *testing.T, res tool.Result) {
+	t.Helper()
+
+	if !res.IsError {
+		t.Fatalf("result is not an error: %s", res.Content)
+	}
+
+	var e tool.Error
+	if err := json.Unmarshal(res.Content, &e); err != nil {
+		t.Fatal(err)
+	}
+
+	if e.Code == "invalid_arguments" ||
+		strings.Contains(string(res.Content), "connection refused") {
+		t.Fatalf("error = %s, want a fault without the internal text", res.Content)
 	}
 }
