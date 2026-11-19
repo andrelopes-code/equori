@@ -201,3 +201,55 @@ func TestRightExerciseTool(t *testing.T) {
 		t.Errorf("right_exercise without amount = %s, want an error", r.Content)
 	}
 }
+
+// O3, O4: a partial exercise is the write-off of the rights left unexercised before the date of
+// the exercise, which takes the rest; on the same date the write-off refuses it (A228 IO16).
+func TestPartialExerciseByWriteOff(t *testing.T) {
+	t.Parallel()
+	f := newInvestFixture(t)
+	for _, code := range []string{"PETR12", "PETR10"} {
+		f.h.MustDo(
+			http.MethodPost,
+			"/api/v1/instruments",
+			security(code, "stock"),
+			http.StatusCreated,
+			nil,
+		)
+	}
+	f.buyPETR4(t, "2026-11-01", map[string]any{"unit_price": "10.00"})
+	f.h.MustDo(http.MethodPost, "/api/v1/corporate-actions", map[string]any{
+		"account_id":     f.petr4,
+		"kind":           "right_issue",
+		"date":           "2026-11-10",
+		"ratio_from":     10,
+		"ratio_to":       1,
+		"new_instrument": "PETR12",
+	}, http.StatusCreated, nil)
+	rights := holdingOf(t, f, "PETR12")
+
+	f.h.MustDo(http.MethodPost, "/api/v1/trades", map[string]any{
+		"account_id": rights,
+		"side":       "write_off",
+		"date":       "2026-11-19",
+		"quantity":   units(4, "PETR12"),
+	}, http.StatusCreated, nil)
+
+	var exercise actionTx
+	f.h.MustDo(http.MethodPost, "/api/v1/corporate-actions", map[string]any{
+		"account_id":     rights,
+		"kind":           "right_exercise",
+		"date":           "2026-11-20",
+		"ratio_from":     1,
+		"ratio_to":       1,
+		"new_instrument": "PETR10",
+		"amount":         apitest.BRL(4800),
+	}, http.StatusCreated, &exercise)
+
+	expectPostings(
+		t,
+		exercise.Postings,
+		[3]any{rights, int64(-6), int64(0)},
+		[3]any{holdingOf(t, f, "PETR10"), int64(6), int64(4800)},
+		[3]any{f.cash, int64(-4800), int64(-4800)},
+	)
+}
