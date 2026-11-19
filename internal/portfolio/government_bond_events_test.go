@@ -149,12 +149,14 @@ func TestS640NTNBCouponFromTheIPCA(t *testing.T) {
 	levels = append(levels, `{"V":"2788.33","D3C":"202610"}`)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		first, last, _ := strings.Cut(r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:], "-")
+
 		out := []string{`{"V":"Valor","D3C":"Mês (Código)"}`}
 		for _, l := range levels {
 			if m := l[len(l)-8 : len(l)-2]; m >= first && m <= last {
 				out = append(out, l)
 			}
 		}
+
 		fmt.Fprintf(w, "[%s]", strings.Join(out, ","))
 	}))
 	t.Cleanup(srv.Close)
@@ -305,6 +307,7 @@ func TestS641NTNCAndLFTFromTheirIndexes(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+
 			srv := httptest.NewServer(sgsSeries(tc.series, tc.rates))
 			t.Cleanup(srv.Close)
 
@@ -321,6 +324,7 @@ func TestS641NTNCAndLFTFromTheirIndexes(t *testing.T) {
 			account := f.h.Account(tc.code, "asset", "brokerage", map[string]any{
 				"institution_id": f.institution, "parent_id": f.xp, "currency": tc.code,
 			})
+
 			bought := time.Date(2000, time.July, 10, 0, 0, 0, 0, time.UTC).Format(time.DateOnly)
 			if tc.series == 28655 {
 				bought = "2026-01-12"

@@ -162,6 +162,7 @@ func stepped(
 			}
 
 			factor.Quo(previous, start)
+
 			current = k
 		}
 

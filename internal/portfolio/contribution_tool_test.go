@@ -109,7 +109,8 @@ func TestSaveContributionPlanToolS401(t *testing.T) {
 	}, &out)
 
 	members := out.Contribution.Classes[1].Members
-	if len(members) != 2 || members[0].Instrument != "BOVA11" || members[0].Amount.Amount != "0.00" ||
+	if len(members) != 2 || members[0].Instrument != "BOVA11" ||
+		members[0].Amount.Amount != "0.00" ||
 		members[1].Instrument != "PETR4" ||
 		members[1].Amount.Amount != "1000.00" {
 		t.Fatalf("members = %+v", members)

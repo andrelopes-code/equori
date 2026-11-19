@@ -12,6 +12,7 @@ import (
 // security, whose cost is the price paid from the cash account.
 func TestRightIssueAndExercise(t *testing.T) {
 	t.Parallel()
+
 	f := newInvestFixture(t)
 	for _, code := range []string{"PETR12", "PETR10"} {
 		f.h.MustDo(
@@ -22,6 +23,7 @@ func TestRightIssueAndExercise(t *testing.T) {
 			nil,
 		)
 	}
+
 	f.buyPETR4(t, "2026-11-01", map[string]any{"unit_price": "10.00"})
 
 	var issue actionTx
@@ -153,6 +155,7 @@ func TestRightExerciseRefusesQuantity(t *testing.T) {
 // the brokerage, and asks for the price of an exercise.
 func TestRightExerciseTool(t *testing.T) {
 	t.Parallel()
+
 	f := newInvestFixture(t)
 	for _, code := range []string{"PETR12", "PETR10"} {
 		f.h.MustDo(
@@ -163,6 +166,7 @@ func TestRightExerciseTool(t *testing.T) {
 			nil,
 		)
 	}
+
 	f.buyPETR4(t, "2026-11-01", map[string]any{"unit_price": "10.00"})
 
 	var issued investmentOut
@@ -197,6 +201,7 @@ func TestRightExerciseTool(t *testing.T) {
 	)
 
 	delete(args, "amount")
+
 	if r := f.h.Tool("record_corporate_action", args); !r.IsError {
 		t.Errorf("right_exercise without amount = %s, want an error", r.Content)
 	}
@@ -206,6 +211,7 @@ func TestRightExerciseTool(t *testing.T) {
 // the exercise, which takes the rest; on the same date the write-off refuses it (A228 IO16).
 func TestPartialExerciseByWriteOff(t *testing.T) {
 	t.Parallel()
+
 	f := newInvestFixture(t)
 	for _, code := range []string{"PETR12", "PETR10"} {
 		f.h.MustDo(
@@ -216,6 +222,7 @@ func TestPartialExerciseByWriteOff(t *testing.T) {
 			nil,
 		)
 	}
+
 	f.buyPETR4(t, "2026-11-01", map[string]any{"unit_price": "10.00"})
 	f.h.MustDo(http.MethodPost, "/api/v1/corporate-actions", map[string]any{
 		"account_id":     f.petr4,

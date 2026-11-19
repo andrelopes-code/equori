@@ -251,6 +251,7 @@ func storeCompanyListings(
 func companyReportParams(
 	source, currency, file string, r companyreport.Report,
 ) postgres.InsertCompanyReportParams {
+	//nolint:gosec // G115: the adapter keeps Months in 1-12, the span of one fiscal year
 	return postgres.InsertCompanyReportParams{
 		Source: source, Identifier: r.Identifier, Period: r.Period, Months: int16(r.Months),
 		File: file, Currency: currency, Name: r.Name, Consolidated: r.Consolidated,

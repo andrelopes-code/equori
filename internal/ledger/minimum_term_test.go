@@ -34,6 +34,7 @@ func TestMinimumTermOfLCIAndLCA(t *testing.T) {
 			contract["subtype"], contract["index_id"] = tc.subtype, tc.index
 			contract["matures_on"] = tc.maturesOn
 			delete(contract, "percent_of_index_bp")
+
 			if tc.index == "ipca" {
 				contract["spread_bp"] = 600
 			}

@@ -135,6 +135,7 @@ func (s *Server) getAssistantFileContent(w http.ResponseWriter, r *http.Request)
 	w.Header().Set("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(http.StatusOK)
+	//nolint:gosec // G705: the CSP and nosniff above keep the member's file from running
 	_, _ = w.Write(content)
 }
 

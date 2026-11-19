@@ -186,6 +186,7 @@ func TestRebuildForVersionRunsOncePerVersion(t *testing.T) {
 		}
 
 		es := f.incomeEvents(t)
+
 		rebuilt := len(es) == 1 && es[0].TaxTreatment != nil && *es[0].TaxTreatment == "exempt"
 		if rebuilt != s.want {
 			t.Fatalf(

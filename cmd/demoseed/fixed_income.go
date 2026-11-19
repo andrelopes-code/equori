@@ -58,6 +58,7 @@ func (s *seeder) apply(i int, a application, d time.Time) {
 			a.index,
 			iso(d),
 		)
+
 		return
 	}
 
@@ -82,6 +83,7 @@ func (s *seeder) apply(i int, a application, d time.Time) {
 	s.priceApplication(out.Instrument, out.UnitPrice, d)
 
 	s.bal[s.id("xp.cash")] -= a.cents
+
 	price, err := strconv.ParseFloat(out.UnitPrice, 64)
 	if err != nil && s.err == nil {
 		s.fail("unit price of %s: %v", a.name, err)

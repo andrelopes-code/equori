@@ -343,6 +343,7 @@ func marketFundReports(
 				Holders:   optionalInt(p.Holders),
 			}
 			fillFundReportFigures(&v.Periods[j], p)
+
 			if p.Delivered != nil {
 				v.Periods[j].Delivered = tool.DateOf(*p.Delivered)
 			}

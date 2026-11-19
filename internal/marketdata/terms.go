@@ -139,6 +139,7 @@ func (m *Module) termsWithPayments(
 	}
 
 	t := toTerms(row)
+
 	var steps []storedStep
 	if err := json.Unmarshal(row.RateSteps, &steps); err != nil {
 		return Terms{}, fmt.Errorf("read rate steps of %s: %w", row.InstrumentCode, err)

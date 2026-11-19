@@ -130,6 +130,7 @@ func TestCurrent(t *testing.T) {
 			srv := httptest.NewServer(
 				http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					mu.Lock()
+
 					requests = append(requests, r.RequestURI)
 					mu.Unlock()
 

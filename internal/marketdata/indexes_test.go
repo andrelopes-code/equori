@@ -316,6 +316,7 @@ func TestIndexFeedsSelicAndIGPM(t *testing.T) {
 			"face_value": 100000,
 		}, http.StatusOK, nil)
 	}
+
 	h.App.Marketdata.TickFeeds(t.Context())
 
 	if got := indexRates(t, h, "selic"); len(got) != 2 ||

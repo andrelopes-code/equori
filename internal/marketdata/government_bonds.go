@@ -122,6 +122,7 @@ func (m *Module) governmentBondCoupons(ctx context.Context, code string) ([]Coup
 	known := kind == "LTN" || kind == "NTNF"
 
 	payOn := bondPayDates(maturity, halfYearly)
+
 	out := make([]Coupon, len(payOn))
 	for i, d := range payOn {
 		c := domain.Coupon{PaysOn: d, PaysInterest: halfYearly, RateMissing: !known}

@@ -92,6 +92,7 @@ func distinctPrices(prices []Price) []Price {
 
 		if !seen[k] {
 			seen[k] = true
+
 			out = append(out, p)
 		}
 	}

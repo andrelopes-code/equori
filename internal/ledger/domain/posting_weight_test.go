@@ -9,6 +9,7 @@ func TestZeroWeight(t *testing.T) {
 	f := newTxFixture(t)
 
 	rightIssue := &CorporateAction{Kind: ActionRightIssue, NewAccountID: f.wise.ID}
+
 	tests := []struct {
 		name   string
 		amount int64

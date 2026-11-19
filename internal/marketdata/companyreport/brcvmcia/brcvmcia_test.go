@@ -607,4 +607,4 @@ func newServer(t *testing.T, files map[string][]byte) *server {
 	return s
 }
 
-func (s *server) client() *http.Client { return s.Server.Client() }
+func (s *server) client() *http.Client { return s.Client() }

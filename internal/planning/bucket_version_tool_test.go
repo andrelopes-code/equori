@@ -11,6 +11,7 @@ func TestDeleteBucketVersionTool(t *testing.T) {
 	f := newFixture(t, "2026-11-17")
 	f.saveBucketsFrom("2026-09", bucket("Needs", 6000, false), bucket("Wants", 4000, false))
 	f.saveBucketsFrom("2026-11", bucket("Needs", 5000, false), bucket("Wants", 5000, false))
+
 	args := map[string]any{"action": "delete_bucket_version", "month": "2026-11"}
 
 	if r := f.h.Tool("manage_budget_or_goal", args); r.IsError {

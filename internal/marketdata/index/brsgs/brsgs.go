@@ -204,6 +204,7 @@ func (s Source) parseQuotes(body []byte) ([]index.Rate, error) {
 		}
 
 		now, okNow := new(big.Rat).SetString(items[i].Value)
+
 		next, okNext := new(big.Rat).SetString(items[i+1].Value)
 		if !okNow || !okNext || now.Sign() <= 0 {
 			return out, fmt.Errorf("%s: quote of %s is not a positive decimal", s.id, items[i].Date)
