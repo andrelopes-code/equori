@@ -114,8 +114,13 @@ export function FixedIncomeCalculator() {
         />
       }
       evidence={
-        answer === null || belowMinimum ? undefined : (
-          <FixedIncomeEvidence money={money} answer={answer} exempt={exempt} />
+        answer === null || belowMinimum || taxBp === null ? undefined : (
+          <FixedIncomeEvidence
+            money={money}
+            answer={answer}
+            exempt={exempt}
+            taxBp={taxBp}
+          />
         )
       }
       inputs={

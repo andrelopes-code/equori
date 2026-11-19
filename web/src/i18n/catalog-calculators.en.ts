@@ -438,6 +438,7 @@ export const calculatorsEn = {
   "calc.fixedIncome.netRate": "Net annual rate",
   "calc.fixedIncome.equivalentTaxable": "Taxed rate that yields the same",
   "calc.fixedIncome.equivalentExempt": "Tax-free rate that yields the same",
+  "calc.fixedIncome.taxShare": "Tax rate applied",
   "calc.fixedIncome.iof":
     "Below 30 days a tax on the redemption (IOF) applies, which this calculator does not compute.",
   "calc.fixedIncome.checked":

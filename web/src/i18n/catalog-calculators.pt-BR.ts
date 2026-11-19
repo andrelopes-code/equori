@@ -441,6 +441,7 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.fixedIncome.netRate": "Taxa anual líquida",
   "calc.fixedIncome.equivalentTaxable": "Taxa com imposto que rende o mesmo",
   "calc.fixedIncome.equivalentExempt": "Taxa sem imposto que rende o mesmo",
+  "calc.fixedIncome.taxShare": "Alíquota aplicada",
   "calc.fixedIncome.iof":
     "Abaixo de 30 dias incide um imposto sobre o resgate (IOF), que esta calculadora não calcula.",
   "calc.fixedIncome.checked":

@@ -47,6 +47,10 @@ describe("Fixed income calculator", () => {
   it("takes the Brazilian tax of the holding period", async () => {
     await open("amount=1000000&rate=12&days=400", "BR");
     expect(await figure()).toMatch(/1[.,]090[.,]96/);
+    // The tier of 361 to 720 days.
+    expect(await result(catalogEn["calc.fixedIncome.taxShare"])).toMatch(
+      /^17[.,]5/,
+    );
     expect(await result(catalogEn["calc.fixedIncome.gross"])).toMatch(
       /1[.,]322[.,]38/,
     );
@@ -98,6 +102,10 @@ describe("Fixed income calculator", () => {
     expect(
       await result(catalogEn["calc.fixedIncome.equivalentTaxable"]),
     ).not.toBe("");
+    await screen.findByText(catalogEn["calc.fixedIncome.equivalentTaxable"]);
+    expect(
+      screen.queryByText(catalogEn["calc.fixedIncome.taxShare"]),
+    ).toBeNull();
     // The tax part of the bar is empty: one part is visible.
     const widths = await parts();
     expect(widths).toHaveLength(2);

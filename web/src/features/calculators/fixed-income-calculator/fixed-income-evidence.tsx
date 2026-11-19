@@ -17,12 +17,15 @@ interface FixedIncomeEvidenceProps {
   money: CalculatorMoney;
   answer: NonNullable<ReturnType<typeof fixedIncomeAnswer>>;
   exempt: boolean;
+  // Basis points of the tax rate applied to the yield.
+  taxBp: number;
 }
 
 export function FixedIncomeEvidence({
   money,
   answer,
   exempt,
+  taxBp,
 }: FixedIncomeEvidenceProps) {
   const t = useT();
   const [tag] = useAppLocale();
@@ -55,6 +58,14 @@ export function FixedIncomeEvidence({
 
         <FactRows
           rows={[
+            ...(exempt
+              ? []
+              : [
+                  {
+                    term: t("calc.fixedIncome.taxShare"),
+                    value: formatRate(taxBp / 10000, tag),
+                  },
+                ]),
             {
               term: t(
                 exempt
