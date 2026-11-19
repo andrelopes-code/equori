@@ -126,6 +126,7 @@ var exposure = map[string]string{
 	"getNetWorth":                      "get_portfolio",
 	"getIssuerExposure":                "get_portfolio",
 	"getNetWorthDays":                  "get_portfolio",
+	"getRisk":                          "get_portfolio",
 	"getContributionPlan":              "get_portfolio",
 	"previewContributionPlan":          "get_portfolio",
 	"saveContributionPlan":             "save_contribution_plan",

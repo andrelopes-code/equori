@@ -347,6 +347,49 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /reports/risk:
+    get:
+      tags: [portfolio]
+      operationId: getRisk
+      x-book-role: read
+      summary: Monthly risk history of the brokerage trees, in total and by class (portfolio risk design, RK1 to RK14).
+      description: |
+        A class is the type of the instrument an account holds; cash is currency. Each month is valued at its last day
+        in value_in (the base currency by default) with the chosen price on or before it; a price dated before the
+        first day of the month makes the month stale, a missing price missing. The return of a month is the modified
+        Dietz return of the span since the last known month end, with the external flows of each class (an income of a
+        security paid into the cash of the brokerage is return of the security). volatility_bp is the sample standard
+        deviation of the one-month returns of the 36 months that end at the month, times the square root of 12, with at
+        least 12 returns. drawdown_bp is the fall of the chained index from its peak. correlations and risk_share_bp
+        read the last 36 months with at least 12 common one-month returns; the risk shares are the shares of the
+        variance of the portfolio and sum to 10000 apart from rounding. weight_bp and accrual_bp are the shares of the
+        value, and of the value priced by accrual, at the last known month end.
+      parameters:
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: value_in
+          in: query
+          required: false
+          schema:
+            type: string
+            pattern: "^[A-Z]{3}$"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RiskReport"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /contribution-plan:
     get:
       tags: [portfolio]
@@ -523,6 +566,88 @@ schemas:
         type: array
         items:
           $ref: "#/components/schemas/NetWorthDay"
+  RiskMonth:
+    type: object
+    required: [month, state]
+    properties:
+      month:
+        type: string
+        format: date
+        description: The last day of the month.
+      state:
+        type: string
+        enum: [known, stale, missing, nothing_held, no_base]
+      return_bp:
+        type: integer
+      span_months:
+        type: integer
+        description: The months of the span the return covers; above 1 after a stale or missing month.
+      drawdown_bp:
+        type: integer
+      volatility_bp:
+        type: integer
+      volatility_months:
+        type: integer
+  RiskSeries:
+    type: object
+    required: [key, months]
+    properties:
+      key:
+        type: string
+        description: The instrument type of the class; empty for the portfolio.
+      months:
+        type: array
+        items:
+          $ref: "#/components/schemas/RiskMonth"
+      volatility_bp:
+        type: integer
+      volatility_months:
+        type: integer
+      max_drawdown_bp:
+        type: integer
+      weight_bp:
+        type: integer
+      risk_share_bp:
+        type: integer
+      accrual_bp:
+        type: integer
+  RiskCorrelation:
+    type: object
+    required: [a, b, correlation_bp, months]
+    properties:
+      a:
+        type: string
+      b:
+        type: string
+      correlation_bp:
+        type: integer
+      months:
+        type: integer
+  RiskReport:
+    type: object
+    required: [value_in, window_months, portfolio, classes, correlations]
+    properties:
+      value_in:
+        type: string
+        pattern: "^[A-Z]{3}$"
+      from:
+        type: string
+        format: date
+      to:
+        type: string
+        format: date
+      window_months:
+        type: integer
+      portfolio:
+        $ref: "#/components/schemas/RiskSeries"
+      classes:
+        type: array
+        items:
+          $ref: "#/components/schemas/RiskSeries"
+      correlations:
+        type: array
+        items:
+          $ref: "#/components/schemas/RiskCorrelation"
   ReturnFlow:
     type: object
     required: [date, amount]

@@ -4389,6 +4389,35 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/reports/risk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Monthly risk history of the brokerage trees, in total and by class (portfolio risk design, RK1 to RK14).
+         * @description A class is the type of the instrument an account holds; cash is currency. Each month is valued at its last day
+         *     in value_in (the base currency by default) with the chosen price on or before it; a price dated before the
+         *     first day of the month makes the month stale, a missing price missing. The return of a month is the modified
+         *     Dietz return of the span since the last known month end, with the external flows of each class (an income of a
+         *     security paid into the cash of the brokerage is return of the security). volatility_bp is the sample standard
+         *     deviation of the one-month returns of the 36 months that end at the month, times the square root of 12, with at
+         *     least 12 returns. drawdown_bp is the fall of the chained index from its peak. correlations and risk_share_bp
+         *     read the last 36 months with at least 12 common one-month returns; the risk shares are the shares of the
+         *     variance of the portfolio and sum to 10000 apart from rounding. weight_bp and accrual_bp are the shares of the
+         *     value, and of the value priced by accrual, at the last known month end.
+         */
+        get: operations["getRisk"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/contribution-plan": {
         parameters: {
             query?: never;
@@ -8477,6 +8506,49 @@ export interface components {
         };
         NetWorthDays: {
             items: components["schemas"]["NetWorthDay"][];
+        };
+        RiskMonth: {
+            /**
+             * Format: date
+             * @description The last day of the month.
+             */
+            month: string;
+            /** @enum {string} */
+            state: "known" | "stale" | "missing" | "nothing_held" | "no_base";
+            return_bp?: number;
+            /** @description The months of the span the return covers; above 1 after a stale or missing month. */
+            span_months?: number;
+            drawdown_bp?: number;
+            volatility_bp?: number;
+            volatility_months?: number;
+        };
+        RiskSeries: {
+            /** @description The instrument type of the class; empty for the portfolio. */
+            key: string;
+            months: components["schemas"]["RiskMonth"][];
+            volatility_bp?: number;
+            volatility_months?: number;
+            max_drawdown_bp?: number;
+            weight_bp?: number;
+            risk_share_bp?: number;
+            accrual_bp?: number;
+        };
+        RiskCorrelation: {
+            a: string;
+            b: string;
+            correlation_bp: number;
+            months: number;
+        };
+        RiskReport: {
+            value_in: string;
+            /** Format: date */
+            from?: string;
+            /** Format: date */
+            to?: string;
+            window_months: number;
+            portfolio: components["schemas"]["RiskSeries"];
+            classes: components["schemas"]["RiskSeries"][];
+            correlations: components["schemas"]["RiskCorrelation"][];
         };
         ReturnFlow: {
             /** Format: date */
@@ -16662,6 +16734,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NetWorthDays"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    getRisk: {
+        parameters: {
+            query?: {
+                to?: string;
+                value_in?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RiskReport"];
                 };
             };
             400: components["responses"]["Problem"];
