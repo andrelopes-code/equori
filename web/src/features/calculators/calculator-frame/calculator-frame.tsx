@@ -57,7 +57,7 @@ export function CalculatorFrame({
   inputs: ReactNode;
   // Inputs a result does not need: they refine it or add figures to it.
   options?: ReactNode;
-  results: ReactNode;
+  results?: ReactNode;
   details?: ReactNode;
   method: ReactNode;
   answer?: ReactNode;
@@ -99,7 +99,9 @@ export function CalculatorFrame({
             <div className={design.calc}>
               {answer}
 
-              <div className={design.evidence}>{evidence}</div>
+              {evidence !== undefined && (
+                <div className={design.evidence}>{evidence}</div>
+              )}
 
               {inputs !== null && (
                 <Card className={design.inputs}>

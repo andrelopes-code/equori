@@ -1,6 +1,7 @@
-import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
+import { Field, FieldDescription } from "@slotted/react/field";
 import type { ReactNode } from "react";
 
+import { FieldTitle } from "@/ui/form-fields/field-title";
 import { RateInput } from "@/ui/money/rate-input";
 import type { RatePeriod } from "@/ui/money/rate-input";
 
@@ -8,6 +9,7 @@ import type { RatePeriod } from "@/ui/money/rate-input";
 export function RateField({
   label,
   hint,
+  help,
   name,
   value,
   onChange,
@@ -17,6 +19,7 @@ export function RateField({
 }: {
   label: string;
   hint?: string;
+  help?: string;
   name: string;
   value: string;
   onChange: (text: string) => void;
@@ -26,7 +29,7 @@ export function RateField({
 }) {
   return (
     <Field necessity="none">
-      <FieldLabel>{label}</FieldLabel>
+      <FieldTitle label={label} {...(help === undefined ? {} : { help })} />
       <RateInput
         name={name}
         value={value}

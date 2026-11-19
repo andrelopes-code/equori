@@ -1,13 +1,15 @@
-import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
+import { Field, FieldDescription } from "@slotted/react/field";
 import type { ReactNode } from "react";
 
 import type { CalculatorMoney } from "@/features/calculators/fields/use-calculator-money";
+import { FieldTitle } from "@/ui/form-fields/field-title";
 import { MoneyInput } from "@/ui/money/money-input";
 
 // An amount of the base currency, held in the address as minor units; absent reads as zero.
 export function AmountField({
   label,
   hint,
+  help,
   value,
   onChange,
   money,
@@ -16,6 +18,8 @@ export function AmountField({
   label: string;
   // What the amount is, in one sentence, below the input.
   hint?: string;
+  // The definition of the term, beside the label (F8).
+  help?: string;
   value: string | undefined;
   onChange: (minorText: string | undefined) => void;
   money: CalculatorMoney;
@@ -25,7 +29,7 @@ export function AmountField({
   const minor = value === undefined ? 0 : Number(value);
   return (
     <Field necessity="none">
-      <FieldLabel>{label}</FieldLabel>
+      <FieldTitle label={label} {...(help === undefined ? {} : { help })} />
       <MoneyInput
         size="field"
         value={Number.isSafeInteger(minor) && minor >= 0 ? minor : 0}

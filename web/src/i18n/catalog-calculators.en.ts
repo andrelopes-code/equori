@@ -623,7 +623,35 @@ export const calculatorsEn = {
     "Adds what an extra payment changes: a shorter term or a smaller installment.",
   "calc.financing.summary":
     "{priceName}: {price} every month. {sacName}: from {sacFirst} down to {sacLast}.",
-  "calc.financing.prepay.title": "With the extra payment",
+  "calc.financing.prepay.title": "Extra payment",
+  "calc.solve.legend": "What to calculate",
+  "calc.choice.option": "Option",
+  "calc.choice.effect": "Effect",
+  "calc.choice.saved": "Interest saved",
+  "calc.financing.answer.sentence":
+    "over {months} months. In {sacName}, the first is {sacFirst}, falling to {sacLast}.",
+  "calc.financing.answer.what": "the installment",
+  "calc.financing.answer.interest": "Interest",
+  "calc.financing.answer.saved": "Less interest in {sacName}",
+  "calc.financing.split.title": "{priceName} or {sacName}",
+  "calc.financing.split.description":
+    "What each system costs, over the same term",
+  "calc.financing.rate.help":
+    "The contract's rate. A yearly rate is converted into the equivalent monthly rate by compounding.",
+  "calc.financing.prepayAmount.help":
+    "A payment beyond the installment that reduces the balance owed.",
+  "calc.financing.prepay.add": "Simulate an extra payment",
+  "calc.financing.prepay.remove": "Remove the extra payment",
+  "calc.financing.prepay.summary":
+    "{amount} after installment {month}, in {priceName}",
+  "calc.financing.prepay.term": "Shorten the term",
+  "calc.financing.prepay.termEffect": "Ends in {months} months, {fewer} fewer",
+  "calc.financing.prepay.lower": "Lower the installment",
+  "calc.financing.prepay.lowerEffect": "Installment falls to {installment}",
+  "calc.financing.prepay.note":
+    "Balance after the payment {balance} · remaining interest without it {without}",
+  "calc.financing.details": "Installments month by month",
+  "calc.financing.details.size": "{months} months, {priceName} and {sacName}",
   "calc.financing.schedule": "Month by month",
   "calc.cash.compare.hint":
     "What the money would earn meanwhile. With it, the result states which option costs less.",

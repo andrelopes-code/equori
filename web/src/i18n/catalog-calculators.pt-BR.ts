@@ -630,7 +630,36 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
     "Acrescenta o que um pagamento extra muda: prazo menor ou prestação menor.",
   "calc.financing.summary":
     "{priceName}: {price} todo mês. {sacName}: de {sacFirst} caindo até {sacLast}.",
-  "calc.financing.prepay.title": "Com a amortização extra",
+  "calc.financing.prepay.title": "Amortização extra",
+  "calc.solve.legend": "O que calcular",
+  "calc.choice.option": "Opção",
+  "calc.choice.effect": "Efeito",
+  "calc.choice.saved": "Juros economizados",
+  "calc.financing.answer.sentence":
+    "por {months} meses. Em {sacName}, a primeira é {sacFirst} e cai até {sacLast}.",
+  "calc.financing.answer.what": "a prestação",
+  "calc.financing.answer.interest": "Juros",
+  "calc.financing.answer.saved": "Juros a menos em {sacName}",
+  "calc.financing.split.title": "{priceName} ou {sacName}",
+  "calc.financing.split.description":
+    "Quanto sai do bolso em cada sistema, no mesmo prazo",
+  "calc.financing.rate.help":
+    "A taxa do contrato. Ao ano, é convertida na taxa mensal equivalente por juros compostos.",
+  "calc.financing.prepayAmount.help":
+    "Um pagamento além da prestação, que abate o saldo devedor.",
+  "calc.financing.prepay.add": "Simular amortização extra",
+  "calc.financing.prepay.remove": "Remover amortização extra",
+  "calc.financing.prepay.summary":
+    "{amount} depois da prestação {month}, em {priceName}",
+  "calc.financing.prepay.term": "Reduzir o prazo",
+  "calc.financing.prepay.termEffect":
+    "Termina em {months} meses, {fewer} a menos",
+  "calc.financing.prepay.lower": "Reduzir a prestação",
+  "calc.financing.prepay.lowerEffect": "Prestação cai para {installment}",
+  "calc.financing.prepay.note":
+    "Saldo depois da amortização {balance} · juros restantes sem ela {without}",
+  "calc.financing.details": "Prestações mês a mês",
+  "calc.financing.details.size": "{months} meses, {priceName} e {sacName}",
   "calc.financing.schedule": "Mês a mês",
   "calc.cash.compare.hint":
     "Quanto o dinheiro renderia enquanto as parcelas são pagas. Com ela, o resultado diz qual opção custa menos.",

@@ -41,8 +41,9 @@ describe("CalculatorAnswer", () => {
       <CalculatorAnswer lead="a" figure="1" sentence="b" />,
     );
 
-    expect((container.firstElementChild as HTMLElement).className).toContain(
-      "answer",
-    );
+    const root = container.firstElementChild as HTMLElement;
+
+    // A CSS module class is _<name>_<hash>: the exact name, not answerLead.
+    expect(root.className).toMatch(/^_answer_\w+$/);
   });
 });

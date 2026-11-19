@@ -25,16 +25,18 @@ export function CalcTable({
   headers,
   rows,
   long = false,
+  ruled = false,
 }: {
   caption: string;
   headers: readonly string[];
   rows: readonly CalcTableRow[];
   long?: boolean;
+  ruled?: boolean;
 }) {
   return (
     <Table
       columns={headers.length}
-      variant="framed"
+      variant={ruled ? "ruled" : "framed"}
       striped={long}
       stickyHeader={long}
     >
