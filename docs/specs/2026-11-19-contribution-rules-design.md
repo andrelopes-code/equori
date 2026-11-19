@@ -61,7 +61,7 @@ A rule sets at least one condition. `subtypes` requires `instrument_type`. `retu
 - the code of a Brazilian government bond (`governmentBondCode` in `internal/marketdata/government_bonds.go`), when it has no terms: `LFT` is `rate`; `LTN` and `NTNF` are `fixed`; `NTNB`, `NTNBP`, `NTNC`, `RENDA` and `EDUCA` are `inflation`; the maturity is the date in the code; daily liquidity is true for `LFT` only. The Tesouro buys back every bond on every business day at its market price. An LFT pays the overnight rate, so its market price stays near its accrued value. The price of the other bonds moves with the market rate, so a redemption before maturity can return less than was applied. "Liquidez diária" in a rule means redemption on any business day near the accrued value, which only an LFT gives.
 - none otherwise: a condition on the return kind, the maturity or the daily liquidity is not met.
 
-**GR4 Guarantee condition.** With the jurisdiction's guarantee `g` (FC22) and the subtype `s` of the security: `covered` is met when `g.Covered(s)`; `sovereign` when `g.Sovereign(s)`; `uncovered` when the security has type `fixed_income` and neither holds. `uncovered` is the private credit of the book: a debenture, a CRI, a CRA or an LF. It never includes a Tesouro bond (`sovereign`) or a stock. When the book's jurisdiction no longer has a guarantee (its region changed after the save), the condition is not met and the response omits `guarantee_name` (GR8).
+**GR4 Guarantee condition.** With the jurisdiction's guarantee `g` (FC22) and the subtype `s` of the security: `covered` is met when `g.Covered(s)`; `sovereign` when `g.Sovereign(s)` or when its facts come from a government bond code (GR3), since a bond listed by the Tesouro feed carries no subtype (`feed.Listing` in `internal/marketdata/feed/tesourodireto/tesourodireto.go`); `uncovered` when the security has type `fixed_income` and neither holds. `uncovered` is the private credit of the book: a debenture, a CRI, a CRA or an LF. It never includes a Tesouro bond (`sovereign`) or a stock. When the book's jurisdiction no longer has a guarantee (its region changed after the save), the condition is not met and the response omits `guarantee_name` (GR8).
 
 **GR5 Assignment.** Each held security, the sum of its holding accounts as in CN5, goes to:
 
@@ -75,7 +75,7 @@ Account members (CN3) are unchanged: a rule never meets an account of type `curr
 
 **GR7 Split and orders.** A class by rule is one slot of CN7. Its order is cash-like (CN17): the planned amount, with no quantity.
 
-**GR8 Response.** Each class returns `rules` as stored, and `matched`: its securities with `instrument` and `value`, sorted by value descending, then by code. The plan returns `guarantee_name` when the book's jurisdiction has a guarantee in the base currency (as `guaranteeIn` in `internal/portfolio/app/issuer_exposure.go` decides). Each outside entry returns `return_kind` when GR3 gives one. The preview (CN13) applies GR1 to GR7 to the draft.
+**GR8 Response.** Each class returns `rules` as stored, and `matched`: its securities with `instrument`, `value` and `share_bp` (inside the class, by `domain.Allocate`, absent when the class value is zero or the plan is incomplete), sorted by value descending, then by code. The plan returns `guarantee_name` when the book's jurisdiction has a guarantee in the base currency (as `guaranteeIn` in `internal/portfolio/app/issuer_exposure.go` decides). Each outside entry returns `return_kind` when GR3 gives one. The preview (CN13) applies GR1 to GR7 to the draft. Its `amount` becomes optional (amends CN13). Without it, the preview returns the draft valued as GET does, with no split, so the editor shows the securities of a rule before an amount is typed. With it, the preview behaves as before.
 
 **GR9 Start from the portfolio (amends CN12).** Outside entries of type `fixed_income` with a return kind form one class per return kind, in order of first appearance. Each class is named by the catalog label of the kind (`portfolio.fixedIncome.kind.<kind>`). It holds one rule `{instrument_type: fixed_income, return_kind: <kind>}` and no member. Entries of type `fixed_income` without a return kind, and the entries of other types, keep CN12: one class per type, each entry a member. The targets of the classes are their shares, as in CN12.
 
@@ -121,9 +121,10 @@ All in `internal/portfolio/openapi.yaml`.
 
 - `ContributionRule` (input and output): the conditions of GR2. `instrument_type` and each `subtypes` item have pattern `^[a-z0-9_]{2,40}$`. `quote_currency` is a string that `app` checks against the catalog (GR2). `return_kind` and `guarantee` are enums: FC9 and GR4 fix the sets, and regions do not extend them. Years are integers from 1900 to 2200.
 - `ContributionClassInput.rules`: array, at most 5.
-- `ContributionClass.rules` (always present, empty for a class by members) and `matched`: array of `{instrument, value}`, always present.
+- `ContributionClass.rules` (always present, empty for a class by members) and `matched`: array of `{instrument, value, share_bp}`, always present.
 - `ContributionPlan.guarantee_name`: string, absent without a guarantee.
 - `ContributionOutside.return_kind`: enum, absent without one.
+- `ContributionPreviewInput.amount`: no longer required (GR8).
 - Problem `contribution_rule_invalid`, 422, detail "a group holds members or 1 to 5 rules, and each rule sets valid conditions".
 
 ## Screen
@@ -138,6 +139,8 @@ With "Por regra":
 - One row per rule, of fixed height: the rule in words (the summary below), cut with an ellipsis and whole in its title; at the end the count and value of the securities that meet it in the draft ("3 ativos · R$ 18.000,00", or "nenhum ativo hoje"); an edit icon button and a remove icon button, each with its tooltip.
 - "Adicionar regra", disabled at five rules.
 - Under the rows, the securities of the group in the draft, as the member rows of the panel without ideal controls: name, value, end-aligned.
+
+While the draft holds a class by rule, `editor/use-contribution-preview.ts` sends the preview even with no amount, without the `amount` field (GR8). The counts and values of the rows then follow the draft.
 
 The summary of a rule is one line: its conditions in the order of GR2, joined by " · ":
 
@@ -165,7 +168,7 @@ With `guarantee` set and no `guarantee_name`, the summary ends with "garantia in
 6. "Garantia": segmented "Qualquer" | "Coberto pelo {name}" | "Título público" | "Sem garantia", shown with a `guarantee_name`.
 7. "Moeda de cotação": select with "Qualquer" and the currencies of the catalog.
 
-Under the fields, the line "Entram hoje: {n} ativos · {value}" from the preview of the draft with this rule, or "Nenhum ativo atende hoje. Os que você comprar depois entram no grupo." "Salvar regra" is disabled while every choice is "Qualquer", with the field description "Escolha ao menos uma condição." The help popover of the editor (`editor/edit-help.tsx`) gains: "Um ativo escolhido em um grupo vale antes das regras. Entre regras, o ativo entra no primeiro grupo da lista."
+Under the fields, the line "Entram neste grupo hoje: {n} ativos · {value}" or "Nenhum ativo entra neste grupo hoje. Os que você comprar depois entram." It comes from a preview without amount of the whole draft, with this class's rules replaced by the rule under edit. The count is what GR5 gives that class, so a security that an earlier group or a member already takes is not counted. "Salvar regra" is disabled while every choice is "Qualquer", with the field description "Escolha ao menos uma condição." The help popover of the editor (`editor/edit-help.tsx`) gains: "Um ativo escolhido em um grupo vale antes das regras. Entre regras, o ativo entra no primeiro grupo da lista."
 
 ### View mode
 
@@ -199,7 +202,7 @@ In the section "Carteira contra o ideal", the members of an expanded group by ru
 - D5: Does not apply: the diagnostic file gains no field.
 - S1: No new operation. `contribution_rule_invalid` has an HTTP test (S644). `TestToolCatalog` runs with `-update`, and the declaration of `save_contribution_plan` stays within 3,500 bytes (`internal/server/catalog_quality_test.go`).
 - S2: Does not appear on a phone (CN, ADR 027).
-- S3: `internal/assistant/guide/articles/investments.md`, section of the contribution plan, describes groups by rule, the order of GR5 and the guarantee words, in the commit of the screen.
+- S3: `internal/assistant/guide/articles/contribution_plan.md` describes groups by rule, the order of GR5 and the guarantee words, in the commit of the screen.
 - S4: The assistant reads and writes rules through `get_portfolio` view `contribution` and `save_contribution_plan` (GR11).
 - X1: S639 a class by rule values the contracts it meets and the outside list excludes them (GR12). S640 an instrument member wins over a rule, and the first class wins among rules (GR12, LCI B). S641 `LFT.20290301` meets `{return_kind: rate, daily_liquidity: true}`; `NTNB.20350515` meets `{return_kind: inflation, matures_from_year: 2035}` and not `{daily_liquidity: true}`. S642 a matched security without a price gives `incomplete` with its instrument. S643 a book of region `DE` saving a rule with `guarantee` receives `contribution_rule_invalid`. S644 a class with members and rules, a rule with no condition, `subtypes` without `instrument_type`, `matures_from_year` after `matures_to_year`, and six rules each receive `contribution_rule_invalid`. S645 the preview of GR12 with 2,000.00 returns 0, 0, 0, 2,000.00. S646 a book with base `USD` values a BRL contract of a class by rule at today's rate. `guarantee: uncovered` meets a debenture and not `NTNB.20350515` or a CDB (domain test of GR4).
 - X2: S643 runs in region `DE`; S646 runs with a base currency other than the contract's.
