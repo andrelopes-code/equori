@@ -518,7 +518,7 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.recurring.rate": "Taxa anual",
   "calc.recurring.origin": "agendamento {name}",
   "calc.recurring.total": "Total pago",
-  "calc.recurring.futureValue": "Os mesmos pagamentos investidos à taxa",
+  "calc.recurring.futureValue": "Valor futuro",
   "calc.recurring.difference": "Juros que os pagamentos renderiam",
   "calc.recurring-cost.step1":
     "O total é o valor vezes o número de ocorrências nos anos.",

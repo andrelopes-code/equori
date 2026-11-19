@@ -514,7 +514,7 @@ export const calculatorsEn = {
   "calc.recurring.rate": "Annual rate",
   "calc.recurring.origin": "schedule {name}",
   "calc.recurring.total": "Total paid",
-  "calc.recurring.futureValue": "The same payments invested at the rate",
+  "calc.recurring.futureValue": "Future value",
   "calc.recurring.difference": "Interest the payments would earn",
   "calc.recurring-cost.step1":
     "The total is the amount times the number of occurrences in the years.",
