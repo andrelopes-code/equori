@@ -55,28 +55,7 @@ func rankingView(outputs []json.RawMessage, sel view.Select, _ time.Time) (view.
 		return view.Payload{}, err
 	}
 
-	limit := cmp.Or(sel.Limit, rankingLimit)
-	data := rankingData{Total: total, Items: []rankingItem{}}
-	for i, it := range items {
-		it.ShareBP = view.Share(it.Amount.Amount, total.Amount)
-		if i < limit {
-			it.Rank = i + 1
-			data.Items = append(data.Items, it)
-
-			continue
-		}
-
-		if data.Rest == nil {
-			data.Rest = &rankingRest{Amount: view.Money{Currency: total.Currency}}
-		}
-
-		data.Rest.Count++
-		data.Rest.Amount.Amount += it.Amount.Amount
-	}
-
-	if data.Rest != nil {
-		data.Rest.ShareBP = view.Share(data.Rest.Amount.Amount, total.Amount)
-	}
+	data := rankingFold(items, total, cmp.Or(sel.Limit, rankingLimit))
 
 	return view.Payload{
 		Title: view.Text{Key: "assistantView.ranking.title"},
@@ -99,6 +78,33 @@ func rankingView(outputs []json.RawMessage, sel view.Select, _ time.Time) (view.
 		Rows: rankingRows(data),
 		Data: data,
 	}, nil
+}
+
+// rankingFold keeps the first limit items with their rank and folds the others into the rest.
+func rankingFold(items []rankingItem, total view.Money, limit int) rankingData {
+	data := rankingData{Total: total, Items: []rankingItem{}}
+	for i, it := range items {
+		it.ShareBP = view.Share(it.Amount.Amount, total.Amount)
+		if i < limit {
+			it.Rank = i + 1
+			data.Items = append(data.Items, it)
+
+			continue
+		}
+
+		if data.Rest == nil {
+			data.Rest = &rankingRest{Amount: view.Money{Currency: total.Currency}}
+		}
+
+		data.Rest.Count++
+		data.Rest.Amount.Amount += it.Amount.Amount
+	}
+
+	if data.Rest != nil {
+		data.Rest.ShareBP = view.Share(data.Rest.Amount.Amount, total.Amount)
+	}
+
+	return data
 }
 
 func rankingVerdict(d rankingData) view.Text {

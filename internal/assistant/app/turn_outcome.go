@@ -116,14 +116,7 @@ func (s *Service) answerTurn(
 
 	ids := state.take()
 
-	answer.Views = state.takeViews()
-	if err := s.repo.InsertViews(
-		storeCtx,
-		booksID,
-		conversationID,
-		answer.ID,
-		answer.Views,
-	); err != nil {
+	if err := s.storeViews(storeCtx, booksID, conversationID, &answer, state); err != nil {
 		return s.failAfterStream(ctx, ev, err)
 	}
 
@@ -190,4 +183,17 @@ func (s *Service) logTurn(
 		"duration",
 		s.now().Sub(began),
 	)
+}
+
+// storeViews stores the views the turn built with its answer (answer views design, V9).
+func (s *Service) storeViews(
+	ctx context.Context,
+	booksID int64,
+	conversationID uuid.UUID,
+	answer *domain.Message,
+	state *turnState,
+) error {
+	answer.Views = state.takeViews()
+
+	return s.repo.InsertViews(ctx, booksID, conversationID, answer.ID, answer.Views)
 }

@@ -37,6 +37,41 @@ func compareView(outputs []json.RawMessage, sel view.Select, _ time.Time) (view.
 		return view.Payload{}, err
 	}
 
+	order := compareMerge(sides, currency)
+	verdict := compareVerdict(order, compareDifference(order, currency))
+
+	data := compareData{
+		Periods:    periods,
+		Items:      []compareItem{},
+		Difference: compareDifference(order, currency),
+	}
+	for i, c := range order {
+		if i == cmp.Or(sel.Limit, compareLimit) {
+			break
+		}
+
+		data.Items = append(data.Items, *c)
+	}
+
+	return view.Payload{
+		Title:   view.Text{Key: "assistantView.compare.title"},
+		Window:  view.Window{From: periods[0].From, To: periods[1].To},
+		Verdict: verdict,
+		Prov: &view.Text{
+			Key:    "assistantView.prov.categories",
+			Params: map[string]view.Value{"count": view.CountValue(int64(len(order)))},
+		},
+		Open: &view.Link{
+			Screen: "reports",
+			Params: map[string]string{"from": periods[1].From, "to": periods[1].To},
+		},
+		Rows: compareRows(data),
+		Data: data,
+	}, nil
+}
+
+// compareMerge joins the categories of both periods, largest after first, ties by name.
+func compareMerge(sides [2][]rankingItem, currency string) []*compareItem {
 	byID := map[string]*compareItem{}
 	var order []*compareItem
 	for side, items := range sides {
@@ -61,44 +96,21 @@ func compareView(outputs []json.RawMessage, sel view.Select, _ time.Time) (view.
 		}
 	}
 
-	data := compareData{
-		Periods:    periods,
-		Items:      []compareItem{},
-		Difference: view.Money{Currency: currency},
-	}
-	for _, c := range order {
-		data.Difference.Amount += c.After.Amount - c.Before.Amount
-	}
-
 	slices.SortStableFunc(order, func(a, b *compareItem) int {
 		return cmp.Or(cmp.Compare(b.After.Amount, a.After.Amount), cmp.Compare(a.Name, b.Name))
 	})
 
-	verdict := compareVerdict(order, data.Difference)
+	return order
+}
 
-	for i, c := range order {
-		if i == cmp.Or(sel.Limit, compareLimit) {
-			break
-		}
-
-		data.Items = append(data.Items, *c)
+// compareDifference is after minus before over every category, not only the rows shown.
+func compareDifference(items []*compareItem, currency string) view.Money {
+	diff := view.Money{Currency: currency}
+	for _, c := range items {
+		diff.Amount += c.After.Amount - c.Before.Amount
 	}
 
-	return view.Payload{
-		Title:   view.Text{Key: "assistantView.compare.title"},
-		Window:  view.Window{From: periods[0].From, To: periods[1].To},
-		Verdict: verdict,
-		Prov: &view.Text{
-			Key:    "assistantView.prov.categories",
-			Params: map[string]view.Value{"count": view.CountValue(int64(len(order)))},
-		},
-		Open: &view.Link{
-			Screen: "reports",
-			Params: map[string]string{"from": periods[1].From, "to": periods[1].To},
-		},
-		Rows: compareRows(data),
-		Data: data,
-	}, nil
+	return diff
 }
 
 func compareSides(outputs []json.RawMessage) ([2]comparePeriod, [2][]rankingItem, string, error) {
