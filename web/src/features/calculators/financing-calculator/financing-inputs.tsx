@@ -1,6 +1,7 @@
 import {
   FieldGroup,
   FieldGroupContent,
+  FieldGroupDescription,
   FieldGroupLegend,
 } from "@slotted/react/field-group";
 import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
@@ -44,6 +45,9 @@ export function FinancingInputs({ solve, money }: FinancingInputsProps) {
     <>
       <FieldGroup kind="section">
         <FieldGroupLegend>{t("calc.solve.legend")}</FieldGroupLegend>
+        <FieldGroupDescription>
+          {t("calc.financing.solve.hint")}
+        </FieldGroupDescription>
         <FieldGroupContent>
           <SegmentedControl value={solve} fullWidth onValueChange={handleSolve}>
             {solves.map((s) => (
@@ -75,6 +79,7 @@ export function FinancingInputs({ solve, money }: FinancingInputsProps) {
           onChange={(v) => {
             set({ rate: v });
           }}
+          compact
           period={period}
           onPeriodChange={(p) => {
             set({ period: p === "month" ? "month" : undefined });
@@ -90,6 +95,7 @@ export function FinancingInputs({ solve, money }: FinancingInputsProps) {
           onChange={(v) => {
             set({ months: v });
           }}
+          compact
           unit={monthsUnit}
           units={termUnits}
           onUnitChange={(u) => {

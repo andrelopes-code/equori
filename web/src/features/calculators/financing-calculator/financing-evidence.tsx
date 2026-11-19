@@ -12,7 +12,10 @@ import { FactRows } from "@/features/calculators/calculator-frame/fact-rows";
 import { SplitBars } from "@/features/calculators/calculator-frame/split-bars";
 import type { CalculatorMoney } from "@/features/calculators/fields/use-calculator-money";
 import type { AmortizationRow } from "@/features/calculators/financing-calculator/annuity";
-import { financingFacts } from "@/features/calculators/financing-calculator/financing-answer";
+import {
+  financingFacts,
+  splitBarRows,
+} from "@/features/calculators/financing-calculator/financing-answer";
 import { FinancingPrepay } from "@/features/calculators/financing-calculator/financing-prepay";
 import { systemNames } from "@/features/calculators/financing-calculator/financing-region";
 import { formatRate } from "@/features/calculators/model/format-rate";
@@ -45,19 +48,15 @@ export function FinancingEvidence({
   const first = (rows: AmortizationRow[]) => rows[0]?.installment ?? 0;
   const last = (rows: AmortizationRow[]) => rows.at(-1)?.installment ?? 0;
 
-  const bars = [
-    { name: t(names.price), principal: loan.amount, interest: facts.interest },
-    { name: t(names.sac), principal: loan.amount, interest: sacInterest },
-  ].map((bar) => {
-    const total = money.format(bar.principal + bar.interest);
-    const interest = money.format(bar.interest);
-
-    return {
-      name: bar.name,
-      parts: [bar.principal, bar.interest] as [number, number],
-      total,
-      label: `${bar.name}: ${t("calc.financing.paid")} ${total}, ${t("calc.financing.answer.interest")} ${interest}`,
-    };
+  const bars = splitBarRows({
+    amount: loan.amount,
+    systems: [
+      { name: t(names.price), interest: facts.interest },
+      { name: t(names.sac), interest: sacInterest },
+    ],
+    format: money.format,
+    paidLabel: t("calc.financing.paid"),
+    interestLabel: t("calc.financing.answer.interest"),
   });
 
   return (
@@ -88,8 +87,9 @@ export function FinancingEvidence({
 
           <CalcTable
             ruled
+            hideFirstHeader
             caption={t(names.compare)}
-            headers={["", t(names.price), t(names.sac)]}
+            headers={[t("calc.financing.figure"), t(names.price), t(names.sac)]}
             rows={[
               {
                 key: "first",

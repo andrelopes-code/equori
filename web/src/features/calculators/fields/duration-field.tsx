@@ -2,6 +2,7 @@ import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
 import { Inline } from "@slotted/react/inline";
 import { TextField } from "@slotted/react/text-field";
 
+import design from "@/features/calculators/calculator-frame/calculator-design.module.css";
 import type { DurationUnit } from "@/features/calculators/model/duration";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/form-fields/choice-select";
@@ -23,6 +24,7 @@ export function DurationField({
   unit,
   units,
   onUnitChange,
+  compact = false,
 }: {
   label: string;
   hint?: string;
@@ -32,6 +34,8 @@ export function DurationField({
   unit: DurationUnit;
   units: readonly DurationUnit[];
   onUnitChange: (unit: DurationUnit) => void;
+  // The value-and-unit layout of the answer-first frame: a 7rem number beside its unit select.
+  compact?: boolean;
 }) {
   const t = useT();
   return (
@@ -40,6 +44,7 @@ export function DurationField({
       <Inline gap={2} wrap="nowrap">
         <TextField
           name={name}
+          {...(compact ? { className: design.unitValue } : {})}
           inputMode={unit === "year" ? "decimal" : "numeric"}
           autoComplete="off"
           value={value}
@@ -52,6 +57,7 @@ export function DurationField({
           choices={units.map((u) => ({ value: u, label: t(unitKeys[u]) }))}
           value={unit}
           multiple={false}
+          {...(compact ? { className: design.unitSelect } : {})}
           onChange={(next) => {
             const chosen = units.find((u) => u === next);
             if (chosen !== undefined) onUnitChange(chosen);

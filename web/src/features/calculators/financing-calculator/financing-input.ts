@@ -21,7 +21,7 @@ export const solves: readonly Solve[] = [
 
 export const maxMonths = 1200;
 
-type Field = "amount" | "rate" | "months" | "installment";
+export type Field = "amount" | "rate" | "months" | "installment";
 
 // Reading order of the four figures; the missing-inputs sentence names them in it.
 export const fieldOrder: readonly Field[] = [

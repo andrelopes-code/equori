@@ -1,13 +1,21 @@
 import { CalculatorAnswer } from "@/features/calculators/calculator-frame/calculator-answer";
-import { missingSentence } from "@/features/calculators/calculator-frame/missing-fields";
 import type { CalculatorMoney } from "@/features/calculators/fields/use-calculator-money";
 import type { AmortizationRow } from "@/features/calculators/financing-calculator/annuity";
-import { financingFacts } from "@/features/calculators/financing-calculator/financing-answer";
-import { fieldOrder } from "@/features/calculators/financing-calculator/financing-input";
+import {
+  emptySentence,
+  financingFacts,
+} from "@/features/calculators/financing-calculator/financing-answer";
 import type { readFinancing } from "@/features/calculators/financing-calculator/financing-input";
 import { systemNames } from "@/features/calculators/financing-calculator/financing-region";
 import { formatRate } from "@/features/calculators/model/format-rate";
 import { useAppLocale, useAppLocaleState, useT } from "@/i18n/i18n-provider";
+
+const whatKeys = {
+  installment: "calc.financing.answer.what",
+  amount: "calc.financing.answer.what.amount",
+  rate: "calc.financing.answer.what.rate",
+  months: "calc.financing.answer.what.months",
+} as const;
 
 interface FinancingAnswerViewProps {
   input: ReturnType<typeof readFinancing>;
@@ -35,34 +43,23 @@ export function FinancingAnswerView({
   }[solve];
 
   if (schedules === null || solved === null) {
-    const labels = {
-      amount: t("calc.financing.amount"),
-      rate: t("calc.financing.rate"),
-      months: t("calc.term"),
-      installment: t(names.installment),
-    };
-    const what =
-      solve === "installment"
-        ? t("calc.financing.answer.what")
-        : solvedLead.toLocaleLowerCase(tag);
-    const sentence = input.complete
-      ? t("calc.financing.noSolution")
-      : missingSentence(
-          fieldOrder.map((field) => ({
-            label: labels[field].toLocaleLowerCase(tag),
-            missing: input.missing[field],
-          })),
-          what,
-          t,
-          tag,
-        );
+    const sentence = emptySentence({
+      complete: input.complete,
+      missing: input.missing,
+      labels: {
+        amount: t("calc.financing.amount"),
+        rate: t("calc.financing.rate"),
+        months: t("calc.term"),
+        installment: t(names.installment),
+      },
+      what: t(whatKeys[solve]),
+      noSolution: t("calc.financing.noSolution"),
+      t,
+      tag,
+    });
 
     return (
-      <CalculatorAnswer
-        lead={solvedLead}
-        figure={null}
-        sentence={sentence ?? ""}
-      />
+      <CalculatorAnswer lead={solvedLead} figure={null} sentence={sentence} />
     );
   }
 

@@ -9,6 +9,7 @@ import {
   TableRow,
   TableRowHeader,
 } from "@slotted/react/table";
+import { VisuallyHidden } from "@slotted/react/visually-hidden";
 
 import styles from "@/features/calculators/calculator-frame/calculators.module.css";
 
@@ -26,12 +27,15 @@ export function CalcTable({
   rows,
   long = false,
   ruled = false,
+  hideFirstHeader = false,
 }: {
   caption: string;
   headers: readonly string[];
   rows: readonly CalcTableRow[];
   long?: boolean;
   ruled?: boolean;
+  // The first header names its column to readers and draws nothing.
+  hideFirstHeader?: boolean;
 }) {
   return (
     <Table
@@ -48,7 +52,11 @@ export function CalcTable({
           <TableRow>
             {headers.map((header, i) => (
               <TableColumnHeader key={header} numeric={i > 0}>
-                {header}
+                {i === 0 && hideFirstHeader ? (
+                  <VisuallyHidden>{header}</VisuallyHidden>
+                ) : (
+                  header
+                )}
               </TableColumnHeader>
             ))}
           </TableRow>

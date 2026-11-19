@@ -318,13 +318,6 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.financing.col.interest": "Juros",
   "calc.financing.col.amortization": "Amortização",
   "calc.financing.col.balance": "Saldo",
-  "calc.financing.prepay.balance": "Saldo após a amortização extra",
-  "calc.financing.prepay.without": "Juros restantes sem a amortização extra",
-  "calc.financing.prepay.months": "Meses restantes, mantendo a prestação",
-  "calc.financing.prepay.keepInstallmentInterest":
-    "Juros restantes, mantendo a prestação",
-  "calc.financing.prepay.installment": "Nova prestação, mantendo o prazo",
-  "calc.financing.prepay.keepTermInterest": "Juros restantes, mantendo o prazo",
   "calc.financing.prepay.invalid":
     "O mês da amortização extra deve estar entre 1 e o prazo menos um.",
   "calc.financing.step1":
@@ -628,8 +621,6 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.financing.installment.hint": "A prestação que fica igual todo mês.",
   "calc.financing.prepayMonth.hint":
     "Acrescenta o que um pagamento extra muda: prazo menor ou prestação menor.",
-  "calc.financing.summary":
-    "{priceName}: {price} todo mês. {sacName}: de {sacFirst} caindo até {sacLast}.",
   "calc.financing.prepay.title": "Amortização extra",
   "calc.solve.legend": "O que calcular",
   "calc.choice.option": "Opção",
@@ -638,6 +629,9 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.financing.answer.sentence":
     "por {months} meses. Em {sacName}, a primeira é {sacFirst} e cai até {sacLast}.",
   "calc.financing.answer.what": "a prestação",
+  "calc.financing.answer.what.amount": "o valor financiado",
+  "calc.financing.answer.what.rate": "a taxa",
+  "calc.financing.answer.what.months": "o prazo",
   "calc.financing.answer.interest": "Juros",
   "calc.financing.answer.saved": "Juros a menos em {sacName}",
   "calc.financing.split.title": "{priceName} ou {sacName}",
@@ -660,7 +654,6 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
     "Saldo depois da amortização {balance} · juros restantes sem ela {without}",
   "calc.financing.details": "Prestações mês a mês",
   "calc.financing.details.size": "{months} meses, {priceName} e {sacName}",
-  "calc.financing.schedule": "Mês a mês",
   "calc.cash.compare.hint":
     "Quanto o dinheiro renderia enquanto as parcelas são pagas. Com ela, o resultado diz qual opção custa menos.",
   "calc.cash.summary":

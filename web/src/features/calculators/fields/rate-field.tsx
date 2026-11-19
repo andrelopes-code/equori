@@ -1,6 +1,7 @@
 import { Field, FieldDescription } from "@slotted/react/field";
 import type { ReactNode } from "react";
 
+import design from "@/features/calculators/calculator-frame/calculator-design.module.css";
 import { FieldTitle } from "@/ui/form-fields/field-title";
 import { RateInput } from "@/ui/money/rate-input";
 import type { RatePeriod } from "@/ui/money/rate-input";
@@ -15,6 +16,7 @@ export function RateField({
   onChange,
   period,
   onPeriodChange,
+  compact = false,
   children,
 }: {
   label: string;
@@ -25,6 +27,8 @@ export function RateField({
   onChange: (text: string) => void;
   period?: RatePeriod;
   onPeriodChange?: (period: RatePeriod) => void;
+  // The value-and-unit layout of the answer-first frame: a 7rem number beside its period select.
+  compact?: boolean;
   children?: ReactNode;
 }) {
   return (
@@ -34,6 +38,12 @@ export function RateField({
         name={name}
         value={value}
         onChange={onChange}
+        {...(compact
+          ? {
+              valueClassName: design.unitValue,
+              periodClassName: design.unitSelect,
+            }
+          : {})}
         {...(period === undefined ? {} : { period })}
         {...(onPeriodChange === undefined ? {} : { onPeriodChange })}
       />

@@ -313,13 +313,6 @@ export const calculatorsEn = {
   "calc.financing.col.interest": "Interest",
   "calc.financing.col.amortization": "Amortization",
   "calc.financing.col.balance": "Balance",
-  "calc.financing.prepay.balance": "Balance after the prepayment",
-  "calc.financing.prepay.without": "Interest left without the prepayment",
-  "calc.financing.prepay.months": "Months left, keeping the installment",
-  "calc.financing.prepay.keepInstallmentInterest":
-    "Interest left, keeping the installment",
-  "calc.financing.prepay.installment": "New installment, keeping the term",
-  "calc.financing.prepay.keepTermInterest": "Interest left, keeping the term",
   "calc.financing.prepay.invalid":
     "The prepayment month must be between 1 and the term less one.",
   "calc.financing.step1":
@@ -621,8 +614,6 @@ export const calculatorsEn = {
     "The installment that stays the same every month.",
   "calc.financing.prepayMonth.hint":
     "Adds what an extra payment changes: a shorter term or a smaller installment.",
-  "calc.financing.summary":
-    "{priceName}: {price} every month. {sacName}: from {sacFirst} down to {sacLast}.",
   "calc.financing.prepay.title": "Extra payment",
   "calc.solve.legend": "What to calculate",
   "calc.choice.option": "Option",
@@ -631,6 +622,9 @@ export const calculatorsEn = {
   "calc.financing.answer.sentence":
     "over {months} months. In {sacName}, the first is {sacFirst}, falling to {sacLast}.",
   "calc.financing.answer.what": "the installment",
+  "calc.financing.answer.what.amount": "the amount financed",
+  "calc.financing.answer.what.rate": "the rate",
+  "calc.financing.answer.what.months": "the term",
   "calc.financing.answer.interest": "Interest",
   "calc.financing.answer.saved": "Less interest in {sacName}",
   "calc.financing.split.title": "{priceName} or {sacName}",
@@ -652,7 +646,6 @@ export const calculatorsEn = {
     "Balance after the payment {balance} · remaining interest without it {without}",
   "calc.financing.details": "Installments month by month",
   "calc.financing.details.size": "{months} months, {priceName} and {sacName}",
-  "calc.financing.schedule": "Month by month",
   "calc.cash.compare.hint":
     "What the money would earn meanwhile. With it, the result states which option costs less.",
   "calc.cash.summary":

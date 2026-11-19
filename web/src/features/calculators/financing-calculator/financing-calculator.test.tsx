@@ -51,6 +51,11 @@ describe("Financing calculator", () => {
     const row = (label: string) =>
       within(table).getByRole("rowheader", { name: label }).closest("tr")
         ?.textContent ?? "";
+    expect(
+      within(table).getByRole("columnheader", {
+        name: catalogEn["calc.financing.figure"],
+      }),
+    ).toBeInTheDocument();
     expect(row(catalogEn["calc.financing.first"])).toContain("888.49");
     expect(row(catalogEn["calc.financing.first"])).toContain("933.33");
     expect(row(catalogEn["calc.financing.last"])).toContain("888.47");
@@ -131,6 +136,39 @@ describe("Financing calculator", () => {
     ).toBeVisible();
   });
 
+  // CR6: the rate and the term are a 7rem value beside their unit select.
+  it("lays the rate and the term out as a value beside its unit", async () => {
+    await open(loan);
+    await screen.findByText(catalogEn["calc.solve.legend"]);
+    for (const name of ["rate", "months"]) {
+      const input = document.querySelector(`input[name="${name}"]`);
+      expect(input?.closest('[class*="_unitValue_"]')).not.toBeNull();
+    }
+    expect(document.querySelectorAll('[class*="_unitSelect_"]')).toHaveLength(
+      2,
+    );
+    expect(
+      screen.getByText(catalogEn["calc.financing.solve.hint"]),
+    ).toBeVisible();
+  });
+
+  it("states the yearly rate only when the rate is solved", async () => {
+    await open(loan);
+    await screen.findByText(catalogEn["calc.solve.legend"]);
+    expect(
+      screen.queryByText(catalogEn["calc.financing.solved.annual"]),
+    ).toBeNull();
+  });
+
+  it("opens the prepayment group when only its amount is in the address", async () => {
+    await open(`${loan}&prepayAmount=200000`);
+    expect(
+      await screen.findByRole("button", {
+        name: catalogEn["calc.financing.prepay.remove"],
+      }),
+    ).toBeVisible();
+  });
+
   it("opens the prepayment group only by its choice", async () => {
     await open(loan);
     expect(
@@ -178,5 +216,10 @@ describe("Financing calculator", () => {
       await screen.findByText(catalogEn["calc.financing.solved.rate"]),
     ).toBeVisible();
     expect(await screen.findByText("1.0000%")).toBeVisible();
+    // The yearly equivalent of 1% a month (the installment is rounded, so the rate is near it).
+    expect(
+      screen.getByText(catalogEn["calc.financing.solved.annual"]),
+    ).toBeVisible();
+    expect(screen.getByText(/^12\.68\d*%$/)).toBeVisible();
   });
 });
