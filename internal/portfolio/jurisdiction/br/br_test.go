@@ -82,6 +82,9 @@ func TestBR(t *testing.T) {
 		{"distribution", "fund_exempt", "exempt"},
 		{"distribution", "", "exclusive"},
 		{"coupon", "fixed_income", "exclusive"},
+		// Coverage row E-11: the dividend of a BDR is taxable by the progressive table.
+		{"dividend", "bdr", "taxable"},
+		{"dividend", "stock", "exempt"},
 	} {
 		if got := j.Treatment(c.incomeType, c.taxClass); got != c.want {
 			t.Errorf("Treatment(%q, %q) = %q, want %q", c.incomeType, c.taxClass, got, c.want)

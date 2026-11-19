@@ -139,6 +139,12 @@ func (Jurisdiction) TaxClass(instrumentType, subtype, exchange string) string {
 func (Jurisdiction) Treatment(incomeType, taxClass string) string {
 	switch incomeType {
 	case "dividend", "bonus_shares":
+		// The dividend of a BDR is paid by a company abroad: taxable by the progressive table
+		// (carnê-leão), the tax withheld abroad deducted (coverage row E-11).
+		if incomeType == "dividend" && taxClass == "bdr" {
+			return "taxable"
+		}
+
 		return "exempt"
 	case "interest", "coupon":
 		if taxClass == "fixed_income_exempt" {

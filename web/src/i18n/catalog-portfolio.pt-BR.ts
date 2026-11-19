@@ -35,6 +35,7 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "taxYear.net": "Líquido",
   "taxYear.treatment.exempt": "Isento",
   "taxYear.treatment.exclusive": "Exclusivo na fonte",
+  "taxYear.treatment.taxable": "Tributável na declaração",
   "nav.portfolio": "Carteira",
   "portfolio.date": "Data de avaliação",
   "portfolio.dateChange": "Data de avaliação, {date}",

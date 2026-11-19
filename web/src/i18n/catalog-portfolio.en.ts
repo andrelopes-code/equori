@@ -35,6 +35,7 @@ export const portfolioEn = {
   "taxYear.net": "Net",
   "taxYear.treatment.exempt": "Exempt",
   "taxYear.treatment.exclusive": "Exclusive",
+  "taxYear.treatment.taxable": "Taxable in the return",
   "nav.portfolio": "Portfolio",
   "portfolio.date": "Valuation date",
   "portfolio.dateChange": "Valuation date, {date}",

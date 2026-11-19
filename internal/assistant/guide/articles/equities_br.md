@@ -10,7 +10,7 @@ What equori does. get_tax_year lists each sale of the year with its cost at aver
 | FII, Fiagro (HGLG11) | reit | fii | 20%, no exemption | distribution |
 | ETF (BOVA11, IVVB11) | etf | etf | 15%, no exemption | distribution |
 | ETF of fixed income (IMAB11) | etf, subtype fixed_income_etf | etf_fixed_income | withheld at source on the sale: 25% for a portfolio of average term up to 180 days, 20% up to 720, 15% above (Lei 13.043/2014, art. 2); outside the monthly tax | distribution |
-| BDR (AAPL34) | depositary_receipt | bdr | 15%, no exemption | dividend |
+| BDR (AAPL34) | depositary_receipt | bdr | 15%, no exemption | dividend, taxable |
 
 A tax class is the class get_tax_year reports for a sale; it comes from the type and the exchange BVMF. No product of this table has a guarantee of the FGC. Liquidity is the trading session of B3: the price is the market price, and settlement follows the rules of the broker.
 
@@ -25,6 +25,8 @@ Income is recorded with record_investment kind income: the facts to ask are the 
 ## Tax rules
 
 Sale on the exchange. A net gain is taxed at 15%, and at 20% in a day trade (Lei 11.033/2004, art. 2, I and II). A sale other than a day trade withholds 0.005% of the amount sold at source, dispensed up to R$ 1.00 a month (art. 2, § 1, IV and § 4); a day trade withholds at source under the law in force (art. 2, § 3).
+
+Dividend of a BDR. The dividend of a BDR is paid by a company abroad: the exemption of dividends covers the profits of Brazilian companies only (Lei 9.249/1995, art. 10), so it is taxable by the progressive table through the carnê-leão of the month it arrives and in the annual return. It is recorded with record_investment kind income, gross the amount before tax converted to reais on the day it arrives, and withheld the tax kept abroad, which the return deducts; get_tax_year reads its treatment as taxable.
 
 Exemption of stocks. The net gain of an individual on the spot market of stocks is exempt when the sales of stocks of the month total R$ 20,000.00 or less (Lei 11.033/2004, art. 3, I). The rule names stocks only: a sale of FII, ETF or BDR has no exemption.
 
