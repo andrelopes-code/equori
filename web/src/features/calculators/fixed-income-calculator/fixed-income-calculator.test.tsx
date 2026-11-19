@@ -67,7 +67,7 @@ describe("Fixed income calculator", () => {
       await screen.findByRole("textbox", {
         name: catalogEn["calc.fixedIncome.taxRate"],
       }),
-    ).toHaveValue("17.5");
+    ).toHaveValue("17,5");
     expect(await result(catalogEn["calc.fixedIncome.tax"])).toMatch(
       /231[.,]42/,
     );
