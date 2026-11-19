@@ -4,6 +4,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppearanceSync } from "@/features/session/appearance/appearance-sync";
 import { fakeApi, json, problem } from "@/testing/fake-api";
 import { renderWithProviders } from "@/testing/render-app";
+import {
+  overviewLayoutKey,
+  overviewLayoutStorage,
+} from "@/theme/overview-layout";
 import { applyScheme, readScheme } from "@/theme/scheme";
 
 const me = {
@@ -88,6 +92,42 @@ describe("AppearanceSync", () => {
       expect(puts).toHaveLength(1);
     });
     expect(puts[0]).toMatchObject({ scheme: "dark" });
+  });
+
+  // Analytics design 5.2, Storage: the overview layout is kept with the member.
+  it("restores the overview layout from the server", async () => {
+    const puts: unknown[] = [];
+    renderWithProviders(<AppearanceSync />, {
+      fetch: api({ "overview.layout": '{"goals":{"hidden":true}}' }, puts),
+    });
+
+    await waitFor(() => {
+      expect(localStorage.getItem(overviewLayoutKey)).toBe(
+        '{"goals":{"hidden":true}}',
+      );
+    });
+  });
+
+  it("saves the overview layout when the grid stores it", async () => {
+    const puts: unknown[] = [];
+    renderWithProviders(<AppearanceSync />, {
+      fetch: api({ scheme: "light" }, puts),
+    });
+    await waitFor(() => {
+      expect(readScheme()).toBe("light");
+    });
+
+    act(() => {
+      overviewLayoutStorage.setItem(overviewLayoutKey, "{}");
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300);
+    });
+
+    await waitFor(() => {
+      expect(puts).toHaveLength(1);
+    });
+    expect(puts[0]).toMatchObject({ "overview.layout": "{}" });
   });
 
   it("requests nothing without a session", async () => {

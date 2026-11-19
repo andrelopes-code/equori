@@ -3,6 +3,7 @@ import { applyAccent, defaultAccent, readAccent } from "@/theme/accent";
 import { applyCorners, defaultCorners, readCorners } from "@/theme/corners";
 import { applyDensity, defaultDensity, readDensity } from "@/theme/density";
 import { motion } from "@/theme/motion";
+import { restoredOverviewLayout } from "@/theme/overview-layout";
 import { applyScheme, defaultScheme, readScheme } from "@/theme/scheme";
 import { statusNames, statusSeeds } from "@/theme/status";
 import { applySurfaces, surfaceDefaults, surfaceNames } from "@/theme/surface";
@@ -27,6 +28,8 @@ export const appearanceNames: readonly string[] = [
   "summaryAmounts",
   "visual",
   "themes",
+  // The overview's grid layout (analytics design 5.2).
+  "overview.layout",
   ...statusNames,
   ...surfaceNames,
 ];
@@ -88,4 +91,5 @@ export function restoreAppearance(values: Record<string, unknown>): void {
   applyVisual(readVisual());
   applySurfaces();
   refreshSavedThemes();
+  restoredOverviewLayout();
 }

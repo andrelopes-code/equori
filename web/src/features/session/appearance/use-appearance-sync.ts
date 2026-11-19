@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 
 import { useApi } from "@/api/api-context";
 import {
@@ -10,6 +10,10 @@ import {
 import { restoreAppearance, storedAppearance } from "@/theme/appearance";
 import { useDensity } from "@/theme/density";
 import { useMotion } from "@/theme/motion";
+import {
+  overviewLayoutSnapshot,
+  subscribeOverviewLayout,
+} from "@/theme/overview-layout";
 import { useScheme } from "@/theme/scheme";
 import { useTextSize } from "@/theme/text-size";
 import { useSavedThemes } from "@/theme/theme-file";
@@ -34,6 +38,7 @@ export function useAppearanceSync(): void {
   useTextSize();
   useMotion();
   useSavedThemes();
+  useSyncExternalStore(subscribeOverviewLayout, overviewLayoutSnapshot);
 
   // The JSON last known to match the server; null until the first answer.
   const synced = useRef<string | null>(null);

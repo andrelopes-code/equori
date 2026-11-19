@@ -233,6 +233,41 @@ describe("overview page", () => {
     ).toBeInTheDocument();
   });
 
+  // Analytics design 5.2, Storage: another browser draws the layout kept with the member.
+  it("draws the layout the member's appearance holds", async () => {
+    await renderApp("/", { width: 800, fetch: api() });
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: catalogEn["overview.block.edit"],
+      }),
+    );
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Rearrange Goals" }),
+    );
+    await userEvent.click(
+      await screen.findByRole("menuitem", { name: "Hide" }),
+    );
+    await waitFor(() => {
+      expect(screen.queryByRole("article", { name: "Goals" })).toBeNull();
+    });
+    const stored = localStorage.getItem("equori.overview.layout") ?? "";
+    cleanup();
+    localStorage.clear();
+
+    await renderApp("/", {
+      width: 800,
+      fetch: api({
+        "GET /api/v1/me/appearance": () =>
+          json(200, { "overview.layout": stored }),
+      }),
+    });
+
+    await screen.findByRole("article", { name: "Attention" });
+    await waitFor(() => {
+      expect(screen.queryByRole("article", { name: "Goals" })).toBeNull();
+    });
+  });
+
   it.each([800, 1280])(
     "places the spending pace at %i px as a widget that hides",
     async (width) => {

@@ -106,7 +106,7 @@ Environment level holds only values needed before the database opens, security b
 | Language model providers, chains, usage limits | Book | `assistant_provider`, `assistant_chain_target`, `assistant_usage_limit` (BK24) |
 | CSV import profiles | Book | `ingestion_csv_profile` |
 | Language | Member | `identity_member.language` |
-| Appearance: `equori.accent`, `.contrast`, `.corners`, `.density`, `.depth`, `.motion`, `.scheme`, `.success`, `.textSize`, `.tone`, `.typeface`, `.themes`, `.visual` | Member | `identity_member.appearance` (BK21) |
+| Appearance: `equori.accent`, `.contrast`, `.corners`, `.density`, `.depth`, `.motion`, `.scheme`, `.success`, `.textSize`, `.tone`, `.typeface`, `.themes`, `.visual`, `.overview.layout` (analytics design 5.2, amended 2026-11-19) | Member | `identity_member.appearance` (BK21) |
 | Privacy mode `equori.privacy` | Browser | `localStorage` (ADR 018, P1) |
 | Navigation layout `equori.nav`, entry form `equori.entry.form` | Browser | `localStorage` |
 | Language before login `equori.locale` | Browser | `localStorage`, overwritten by the member's language after login |

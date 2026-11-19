@@ -1,8 +1,4 @@
 import { Button } from "@slotted/react/button";
-import {
-  DashboardGrid,
-  usePersistedDashboardLayout,
-} from "@slotted/react/dashboard-grid";
 import { Page, PageBody } from "@slotted/react/page";
 import {
   PageHeader,
@@ -13,7 +9,7 @@ import {
   PageHeaderTitleArea,
   PageHeaderTitleRow,
 } from "@slotted/react/page-header";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 
 import { ReleaseNotice } from "@/features/instance";
 import { AttentionBlock } from "@/features/overview/attention/attention-block";
@@ -36,6 +32,7 @@ import {
   type NetWorthKind,
 } from "@/features/overview/net-worth-figure/net-worth-figure";
 import { placement } from "@/features/overview/overview-block/overview-block";
+import { OverviewGrid } from "@/features/overview/pages/overview-grid";
 import { SpendingBlock } from "@/features/overview/spending/spending-block";
 import { SpendingChart } from "@/features/overview/spending/spending-chart";
 import { SpendingPaceFigure } from "@/features/overview/spending-pace/spending-pace-figure";
@@ -43,6 +40,10 @@ import { UpcomingBlock } from "@/features/overview/upcoming/upcoming-block";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
+import {
+  overviewLayoutRestores,
+  subscribeOverviewLayout,
+} from "@/theme/overview-layout";
 import { PageStack } from "@/ui/page-layout/page-stack";
 import { useMediaQuery, wideQuery } from "@/ui/runtime/use-media-query";
 
@@ -63,9 +64,6 @@ const flows: [MonthFlowKind, MessageKey][] = [
   ["result", "overview.figures.result"],
 ];
 
-// Per browser, as the privacy choice is kept (analytics design 5.2).
-export const layoutKey = "equori.overview.layout";
-
 // One grid of widgets the owner moves, resizes and hides. The grid stacks each column under its
 // own widgets and places a widget with no stored cell in the first one free, in the order of the
 // children: the widgets of one row share one height, so every row starts on one line. Below 1024 px the blocks stand in the
@@ -76,7 +74,10 @@ export function OverviewPage() {
   const month = useToday().slice(0, 7);
   const wide = useMediaQuery(wideQuery);
   const [editing, setEditing] = useState(false);
-  const persisted = usePersistedDashboardLayout({ key: layoutKey });
+  const restores = useSyncExternalStore(
+    subscribeOverviewLayout,
+    overviewLayoutRestores,
+  );
   // The blocks both layouts draw, under one key each, so a block hidden at the desk is hidden on
   // the phone.
   const at = {
@@ -131,12 +132,13 @@ export function OverviewPage() {
 
           <FirstStepsBlock />
 
-          <DashboardGrid
+          {/* Workaround for Slotted issue #149: the grid reads storage once, so a layout
+              restored from the member's appearance after mount reaches it by a new key. */}
+          <OverviewGrid
+            key={restores}
             aria-label={t("overview.block.label")}
             editing={editing}
             onEditingChange={setEditing}
-            layout={persisted.layout}
-            onLayoutChange={persisted.onLayoutChange}
           >
             {wide
               ? [
@@ -202,7 +204,7 @@ export function OverviewPage() {
                   <BudgetsBlock key="budgets" month={month} {...at.budgets} />,
                   <GoalsBlock key="goals" {...at.goals} />,
                 ]}
-          </DashboardGrid>
+          </OverviewGrid>
         </PageStack>
       </PageBody>
     </Page>
