@@ -270,7 +270,6 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.correction.amount": "Valor",
   "calc.correction.from": "Mês inicial",
   "calc.correction.to": "Mês final",
-  "calc.correction.corrected": "Valor corrigido",
   "calc.correction.factor": "Fator acumulado",
   "calc.correction.percent": "Variação acumulada",
   "calc.correction.months": "Meses usados",
@@ -626,8 +625,11 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.rates.index.hint":
     "Acrescenta a taxa anual de um percentual do índice nos últimos 12 meses.",
   "calc.correction.amount.hint": "O valor no mês inicial.",
-  "calc.correction.summary":
-    "O {index} variou {percent} de {from} a {to}, em {months} meses.",
+  "calc.correction.answer.lead": "Valor corrigido",
+  "calc.correction.answer.sentence": "de {from} a {to} pelo {index}.",
+  "calc.correction.answer.what": "o valor corrigido",
+  "calc.correction.index.help":
+    "O índice de preços que corrige o valor, mês a mês.",
   "calc.fixedIncome.days.hint": "Dias corridos da aplicação ao resgate.",
   "calc.fixedIncome.kind.hint":
     "Isento: o rendimento não paga imposto de renda.",

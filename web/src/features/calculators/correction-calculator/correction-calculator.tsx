@@ -1,34 +1,25 @@
-import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
-import { Field, FieldLabel } from "@slotted/react/field";
-import { Stack } from "@slotted/react/stack";
 import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/api/api-context";
-import { AmountField } from "@/features/calculators/fields/amount-field";
 import { indexRatesQuery } from "@/features/calculators/api";
-import styles from "@/features/calculators/calculator-frame/calculators.module.css";
 import { CalculatorFrame } from "@/features/calculators/calculator-frame/calculator-frame";
 import { CalculatorMethod } from "@/features/calculators/calculator-frame/calculator-method";
+import type { Source } from "@/features/calculators/calculator-frame/method-section";
+import { addressKeys } from "@/features/calculators/correction-calculator/address-keys";
+import {
+  correctionAnswer,
+  monthsStatus,
+} from "@/features/calculators/correction-calculator/correction-answer";
+import { CorrectionAnswerView } from "@/features/calculators/correction-calculator/correction-answer-view";
+import { CorrectionInputs } from "@/features/calculators/correction-calculator/correction-inputs";
+import { useCalculatorMoney } from "@/features/calculators/fields/use-calculator-money";
 import {
   readMinor,
   readMonth,
   useCalculatorSearch,
 } from "@/features/calculators/model/calculator-search";
-import { addressKeys } from "@/features/calculators/correction-calculator/address-keys";
-import { ChoiceField } from "@/features/calculators/fields/choice-field";
-import { formatRate } from "@/features/calculators/model/format-rate";
-import { indexName } from "@/features/calculators/rate-source/index-catalog";
-import { accumulated } from "@/features/calculators/rate-source/index-rates";
-import type { Source } from "@/features/calculators/calculator-frame/method-section";
-import { ResultLead } from "@/features/calculators/result/result-lead";
-import { ResultList } from "@/features/calculators/result/result-list";
-import { roundHalfEven } from "@/features/calculators/model/round";
-import { useCalculatorMoney } from "@/features/calculators/fields/use-calculator-money";
 import { useIndexes } from "@/features/calculators/rate-source/use-index-rate";
 import { shiftMonth } from "@/features/overview";
-import { formatReferenceMonth, numberFormatter } from "@/i18n/format";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { MonthControl } from "@/ui/navigation/month-control";
 
 const sources: Source[] = [
   {
@@ -50,11 +41,9 @@ function lastDay(month: string): string {
 // Design §5, correction: an amount carried from one month to another by the product of the
 // index's rates of every month between them, both included (M7).
 export function CorrectionCalculator() {
-  const t = useT();
-  const [locale] = useAppLocale();
   const api = useApi();
   const money = useCalculatorMoney();
-  const [search, set] = useCalculatorSearch(addressKeys);
+  const [search] = useCalculatorSearch(addressKeys);
   const indexes = useIndexes();
   const index = indexes.find((i) => i.id === search.index) ?? indexes[0];
   const first = index?.first.slice(0, 7);
@@ -65,13 +54,7 @@ export function CorrectionCalculator() {
     (last === undefined ? null : shiftMonth(last, -11));
   const to = readMonth(search.to) ?? last ?? null;
   const amount = readMinor(search.amount);
-  const ordered = from !== null && to !== null && from <= to;
-  const inRange =
-    ordered &&
-    first !== undefined &&
-    last !== undefined &&
-    from >= first &&
-    to <= last;
+  const status = monthsStatus(from, to, first, last);
   const rates = useQuery({
     ...indexRatesQuery(
       api,
@@ -79,151 +62,37 @@ export function CorrectionCalculator() {
       from === null ? "" : `${from}-01`,
       to === null ? "" : lastDay(to),
     ),
-    enabled: index !== undefined && inRange,
+    enabled: index !== undefined && status === "inside",
   }).data;
 
   if (money === null)
-    return (
-      <CalculatorFrame
-        id="correction"
-        inputs={null}
-        results={null}
-        method={null}
-      />
-    );
+    return <CalculatorFrame id="correction" inputs={null} method={null} />;
 
-  let results = null;
-  if (index === undefined)
-    results = (
-      <Alert tone="info">
-        <AlertContent>
-          <AlertDescription>{t("calc.noIndexes")}</AlertDescription>
-        </AlertContent>
-      </Alert>
-    );
-  else if (from !== null && to !== null && !ordered)
-    results = (
-      <Alert tone="warning">
-        <AlertContent>
-          <AlertDescription>{t("calc.correction.order")}</AlertDescription>
-        </AlertContent>
-      </Alert>
-    );
-  else if (!inRange && first !== undefined && last !== undefined)
-    results = (
-      <Alert tone="warning">
-        <AlertContent>
-          <AlertDescription>
-            {t("calc.correction.range", {
-              first: formatReferenceMonth(first, locale),
-              last: formatReferenceMonth(last, locale),
-            })}
-          </AlertDescription>
-        </AlertContent>
-      </Alert>
-    );
-  else if (
-    amount !== null &&
-    from !== null &&
-    to !== null &&
-    rates !== undefined &&
-    rates.length > 0
-  ) {
-    const change = accumulated(rates);
-    const months = new Set(rates.map((r) => r.date.slice(0, 7))).size;
-    results = (
-      <Stack gap={5}>
-        <ResultLead
-          label={t("calc.correction.corrected")}
-          value={money.format(roundHalfEven(amount * (1 + change)))}
-          summary={t("calc.correction.summary", {
-            index: indexName(index.id),
-            percent: formatRate(change, locale),
-            from: formatReferenceMonth(from, locale),
-            to: formatReferenceMonth(to, locale),
-            months,
-          })}
-        />
-        <ResultList
-          results={[
-            {
-              label: t("calc.correction.factor"),
-              value: numberFormatter(locale, {
-                minimumFractionDigits: 8,
-                maximumFractionDigits: 8,
-              }).format(1 + change),
-            },
-            {
-              label: t("calc.correction.percent"),
-              value: formatRate(change, locale),
-            },
-            { label: t("calc.correction.months"), value: String(months) },
-          ]}
-        />
-      </Stack>
-    );
-  }
-
-  const inputs = (
-    <>
-      <AmountField
-        label={t("calc.correction.amount")}
-        hint={t("calc.correction.amount.hint")}
-        value={search.amount}
-        money={money}
-        onChange={(v) => {
-          set({ amount: v });
-        }}
-      />
-      {index !== undefined && (
-        <>
-          <ChoiceField
-            label={t("calc.index")}
-            choices={indexes.map((i) => ({
-              value: i.id,
-              label: indexName(i.id),
-            }))}
-            value={index.id}
-            onChange={(next) => {
-              set({ index: next });
-            }}
-          />
-          <div className={styles.pair}>
-            {from !== null && (
-              <Field necessity="none">
-                <FieldLabel>{t("calc.correction.from")}</FieldLabel>
-                <MonthControl
-                  label={t("calc.correction.from")}
-                  value={from}
-                  onChange={(m) => {
-                    set({ from: m });
-                  }}
-                />
-              </Field>
-            )}
-            {to !== null && (
-              <Field necessity="none">
-                <FieldLabel>{t("calc.correction.to")}</FieldLabel>
-                <MonthControl
-                  label={t("calc.correction.to")}
-                  value={to}
-                  onChange={(m) => {
-                    set({ to: m });
-                  }}
-                />
-              </Field>
-            )}
-          </div>
-        </>
-      )}
-    </>
-  );
+  const answer = correctionAnswer(amount, rates);
 
   return (
     <CalculatorFrame
       id="correction"
-      inputs={inputs}
-      results={results}
+      answer={
+        <CorrectionAnswerView
+          money={money}
+          amount={amount}
+          index={index}
+          from={from}
+          to={to}
+          status={status}
+          answer={answer}
+        />
+      }
+      inputs={
+        <CorrectionInputs
+          money={money}
+          indexes={indexes}
+          index={index?.id}
+          from={from}
+          to={to}
+        />
+      }
       method={
         <CalculatorMethod
           id="correction"

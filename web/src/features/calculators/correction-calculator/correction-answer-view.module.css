@@ -1,0 +1,8 @@
+@layer app {
+  /* The answer and the notice about its months stand in the area of the answer. */
+  .area {
+    grid-area: answer;
+    display: grid;
+    gap: var(--slotted-space-4);
+  }
+}

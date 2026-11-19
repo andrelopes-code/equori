@@ -266,7 +266,6 @@ export const calculatorsEn = {
   "calc.correction.amount": "Amount",
   "calc.correction.from": "Start month",
   "calc.correction.to": "End month",
-  "calc.correction.corrected": "Corrected amount",
   "calc.correction.factor": "Accumulated factor",
   "calc.correction.percent": "Accumulated change",
   "calc.correction.months": "Months used",
@@ -620,8 +619,11 @@ export const calculatorsEn = {
   "calc.rates.index.hint":
     "Adds the annual rate of a percent of the index over its last 12 months.",
   "calc.correction.amount.hint": "The amount on the start month.",
-  "calc.correction.summary":
-    "{index} varied {percent} from {from} to {to}, over {months} months.",
+  "calc.correction.answer.lead": "Corrected amount",
+  "calc.correction.answer.sentence": "from {from} to {to} by {index}.",
+  "calc.correction.answer.what": "the corrected amount",
+  "calc.correction.index.help":
+    "The price index that corrects the amount, month by month.",
   "calc.fixedIncome.days.hint":
     "Calendar days from the investment to the redemption.",
   "calc.fixedIncome.kind.hint": "Exempt: the yield pays no income tax.",
