@@ -182,9 +182,6 @@ export const portfolioEn = {
   "fixedIncome.issuers.excess": "Above the limit",
   "fixedIncome.issuers.sovereign": "Government security",
   "fixedIncome.issuers.uncovered": "Not covered",
-  "fixedIncome.panel.minimize": "Minimize {name}",
-  "fixedIncome.panel.expand": "Expand {name}",
-  "fixedIncome.panel.more": "Show more",
   "fixedIncome.issuers.mark": "Limit per issuer",
   "portfolio.risk.title": "Risk over time",
   "portfolio.risk.description":

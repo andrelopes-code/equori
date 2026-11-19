@@ -60,7 +60,6 @@ export function RiskCharts({ report }: RiskChartsProps) {
   return (
     <Grid minItemWidth="md" gap={6}>
       <Chart
-        variant="card"
         size="sm"
         title={t("portfolio.risk.volatility")}
         data={records(volatilityRows(report))}
@@ -71,7 +70,6 @@ export function RiskCharts({ report }: RiskChartsProps) {
         toolbar="hover"
       />
       <Chart
-        variant="card"
         size="sm"
         title={t("portfolio.risk.drawdown")}
         description={

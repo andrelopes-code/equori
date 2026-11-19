@@ -37,7 +37,7 @@ export function RiskCorrelationsTable({ report }: RiskCorrelationsTableProps) {
   const count = numberFormatter(tag, { maximumFractionDigits: 0 });
 
   return (
-    <Table columns={columns} variant="framed">
+    <Table columns={columns} variant="ruled">
       <TableContent aria-label={t("portfolio.risk.correlations")}>
         <TableHead>
           <TableRow>

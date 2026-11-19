@@ -36,7 +36,7 @@ export function RiskClassesTable({ report }: RiskClassesTableProps) {
     bp === undefined ? absent : formatBasisPoints(bp, tag);
 
   return (
-    <Table columns={columns} variant="framed">
+    <Table columns={columns} variant="ruled">
       <TableContent aria-label={t("portfolio.risk.classes")}>
         <TableHead>
           <TableRow>

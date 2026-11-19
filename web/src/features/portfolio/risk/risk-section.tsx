@@ -1,16 +1,9 @@
-import {
-  Section,
-  SectionBody,
-  SectionDescription,
-  SectionHeader,
-  SectionHeading,
-  SectionTitle,
-} from "@slotted/react/section";
 import { Stack } from "@slotted/react/stack";
 import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/api/api-context";
 import { riskQuery } from "@/features/portfolio/api";
+import { CollapsibleSection } from "@/features/portfolio/collapsible-section/collapsible-section";
 import { RiskCharts } from "@/features/portfolio/risk/risk-charts";
 import { RiskClassesTable } from "@/features/portfolio/risk/risk-classes-table";
 import { RiskCorrelationsTable } from "@/features/portfolio/risk/risk-correlations-table";
@@ -22,6 +15,8 @@ interface RiskSectionProps {
   date: string;
   valueIn: string | undefined;
 }
+
+const storageKey = "equori.portfolio.risk.collapsed";
 
 // Portfolio risk design, Screen: how much the portfolio swings, how far it fell and which class
 // carries the swing, month by month. The section waits for the report: a book without a month
@@ -36,27 +31,21 @@ export function RiskSection({ date, valueIn }: RiskSectionProps) {
   if (!risk.isError && risk.data.portfolio.months.length === 0) return null;
 
   return (
-    <Section size="lg" ground="surface">
-      <SectionHeader>
-        <SectionTitle>
-          <SectionHeading>{t("portfolio.risk.title")}</SectionHeading>
-          <SectionDescription>
-            {t("portfolio.risk.description")}
-          </SectionDescription>
-        </SectionTitle>
-      </SectionHeader>
-      <SectionBody>
-        {risk.isError && <FormNotice>{t("portfolio.risk.error")}</FormNotice>}
+    <CollapsibleSection
+      title={t("portfolio.risk.title")}
+      description={t("portfolio.risk.description")}
+      storageKey={storageKey}
+    >
+      {risk.isError && <FormNotice>{t("portfolio.risk.error")}</FormNotice>}
 
-        {risk.isSuccess && (
-          <Stack gap={6}>
-            <RiskCharts report={risk.data} />
-            <RiskClassesTable report={risk.data} />
-            <RiskCorrelationsTable report={risk.data} />
-            <RiskNotes report={risk.data} />
-          </Stack>
-        )}
-      </SectionBody>
-    </Section>
+      {risk.isSuccess && (
+        <Stack gap={6}>
+          <RiskCharts report={risk.data} />
+          <RiskClassesTable report={risk.data} />
+          <RiskCorrelationsTable report={risk.data} />
+          <RiskNotes report={risk.data} />
+        </Stack>
+      )}
+    </CollapsibleSection>
   );
 }

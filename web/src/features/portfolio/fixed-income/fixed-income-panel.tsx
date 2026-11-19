@@ -1,28 +1,15 @@
-import { IconButton } from "@slotted/react/button";
-import { Glyph, Icon } from "@slotted/react/icon";
-import {
-  Section,
-  SectionActions,
-  SectionBody,
-  SectionDescription,
-  SectionHeader,
-  SectionHeading,
-  SectionTitle,
-} from "@slotted/react/section";
 import { Skeleton } from "@slotted/react/skeleton";
-import { useId } from "react";
 
+import { CollapsibleSection } from "@/features/portfolio/collapsible-section/collapsible-section";
 import { ExposureTracks } from "@/features/portfolio/fixed-income/exposure-tracks-view";
 import styles from "@/features/portfolio/fixed-income/fixed-income-panel.module.css";
 import { MaturityLadder } from "@/features/portfolio/fixed-income/maturity-ladder-view";
 import { maturityLadder } from "@/features/portfolio/fixed-income/maturity-ladder";
 import { PaymentsTimeline } from "@/features/portfolio/fixed-income/payments-timeline";
-import { PeekBody } from "@/features/portfolio/fixed-income/peek-body";
 import { returnKind } from "@/features/portfolio/fixed-income/return-kind";
 import { ReturnShareBar } from "@/features/portfolio/fixed-income/return-share-bar";
 import { returnShares } from "@/features/portfolio/fixed-income/return-shares";
 import { useFixedIncomePanel } from "@/features/portfolio/fixed-income/use-fixed-income-panel";
-import { usePanelCollapsed } from "@/features/portfolio/fixed-income/use-panel-collapsed";
 import { fixedIncomeVerdict } from "@/features/portfolio/fixed-income/verdict";
 import { VerdictLine } from "@/features/portfolio/fixed-income/verdict-line";
 import type { Holding } from "@/features/portfolio/model/portfolio-holdings";
@@ -30,6 +17,8 @@ import { useScale } from "@/features/setup";
 import { formatDate, formatDayMonthNumeric } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+
+const storageKey = "equori.portfolio.fixedIncome.collapsed";
 
 interface FixedIncomePanelProps {
   holdings: readonly Holding[];
@@ -43,8 +32,6 @@ export function FixedIncomePanel({ holdings, date }: FixedIncomePanelProps) {
   const scale = useScale();
   const [locale] = useAppLocale();
   const data = useFixedIncomePanel(holdings, date);
-  const [collapsed, setCollapsed] = usePanelCollapsed();
-  const bodyId = useId();
 
   const currency = data.fixed[0]?.currency;
   if (currency === undefined || scale === null) return null;
@@ -66,85 +53,49 @@ export function FixedIncomePanel({ holdings, date }: FixedIncomePanelProps) {
   });
 
   return (
-    <Section size="lg" ground="surface">
-      <SectionHeader>
-        <SectionTitle>
-          <SectionHeading>{t("fixedIncome.panel")}</SectionHeading>
-          <SectionDescription>
-            {t("fixedIncome.panel.description", {
-              total: money({ amount: total, currency }),
-              count: data.fixed.length,
-              date: formatDate(date, locale),
-            })}
-          </SectionDescription>
-        </SectionTitle>
-        <SectionActions>
-          <IconButton
-            size="sm"
-            variant="ghost"
-            tone="secondary"
-            aria-label={t(
-              collapsed
-                ? "fixedIncome.panel.expand"
-                : "fixedIncome.panel.minimize",
-              { name: t("fixedIncome.panel") },
-            )}
-            aria-expanded={!collapsed}
-            aria-controls={bodyId}
-            onClick={() => {
-              setCollapsed(!collapsed);
-            }}
-          >
-            <Icon>
-              <Glyph name={collapsed ? "chevron-down" : "chevron-up"} />
-            </Icon>
-          </IconButton>
-        </SectionActions>
-      </SectionHeader>
-      <SectionBody>
-        <PeekBody
-          id={bodyId}
-          collapsed={collapsed}
-          onExpand={() => {
-            setCollapsed(false);
-          }}
-        >
-          {data.pending && <Skeleton />}
+    <CollapsibleSection
+      title={t("fixedIncome.panel")}
+      description={t("fixedIncome.panel.description", {
+        total: money({ amount: total, currency }),
+        count: data.fixed.length,
+        date: formatDate(date, locale),
+      })}
+      storageKey={storageKey}
+    >
+      {data.pending && <Skeleton />}
 
-          {!data.pending && (
-            <div className={styles.body}>
-              <VerdictLine verdict={verdict} />
+      {!data.pending && (
+        <div className={styles.body}>
+          <VerdictLine verdict={verdict} />
 
-              <div className={styles.pair}>
-                <ReturnShareBar
-                  shares={shares}
-                  currency={currency}
-                  scale={scale(currency)}
-                />
+          <div className={styles.pair}>
+            <ReturnShareBar
+              shares={shares}
+              currency={currency}
+              scale={scale(currency)}
+            />
 
-                <MaturityLadder
-                  years={years}
-                  currency={currency}
-                  scale={scale(currency)}
-                />
-              </div>
+            <MaturityLadder
+              years={years}
+              currency={currency}
+              scale={scale(currency)}
+            />
+          </div>
 
-              <PaymentsTimeline
-                events={data.events}
-                names={data.names}
-                kindOf={kindOf}
-                today={data.today}
-                until={data.until}
-                scale={scale}
-              />
+          <PaymentsTimeline
+            events={data.events}
+            names={data.names}
+            kindOf={kindOf}
+            today={data.today}
+            until={data.until}
+            scale={scale}
+          />
 
-              {data.report.issuers.length > 0 && (
-                <ExposureTracks report={data.report} scale={scale} />
-              )}
-            </div>
+          {data.report.issuers.length > 0 && (
+            <ExposureTracks report={data.report} scale={scale} />
           )}
-        </PeekBody>
-      </SectionBody>
-    </Section>
+        </div>
+      )}
+    </CollapsibleSection>
   );
 }

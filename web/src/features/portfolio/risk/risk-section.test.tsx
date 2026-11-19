@@ -1,5 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { json, problem } from "@/testing/fake-api";
@@ -64,6 +65,8 @@ const report = {
   ],
 };
 
+const collapsedKey = "equori.portfolio.risk.collapsed";
+
 const section = () =>
   screen.findByRole("region", { name: catalogEn["portfolio.risk.title"] });
 
@@ -76,6 +79,10 @@ const rows = (table: HTMLElement) =>
   );
 
 describe("Risk section", () => {
+  afterEach(() => {
+    localStorage.removeItem(collapsedKey);
+  });
+
   it("RK10: states the weight, the share of risk, the volatility and the deepest fall of each class", async () => {
     const fetch = portfolioApi({
       "GET /api/v1/reports/risk": () => json(200, report),
@@ -140,6 +147,36 @@ describe("Risk section", () => {
         "REITs: 100.00% of the value is priced by accrual, so its volatility stays near zero by method.",
       ),
     ).toBeInTheDocument();
+  });
+
+  it("collapses from its whole header, and keeps the choice", async () => {
+    const fetch = portfolioApi({
+      "GET /api/v1/reports/risk": () => json(200, report),
+    });
+    const first = await renderApp("/portfolio", { fetch });
+    const region = await section();
+    const header = within(region).getByRole("button", {
+      name: new RegExp(`^${catalogEn["portfolio.risk.title"]}`),
+    });
+
+    await userEvent.click(header);
+
+    expect(header).toHaveAttribute("aria-expanded", "false");
+    expect(localStorage.getItem(collapsedKey)).toBe("true");
+
+    first.unmount();
+    await renderApp("/portfolio", { fetch });
+
+    expect(
+      within(await section()).getByRole("button", {
+        name: new RegExp(`^${catalogEn["portfolio.risk.title"]}`),
+      }),
+    ).toHaveAttribute("aria-expanded", "false");
+    expect(
+      within(await section()).queryByRole("table", {
+        name: catalogEn["portfolio.risk.classes"],
+      }),
+    ).toBeNull();
   });
 
   it("states a failure of the report", async () => {
