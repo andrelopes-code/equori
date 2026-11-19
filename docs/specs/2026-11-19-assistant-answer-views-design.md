@@ -38,7 +38,9 @@ Confidence: medium-high. Invalidated if an owner-run eval shows the cheapest mod
 ### Source and tool
 
 - V1. Every read tool output the chat receives is a JSON object with one added field `view_source`, a handle `r1`, `r2`, … in call order within the turn. The turn keeps the raw output under its handle: at most 24 handles, 256 KiB each; a larger output gets no handle. MCP outputs do not change.
-- V2. The assistant module declares the read tool `show` (chat only, not in MCP): `{source: "rN", form: <form id>, select?: {limit?: 1-12, highlight?: string}, next?: [string ≤ 60 runes] ≤ 3}`. The output is `{"view": "<id>"}` or a tool error naming the forms the source allows.
+- V2. The assistant module declares the read tool `show` (chat only, not in MCP): `{source: ["rN"] (1 or 2 handles), form: <form id>, select?: {limit?: 1-12, highlight?: string}, next?: [string ≤ 60 runes] ≤ 3}`. The output is `{"view": "<id>"}` or a tool error naming the forms the source allows.
+- V2a. A form that compares two periods (`compare`, `changes`) takes 2 handles of the same source tool; every other form takes 1.
+- V2b. `get_category_totals` gains `group: month | day` (optional): the output then adds `periods[{from, to, categories}]`. It feeds `series` (month) and `heat` (day) and passes `TestToolCatalog`.
 - V3. A registry maps `(source tool, form)` to one builder. A pair outside the registry is a tool error. The description of `show` lists the forms of each source tool, generated from the registry.
 - V4. A builder is a pure function `func(output json.RawMessage, sel Select, today time.Time) (View, error)` in the module that owns the source tool (`<module>/toolapi/view_<form>.go`), with a table test whose expected values are derived by hand from the input.
 - V5. One answer holds at most 3 views. A fourth `show` call is a tool error.
@@ -140,7 +142,7 @@ Confidence: medium-high. Invalidated if an owner-run eval shows the cheapest mod
 
 ## 7. Delivery order
 
-1. Source handles, `show`, registry, `assistant_view`, `views[]`, `AnswerView` anatomy, prompt; forms `ranking`, `compare`, `series` move to the registry.
-2. Forms by area, one commit per form with its builder, body, keys and row in "A form per kind": patrimony and accounts, spending, transactions, card, planning, investments, taxes and imports.
+1. Source handles, `show`, registry, `assistant_view`, `views[]`, `AnswerView` anatomy, prompt; forms `ranking` and `compare` move to the registry.
+2. `group` on `get_category_totals` with `series` and `heat`; then forms by area, one commit per form with its builder, body, keys and row in "A form per kind": patrimony and accounts, spending, transactions, card, planning, investments, taxes and imports.
 3. `effects[]` in previews and the write bodies, one commit per kind.
 4. Outcomes.
