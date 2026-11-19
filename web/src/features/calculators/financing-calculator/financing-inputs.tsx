@@ -1,11 +1,4 @@
-import {
-  FieldGroup,
-  FieldGroupContent,
-  FieldGroupDescription,
-  FieldGroupLegend,
-} from "@slotted/react/field-group";
-import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
-
+import { SolveGroup } from "@/features/calculators/calculator-frame/solve-group";
 import { AmountField } from "@/features/calculators/fields/amount-field";
 import { DurationField } from "@/features/calculators/fields/duration-field";
 import { RateField } from "@/features/calculators/fields/rate-field";
@@ -36,35 +29,29 @@ export function FinancingInputs({ solve, money }: FinancingInputsProps) {
   const monthsUnit = readUnit(search.monthsUnit, termUnits);
   const period = search.period === "month" ? "month" : "year";
 
-  function handleSolve(next: string) {
-    const chosen = solves.find((s) => s === next);
-    if (chosen !== undefined)
-      set({ solve: chosen === "installment" ? undefined : chosen });
+  function handleSolve(chosen: Solve) {
+    set({ solve: chosen === "installment" ? undefined : chosen });
   }
 
   return (
     <>
-      <FieldGroup kind="section">
-        <FieldGroupLegend>{t("calc.solve.legend")}</FieldGroupLegend>
-        <FieldGroupDescription>
-          {t("calc.financing.solve.hint")}
-        </FieldGroupDescription>
-        <FieldGroupContent>
-          <SegmentedControl value={solve} fullWidth onValueChange={handleSolve}>
-            {solves.map((s) => (
-              <Segment key={s} value={s}>
-                {t(`calc.financing.solve.${s}`)}
-              </Segment>
-            ))}
-          </SegmentedControl>
-        </FieldGroupContent>
-      </FieldGroup>
+      <SolveGroup
+        legend={t("calc.solve.legend")}
+        hint={t("calc.financing.solve.hint")}
+        choices={solves.map((s) => ({
+          value: s,
+          label: t(`calc.financing.solve.${s}`),
+        }))}
+        value={solve}
+        onChange={handleSolve}
+      />
 
       {solve !== "amount" && (
         <AmountField
           label={t("calc.financing.amount")}
           value={search.amount}
           money={money}
+          width="medium"
           onChange={(v) => {
             set({ amount: v });
           }}
@@ -111,6 +98,7 @@ export function FinancingInputs({ solve, money }: FinancingInputsProps) {
           hint={t("calc.financing.installment.hint")}
           value={search.installment}
           money={money}
+          width="medium"
           onChange={(v) => {
             set({ installment: v });
           }}

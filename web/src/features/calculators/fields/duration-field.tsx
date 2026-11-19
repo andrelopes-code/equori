@@ -39,7 +39,7 @@ export function DurationField({
 }) {
   const t = useT();
   return (
-    <Field necessity="none">
+    <Field necessity="none" {...(compact ? { width: "medium" } : {})}>
       <FieldLabel>{label}</FieldLabel>
       <Inline gap={2} wrap="nowrap">
         <TextField

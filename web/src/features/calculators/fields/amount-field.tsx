@@ -10,6 +10,7 @@ export function AmountField({
   label,
   hint,
   help,
+  width,
   value,
   onChange,
   money,
@@ -20,6 +21,8 @@ export function AmountField({
   hint?: string;
   // The definition of the term, beside the label (F8).
   help?: string;
+  // The width step of forms F3: an amount stands at "medium".
+  width?: "short" | "medium";
   value: string | undefined;
   onChange: (minorText: string | undefined) => void;
   money: CalculatorMoney;
@@ -28,7 +31,7 @@ export function AmountField({
 }) {
   const minor = value === undefined ? 0 : Number(value);
   return (
-    <Field necessity="none">
+    <Field necessity="none" {...(width === undefined ? {} : { width })}>
       <FieldTitle label={label} {...(help === undefined ? {} : { help })} />
       <MoneyInput
         size="field"

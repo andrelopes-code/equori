@@ -47,7 +47,9 @@ export function CalcTable({
       <TableContent
         {...(long ? { scrollProps: { className: styles.scroll } } : {})}
       >
-        <TableCaption>{caption}</TableCaption>
+        <TableCaption>
+          <VisuallyHidden>{caption}</VisuallyHidden>
+        </TableCaption>
         <TableHead>
           <TableRow>
             {headers.map((header, i) => (

@@ -1,4 +1,4 @@
-import { ChoiceField } from "@/features/calculators/fields/choice-field";
+import { SolveGroup } from "@/features/calculators/calculator-frame/solve-group";
 import { useCalculatorSearch } from "@/features/calculators/model/calculator-search";
 import { addressKeys } from "@/features/calculators/compound-calculator/address-keys";
 import { useT } from "@/i18n/i18n-provider";
@@ -15,8 +15,8 @@ export function CompoundModeField() {
       : "final";
 
   return (
-    <ChoiceField<CompoundMode>
-      label={t("calc.compound.mode")}
+    <SolveGroup<CompoundMode>
+      legend={t("calc.compound.mode")}
       hint={t(`calc.compound.mode.${mode}.hint`)}
       choices={[
         { value: "final", label: t("calc.compound.mode.final") },

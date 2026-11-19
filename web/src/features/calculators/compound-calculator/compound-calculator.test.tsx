@@ -133,6 +133,29 @@ describe("Compound interest calculator", () => {
     ).toBeInTheDocument();
   });
 
+  // Mock fidelity (Task 9), D1/D2/D6: the mode is a group with its hint as the description, its
+  // control in an Inline, the amounts at the medium step and no hint under the initial amount.
+  it("draws the inputs as the mock does", async () => {
+    await open("initial=100000&deposit=0&months=12&rate=12");
+    const group = await screen.findByRole("group", {
+      name: catalogEn["calc.compound.mode"],
+    });
+    expect(group).toHaveAccessibleDescription(
+      catalogEn["calc.compound.mode.final.hint"],
+    );
+    expect(
+      group.querySelector('[data-ui="segmented-control"]')?.parentElement,
+    ).toHaveAttribute("data-ui", "inline");
+    for (const label of [
+      catalogEn["calc.compound.initial"],
+      catalogEn["calc.compound.deposit"],
+    ])
+      expect(
+        screen.getByLabelText(label).closest('[data-ui="field"]'),
+      ).toHaveAttribute("data-width", "medium");
+    expect(screen.queryByText("What is invested today.")).toBeNull();
+  });
+
   it("works without indexes", async () => {
     await open("initial=100000&months=12&rate=12");
     await answer();

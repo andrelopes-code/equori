@@ -23,7 +23,7 @@ export function FinancingOptional({ money }: FinancingOptionalProps) {
     >
       <CountField
         label={t("calc.financing.prepayMonth")}
-        hint={t("calc.financing.prepayMonth.hint")}
+        width="short"
         name="prepayMonth"
         value={search.prepayMonth ?? ""}
         onChange={(v) => {
@@ -34,6 +34,7 @@ export function FinancingOptional({ money }: FinancingOptionalProps) {
       <AmountField
         label={t("calc.financing.prepayAmount")}
         help={t("calc.financing.prepayAmount.help")}
+        width="medium"
         value={search.prepayAmount}
         money={money}
         onChange={(v) => {

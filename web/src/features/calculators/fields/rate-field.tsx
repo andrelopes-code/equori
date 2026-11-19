@@ -32,7 +32,7 @@ export function RateField({
   children?: ReactNode;
 }) {
   return (
-    <Field necessity="none">
+    <Field necessity="none" {...(compact ? { width: "medium" } : {})}>
       <FieldTitle label={label} {...(help === undefined ? {} : { help })} />
       <RateInput
         name={name}

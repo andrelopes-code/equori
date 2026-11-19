@@ -30,6 +30,7 @@ export function IncomeInputs({ money }: IncomeInputsProps) {
         label={t("calc.compound.live.balance")}
         hint={t("calc.compound.live.balance.hint")}
         value={search.initial}
+        width="medium"
         money={money}
         onChange={(v) => {
           set({ initial: v });

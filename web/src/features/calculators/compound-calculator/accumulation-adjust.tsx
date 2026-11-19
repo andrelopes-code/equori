@@ -29,7 +29,7 @@ export function AccumulationAdjust({ input }: AccumulationAdjustProps) {
     <FieldGroup kind="section">
       <FieldGroupLegend>{t("calc.compound.adjust")}</FieldGroupLegend>
       <FieldGroupContent>
-        <Stack gap={6}>
+        <Stack gap={8}>
           <InflationField input={input} />
 
           <RateField

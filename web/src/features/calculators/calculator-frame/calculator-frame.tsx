@@ -106,7 +106,7 @@ export function CalculatorFrame({
               {inputs !== null && (
                 <Card className={design.inputs}>
                   <CardBody>
-                    <Stack gap={6}>
+                    <Stack gap={8}>
                       {inputs}
                       {optional}
                     </Stack>

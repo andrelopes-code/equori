@@ -35,7 +35,7 @@ export function AccumulationInputs({ input, money }: AccumulationInputsProps) {
 
       <AmountField
         label={t("calc.compound.initial")}
-        hint={t("calc.compound.initial.hint")}
+        width="medium"
         value={search.initial}
         money={money}
         onChange={(v) => {
@@ -48,6 +48,7 @@ export function AccumulationInputs({ input, money }: AccumulationInputsProps) {
           label={t("calc.compound.target")}
           hint={t("calc.compound.target.hint")}
           value={search.target}
+          width="medium"
           money={money}
           onChange={(v) => {
             set({ target: v });
@@ -58,6 +59,7 @@ export function AccumulationInputs({ input, money }: AccumulationInputsProps) {
           label={t("calc.compound.deposit")}
           hint={t("calc.compound.deposit.hint")}
           value={search.deposit}
+          width="medium"
           money={money}
           onChange={(v) => {
             set({ deposit: v });

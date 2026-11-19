@@ -297,8 +297,8 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.financing.amount": "Valor financiado",
   "calc.financing.rate": "Taxa de juros",
   "calc.financing.installment": "Prestação fixa",
-  "calc.financing.prepayMonth": "Amortização extra após a prestação nº",
-  "calc.financing.prepayAmount": "Valor da amortização extra",
+  "calc.financing.prepayMonth": "Depois da prestação nº",
+  "calc.financing.prepayAmount": "Valor pago a mais",
   "calc.financing.solved.amount": "Valor financiado",
   "calc.financing.solved.rate": "Taxa mensal",
   "calc.financing.solved.annual": "Taxa anual",
@@ -600,7 +600,6 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.rateSource.hint":
     "Uma taxa digitada abaixo, ou a dos últimos 12 meses de um índice.",
   "calc.percent.hint": "100 é o próprio índice; 110 é 10% acima dele.",
-  "calc.compound.initial.hint": "O que já está investido hoje.",
   "calc.compound.deposit.hint": "Feito no início de cada mês.",
   "calc.compound.target.hint": "O saldo a alcançar no fim do prazo.",
   "calc.compound.rate.hint":
@@ -617,10 +616,8 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
     "Isento: o rendimento não paga imposto de renda.",
   "calc.fixedIncome.summary":
     "Rendimento bruto de {gross}, menos {tax} de imposto ({share}), em {days} dias.",
-  "calc.financing.solve.hint": "Informe os outros três valores.",
+  "calc.financing.solve.hint": "Preencha os outros três valores.",
   "calc.financing.installment.hint": "A prestação que fica igual todo mês.",
-  "calc.financing.prepayMonth.hint":
-    "Acrescenta o que um pagamento extra muda: prazo menor ou prestação menor.",
   "calc.financing.prepay.title": "Amortização extra",
   "calc.solve.legend": "O que calcular",
   "calc.choice.option": "Opção",

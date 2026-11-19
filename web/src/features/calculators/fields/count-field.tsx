@@ -6,6 +6,7 @@ import { TextField } from "@slotted/react/text-field";
 export function CountField({
   label,
   hint,
+  width,
   unit,
   name,
   value,
@@ -13,13 +14,14 @@ export function CountField({
 }: {
   label: string;
   hint?: string;
+  width?: "short" | "medium";
   unit?: string;
   name: string;
   value: string;
   onChange: (text: string) => void;
 }) {
   return (
-    <Field necessity="none">
+    <Field necessity="none" {...(width === undefined ? {} : { width })}>
       <FieldLabel>{label}</FieldLabel>
       <TextField
         name={name}

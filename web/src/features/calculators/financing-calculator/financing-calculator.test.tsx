@@ -152,6 +152,63 @@ describe("Financing calculator", () => {
     ).toBeVisible();
   });
 
+  // Mock fidelity (Task 9), D1/D2: the amount and the rate stand at the medium step, the
+  // term and the rate keep a value beside the unit, and the choice stands in an Inline.
+  it("draws the inputs at the width steps of the mock", async () => {
+    await open(loan);
+    const group = await screen.findByRole("group", {
+      name: catalogEn["calc.solve.legend"],
+    });
+    expect(group).toHaveAccessibleDescription(
+      catalogEn["calc.financing.solve.hint"],
+    );
+    expect(
+      group.querySelector('[data-ui="segmented-control"]')?.parentElement,
+    ).toHaveAttribute("data-ui", "inline");
+    for (const name of ["rate", "months"])
+      expect(
+        document
+          .querySelector(`input[name="${name}"]`)
+          ?.closest('[data-ui="field"]'),
+      ).toHaveAttribute("data-width", "medium");
+    expect(
+      screen
+        .getByRole("textbox", { name: catalogEn["calc.financing.amount"] })
+        .closest('[data-ui="field"]'),
+    ).toHaveAttribute("data-width", "medium");
+  });
+
+  // Mock fidelity (Task 9), D3: the name of the comparison table is not drawn.
+  it("keeps the comparison caption out of sight", async () => {
+    await open(loan);
+    const caption = await screen.findByText(
+      catalogEn["calc.financing.compare"],
+    );
+    expect(caption.closest('[data-ui="visually-hidden"]')).not.toBeNull();
+  });
+
+  // Mock fidelity (Task 9), D4: the labels of the extra payment, with no line under the first.
+  it("labels the extra payment as the mock does", async () => {
+    await open(`${loan}&prepayMonth=6&prepayAmount=200000`);
+    const month = await screen.findByLabelText("After installment no.");
+    expect(month.closest('[data-ui="field"]')).toHaveAttribute(
+      "data-width",
+      "short",
+    );
+    expect(month).not.toHaveAccessibleDescription();
+    expect(
+      screen.getByLabelText("Amount paid on top").closest('[data-ui="field"]'),
+    ).toHaveAttribute("data-width", "medium");
+  });
+
+  // Mock fidelity (Task 9), D5.
+  it("asks to fill the other three values in pt-BR", async () => {
+    await open("", "BR", "pt");
+    expect(
+      await screen.findByText("Preencha os outros três valores."),
+    ).toBeVisible();
+  });
+
   it("states the yearly rate only when the rate is solved", async () => {
     await open(loan);
     await screen.findByText(catalogEn["calc.solve.legend"]);

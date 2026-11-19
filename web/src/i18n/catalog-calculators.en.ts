@@ -293,8 +293,8 @@ export const calculatorsEn = {
   "calc.financing.amount": "Amount financed",
   "calc.financing.rate": "Interest rate",
   "calc.financing.installment": "Fixed installment",
-  "calc.financing.prepayMonth": "Extra payment after installment no.",
-  "calc.financing.prepayAmount": "Prepayment amount",
+  "calc.financing.prepayMonth": "After installment no.",
+  "calc.financing.prepayAmount": "Amount paid on top",
   "calc.financing.solved.amount": "Amount financed",
   "calc.financing.solved.rate": "Monthly rate",
   "calc.financing.solved.annual": "Annual rate",
@@ -595,7 +595,6 @@ export const calculatorsEn = {
   "calc.rateSource.hint":
     "A rate typed below, or the last 12 months of an index.",
   "calc.percent.hint": "100 is the index itself; 110 is 10% above it.",
-  "calc.compound.initial.hint": "What is invested today.",
   "calc.compound.deposit.hint": "Made at the start of each month.",
   "calc.compound.target.hint": "The balance to reach at the end.",
   "calc.compound.rate.hint": "Expected return, before tax and fees.",
@@ -614,8 +613,6 @@ export const calculatorsEn = {
   "calc.financing.solve.hint": "Fill in the other three figures.",
   "calc.financing.installment.hint":
     "The installment that stays the same every month.",
-  "calc.financing.prepayMonth.hint":
-    "Adds what an extra payment changes: a shorter term or a smaller installment.",
   "calc.financing.prepay.title": "Extra payment",
   "calc.solve.legend": "What to calculate",
   "calc.choice.option": "Option",
