@@ -5788,6 +5788,88 @@
                       "additionalProperties": false
                     }
                   },
+                  "rules": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "instrument_type": {
+                          "type": "string",
+                          "description": "security type, such as fixed_income or stock"
+                        },
+                        "subtypes": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "description": "subtypes of instrument_type, such as cdb or lci"
+                        },
+                        "quote_currency": {
+                          "type": "string",
+                          "description": "currency the security is quoted in, such as USD"
+                        },
+                        "return_kind": {
+                          "type": "string",
+                          "description": "rate, inflation or fixed"
+                        },
+                        "matures_from_year": {
+                          "type": "integer",
+                          "description": "first maturity year"
+                        },
+                        "matures_to_year": {
+                          "type": "integer",
+                          "description": "last maturity year"
+                        },
+                        "daily_liquidity": {
+                          "type": "boolean",
+                          "description": "redeemable any business day near its accrued value"
+                        },
+                        "guarantee": {
+                          "type": "string",
+                          "description": "covered, sovereign or uncovered"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "matched": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "instrument": {
+                          "type": "string"
+                        },
+                        "value": {
+                          "type": "object",
+                          "properties": {
+                            "amount": {
+                              "type": "string",
+                              "description": "decimal amount in the instrument's scale, such as -1234.56"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "description": "currency or instrument code"
+                            }
+                          },
+                          "required": [
+                            "amount",
+                            "currency"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "share_bp": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "instrument",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "description": "securities a rule takes"
+                  },
                   "questions": {
                     "type": "array",
                     "items": {
@@ -5837,6 +5919,9 @@
                       "currency"
                     ],
                     "additionalProperties": false
+                  },
+                  "return_kind": {
+                    "type": "string"
                   }
                 },
                 "additionalProperties": false
@@ -5864,6 +5949,10 @@
                 "additionalProperties": false
               },
               "description": "holdings and accounts without a price or a rate"
+            },
+            "guarantee_name": {
+              "type": "string",
+              "description": "deposit guarantee scheme of the base currency, such as FGC"
             }
           },
           "description": "for contribution: the saved target split valued today, with the split of amount when given",
@@ -11486,6 +11575,51 @@
                   "type": "string"
                 },
                 "description": "the investor's yes-or-no questions of the group, at most 10, each 1 to 200 characters; with questions, members carry answers and no target_bp"
+              },
+              "rules": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "instrument_type": {
+                      "type": "string",
+                      "description": "security type, such as fixed_income or stock"
+                    },
+                    "subtypes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "subtypes of instrument_type, such as cdb or lci"
+                    },
+                    "quote_currency": {
+                      "type": "string",
+                      "description": "currency the security is quoted in, such as USD"
+                    },
+                    "return_kind": {
+                      "type": "string",
+                      "description": "rate, inflation or fixed"
+                    },
+                    "matures_from_year": {
+                      "type": "integer",
+                      "description": "first maturity year"
+                    },
+                    "matures_to_year": {
+                      "type": "integer",
+                      "description": "last maturity year"
+                    },
+                    "daily_liquidity": {
+                      "type": "boolean",
+                      "description": "redeemable any business day near its accrued value"
+                    },
+                    "guarantee": {
+                      "type": "string",
+                      "description": "covered, sovereign or uncovered"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "description": "conditions of a group by rule, at most 5, instead of members: a security bought later that meets one joins it"
               }
             },
             "required": [
@@ -11787,6 +11921,88 @@
                   "additionalProperties": false
                 }
               },
+              "rules": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "instrument_type": {
+                      "type": "string",
+                      "description": "security type, such as fixed_income or stock"
+                    },
+                    "subtypes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "subtypes of instrument_type, such as cdb or lci"
+                    },
+                    "quote_currency": {
+                      "type": "string",
+                      "description": "currency the security is quoted in, such as USD"
+                    },
+                    "return_kind": {
+                      "type": "string",
+                      "description": "rate, inflation or fixed"
+                    },
+                    "matures_from_year": {
+                      "type": "integer",
+                      "description": "first maturity year"
+                    },
+                    "matures_to_year": {
+                      "type": "integer",
+                      "description": "last maturity year"
+                    },
+                    "daily_liquidity": {
+                      "type": "boolean",
+                      "description": "redeemable any business day near its accrued value"
+                    },
+                    "guarantee": {
+                      "type": "string",
+                      "description": "covered, sovereign or uncovered"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "matched": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "instrument": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "object",
+                      "properties": {
+                        "amount": {
+                          "type": "string",
+                          "description": "decimal amount in the instrument's scale, such as -1234.56"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "description": "currency or instrument code"
+                        }
+                      },
+                      "required": [
+                        "amount",
+                        "currency"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "share_bp": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "instrument",
+                    "value"
+                  ],
+                  "additionalProperties": false
+                },
+                "description": "securities a rule takes"
+              },
               "questions": {
                 "type": "array",
                 "items": {
@@ -11836,6 +12052,9 @@
                   "currency"
                 ],
                 "additionalProperties": false
+              },
+              "return_kind": {
+                "type": "string"
               }
             },
             "additionalProperties": false
@@ -11863,6 +12082,10 @@
             "additionalProperties": false
           },
           "description": "holdings and accounts without a price or a rate"
+        },
+        "guarantee_name": {
+          "type": "string",
+          "description": "deposit guarantee scheme of the base currency, such as FGC"
         }
       },
       "required": [

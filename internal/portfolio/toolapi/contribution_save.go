@@ -19,12 +19,24 @@ type contributionMemberIn struct {
 	Answers    []bool `json:"answers,omitzero"    jsonschema:"one answer per question of the group, true for yes"`
 }
 
+type contributionRuleIn struct {
+	InstrumentType  string            `json:"instrument_type,omitzero"   jsonschema:"security type, such as fixed_income or stock"`
+	Subtypes        []string          `json:"subtypes,omitzero"          jsonschema:"subtypes of instrument_type, such as cdb or lci"`
+	QuoteCurrency   string            `json:"quote_currency,omitzero"    jsonschema:"currency the security is quoted in, such as USD"`
+	ReturnKind      string            `json:"return_kind,omitzero"       jsonschema:"rate, inflation or fixed"`
+	MaturesFromYear int               `json:"matures_from_year,omitzero" jsonschema:"first maturity year"`
+	MaturesToYear   int               `json:"matures_to_year,omitzero"   jsonschema:"last maturity year"`
+	DailyLiquidity  tool.OptionalBool `json:"daily_liquidity,omitzero"   jsonschema:"redeemable any business day near its accrued value"`
+	Guarantee       string            `json:"guarantee,omitzero"         jsonschema:"covered, sovereign or uncovered"`
+}
+
 type contributionClassIn struct {
 	Name     string                 `json:"name"      jsonschema:"name of the class, 1 to 60 characters, unique in the plan"`
 	TargetBP int                    `json:"target_bp" jsonschema:"share of the portfolio the class should hold, in basis points: 4000 is 40%; the classes add up to 10000"`
 	Members  []contributionMemberIn `json:"members"   jsonschema:"what the class holds; a holding belongs to at most one class"`
 
-	Questions []string `json:"questions,omitzero" jsonschema:"the investor's yes-or-no questions of the group, at most 10, each 1 to 200 characters; with questions, members carry answers and no target_bp"`
+	Questions []string             `json:"questions,omitzero" jsonschema:"the investor's yes-or-no questions of the group, at most 10, each 1 to 200 characters; with questions, members carry answers and no target_bp"`
+	Rules     []contributionRuleIn `json:"rules,omitzero"     jsonschema:"conditions of a group by rule, at most 5, instead of members: a security bought later that meets one joins it"`
 }
 
 type saveContributionPlanIn struct {
@@ -143,8 +155,37 @@ func contributionClasses(in []contributionClassIn) ([]domain.PlanClass, error) {
 			TargetBP:  c.TargetBP,
 			Questions: c.Questions,
 			Members:   members,
+			Rules:     contributionPlanRules(c.Rules),
 		}
 	}
 
 	return out, nil
+}
+
+// contributionPlanRules maps the rules of a class; a year of 0 is unset.
+func contributionPlanRules(in []contributionRuleIn) []domain.PlanRule {
+	out := make([]domain.PlanRule, len(in))
+
+	for i, r := range in {
+		out[i] = domain.PlanRule{
+			InstrumentType: r.InstrumentType,
+			Subtypes:       r.Subtypes,
+			QuoteCurrency:  money.Currency(r.QuoteCurrency),
+			ReturnKind:     r.ReturnKind,
+			Guarantee:      r.Guarantee,
+		}
+		if r.DailyLiquidity.Set {
+			out[i].DailyLiquidity = &r.DailyLiquidity.B
+		}
+
+		if r.MaturesFromYear != 0 {
+			out[i].MaturesFromYear = &r.MaturesFromYear
+		}
+
+		if r.MaturesToYear != 0 {
+			out[i].MaturesToYear = &r.MaturesToYear
+		}
+	}
+
+	return out
 }

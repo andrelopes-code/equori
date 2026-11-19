@@ -9,6 +9,7 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/apitest"
 	"github.com/andrelopes-code/equori/internal/platform/locale"
+	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
 type ruleOut struct {
@@ -436,4 +437,66 @@ func TestS647RuleClassForeignBase(t *testing.T) {
 	}
 
 	wantRows(t, got.Classes[0], matchedRow{code, 20000, 10000})
+}
+
+// TestSaveRulesTool saves the plan of GR12 through save_contribution_plan and reads its rules,
+// matched securities and guarantee name through get_portfolio view contribution (GR11).
+func TestSaveRulesTool(t *testing.T) {
+	t.Parallel()
+	f := newRulesFixture(t)
+
+	type toolClass struct {
+		Name    string    `json:"name"`
+		Rules   []ruleOut `json:"rules"`
+		Matched []struct {
+			Instrument string     `json:"instrument"`
+			Value      tool.Money `json:"value"`
+			ShareBP    int        `json:"share_bp"`
+		} `json:"matched"`
+	}
+
+	type toolView struct {
+		GuaranteeName string      `json:"guarantee_name"`
+		Classes       []toolClass `json:"classes"`
+	}
+
+	var saved toolView
+	toolOutput(t, f.h, "save_contribution_plan", f.gr12(), &saved)
+
+	var read struct {
+		Contribution toolView `json:"contribution"`
+	}
+	toolOutput(t, f.h, "get_portfolio", map[string]any{"view": "contribution"}, &read)
+
+	got := read.Contribution
+
+	if got.GuaranteeName == "" || len(got.Classes) != 4 || len(saved.Classes) != 4 {
+		t.Fatalf("view = %+v, saved = %+v", got, saved)
+	}
+
+	reserve := got.Classes[0]
+	if len(reserve.Rules) != 1 || reserve.Rules[0].DailyLiquidity == nil ||
+		!*reserve.Rules[0].DailyLiquidity {
+		t.Errorf("rules of Reserva = %+v", reserve.Rules)
+	}
+
+	ipca := got.Classes[2].Rules
+	if len(ipca) != 1 || ipca[0].ReturnKind != "inflation" || ipca[0].MaturesFromYear != 2031 ||
+		ipca[0].MaturesToYear != 2040 {
+		t.Errorf("rules of IPCA+ = %+v", ipca)
+	}
+
+	if m := got.Classes[1].Matched; len(m) != 1 || m[0].Instrument != f.cdb ||
+		m[0].Value.Amount != "10000.00" || m[0].ShareBP != 10000 {
+		t.Errorf("matched of Pós = %+v", m)
+	}
+
+	if m := got.Classes[2].Matched; len(m) != 1 || m[0].Instrument != f.ntnb ||
+		m[0].Value.Amount != "3000.00" {
+		t.Errorf("matched of IPCA+ = %+v", m)
+	}
+
+	if len(got.Classes[3].Rules) != 0 || len(got.Classes[3].Matched) != 0 {
+		t.Errorf("Ações = %+v", got.Classes[3])
+	}
 }

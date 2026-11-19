@@ -8,6 +8,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 	"github.com/andrelopes-code/equori/internal/portfolio/app"
+	"github.com/andrelopes-code/equori/internal/portfolio/domain"
 )
 
 // contributionView is the contribution plan valued at today. A field of a figure that is not
@@ -24,20 +25,30 @@ type contributionView struct {
 	Classes      []contributionClassOut `json:"classes"`
 	Outside      []contributionOutside  `json:"outside"                 jsonschema:"holdings and accounts that belong to no member"`
 	Missing      []contributionMissing  `json:"missing"                 jsonschema:"holdings and accounts without a price or a rate"`
+
+	GuaranteeName string `json:"guarantee_name,omitzero" jsonschema:"deposit guarantee scheme of the base currency, such as FGC"`
 }
 
 type contributionClassOut struct {
-	Name         string                  `json:"name"`
-	TargetBP     int                     `json:"target_bp"`
-	Value        tool.Money              `json:"value"`
-	ShareBP      int                     `json:"share_bp,omitzero"`
-	AfterShareBP int                     `json:"after_share_bp,omitzero"`
-	Amount       tool.Money              `json:"amount,omitzero"`
-	Cost         tool.Money              `json:"cost,omitzero"           jsonschema:"order cost of a class whose members have no targets"`
-	Members      []contributionMemberOut `json:"members"`
+	Name         string                   `json:"name"`
+	TargetBP     int                      `json:"target_bp"`
+	Value        tool.Money               `json:"value"`
+	ShareBP      int                      `json:"share_bp,omitzero"`
+	AfterShareBP int                      `json:"after_share_bp,omitzero"`
+	Amount       tool.Money               `json:"amount,omitzero"`
+	Cost         tool.Money               `json:"cost,omitzero"           jsonschema:"order cost of a class whose members have no targets"`
+	Members      []contributionMemberOut  `json:"members"`
+	Rules        []contributionRuleIn     `json:"rules,omitzero"`
+	Matched      []contributionMatchedOut `json:"matched,omitzero"        jsonschema:"securities a rule takes"`
 
 	Questions      []string `json:"questions,omitzero"       jsonschema:"the investor's yes-or-no questions of the group"`
 	QuestionIdeals bool     `json:"question_ideals,omitzero" jsonschema:"true when the member target_bp values derive from the answers and one answer is yes"`
+}
+
+type contributionMatchedOut struct {
+	Instrument string     `json:"instrument"`
+	Value      tool.Money `json:"value"`
+	ShareBP    int        `json:"share_bp,omitzero"`
 }
 
 type contributionMemberOut struct {
@@ -58,6 +69,7 @@ type contributionOutside struct {
 	AccountID  string     `json:"account_id,omitzero"`
 	Instrument string     `json:"instrument,omitzero"`
 	Value      tool.Money `json:"value,omitzero"`
+	ReturnKind string     `json:"return_kind,omitzero"`
 }
 
 type contributionMissing struct {
@@ -111,6 +123,8 @@ func contributionViewOf(v app.ContributionView) contributionView {
 		Classes:      []contributionClassOut{},
 		Outside:      []contributionOutside{},
 		Missing:      []contributionMissing{},
+
+		GuaranteeName: v.GuaranteeName,
 	}
 	if !v.Complete {
 		out.Status = "incomplete"
@@ -125,6 +139,7 @@ func contributionViewOf(v app.ContributionView) contributionView {
 			AccountID:  idText(o.AccountID),
 			Instrument: string(o.Instrument),
 			Value:      optionalMoney(o.Value),
+			ReturnKind: o.ReturnKind,
 		})
 	}
 
@@ -154,6 +169,18 @@ func contributionClassOf(c app.ContributionClass) contributionClassOut {
 		QuestionIdeals: c.QuestionIdeals,
 	}
 
+	for _, r := range c.Rules {
+		out.Rules = append(out.Rules, contributionRuleOf(r))
+	}
+
+	for _, m := range c.Matched {
+		out.Matched = append(out.Matched, contributionMatchedOut{
+			Instrument: string(m.Instrument),
+			Value:      tool.MoneyOf(m.Value),
+			ShareBP:    valueOf(m.ShareBP),
+		})
+	}
+
 	for _, m := range c.Members {
 		out.Members = append(out.Members, contributionMemberOut{
 			AccountID:    idText(m.AccountID),
@@ -168,6 +195,23 @@ func contributionClassOf(c app.ContributionClass) contributionClassOut {
 			Cost:         optionalMoney(m.Cost),
 			Answers:      m.Answers,
 		})
+	}
+
+	return out
+}
+
+func contributionRuleOf(r domain.PlanRule) contributionRuleIn {
+	out := contributionRuleIn{
+		InstrumentType:  r.InstrumentType,
+		Subtypes:        r.Subtypes,
+		QuoteCurrency:   string(r.QuoteCurrency),
+		ReturnKind:      r.ReturnKind,
+		MaturesFromYear: valueOf(r.MaturesFromYear),
+		MaturesToYear:   valueOf(r.MaturesToYear),
+		Guarantee:       r.Guarantee,
+	}
+	if r.DailyLiquidity != nil {
+		out.DailyLiquidity = tool.OptionalBool{B: *r.DailyLiquidity, Set: true}
 	}
 
 	return out
