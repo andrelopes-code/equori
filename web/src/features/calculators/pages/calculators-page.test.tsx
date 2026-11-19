@@ -159,6 +159,18 @@ describe("Calculators page", () => {
     expect(
       await screen.findByText(catalogEn["calc.unavailable"]),
     ).toBeInTheDocument();
+    expect(
+      screen.getByText(catalogEn["calc.unavailable.description"]),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", {
+        level: 1,
+        name: catalogEn["calc.reserve.title"],
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(catalogEn["calc.reserve.question"]),
+    ).not.toBeNull();
   });
 
   it("draws the screen of a written calculator", async () => {

@@ -46,7 +46,7 @@ export function RecurringCostCalculator() {
       <CalculatorFrame
         id="recurring-cost"
         inputs={null}
-        results={null}
+        answer={null}
         method={method}
       />
     );

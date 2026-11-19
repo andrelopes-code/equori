@@ -67,7 +67,6 @@ describe("Debt payoff calculator", () => {
         /less than snowball, with the last payment in 17 months\./,
       ),
     ).toBeInTheDocument();
-    expect(screen.queryByText(catalogEn["calc.options"])).toBeNull();
   });
 
   it("states the last payment of each order as a fact", async () => {

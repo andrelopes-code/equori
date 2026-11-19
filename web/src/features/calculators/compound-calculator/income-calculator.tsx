@@ -55,7 +55,14 @@ export function IncomeCalculator() {
       : readMonths(search.delay, delayUnit, 0, maxMonths);
 
   if (money === null)
-    return <CalculatorFrame id="compound" inputs={null} method={null} />;
+    return (
+      <CalculatorFrame
+        id="compound"
+        inputs={null}
+        answer={null}
+        method={null}
+      />
+    );
 
   // The rows pay the balance at j - g, the rate of the lasting income, so the first row and the
   // answer state the same income. The Fisher rate only compounds the delay.

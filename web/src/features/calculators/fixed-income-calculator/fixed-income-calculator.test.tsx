@@ -57,7 +57,6 @@ describe("Fixed income calculator", () => {
     expect(await result(catalogEn["calc.fixedIncome.tax"])).toMatch(
       /231[.,]42/,
     );
-    expect(screen.queryByText(catalogEn["calc.options"])).toBeNull();
   });
 
   it("gives no result below 30 days in Brazil, where IOF applies", async () => {

@@ -72,7 +72,6 @@ describe("Rate converter", () => {
       await screen.findByText("Fill in rate to see the equivalent rate."),
     ).toBeVisible();
     expect(screen.getByText("—", { selector: "p" })).toBeVisible();
-    expect(screen.queryByText(catalogEn["calc.options"])).toBeNull();
   });
 
   it("shows no fact whose input is not set", async () => {

@@ -16,7 +16,14 @@ export function AccumulationCalculator() {
   const input = useAccumulation();
 
   if (money === null)
-    return <CalculatorFrame id="compound" inputs={null} method={null} />;
+    return (
+      <CalculatorFrame
+        id="compound"
+        inputs={null}
+        answer={null}
+        method={null}
+      />
+    );
 
   const { run } = input;
 

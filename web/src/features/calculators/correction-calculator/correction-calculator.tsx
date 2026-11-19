@@ -66,7 +66,14 @@ export function CorrectionCalculator() {
   }).data;
 
   if (money === null)
-    return <CalculatorFrame id="correction" inputs={null} method={null} />;
+    return (
+      <CalculatorFrame
+        id="correction"
+        inputs={null}
+        answer={null}
+        method={null}
+      />
+    );
 
   const answer = correctionAnswer(amount, rates);
 

@@ -17,7 +17,7 @@ export function IndexerComparisonCalculator() {
       <CalculatorFrame
         id="indexer-comparison"
         inputs={null}
-        results={null}
+        answer={null}
         method={
           <CalculatorMethod
             id="indexer-comparison"

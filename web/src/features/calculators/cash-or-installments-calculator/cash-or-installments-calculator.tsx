@@ -50,7 +50,7 @@ export function CashOrInstallmentsCalculator() {
       <CalculatorFrame
         id="cash-or-installments"
         inputs={null}
-        results={null}
+        answer={null}
         method={method}
       />
     );

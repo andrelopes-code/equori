@@ -14,8 +14,6 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
     "Os índices não carregaram; Comparar indexadores ficou oculto.",
   "calc.back": "Calculadoras",
   "calc.results": "Resultado",
-  "calc.results.empty":
-    "Preencha os dados; o resultado é recalculado a cada alteração.",
   "calc.method": "Como é calculado",
   "calc.method.steps": "Passos",
   "calc.method.formula": "Fórmula",
@@ -245,8 +243,6 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.rates.rate": "Taxa",
   "calc.rates.inflation": "Inflação anual",
   "calc.rates.percent": "Percentual do índice",
-  "calc.rates.monthly": "Taxa mensal",
-  "calc.rates.annual": "Taxa anual",
   "calc.rates.real": "Taxa anual descontada a inflação",
   "calc.rates.ofIndex": "Taxa anual pelo índice",
   "calc.rates.step1":
@@ -288,7 +284,6 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
     "As taxas são as que a fonte do índice publicou e esta instalação guardou.",
   "calc.correction.limit1":
     "Os resultados podem diferir dos de uma instituição, que pode usar outras datas ou arredondamentos (Banco Central do Brasil, Calculadora do Cidadão).",
-  "calc.financing.solve": "O que calcular",
   "calc.financing.solve.installment": "Prestação",
   "calc.financing.solve.amount": "Valor",
   "calc.financing.solve.rate": "Taxa",
@@ -434,7 +429,6 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.fixedIncome.taxRate": "Imposto sobre o rendimento",
   "calc.fixedIncome.gross": "Rendimento bruto",
   "calc.fixedIncome.tax": "Imposto",
-  "calc.fixedIncome.net": "Rendimento líquido",
   "calc.fixedIncome.netRate": "Taxa anual líquida",
   "calc.fixedIncome.equivalentTaxable": "Taxa com imposto que rende o mesmo",
   "calc.fixedIncome.equivalentExempt": "Taxa sem imposto que rende o mesmo",
@@ -557,8 +551,6 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.own.riskPremium": "Prêmio de risco",
   "calc.own.total": "Custo anual de ter o imóvel",
   "calc.own.rentYear": "Aluguel anual",
-  "calc.own.ownLower": "Ter o imóvel custa menos por ano em",
-  "calc.own.rentLower": "Alugar custa menos por ano em",
   "calc.own.same": "Diferença por ano",
   "calc.own-or-rent.step1":
     "Cada componente é o preço vezes a sua taxa; a dedução e a valorização reduzem o custo.",
@@ -576,9 +568,7 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
     "A fórmula vem do imposto de renda federal dos Estados Unidos; os impostos de outro país entram por ω e τ.",
   "calc.own-or-rent.limit2":
     "A valorização esperada e o prêmio de risco são estimativas escolhidas pela pessoa.",
-  "calc.results.emptyTitle": "O resultado aparece aqui",
   "calc.answer.missing": "Preencha {fields} para ver {what}.",
-  "calc.options": "Ajustes opcionais",
   "calc.method.description": "Passos, fórmula, premissas, limites e fontes",
   "calc.term": "Prazo",
   "calc.unit": "Unidade",
@@ -749,20 +739,12 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.recurring.rate.legend": "Taxa da aplicação",
   "calc.recurring.rate.hint":
     "Acrescenta quanto os mesmos pagamentos alcançariam se fossem investidos.",
-  "calc.recurring.summaryMonth": "{amount} todo mês por {years} anos.",
-  "calc.recurring.summaryYear": "{amount} todo ano por {years} anos.",
   "calc.own.rent.hint": "Doze meses de aluguel de um imóvel equivalente.",
-  "calc.own.riskFree.hint":
-    "O que o dinheiro do imóvel renderia sem risco, por ano.",
   "calc.own.propertyTax.hint": "Imposto anual sobre o imóvel, em % do preço.",
   "calc.own.deductibleTax.hint":
     "Só onde os juros do financiamento são dedutíveis; 0 nos demais casos.",
   "calc.own.mortgage.hint": "Usada só na dedução.",
   "calc.own.maintenanceRate.hint": "Reparos e desgaste por ano, em % do preço.",
-  "calc.own.appreciationRate.hint": "Alta anual esperada do preço.",
-  "calc.own.riskPremiumRate.hint": "Compensação pelo risco de o preço cair.",
-  "calc.own.summary":
-    "Ter o imóvel custa {own} por ano, contra {rent} de aluguel.",
   "calc.unavailable": "Esta calculadora ainda não está disponível",
   "calc.unavailable.description":
     "Ela lê valores das suas contas que esta versão ainda não calcula.",

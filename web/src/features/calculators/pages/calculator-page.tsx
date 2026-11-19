@@ -39,13 +39,7 @@ export function CalculatorPage() {
   const calculatorId = id as CalculatorId;
   const Screen = isWritten(calculatorId) ? screens[calculatorId] : undefined;
   return Screen === undefined ? (
-    <CalculatorFrame
-      id={calculatorId}
-      unavailable
-      inputs={null}
-      results={null}
-      method={null}
-    />
+    <CalculatorFrame id={calculatorId} unavailable />
   ) : (
     <Screen />
   );

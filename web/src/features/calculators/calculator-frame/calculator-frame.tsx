@@ -19,65 +19,53 @@ import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
 import design from "@/features/calculators/calculator-frame/calculator-design.module.css";
-import styles from "@/features/calculators/calculator-frame/calculators.module.css";
 import type { CalculatorId } from "@/features/calculators/model/calculators";
 import { useT } from "@/i18n/i18n-provider";
 import { PageBack } from "@/ui/navigation/page-back";
 import { PageStack } from "@/ui/page-layout/page-stack";
-import {
-  Section,
-  SectionBody,
-  SectionHeader,
-  SectionHeading,
-  SectionTitle,
-} from "@slotted/react/section";
 
-// One calculator (design §4, "Layout"): the inputs beside the results, which stay in view while
-// the inputs scroll and carry their own evidence (a chart, a short table); the optional inputs
-// under the inputs, and on a phone under the results, so the answer follows the required inputs; below them the details
-// too wide for the results column (two schedules side by side), then "How it is calculated". One column below 1024 px, in the same order.
-// With answer set, the frame draws the answer-first layout instead: the answer, then the evidence
-// beside the inputs (the optional inputs inside their card), then the details and the method.
-// results is null until every required input is valid; inputs is null while the base currency
-// loads, and for a calculator not yet written, which states so.
-export function CalculatorFrame({
-  id,
-  unavailable = false,
-  inputs,
-  options,
-  results,
-  details,
-  method,
-  answer,
-  evidence,
-  optional,
-}: {
+interface CalculatorFrameBase {
   id: CalculatorId;
-  unavailable?: boolean;
+}
+
+interface AnswerFrameProps extends CalculatorFrameBase {
+  unavailable?: false;
+  // null while the base currency loads: the frame draws the answer without the inputs card.
   inputs: ReactNode;
-  // Inputs a result does not need: they refine it or add figures to it.
-  options?: ReactNode;
-  results?: ReactNode;
+  answer: ReactNode;
+  evidence?: ReactNode;
+  // Inputs the answer does not need; drawn in the inputs card.
+  optional?: ReactNode;
   details?: ReactNode;
   method: ReactNode;
-  answer?: ReactNode;
-  evidence?: ReactNode;
-  // Inputs of the answer layout a result does not need; drawn in the inputs card.
-  optional?: ReactNode;
-}) {
+}
+
+// A calculator not yet written draws its title and the unavailable message only.
+interface UnavailableFrameProps extends CalculatorFrameBase {
+  unavailable: true;
+}
+
+type CalculatorFrameProps = AnswerFrameProps | UnavailableFrameProps;
+
+// One calculator: the answer, then the evidence beside the inputs (the optional inputs inside
+// their card), then the details and "How it is calculated".
+export function CalculatorFrame(props: CalculatorFrameProps) {
   const t = useT();
+
   return (
     <Page width="full">
       <PageHeader size="lg">
         <PageHeaderTitleArea>
-          <PageBack render={(props) => <Link {...props} to="/calculators" />}>
+          <PageBack render={(p) => <Link {...p} to="/calculators" />}>
             {t("calc.back")}
           </PageBack>
           <PageHeaderTitleRow>
             <PageHeaderTitle>
-              <PageHeaderHeading>{t(`calc.${id}.title`)}</PageHeaderHeading>
+              <PageHeaderHeading>
+                {t(`calc.${props.id}.title`)}
+              </PageHeaderHeading>
               <PageHeaderSubheading>
-                {t(`calc.${id}.question`)}
+                {t(`calc.${props.id}.question`)}
               </PageHeaderSubheading>
             </PageHeaderTitle>
           </PageHeaderTitleRow>
@@ -85,7 +73,7 @@ export function CalculatorFrame({
       </PageHeader>
       <PageBody>
         <PageStack>
-          {unavailable && (
+          {props.unavailable ? (
             <ResultState status="empty" align="start">
               <ResultStateContent>
                 <ResultStateTitle>{t("calc.unavailable")}</ResultStateTitle>
@@ -94,81 +82,30 @@ export function CalculatorFrame({
                 </ResultStateDescription>
               </ResultStateContent>
             </ResultState>
-          )}
-          {answer !== undefined && (
+          ) : (
             <div className={design.calc}>
-              {answer}
+              {props.answer}
 
-              {evidence !== undefined && (
-                <div className={design.evidence}>{evidence}</div>
+              {props.evidence !== undefined && (
+                <div className={design.evidence}>{props.evidence}</div>
               )}
 
-              {inputs !== null && (
+              {props.inputs !== null && (
                 <Card className={design.inputs}>
                   <CardBody>
                     <Stack gap={8}>
-                      {inputs}
-                      {optional}
+                      {props.inputs}
+                      {props.optional}
                     </Stack>
                   </CardBody>
                 </Card>
               )}
 
               <div className={design.after}>
-                {details}
-                {method}
+                {props.details}
+                {props.method}
               </div>
             </div>
-          )}
-          {answer === undefined && inputs !== null && (
-            <div className={styles.work}>
-              <Card className={styles.inputs}>
-                <CardBody>
-                  <Stack gap={6}>{inputs}</Stack>
-                </CardBody>
-              </Card>
-              {options !== undefined && (
-                <Card className={styles.options}>
-                  <CardBody>
-                    <Section size="lg">
-                      <SectionHeader>
-                        <SectionTitle>
-                          <SectionHeading>{t("calc.options")}</SectionHeading>
-                        </SectionTitle>
-                      </SectionHeader>
-
-                      <SectionBody>
-                        <Stack gap={6}>{options}</Stack>
-                      </SectionBody>
-                    </Section>
-                  </CardBody>
-                </Card>
-              )}
-              <section
-                className={styles.results}
-                aria-label={t("calc.results")}
-                aria-live="polite"
-              >
-                {results ?? (
-                  <ResultState status="empty" align="start" live="off">
-                    <ResultStateContent>
-                      <ResultStateTitle>
-                        {t("calc.results.emptyTitle")}
-                      </ResultStateTitle>
-                      <ResultStateDescription>
-                        {t("calc.results.empty")}
-                      </ResultStateDescription>
-                    </ResultStateContent>
-                  </ResultState>
-                )}
-              </section>
-            </div>
-          )}
-          {answer === undefined && (
-            <>
-              {details}
-              {method}
-            </>
           )}
         </PageStack>
       </PageBody>

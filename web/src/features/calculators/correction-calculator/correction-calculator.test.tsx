@@ -45,7 +45,6 @@ describe("Correction by an index", () => {
     expect(
       await screen.findByText(/1,045\.17/, { selector: "p" }),
     ).toBeVisible();
-    expect(screen.queryByText(catalogEn["calc.options"])).toBeNull();
   });
 
   // CR4: a start after the end is the sentence of the answer and the figure is a dash.

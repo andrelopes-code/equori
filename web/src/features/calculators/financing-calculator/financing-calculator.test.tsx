@@ -3,7 +3,6 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
-import { catalogPtBR } from "@/i18n/catalog.pt-BR";
 import { calculatorApiRoutes } from "@/testing/calculator-api";
 import { fakeApi, json } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
@@ -260,7 +259,6 @@ describe("Financing calculator", () => {
         name: catalogEn["calc.financing.prepay.add"],
       }),
     ).toBeVisible();
-    expect(screen.queryByText(catalogEn["calc.options"])).toBeNull();
   });
 
   it("answers first in pt-BR: the installment, the facts and the sentence", async () => {
@@ -310,7 +308,6 @@ describe("Financing calculator", () => {
         "Preencha valor financiado, taxa de juros e prazo para ver a prestação.",
       ),
     ).toBeVisible();
-    expect(screen.queryByText(catalogPtBR["calc.options"])).toBeNull();
   });
 
   // CR3: the solved value is the figure of the answer, under its lead.

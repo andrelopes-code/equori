@@ -59,7 +59,6 @@ describe("Cost of credit calculator", () => {
   it("computes the effective annual cost with 2 decimals", async () => {
     await open();
     expect(await figure(catalogEn["calc.credit.annual"])).toBe("17.14%");
-    expect(screen.queryByText(catalogEn["calc.options"])).toBeNull();
   });
 
   it("states the offer in the sentence and the monthly rate, total paid and amount released", async () => {

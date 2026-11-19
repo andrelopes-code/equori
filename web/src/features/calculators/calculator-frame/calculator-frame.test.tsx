@@ -1,7 +1,9 @@
 import { screen } from "@testing-library/react";
+import type { ComponentProps } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { CalculatorFrame } from "@/features/calculators/calculator-frame/calculator-frame";
+import { catalogEn } from "@/i18n/catalog.en";
 import { fakeApi } from "@/testing/fake-api";
 import { renderWithProviders } from "@/testing/render-app";
 
@@ -9,6 +11,8 @@ vi.mock("@tanstack/react-router", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@tanstack/react-router")>()),
   Link: ({ to, ...props }: { to: string }) => <a href={to} {...props} />,
 }));
+
+type FrameProps = ComponentProps<typeof CalculatorFrame>;
 
 function renderFrame(evidence?: React.ReactNode) {
   return renderWithProviders(
@@ -48,6 +52,51 @@ describe("CalculatorFrame with an answer", () => {
     const calc = calcOf();
 
     expect(calc.children).toHaveLength(3);
+  });
+});
+
+describe("CalculatorFrame without an answer", () => {
+  it("draws the title and the unavailable message, with no inputs grid and no result region", () => {
+    const { container } = renderWithProviders(
+      <CalculatorFrame id="reserve" unavailable />,
+      { fetch: fakeApi({}) },
+    );
+
+    expect(
+      screen.getByRole("heading", {
+        level: 1,
+        name: catalogEn["calc.reserve.title"],
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(catalogEn["calc.unavailable"])).toBeInTheDocument();
+    expect(
+      screen.getByText(catalogEn["calc.unavailable.description"]),
+    ).toBeInTheDocument();
+    expect(container.querySelector("[aria-live]")).toBeNull();
+    expect(container.querySelector("[class*='work']")).toBeNull();
+  });
+
+  it("takes no results or options props, and requires an answer unless unavailable", () => {
+    const withResults: FrameProps = {
+      id: "reserve",
+      unavailable: true,
+      // @ts-expect-error results is not a prop
+      results: null,
+    };
+    const withOptions: FrameProps = {
+      id: "reserve",
+      unavailable: true,
+      // @ts-expect-error options is not a prop
+      options: null,
+    };
+    // @ts-expect-error a frame that is not unavailable needs an answer
+    const withoutAnswer: FrameProps = {
+      id: "reserve",
+      inputs: null,
+      method: null,
+    };
+
+    expect([withResults, withOptions, withoutAnswer]).toHaveLength(3);
   });
 });
 

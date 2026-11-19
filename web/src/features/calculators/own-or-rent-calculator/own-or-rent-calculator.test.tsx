@@ -50,7 +50,6 @@ describe("Own or rent calculator", () => {
         /^a year: owning costs .*52,500\.00 and renting, .*48,000\.00\.$/,
       ),
     ).toBeInTheDocument();
-    expect(screen.queryByText(catalogEn["calc.options"])).toBeNull();
   });
 
   it("keeps the six components reachable and the formula in the method", async () => {

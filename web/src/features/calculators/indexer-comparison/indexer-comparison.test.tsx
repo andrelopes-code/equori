@@ -269,7 +269,6 @@ describe("IndexerComparison", () => {
           "Preencha taxa do título 1 e taxa do título 2 para ver o título que rende mais.",
         ),
       ).toBeInTheDocument();
-      expect(screen.queryByText(catalogPtBR["calc.options"])).toBeNull();
     });
 
     it("names the rate still missing while only one security has one", async () => {

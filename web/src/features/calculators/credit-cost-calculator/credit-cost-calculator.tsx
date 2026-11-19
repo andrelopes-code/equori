@@ -55,7 +55,7 @@ export function CreditCostCalculator() {
       <CalculatorFrame
         id="credit-cost"
         inputs={null}
-        results={null}
+        answer={null}
         method={method}
       />
     );

@@ -68,7 +68,7 @@ export function FixedIncomeCalculator() {
       <CalculatorFrame
         id="fixed-income"
         inputs={null}
-        results={null}
+        answer={null}
         method={method}
       />
     );

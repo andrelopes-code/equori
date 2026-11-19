@@ -13,7 +13,6 @@ export const calculatorsEn = {
     "The indexes did not load; Compare indexers is hidden.",
   "calc.back": "Calculators",
   "calc.results": "Result",
-  "calc.results.empty": "Fill in the inputs; the result updates as you type.",
   "calc.method": "How it is calculated",
   "calc.method.steps": "Steps",
   "calc.method.formula": "Formula",
@@ -242,8 +241,6 @@ export const calculatorsEn = {
   "calc.rates.rate": "Rate",
   "calc.rates.inflation": "Annual inflation",
   "calc.rates.percent": "Percent of the index",
-  "calc.rates.monthly": "Monthly rate",
-  "calc.rates.annual": "Annual rate",
   "calc.rates.real": "Annual rate after inflation",
   "calc.rates.ofIndex": "Annual rate from the index",
   "calc.rates.step1":
@@ -284,7 +281,6 @@ export const calculatorsEn = {
     "The rates are the ones the index source published and this installation stored.",
   "calc.correction.limit1":
     "Results can differ from those of an institution, which may use other dates or rounding (Banco Central do Brasil, Calculadora do Cidadão).",
-  "calc.financing.solve": "What to calculate",
   "calc.financing.solve.installment": "Installment",
   "calc.financing.solve.amount": "Amount",
   "calc.financing.solve.rate": "Rate",
@@ -430,7 +426,6 @@ export const calculatorsEn = {
   "calc.fixedIncome.taxRate": "Tax on the yield",
   "calc.fixedIncome.gross": "Gross yield",
   "calc.fixedIncome.tax": "Tax",
-  "calc.fixedIncome.net": "Net yield",
   "calc.fixedIncome.netRate": "Net annual rate",
   "calc.fixedIncome.equivalentTaxable": "Taxed rate that yields the same",
   "calc.fixedIncome.equivalentExempt": "Tax-free rate that yields the same",
@@ -551,8 +546,6 @@ export const calculatorsEn = {
   "calc.own.riskPremium": "Risk premium",
   "calc.own.total": "Annual cost of owning",
   "calc.own.rentYear": "Annual rent",
-  "calc.own.ownLower": "Owning costs less per year by",
-  "calc.own.rentLower": "Renting costs less per year by",
   "calc.own.same": "Difference per year",
   "calc.own-or-rent.step1":
     "Each component is the price times its rate; the deduction and the appreciation lower the cost.",
@@ -570,9 +563,7 @@ export const calculatorsEn = {
     "The formula comes from the United States federal income tax; another country's taxes enter through ω and τ.",
   "calc.own-or-rent.limit2":
     "Expected appreciation and the risk premium are estimates the person chooses.",
-  "calc.results.emptyTitle": "The result appears here",
   "calc.answer.missing": "Fill in {fields} to see {what}.",
-  "calc.options": "Optional adjustments",
   "calc.method.description": "Steps, formula, assumptions, limits and sources",
   "calc.term": "Term",
   "calc.unit": "Unit",
@@ -741,21 +732,13 @@ export const calculatorsEn = {
   "calc.recurring.rate.legend": "Investment rate",
   "calc.recurring.rate.hint":
     "Adds what the same payments would reach if invested.",
-  "calc.recurring.summaryMonth": "{amount} every month for {years} years.",
-  "calc.recurring.summaryYear": "{amount} every year for {years} years.",
   "calc.own.rent.hint": "Twelve months of rent for a comparable home.",
-  "calc.own.riskFree.hint":
-    "What the money in the home would earn at no risk, a year.",
   "calc.own.propertyTax.hint": "Yearly property tax, as a share of the price.",
   "calc.own.deductibleTax.hint":
     "Only where mortgage interest is deductible; 0 elsewhere.",
   "calc.own.mortgage.hint": "Used only for the deduction.",
   "calc.own.maintenanceRate.hint":
     "Repairs and wear, a year, as a share of the price.",
-  "calc.own.appreciationRate.hint": "Expected yearly rise of the price.",
-  "calc.own.riskPremiumRate.hint":
-    "Compensation for the risk of the price falling.",
-  "calc.own.summary": "Owning costs {own} a year against {rent} of rent.",
   "calc.unavailable": "This calculator is not available yet",
   "calc.unavailable.description":
     "It reads figures of your accounts that this version does not compute yet.",

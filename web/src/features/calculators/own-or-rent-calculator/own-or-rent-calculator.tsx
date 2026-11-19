@@ -51,7 +51,7 @@ export function OwnOrRentCalculator() {
       <CalculatorFrame
         id="own-or-rent"
         inputs={null}
-        results={null}
+        answer={null}
         method={method}
       />
     );

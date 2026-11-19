@@ -34,7 +34,14 @@ export function FinancingCalculator() {
   const [search] = useCalculatorSearch(addressKeys);
 
   if (money === null)
-    return <CalculatorFrame id="financing" inputs={null} method={null} />;
+    return (
+      <CalculatorFrame
+        id="financing"
+        inputs={null}
+        answer={null}
+        method={null}
+      />
+    );
 
   const names = systemNames(locale.region);
   const input = readFinancing(search);

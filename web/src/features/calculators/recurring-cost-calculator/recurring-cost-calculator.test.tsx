@@ -51,7 +51,6 @@ describe("Recurring cost calculator", () => {
     expect(await result(catalogEn["calc.recurring.difference"])).toContain(
       "0.00",
     );
-    expect(screen.queryByText(catalogEn["calc.options"])).toBeNull();
   });
 
   it("fills the amount from a schedule", async () => {

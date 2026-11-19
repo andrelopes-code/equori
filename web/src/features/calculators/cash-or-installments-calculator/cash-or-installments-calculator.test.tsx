@@ -43,7 +43,6 @@ describe("Cash or installments calculator", () => {
     expect(
       screen.getByText(/at present value at 1(\.0+)?% a month/),
     ).toBeInTheDocument();
-    expect(screen.queryByText(catalogEn["calc.options"])).toBeNull();
   });
 
   it("states the implied rates and the present value of the installments", async () => {

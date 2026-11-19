@@ -42,7 +42,7 @@ export function DebtPayoffCalculator() {
       <CalculatorFrame
         id="debt-payoff"
         inputs={null}
-        results={null}
+        answer={null}
         method={method}
       />
     );
