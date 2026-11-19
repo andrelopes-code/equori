@@ -47,11 +47,11 @@ Net worth by month and by day. The dashed line projects the balance from the sch
 
 ### Portfolio
 
-Positions with quantity, average cost, market value, profit or loss and share of the portfolio.
+Portfolio value, profit or loss, the return of the period against the CDI and inflation, and the share of each asset class.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/portfolio-dark.webp">
-  <img alt="The portfolio screen: positions by account with cost, market value and profit or loss." src="docs/assets/portfolio-light.webp">
+  <img alt="The portfolio screen: value, profit or loss, return against the CDI and inflation, and allocation by asset class." src="docs/assets/portfolio-light.webp">
 </picture>
 
 ## Install
