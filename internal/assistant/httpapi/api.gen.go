@@ -267,12 +267,21 @@ type AssistantProposal struct {
 	Reason    *string            `json:"reason,omitempty"`
 
 	// Result Tool output when executed, tool error when failed.
-	Result     interface{}             `json:"result,omitempty"`
-	Status     AssistantProposalStatus `json:"status"`
-	Suggested  bool                    `json:"suggested"`
-	Summary    *string                 `json:"summary,omitempty"`
-	Tool       string                  `json:"tool"`
-	WaitingFor []openapi_types.UUID    `json:"waiting_for"`
+	Result    interface{}             `json:"result,omitempty"`
+	Status    AssistantProposalStatus `json:"status"`
+	Suggested bool                    `json:"suggested"`
+	Summary   *string                 `json:"summary,omitempty"`
+	Tool      string                  `json:"tool"`
+
+	// Undoable An executed proposal whose write has an exact inverse that no executed undo ran yet.
+	Undoable *bool `json:"undoable,omitempty"`
+
+	// Undoes The proposal whose inverse this undo runs.
+	Undoes *openapi_types.UUID `json:"undoes,omitempty"`
+
+	// UndoneBy The executed undo of this proposal.
+	UndoneBy   *openapi_types.UUID  `json:"undone_by,omitempty"`
+	WaitingFor []openapi_types.UUID `json:"waiting_for"`
 }
 
 // AssistantProposalStatus defines model for AssistantProposal.Status.
@@ -295,6 +304,12 @@ type AssistantTurnInput struct {
 
 	// Text Empty only when file_ids names a file.
 	Text string `json:"text"`
+}
+
+// AssistantUndoInput defines model for AssistantUndoInput.
+type AssistantUndoInput struct {
+	// Reason Kept in the history of a record the inverse voids.
+	Reason string `json:"reason"`
 }
 
 // AssistantValue defines model for AssistantValue.
@@ -643,6 +658,9 @@ type ListUsageDaysParams struct {
 
 // CreateAssistantFileMultipartRequestBody defines body for CreateAssistantFile for multipart/form-data ContentType.
 type CreateAssistantFileMultipartRequestBody CreateAssistantFileMultipartBody
+
+// UndoAssistantProposalJSONRequestBody defines body for UndoAssistantProposal for application/json ContentType.
+type UndoAssistantProposalJSONRequestBody = AssistantUndoInput
 
 // CreateProviderJSONRequestBody defines body for CreateProvider for application/json ContentType.
 type CreateProviderJSONRequestBody = ProviderInput

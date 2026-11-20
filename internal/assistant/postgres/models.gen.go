@@ -57,6 +57,7 @@ type AssistantProposal struct {
 	Reason         *string
 	Summary        *string
 	Refs           []byte
+	Undoes         uuid.NullUUID
 }
 
 type AssistantProvider struct {

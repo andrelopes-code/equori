@@ -46,7 +46,9 @@ type Transaction struct {
 func Tools(svc *app.Service, l Ledger, clk clock.Clock) []tool.Tool {
 	return []tool.Tool{
 		listSchedules(svc, l, clk), getBudgetsAndGoals(svc, l, clk), projectBalance(svc, l),
-		manageSchedule(svc, l, clk), manageOccurrence(svc), manageBudgetOrGoal(svc, l, clk),
+		manageSchedule(svc, l, clk),
+		tool.WithUndo(manageOccurrence(svc), undoOccurrence),
+		tool.WithUndo(manageBudgetOrGoal(svc, l, clk), undoBudgetOrGoal),
 		findRecurring(svc, l),
 	}
 }

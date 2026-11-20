@@ -72,6 +72,8 @@ func (s *Service) Conversation(
 		return ConversationDetail{}, err
 	}
 
+	markUndone(ps)
+
 	return ConversationDetail{Conversation: c, Messages: msgs, Proposals: ps}, nil
 }
 

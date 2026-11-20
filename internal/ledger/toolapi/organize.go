@@ -334,3 +334,19 @@ func accountName(
 
 	return a.Name, err
 }
+
+// undoOrganize reopens the account close_account closed.
+func undoOrganize(
+	in manageAccountsAndPayeesIn,
+	_ manageAccountsAndPayeesOut,
+	_ string,
+) (string, any, bool) {
+	if in.Action != "close_account" {
+		return "", nil, false
+	}
+
+	return "manage_accounts_and_payees", manageAccountsAndPayeesIn{
+		Action:    "reopen_account",
+		AccountID: in.AccountID,
+	}, true
+}

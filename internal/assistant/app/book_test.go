@@ -114,3 +114,12 @@ func (fakeBookTools) Validate(string, json.RawMessage) (tool.Result, error) {
 }
 
 func (fakeBookTools) Effect(string) (tool.Effect, bool) { return 0, false }
+
+func (fakeBookTools) Undo(
+	string,
+	json.RawMessage,
+	json.RawMessage,
+	string,
+) (tool.Undo, bool, error) {
+	return tool.Undo{}, false, nil
+}

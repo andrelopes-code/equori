@@ -155,4 +155,24 @@ Confidence: medium-high. Invalidated if an owner-run eval shows the cheapest mod
 - A4. A form draws only what its read returns. The mock's marks without a source are left out: the goal's monthly history (the `goals` form shows saved against target and the monthly amount to the date), the cadence dots of recurring charges (the `recurring` form shows the yearly cost from the cadence), the future commitments of a card (the `statement_history` form shows the closed statements), the gap days of imports (the `imports` form shows the batches), the expansion of a ranking row into payees (a row opens the category's transactions), the conversion rates of balances (the `allocation` form read by currency shows the converted shares).
 - A5. Forms built: ranking, compare, changes, treemap, series, waterfall, indicators (get_category_totals, get_financial_indicators); budget, goals, agenda, balance, recurring (planning); txs, outliers, heat, transaction, redemption (ledger); figure, allocation, contribution, holdings, benchmark, tax_year (portfolio); statement, statement_history (get_statement_analytics); explain, categorization (classification); institution, price (marketdata); imports (ingestion); help, calculator (assistant).
 - A6. V16 (`effects[]`) is not built: the write bodies draw the changes and items the previews already send. A kind without a body draws its records and then each change before → after; goals, budgets, fixed income applications and custody transfers have bodies of their own.
-- A7. V18 keeps the existing receipt and result blocks. Undoing a confirmed proposal is not offered: no operation undoes a write, and what undo means for each write is the owner's decision.
+- A7. V18 keeps the existing receipt and result blocks; an executed write whose tool derives an exact inverse adds Desfazer (V19).
+
+## 9. Amendment of 2026-11-20: undo (V19)
+
+- V19. Desfazer runs, once, the existing write that reverses an executed proposal, as a new proposal of the same answer (`undoes` names the original); the click is the confirmation. The inverse goes through the preview, the basis check and the execution of every proposal. An inverse that fails is stored failed with its reason and leaves the original undoable; an executed one sets `undone_by` on the original and the receipt reads "Desfeito". An undo is not undone. `POST /assistant/proposals/{id}/undo` takes the reason the client writes in the member's language; it answers 409 `proposal_not_undoable` or `proposal_undone`.
+- V20. Each tool declares its inverse with `tool.WithUndo`; a write without an exact inverse has no Desfazer:
+
+| Write | Desfazer runs |
+|---|---|
+| record_transaction, record_investment (new), record_fixed_income, transfer_custody, record_corporate_action | void_transaction of the transaction it recorded (anular: it stays in history with the reason) |
+| attach_file | detach_attachment of the attachment it added |
+| manage_card add_card / set_card_active | remove_card of the card it added / set_card_active with the opposite state |
+| manage_accounts_and_payees close_account | reopen_account |
+| manage_budget_or_goal create_budget / create_goal | delete_budget / delete_goal of what it created |
+| manage_budget_or_goal link_expense, unlink_expense, allocate | the opposite link / allocate of the opposite amount |
+| manage_occurrence realize / skip | unrealize / reopen |
+| manage_rule create_rule / create_alias | delete_rule / delete_alias of what it created |
+| manage_instrument hide, show | show, hide |
+| review_investment_movement confirm, dismiss | undo |
+
+- V21. Writes without Desfazer, by cause: a void (the ledger forbids restoring a voided transaction), a deletion or a merge (the record is gone), a write that replaces values (corrections, amounts, terms, settings, profile, appearance: the earlier value is not in the call), a write of several records (brokerage note, categorization, imports, price files, statement settlement: no single inverse undoes all of them), and an external effect (sync, export, quote probe). Each is corrected by asking the assistant again.

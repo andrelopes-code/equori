@@ -17,7 +17,7 @@ import (
 
 func Tools(svc *app.Service, files ConversationFile) []tool.Tool {
 	return []tool.Tool{
-		attachFile(svc, files),
+		tool.WithUndo(attachFile(svc, files), undoAttach),
 		detachAttachment(svc),
 		listAccounts(
 			svc,
@@ -28,21 +28,21 @@ func Tools(svc *app.Service, files ConversationFile) []tool.Tool {
 		listPayeesAndTags(svc),
 		getAccountDetails(svc),
 		getStatement(svc),
-		recordTransaction(svc),
+		tool.WithUndo(recordTransaction(svc), undoByVoid),
 		changeTransaction(svc),
 		categorizeTransactions(
 			svc,
 		),
 		voidTransaction(svc),
-		manageCard(svc),
+		tool.WithUndo(manageCard(svc), undoCard),
 		handleCardPurchase(svc),
 		settleStatement(svc),
-		manageAccountsAndPayees(svc),
+		tool.WithUndo(manageAccountsAndPayees(svc), undoOrganize),
 		reconcileAccount(svc),
-		recordInvestment(svc),
-		recordFixedIncome(svc),
-		transferCustody(svc),
-		recordCorporateAction(svc),
+		tool.WithUndo(recordInvestment(svc), undoByVoid),
+		tool.WithUndo(recordFixedIncome(svc), undoByVoid),
+		tool.WithUndo(transferCustody(svc), undoByVoid),
+		tool.WithUndo(recordCorporateAction(svc), undoByVoid),
 		recordBrokerageNote(svc),
 		setBaseCurrency(svc),
 		getHoldingLots(svc),

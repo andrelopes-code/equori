@@ -130,6 +130,8 @@ type Tools interface {
 	Call(ctx context.Context, name string, args json.RawMessage) (tool.Result, error)
 	Validate(name string, args json.RawMessage) (tool.Result, error)
 	Effect(name string) (tool.Effect, bool)
+	// Undo returns the write that reverses an executed call; false when the call has no inverse.
+	Undo(name string, args, result json.RawMessage, reason string) (tool.Undo, bool, error)
 }
 
 // Agent runs the model loop over the chat tools. Its errors are *LimitError, ErrChatUnavailable, ErrTurnFailed

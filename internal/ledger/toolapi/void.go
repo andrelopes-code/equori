@@ -79,3 +79,15 @@ func voidTarget(
 
 	return svc.Transaction(ctx, booksID, id)
 }
+
+// recorded reads the transaction a write recorded, and the one it corrects when given.
+type recorded struct {
+	TransactionID string `json:"transaction_id"`
+}
+
+// undoByVoid is the inverse of a write that records one transaction: voiding it. A call that
+// corrects an existing transaction, or records none, has no inverse (answer views design V19).
+func undoByVoid(in, out recorded, reason string) (string, any, bool) {
+	void := voidTransactionIn{TransactionID: out.TransactionID, Reason: reason}
+	return "void_transaction", void, in.TransactionID == "" && out.TransactionID != ""
+}

@@ -20,7 +20,7 @@ func Tools(svc *app.Service, names AccountNames, files ConversationFile) []tool.
 	return []tool.Tool{
 		getImports(svc, names),
 		manageImports(svc, names),
-		reviewInvestmentMovement(svc),
+		tool.WithUndo(reviewInvestmentMovement(svc), undoReview),
 		importStatementFile(svc, names, files),
 		getCSVProfile(svc),
 		saveCSVProfile(svc, names),

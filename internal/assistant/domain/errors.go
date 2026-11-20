@@ -12,6 +12,7 @@ var (
 
 	ErrConversationNotFound = errors.New("conversation not found")
 	ErrProposalNotFound     = errors.New("proposal not found")
+	ErrProposalUndone       = errors.New("the proposal was already undone")
 
 	ErrTooManyViews = errors.New("an answer holds at most 3 views")
 )

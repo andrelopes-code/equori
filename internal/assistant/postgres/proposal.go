@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/andrelopes-code/equori/internal/assistant/domain"
 )
@@ -49,6 +50,10 @@ func toProposal(row AssistantProposal) (domain.Proposal, error) {
 		p.DecidedAt = *row.DecidedAt
 	}
 
+	if row.Undoes.Valid {
+		p.Undoes = row.Undoes.UUID
+	}
+
 	return p, nil
 }
 
@@ -62,7 +67,7 @@ func (r *Repository) InsertProposal(ctx context.Context, booksID int64, p domain
 		}
 	}
 
-	return r.q.InsertProposal(ctx, InsertProposalParams{
+	err := r.q.InsertProposal(ctx, InsertProposalParams{
 		ID:             p.ID,
 		BooksID:        booksID,
 		ConversationID: p.ConversationID,
@@ -80,7 +85,14 @@ func (r *Repository) InsertProposal(ctx context.Context, booksID int64, p domain
 		Reason:         nilIfEmpty(p.Reason),
 		Summary:        nilIfEmpty(p.Summary),
 		Refs:           refs,
+		Undoes:         uuid.NullUUID{UUID: p.Undoes, Valid: p.Undoes != uuid.Nil},
 	})
+	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == uniqueViolation &&
+		pgErr.ConstraintName == "assistant_proposal_undoes" {
+		return domain.ErrProposalUndone
+	}
+
+	return err
 }
 
 // PromoteProposal moves a waiting proposal to pending with the arguments, preview, basis and expiry of p.

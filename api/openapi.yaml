@@ -476,6 +476,36 @@ paths:
           $ref: "#/components/responses/Problem"
         "409":
           $ref: "#/components/responses/Problem"
+  /assistant/proposals/{id}/undo:
+    post:
+      tags: [assistant]
+      operationId: undoAssistantProposal
+      x-book-role: write
+      summary: Run once the write that reverses an executed proposal, as a proposal of the same answer.
+      description: "Returns the undo proposal, executed or failed; a failed undo leaves the proposal undoable. Answers 409 with Problem code proposal_not_undoable (not executed, an undo itself, or no exact inverse) or proposal_undone."
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssistantUndoInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssistantProposal"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
   /assistant/uses:
     get:
       tags: [assistant]
@@ -8658,6 +8688,15 @@ components:
         created_at: {type: string, format: date-time}
         expires_at: {type: string, format: date-time}
         decided_at: {type: string, format: date-time}
+        undoable: {type: boolean, description: "An executed proposal whose write has an exact inverse that no executed undo ran yet."}
+        undoes: {type: string, format: uuid, description: "The proposal whose inverse this undo runs."}
+        undone_by: {type: string, format: uuid, description: "The executed undo of this proposal."}
+    AssistantUndoInput:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason: {type: string, minLength: 1, maxLength: 200, description: "Kept in the history of a record the inverse voids."}
     AssistantPreview:
       type: object
       additionalProperties: false

@@ -79,7 +79,7 @@ func Tools(svc Service, cals Calendars, files ConversationFile) []tool.Tool {
 		setPaymentSchedule(svc),
 		setRateSteps(svc),
 		getMarketData(svc, cals),
-		manageInstrument(svc),
+		tool.WithUndo(manageInstrument(svc), undoInstrument),
 		probeQuote(svc),
 		getInstitutionIndicators(svc),
 		recordPriceSeries(svc),

@@ -157,3 +157,8 @@ func attachInput(
 
 	return name, content, t, nil
 }
+
+// undoAttach removes the attachment a call added.
+func undoAttach(_ attachFileIn, out attachFileOut, _ string) (string, any, bool) {
+	return "detach_attachment", detachAttachmentIn{AttachmentID: out.AttachmentID}, true
+}

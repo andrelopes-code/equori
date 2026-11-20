@@ -68,6 +68,8 @@ func (s *Server) Register(mux *http.ServeMux) {
 		httpserver.Handle(s.errs, http.StatusOK, s.confirmAssistantProposal))
 	mux.HandleFunc("POST "+BaseURL+"/assistant/proposals/{id}/reject",
 		httpserver.Handle(s.errs, http.StatusOK, s.rejectAssistantProposal))
+	mux.HandleFunc("POST "+BaseURL+"/assistant/proposals/{id}/undo",
+		httpserver.Handle(s.errs, http.StatusOK, s.undoAssistantProposal))
 	mux.HandleFunc("GET "+BaseURL+"/assistant/uses",
 		httpserver.Handle(s.errs, http.StatusOK, s.listUses))
 	mux.HandleFunc("PUT "+BaseURL+"/assistant/uses/{use}/chain",
@@ -87,6 +89,10 @@ func toProblem(err error) (problem.Details, bool) {
 		d := problem.New(http.StatusUnprocessableEntity, "capability_missing", ce.Error())
 		d.Errors = []problem.FieldError{{Field: "targets", Message: ce.Error()}}
 
+		return d, true
+	}
+
+	if d, ok := proposalProblem(err); ok {
 		return d, true
 	}
 
@@ -133,32 +139,6 @@ func toProblem(err error) (problem.Details, bool) {
 		return d, true
 	case errors.Is(err, domain.ErrProviderNotFound):
 		return problem.New(http.StatusNotFound, "provider_not_found", err.Error()), true
-	case errors.Is(err, domain.ErrProposalNotFound):
-		return problem.New(http.StatusNotFound, "proposal_not_found", "proposal not found"), true
-	case errors.Is(err, app.ErrProposalClosed):
-		return problem.New(
-			http.StatusConflict,
-			"proposal_closed",
-			"the proposal was already decided",
-		), true
-	case errors.Is(err, app.ErrProposalExpired):
-		return problem.New(
-			http.StatusConflict,
-			"proposal_expired",
-			"the proposal expired; ask the assistant again",
-		), true
-	case errors.Is(err, app.ErrProposalWaiting):
-		return problem.New(
-			http.StatusConflict,
-			"proposal_waiting",
-			"the proposal waits for the confirmation of another proposal",
-		), true
-	case errors.Is(err, app.ErrProposalStale):
-		return problem.New(
-			http.StatusConflict,
-			"proposal_stale",
-			"the data changed after the proposal; ask the assistant again",
-		), true
 	case errors.Is(err, domain.ErrUseNotFound):
 		return problem.New(http.StatusNotFound, "use_not_found", err.Error()), true
 	case errors.Is(err, app.ErrSecretKeyMissing):

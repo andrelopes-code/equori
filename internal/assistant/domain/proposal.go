@@ -39,6 +39,9 @@ type Proposal struct {
 	Refs                 map[string]string
 	CreatedAt, ExpiresAt time.Time
 	DecidedAt            time.Time
+	// Undoes is the executed proposal whose inverse this one runs, and UndoneBy the executed undo
+	// of this one (answer views design V19); uuid.Nil when none.
+	Undoes, UndoneBy uuid.UUID
 }
 
 func (p Proposal) Expired(now time.Time) bool {

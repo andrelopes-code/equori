@@ -47,7 +47,7 @@ WHERE
     AND c.books_id = p.books_id
     AND c.member_id = $4
 RETURNING
-    p.id, p.books_id, p.conversation_id, p.message_id, p.tool, p.arguments, p.preview, p.basis, p.status, p.result, p.created_at, p.expires_at, p.decided_at, p.suggested, p.reason, p.summary, p.refs
+    p.id, p.books_id, p.conversation_id, p.message_id, p.tool, p.arguments, p.preview, p.basis, p.status, p.result, p.created_at, p.expires_at, p.decided_at, p.suggested, p.reason, p.summary, p.refs, p.undoes
 `
 
 type ClaimProposalParams struct {
@@ -83,6 +83,7 @@ func (q *Queries) ClaimProposal(ctx context.Context, arg ClaimProposalParams) (A
 		&i.Reason,
 		&i.Summary,
 		&i.Refs,
+		&i.Undoes,
 	)
 	return i, err
 }
@@ -158,7 +159,8 @@ INSERT INTO
         suggested,
         reason,
         summary,
-        refs
+        refs,
+        undoes
     )
 VALUES
     (
@@ -178,7 +180,8 @@ VALUES
         $14,
         $15,
         $16,
-        $17
+        $17,
+        $18
     )
 `
 
@@ -200,6 +203,7 @@ type InsertProposalParams struct {
 	Reason         *string
 	Summary        *string
 	Refs           []byte
+	Undoes         uuid.NullUUID
 }
 
 func (q *Queries) InsertProposal(ctx context.Context, arg InsertProposalParams) error {
@@ -221,13 +225,14 @@ func (q *Queries) InsertProposal(ctx context.Context, arg InsertProposalParams) 
 		arg.Reason,
 		arg.Summary,
 		arg.Refs,
+		arg.Undoes,
 	)
 	return err
 }
 
 const listProposals = `-- name: ListProposals :many
 SELECT
-    id, books_id, conversation_id, message_id, tool, arguments, preview, basis, status, result, created_at, expires_at, decided_at, suggested, reason, summary, refs
+    id, books_id, conversation_id, message_id, tool, arguments, preview, basis, status, result, created_at, expires_at, decided_at, suggested, reason, summary, refs, undoes
 FROM
     assistant_proposal
 WHERE
@@ -270,6 +275,7 @@ func (q *Queries) ListProposals(ctx context.Context, arg ListProposalsParams) ([
 			&i.Reason,
 			&i.Summary,
 			&i.Refs,
+			&i.Undoes,
 		); err != nil {
 			return nil, err
 		}
@@ -321,7 +327,7 @@ func (q *Queries) PromoteProposal(ctx context.Context, arg PromoteProposalParams
 
 const proposalByID = `-- name: ProposalByID :one
 SELECT
-    p.id, p.books_id, p.conversation_id, p.message_id, p.tool, p.arguments, p.preview, p.basis, p.status, p.result, p.created_at, p.expires_at, p.decided_at, p.suggested, p.reason, p.summary, p.refs
+    p.id, p.books_id, p.conversation_id, p.message_id, p.tool, p.arguments, p.preview, p.basis, p.status, p.result, p.created_at, p.expires_at, p.decided_at, p.suggested, p.reason, p.summary, p.refs, p.undoes
 FROM
     assistant_proposal p
     JOIN assistant_conversation c ON c.id = p.conversation_id
@@ -360,6 +366,7 @@ func (q *Queries) ProposalByID(ctx context.Context, arg ProposalByIDParams) (Ass
 		&i.Reason,
 		&i.Summary,
 		&i.Refs,
+		&i.Undoes,
 	)
 	return i, err
 }

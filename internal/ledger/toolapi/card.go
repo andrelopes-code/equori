@@ -287,3 +287,24 @@ func setCardFace(svc *app.Service) tool.Tool {
 		return setCardFaceOut{AccountID: in.AccountID}, err
 	})
 }
+
+// undoCard removes the card add_card added, and sets back the state set_card_active changed.
+func undoCard(in manageCardIn, out manageCardOut, _ string) (string, any, bool) {
+	switch in.Action {
+	case "add_card":
+		return "manage_card", manageCardIn{
+			AccountID: in.AccountID,
+			Action:    "remove_card",
+			CardID:    out.ID,
+		}, true
+	case "set_card_active":
+		return "manage_card", manageCardIn{
+			AccountID: in.AccountID,
+			Action:    "set_card_active",
+			CardID:    in.CardID,
+			Active:    !in.Active,
+		}, true
+	}
+
+	return "", nil, false
+}

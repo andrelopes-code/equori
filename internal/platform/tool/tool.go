@@ -52,6 +52,7 @@ type Tool struct {
 	input, output inferred
 	call          func(ctx context.Context, booksID int64, args []byte) (any, error)
 	preview       func(ctx context.Context, booksID int64, args []byte) (Preview, error)
+	undo          func(args, result []byte, reason string) (Undo, bool)
 }
 
 var namePattern = regexp.MustCompile(`^[a-z][a-z0-9_]{0,63}$`)

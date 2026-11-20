@@ -35,6 +35,7 @@ var exposure = map[string]string{
 	"deleteAssistantConversations":     "-llm",
 	"confirmAssistantProposal":         "-llm",
 	"rejectAssistantProposal":          "-llm",
+	"undoAssistantProposal":            "-llm",
 	"listUses":                         "-llm",
 	"setUseChain":                      "-llm",
 	"listUsage":                        "-llm",

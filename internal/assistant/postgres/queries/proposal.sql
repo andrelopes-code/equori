@@ -17,7 +17,8 @@ INSERT INTO
         suggested,
         reason,
         summary,
-        refs
+        refs,
+        undoes
     )
 VALUES
     (
@@ -37,7 +38,8 @@ VALUES
         @suggested,
         sqlc.narg (reason),
         sqlc.narg (summary),
-        sqlc.narg (refs)
+        sqlc.narg (refs),
+        sqlc.narg (undoes)
     );
 
 -- name: ProposalByID :one

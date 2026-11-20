@@ -316,6 +316,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/assistant/proposals/{id}/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run once the write that reverses an executed proposal, as a proposal of the same answer.
+         * @description Returns the undo proposal, executed or failed; a failed undo leaves the proposal undoable. Answers 409 with Problem code proposal_not_undoable (not executed, an undo itself, or no exact inverse) or proposal_undone.
+         */
+        post: operations["undoAssistantProposal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/assistant/uses": {
         parameters: {
             query?: never;
@@ -5114,6 +5134,22 @@ export interface components {
             expires_at: string;
             /** Format: date-time */
             decided_at?: string;
+            /** @description An executed proposal whose write has an exact inverse that no executed undo ran yet. */
+            undoable?: boolean;
+            /**
+             * Format: uuid
+             * @description The proposal whose inverse this undo runs.
+             */
+            undoes?: string;
+            /**
+             * Format: uuid
+             * @description The executed undo of this proposal.
+             */
+            undone_by?: string;
+        };
+        AssistantUndoInput: {
+            /** @description Kept in the history of a record the inverse voids. */
+            reason: string;
         };
         AssistantPreview: {
             action: string;
@@ -9672,6 +9708,36 @@ export interface operations {
                     "application/json": components["schemas"]["AssistantProposal"];
                 };
             };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+        };
+    };
+    undoAssistantProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssistantUndoInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantProposal"];
+                };
+            };
+            400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
             409: components["responses"]["Problem"];

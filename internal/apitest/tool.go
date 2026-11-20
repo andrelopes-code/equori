@@ -66,3 +66,26 @@ func (h *Harness) ExpectToolError(r tool.Result, code, field string) {
 		h.t.Fatalf("field errors = %+v, want %q", e.Errors, field)
 	}
 }
+
+// Undo returns the inverse a tool derives from a call with args and its result (answer views
+// design V19), over the whole registry.
+func (h *Harness) Undo(name, args, result string) (tool.Undo, bool) {
+	h.t.Helper()
+
+	names := make([]string, 0, len(h.App.Tools.Tools()))
+	for _, t := range h.App.Tools.Tools() {
+		names = append(names, t.Spec().Name)
+	}
+
+	set, err := h.App.Tools.Select(names...)
+	if err != nil {
+		h.t.Fatal(err)
+	}
+
+	u, ok, err := set.Undo(name, []byte(args), []byte(result), "undone")
+	if err != nil {
+		h.t.Fatal(err)
+	}
+
+	return u, ok
+}

@@ -24,7 +24,7 @@ func Tools(svc *app.Service, names Names, today func(context.Context) time.Time)
 	return []tool.Tool{
 		listRules(svc, names),
 		explainCategorization(svc),
-		manageRule(svc, names, today),
+		tool.WithUndo(manageRule(svc, names, today), undoRule),
 	}
 }
 
