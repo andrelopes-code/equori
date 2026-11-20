@@ -29,6 +29,7 @@ var sourceCounts = map[string][2]int{
 	"txs":      {1, maxPages},
 	"outliers": {1, maxPages},
 	"heat":     {1, maxPages},
+	"figure":   {1, 2},
 }
 
 // The pages of one list a view joins.

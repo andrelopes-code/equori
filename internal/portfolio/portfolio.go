@@ -15,6 +15,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
 	"github.com/andrelopes-code/equori/internal/platform/registry"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
+	"github.com/andrelopes-code/equori/internal/platform/view"
 	"github.com/andrelopes-code/equori/internal/portfolio/app"
 	"github.com/andrelopes-code/equori/internal/portfolio/domain"
 	"github.com/andrelopes-code/equori/internal/portfolio/httpapi"
@@ -67,6 +68,9 @@ func New(
 
 	return m, nil
 }
+
+// Views returns the builders of the views of the module's reads (answer views design, V3).
+func (m *Module) Views() map[view.Key]view.Builder { return toolapi.Views() }
 
 // Tools returns the portfolio module's tools for language models (ADR 012).
 func (m *Module) Tools() tool.Group {

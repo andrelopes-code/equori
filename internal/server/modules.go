@@ -292,7 +292,12 @@ func (m *modules) buildTools(cfg Config, log *slog.Logger) error {
 		return err
 	}
 
-	m.assistant.UseViews(m.reporting.Views(), m.planning.Views(), m.ledger.Views())
+	m.assistant.UseViews(
+		m.reporting.Views(),
+		m.planning.Views(),
+		m.ledger.Views(),
+		m.portfolio.Views(),
+	)
 
 	return m.assistant.UseTools(chatTools)
 }
