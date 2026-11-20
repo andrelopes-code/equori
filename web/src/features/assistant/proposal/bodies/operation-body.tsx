@@ -1,7 +1,7 @@
 import type { components } from "@/api/schema.gen";
 import { CategorizeBody } from "@/features/assistant/proposal/bodies/categorize-body";
 import { bodyKind } from "@/features/assistant/proposal/bodies/body-kind";
-import { DiffRows } from "@/features/assistant/proposal/bodies/diff-rows";
+import { ChangeBody } from "@/features/assistant/proposal/bodies/change-body";
 import { FileBody } from "@/features/assistant/proposal/bodies/file-body";
 import { GoalBody } from "@/features/assistant/proposal/bodies/goal-body";
 import { InvestmentBody } from "@/features/assistant/proposal/bodies/investment-body";
@@ -51,6 +51,6 @@ export function OperationBody({ preview }: OperationBodyProps) {
     case "move":
       return <MoveBody preview={preview} />;
     case "fields":
-      return <DiffRows changes={preview.changes} />;
+      return <ChangeBody preview={preview} />;
   }
 }
