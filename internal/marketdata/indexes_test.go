@@ -434,6 +434,46 @@ func TestIndexFeedReachesTheBondBase(t *testing.T) {
 	}
 }
 
+// A store that a former rule started at the issue date of a security (2024-08 for the CDI of an
+// instance) is filled back to 20 years before today, once per process: a series that begins later
+// than that is not asked again on every tick (calculators design, History).
+func TestIndexFeedFillsBackTheDefaultHistory(t *testing.T) {
+	t.Parallel()
+
+	s := &sgsServer{cdi: append([][2]string{{"04/01/2016", "0.050788"}}, cdiWeek...)}
+	srv := httptest.NewServer(s)
+	t.Cleanup(srv.Close)
+	h := apitest.New(
+		t,
+		apitest.Today("2026-01-09"),
+		apitest.IndexFeeds([]string{"br_cdi"}, indexURLs(srv)),
+	)
+
+	if _, err := h.Pool.Exec(
+		t.Context(),
+		`INSERT INTO marketdata_index_rate (index_id, date, rate, source)
+		VALUES ('cdi', '2026-01-02', 0.00055131, 'br_cdi')`,
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	h.App.Marketdata.TickFeeds(t.Context())
+
+	got := indexRates(t, h, "cdi")
+	if len(got) != 7 || got[0] != (indexRateRow{"2016-01-04", "0.000507880000", "br_cdi"}) {
+		t.Fatalf("cdi = %+v, want the rate of 2016-01-04 filled back and the week", got)
+	}
+
+	s.take()
+	h.App.Marketdata.TickFeeds(t.Context())
+
+	for _, r := range s.take() {
+		if strings.Contains(r, "bcdata.sgs.12/dados") {
+			t.Errorf("CDI request after the fill back: %s", r)
+		}
+	}
+}
+
 func TestNewIndexSources(t *testing.T) {
 	t.Parallel()
 

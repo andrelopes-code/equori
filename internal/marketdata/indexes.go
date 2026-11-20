@@ -157,8 +157,8 @@ func NewIndexSources(
 // tickIndex fetches the rates of an index from the day after the latest stored one to today; a
 // first fetch starts 20 years before today, at the earliest issue date of a security that follows
 // the index, or at the history start of the source, whichever is earliest. A store that starts
-// after a declared history start is filled back to it first. On a failure the next tick fetches
-// the same days.
+// after that day is filled back to it first, once per process: a series that begins later answers
+// nothing for the days before it. On a failure the next tick fetches the same days.
 func (m *Module) tickIndex(ctx context.Context, src index.Source) error {
 	start, err := m.indexStart(ctx, src)
 	if err != nil {
@@ -172,18 +172,23 @@ func (m *Module) tickIndex(ctx context.Context, src index.Source) error {
 
 	today := m.feeds.Clock.Today(ctx)
 	if !earliest.Found {
-		return m.fetchRates(ctx, src, start, today)
-	}
-
-	// Only a declared history start is filled back; a month of slack covers a start that falls on
-	// a day without a rate.
-	if since := historySince(
-		src,
-	); !since.IsZero() &&
-		earliest.Earliest.After(since.AddDate(0, 1, 0)) {
-		if err := m.fetchRates(ctx, src, since, earliest.Earliest.AddDate(0, 0, -1)); err != nil {
+		if err := m.fetchRates(ctx, src, start, today); err != nil {
 			return err
 		}
+
+		m.filledBack.Store(src.ID(), true)
+
+		return nil
+	}
+
+	// A month of slack covers a start that falls on a day without a rate.
+	if _, done := m.filledBack.Load(src.ID()); !done &&
+		earliest.Earliest.After(start.AddDate(0, 1, 0)) {
+		if err := m.fetchRates(ctx, src, start, earliest.Earliest.AddDate(0, 0, -1)); err != nil {
+			return err
+		}
+
+		m.filledBack.Store(src.ID(), true)
 	}
 
 	latest, err := m.q.LatestIndexRate(ctx, src.Index())
