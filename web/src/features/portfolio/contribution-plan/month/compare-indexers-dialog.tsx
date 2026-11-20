@@ -32,7 +32,7 @@ export function CompareIndexersDialog({
   return (
     <Dialog
       open={open}
-      size="xl"
+      size="full"
       onOpenChange={(next) => {
         if (!next) onClose();
       }}
