@@ -85,6 +85,7 @@ func changesVerdict(items []changesItem, diff view.Money) view.Text {
 
 	top := view.Money{Currency: diff.Currency}
 	names := []string{}
+
 	for _, m := range moves[:min(2, len(moves))] {
 		if sign*m.Delta.Amount > 0 {
 			top.Amount += sign * m.Delta.Amount

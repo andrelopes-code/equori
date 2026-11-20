@@ -15,11 +15,13 @@ import (
 	"github.com/andrelopes-code/equori/internal/ledger/httpapi"
 	"github.com/andrelopes-code/equori/internal/ledger/postgres"
 	"github.com/andrelopes-code/equori/internal/ledger/toolapi"
+	"github.com/andrelopes-code/equori/internal/ledger/viewapi"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
+	"github.com/andrelopes-code/equori/internal/platform/view"
 )
 
 type Module struct {
@@ -61,6 +63,9 @@ func New(
 
 	return &Module{http: httpapi.NewServer(svc, log), svc: svc}
 }
+
+// Views returns the builders of the views of the module's reads (answer views design, V3).
+func (m *Module) Views() map[view.Key]view.Builder { return viewapi.Views() }
 
 // Tools returns the ledger's tools for language models (ADR 012).
 func (m *Module) Tools() tool.Group {

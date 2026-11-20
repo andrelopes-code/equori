@@ -136,12 +136,14 @@ func squarify(cells []treemapCell, total int64) {
 
 	for len(rest) > 0 && left > 0 {
 		n := bestRow(rest, left, w, h)
+
 		sum := 0.0
 		for _, c := range rest[:n] {
 			sum += float64(c.Amount.Amount)
 		}
 
 		horiz := w >= h
+
 		thick := sum / left * h
 		if horiz {
 			thick = sum / left * w
@@ -179,6 +181,7 @@ func bestRow(cells []treemapCell, left, w, h float64) int {
 	for i, c := range cells {
 		sum += float64(c.Amount.Amount)
 		thick := sum / left * length
+
 		worst := 0.0
 		for _, d := range cells[:i+1] {
 			l := float64(d.Amount.Amount) / sum * side

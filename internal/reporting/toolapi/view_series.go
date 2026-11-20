@@ -81,6 +81,7 @@ func averageOf(months []seriesMonth) view.Money {
 	}
 
 	n := int64(len(months))
+
 	q, r := sum/n, sum%n
 	if 2*r > n || 2*r == n && q%2 == 1 {
 		q++

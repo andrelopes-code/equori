@@ -16,12 +16,16 @@ func (r *Repository) InsertViews(
 	views []domain.View,
 ) error {
 	for _, v := range views {
+		// seq runs 0 to 2: an answer holds at most 3 views (answer views design, V5).
+		//nolint:gosec // bounded by the 3 views of an answer
+		seq := int32(v.Seq)
+
 		err := r.q.InsertView(ctx, InsertViewParams{
 			ID:             v.ID,
 			BooksID:        booksID,
 			ConversationID: conversationID,
 			MessageID:      messageID,
-			Seq:            int32(v.Seq),
+			Seq:            seq,
 			Form:           v.Form,
 			Payload:        v.Payload,
 			CreatedAt:      v.CreatedAt,

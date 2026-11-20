@@ -13,6 +13,7 @@ import (
 // toolResults returns the tool results the model received in its last request, in order.
 func toolResults(p *llmtest.Provider) []llm.ToolResult {
 	reqs := p.Requests()
+
 	var out []llm.ToolResult
 	for _, m := range reqs[len(reqs)-1].Request.Messages {
 		for _, part := range m.Parts {
@@ -95,6 +96,7 @@ func TestShowRefuses(t *testing.T) {
 			}
 
 			res := toolResults(p)
+
 			last := res[len(res)-1]
 			if !last.IsError || !strings.Contains(string(last.Content), c.want) {
 				t.Fatalf("show result = %+v %s", last, last.Content)

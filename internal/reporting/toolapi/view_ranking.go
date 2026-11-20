@@ -171,6 +171,7 @@ func decodeTotals(raw json.RawMessage) (getCategoryTotalsOut, error) {
 // topLevel returns the top-level categories by subtree total, largest first, ties by name, and their sum.
 func topLevel(out getCategoryTotalsOut) ([]rankingItem, view.Money, error) {
 	var total view.Money
+
 	items := []rankingItem{}
 	for _, c := range out.Categories {
 		if c.ParentID != "" {

@@ -127,6 +127,7 @@ func budgetVerdict(items []budgetItem) view.Text {
 	}
 
 	var count int64
+
 	var top budgetItem
 	for _, it := range items {
 		if it.Over.Amount > 0 {

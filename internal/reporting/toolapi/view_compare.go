@@ -74,6 +74,7 @@ func compareView(outputs []json.RawMessage, sel view.Select, _ time.Time) (view.
 // compareMerge joins the categories of both periods, largest after first, ties by name.
 func compareMerge(sides [2][]rankingItem, currency string) []*compareItem {
 	byID := map[string]*compareItem{}
+
 	var order []*compareItem
 	for side, items := range sides {
 		for _, it := range items {

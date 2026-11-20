@@ -1,10 +1,8 @@
-package domain_test
+package domain
 
 import (
 	"strings"
 	"testing"
-
-	"github.com/andrelopes-code/equori/internal/assistant/domain"
 )
 
 func TestValidForm(t *testing.T) {
@@ -24,7 +22,7 @@ func TestValidForm(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		if got := domain.ValidForm(c.form); got != c.want {
+		if got := ValidForm(c.form); got != c.want {
 			t.Errorf("ValidForm(%q) = %v, want %v", c.form, got, c.want)
 		}
 	}

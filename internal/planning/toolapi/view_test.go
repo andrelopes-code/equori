@@ -62,6 +62,7 @@ func TestViewBudget(t *testing.T) {
 	p := buildBudget(t, out, time.Date(2026, 11, 19, 0, 0, 0, 0, time.UTC))
 
 	b, _ := json.Marshal(p.Data)
+
 	var d budgetData
 	if err := json.Unmarshal(b, &d); err != nil {
 		t.Fatal(err)

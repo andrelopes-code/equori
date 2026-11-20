@@ -267,6 +267,7 @@ func TestViewChanges(t *testing.T) {
 	}
 
 	d := decode[changesData](t, p)
+
 	names := make([]string, len(d.Items))
 	for i, it := range d.Items {
 		names[i] = it.Name

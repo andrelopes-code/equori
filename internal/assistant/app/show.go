@@ -21,8 +21,18 @@ const (
 	maxNextRunes = 60
 )
 
-// The forms that compare two reads of the same tool take two handles (V2a).
-var twoSourceForms = map[string]bool{"compare": true, "changes": true}
+// How many handles of one tool a form takes (V2a): two periods to compare, or up to four pages of
+// a list; every other form takes one.
+var sourceCounts = map[string][2]int{
+	"compare":  {2, 2},
+	"changes":  {2, 2},
+	"txs":      {1, maxPages},
+	"outliers": {1, maxPages},
+	"heat":     {1, maxPages},
+}
+
+// The pages of one list a view joins.
+const maxPages = 4
 
 type showArgs struct {
 	Source []string   `json:"source"`
@@ -79,6 +89,7 @@ func (s *Service) Show(ctx context.Context, args json.RawMessage) (json.RawMessa
 	build, ok := s.views[ViewKey{Tool: toolName, Form: in.Form}]
 	if !ok {
 		forms := strings.Join(s.FormsOf(toolName), ", ")
+
 		return nil, showFailure(
 			"form",
 			fmt.Sprintf("is not a form of %s; its forms: %s", toolName, forms),
@@ -100,20 +111,21 @@ func (s *Service) Show(ctx context.Context, args json.RawMessage) (json.RawMessa
 
 // showSources resolves the handles of in to the outputs of one tool.
 func (s *Service) showSources(t *turnState, in showArgs) (string, []json.RawMessage, error) {
-	want := 1
-	if twoSourceForms[in.Form] {
-		want = 2
+	count, ok := sourceCounts[in.Form]
+	if !ok {
+		count = [2]int{1, 1}
 	}
 
-	if len(in.Source) != want {
+	if len(in.Source) < count[0] || len(in.Source) > count[1] {
 		return "", nil, showFailure(
 			"source",
-			fmt.Sprintf("takes %d handle(s) for form %s", want, in.Form),
+			fmt.Sprintf("takes %d to %d handle(s) for form %s", count[0], count[1], in.Form),
 		)
 	}
 
 	var toolName string
-	outputs := make([]json.RawMessage, 0, want)
+
+	outputs := make([]json.RawMessage, 0, len(in.Source))
 	for _, h := range in.Source {
 		name, out, ok := t.read(h)
 		if !ok {
@@ -128,6 +140,7 @@ func (s *Service) showSources(t *turnState, in showArgs) (string, []json.RawMess
 		}
 
 		toolName = name
+
 		outputs = append(outputs, out)
 	}
 
