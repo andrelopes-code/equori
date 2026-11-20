@@ -1,6 +1,7 @@
 import {
   Dialog,
   DialogBody,
+  DialogClose,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -37,6 +38,7 @@ export function FundReportDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("contributionPlan.fundReport.title")}</DialogTitle>
+          <DialogClose />
         </DialogHeader>
 
         <DialogBody>

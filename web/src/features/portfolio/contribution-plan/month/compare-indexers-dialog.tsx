@@ -1,7 +1,9 @@
 import {
   Dialog,
   DialogBody,
+  DialogClose,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@slotted/react/dialog";
@@ -42,6 +44,10 @@ export function CompareIndexersDialog({
           <DialogTitle>
             {t("contributionPlan.compareIndexers.title")}
           </DialogTitle>
+          <DialogDescription>
+            {t("calc.indexer-comparison.question")}
+          </DialogDescription>
+          <DialogClose />
         </DialogHeader>
 
         <DialogBody>
