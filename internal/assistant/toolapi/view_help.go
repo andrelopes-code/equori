@@ -3,6 +3,7 @@ package toolapi
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/platform/view"
@@ -17,7 +18,8 @@ type helpData struct {
 // Views returns the builders of the assistant's own reads (answer views design, V3).
 func Views() map[view.Key]view.Builder {
 	return map[view.Key]view.Builder{
-		{Tool: "get_help", Form: "help"}: helpView,
+		{Tool: "get_help", Form: "help"}:              helpView,
+		{Tool: "open_calculator", Form: "calculator"}: calculatorView,
 	}
 }
 
@@ -50,4 +52,15 @@ func helpView(outputs []json.RawMessage, _ view.Select, _ time.Time) (view.Paylo
 	}
 
 	return p, nil
+}
+
+func sortedKeys(m map[string]string) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+
+	slices.Sort(keys)
+
+	return keys
 }

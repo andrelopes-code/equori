@@ -222,3 +222,18 @@ func TestViewTransaction(t *testing.T) {
 		t.Fatalf("verdict = %+v, open = %+v", p.Verdict, p.Open)
 	}
 }
+
+// A redemption of the mock: net R$ 11,171.50 after R$ 248.50 of income tax.
+func TestViewRedemption(t *testing.T) {
+	p := build(t, "estimate_redemption", "redemption", json.RawMessage(
+		`{"income_tax":{"amount":"248.50","currency":"BRL"},"iof":{"amount":"0.00","currency":"BRL"},"net":{"amount":"11171.50","currency":"BRL"}}`,
+	))
+
+	d := decode[struct {
+		Gross view.Money `json:"gross"`
+	}](t, p)
+
+	if d.Gross.Amount != 1142000 || p.Verdict.Params["tax"].Money.Amount != 24850 {
+		t.Fatalf("data = %+v, verdict = %+v", d, p.Verdict)
+	}
+}

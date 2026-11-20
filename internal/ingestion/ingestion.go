@@ -25,6 +25,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/registry"
 	"github.com/andrelopes-code/equori/internal/platform/secret"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
+	"github.com/andrelopes-code/equori/internal/platform/view"
 )
 
 type Module struct {
@@ -100,6 +101,9 @@ func New(
 
 	return &Module{http: httpapi.NewServer(svc, log), svc: svc, ledger: l, log: log}, nil
 }
+
+// Views returns the builders of the views of the module's reads (answer views design, V3).
+func (m *Module) Views() map[view.Key]view.Builder { return toolapi.Views() }
 
 // Tools returns the ingestion module's tools for language models (ADR 012).
 func (m *Module) Tools() tool.Group {

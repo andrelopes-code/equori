@@ -34,10 +34,11 @@ type txsData struct {
 // Views returns the builders of the ledger reads (answer views design, V3).
 func Views() map[view.Key]view.Builder {
 	return map[view.Key]view.Builder{
-		{Tool: "search_transactions", Form: "txs"}:      txsView,
-		{Tool: "search_transactions", Form: "outliers"}: outliersView,
-		{Tool: "search_transactions", Form: "heat"}:     heatView,
-		{Tool: "get_transaction", Form: "transaction"}:  transactionFormView,
+		{Tool: "search_transactions", Form: "txs"}:        txsView,
+		{Tool: "search_transactions", Form: "outliers"}:   outliersView,
+		{Tool: "search_transactions", Form: "heat"}:       heatView,
+		{Tool: "get_transaction", Form: "transaction"}:    transactionFormView,
+		{Tool: "estimate_redemption", Form: "redemption"}: redemptionView,
 	}
 }
 

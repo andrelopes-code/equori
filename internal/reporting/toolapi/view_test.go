@@ -489,3 +489,94 @@ func TestViewIndicators(t *testing.T) {
 		t.Fatalf("verdict = %+v", p.Verdict)
 	}
 }
+
+func parts(purchases, installments, charges, total string) string {
+	m := func(a string) string { return fmt.Sprintf(`{"amount":%q,"currency":"BRL"}`, a) }
+
+	return fmt.Sprintf(`"purchases":%s,"installments":%s,"charges":%s,"credits":%s,"total":%s`,
+		m(purchases), m(installments), m(charges), m("0.00"), m(total))
+}
+
+// The November statement of the mock: Restaurantes takes 38% of R$ 3,760.00.
+func TestViewStatement(t *testing.T) {
+	cat := func(id, name, total string) string {
+		return fmt.Sprintf(
+			`{"category_id":%q,"category_name":%q,%s}`,
+			id,
+			name,
+			parts(total, "0.00", "0.00", total),
+		)
+	}
+	out := `{"statements":[{"statement_id":"s","reference":"2026-11",` + parts(
+		"3760.00",
+		"0.00",
+		"0.00",
+		"3760.00",
+	) +
+		`,"categories":[` + cat(
+		"c2",
+		"Mercado",
+		"1015.20",
+	) + `,` + cat(
+		"c1",
+		"Restaurantes",
+		"1428.80",
+	) + `,` + cat(
+		"c3",
+		"Transporte",
+		"714.40",
+	) + `]}]}`
+
+	b := toolapi.Views()[view.Key{Tool: "get_statement_analytics", Form: "statement"}]
+
+	p, err := b([]json.RawMessage{json.RawMessage(out)}, view.Select{}, today)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	d := decode[struct {
+		Categories []struct {
+			Name    string `json:"name"`
+			ShareBP int64  `json:"share_bp"`
+		} `json:"categories"`
+	}](t, p)
+
+	if len(d.Categories) != 3 || d.Categories[0].Name != "Restaurantes" ||
+		d.Categories[0].ShareBP != 3800 {
+		t.Fatalf("data = %+v", d)
+	}
+
+	if p.Verdict.Key != "assistantView.statement.verdict" ||
+		p.Verdict.Params["total"].Money.Amount != 376000 {
+		t.Fatalf("verdict = %+v", p.Verdict)
+	}
+}
+
+// Two closed statements; the last one, R$ 1,529.40, is 81% installments.
+func TestViewStatementHistory(t *testing.T) {
+	out := `{"statements":[{"statement_id":"a","reference":"2026-09",` + parts(
+		"900.00",
+		"300.00",
+		"0.00",
+		"1200.00",
+	) +
+		`},{"statement_id":"b","reference":"2026-10",` + parts(
+		"289.40",
+		"1240.00",
+		"0.00",
+		"1529.40",
+	) + `}]}`
+
+	b := toolapi.Views()[view.Key{Tool: "get_statement_analytics", Form: "statement_history"}]
+
+	p, err := b([]json.RawMessage{json.RawMessage(out)}, view.Select{}, today)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if p.Verdict.Key != "assistantView.statement_history.verdict" ||
+		*p.Verdict.Params["installments"].BP != 8108 ||
+		p.Verdict.Params["month"].Month != "2026-10" {
+		t.Fatalf("verdict = %+v", p.Verdict)
+	}
+}

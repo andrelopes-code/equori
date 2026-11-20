@@ -297,6 +297,9 @@ func (m *modules) buildTools(cfg Config, log *slog.Logger) error {
 		m.planning.Views(),
 		m.ledger.Views(),
 		m.portfolio.Views(),
+		m.classification.Views(),
+		m.marketdata.Views(),
+		m.ingestion.Views(),
 	)
 
 	return m.assistant.UseTools(chatTools)
