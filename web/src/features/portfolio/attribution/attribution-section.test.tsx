@@ -8,6 +8,7 @@ import { portfolioApi } from "@/testing/portfolio-api";
 import { renderApp } from "@/testing/render-app";
 
 const brl = (amount: number) => ({ amount, currency: "BRL" });
+const yearChoice = catalogEn["portfolio.attribution.yearChoice"];
 
 // S656 and S658 as the API returns them; 2026 also holds the comparisons of S670.
 const report = {
@@ -148,11 +149,7 @@ describe("Attribution section", () => {
   it("AT5, AT13: a past year names its first day, tallies its holdings and writes a stale quote in place of the bar and the rate", async () => {
     const region = await renderReport(report);
 
-    await userEvent
-      .setup()
-      .click(
-        await within(region).findByRole("button", { name: "2025: −0.50%" }),
-      );
+    await chooseYear(region, "2025");
 
     expect(
       within(region).getByText("How 2025, since 01/02 went"),
@@ -164,8 +161,39 @@ describe("Attribution section", () => {
       within(region).getByText("No quote since 06/30/2025"),
     ).toBeInTheDocument();
     expect(
-      within(region).getByRole("button", { name: "2025: −0.50%" }),
-    ).toHaveAttribute("aria-pressed", "true");
+      within(region).getByRole("combobox", { name: yearChoice }),
+    ).toHaveTextContent("2025");
+  });
+
+  it("lists every measured year, not only the last six", async () => {
+    const years = [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023].map((y) => ({
+      ...report.years[0],
+      year: y,
+      from: `${String(y)}-01-01`,
+      to: `${String(y)}-12-31`,
+      since: `${String(y)}-01-01`,
+    }));
+    const region = await renderReport({ years });
+    const user = userEvent.setup();
+
+    await user.click(
+      await within(region).findByRole("combobox", { name: yearChoice }),
+    );
+
+    expect(screen.getAllByRole("option").map((o) => o.textContent)).toEqual([
+      "2023",
+      "2022",
+      "2021",
+      "2020",
+      "2019",
+      "2018",
+      "2017",
+      "2016",
+    ]);
+
+    await user.click(screen.getByRole("option", { name: "2016" }));
+
+    expect(within(region).getByText("How 2016 went")).toBeInTheDocument();
   });
 
   it("chooses a year without minimizing, and minimizes from the header", async () => {
@@ -173,9 +201,7 @@ describe("Attribution section", () => {
     const user = userEvent.setup();
     const title = catalogEn["portfolio.attribution.title"];
 
-    await user.click(
-      await within(region).findByRole("button", { name: "2025: −0.50%" }),
-    );
+    await chooseYear(region, "2025");
     await user.click(
       within(region).getByRole("button", { name: `About “${title}”` }),
     );
@@ -222,3 +248,12 @@ describe("Attribution section", () => {
     ).not.toBeInTheDocument();
   });
 });
+
+async function chooseYear(region: HTMLElement, year: string) {
+  const user = userEvent.setup();
+
+  await user.click(
+    await within(region).findByRole("combobox", { name: yearChoice }),
+  );
+  await user.click(screen.getByRole("option", { name: year }));
+}

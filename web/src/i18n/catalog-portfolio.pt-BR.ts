@@ -208,7 +208,7 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.attribution.fact.gains.other": "{count} ativos ganharam",
   "portfolio.attribution.fact.losses.one": "1 ativo perdeu",
   "portfolio.attribution.fact.losses.other": "{count} ativos perderam",
-  "portfolio.attribution.yearColumn": "{year}: {rate}",
+  "portfolio.attribution.yearChoice": "Ano do detalhe",
   "portfolio.attribution.legend.portfolio": "Carteira",
   "portfolio.attribution.period.partial": "{year} até {day}",
   "portfolio.attribution.period.since": "{year}, desde {since}",

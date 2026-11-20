@@ -205,7 +205,7 @@ export const portfolioEn = {
   "portfolio.attribution.fact.gains.other": "{count} holdings gained",
   "portfolio.attribution.fact.losses.one": "1 holding lost",
   "portfolio.attribution.fact.losses.other": "{count} holdings lost",
-  "portfolio.attribution.yearColumn": "{year}: {rate}",
+  "portfolio.attribution.yearChoice": "Year of the detail",
   "portfolio.attribution.legend.portfolio": "Portfolio",
   "portfolio.attribution.period.partial": "{year} to {day}",
   "portfolio.attribution.period.since": "{year}, since {since}",
