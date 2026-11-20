@@ -1,6 +1,6 @@
 import { monthText } from "@/features/assistant/view/month-text";
 import type { ViewWindow } from "@/features/assistant/view/view-types";
-import { formatDate } from "@/i18n/format";
+import { formatDate, formatDayMonthNumeric } from "@/i18n/format";
 
 // The period of a view in the locale: a month by name, whole months as a range, else the dates.
 export function windowText(w: ViewWindow, locale: string): string {
@@ -9,6 +9,10 @@ export function windowText(w: ViewWindow, locale: string): string {
 
   const from = utc(w.from);
   const to = utc(w.to);
+
+  // Days of one year leave the year to the head of the view: it holds the title too.
+  if (!wholeMonths(from, to) && from.getUTCFullYear() === to.getUTCFullYear())
+    return `${formatDayMonthNumeric(w.from, locale)} – ${formatDayMonthNumeric(w.to, locale)}`;
 
   if (!wholeMonths(from, to))
     return `${formatDate(w.from, locale)} – ${formatDate(w.to, locale)}`;

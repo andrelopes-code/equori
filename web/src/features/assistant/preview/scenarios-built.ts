@@ -1141,4 +1141,465 @@ export const builtScenarios: Scenario[] = [
       },
     ],
   },
+  {
+    id: "built-agenda",
+    form: "agenda",
+    note: "list_schedules → show agenda",
+    handled: true,
+    question: "O que vence nos próximos 30 dias?",
+    answer: "A primeira semana de dezembro é a mais pesada.",
+    views: [
+      {
+        id: "v-agenda",
+        form: "agenda",
+        payload: {
+          title: { key: "assistantView.agenda.title" },
+          window: { from: "2026-11-25", to: "2026-12-12" },
+          verdict: {
+            key: "assistantView.agenda.verdict",
+            params: {
+              count: { count: 7 },
+              total: { money: { amount: 903790, currency: "BRL" } },
+              week: { date: "2026-11-30" },
+              week_total: { money: { amount: 533332, currency: "BRL" } },
+            },
+          },
+          open: { screen: "/planning", params: { tab: "agenda" } },
+          next: [],
+          rows: {
+            head: [
+              "assistantView.col.date",
+              "assistantView.col.name",
+              "assistantView.col.amount",
+            ],
+            rows: [
+              [
+                { date: "2026-11-25" },
+                { text: "Fatura Cartão Itaú" },
+                { money: { amount: -291838, currency: "BRL" } },
+              ],
+              [
+                { date: "2026-11-28" },
+                { text: "Conta de luz" },
+                { money: { amount: -18730, currency: "BRL" } },
+              ],
+              [
+                { date: "2026-12-01" },
+                { text: "Escola" },
+                { money: { amount: -200342, currency: "BRL" } },
+              ],
+              [
+                { date: "2026-12-05" },
+                { text: "Aluguel" },
+                { money: { amount: -320000, currency: "BRL" } },
+              ],
+              [
+                { date: "2026-12-06" },
+                { text: "Internet" },
+                { money: { amount: -12990, currency: "BRL" } },
+              ],
+              [
+                { date: "2026-12-10" },
+                { text: "Notebook Dell · parcela 7 de 10" },
+                { money: { amount: -47900, currency: "BRL" } },
+              ],
+              [
+                { date: "2026-12-12" },
+                { text: "Academia" },
+                { money: { amount: -11990, currency: "BRL" } },
+              ],
+            ],
+          },
+          data: {
+            total: { amount: -903790, currency: "BRL" },
+            weeks: [
+              {
+                start: "2026-11-23",
+                total: { amount: -310568, currency: "BRL" },
+                events: [
+                  {
+                    date: "2026-11-25",
+                    description: "Fatura Cartão Itaú",
+                    account: "Itaú",
+                    amount: { amount: -291838, currency: "BRL" },
+                    state: "expected",
+                  },
+                  {
+                    date: "2026-11-28",
+                    description: "Conta de luz",
+                    amount: { amount: -18730, currency: "BRL" },
+                    state: "expected",
+                  },
+                ],
+              },
+              {
+                start: "2026-11-30",
+                total: { amount: -533332, currency: "BRL" },
+                events: [
+                  {
+                    date: "2026-12-01",
+                    description: "Escola",
+                    amount: { amount: -200342, currency: "BRL" },
+                    state: "expected",
+                  },
+                  {
+                    date: "2026-12-05",
+                    description: "Aluguel",
+                    amount: { amount: -320000, currency: "BRL" },
+                    state: "expected",
+                  },
+                  {
+                    date: "2026-12-06",
+                    description: "Internet",
+                    amount: { amount: -12990, currency: "BRL" },
+                    state: "expected",
+                  },
+                ],
+              },
+              {
+                start: "2026-12-07",
+                total: { amount: -59890, currency: "BRL" },
+                events: [
+                  {
+                    date: "2026-12-10",
+                    description: "Notebook Dell · parcela 7 de 10",
+                    amount: { amount: -47900, currency: "BRL" },
+                    state: "expected",
+                  },
+                  {
+                    date: "2026-12-12",
+                    description: "Academia",
+                    amount: { amount: -11990, currency: "BRL" },
+                    state: "expected",
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      },
+    ],
+  },
+  {
+    id: "built-balance",
+    form: "balance",
+    note: "project_balance → show balance",
+    handled: true,
+    question: "Meu saldo aguenta até o fim do ano?",
+    answer: "Aguenta, com folga pequena depois do aluguel.",
+    views: [
+      {
+        id: "v-balance",
+        form: "balance",
+        payload: {
+          title: {
+            key: "assistantView.balance.title",
+            params: { account: { text: "Itaú" } },
+          },
+          window: { from: "2026-11-19", to: "2026-12-31" },
+          verdict: {
+            key: "assistantView.balance.verdict_positive",
+            params: {
+              amount: { money: { amount: 41230, currency: "BRL" } },
+              day: { date: "2026-12-05" },
+            },
+          },
+          open: { screen: "/planning", params: { tab: "agenda" } },
+          next: [],
+          rows: {
+            head: [
+              "assistantView.col.date",
+              "assistantView.col.name",
+              "assistantView.col.balance",
+            ],
+            rows: [
+              [
+                { date: "2026-11-19" },
+                { text: "assistantView.balance.today" },
+                { money: { amount: 203410, currency: "BRL" } },
+              ],
+              [
+                { date: "2026-11-22" },
+                { text: "Salário" },
+                { money: { amount: 853410, currency: "BRL" } },
+              ],
+              [
+                { date: "2026-11-25" },
+                { text: "Fatura" },
+                { money: { amount: 561572, currency: "BRL" } },
+              ],
+              [
+                { date: "2026-12-01" },
+                { text: "Escola" },
+                { money: { amount: 361230, currency: "BRL" } },
+              ],
+              [
+                { date: "2026-12-05" },
+                { text: "Aluguel" },
+                { money: { amount: 41230, currency: "BRL" } },
+              ],
+              [
+                { date: "2026-12-20" },
+                { text: "13º salário" },
+                { money: { amount: 691230, currency: "BRL" } },
+              ],
+            ],
+          },
+          data: {
+            account: "Itaú",
+            from: "2026-11-19",
+            to: "2026-12-31",
+            opening: { amount: 203410, currency: "BRL" },
+            points: [
+              {
+                date: "2026-11-22",
+                description: "Salário",
+                amount: { amount: 650000, currency: "BRL" },
+                balance: { amount: 853410, currency: "BRL" },
+              },
+              {
+                date: "2026-11-25",
+                description: "Fatura",
+                amount: { amount: -291838, currency: "BRL" },
+                balance: { amount: 561572, currency: "BRL" },
+              },
+              {
+                date: "2026-12-01",
+                description: "Escola",
+                amount: { amount: -200342, currency: "BRL" },
+                balance: { amount: 361230, currency: "BRL" },
+              },
+              {
+                date: "2026-12-05",
+                description: "Aluguel",
+                amount: { amount: -320000, currency: "BRL" },
+                balance: { amount: 41230, currency: "BRL" },
+              },
+              {
+                date: "2026-12-20",
+                description: "13º salário",
+                amount: { amount: 650000, currency: "BRL" },
+                balance: { amount: 691230, currency: "BRL" },
+              },
+            ],
+            low: {
+              date: "2026-12-05",
+              description: "Aluguel",
+              amount: { amount: -320000, currency: "BRL" },
+              balance: { amount: 41230, currency: "BRL" },
+            },
+          },
+        },
+      },
+    ],
+  },
+  {
+    id: "built-goals",
+    form: "goals",
+    note: "get_budgets_and_goals → show goals",
+    handled: true,
+    question: "Vou bater a meta da viagem?",
+    answer: "Só se guardar mais por mês.",
+    views: [
+      {
+        id: "v-goals",
+        form: "goals",
+        payload: {
+          title: { key: "assistantView.goals.title" },
+          window: { at: "2026-11-19" },
+          verdict: {
+            key: "assistantView.goals.verdict",
+            params: {
+              due: { date: "2027-07-31" },
+              monthly: { money: { amount: 110000, currency: "BRL" } },
+              months: { count: 8 },
+              name: { text: "Viagem Japão" },
+            },
+          },
+          open: { screen: "/goals" },
+          next: [],
+          rows: {
+            head: [
+              "assistantView.col.goal",
+              "assistantView.col.saved",
+              "assistantView.col.target",
+            ],
+            rows: [
+              [
+                { text: "Viagem Japão" },
+                { money: { amount: 620000, currency: "BRL" } },
+                { money: { amount: 1500000, currency: "BRL" } },
+              ],
+              [
+                { text: "Reserva de emergência" },
+                { money: { amount: 3150000, currency: "BRL" } },
+                { money: { amount: 4500000, currency: "BRL" } },
+              ],
+            ],
+          },
+          data: {
+            goals: [
+              {
+                goal_id: "g1",
+                name: "Viagem Japão",
+                target: { amount: 1500000, currency: "BRL" },
+                current: { amount: 620000, currency: "BRL" },
+                progress_bp: 4133,
+                due_on: "2027-07-31",
+                months: 8,
+                monthly: { amount: 110000, currency: "BRL" },
+              },
+              {
+                goal_id: "g2",
+                name: "Reserva de emergência",
+                target: { amount: 4500000, currency: "BRL" },
+                current: { amount: 3150000, currency: "BRL" },
+                progress_bp: 7000,
+                due_on: "2027-12-31",
+                months: 13,
+                monthly: { amount: 103847, currency: "BRL" },
+              },
+            ],
+          },
+        },
+      },
+    ],
+  },
+  {
+    id: "built-recurring",
+    form: "recurring",
+    note: "find_recurring → show recurring",
+    handled: true,
+    question: "Que assinaturas eu pago?",
+    answer: "Seis cobranças se repetem.",
+    views: [
+      {
+        id: "v-recurring",
+        form: "recurring",
+        payload: {
+          title: { key: "assistantView.recurring.title" },
+          window: {},
+          verdict: {
+            key: "assistantView.recurring.verdict",
+            params: {
+              count: { count: 6 },
+              total: { money: { amount: 390600, currency: "BRL" } },
+            },
+          },
+          open: { screen: "/planning", params: { tab: "subscriptions" } },
+          next: [],
+          rows: {
+            head: [
+              "assistantView.col.name",
+              "assistantView.col.amount",
+              "assistantView.col.yearly",
+            ],
+            rows: [
+              [
+                { text: "Academia Smart" },
+                { money: { amount: -11990, currency: "BRL" } },
+                { money: { amount: -143880, currency: "BRL" } },
+              ],
+              [
+                { text: "Adobe" },
+                { money: { amount: -9900, currency: "BRL" } },
+                { money: { amount: -118800, currency: "BRL" } },
+              ],
+              [
+                { text: "Netflix" },
+                { money: { amount: -5590, currency: "BRL" } },
+                { money: { amount: -67080, currency: "BRL" } },
+              ],
+              [
+                { text: "Spotify" },
+                { money: { amount: -2190, currency: "BRL" } },
+                { money: { amount: -26280, currency: "BRL" } },
+              ],
+              [
+                { text: "iCloud" },
+                { money: { amount: -1490, currency: "BRL" } },
+                { money: { amount: -17880, currency: "BRL" } },
+              ],
+              [
+                { text: "Amazon Prime" },
+                { money: { amount: -16680, currency: "BRL" } },
+                { money: { amount: -16680, currency: "BRL" } },
+              ],
+            ],
+          },
+          data: {
+            total: { amount: -390600, currency: "BRL" },
+            items: [
+              {
+                key: "Academia Smart",
+                name: "Academia Smart",
+                account: "Nubank",
+                frequency: "monthly",
+                last: { amount: -11990, currency: "BRL" },
+                last_date: "2026-11-05",
+                next_date: "2026-12-05",
+                yearly: { amount: -143880, currency: "BRL" },
+                scheduled: false,
+              },
+              {
+                key: "Adobe",
+                name: "Adobe",
+                account: "Nubank",
+                frequency: "monthly",
+                last: { amount: -9900, currency: "BRL" },
+                last_date: "2026-11-05",
+                next_date: "2026-12-05",
+                yearly: { amount: -118800, currency: "BRL" },
+                scheduled: false,
+              },
+              {
+                key: "Netflix",
+                name: "Netflix",
+                account: "Nubank",
+                frequency: "monthly",
+                last: { amount: -5590, currency: "BRL" },
+                last_date: "2026-11-05",
+                next_date: "2026-12-05",
+                yearly: { amount: -67080, currency: "BRL" },
+                scheduled: false,
+              },
+              {
+                key: "Spotify",
+                name: "Spotify",
+                account: "Nubank",
+                frequency: "monthly",
+                last: { amount: -2190, currency: "BRL" },
+                last_date: "2026-11-05",
+                next_date: "2026-12-05",
+                yearly: { amount: -26280, currency: "BRL" },
+                scheduled: false,
+              },
+              {
+                key: "iCloud",
+                name: "iCloud",
+                account: "Nubank",
+                frequency: "monthly",
+                last: { amount: -1490, currency: "BRL" },
+                last_date: "2026-11-05",
+                next_date: "2026-12-05",
+                yearly: { amount: -17880, currency: "BRL" },
+                scheduled: false,
+              },
+              {
+                key: "Amazon Prime",
+                name: "Amazon Prime",
+                account: "Nubank",
+                frequency: "yearly",
+                last: { amount: -16680, currency: "BRL" },
+                last_date: "2026-11-05",
+                next_date: "2026-12-05",
+                yearly: { amount: -16680, currency: "BRL" },
+                scheduled: false,
+              },
+            ],
+          },
+        },
+      },
+    ],
+  },
 ];

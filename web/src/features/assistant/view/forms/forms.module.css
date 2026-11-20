@@ -1155,3 +1155,207 @@
     }
   }
 }
+
+/* Planning: the week heads of the agenda, the step line of a balance, goals and recurring rows. */
+@layer app {
+  @keyframes draw {
+    from {
+      stroke-dashoffset: 1;
+    }
+  }
+
+  .week {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    box-sizing: border-box;
+    block-size: 28px;
+    padding-block-end: 4px;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+    font-weight: var(--slotted-font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .canvas {
+    position: relative;
+    min-inline-size: 0;
+    margin-block-start: 20px;
+  }
+
+  .line {
+    display: block;
+    inline-size: 100%;
+    block-size: 120px;
+    overflow: visible;
+  }
+
+  .lineArea {
+    fill: color-mix(
+      in oklab,
+      var(--slotted-tone-accent-solid) 14%,
+      transparent
+    );
+  }
+
+  .lineSubject {
+    fill: none;
+    stroke: var(--slotted-tone-accent-solid);
+    stroke-width: 2px;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .zeroLine {
+    stroke: var(--slotted-tone-danger-solid);
+    stroke-width: 1px;
+    stroke-dasharray: 3 3;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .mark {
+    position: absolute;
+    box-sizing: border-box;
+    inline-size: 10px;
+    block-size: 10px;
+    translate: -5px -5px;
+    border: 2px solid
+      var(--slotted-panel-surface, var(--slotted-surface-raised));
+    border-radius: 50%;
+    background: var(--slotted-tone-warning-solid);
+    pointer-events: none;
+  }
+
+  .markLabel {
+    position: absolute;
+    translate: -50% calc(-100% - 8px);
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: var(--slotted-surface-inverse);
+    color: var(--slotted-text-inverse);
+    font-size: var(--slotted-font-size-xs);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  .readout {
+    position: absolute;
+    inset: 0;
+    display: flex;
+  }
+
+  .hit {
+    flex: 1 1 0;
+    outline: none;
+  }
+
+  .guide {
+    position: absolute;
+    inset-block: 0;
+    border-inline-start: 1px solid var(--slotted-text-muted);
+    opacity: 0;
+  }
+
+  .readoutTip {
+    position: absolute;
+    inset-block-start: -8px;
+    inset-inline-start: 0;
+    z-index: 2;
+    display: none;
+    transform: translateY(-100%);
+    padding: 6px 8px;
+    border-radius: 8px;
+    background: var(--slotted-surface-inverse);
+    color: var(--slotted-text-inverse);
+    font-size: var(--slotted-font-size-xs);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  .hit:hover .guide,
+  .hit:focus-visible .guide {
+    opacity: 1;
+  }
+
+  .hit:hover .readoutTip,
+  .hit:focus-visible .readoutTip {
+    display: block;
+  }
+
+  .xAxis {
+    display: flex;
+    justify-content: space-between;
+    margin-block-start: 6px;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .goalRow {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    grid-template-rows: 18px 8px 16px;
+    row-gap: 4px;
+    align-items: center;
+    padding-block: 6px;
+  }
+
+  .goalPace {
+    grid-column: 1 / -1;
+    overflow: hidden;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .rowMeta {
+    overflow: hidden;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lineSubject {
+      animation: none;
+    }
+  }
+}
+
+@layer app {
+  .tallRow {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    grid-template-rows: 34px 8px;
+    row-gap: 4px;
+    align-items: center;
+    padding-block: 6px;
+  }
+
+  .stacked {
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 0;
+    font-size: var(--slotted-font-size-sm);
+  }
+
+  .yAxis {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-end: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+    pointer-events: none;
+  }
+}

@@ -112,10 +112,10 @@ func agendaVerdict(d agendaData, count int) view.Text {
 	)
 
 	return view.Text{Key: "assistantView.agenda.verdict", Params: map[string]view.Value{
-		"total":      view.MoneyValue(d.Total),
+		"total":      view.MoneyValue(absMoney(d.Total)),
 		"count":      view.CountValue(int64(count)),
 		"week":       view.DateValue(top.Start),
-		"week_total": view.MoneyValue(top.Total),
+		"week_total": view.MoneyValue(absMoney(top.Total)),
 	}}
 }
 
@@ -142,4 +142,13 @@ func agendaRows(weeks []agendaWeek) view.Table {
 	}
 
 	return t
+}
+
+// absMoney is the size of an amount: commitments and costs read as positive in a sentence.
+func absMoney(m view.Money) view.Money {
+	if m.Amount < 0 {
+		m.Amount = -m.Amount
+	}
+
+	return m
 }

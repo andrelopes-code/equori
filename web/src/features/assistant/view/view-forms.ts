@@ -14,6 +14,10 @@ import { HeatBody } from "@/features/assistant/view/forms/ledger/heat-body";
 import { OutliersBody } from "@/features/assistant/view/forms/ledger/outliers-body";
 import { TransactionBody } from "@/features/assistant/view/forms/ledger/transaction-body";
 import { TxsBody } from "@/features/assistant/view/forms/ledger/txs-body";
+import { AgendaBody } from "@/features/assistant/view/forms/planning/agenda-body";
+import { BalanceBody } from "@/features/assistant/view/forms/planning/balance-body";
+import { GoalsBody } from "@/features/assistant/view/forms/planning/goals-body";
+import { RecurringBody } from "@/features/assistant/view/forms/planning/recurring-body";
 import type { ViewWindow } from "@/features/assistant/view/view-types";
 
 export type ViewUnit = "amount" | "share";
@@ -47,4 +51,8 @@ export const FORMS: Partial<Record<string, ViewForm>> = {
   outliers: { icon: "search", Body: OutliersBody },
   heat: { icon: "calendar", Body: HeatBody },
   transaction: { icon: "receipt", Body: TransactionBody },
+  agenda: { icon: "calendar", Body: AgendaBody },
+  balance: { icon: "trend", Body: BalanceBody },
+  goals: { icon: "target", Body: GoalsBody },
+  recurring: { icon: "repeat", Body: RecurringBody },
 };

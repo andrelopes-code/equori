@@ -16,9 +16,15 @@ describe("windowText", () => {
     expect(text.replace(/\s/gu, " ")).toBe("set. – out. de 2026");
   });
 
-  it("writes a range of days", () => {
+  it("writes a range of days of one year without the year", () => {
     expect(windowText({ from: "2026-11-20", to: "2026-12-19" }, "pt-BR")).toBe(
-      "20/11/2026 – 19/12/2026",
+      "20/11 – 19/12",
+    );
+  });
+
+  it("writes a range of days across years with the years", () => {
+    expect(windowText({ from: "2026-12-20", to: "2027-01-19" }, "pt-BR")).toBe(
+      "20/12/2026 – 19/01/2027",
     );
   });
 

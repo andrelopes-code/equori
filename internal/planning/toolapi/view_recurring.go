@@ -88,7 +88,7 @@ func recurringVerdict(d recurringData) view.Text {
 
 	return view.Text{Key: "assistantView.recurring.verdict", Params: map[string]view.Value{
 		"count": view.CountValue(int64(len(d.Items))),
-		"total": view.MoneyValue(view.Money{Amount: -d.Total.Amount, Currency: d.Total.Currency}),
+		"total": view.MoneyValue(absMoney(d.Total)),
 	}}
 }
 
