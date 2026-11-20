@@ -108,6 +108,7 @@ classDiagram
 | Parent account | Conta pai | A balance account that groups sub-accounts at the same institution. The parent balance is the sum of its children. | Nubank checking with three reserves |
 | Reserve | Reserva | A sub-account of kind `reserve` inside an institution, earning yield (A11). | "Emergency fund" caixinha |
 | Receivable | Valor a receber | Asset account for money owed to the user by a person or organization. | Ana owes 100.00 from a shared dinner |
+| Property | Bem | Asset account of kind `property` for a good the user owns, valued at the amount the user states; a new value is a balance assertion resolved as an adjustment (A259). | Apartment, car |
 | Payable | Valor a pagar | Liability account for money the user owes to a person or organization. | 50.00 owed to a friend |
 | Counterparty | Contraparte | The person or organization behind a receivable or payable. | Ana, Employer Ltda |
 

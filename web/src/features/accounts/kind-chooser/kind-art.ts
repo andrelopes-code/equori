@@ -286,6 +286,30 @@ export const panelArt: Record<Kind, readonly ArtShape[]> = {
       rx: 1,
     },
   ],
+  // Not in the mock: drawn for property account design PA8 in the same paints.
+  property: [
+    { el: "path", paint: ["g1", "gj"], d: "M24 6 43 21v3H5v-3z" },
+    { el: "rect", paint: ["g2"], x: 10, y: 22, width: 28, height: 19, rx: 2 },
+    {
+      el: "rect",
+      paint: ["g0"],
+      x: 13.5,
+      y: 26,
+      width: 5.5,
+      height: 5.5,
+      rx: 1.2,
+    },
+    {
+      el: "rect",
+      paint: ["g0"],
+      x: 22,
+      y: 29,
+      width: 6.5,
+      height: 12,
+      rx: 1.4,
+    },
+    { el: "rect", paint: ["g1"], x: 5, y: 40, width: 38, height: 3, rx: 1.5 },
+  ],
   credit_card: [
     { el: "rect", paint: ["g2"], x: 14, y: 4.5, width: 22, height: 26, rx: 3 },
     { el: "path", paint: ["g0s"], d: "M19 10.5h12M19 15h7" },
@@ -618,6 +642,11 @@ export const plateArt: Record<Kind, readonly ArtShape[]> = {
       height: 1.9,
       rx: 0.95,
     },
+  ],
+  property: [
+    { el: "path", paint: ["g1", "gj"], d: "M24 10 37 20.5v2.5H11v-2.5z" },
+    { el: "rect", paint: ["g2"], x: 14, y: 21, width: 20, height: 16, rx: 1.6 },
+    { el: "rect", paint: ["g0"], x: 21.5, y: 28, width: 5, height: 9, rx: 1 },
   ],
   credit_card: [
     { el: "rect", paint: ["g1"], x: 9, y: 14, width: 30, height: 20, rx: 3.6 },

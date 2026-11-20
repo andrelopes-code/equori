@@ -1272,6 +1272,7 @@ AT5, through the HTTP API. PETR4 of S656 holds the close of 2025-06-30 on 2025-1
 
 AT6, through the HTTP API. PETR4 of S656 without any close: the year 2025 lists PETR4 in `missing` and holds no result, rate, `other` or rows. A book without a brokerage has no year.
 
+
 ### S660 Turn on a chosen model
 
 Model choice MC2 (`docs/specs/2026-11-20-assistant-model-choice-design.md`), through the HTTP API. The instance provider serves `gemini-3.5-flash` first; a turn with `target` `gemini-3.5-flash-lite` sends its one request to `gemini-3.5-flash-lite` and stores its answer.
@@ -1283,6 +1284,14 @@ MC3, through the HTTP API. `gemini-3.5-flash` cools down for an hour while `gemi
 ### S662 Chosen model outside the chain
 
 MC4, through the HTTP API. A turn with `target` `unknown-model` answers 422 `assistant_target_unknown` on the field `target`, stores no conversation and sends no request.
+
+### S663 Financed home in the net worth
+
+Amendment A259, property account PA6 (`docs/specs/2026-11-20-property-account-design.md`), through the HTTP API. Checking receives 150,000.00; a home of kind `property` is bought for 400,000.00 with 100,000.00 from checking and 300,000.00 of a `loan` liability. The net worth holds assets 450,000.00, liabilities 300,000.00 and net 150,000.00; the allocation by type holds `property` 400,000.00 (8888 bp) and `currency` 50,000.00 (1112 bp). Test in `internal/portfolio/property_test.go`.
+
+### S664 New value of a home
+
+PA3, through the HTTP API. The home of S663 is asserted at 420,000.00 on 2026-10-31: the difference is 20,000.00, resolved as `adjustment`, and the net worth rises to 170,000.00. Test in `internal/portfolio/property_test.go`.
 
 ### S670 The year beside the same money at the CDI and the IPCA
 

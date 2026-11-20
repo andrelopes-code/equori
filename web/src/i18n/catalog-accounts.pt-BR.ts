@@ -6,6 +6,7 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "kind.group.reserves": "Reservas",
   "kind.group.investments": "Investimentos",
   "kind.group.debts": "Dívidas e valores a receber",
+  "kind.group.goods": "Bens",
   "kind.hint.checking": "Conta bancária que paga e recebe no dia a dia.",
   "kind.hint.savings": "Poupança que guarda dinheiro à parte.",
   "kind.hint.cash": "Dinheiro em espécie.",
@@ -15,6 +16,7 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "kind.hint.brokerage":
     "Onde se compram ações, ETFs e fundos. Tem um saldo em caixa e uma linha por investimento.",
   "kind.hint.receivable": "Dinheiro que alguém deve a você.",
+  "kind.hint.property": "Imóvel, veículo ou outro bem que você possui.",
   "kind.hint.credit_card": "Cartão de crédito cobrado por faturas.",
   "kind.hint.loan": "Empréstimo ou financiamento que você paga.",
   "kind.hint.payable": "Conta ou dívida que você deve a alguém.",
@@ -1007,6 +1009,7 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "kind.title.reserve": "Reserva",
   "kind.title.brokerage": "Corretora",
   "kind.title.receivable": "A receber",
+  "kind.title.property": "Bem",
   "kind.title.credit_card": "Cartão de crédito",
   "kind.title.loan": "Empréstimo",
   "kind.title.payable": "A pagar",

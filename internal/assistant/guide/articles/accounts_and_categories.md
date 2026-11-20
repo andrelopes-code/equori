@@ -1,4 +1,4 @@
-An **Account** has an **Account class**: asset and liability accounts hold money you have or owe; income and expense accounts are your categories; equity accounts hold opening balances and adjustments. Asset and liability accounts also have an **Account kind**, such as checking, savings, cash, reserve, brokerage, receivable, loan or credit card.
+An **Account** has an **Account class**: asset and liability accounts hold money you have or owe; income and expense accounts are your categories; equity accounts hold opening balances and adjustments. Asset and liability accounts also have an **Account kind**, such as checking, savings, cash, reserve, brokerage, receivable, property, loan or credit card. A property account holds a home, a vehicle or another good at the value you state; a new value is a balance update resolved as an adjustment, so it changes the net worth and never the income or the expenses.
 
 A brokerage is an account kind with one Investment line per security. Its money is in a Cash account inside it or in an account of the same institution; the articles on investments describe how to create it and record a buy (topic investments).
 
@@ -18,7 +18,7 @@ The tools. list_accounts lists accounts and categories with their IDs, instituti
 
 manage_accounts_and_payees changes accounts, categories, payees, institutions and tags; action names the operation.
 
-- create_account: name and class. The class income or expense creates a category. An asset or liability takes kind: checking, savings, cash, wallet, benefit, reserve, brokerage, receivable, loan, credit_card or other. Optional: currency (the base currency when absent), parent_id, institution_id, opened_on, color (slot 1 to 8), icon and yield_mode, where auto books the yield of the account and none does not.
+- create_account: name and class. The class income or expense creates a category. An asset or liability takes kind: checking, savings, cash, wallet, benefit, reserve, brokerage, receivable, property, loan, credit_card or other. Optional: currency (the base currency when absent), parent_id, institution_id, opened_on, color (slot 1 to 8), icon and yield_mode, where auto books the yield of the account and none does not.
 - update_account: account_id and the fields that change: name, parent_id, institution_id, color (0 clears it), icon (none clears it), yield_mode, excluded_from_liquidity, and opened_on, which moves only to an earlier date.
 - close_account and reopen_account: account_id; close_account takes date, today when absent.
 - merge_category: account_id is merged into into_id, which remains.

@@ -26,6 +26,7 @@ describe("account kinds", () => {
   it.each([
     ["checking", "asset"],
     ["receivable", "asset"],
+    ["property", "asset"],
     ["brokerage", "asset"],
     ["credit_card", "liability"],
     ["loan", "liability"],

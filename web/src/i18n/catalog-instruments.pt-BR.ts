@@ -11,6 +11,7 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "instruments.emptyHint":
     "Cadastre os investimentos que suas contas de corretora guardam para acompanhar o preço deles.",
   "instruments.type.currency": "Moedas",
+  "instruments.type.property": "Bens",
   "instruments.type.stock": "Ações",
   "instruments.type.etf": "ETFs",
   "instruments.type.reit": "Fundos imobiliários",

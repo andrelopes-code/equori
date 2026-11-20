@@ -16,6 +16,7 @@ const (
 	classAsset     = "asset"
 	classLiability = "liability"
 	typeCurrency   = "currency"
+	kindProperty   = "property"
 )
 
 // MaxNetWorthDays is the longest range of NetWorthDays, two months (net worth days design, D2).
@@ -225,6 +226,11 @@ func (s *Service) allocationKey(ctx context.Context, v valuedBalance, by string)
 		}
 
 		return v.account.InstitutionID.String(), nil
+	}
+
+	// A home or a vehicle holds a currency but is not cash (property account design PA6).
+	if by == "type" && v.account.Kind == kindProperty {
+		return kindProperty, nil
 	}
 
 	info, err := s.md.InstrumentOf(ctx, v.balance.Amount.Currency())

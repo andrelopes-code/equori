@@ -5,7 +5,7 @@ type Account = components["schemas"]["Account"];
 type Balance = components["schemas"]["Balance"];
 type Money = components["schemas"]["Money"];
 
-export type Group = "available" | "reserves" | "cards" | "loans";
+export type Group = "available" | "reserves" | "property" | "cards" | "loans";
 
 export interface BalanceGroup {
   group: Group;
@@ -23,12 +23,13 @@ const groupOfKind: Record<NonNullable<Account["kind"]>, Group> = {
   reserve: "reserves",
   brokerage: "reserves",
   receivable: "reserves",
+  property: "property",
   credit_card: "cards",
   loan: "loans",
   payable: "loans",
 };
 
-const order: Group[] = ["available", "reserves", "cards", "loans"];
+const order: Group[] = ["available", "reserves", "property", "cards", "loans"];
 
 export function groupBalances(
   accounts: Account[],
@@ -75,6 +76,7 @@ export function groupBalances(
 export const groupLabels: Record<Group, MessageKey> = {
   available: "home.group.available",
   reserves: "home.group.reserves",
+  property: "home.group.property",
   cards: "home.group.cards",
   loans: "home.group.loans",
 };

@@ -566,6 +566,24 @@ func TestNewRuleRejections(t *testing.T) {
 	}
 }
 
+// Property account design PA1 (A259): a rule condition names the kind property.
+func TestNewRuleAcceptsPropertyKind(t *testing.T) {
+	t.Parallel()
+	r := Rule{
+		Name: "r",
+		Conditions: []Condition{
+			{Field: FieldAccountKind, Operator: OpEquals, Text: []string{"property"}},
+		},
+		Actions: []Action{{Type: ActionSetCategory, CategoryID: uuid.New()}},
+	}
+
+	_, err := NewRule(r)
+
+	if err != nil {
+		t.Fatalf("NewRule = %v, want nil", err)
+	}
+}
+
 func TestAliasOrder(t *testing.T) {
 	t.Parallel()
 

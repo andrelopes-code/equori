@@ -84,6 +84,7 @@ var (
 		"reserve",
 		"brokerage",
 		"receivable",
+		"property",
 		"credit_card",
 		"loan",
 		"payable",

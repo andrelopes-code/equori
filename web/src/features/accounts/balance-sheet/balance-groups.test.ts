@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { components } from "@/api/schema.gen";
 import { groupBalances } from "@/features/accounts/balance-sheet/balance-groups";
+import { sides } from "@/features/accounts/balance-sheet/balance-sheet";
 
 type Account = components["schemas"]["Account"];
 type Balance = components["schemas"]["Balance"];
@@ -95,5 +96,33 @@ describe("groupBalances", () => {
       "loans",
     ]);
     expect(groups[0]?.items.map((i) => i.account.id)).toEqual(["kept"]);
+  });
+
+  // Property account design PA7 (A259).
+  it("puts a property in its own group after the reserves, on the asset side", () => {
+    const groups = groupBalances(
+      [
+        account("card", "credit_card"),
+        account("home", "property"),
+        account("reserve", "reserve"),
+      ],
+      [
+        balance("card", -30000),
+        balance("home", 40000000),
+        balance("reserve", 5000),
+      ],
+      "BRL",
+    );
+
+    expect(groups.map((g) => g.group)).toEqual([
+      "reserves",
+      "property",
+      "cards",
+    ]);
+    expect(sides(groups)).toEqual({
+      assets: 40005000,
+      liabilities: 30000,
+      net: 39975000,
+    });
   });
 });

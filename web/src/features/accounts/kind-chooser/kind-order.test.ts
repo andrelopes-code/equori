@@ -17,6 +17,7 @@ describe("kindOrder", () => {
       "reserve",
       "brokerage",
       "receivable",
+      "property",
       "credit_card",
       "loan",
       "payable",
@@ -29,7 +30,9 @@ describe("nextKind", () => {
     ["checking", "ArrowRight", "cash"],
     ["checking", "ArrowLeft", "checking"],
     ["checking", "ArrowDown", "benefit"],
-    ["receivable", "ArrowDown", "payable"],
+    // PA8: the ninth asset fills the third row, so receivable sits above loan.
+    ["receivable", "ArrowDown", "loan"],
+    ["property", "ArrowDown", "payable"],
     ["payable", "ArrowDown", "payable"],
     ["cash", "ArrowUp", "checking"],
     [null, "ArrowRight", "checking"],

@@ -11697,7 +11697,7 @@ components:
           $ref: "#/components/schemas/AccountClass"
         kind:
           type: string
-          enum: [checking, savings, cash, wallet, benefit, reserve, brokerage, receivable, credit_card, loan, payable]
+          enum: [checking, savings, cash, wallet, benefit, reserve, brokerage, receivable, property, credit_card, loan, payable]
         currency:
           type: string
           description: Instrument of the account; a security only for a child of a brokerage account (P8 amendment A63).

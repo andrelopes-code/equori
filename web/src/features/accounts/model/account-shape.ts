@@ -12,6 +12,7 @@ const shapeOfKind: Record<Kind, AccountShape> = {
   wallet: "square",
   benefit: "square",
   receivable: "square",
+  property: "square",
   loan: "square",
   payable: "square",
   credit_card: "card",

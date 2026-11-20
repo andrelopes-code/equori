@@ -85,6 +85,7 @@ The model must represent every item below. Each item gets at least one worked ex
 | A09 | Loan or financing | Personal loan, vehicle or real estate financing |
 | A10 | Receivable / payable | Money lent to or owed by a person; reimbursement owed by an employer |
 | A11 | Yield-bearing reserve | Sub-balance inside an institution that earns daily yield: Nubank "caixinhas", PicPay "cofrinhos", Inter "porquinhos", CDB with daily liquidity |
+| A12 | Property | A home, a vehicle or another good, valued at the amount the user states (A259) |
 
 ### 1.5.2 Transaction kinds
 

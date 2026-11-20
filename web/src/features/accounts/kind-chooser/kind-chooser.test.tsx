@@ -15,7 +15,7 @@ const none = Object.fromEntries(kindOrder.map((kind) => [kind, 0])) as Record<
 >;
 
 describe("KindChooser", () => {
-  it("lists the eleven kinds in two groups in kind order", () => {
+  it("lists the twelve kinds in two groups in kind order", () => {
     inEnglish({ value: null });
 
     const have = group(catalogEn["kindChooser.assets"]);
@@ -24,7 +24,7 @@ describe("KindChooser", () => {
     expect(screen.getByRole("radiogroup")).toHaveAccessibleName(
       catalogEn["kindChooser.label"],
     );
-    expect(within(have).getAllByRole("radio")).toHaveLength(8);
+    expect(within(have).getAllByRole("radio")).toHaveLength(9);
     expect(within(owe).getAllByRole("radio")).toHaveLength(3);
     expect(
       screen.getAllByRole("radio").map((radio) => radio.textContent),

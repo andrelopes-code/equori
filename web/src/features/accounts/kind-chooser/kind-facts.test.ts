@@ -65,6 +65,7 @@ const rows: readonly Row[] = [
     ...accounts,
   },
   { kind: "receivable", ...asset, steps: plain, liquid: false, ...accounts },
+  { kind: "property", ...asset, steps: plain, liquid: false, ...accounts },
   {
     kind: "credit_card",
     side: "liability",

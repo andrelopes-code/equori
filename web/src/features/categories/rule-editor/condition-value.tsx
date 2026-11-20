@@ -23,6 +23,7 @@ const kinds = [
   "reserve",
   "brokerage",
   "receivable",
+  "property",
   "credit_card",
   "loan",
   "payable",

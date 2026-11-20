@@ -248,12 +248,25 @@ func TestDBRejectsClassKindMismatch(t *testing.T) {
 	t.Parallel()
 
 	f := newSchemaFixture(t)
-	for _, c := range []struct{ class, kind string }{{"expense", "checking"}, {"liability", "cash"}, {"asset", ""}} {
+	for _, c := range []struct{ class, kind string }{
+		{"expense", "checking"},
+		{"liability", "cash"},
+		{"liability", "property"},
+		{"asset", ""},
+	} {
 		_, err := f.pool.Exec(context.Background(), `
 			INSERT INTO ledger_account (books_id, name, account_class, kind, instrument, opened_on)
 			VALUES ($1, 'x', $2, nullif($3, ''), 'BRL', '2026-01-01')`, f.booksID, c.class, c.kind)
 		requireViolation(t, err, checkViolation, "")
 	}
+}
+
+// PA1 (A259): a property account is an asset.
+func TestDBAcceptsPropertyAsset(t *testing.T) {
+	t.Parallel()
+	f := newSchemaFixture(t)
+
+	f.account(t, f.booksID, "asset", "property", "2026-01-01")
 }
 
 func TestDBForbidsUnvoid(t *testing.T) {

@@ -140,7 +140,7 @@ describe("New account", () => {
     expect(next).toBeDisabled();
     await userEvent.click(reserve);
     expect(reserve).toBeChecked();
-    expect(screen.getAllByRole("radio")).toHaveLength(11);
+    expect(screen.getAllByRole("radio")).toHaveLength(12);
     expect(
       screen.getByText(catalogEn["kindPanel.accounts"]),
     ).toBeInTheDocument();

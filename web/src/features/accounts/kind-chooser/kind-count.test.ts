@@ -23,6 +23,7 @@ describe("kindCount", () => {
     ["savings", 0],
     ["benefit", 0],
     ["receivable", 0],
+    ["property", 0],
     ["payable", 0],
   ] as const satisfies readonly (readonly [Kind, number])[])(
     "counts %s accounts: %i",
@@ -45,6 +46,7 @@ describe("kindCounts", () => {
       savings: 0,
       benefit: 0,
       receivable: 0,
+      property: 0,
       payable: 0,
     });
   });

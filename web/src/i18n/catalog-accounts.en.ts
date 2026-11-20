@@ -5,6 +5,7 @@ export const accountsEn = {
   "kind.group.reserves": "Reserves",
   "kind.group.investments": "Investments",
   "kind.group.debts": "Debts and receivables",
+  "kind.group.goods": "Property",
   "kind.hint.checking": "A bank account that pays and receives day to day.",
   "kind.hint.savings": "A savings account that holds money apart.",
   "kind.hint.cash": "Notes and coins at hand.",
@@ -14,6 +15,7 @@ export const accountsEn = {
   "kind.hint.brokerage":
     "Where you buy stocks, ETFs and funds. It has a cash balance and one line per investment.",
   "kind.hint.receivable": "Money someone owes to you.",
+  "kind.hint.property": "A home, a vehicle or another good you own.",
   "kind.hint.credit_card": "A credit card billed by statements.",
   "kind.hint.loan": "A loan or financing you pay back.",
   "kind.hint.payable": "A bill or debt you owe to someone.",
@@ -1008,6 +1010,7 @@ export const accountsEn = {
   "kind.title.reserve": "Reserve",
   "kind.title.brokerage": "Brokerage",
   "kind.title.receivable": "Receivable",
+  "kind.title.property": "Property",
   "kind.title.credit_card": "Credit card",
   "kind.title.loan": "Loan",
   "kind.title.payable": "Payable",

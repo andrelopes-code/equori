@@ -49,6 +49,7 @@ func (manageAccountsAndPayeesKind) Values() []string {
 		"reserve",
 		"brokerage",
 		"receivable",
+		"property",
 		"loan",
 		"credit_card",
 		"other",

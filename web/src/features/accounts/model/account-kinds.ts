@@ -4,7 +4,7 @@ import type { MessageKey } from "@/i18n/catalog.en";
 type Account = components["schemas"]["Account"];
 export type Kind = NonNullable<Account["kind"]>;
 export type KindGroup =
-  "accounts" | "cards" | "reserves" | "investments" | "debts";
+  "accounts" | "cards" | "reserves" | "investments" | "debts" | "goods";
 
 export const kinds: readonly Kind[] = [
   "checking",
@@ -15,6 +15,7 @@ export const kinds: readonly Kind[] = [
   "reserve",
   "brokerage",
   "receivable",
+  "property",
   "credit_card",
   "loan",
   "payable",
@@ -28,6 +29,7 @@ export const kindGroups: readonly { key: KindGroup; kinds: readonly Kind[] }[] =
     { key: "reserves", kinds: ["savings", "reserve"] },
     { key: "investments", kinds: ["brokerage"] },
     { key: "debts", kinds: ["loan", "payable", "receivable"] },
+    { key: "goods", kinds: ["property"] },
   ];
 
 const liabilities = new Set<Kind>(["credit_card", "loan", "payable"]);
@@ -45,6 +47,7 @@ export const kindLabel: Record<Kind, MessageKey> = {
   reserve: "kind.reserve",
   brokerage: "kind.brokerage",
   receivable: "kind.receivable",
+  property: "kind.property",
   credit_card: "kind.credit_card",
   loan: "kind.loan",
   payable: "kind.payable",
@@ -59,6 +62,7 @@ export const kindHint: Record<Kind, MessageKey> = {
   reserve: "kind.hint.reserve",
   brokerage: "kind.hint.brokerage",
   receivable: "kind.hint.receivable",
+  property: "kind.hint.property",
   credit_card: "kind.hint.credit_card",
   loan: "kind.hint.loan",
   payable: "kind.hint.payable",
@@ -70,6 +74,7 @@ export const kindGroupLabel: Record<KindGroup, MessageKey> = {
   reserves: "kind.group.reserves",
   investments: "kind.group.investments",
   debts: "kind.group.debts",
+  goods: "kind.group.goods",
 };
 
 // P6 amendment A35: the ledger kinds an aggregator's account subtype may feed.
@@ -108,6 +113,7 @@ export const kindTitle: Record<Kind, MessageKey> = {
   reserve: "kind.title.reserve",
   brokerage: "kind.title.brokerage",
   receivable: "kind.title.receivable",
+  property: "kind.title.property",
   credit_card: "kind.title.credit_card",
   loan: "kind.title.loan",
   payable: "kind.title.payable",

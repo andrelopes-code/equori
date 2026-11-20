@@ -18,6 +18,7 @@ const (
 	AccountKindCreditCard AccountKind = "credit_card"
 	AccountKindLoan       AccountKind = "loan"
 	AccountKindPayable    AccountKind = "payable"
+	AccountKindProperty   AccountKind = "property"
 	AccountKindReceivable AccountKind = "receivable"
 	AccountKindReserve    AccountKind = "reserve"
 	AccountKindSavings    AccountKind = "savings"
@@ -40,6 +41,8 @@ func (e AccountKind) Valid() bool {
 	case AccountKindLoan:
 		return true
 	case AccountKindPayable:
+		return true
+	case AccountKindProperty:
 		return true
 	case AccountKindReceivable:
 		return true
@@ -108,6 +111,7 @@ const (
 	AccountInputKindCreditCard AccountInputKind = "credit_card"
 	AccountInputKindLoan       AccountInputKind = "loan"
 	AccountInputKindPayable    AccountInputKind = "payable"
+	AccountInputKindProperty   AccountInputKind = "property"
 	AccountInputKindReceivable AccountInputKind = "receivable"
 	AccountInputKindReserve    AccountInputKind = "reserve"
 	AccountInputKindSavings    AccountInputKind = "savings"
@@ -130,6 +134,8 @@ func (e AccountInputKind) Valid() bool {
 	case AccountInputKindLoan:
 		return true
 	case AccountInputKindPayable:
+		return true
+	case AccountInputKindProperty:
 		return true
 	case AccountInputKindReceivable:
 		return true

@@ -32,6 +32,7 @@ const (
 	KindReserve    Kind = "reserve"
 	KindBrokerage  Kind = "brokerage"
 	KindReceivable Kind = "receivable"
+	KindProperty   Kind = "property"
 	KindCreditCard Kind = "credit_card"
 	KindLoan       Kind = "loan"
 	KindPayable    Kind = "payable"
@@ -48,6 +49,7 @@ var kindsByClass = map[Class][]Kind{
 		KindReserve,
 		KindBrokerage,
 		KindReceivable,
+		KindProperty,
 		KindLoan,
 	},
 	ClassLiability: {KindCreditCard, KindLoan, KindPayable},

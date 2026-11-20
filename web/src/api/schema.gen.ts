@@ -6688,7 +6688,7 @@ export interface components {
             name: string;
             class: components["schemas"]["AccountClass"];
             /** @enum {string} */
-            kind?: "checking" | "savings" | "cash" | "wallet" | "benefit" | "reserve" | "brokerage" | "receivable" | "credit_card" | "loan" | "payable";
+            kind?: "checking" | "savings" | "cash" | "wallet" | "benefit" | "reserve" | "brokerage" | "receivable" | "property" | "credit_card" | "loan" | "payable";
             /** @description Instrument of the account; a security only for a child of a brokerage account (P8 amendment A63). */
             currency: string;
             /** Format: uuid */

@@ -178,6 +178,7 @@ classDiagram
 | `checking`, `savings`, `cash`, `wallet`, `benefit`, `reserve` | asset | `reserve` is a child of a `checking` or `wallet` parent account. |
 | `brokerage` | asset | Parent with one child per instrument held. |
 | `receivable` | asset | One per counterparty. |
+| `property` | asset | A good valued at the amount the user states; outside the liquidity indicator; its own group `property` in the allocation by type (A259). |
 | `credit_card` | liability | Has a `CardProfile`. |
 | `loan` | liability or asset | Liability when taken, asset when given. |
 | `payable` | liability | One per counterparty. |

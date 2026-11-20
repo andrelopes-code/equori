@@ -20,6 +20,7 @@ export const kindOrder: readonly Kind[] = [
   "reserve",
   "brokerage",
   "receivable",
+  "property",
   "credit_card",
   "loan",
   "payable",

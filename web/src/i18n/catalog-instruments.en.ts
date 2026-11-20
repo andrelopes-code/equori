@@ -11,6 +11,7 @@ export const instrumentsEn = {
   "instruments.emptyHint":
     "Add the investments your brokerage accounts hold to follow their price.",
   "instruments.type.currency": "Currencies",
+  "instruments.type.property": "Property",
   "instruments.type.stock": "Stocks",
   "instruments.type.etf": "ETFs",
   "instruments.type.reit": "REITs",

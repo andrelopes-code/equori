@@ -47,7 +47,7 @@ interface Node {
   position: boolean;
 }
 
-const assetGroups = new Set(["available", "reserves"]);
+const assetGroups = new Set(["available", "reserves", "property"]);
 
 export function isAssetGroup(group: string): boolean {
   return assetGroups.has(group);

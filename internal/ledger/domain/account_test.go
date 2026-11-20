@@ -26,6 +26,16 @@ func TestNewAccount(t *testing.T) {
 			in:        Account{Name: "Emergency", Class: ClassAsset, Kind: KindReserve},
 			wantYield: YieldAuto,
 		},
+		{
+			name:      "property",
+			in:        Account{Name: "Apartment", Class: ClassAsset, Kind: KindProperty},
+			wantYield: YieldNone,
+		},
+		{
+			name:      "liability property",
+			in:        Account{Name: "X", Class: ClassLiability, Kind: KindProperty},
+			wantField: "kind",
+		},
 		{name: "category", in: Account{Name: "Food", Class: ClassExpense}, wantYield: YieldNone},
 		{
 			name:      "kind on category",
