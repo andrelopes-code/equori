@@ -77,6 +77,10 @@ func (m *Module) requestHistory(
 				return n, fmt.Errorf("request the history of %s from %s: %w", code, src.ID(), err)
 			}
 
+			if err := m.reopenHole(ctx, src.ID(), string(code), start, now); err != nil {
+				return n, err
+			}
+
 			n++
 		}
 	}
@@ -86,6 +90,32 @@ func (m *Module) requestHistory(
 	}
 
 	return n, nil
+}
+
+// reopenHole queues a finished history of source and instrument again from from when its stored
+// prices from there hold a hole: a request over prices already stored changes nothing (A222 MQ5),
+// one over a hole fetches it (A248 CQ4b).
+func (m *Module) reopenHole(
+	ctx context.Context,
+	source, instrument string,
+	from, now time.Time,
+) error {
+	dates, err := m.storedDates(ctx, source, instrument, from)
+	if err != nil || len(dates) == 0 || lastRun(dates) == 0 {
+		return err
+	}
+
+	err = m.q.ReopenHistory(ctx, postgres.ReopenHistoryParams{
+		Source:      source,
+		Instrument:  instrument,
+		FromDate:    from,
+		RequestedAt: now,
+	})
+	if err != nil {
+		return fmt.Errorf("reopen the history of %s from %s: %w", instrument, source, err)
+	}
+
+	return nil
 }
 
 // requestDefaultHistory requests the default history of in from every enabled source that

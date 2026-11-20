@@ -135,33 +135,6 @@ func (q *Queries) DeletePricesBySource(ctx context.Context, arg DeletePricesBySo
 	return err
 }
 
-const earliestSourceDate = `-- name: EarliestSourceDate :one
-SELECT
-    coalesce(min(date), DATE '9999-12-31')::date AS earliest
-FROM
-    marketdata_price
-WHERE
-    source = $1
-    AND date >= $2
-    AND (
-        instrument = $3
-        OR quote_instrument = $3
-    )
-`
-
-type EarliestSourceDateParams struct {
-	Source     string
-	FromDate   time.Time
-	Instrument string
-}
-
-func (q *Queries) EarliestSourceDate(ctx context.Context, arg EarliestSourceDateParams) (time.Time, error) {
-	row := q.db.QueryRow(ctx, earliestSourceDate, arg.Source, arg.FromDate, arg.Instrument)
-	var earliest time.Time
-	err := row.Scan(&earliest)
-	return earliest, err
-}
-
 const instrumentCoverage = `-- name: InstrumentCoverage :one
 SELECT
     coalesce(min(date), DATE '1970-01-01')::date AS first,

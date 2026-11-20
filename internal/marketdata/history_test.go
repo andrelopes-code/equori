@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -393,6 +394,71 @@ func TestS556HistoryRefillsAfterAnOlderPrice(t *testing.T) {
 	}
 	requirePrices(t, cryptoPrices(t, h, "ETH", "USD"), want)
 	assertRows(t, historyRow(h, "coinbase", "ETH"), "2026-11-08 true ")
+}
+
+// S655: a history request fills a hole between stored prices of its source, and a request for a
+// finished row queues it again (A248 CQ4b). The source answers a candle for every day asked.
+func TestS655HistoryFillsAHole(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(everyDayCandles(r)))
+	}))
+	t.Cleanup(srv.Close)
+
+	h := apitest.New(t,
+		apitest.Clock(func() time.Time { return time.Date(2027, 1, 10, 12, 0, 0, 0, time.UTC) }),
+		apitest.PriceFeeds(nil, map[string]string{"coinbase": srv.URL + "/cb"}))
+	h.MustDo(http.MethodPost, "/api/v1/instruments", map[string]any{
+		"code": "ETH", "type": "crypto", "scale": 8, "name": "Ether", "quote_currency": "USD",
+	}, http.StatusCreated, nil)
+	h.MustDo(http.MethodPut, "/api/v1/market-data/feeds/coinbase",
+		map[string]any{"enabled": true}, http.StatusOK, nil)
+
+	// Stored: October 1 to 3 and December 20 to January 9, a finished history from October 1.
+	for _, statement := range []string{
+		`DELETE FROM marketdata_price WHERE instrument = 'ETH'`,
+		`INSERT INTO marketdata_price
+			(instrument, quote_instrument, date, value, source, priority, recorded_at)
+		SELECT 'ETH', 'USD', d::date, 1000, 'coinbase', 3, now()
+		FROM generate_series('2026-10-01'::date, '2026-10-03'::date, '1 day') d
+		UNION ALL
+		SELECT 'ETH', 'USD', d::date, 1000, 'coinbase', 3, now()
+		FROM generate_series('2026-12-20'::date, '2027-01-09'::date, '1 day') d`,
+		`INSERT INTO marketdata_history (source, instrument, from_date, requested_at, done_at)
+		VALUES ('coinbase', 'ETH', '2026-10-01', now(), now())
+		ON CONFLICT (source, instrument) DO UPDATE
+		SET from_date = EXCLUDED.from_date, done_at = EXCLUDED.done_at, error = NULL`,
+	} {
+		if _, err := h.Pool.Exec(t.Context(), statement); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	h.MustDo(http.MethodPost, "/api/v1/instruments/ETH/history",
+		map[string]any{"from": "2026-10-01"}, http.StatusAccepted, nil)
+	h.App.Marketdata.TickFeeds(t.Context())
+
+	// The hole from October 4 to December 19 holds a price for every day of it.
+	assertRows(t, h.Rows(`SELECT count(*)::text FROM marketdata_price
+		WHERE source = 'coinbase' AND instrument = 'ETH'
+		AND date BETWEEN '2026-10-04' AND '2026-12-19'`), "77")
+	assertRows(t, historyRow(h, "coinbase", "ETH"), "2026-10-01 true ")
+}
+
+// everyDayCandles answers a Coinbase candle for each day from start to end of the request.
+func everyDayCandles(r *http.Request) string {
+	start, _ := strconv.ParseInt(r.URL.Query().Get("start"), 10, 64)
+	end, _ := strconv.ParseInt(r.URL.Query().Get("end"), 10, 64)
+
+	var candles []string
+
+	for day := start - start%86400; day <= end; day += 86400 {
+		candles = append(candles, fmt.Sprintf(
+			`{"start":"%d","low":"1","high":"2","open":"1","close":"2000","volume":"1"}`, day))
+	}
+
+	return `{"candles":[` + strings.Join(candles, ",") + `]}`
 }
 
 // ptaxHarness runs an instance whose PTAX source answers the fixture of S357.

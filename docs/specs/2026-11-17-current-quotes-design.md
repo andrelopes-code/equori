@@ -64,6 +64,7 @@ Non-goals:
 | CQ3 | `coinbase`: a candle is finished when its `start` plus 24 hours is at or before now. Amends MQ17. |
 | CQ4 | A goose migration finds, for `yahoo_chart` and `coinbase`, each `(instrument, quote_instrument)` that holds a row with `recorded_at < date + 36 hours` (UTC). It deletes the rows of that source and pair from the earliest such date on and requests history (MQ4, MQ5) from that date. It runs only for a source that is enabled, as migration 98 does. A row loaded as history (`recorded_at` days after `date`) before the earliest such date is not touched. Until the next successful tick, the pair is valued at an earlier close or at the close of another source. |
 | CQ4a | Amends MQ9: the end of a history row is the day before the earliest stored price of that source and instrument on or after `from_date`, or today when none is stored from `from_date` on. A request for dates after an older stored price is no longer finished without a fetch. |
+| CQ4b | Amends CQ4a, 2026-11-20: the end of a history row is the day before the first price of the last run of stored prices of that source and instrument from `from_date`, a run having no two prices more than 14 days apart; today when none is stored. A request for a finished row whose stored prices from its `from_date` hold such a hole queues the row again from that date; a request over prices without a hole still changes nothing (MQ5). Before, one stored price ended the history before it, and a later request for a finished row was dropped: a security kept a hole of 45 months between a lone price and the prices of the daily tick. |
 | CQ5 | `feedStart` is unchanged: once CQ1 holds, a stored date is final for its source. |
 
 ### 3.2 Current quote
@@ -159,6 +160,7 @@ Tests use a fixed clock and sources served from fixtures. No test reaches a prov
 | S554 | A tick 30 minutes after `regular.end` stores the close of today. |
 | S555 | A tick during a UTC day stores no `coinbase` price of that day; a tick after it ends stores it. |
 | S556 | The migration requests history again for an instrument with a row recorded during its date and leaves an instrument without one untouched; the next tick replaces the value. |
+| S655 | A finished history over stored prices with a hole of 77 days is requested again from its start: the next tick fetches the hole and finishes the row (`TestS655HistoryFillsAHole`). |
 | S557 | `listPositions` at today, with a current quote later than the last close, values the holding at it and returns its `Price` with `at` and `open`. |
 | S558 | With the source disabled, failing, answering 429 or slower than 3 seconds, `listPositions` answers 200 with the close and no `at`. |
 | S559 | A manual price of today wins over a current quote of today. |

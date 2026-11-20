@@ -55,3 +55,35 @@ GROUP BY
     source
 ORDER BY
     source;
+
+-- name: ReopenHistory :exec
+-- A finished history whose stored prices hold a hole runs again from from_date (A248 CQ4b).
+UPDATE marketdata_history
+SET
+    from_date = @from_date,
+    requested_at = @requested_at,
+    done_at = NULL,
+    error = NULL
+WHERE
+    source = @source
+    AND instrument = @instrument
+    AND done_at IS NOT NULL;
+
+-- name: SourceDatesFrom :many
+-- The dates of the stored prices of one source and instrument, as the instrument or as its quote,
+-- on or after from_date, oldest first (A248 CQ4b).
+SELECT
+    date
+FROM
+    marketdata_price
+WHERE
+    source = @source
+    AND date >= @from_date
+    AND (
+        instrument = @instrument
+        OR quote_instrument = @instrument
+    )
+GROUP BY
+    date
+ORDER BY
+    date;

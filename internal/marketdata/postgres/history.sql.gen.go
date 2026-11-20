@@ -156,6 +156,37 @@ func (q *Queries) ListPendingHistory(ctx context.Context, source string) ([]Mark
 	return items, nil
 }
 
+const reopenHistory = `-- name: ReopenHistory :exec
+UPDATE marketdata_history
+SET
+    from_date = $1,
+    requested_at = $2,
+    done_at = NULL,
+    error = NULL
+WHERE
+    source = $3
+    AND instrument = $4
+    AND done_at IS NOT NULL
+`
+
+type ReopenHistoryParams struct {
+	FromDate    time.Time
+	RequestedAt time.Time
+	Source      string
+	Instrument  string
+}
+
+// A finished history whose stored prices hold a hole runs again from from_date (A248 CQ4b).
+func (q *Queries) ReopenHistory(ctx context.Context, arg ReopenHistoryParams) error {
+	_, err := q.db.Exec(ctx, reopenHistory,
+		arg.FromDate,
+		arg.RequestedAt,
+		arg.Source,
+		arg.Instrument,
+	)
+	return err
+}
+
 const requestHistory = `-- name: RequestHistory :exec
 INSERT INTO
     marketdata_history (source, instrument, from_date, requested_at)
@@ -186,4 +217,50 @@ func (q *Queries) RequestHistory(ctx context.Context, arg RequestHistoryParams) 
 		arg.RequestedAt,
 	)
 	return err
+}
+
+const sourceDatesFrom = `-- name: SourceDatesFrom :many
+SELECT
+    date
+FROM
+    marketdata_price
+WHERE
+    source = $1
+    AND date >= $2
+    AND (
+        instrument = $3
+        OR quote_instrument = $3
+    )
+GROUP BY
+    date
+ORDER BY
+    date
+`
+
+type SourceDatesFromParams struct {
+	Source     string
+	FromDate   time.Time
+	Instrument string
+}
+
+// The dates of the stored prices of one source and instrument, as the instrument or as its quote,
+// on or after from_date, oldest first (A248 CQ4b).
+func (q *Queries) SourceDatesFrom(ctx context.Context, arg SourceDatesFromParams) ([]time.Time, error) {
+	rows, err := q.db.Query(ctx, sourceDatesFrom, arg.Source, arg.FromDate, arg.Instrument)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []time.Time
+	for rows.Next() {
+		var date time.Time
+		if err := rows.Scan(&date); err != nil {
+			return nil, err
+		}
+		items = append(items, date)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

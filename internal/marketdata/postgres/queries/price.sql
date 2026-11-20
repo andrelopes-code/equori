@@ -111,19 +111,6 @@ WHERE
     source = @source
     AND instrument = @instrument;
 
--- name: EarliestSourceDate :one
-SELECT
-    coalesce(min(date), DATE '9999-12-31')::date AS earliest
-FROM
-    marketdata_price
-WHERE
-    source = @source
-    AND date >= @from_date
-    AND (
-        instrument = @instrument
-        OR quote_instrument = @instrument
-    );
-
 -- name: InstrumentCoverage :one
 SELECT
     coalesce(min(date), DATE '1970-01-01')::date AS first,

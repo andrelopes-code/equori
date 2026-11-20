@@ -63,37 +63,64 @@ func (m *Module) tickHistory(ctx context.Context, src feed.Source) error {
 	return m.fetchHistory(ctx, src, jobs)
 }
 
-// historyEnd is the last day to fetch for row: the day before the earliest price of source stored
-// on or after its start, or today when none is stored from there on (A248 CQ4a).
+// historyGap is the longest run of days between two stored prices of a source that its history
+// keeps without fetching it again: a weekend with the holidays around the turn of the year stays
+// under it.
+const historyGap = 14 * 24 * time.Hour
+
+// historyEnd is the last day to fetch for row: the day before the first price of the last run of
+// stored prices of source from its start, a run having no two prices more than historyGap apart;
+// today when none is stored from there on. A hole between stored prices is fetched again with
+// what lies before it (A248 CQ4a, CQ4b).
 func (m *Module) historyEnd(
 	ctx context.Context,
 	source string,
 	row postgres.MarketdataHistory,
 	today time.Time,
 ) (time.Time, error) {
-	earliest, err := m.q.EarliestSourceDate(
-		ctx,
-		postgres.EarliestSourceDateParams{
-			Source:     source,
-			Instrument: row.Instrument,
-			FromDate:   row.FromDate,
-		},
-	)
+	dates, err := m.storedDates(ctx, source, row.Instrument, row.FromDate)
 	if err != nil {
-		return time.Time{}, fmt.Errorf(
-			"read the earliest price of %s from %s: %w",
-			row.Instrument,
-			source,
-			err,
-		)
+		return time.Time{}, err
 	}
 
-	end := earliest.AddDate(0, 0, -1)
+	if len(dates) == 0 {
+		return today, nil
+	}
+
+	end := dates[lastRun(dates)].AddDate(0, 0, -1)
 	if end.After(today) {
 		end = today
 	}
 
 	return end, nil
+}
+
+// storedDates are the dates of the stored prices of source and instrument from from on.
+func (m *Module) storedDates(
+	ctx context.Context,
+	source, instrument string,
+	from time.Time,
+) ([]time.Time, error) {
+	dates, err := m.q.SourceDatesFrom(
+		ctx,
+		postgres.SourceDatesFromParams{Source: source, Instrument: instrument, FromDate: from},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("read the stored prices of %s from %s: %w", instrument, source, err)
+	}
+
+	return dates, nil
+}
+
+// lastRun is the index of the first date of the last run of dates, oldest first: 0 when no two
+// dates are more than historyGap apart.
+func lastRun(dates []time.Time) int {
+	run := len(dates) - 1
+	for run > 0 && dates[run].Sub(dates[run-1]) <= historyGap {
+		run--
+	}
+
+	return run
 }
 
 // fetchHistory makes one Fetch of src over the jobs and finishes each row (D6 to D9).
