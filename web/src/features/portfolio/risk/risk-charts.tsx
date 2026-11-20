@@ -9,10 +9,12 @@ import {
   deepestFall,
   drawdownRows,
   portfolioKey,
+  seriesWithValue,
   volatilityKeys,
   volatilityRows,
 } from "@/features/portfolio/risk/risk-figures";
 import type { RiskRow } from "@/features/portfolio/risk/risk-figures";
+import { useLinkedCharts } from "@/features/portfolio/risk/use-linked-charts";
 import {
   formatBasisPoints,
   formatReferenceMonth,
@@ -31,6 +33,7 @@ interface RiskChartsProps {
 export function RiskCharts({ report }: RiskChartsProps) {
   const t = useT();
   const [tag] = useAppLocale();
+  const linked = useLinkedCharts();
 
   const percent = (bp: number) => formatBasisPoints(bp, tag);
   const keys = [portfolioKey, ...volatilityKeys(report)];
@@ -56,18 +59,28 @@ export function RiskCharts({ report }: RiskChartsProps) {
     },
   ];
   const deepest = deepestFall(report);
+  const volatilityData = records(volatilityRows(report));
+  const drawdownData = records(drawdownRows(report));
+  const shared = {
+    zoomable: true,
+    zoom: linked.zoom,
+    onZoomChange: linked.setZoom,
+    onActivePointChange: linked.setActive,
+  };
 
   return (
     <Grid minItemWidth="md" gap={6}>
       <Chart
         size="sm"
         title={t("portfolio.risk.volatility")}
-        data={records(volatilityRows(report))}
+        data={volatilityData}
+        activePoint={linked.pointOf(seriesWithValue(volatilityData, keys))}
         series={volatility}
         x={{ field: "name" }}
         y={{ format: percent }}
         trigger="axis"
         toolbar="hover"
+        {...shared}
       />
       <Chart
         size="sm"
@@ -82,13 +95,17 @@ export function RiskCharts({ report }: RiskChartsProps) {
             </Text>
           )
         }
-        data={records(drawdownRows(report))}
+        data={drawdownData}
+        activePoint={linked.pointOf(
+          seriesWithValue(drawdownData, [portfolioKey]),
+        )}
         series={drawdown}
         x={{ field: "name" }}
         y={{ format: percent }}
         legend={false}
         trigger="axis"
         toolbar="hover"
+        {...shared}
       />
     </Grid>
   );

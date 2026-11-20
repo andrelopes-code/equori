@@ -112,3 +112,16 @@ function leftOutOf(c: RiskSeries, i: number): boolean {
     (m.state === "stale" || m.state === "missing" || (m.excluded_bp ?? 0) > 0)
   );
 }
+
+// The first of ids whose line holds a value in the record named key: the series a chart reads a
+// month on when the other chart points at it.
+export function seriesWithValue(
+  records: readonly Readonly<Record<string, unknown>>[],
+  ids: readonly string[],
+): (key: string) => string | undefined {
+  return (key) => {
+    const record = records.find((r) => r.name === key);
+
+    return ids.find((id) => record?.[id] !== undefined && record[id] !== null);
+  };
+}

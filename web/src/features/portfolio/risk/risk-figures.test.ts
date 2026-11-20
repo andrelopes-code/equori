@@ -6,6 +6,7 @@ import {
   drawdownRows,
   portfolioKey,
   riskNotes,
+  seriesWithValue,
   volatilityKeys,
   volatilityRows,
 } from "@/features/portfolio/risk/risk-figures";
@@ -126,5 +127,21 @@ describe("risk figures", () => {
       shortSample: undefined,
       belowFloor: 2,
     });
+  });
+
+  it("RK7: reads a month on the first line that holds a value in it", () => {
+    const at = seriesWithValue(
+      [
+        { name: "jan-2026", portfolio: undefined, stock: 3893 },
+        { name: "fev-2026", portfolio: 2403, stock: 3900 },
+        { name: "mar-2026", portfolio: undefined, stock: undefined },
+      ],
+      ["portfolio", "stock"],
+    );
+
+    expect(at("jan-2026")).toBe("stock");
+    expect(at("fev-2026")).toBe("portfolio");
+    expect(at("mar-2026")).toBeUndefined();
+    expect(at("abr-2026")).toBeUndefined();
   });
 });
