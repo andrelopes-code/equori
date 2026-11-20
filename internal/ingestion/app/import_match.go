@@ -133,6 +133,7 @@ type scoredLine struct {
 	rec           *domain.ExternalRecord
 	line          Line
 	reserveReview bool
+	closed        bool // A261: first reported and dated before the last reconciled balance
 }
 
 // assign decides the lines by score (A98–A100); the payees of the lines are asked of

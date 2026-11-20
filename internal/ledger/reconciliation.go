@@ -53,6 +53,16 @@ func (m *Module) MoveReconciledDate(
 	return m.svc.MoveReconciledDate(ctx, booksID, txID, accountID, date)
 }
 
+// LastBalanceReconciledOn returns the date of the account's latest reconciled balance
+// assertion, nil for none (A261).
+func (m *Module) LastBalanceReconciledOn(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+) (*time.Time, error) {
+	return m.svc.LastBalanceReconciledOn(ctx, booksID, accountID)
+}
+
 // AccountChecks lists the open balance accounts with their open differences (P12 A152).
 func (m *Module) AccountChecks(ctx context.Context, booksID int64) ([]AccountCheck, error) {
 	return m.svc.AccountChecks(ctx, booksID)

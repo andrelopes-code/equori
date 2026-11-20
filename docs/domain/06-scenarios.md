@@ -1300,3 +1300,7 @@ AT10 to AT12, through the HTTP API. S656 with a CDI on every day of 2025 from 20
 ### S671 A region without indexes
 
 AT11, R2, through the HTTP API. S656 in a book of Germany: no rate and no inflation comparison; the return of 2025 stays −0.50%.
+
+### S673 A sync line dated before a reconciled balance
+
+Amendment A261 (`docs/specs/2026-11-20-reconciled-sync-line-design.md`), through the HTTP API. A checking account synced on 2026-11-12 reconciles its balance of 2,834.10. The next sync returns a new line of +4.35 dated 2026-11-05 and a new line of −10.00 dated 2026-11-12: the first waits for review with reason `reconciled` and books nothing, the second is created. The owner creates the first through `POST /external-records/{id}/resolve`. Test `TestS673LineBeforeReconciledBalance` in `internal/ingestion`.

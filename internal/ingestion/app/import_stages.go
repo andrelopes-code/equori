@@ -50,9 +50,36 @@ func (s *Service) claimLines(ctx context.Context, p *importPlan) error {
 	}
 
 	p.batch.Counts.Received = len(p.lines)
+
+	if err := s.markFirstReported(ctx, p, claimed); err != nil {
+		return err
+	}
+
 	reopenWithdrawn(claimed, p.lines)
 
 	p.claimed = claimed
+
+	return nil
+}
+
+// markFirstReported records, before a withdrawn record is reopened, which lines the source
+// reports for the first time, and in a sync the account's last reconciled balance (A261).
+func (s *Service) markFirstReported(ctx context.Context, p *importPlan, claimed []Claim) error {
+	p.first = make([]bool, len(claimed))
+	for i := range claimed {
+		p.first[i] = !claimed[i].Existed
+	}
+
+	if !p.sync {
+		return nil
+	}
+
+	on, err := s.ledger.LastBalanceReconciledOn(ctx, p.batch.BooksID, p.batch.AccountID)
+	if err != nil {
+		return err
+	}
+
+	p.closedBefore = on
 
 	return nil
 }
@@ -114,7 +141,8 @@ func (s *Service) classifyLine(ctx context.Context, p *importPlan, i int) error 
 		}
 	}
 
-	p.scoring = append(p.scoring, scoredLine{rec: rec, line: line, reserveReview: reserve.Review})
+	sl := scoredLine{rec: rec, line: line, reserveReview: reserve.Review, closed: p.closed(i, r)}
+	p.scoring = append(p.scoring, sl)
 
 	return nil
 }

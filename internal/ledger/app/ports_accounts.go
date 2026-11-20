@@ -121,6 +121,12 @@ type reconciliationStore interface {
 		p page.Request[AssertionKey],
 	) ([]BalanceAssertion, *AssertionKey, error)
 	LastReconciledOn(ctx context.Context, booksID int64, accountID uuid.UUID) (*time.Time, error)
+	// LastBalanceReconciledOn is LastReconciledOn without card statement reconciliations.
+	LastBalanceReconciledOn(
+		ctx context.Context,
+		booksID int64,
+		accountID uuid.UUID,
+	) (*time.Time, error)
 	FirstSettledOn(ctx context.Context, booksID int64, accountID uuid.UUID) (*time.Time, error)
 	// InsertReconciliation returns domain.ErrAlreadyReconciled for an assertion or statement reconciled before.
 	InsertReconciliation(ctx context.Context, rec Reconciliation) error

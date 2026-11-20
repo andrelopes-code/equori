@@ -82,6 +82,20 @@ ORDER BY
 LIMIT
     1;
 
+-- name: LastBalanceReconciledOn :one
+SELECT
+    date
+FROM
+    ledger_reconciliation
+WHERE
+    books_id = $1
+    AND account_id = $2
+    AND assertion_id IS NOT NULL
+ORDER BY
+    date DESC
+LIMIT
+    1;
+
 -- name: InsertReconciliation :exec
 INSERT INTO
     ledger_reconciliation (

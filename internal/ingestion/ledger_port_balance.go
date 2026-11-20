@@ -44,6 +44,16 @@ func (p ledgerPort) AssertSyncedReserve(
 	return p.assert(ctx, booksID, accountID, b, c, p.l.AssertSyncedReserve)
 }
 
+func (p ledgerPort) LastBalanceReconciledOn(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+) (*time.Time, error) {
+	on, err := p.l.LastBalanceReconciledOn(ctx, booksID, accountID)
+
+	return on, p.translate(err)
+}
+
 type assertFunc func(ctx context.Context, booksID int64, accountID uuid.UUID, date time.Time, amount money.Money) error
 
 func (p ledgerPort) assert(

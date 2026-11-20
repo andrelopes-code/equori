@@ -631,6 +631,8 @@ export const accountsEn = {
     "A transaction with this date and amount is already recorded under another name or id. Discard this line if it is the same; create it if there were two.",
   "batch.reason.transfer":
     "This line looks like a transfer between your own accounts. Choose the other account's transaction; without one, create it and turn it into a transfer to the right account, or discard it.",
+  "batch.reason.reconciled":
+    "The bank reported this line after a reconciled balance of a later date, and that balance did not include it. Discard it if it did not move this account; create it if it did.",
   "batch.group.confirm": "Confirm the group",
   "batch.group.lines": "Group of {count} bank lines.",
   "batch.unapplied": "Change not applied: {change}",

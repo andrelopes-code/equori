@@ -73,6 +73,16 @@ func (s *Service) ReconciliationStatus(
 	return st, nil
 }
 
+// LastBalanceReconciledOn returns the date of the account's latest reconciled balance
+// assertion, nil for none; a card statement reconciliation does not count (A261).
+func (s *Service) LastBalanceReconciledOn(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+) (*time.Time, error) {
+	return s.repo.LastBalanceReconciledOn(ctx, booksID, accountID)
+}
+
 // Unlock is the explicit step chapter 2 requires before reconciled postings change (A8).
 func (s *Service) Unlock(
 	ctx context.Context,

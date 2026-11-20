@@ -38,6 +38,7 @@ const reasonWords: Record<
   reserve: "batch.reason.reserve",
   duplicate: "batch.reason.duplicate",
   transfer: "batch.reason.transfer",
+  reconciled: "batch.reason.reconciled",
 };
 
 // The line waiting for review, the transactions it may confirm best first, and the three ways

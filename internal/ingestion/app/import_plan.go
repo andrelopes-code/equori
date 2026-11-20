@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -18,6 +19,11 @@ type importPlan struct {
 	lines    []domain.NormalizedRecord
 	reserve  func(domain.NormalizedRecord) domain.ReserveOutcome
 	claimed  []Claim
+	// first marks the lines the source reports for the first time, before a withdrawn record
+	// is reopened (A261).
+	first []bool
+	// closedBefore is the date of the account's last reconciled balance in a sync (A261).
+	closedBefore *time.Time
 
 	pending []*domain.ExternalRecord
 	updated []domain.ExternalRecord
@@ -165,6 +171,9 @@ func (p *importPlan) routeZone(i int, a domain.Assignment) {
 	case a.Zone == domain.ZoneNew && p.scoring[i].reserveReview:
 		// A213: a line no reserve resolves books nothing a balance could turn into yield.
 		rec.State, rec.ReviewReason = domain.StateNeedsReview, domain.ReviewReserve
+	case a.Zone == domain.ZoneNew && p.scoring[i].closed:
+		// A261: a reconciled balance the bank reported after the line's date left it out.
+		rec.State, rec.ReviewReason = domain.StateNeedsReview, domain.ReviewReconciled
 	case a.Zone == domain.ZoneNew:
 		p.creates, p.created = append(
 			p.creates,
@@ -208,6 +217,11 @@ func (p *importPlan) lineOf(rec *domain.ExternalRecord, r domain.NormalizedRecor
 		Category:    r.Category,
 		Kind:        r.Kind,
 	}
+}
+
+// closed reports a first-reported line dated before the last reconciled balance (A261).
+func (p *importPlan) closed(i int, r domain.NormalizedRecord) bool {
+	return p.first[i] && p.closedBefore != nil && r.Date.Before(*p.closedBefore)
 }
 
 // reopenWithdrawn turns a withdrawn record that the aggregator returned into a received one.

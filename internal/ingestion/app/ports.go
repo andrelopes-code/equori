@@ -178,6 +178,13 @@ type Ledger interface {
 		b domain.Balance,
 		c money.Currency,
 	) error
+	// LastBalanceReconciledOn returns the date of the account's latest reconciled balance
+	// assertion, nil for none (A261).
+	LastBalanceReconciledOn(
+		ctx context.Context,
+		booksID int64,
+		accountID uuid.UUID,
+	) (*time.Time, error)
 	// AssertSyncedReserve is AssertSyncedBalance for a reserved balance, which books bounded
 	// yield on a positive difference (A75).
 	AssertSyncedReserve(

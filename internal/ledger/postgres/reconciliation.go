@@ -150,6 +150,19 @@ func (r *Repository) LastReconciledOn(
 	)
 }
 
+func (r *Repository) LastBalanceReconciledOn(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+) (*time.Time, error) {
+	return optionalDate(
+		r.q.LastBalanceReconciledOn(
+			ctx,
+			LastBalanceReconciledOnParams{BooksID: booksID, AccountID: accountID},
+		),
+	)
+}
+
 func (r *Repository) FirstSettledOn(
 	ctx context.Context,
 	booksID int64,

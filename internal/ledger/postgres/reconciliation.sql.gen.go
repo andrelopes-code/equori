@@ -206,6 +206,33 @@ func (q *Queries) InsertReconciliation(ctx context.Context, arg InsertReconcilia
 	return err
 }
 
+const lastBalanceReconciledOn = `-- name: LastBalanceReconciledOn :one
+SELECT
+    date
+FROM
+    ledger_reconciliation
+WHERE
+    books_id = $1
+    AND account_id = $2
+    AND assertion_id IS NOT NULL
+ORDER BY
+    date DESC
+LIMIT
+    1
+`
+
+type LastBalanceReconciledOnParams struct {
+	BooksID   int64
+	AccountID uuid.UUID
+}
+
+func (q *Queries) LastBalanceReconciledOn(ctx context.Context, arg LastBalanceReconciledOnParams) (time.Time, error) {
+	row := q.db.QueryRow(ctx, lastBalanceReconciledOn, arg.BooksID, arg.AccountID)
+	var date time.Time
+	err := row.Scan(&date)
+	return date, err
+}
+
 const lastReconciledOn = `-- name: LastReconciledOn :one
 SELECT
     date

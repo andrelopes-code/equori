@@ -1238,8 +1238,8 @@ schemas:
         description: The last automatic decision of a sync, present while POST /external-records/{id}/undo can revert it (A148, A220).
       review_reason:
         type: string
-        enum: [ambiguous, probable, changed, repeated, group, reserve, duplicate, transfer]
-        description: Why the record waits for review (A100, A102, A142, A168, A213, A215, A219).
+        enum: [ambiguous, probable, changed, repeated, group, reserve, duplicate, transfer, reconciled]
+        description: Why the record waits for review (A100, A102, A142, A168, A213, A215, A219, A261).
       group_record_ids:
         type: array
         description: The other lines of the group, while review_reason is group (A168).

@@ -629,6 +629,8 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
     "Já existe um lançamento com esta data e valor, com outro nome ou identificador. Descarte se for o mesmo; crie se foram dois.",
   "batch.reason.transfer":
     "Esta linha parece uma transferência entre contas suas. Escolha a transação da outra conta; sem ela, crie e transforme em transferência para a conta certa, ou descarte.",
+  "batch.reason.reconciled":
+    "O banco chegou a esta linha depois de um saldo conferido de data posterior, e esse saldo não a incluía. Descarte se ela não mexeu nesta conta; crie se mexeu.",
   "batch.group.confirm": "Confirmar o grupo",
   "batch.group.lines": "Grupo de {count} linhas do banco.",
   "batch.unapplied": "Alteração não aplicada: {change}",
