@@ -474,3 +474,261 @@
     }
   }
 }
+
+/* Columns of a monthly series, the walk of a month and the indicator tiles. */
+@layer app {
+  @keyframes rise {
+    from {
+      transform: scaleY(0);
+    }
+  }
+
+  .cols {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+    align-items: end;
+    gap: 4px;
+    block-size: 112px;
+    border-block-end: 1px solid var(--slotted-text-muted);
+  }
+
+  .col {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    block-size: 100%;
+    outline: none;
+  }
+
+  .col > i {
+    display: block;
+    inline-size: 100%;
+    block-size: var(--h);
+    border-radius: 4px 4px 0 0;
+    background: color-mix(
+      in oklab,
+      var(--slotted-tone-accent-solid) 55%,
+      transparent
+    );
+    transform-origin: bottom;
+    animation: rise var(--slotted-duration-long) var(--slotted-easing-enter)
+      both;
+  }
+
+  .colFocus > i {
+    background: var(--slotted-tone-accent-solid);
+  }
+
+  .colPartial > i,
+  .keyPartial {
+    background: repeating-linear-gradient(
+      135deg,
+      var(--slotted-tone-accent-solid) 0 2px,
+      transparent 2px 4px
+    );
+  }
+
+  .col:hover > i,
+  .col:focus-visible > i {
+    background: var(--slotted-tone-accent-solid-hover);
+  }
+
+  .col:focus-visible {
+    outline: 2px solid var(--slotted-tone-accent-solid);
+    outline-offset: 2px;
+  }
+
+  .colTip {
+    position: absolute;
+    inset-block-end: calc(var(--h) + 6px);
+    inset-inline-start: 50%;
+    z-index: 2;
+    display: none;
+    transform: translateX(-50%);
+    padding: 6px 8px;
+    border-radius: 8px;
+    background: var(--slotted-surface-inverse);
+    color: var(--slotted-text-inverse);
+    font-size: var(--slotted-font-size-xs);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  .tipStart .colTip {
+    inset-inline-start: 0;
+    transform: none;
+  }
+
+  .tipEnd .colTip {
+    inset-inline: auto 0;
+    transform: none;
+  }
+
+  .col:hover .colTip,
+  .col:focus-visible .colTip {
+    display: block;
+  }
+
+  .avg {
+    position: absolute;
+    inset-inline: 0;
+    border-block-start: 1px dashed var(--slotted-text-muted);
+    pointer-events: none;
+  }
+
+  .avgLabel {
+    position: absolute;
+    inset-inline-end: 0;
+    transform: translateY(-100%);
+    padding-block-end: 2px;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .colAxis {
+    display: grid;
+    grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+    gap: 4px;
+    margin-block-start: 6px;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .colAxis > span {
+    overflow: hidden;
+    text-overflow: clip;
+  }
+
+  .keyPartial {
+    flex: none;
+    inline-size: 10px;
+    block-size: 10px;
+    border-radius: 3px;
+  }
+
+  .fall {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+    gap: 6px;
+    block-size: 132px;
+    margin-block-start: 18px;
+  }
+
+  .step {
+    position: relative;
+  }
+
+  .step > i {
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: var(--from);
+    block-size: max(var(--h), 1px);
+    border-radius: 3px;
+    background: var(--equori-slot-1);
+    transform-origin: bottom;
+    animation: rise var(--slotted-duration-long) var(--slotted-easing-enter)
+      both;
+  }
+
+  .step > b {
+    position: absolute;
+    inset-inline: -4px;
+    inset-block-end: calc(var(--from) + var(--h) + 4px);
+    font-size: var(--slotted-font-size-xs);
+    font-weight: var(--slotted-font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .stepTotal > i {
+    background: color-mix(in oklab, var(--slotted-text) 34%, transparent);
+  }
+
+  .stepGain > i {
+    background: var(--slotted-tone-success-solid);
+  }
+
+  .stepLoss > i {
+    background: var(--slotted-tone-danger-solid);
+  }
+
+  .stepLoss > b {
+    inset-block-end: auto;
+    inset-block-start: calc(100% - var(--from) + 4px);
+  }
+
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .tile {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-inline-size: 0;
+    padding: 10px;
+    border-radius: 10px;
+    background: color-mix(in oklab, var(--slotted-text) 4%, transparent);
+    outline: none;
+  }
+
+  .tile:focus-visible {
+    outline: 2px solid var(--slotted-tone-accent-solid);
+    outline-offset: 2px;
+  }
+
+  .tileKey {
+    overflow: hidden;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .tileValue {
+    font-size: var(--slotted-font-size-lg);
+    font-weight: var(--slotted-font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .mini {
+    display: block;
+    inline-size: 100%;
+    block-size: 24px;
+    margin-block-start: 4px;
+  }
+
+  .mini path {
+    fill: none;
+    stroke: var(--slotted-tone-accent-solid);
+    stroke-width: 1.5px;
+    vector-effect: non-scaling-stroke;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .col > i,
+    .step > i {
+      animation: none;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .col > i,
+    .step > i,
+    .tile {
+      forced-color-adjust: none;
+      border: 1px solid CanvasText;
+    }
+  }
+}

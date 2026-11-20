@@ -862,6 +862,7 @@ schemas:
       bp: {type: integer, format: int64, description: share in basis points}
       count: {type: integer, format: int64}
       date: {type: string, format: date}
+      month: {type: string, pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$"}
   AssistantViewMoney:
     type: object
     additionalProperties: false

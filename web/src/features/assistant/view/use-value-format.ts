@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 
 import type { ValueFormat } from "@/features/assistant/view/value-text";
+import { wholeUnits } from "@/features/assistant/view/whole-units";
 import { catalogKey } from "@/features/assistant/model/catalog-key";
 import { useScale } from "@/features/setup";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -17,6 +18,18 @@ export function useValueFormat(): ValueFormat {
     () => ({
       locale,
       money: (m) => fmt.money(m, scaleOf?.(m.currency) ?? 2),
+      whole: (m, signed) => {
+        const unit =
+          m.amount === 0
+            ? m
+            : {
+                ...m,
+                amount: wholeUnits(m.amount, scaleOf?.(m.currency) ?? 2),
+              };
+        return signed
+          ? fmt.signed(unit, 0, { symbol: false })
+          : fmt.money(unit, 0);
+      },
       delta: (m) =>
         fmt.signed(m, scaleOf?.(m.currency) ?? 2, { symbol: false }),
       label: (key, count) => {

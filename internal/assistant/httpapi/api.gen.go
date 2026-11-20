@@ -357,6 +357,7 @@ type AssistantViewValue struct {
 	Count *int64              `json:"count,omitempty"`
 	Date  *openapi_types.Date `json:"date,omitempty"`
 	Money *AssistantViewMoney `json:"money,omitempty"`
+	Month *string             `json:"month,omitempty"`
 	Text  *string             `json:"text,omitempty"`
 }
 

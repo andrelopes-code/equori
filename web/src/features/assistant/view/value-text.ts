@@ -1,3 +1,4 @@
+import { monthText } from "@/features/assistant/view/month-text";
 import type {
   ViewMoney,
   ViewValue,
@@ -8,6 +9,8 @@ export interface ValueFormat {
   money: (m: ViewMoney) => string;
   // A difference: always signed, without the currency symbol.
   delta: (m: ViewMoney) => string;
+  // A label on a chart column: whole units of the currency, signed when it is a flow.
+  whole: (m: ViewMoney, signed: boolean) => string;
   // A catalog key the server sent as a label, such as the rest row of a ranking.
   label: (key: string, count: number | undefined) => string;
   locale: string;
@@ -20,6 +23,7 @@ export function valueText(v: ViewValue, f: ValueFormat): string {
   if (v.money !== undefined) return f.money(v.money);
   if (v.bp !== undefined) return percent(v.bp, f.locale);
   if (v.date !== undefined) return formatDate(v.date, f.locale);
+  if (v.month !== undefined) return monthText(v.month, f.locale);
   if (v.text?.startsWith(LABEL) === true) return f.label(v.text, v.count);
   if (v.count !== undefined) return numberFormatter(f.locale).format(v.count);
 

@@ -335,3 +335,156 @@ func TestViewTreemap(t *testing.T) {
 		t.Fatalf("verdict = %+v", p.Verdict)
 	}
 }
+
+// indicators writes a get_financial_indicators output; each month is month=income/expense/liquid/savings_bp/committed_bp/liquidity_bp.
+func indicators(months ...string) json.RawMessage {
+	var out []string
+	for _, m := range months {
+		month, rest, _ := strings.Cut(m, "=")
+		f := strings.Split(rest, "/")
+		brl := func(a string) string { return fmt.Sprintf(`{"amount":%q,"currency":"BRL"}`, a) }
+		out = append(out, fmt.Sprintf(
+			`{"month":%q,"income":%s,"expense":%s,"committed":%s,"debt_service":%s,"liquid_balance":%s,"liabilities":%s,`+
+				`"savings_rate":{"bp":%s},"trailing_savings_rate":{"bp":0},"liquidity":{"bp":%s},"committed_share":{"bp":%s},"debt_service_share":{"bp":0}}`,
+			month,
+			brl(f[0]),
+			brl(f[1]),
+			brl("0.00"),
+			brl("0.00"),
+			brl(f[2]),
+			brl("0.00"),
+			f[3],
+			f[5],
+			f[4],
+		))
+	}
+
+	return json.RawMessage(`{"months":[` + strings.Join(out, ",") + `]}`)
+}
+
+func indicatorsBuild(t *testing.T, form string, out json.RawMessage) view.Payload {
+	t.Helper()
+
+	b := toolapi.Views()[view.Key{Tool: "get_financial_indicators", Form: form}]
+	if b == nil {
+		t.Fatalf("no builder for %s", form)
+	}
+
+	p, err := b([]json.RawMessage{out}, view.Select{}, today)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return p
+}
+
+var year = indicators(
+	"2025-12=12000.00/9850.00/3000.00/1792/5200/20000",
+	"2026-01=12000.00/7120.00/4000.00/4067/5100/22000",
+	"2026-02=12000.00/6980.00/5000.00/4183/5000/24000",
+	"2026-03=12000.00/7450.00/6000.00/3792/5200/26000",
+	"2026-04=12000.00/6890.00/7000.00/4258/4900/28000",
+	"2026-05=12000.00/7210.00/8000.00/3992/5000/30000",
+	"2026-06=12000.00/8420.00/9000.00/2983/4800/32000",
+	"2026-07=12000.00/7050.00/10000.00/4125/4900/34000",
+	"2026-08=12000.00/6640.00/11000.00/4467/4800/36000",
+	"2026-09=12000.00/7320.00/12000.00/3900/4700/38000",
+	"2026-10=12400.00/8191.05/16208.95/3394/4900/42000",
+	"2026-11=6000.00/5115.00/17093.95/1475/4800/42000",
+)
+
+// The months of the mock: November is open on the 19th, so the series reads October as the last
+// closed month, third largest, and averages the 11 closed months.
+func TestViewSeries(t *testing.T) {
+	p := indicatorsBuild(t, "series", year)
+
+	var d struct {
+		Months []struct {
+			Month   string     `json:"month"`
+			Amount  view.Money `json:"amount"`
+			Partial bool       `json:"partial"`
+		} `json:"months"`
+		Average view.Money `json:"average"`
+		Focus   string     `json:"focus"`
+	}
+	b, _ := json.Marshal(p.Data)
+	_ = json.Unmarshal(b, &d)
+
+	if len(d.Months) != 12 || !d.Months[11].Partial || d.Months[10].Partial ||
+		d.Focus != "2026-10" ||
+		d.Average.Amount != 755646 {
+		t.Fatalf("data = %+v", d)
+	}
+
+	if p.Verdict.Key != "assistantView.series.verdict" || *p.Verdict.Params["rank"].Count != 3 ||
+		p.Verdict.Params["month"].Month != "2026-10" || p.Verdict.Params["average"].Money.Amount != 755646 {
+		t.Fatalf("verdict = %+v", p.Verdict)
+	}
+}
+
+// October of the mock: liquid balance 12000.00 at the end of September, 16208.95 at the end of
+// October; income 12400.00 and expense 8191.05 leave 2000.00 of other movements.
+func TestViewWaterfall(t *testing.T) {
+	p := indicatorsBuild(t, "waterfall", year)
+
+	var d struct {
+		Month string `json:"month"`
+		Steps []struct {
+			Kind   string     `json:"kind"`
+			Amount view.Money `json:"amount"`
+		} `json:"steps"`
+	}
+	b, _ := json.Marshal(p.Data)
+	_ = json.Unmarshal(b, &d)
+
+	want := []struct {
+		kind   string
+		amount int64
+	}{{"start", 1200000}, {"income", 1240000}, {"expense", -819105}, {"other", 0 - 200000 + 200000 - 200000 + 200000}, {"end", 1620895}}
+	want[3].amount = 1620895 - 1200000 - 1240000 + 819105
+
+	if d.Month != "2026-10" || len(d.Steps) != 5 {
+		t.Fatalf("data = %+v", d)
+	}
+
+	for i, w := range want {
+		if d.Steps[i].Kind != w.kind || d.Steps[i].Amount.Amount != w.amount {
+			t.Fatalf("step %d = %+v, want %s %d", i, d.Steps[i], w.kind, w.amount)
+		}
+	}
+
+	if p.Verdict.Key != "assistantView.waterfall.verdict_saved" ||
+		p.Verdict.Params["amount"].Money.Amount != 420895 {
+		t.Fatalf("verdict = %+v", p.Verdict)
+	}
+}
+
+// The tiles of October: savings 33.94%, committed share 49%, liquidity 4.2 months.
+func TestViewIndicators(t *testing.T) {
+	p := indicatorsBuild(t, "indicators", year)
+
+	var d struct {
+		Month string `json:"month"`
+		Tiles []struct {
+			Kind   string  `json:"kind"`
+			BP     int64   `json:"bp"`
+			Series []int64 `json:"series"`
+		} `json:"tiles"`
+	}
+	b, _ := json.Marshal(p.Data)
+	_ = json.Unmarshal(b, &d)
+
+	if d.Month != "2026-10" || len(d.Tiles) != 3 || d.Tiles[0].Kind != "savings" ||
+		d.Tiles[0].BP != 3394 ||
+		d.Tiles[1].BP != 4900 ||
+		d.Tiles[2].Kind != "liquidity" ||
+		d.Tiles[2].BP != 42000 ||
+		len(d.Tiles[0].Series) != 11 {
+		t.Fatalf("data = %+v", d)
+	}
+
+	if p.Verdict.Key != "assistantView.indicators.verdict" ||
+		*p.Verdict.Params["savings"].BP != 3394 {
+		t.Fatalf("verdict = %+v", p.Verdict)
+	}
+}

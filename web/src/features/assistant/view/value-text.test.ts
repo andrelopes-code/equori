@@ -6,6 +6,7 @@ import type { ValueFormat } from "@/features/assistant/view/value-text";
 const format: ValueFormat = {
   money: (m) => `${m.currency} ${String(m.amount)}`,
   delta: (m) => `±${String(m.amount)}`,
+  whole: (m) => String(m.amount),
   label: (key, count) => `${key}:${String(count)}`,
   locale: "pt-BR",
 };
@@ -41,6 +42,10 @@ describe("valueText", () => {
     expect(
       valueText({ text: "assistantView.ranking.rest", count: 7 }, format),
     ).toBe("assistantView.ranking.rest:7");
+  });
+
+  it("names a month", () => {
+    expect(valueText({ month: "2026-10" }, format)).toBe("outubro 2026");
   });
 
   it("writes plain text as given", () => {

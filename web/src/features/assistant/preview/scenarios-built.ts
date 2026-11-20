@@ -284,4 +284,283 @@ export const builtScenarios: Scenario[] = [
       },
     ],
   },
+  {
+    id: "built-series",
+    form: "series",
+    note: "get_financial_indicators → show series",
+    handled: true,
+    question: "Como meus gastos andaram no ano?",
+    answer: "Outubro pesou mais que o normal.",
+    views: [
+      {
+        id: "v-series",
+        form: "series",
+        payload: {
+          title: { key: "assistantView.series.title" },
+          window: { from: "2025-12-01", to: "2026-11-30" },
+          verdict: {
+            key: "assistantView.series.verdict",
+            params: {
+              average: { money: { amount: 755646, currency: "BRL" } },
+              month: { month: "2026-10" },
+              rank: { count: 3 },
+            },
+          },
+          prov: {
+            key: "assistantView.prov.months",
+            params: { count: { count: 11 } },
+          },
+          open: { screen: "/reports" },
+          next: [],
+          rows: {
+            head: ["assistantView.col.month", "assistantView.col.spent"],
+            rows: [
+              [
+                { month: "2025-12" },
+                { money: { amount: 985000, currency: "BRL" } },
+              ],
+              [
+                { month: "2026-01" },
+                { money: { amount: 712000, currency: "BRL" } },
+              ],
+              [
+                { month: "2026-02" },
+                { money: { amount: 698000, currency: "BRL" } },
+              ],
+              [
+                { month: "2026-03" },
+                { money: { amount: 745000, currency: "BRL" } },
+              ],
+              [
+                { month: "2026-04" },
+                { money: { amount: 689000, currency: "BRL" } },
+              ],
+              [
+                { month: "2026-05" },
+                { money: { amount: 721000, currency: "BRL" } },
+              ],
+              [
+                { month: "2026-06" },
+                { money: { amount: 842000, currency: "BRL" } },
+              ],
+              [
+                { month: "2026-07" },
+                { money: { amount: 705000, currency: "BRL" } },
+              ],
+              [
+                { month: "2026-08" },
+                { money: { amount: 664000, currency: "BRL" } },
+              ],
+              [
+                { month: "2026-09" },
+                { money: { amount: 732000, currency: "BRL" } },
+              ],
+              [
+                { month: "2026-10" },
+                { money: { amount: 819105, currency: "BRL" } },
+              ],
+              [
+                { month: "2026-11" },
+                { money: { amount: 511500, currency: "BRL" } },
+              ],
+            ],
+          },
+          data: {
+            months: [
+              {
+                month: "2025-12",
+                amount: { amount: 985000, currency: "BRL" },
+                partial: false,
+              },
+              {
+                month: "2026-01",
+                amount: { amount: 712000, currency: "BRL" },
+                partial: false,
+              },
+              {
+                month: "2026-02",
+                amount: { amount: 698000, currency: "BRL" },
+                partial: false,
+              },
+              {
+                month: "2026-03",
+                amount: { amount: 745000, currency: "BRL" },
+                partial: false,
+              },
+              {
+                month: "2026-04",
+                amount: { amount: 689000, currency: "BRL" },
+                partial: false,
+              },
+              {
+                month: "2026-05",
+                amount: { amount: 721000, currency: "BRL" },
+                partial: false,
+              },
+              {
+                month: "2026-06",
+                amount: { amount: 842000, currency: "BRL" },
+                partial: false,
+              },
+              {
+                month: "2026-07",
+                amount: { amount: 705000, currency: "BRL" },
+                partial: false,
+              },
+              {
+                month: "2026-08",
+                amount: { amount: 664000, currency: "BRL" },
+                partial: false,
+              },
+              {
+                month: "2026-09",
+                amount: { amount: 732000, currency: "BRL" },
+                partial: false,
+              },
+              {
+                month: "2026-10",
+                amount: { amount: 819105, currency: "BRL" },
+                partial: false,
+              },
+              {
+                month: "2026-11",
+                amount: { amount: 511500, currency: "BRL" },
+                partial: true,
+              },
+            ],
+            average: { amount: 755646, currency: "BRL" },
+            focus: "2026-10",
+          },
+        },
+      },
+    ],
+  },
+  {
+    id: "built-waterfall",
+    form: "waterfall",
+    note: "get_financial_indicators → show waterfall",
+    handled: true,
+    question: "Quanto sobrou em outubro?",
+    answer: "O mês fechou positivo.",
+    views: [
+      {
+        id: "v-waterfall",
+        form: "waterfall",
+        payload: {
+          title: { key: "assistantView.waterfall.title" },
+          window: { from: "2026-10-01", to: "2026-10-31" },
+          verdict: {
+            key: "assistantView.waterfall.verdict_saved",
+            params: {
+              amount: { money: { amount: 420895, currency: "BRL" } },
+              expense: { money: { amount: 819105, currency: "BRL" } },
+              income: { money: { amount: 1240000, currency: "BRL" } },
+            },
+          },
+          open: { screen: "/reports" },
+          next: [],
+          rows: {
+            head: ["assistantView.col.step", "assistantView.col.value"],
+            rows: [
+              [
+                { text: "assistantView.waterfall.start" },
+                { money: { amount: 482000, currency: "BRL" } },
+              ],
+              [
+                { text: "assistantView.waterfall.income" },
+                { money: { amount: 1240000, currency: "BRL" } },
+              ],
+              [
+                { text: "assistantView.waterfall.expense" },
+                { money: { amount: -819105, currency: "BRL" } },
+              ],
+              [
+                { text: "assistantView.waterfall.other" },
+                { money: { amount: 0, currency: "BRL" } },
+              ],
+              [
+                { text: "assistantView.waterfall.end" },
+                { money: { amount: 902895, currency: "BRL" } },
+              ],
+            ],
+          },
+          data: {
+            month: "2026-10",
+            steps: [
+              { kind: "start", amount: { amount: 482000, currency: "BRL" } },
+              { kind: "income", amount: { amount: 1240000, currency: "BRL" } },
+              { kind: "expense", amount: { amount: -819105, currency: "BRL" } },
+              { kind: "other", amount: { amount: 0, currency: "BRL" } },
+              { kind: "end", amount: { amount: 902895, currency: "BRL" } },
+            ],
+          },
+        },
+      },
+    ],
+  },
+  {
+    id: "built-indicators",
+    form: "indicators",
+    note: "get_financial_indicators → show indicators",
+    handled: true,
+    question: "Como foi meu mês em números?",
+    answer: "A poupança subiu; a reserva ainda está abaixo de 6 meses.",
+    views: [
+      {
+        id: "v-indicators",
+        form: "indicators",
+        payload: {
+          title: { key: "assistantView.indicators.title" },
+          window: { from: "2026-10-01", to: "2026-10-31" },
+          verdict: {
+            key: "assistantView.indicators.verdict",
+            params: { liquidity: { bp: 42000 }, savings: { bp: 3394 } },
+          },
+          prov: {
+            key: "assistantView.prov.months",
+            params: { count: { count: 11 } },
+          },
+          open: { screen: "/reports" },
+          next: [],
+          rows: {
+            head: ["assistantView.col.indicator", "assistantView.col.value"],
+            rows: [
+              [{ text: "assistantView.indicators.savings" }, { bp: 3394 }],
+              [{ text: "assistantView.indicators.committed" }, { bp: 4900 }],
+              [{ text: "assistantView.indicators.liquidity" }, { bp: 42000 }],
+            ],
+          },
+          data: {
+            month: "2026-10",
+            tiles: [
+              {
+                kind: "savings",
+                bp: 3394,
+                series: [
+                  1792, 4067, 4183, 3792, 4258, 3992, 2983, 4125, 4467, 3900,
+                  3394,
+                ],
+              },
+              {
+                kind: "committed",
+                bp: 4900,
+                series: [
+                  5200, 5100, 5000, 5200, 4900, 5000, 4800, 4900, 4800, 4700,
+                  4900,
+                ],
+              },
+              {
+                kind: "liquidity",
+                bp: 42000,
+                series: [
+                  20000, 22000, 24000, 26000, 28000, 30000, 32000, 34000, 36000,
+                  38000, 42000,
+                ],
+              },
+            ],
+          },
+        },
+      },
+    ],
+  },
 ];

@@ -5039,6 +5039,7 @@ export interface components {
             count?: number;
             /** Format: date */
             date?: string;
+            month?: string;
         };
         AssistantViewMoney: {
             /**

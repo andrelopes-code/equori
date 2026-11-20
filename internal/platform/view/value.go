@@ -54,3 +54,5 @@ func BPValue(bp int64) Value   { return Value{BP: &bp} }
 func CountValue(n int64) Value { return Value{Count: &n} }
 func TextValue(s string) Value { return Value{Text: s} }
 func DateValue(d string) Value { return Value{Date: d} }
+
+func MonthValue(m string) Value { return Value{Month: m} }

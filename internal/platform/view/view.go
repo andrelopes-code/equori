@@ -45,6 +45,8 @@ type Value struct {
 	BP    *int64 `json:"bp,omitempty"`
 	Count *int64 `json:"count,omitempty"`
 	Date  string `json:"date,omitempty"`
+	// Month is a calendar month written YYYY-MM.
+	Month string `json:"month,omitempty"`
 }
 
 // Money is an amount in minor units of its currency.

@@ -1,3 +1,4 @@
+import { monthText } from "@/features/assistant/view/month-text";
 import type { ViewWindow } from "@/features/assistant/view/view-types";
 import { formatDate } from "@/i18n/format";
 
@@ -16,14 +17,9 @@ export function windowText(w: ViewWindow, locale: string): string {
     from.getUTCMonth() === to.getUTCMonth() &&
     from.getUTCFullYear() === to.getUTCFullYear()
   ) {
-    // The month and the year side by side, as a column head reads ("outubro 2026"): the
-    // preposition Intl adds in some languages would push the view's title into an ellipsis.
-    const month = new Intl.DateTimeFormat(locale, {
-      month: "long",
-      timeZone: "UTC",
-    }).format(from);
-
-    return `${month} ${String(from.getUTCFullYear())}`;
+    // Month and year side by side: the preposition Intl adds in some languages would push the
+    // view's title into an ellipsis.
+    return monthText(w.from.slice(0, 7), locale);
   }
 
   return new Intl.DateTimeFormat(locale, {

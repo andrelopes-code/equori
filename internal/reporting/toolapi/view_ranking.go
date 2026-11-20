@@ -39,10 +39,13 @@ type rankingData struct {
 // Views returns the builders of the reporting reads (answer views design, V3).
 func Views() map[view.Key]view.Builder {
 	return map[view.Key]view.Builder{
-		{Tool: "get_category_totals", Form: "ranking"}: rankingView,
-		{Tool: "get_category_totals", Form: "compare"}: compareView,
-		{Tool: "get_category_totals", Form: "changes"}: changesView,
-		{Tool: "get_category_totals", Form: "treemap"}: treemapView,
+		{Tool: "get_category_totals", Form: "ranking"}:         rankingView,
+		{Tool: "get_category_totals", Form: "compare"}:         compareView,
+		{Tool: "get_category_totals", Form: "changes"}:         changesView,
+		{Tool: "get_category_totals", Form: "treemap"}:         treemapView,
+		{Tool: "get_financial_indicators", Form: "series"}:     seriesView,
+		{Tool: "get_financial_indicators", Form: "waterfall"}:  waterfallView,
+		{Tool: "get_financial_indicators", Form: "indicators"}: indicatorsView,
 	}
 }
 
