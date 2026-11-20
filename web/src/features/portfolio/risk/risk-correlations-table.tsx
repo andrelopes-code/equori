@@ -11,6 +11,7 @@ import {
 
 import type { components } from "@/api/schema.gen";
 import { classLabel } from "@/features/portfolio/risk/class-label";
+import { correlationReading } from "@/features/portfolio/risk/correlation-reading";
 import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
@@ -20,10 +21,10 @@ interface RiskCorrelationsTableProps {
   report: RiskReport;
 }
 
-const columns = 3;
+const columns = 4;
 
-// RK9: the correlation of each pair of classes over the last 36 months; absent pairs had fewer
-// than 12 months in common. A report without a pair draws nothing.
+// RK9: the correlation of each pair of classes over the last 36 months, read in words first;
+// absent pairs had fewer than 12 months in common. A report without a pair draws nothing.
 export function RiskCorrelationsTable({ report }: RiskCorrelationsTableProps) {
   const t = useT();
   const [tag] = useAppLocale();
@@ -42,6 +43,7 @@ export function RiskCorrelationsTable({ report }: RiskCorrelationsTableProps) {
         <TableHead>
           <TableRow>
             <TableColumnHeader>{t("portfolio.risk.pair")}</TableColumnHeader>
+            <TableColumnHeader>{t("portfolio.risk.reading")}</TableColumnHeader>
             <TableColumnHeader numeric>
               {t("portfolio.risk.correlation")}
             </TableColumnHeader>
@@ -59,6 +61,11 @@ export function RiskCorrelationsTable({ report }: RiskCorrelationsTableProps) {
                   b: classLabel(t, c.b),
                 })}
               </TableRowHeader>
+              <TableCell>
+                {t(
+                  `portfolio.risk.reading.${correlationReading(c.correlation_bp)}`,
+                )}
+              </TableCell>
               <TableCell numeric>
                 {correlation.format(c.correlation_bp / 10000)}
               </TableCell>

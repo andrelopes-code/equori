@@ -1,15 +1,17 @@
 import { Stack } from "@slotted/react/stack";
+import { Text } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/api/api-context";
 import { riskQuery } from "@/features/portfolio/api";
 import { CollapsibleSection } from "@/features/portfolio/collapsible-section/collapsible-section";
+import { RiskBlock } from "@/features/portfolio/risk/risk-block";
 import { RiskCharts } from "@/features/portfolio/risk/risk-charts";
 import { RiskClassesTable } from "@/features/portfolio/risk/risk-classes-table";
 import { RiskCorrelationsTable } from "@/features/portfolio/risk/risk-correlations-table";
-import { RiskNotes } from "@/features/portfolio/risk/risk-notes";
+import { RiskCoverageNotice } from "@/features/portfolio/risk/risk-coverage-notice";
+import { RiskVerdict } from "@/features/portfolio/risk/risk-verdict";
 import { useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-layout/form-notice";
 
 interface RiskSectionProps {
   date: string;
@@ -18,9 +20,9 @@ interface RiskSectionProps {
 
 const storageKey = "equori.portfolio.risk.collapsed";
 
-// Portfolio risk design, Screen: how much the portfolio swings, how far it fell and which class
-// carries the swing, month by month. The section waits for the report: a book without a month
-// draws nothing, so a placeholder would announce a section that may never come.
+// Portfolio risk design, Screen: the verdict first (how much the portfolio swings, how deep it
+// fell, which class carries the swing), then where the swing comes from, the months behind it and
+// how the classes move together. A book without a month draws nothing.
 export function RiskSection({ date, valueIn }: RiskSectionProps) {
   const t = useT();
   const api = useApi();
@@ -36,14 +38,39 @@ export function RiskSection({ date, valueIn }: RiskSectionProps) {
       description={t("portfolio.risk.description")}
       storageKey={storageKey}
     >
-      {risk.isError && <FormNotice>{t("portfolio.risk.error")}</FormNotice>}
+      {risk.isError && (
+        <Text size="sm" tone="danger">
+          {t("portfolio.risk.error")}
+        </Text>
+      )}
 
       {risk.isSuccess && (
-        <Stack gap={6}>
-          <RiskCharts report={risk.data} />
-          <RiskClassesTable report={risk.data} />
-          <RiskCorrelationsTable report={risk.data} />
-          <RiskNotes report={risk.data} />
+        <Stack gap={8}>
+          <RiskVerdict report={risk.data} />
+          <RiskCoverageNotice report={risk.data} />
+
+          <RiskBlock
+            title={t("portfolio.risk.sources")}
+            description={t("portfolio.risk.sourcesHint")}
+          >
+            <RiskClassesTable report={risk.data} />
+          </RiskBlock>
+
+          <RiskBlock
+            title={t("portfolio.risk.history")}
+            description={t("portfolio.risk.historyHint")}
+          >
+            <RiskCharts report={risk.data} />
+          </RiskBlock>
+
+          {risk.data.correlations.length > 0 && (
+            <RiskBlock
+              title={t("portfolio.risk.correlations")}
+              description={t("portfolio.risk.correlationsHint")}
+            >
+              <RiskCorrelationsTable report={risk.data} />
+            </RiskBlock>
+          )}
         </Stack>
       )}
     </CollapsibleSection>

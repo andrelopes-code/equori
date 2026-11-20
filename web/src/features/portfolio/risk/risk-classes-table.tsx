@@ -1,3 +1,4 @@
+import { Inline } from "@slotted/react/inline";
 import {
   Table,
   TableBody,
@@ -9,10 +10,12 @@ import {
   TableRowHeader,
   TableSummary,
 } from "@slotted/react/table";
+import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
 import { classLabel } from "@/features/portfolio/risk/class-label";
 import { portfolioKey } from "@/features/portfolio/risk/risk-figures";
+import { RiskShareBar } from "@/features/portfolio/risk/risk-share-bar";
 import { formatBasisPoints } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
@@ -22,18 +25,19 @@ interface RiskClassesTableProps {
   report: RiskReport;
 }
 
-const columns = 5;
+const columns = 6;
 
-// A figure the report leaves absent (RK7, RK10).
-const absent = "—";
-
-// RK10: a class whose share of the risk exceeds its weight swings more than its size.
+// RK10: each class's share of the swing beside its share of the money, the class that swings the
+// most first. A class whose bar passes its mark swings more than its size; one priced by accrual
+// says so on its row (RK11).
 export function RiskClassesTable({ report }: RiskClassesTableProps) {
   const t = useT();
   const [tag] = useAppLocale();
 
-  const percent = (bp: number | undefined) =>
-    bp === undefined ? absent : formatBasisPoints(bp, tag);
+  const percent = (bp: number) => formatBasisPoints(bp, tag);
+  const classes = [...report.classes].sort(
+    (a, b) => (b.risk_share_bp ?? -1e9) - (a.risk_share_bp ?? -1e9),
+  );
 
   return (
     <Table columns={columns} variant="ruled">
@@ -41,11 +45,12 @@ export function RiskClassesTable({ report }: RiskClassesTableProps) {
         <TableHead>
           <TableRow>
             <TableColumnHeader>{t("portfolio.risk.class")}</TableColumnHeader>
-            <TableColumnHeader numeric>
-              {t("portfolio.risk.weight")}
-            </TableColumnHeader>
+            <TableColumnHeader>{t("portfolio.risk.compare")}</TableColumnHeader>
             <TableColumnHeader numeric>
               {t("portfolio.risk.share")}
+            </TableColumnHeader>
+            <TableColumnHeader numeric>
+              {t("portfolio.risk.weight")}
             </TableColumnHeader>
             <TableColumnHeader numeric>
               {t("portfolio.risk.volatilityShort")}
@@ -57,13 +62,46 @@ export function RiskClassesTable({ report }: RiskClassesTableProps) {
         </TableHead>
 
         <TableBody>
-          {report.classes.map((c) => (
+          {classes.map((c) => (
             <TableRow key={c.key} value={c.key}>
-              <TableRowHeader>{classLabel(t, c.key)}</TableRowHeader>
-              <TableCell numeric>{percent(c.weight_bp)}</TableCell>
-              <TableCell numeric>{percent(c.risk_share_bp)}</TableCell>
-              <TableCell numeric>{percent(c.volatility_bp)}</TableCell>
-              <TableCell numeric>{percent(c.max_drawdown_bp)}</TableCell>
+              <TableRowHeader>
+                <Inline gap={4} align="center">
+                  <span>{classLabel(t, c.key)}</span>
+                  {(c.accrual_bp ?? 0) > 0 && (
+                    <Text size="sm" tone="muted">
+                      {t("portfolio.risk.accrualHint", {
+                        share: percent(c.accrual_bp ?? 0),
+                      })}
+                    </Text>
+                  )}
+                </Inline>
+              </TableRowHeader>
+              <TableCell>
+                {c.risk_share_bp !== undefined && (
+                  <RiskShareBar
+                    share={c.risk_share_bp}
+                    weight={c.weight_bp ?? 0}
+                    label={t("portfolio.risk.barLabel", {
+                      share: percent(c.risk_share_bp),
+                      weight: percent(c.weight_bp ?? 0),
+                    })}
+                  />
+                )}
+              </TableCell>
+              <TableCell numeric>
+                {shareText(c.risk_share_bp, t, percent)}
+              </TableCell>
+              <TableCell numeric>{percent(c.weight_bp ?? 0)}</TableCell>
+              <TableCell numeric>
+                {c.volatility_bp === undefined
+                  ? t("portfolio.risk.unmeasured")
+                  : percent(c.volatility_bp)}
+              </TableCell>
+              <TableCell numeric>
+                {c.max_drawdown_bp === undefined
+                  ? t("portfolio.risk.unmeasured")
+                  : percent(c.max_drawdown_bp)}
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -71,17 +109,34 @@ export function RiskClassesTable({ report }: RiskClassesTableProps) {
         <TableSummary>
           <TableRow>
             <TableRowHeader>{classLabel(t, portfolioKey)}</TableRowHeader>
+            <TableCell />
             <TableCell numeric>{percent(10000)}</TableCell>
             <TableCell numeric>{percent(10000)}</TableCell>
             <TableCell numeric>
-              {percent(report.portfolio.volatility_bp)}
+              {report.portfolio.volatility_bp === undefined
+                ? t("portfolio.risk.unmeasured")
+                : percent(report.portfolio.volatility_bp)}
             </TableCell>
             <TableCell numeric>
-              {percent(report.portfolio.max_drawdown_bp)}
+              {report.portfolio.max_drawdown_bp === undefined
+                ? t("portfolio.risk.unmeasured")
+                : percent(report.portfolio.max_drawdown_bp)}
             </TableCell>
           </TableRow>
         </TableSummary>
       </TableContent>
     </Table>
   );
+}
+
+// A negative share reduces the swing: it reads as such rather than as a minus sign.
+function shareText(
+  share: number | undefined,
+  t: ReturnType<typeof useT>,
+  percent: (bp: number) => string,
+): string {
+  if (share === undefined) return t("portfolio.risk.unmeasured");
+  if (share < 0) return t("portfolio.risk.reduces", { value: percent(-share) });
+
+  return percent(share);
 }

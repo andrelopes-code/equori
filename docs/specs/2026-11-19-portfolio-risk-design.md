@@ -65,14 +65,14 @@ Anti-goals:
 
 ## Screen
 
-A section "Risco ao longo do tempo" on the portfolio page (`/portfolio`), below the return:
+A section "Risco ao longo do tempo" on the portfolio page (`/portfolio`), below the return, which a click on its header minimizes to its first lines. Amended 2026-11-20 after the owner found the figures unexplained and the notes loose; the blocks follow the order the owner delegated: verdict, sources, history, correlations.
 
-- A line chart of the volatility of the portfolio and of each class by month; a month without volatility leaves a gap.
-- A line chart of the drawdown of the portfolio by month, with the deepest point written under it with its month.
-- A table of the classes: weight, share of the risk, volatility, the deepest fall, and the note of accrual (RK11).
-- A table of the correlation of each pair (RK9).
-- A neutral sentence with the months that left out more than 10% of the value and their classes, and one with the securities left out (at most three, the most months first) and their months.
-- A neutral sentence when the last volatility rests on fewer than 36 months.
+- Verdict: three plain figures (Slotted OV-08). The typical swing a year is `±volatility_bp`, read as "2 years in 3 stay this close to the mean" (about two thirds of yearly returns fall within one standard deviation of the mean); with fewer than 36 months its label states the months. The deepest fall states its month and how it ended: the first month back at the peak, still below it, or a month without a figure before it came back. The source of the swing is the class with the largest risk share, with its weight. Without a figure, each states when it comes: 12 months that count (known, one month long, at most 10% left out).
+- Coverage: one line under the verdict, in the warning tone and without a surface: the security left out the longest, its first and last month without a price (`left_out.from`, `left_out.to`), the number of others, and a link to its instrument page to record prices.
+- Where the swing comes from: the classes by share of the risk, each with a bar of its share of the risk and a mark at its weight, then the share of the risk ("reduces" for a negative one), the weight, the volatility and the deepest fall; a class priced by accrual states its share without a quote (RK11); a figure the report lacks reads "not measured".
+- Month by month: the portfolio's volatility and its drawdown, one above the other with one plot start, so a month sits at one x on both; zoom and the month under the pointer are shared; the class lines start hidden in the legend. A band marks a run of months without a figure: part of the value without a price (warning tone) or fewer than 12 months counted (neutral), with a key under the charts. The volatility chart is absent while no month has a volatility.
+- How the classes move together: each pair with its reading in words (opposite from −0.3, nearly independent below 0.3 in size, partly together below 0.7, together from 0.7), the correlation and its months.
+- A failure is one sentence in the danger tone.
 
 ## Cross-cutting questions
 
@@ -80,7 +80,7 @@ A section "Risco ao longo do tempo" on the portfolio page (`/portfolio`), below 
 - R2: Every region gets the same rules; nothing depends on a region.
 - R3: `state` is a closed set of this spec that does not grow with regions; class keys are instrument types, already a `pattern` in `api/openapi.yaml`.
 - R4: Does not apply: no extension point.
-- R5: Catalog keys under `portfolio.risk.*` in `catalog-portfolio.*` with pt-BR and en text: section title and description, chart labels, table headers, state sentences, the accrual note.
+- R5: Catalog keys under `portfolio.risk.*` in `catalog-portfolio.*` with pt-BR and en text: section title and description, verdict, coverage line, block titles, chart labels, band key, table headers, correlation readings.
 - R6: Percents through `numberFormatter` with the active tag; months through `formatReferenceMonth`.
 - C1: Values and flows are integers of minor units with their currency (`money.Money`); the returns leave as basis points (RK13). No amount is stored.
 - C2: Every value and flow is converted to `value_in` on its date by the existing conversion; a missing rate makes the month `missing` (RK3, RK4) and the screen counts it.

@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { json, problem } from "@/testing/fake-api";
@@ -60,15 +60,28 @@ const report = {
   ],
   correlations: [{ a: "stock", b: "reit", correlation_bp: 9819, months: 13 }],
   left_out: [
-    { instrument: "B5P211", months: 45 },
-    { instrument: "PETR4", months: 1 },
+    { instrument: "B5P211", months: 45, from: "2022-04-30", to: "2025-12-31" },
+    { instrument: "PETR4", months: 1, from: "2026-02-28", to: "2026-02-28" },
   ],
 };
 
+// The charts are not the subject here (their figures have tests of their own), and the first
+// chart of a run takes over 15 s to mount in jsdom.
+vi.mock("@slotted/react/chart", () => ({
+  Chart: ({ title }: { title: string }) => <figure aria-label={title} />,
+}));
+
 const collapsedKey = "equori.portfolio.risk.collapsed";
 
-const section = () =>
-  screen.findByRole("region", { name: catalogEn["portfolio.risk.title"] });
+// The section by its title: a role query over a page of tables and charts computes every
+// accessible name of the page on each try, which took over 20 s.
+const section = async () => {
+  const title = await screen.findByText(catalogEn["portfolio.risk.title"]);
+  const region = title.closest("section");
+  if (region === null) throw new Error("the risk title is outside a section");
+
+  return region;
+};
 
 // The body and summary rows of a table, one string of cells each.
 const rows = (table: HTMLElement) =>
@@ -83,7 +96,35 @@ describe("Risk section", () => {
     localStorage.removeItem(collapsedKey);
   });
 
-  it("RK10: states the weight, the share of risk, the volatility and the deepest fall of each class", async () => {
+  it("RK7, RK8, RK10: leads with the typical swing, the deepest fall and the class behind the swing", async () => {
+    const fetch = portfolioApi({
+      "GET /api/v1/reports/risk": () => json(200, report),
+    });
+    await renderApp("/portfolio", { fetch });
+    const region = await section();
+
+    expect(
+      await within(region).findByText("Typical swing a year · 13 months"),
+    ).toBeInTheDocument();
+    expect(within(region).getByText("±24.03%")).toBeInTheDocument();
+    expect(
+      within(region).getByText("2 years in 3 stay this close to the mean"),
+    ).toBeInTheDocument();
+    const fall = within(region)
+      .getByText("Deepest fall from the peak")
+      .closest<HTMLElement>('[data-ui="stat-card"]');
+    expect(fall).not.toBeNull();
+    expect(within(fall ?? region).getByText("−6.45%")).toBeInTheDocument();
+    expect(
+      within(region).getByText("in Mar-2026, still below the peak"),
+    ).toBeInTheDocument();
+    expect(within(region).getByText("Swing from Stocks")).toBeInTheDocument();
+    expect(
+      within(region).getByText("with 53.64% of the money"),
+    ).toBeInTheDocument();
+  });
+
+  it("RK10, RK11: ranks the classes by their share of the swing beside their share of the money", async () => {
     const fetch = portfolioApi({
       "GET /api/v1/reports/risk": () => json(200, report),
     });
@@ -95,58 +136,38 @@ describe("Risk section", () => {
     });
     await waitFor(() => {
       expect(rows(classes)).toEqual([
-        "Stocks|53.64%|82.84%|38.93%|−10.62%",
-        "REITs|46.36%|17.16%|8.53%|−1.96%",
-        "Portfolio|100.00%|100.00%|24.03%|−6.45%",
+        "Stocks||82.84%|53.64%|38.93%|−10.62%",
+        "REITs100.00% unquoted||17.16%|46.36%|8.53%|−1.96%",
+        "Portfolio||100.00%|100.00%|24.03%|−6.45%",
       ]);
     });
-
     expect(
-      within(region).getByText(catalogEn["portfolio.risk.volatility"]),
-    ).toBeInTheDocument();
-    expect(
-      within(region).getByText(catalogEn["portfolio.risk.drawdown"]),
-    ).toBeInTheDocument();
-    expect(
-      within(region).getByText("Deepest fall: −6.45% in Mar 2026."),
+      within(classes).getByRole("img", {
+        name: "82.84% of the swing, 53.64% of the money",
+      }),
     ).toBeInTheDocument();
 
     const pairs = within(region).getByRole("table", {
       name: catalogEn["portfolio.risk.correlations"],
     });
-    expect(rows(pairs)).toEqual(["Stocks and REITs|0.98|13"]);
+    expect(rows(pairs)).toEqual(["Stocks and REITs|Together|0.98|13"]);
   });
 
-  it("RK3, RK7, RK11: writes the months left out, the short sample and the accrual note", async () => {
+  it("RK3: names the security left out the longest, its months, and the way to its prices", async () => {
     const fetch = portfolioApi({
       "GET /api/v1/reports/risk": () => json(200, report),
     });
     await renderApp("/portfolio", { fetch });
     const region = await section();
-    await within(region).findByRole("table", {
-      name: catalogEn["portfolio.risk.classes"],
-    });
 
     expect(
       await within(region).findByText(
-        "Months left out, with over 10% of the value without a fresh price: 1, in Stocks.",
+        "B5P211 without a price from Apr-2022 to Dec-2025; other securities without one: 1.",
       ),
     ).toBeInTheDocument();
     expect(
-      within(region).getByText(
-        "The latest volatility rests on 13 months; the standard is 36.",
-      ),
-    ).toBeInTheDocument();
-    expect(
-      within(region).getByText(
-        "Months without a fresh price: B5P211 (45), PETR4 (1).",
-      ),
-    ).toBeInTheDocument();
-    expect(
-      within(region).getByText(
-        "REITs: 100.00% of the value is priced by accrual, so its volatility stays near zero by method.",
-      ),
-    ).toBeInTheDocument();
+      within(region).getByRole("link", { name: "Record prices of B5P211" }),
+    ).toHaveAttribute("href", "/instruments/B5P211");
   });
 
   it("minimizes from a click on its header, and keeps the choice", async () => {
@@ -155,14 +176,9 @@ describe("Risk section", () => {
     });
     const first = await renderApp("/portfolio", { fetch });
     const region = await section();
-    await within(region).findByRole("table", {
-      name: catalogEn["portfolio.risk.classes"],
-    });
 
     await userEvent.click(
-      within(region).getByRole("heading", {
-        name: catalogEn["portfolio.risk.title"],
-      }),
+      within(region).getByText(catalogEn["portfolio.risk.title"]),
     );
 
     expect(region.querySelector("[data-peek]")).toHaveAttribute(
@@ -181,9 +197,9 @@ describe("Risk section", () => {
     );
 
     await userEvent.click(
-      within(again).getByRole("button", {
-        name: `Expand ${catalogEn["portfolio.risk.title"]}`,
-      }),
+      within(again).getByLabelText(
+        `Expand ${catalogEn["portfolio.risk.title"]}`,
+      ),
     );
 
     expect(again.querySelector("[data-peek]")).toHaveAttribute(

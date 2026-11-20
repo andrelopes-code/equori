@@ -2,10 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import type { components } from "@/api/schema.gen";
 import {
-  deepestFall,
   drawdownRows,
   portfolioKey,
-  riskNotes,
+  riskBands,
   seriesWithValue,
   volatilityKeys,
   volatilityRows,
@@ -69,64 +68,12 @@ describe("risk figures", () => {
     ]);
   });
 
-  it("RK8: states the drawdown of each month and the deepest fall", () => {
+  it("RK8: states the drawdown of each month", () => {
     expect(drawdownRows(report).map((r) => r.values[portfolioKey])).toEqual([
       0,
       undefined,
       -645,
     ]);
-    expect(deepestFall(report)).toEqual({ month: "2026-03-31", bp: -645 });
-    expect(
-      deepestFall({
-        ...report,
-        portfolio: { ...report.portfolio, months: [] },
-      }),
-    ).toBeUndefined();
-  });
-
-  it("RK3, RK7: counts the months without a fresh price and a short sample", () => {
-    expect(riskNotes(report)).toEqual({
-      unknownMonths: 1,
-      unknownClasses: ["stock"],
-      shortSample: 13,
-      belowFloor: undefined,
-    });
-
-    // A known month that leaves out 1500 basis points counts; 1000 does not (RK3).
-    const partial = (bp: number) => ({
-      ...report,
-      portfolio: {
-        ...report.portfolio,
-        months: [
-          { month: "2026-01-31", state: "known" as const, excluded_bp: bp },
-        ],
-      },
-      classes: [
-        {
-          key: "etf",
-          months: [
-            { month: "2026-01-31", state: "known" as const, excluded_bp: bp },
-          ],
-        },
-      ],
-    });
-    expect(riskNotes(partial(1500)).unknownMonths).toBe(1);
-    expect(riskNotes(partial(1500)).unknownClasses).toEqual(["etf"]);
-    expect(riskNotes(partial(1000)).unknownMonths).toBe(0);
-
-    const young = {
-      ...report,
-      portfolio: {
-        key: "",
-        months: report.portfolio.months,
-      },
-    };
-    expect(riskNotes(young)).toEqual({
-      unknownMonths: 1,
-      unknownClasses: ["stock"],
-      shortSample: undefined,
-      belowFloor: 2,
-    });
   });
 
   it("RK7: reads a month on the first line that holds a value in it", () => {
@@ -143,5 +90,37 @@ describe("risk figures", () => {
     expect(at("fev-2026")).toBe("portfolio");
     expect(at("mar-2026")).toBeUndefined();
     expect(at("abr-2026")).toBeUndefined();
+  });
+
+  it("RK3, RK7, RK8: marks the runs without a figure and why", () => {
+    const month = (
+      m: string,
+      fields: Partial<RiskReport["portfolio"]["months"][number]>,
+    ) => ({ month: m, state: "known" as const, ...fields });
+    const months = [
+      month("2025-01-31", { state: "nothing_held" }),
+      month("2025-02-28", { drawdown_bp: 0 }),
+      month("2025-03-31", { drawdown_bp: -100 }),
+      month("2025-04-30", { excluded_bp: 3000 }),
+      month("2025-05-31", { excluded_bp: 2000 }),
+      month("2025-06-30", { drawdown_bp: 0, excluded_bp: 500 }),
+      month("2025-07-31", { drawdown_bp: 0, span_months: 2 }),
+      month("2025-08-31", { drawdown_bp: 0, volatility_bp: 400 }),
+    ];
+
+    const bands = riskBands({
+      ...report,
+      portfolio: { key: "", months },
+    });
+
+    expect(bands.drawdown).toEqual([
+      { from: "2025-04-30", to: "2025-05-31", reason: "excluded" },
+    ]);
+    expect(bands.volatility).toEqual([
+      { from: "2025-02-28", to: "2025-03-31", reason: "short" },
+      { from: "2025-04-30", to: "2025-05-31", reason: "excluded" },
+      { from: "2025-06-30", to: "2025-06-30", reason: "short" },
+      { from: "2025-07-31", to: "2025-07-31", reason: "excluded" },
+    ]);
   });
 });

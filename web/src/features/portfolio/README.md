@@ -27,7 +27,7 @@ Guide topic (`navigation-map.json`): `investments`.
 - `summary/`: portfolio header, summary and income hook.
 - `notices/`: problem, missing price and quote warning notices.
 - `return/`: return panel, period, view, bars, method, yield group list and options hook.
-- `risk/`: risk section, its charts, class and correlation tables, notes and the figures they read.
+- `risk/`: risk section: verdict, coverage line, class table with its share bar, stacked charts with their band key and the chart workarounds, correlation table, and the figures they read.
 - `collapsible-section/`: the surface section a click on its header minimizes to its first lines (`peek-body`), with the choice kept per browser (risk, fixed income).
 - `return-money/`: origin of the closing balance: its list, its bar (`origin-parts`) and the money figures.
 - `account-yield/`: account yield, its section, hook and measured tops.

@@ -17,17 +17,6 @@ export interface RiskRow {
   values: Readonly<Record<string, number | undefined>>;
 }
 
-export interface RiskNotes {
-  // Months of the portfolio left out for a stale or missing price over more than a tenth of its
-  // value, and the classes with a holding left out in them.
-  unknownMonths: number;
-  unknownClasses: readonly string[];
-  // Months the last volatility rests on, when fewer than the window.
-  shortSample: number | undefined;
-  // Known months, when the portfolio has no volatility yet.
-  belowFloor: number | undefined;
-}
-
 // The classes whose volatility the chart draws: those with at least one month of volatility.
 export function volatilityKeys(report: RiskReport): string[] {
   return report.classes
@@ -60,59 +49,6 @@ export function drawdownRows(report: RiskReport): RiskRow[] {
   }));
 }
 
-// The month of the deepest fall of the portfolio; undefined without a fall.
-export function deepestFall(
-  report: RiskReport,
-): { month: string; bp: number } | undefined {
-  let deepest: { month: string; bp: number } | undefined;
-
-  for (const m of report.portfolio.months) {
-    if (m.drawdown_bp !== undefined && m.drawdown_bp < (deepest?.bp ?? 0)) {
-      deepest = { month: m.month, bp: m.drawdown_bp };
-    }
-  }
-
-  return deepest;
-}
-
-// The sentences under the section: months without a fresh price, a short sample (RK3, RK7).
-export function riskNotes(report: RiskReport): RiskNotes {
-  const leftOut = report.portfolio.months.flatMap((m, i) =>
-    m.state === "stale" ||
-    m.state === "missing" ||
-    (m.excluded_bp ?? 0) > maxExcludedBP
-      ? [i]
-      : [],
-  );
-  const known = report.portfolio.months.filter(
-    (m) => m.state === "known",
-  ).length;
-  const months = report.portfolio.volatility_months;
-
-  return {
-    unknownMonths: leftOut.length,
-    unknownClasses: report.classes
-      .filter((c) => leftOut.some((i) => leftOutOf(c, i)))
-      .map((c) => c.key),
-    shortSample:
-      months !== undefined && months < fullWindow ? months : undefined,
-    belowFloor:
-      report.portfolio.volatility_bp === undefined && known > 0
-        ? known
-        : undefined,
-  };
-}
-
-// A class leaves out some value in month i: a holding of it lacks a fresh price.
-function leftOutOf(c: RiskSeries, i: number): boolean {
-  const m = c.months[i];
-
-  return (
-    m !== undefined &&
-    (m.state === "stale" || m.state === "missing" || (m.excluded_bp ?? 0) > 0)
-  );
-}
-
 // The first of ids whose line holds a value in the record named key: the series a chart reads a
 // month on when the other chart points at it.
 export function seriesWithValue(
@@ -124,4 +60,78 @@ export function seriesWithValue(
 
     return ids.find((id) => record?.[id] !== undefined && record[id] !== null);
   };
+}
+
+// Why a run of months has no figure on a chart: part of the value lacked a price (RK3), or the
+// portfolio had fewer than 12 counted months (RK7).
+export type BandReason = "excluded" | "short";
+
+export interface RiskBand {
+  from: string;
+  to: string;
+  reason: BandReason;
+}
+
+// The runs of the portfolio's months without a volatility, and without a drawdown, with their
+// reason. A month that holds nothing draws no band: there was no portfolio to measure.
+export function riskBands(report: RiskReport): {
+  volatility: RiskBand[];
+  drawdown: RiskBand[];
+} {
+  const months = report.portfolio.months;
+
+  return {
+    volatility: runs(months, (m) =>
+      m.volatility_bp === undefined ? reasonOf(m) : undefined,
+    ),
+    drawdown: runs(months, (m) =>
+      m.drawdown_bp === undefined && m.state !== "nothing_held"
+        ? "excluded"
+        : undefined,
+    ),
+  };
+}
+
+type RiskMonth = RiskSeries["months"][number];
+
+function reasonOf(m: RiskMonth): BandReason | undefined {
+  if (m.state === "nothing_held") return undefined;
+
+  const counted =
+    m.state === "known" &&
+    (m.span_months ?? 1) === 1 &&
+    (m.excluded_bp ?? 0) <= maxExcludedBP;
+
+  return counted ? "short" : "excluded";
+}
+
+function runs(
+  months: readonly RiskMonth[],
+  reason: (m: RiskMonth) => BandReason | undefined,
+): RiskBand[] {
+  const out: RiskBand[] = [];
+
+  for (const m of months) {
+    const r = reason(m);
+    const last = out.at(-1);
+
+    if (
+      r !== undefined &&
+      last?.reason === r &&
+      last.to === previous(months, m)
+    ) {
+      last.to = m.month;
+    } else if (r !== undefined) {
+      out.push({ from: m.month, to: m.month, reason: r });
+    }
+  }
+
+  return out;
+}
+
+function previous(
+  months: readonly RiskMonth[],
+  m: RiskMonth,
+): string | undefined {
+  return months[months.indexOf(m) - 1]?.month;
 }
