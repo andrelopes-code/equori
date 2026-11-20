@@ -33,6 +33,14 @@ const (
 		`"description":"Invalid input - interval=1x is not supported"}}}`
 	notFound = `{"chart":{"result":null,"error":{"code":"Not Found",` +
 		`"description":"No data found, symbol may be delisted"}}}`
+	// Yahoo divides each close before a split by its ratio: 2:1 on 2026-11-05, 5:1 on 2026-11-06.
+	splits = `{"chart":{"result":[{"meta":{"currency":"USD",` +
+		`"exchangeTimezoneName":"America/New_York"},` +
+		`"timestamp":[1793802600,1793889000,1793975400],` +
+		`"events":{"splits":{` +
+		`"1793889000":{"date":1793889000,"numerator":2,"denominator":1,"splitRatio":"2:1"},` +
+		`"1793975400":{"date":1793975400,"numerator":5,"denominator":1,"splitRatio":"5:1"}}},` +
+		`"indicators":{"quote":[{"close":[5.1,10.2,51]}]}}],"error":null}}`
 )
 
 func TestSymbol(t *testing.T) {
@@ -172,6 +180,17 @@ func TestFetch(t *testing.T) {
 			[]string{"AAPL USD 2026-11-04 10", "AAPL USD 2026-11-06 10.5"},
 			"",
 		},
+		{
+			"split",
+			http.StatusOK,
+			splits,
+			[]string{
+				"AAPL USD 2026-11-04 51",
+				"AAPL USD 2026-11-05 51",
+				"AAPL USD 2026-11-06 51",
+			},
+			"",
+		},
 		{"range without bars", http.StatusBadRequest, noBars, nil, ""},
 		{"invalid request", http.StatusBadRequest, badRequest, nil, "instrument AAPL"},
 		{"pence", http.StatusOK, gbp, nil, "instrument AAPL"},
@@ -233,7 +252,9 @@ func TestFetch(t *testing.T) {
 				t.Fatalf("quotes = %v, want %v", got, tc.quotes)
 			}
 
-			want := []string{"/AAPL?period1=1793491200&period2=1794268800&interval=1d"}
+			want := []string{
+				"/AAPL?period1=1793491200&period2=1794268800&interval=1d&events=split",
+			}
 			if !slices.Equal(requests, want) {
 				t.Fatalf("requests = %v, want %v", requests, want)
 			}

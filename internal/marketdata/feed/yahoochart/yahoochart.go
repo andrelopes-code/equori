@@ -200,7 +200,7 @@ func (s Source) Search(ctx context.Context, query string, limit int) ([]feed.Lis
 func (s Source) fetchCode(
 	ctx context.Context, code money.Currency, t target, from, to time.Time,
 ) ([]feed.Quote, error) {
-	endpoint := fmt.Sprintf("%s/%s?period1=%d&period2=%d&interval=1d",
+	endpoint := fmt.Sprintf("%s/%s?period1=%d&period2=%d&interval=1d&events=split",
 		s.baseURL, url.PathEscape(t.symbol), from.Unix(), to.AddDate(0, 0, 1).Unix())
 
 	body, err := feed.Get(ctx, s.client, endpoint)

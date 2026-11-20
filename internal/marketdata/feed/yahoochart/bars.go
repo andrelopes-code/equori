@@ -3,6 +3,7 @@ package yahoochart
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -19,8 +20,9 @@ const sessionMargin = 30 * time.Minute
 type chartAnswer struct {
 	Chart struct {
 		Result []struct {
-			Meta       chartMeta `json:"meta"`
-			Timestamp  []int64   `json:"timestamp"`
+			Meta       chartMeta   `json:"meta"`
+			Timestamp  []int64     `json:"timestamp"`
+			Events     chartEvents `json:"events"`
 			Indicators struct {
 				Quote []series `json:"quote"`
 			} `json:"indicators"`
@@ -39,6 +41,17 @@ type chartMeta struct {
 			End   int64 `json:"end"`
 		} `json:"regular"`
 	} `json:"currentTradingPeriod"`
+}
+
+// chartEvents are the splits the chart reports when asked with events=split. Yahoo divides every
+// close before a split by its ratio; the B3 and the ledger keep the close the market printed and
+// record the split as a corporate action.
+type chartEvents struct {
+	Splits map[string]struct {
+		Date        int64   `json:"date"`
+		Numerator   float64 `json:"numerator"`
+		Denominator float64 `json:"denominator"`
+	} `json:"splits"`
 }
 
 // series holds the daily bars of a quote. A series without volume or without the open, high and
@@ -100,6 +113,7 @@ func parse(
 	return closeQuotes(
 		result.Indicators.Quote[0],
 		result.Timestamp,
+		splitFactors(result.Events, loc),
 		loc,
 		code,
 		quote,
@@ -110,9 +124,32 @@ func parse(
 	)
 }
 
+// split is the first day without the right of a split and the units each unit became.
+type split struct {
+	date  time.Time
+	ratio float64
+}
+
+// splitFactors returns the splits of events with a valid ratio, as local dates.
+func splitFactors(events chartEvents, loc *time.Location) []split {
+	var out []split
+
+	for _, e := range events.Splits {
+		if e.Numerator > 0 && e.Denominator > 0 {
+			out = append(out, split{
+				date:  localDate(time.Unix(e.Date, 0), loc),
+				ratio: e.Numerator / e.Denominator,
+			})
+		}
+	}
+
+	return out
+}
+
 func closeQuotes(
 	bars series,
 	timestamps []int64,
+	splits []split,
 	loc *time.Location,
 	code, quote money.Currency,
 	from, to, now time.Time,
@@ -130,7 +167,7 @@ func closeQuotes(
 			continue
 		}
 
-		value, err := money.ParseRate(closeText(*closing))
+		value, err := money.ParseRate(unadjusted(closeText(*closing), date, splits))
 		if err != nil {
 			return out, fmt.Errorf("read close %v: %w", *closing, err)
 		}
@@ -162,6 +199,29 @@ func localDate(t time.Time, loc *time.Location) time.Time {
 	local := t.In(loc)
 
 	return time.Date(local.Year(), local.Month(), local.Day(), 0, 0, 0, 0, time.UTC)
+}
+
+// unadjusted returns text, the close of date as Yahoo publishes it, multiplied by the ratio of each
+// later split. The product is rounded to 8 decimals, which drops the error of the float arithmetic.
+func unadjusted(text string, date time.Time, splits []split) string {
+	factor := 1.0
+
+	for _, s := range splits {
+		if date.Before(s.date) {
+			factor *= s.ratio
+		}
+	}
+
+	if factor == 1 {
+		return text
+	}
+
+	v, err := strconv.ParseFloat(text, 64)
+	if err != nil {
+		return text
+	}
+
+	return strconv.FormatFloat(math.Round(v*factor*1e8)/1e8, 'f', -1, 64)
 }
 
 // closeText returns the decimal text of a close. Yahoo publishes float32 values, so the shortest
