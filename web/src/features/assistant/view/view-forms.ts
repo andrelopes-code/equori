@@ -1,19 +1,19 @@
 import type { ComponentType } from "react";
 
 import type { AssistantIconName } from "@/features/assistant/panel/assistant-icon";
-import { BudgetBody } from "@/features/assistant/view/forms/budget-body";
-import { ChangesBody } from "@/features/assistant/view/forms/changes-body";
-import { CompareBody } from "@/features/assistant/view/forms/compare-body";
+import { BudgetBody } from "@/features/assistant/view/forms/bars/budget-body";
+import { ChangesBody } from "@/features/assistant/view/forms/bars/changes-body";
+import { CompareBody } from "@/features/assistant/view/forms/bars/compare-body";
 import { HelpBody } from "@/features/assistant/view/forms/help-body";
-import { IndicatorsBody } from "@/features/assistant/view/forms/indicators-body";
-import { RankingBody } from "@/features/assistant/view/forms/ranking-body";
-import { SeriesBody } from "@/features/assistant/view/forms/series-body";
-import { TreemapBody } from "@/features/assistant/view/forms/treemap-body";
-import { WaterfallBody } from "@/features/assistant/view/forms/waterfall-body";
-import { HeatBody } from "@/features/assistant/view/forms/heat-body";
-import { OutliersBody } from "@/features/assistant/view/forms/outliers-body";
-import { TransactionBody } from "@/features/assistant/view/forms/transaction-body";
-import { TxsBody } from "@/features/assistant/view/forms/txs-body";
+import { IndicatorsBody } from "@/features/assistant/view/forms/charts/indicators-body";
+import { RankingBody } from "@/features/assistant/view/forms/bars/ranking-body";
+import { SeriesBody } from "@/features/assistant/view/forms/charts/series-body";
+import { TreemapBody } from "@/features/assistant/view/forms/charts/treemap-body";
+import { WaterfallBody } from "@/features/assistant/view/forms/charts/waterfall-body";
+import { HeatBody } from "@/features/assistant/view/forms/ledger/heat-body";
+import { OutliersBody } from "@/features/assistant/view/forms/ledger/outliers-body";
+import { TransactionBody } from "@/features/assistant/view/forms/ledger/transaction-body";
+import { TxsBody } from "@/features/assistant/view/forms/ledger/txs-body";
 import type { ViewWindow } from "@/features/assistant/view/view-types";
 
 export type ViewUnit = "amount" | "share";
