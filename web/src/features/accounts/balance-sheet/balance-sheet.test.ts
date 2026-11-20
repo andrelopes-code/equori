@@ -29,6 +29,27 @@ describe("sheetRows", () => {
       ["b", 1, false, { amount: 700, currency: "USD" }],
     ]);
   });
+
+  // Valued balance sheet design VB3 (A260).
+  it("adds the value of a child in another currency to the parent", () => {
+    const position = {
+      ...item("b", "p", "PETR4", 10),
+      value: { amount: 3500, currency: "BRL" },
+    };
+    const group: BalanceGroup = {
+      group: "reserves",
+      total: { amount: 0, currency: "BRL" },
+      excluded: 0,
+      items: [item("p", undefined, "BRL", 1000), position],
+    };
+
+    const rows = sheetRows(group, "en-US", { base: "BRL" });
+
+    expect(rows.map((r) => [r.account.id, r.subtree, r.position])).toEqual([
+      ["p", { amount: 4500, currency: "BRL" }, false],
+      ["b", { amount: 10, currency: "PETR4" }, true],
+    ]);
+  });
 });
 
 function item(

@@ -124,6 +124,9 @@ export function sheetRows(
       settle(kid, depth + 1);
       if (kid.item.balance.currency === node.item.balance.currency) {
         node.subtree += kid.subtree;
+      } else if (kid.item.value?.currency === node.item.balance.currency) {
+        // A position adds its market value to its brokerage (VB3).
+        node.subtree += kid.item.value.amount;
       }
       node.differs ||= kid.differs;
     }

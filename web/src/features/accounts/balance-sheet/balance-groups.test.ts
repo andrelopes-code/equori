@@ -79,6 +79,42 @@ describe("groupBalances", () => {
     expect(available?.excluded).toBe(1);
   });
 
+  // Valued balance sheet design VB2 and VB4 (A260).
+  it("adds the value of a foreign balance and keeps an unvalued one out", () => {
+    const values = new Map([
+      ["usd", { amount: 350000, currency: "BRL" }],
+      ["petr4", { amount: 30000, currency: "BRL" }],
+    ]);
+
+    const groups = groupBalances(
+      [
+        account("checking", "checking"),
+        account("usd", "checking", "USD"),
+        account("eur", "checking", "EUR"),
+        account("petr4", "checking", "PETR4"),
+      ],
+      [
+        balance("checking", 100000),
+        balance("usd", 70000, "USD"),
+        balance("eur", 9000, "EUR"),
+        balance("petr4", 10, "PETR4"),
+      ],
+      "BRL",
+      false,
+      values,
+    );
+
+    const available = groups[0];
+    expect(available?.total).toEqual({ amount: 480000, currency: "BRL" });
+    expect(available?.excluded).toBe(1);
+    expect(available?.items.map((i) => i.value)).toEqual([
+      undefined,
+      { amount: 350000, currency: "BRL" },
+      undefined,
+      { amount: 30000, currency: "BRL" },
+    ]);
+  });
+
   it("assigns reserves and loans and omits closed zero-balance accounts", () => {
     const groups = groupBalances(
       [

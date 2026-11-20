@@ -12,6 +12,8 @@ import {
   checkingID,
   connectionFixture,
   reserveID,
+  stockID,
+  usdID,
 } from "@/testing/account-api";
 import { fakeApi, json, problem } from "@/testing/fake-api";
 import { moneyValue } from "@/testing/money-value";
@@ -202,6 +204,38 @@ describe("AccountsPage", () => {
     expect(
       screen.getAllByText(catalogEn["balanceSheet.excludedOne"]),
     ).toHaveLength(2);
+  });
+
+  // Valued balance sheet design VB2 and VB5 (A260): a book in BRL with an account in USD.
+  it("adds the value of the accounts in another currency to the totals", async () => {
+    const worth = () =>
+      json(200, {
+        assets: { amount: 0, currency: "BRL" },
+        liabilities: { amount: 0, currency: "BRL" },
+        net: { amount: 0, currency: "BRL" },
+        accounts: [
+          { account_id: usdID, value: { amount: 500000, currency: "BRL" } },
+          { account_id: stockID, value: { amount: 30000, currency: "BRL" } },
+        ],
+      });
+    await renderApp("/accounts", {
+      fetch: api([], { "GET /api/v1/reports/net-worth": worth }),
+    });
+
+    const region = await screen.findByRole("region", {
+      name: catalogEn["balanceSheet.figures"],
+    });
+
+    await waitFor(() => {
+      for (const figure of ["R$20,690.55", "R$14,500.00", "R$6,190.55"]) {
+        expect(
+          within(region).getByText(moneyValue(figure)),
+        ).toBeInTheDocument();
+      }
+    });
+    expect(
+      screen.queryByText(catalogEn["balanceSheet.excludedOne"]),
+    ).toBeNull();
   });
 
   it("states when an account was last reconciled", async () => {

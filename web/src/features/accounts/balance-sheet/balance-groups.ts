@@ -9,7 +9,8 @@ export type Group = "available" | "reserves" | "property" | "cards" | "loans";
 
 export interface BalanceGroup {
   group: Group;
-  items: { account: Account; balance: Money }[];
+  // value: a balance in another currency valued in the base currency (VB2).
+  items: { account: Account; balance: Money; value?: Money }[];
   total: Money;
   excluded: number;
 }
@@ -37,6 +38,8 @@ export function groupBalances(
   base: string,
   // A closed account stays while it holds money; with includeClosed every closed one shows.
   includeClosed = false,
+  // The values of GET /reports/net-worth by account; an account absent from it stays out (VB4).
+  values: ReadonlyMap<string, Money> = new Map(),
 ): BalanceGroup[] {
   const balanceOf = new Map(balances.map((b) => [b.account_id, b.balance]));
   const byGroup = new Map<Group, BalanceGroup>();
@@ -63,9 +66,15 @@ export function groupBalances(
       };
       byGroup.set(group, entry);
     }
-    entry.items.push({ account, balance });
+    const value = values.get(account.id);
+    const valued = balance.currency !== base && value?.currency === base;
+    entry.items.push(
+      valued ? { account, balance, value } : { account, balance },
+    );
     if (balance.currency === base) {
       entry.total.amount += balance.amount;
+    } else if (valued) {
+      entry.total.amount += value.amount;
     } else {
       entry.excluded += 1;
     }

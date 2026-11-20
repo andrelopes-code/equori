@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/api/api-context";
 import { accountsQuery, balancesQuery } from "@/features/accounts/api";
-import { groupBalances } from "@/features/accounts/balance-sheet/balance-groups";
+import { useValuedGroups } from "@/features/accounts/model/use-valued-groups";
 import { instrumentsQuery, settingsQuery, useScale } from "@/features/setup";
 import { useToday } from "@/i18n/today";
 
@@ -22,18 +22,15 @@ export function useBalanceGroups() {
       if (query.isError) void query.refetch();
     }
   };
-  if (
-    accounts.data === undefined ||
-    balances.data === undefined ||
-    settings.data === undefined ||
-    scale === null
-  ) {
+  const groups = useValuedGroups({
+    accounts: accounts.data,
+    balances: balances.data,
+    base: settings.data?.base_currency,
+    date: today,
+    basis: "booked",
+  });
+  if (groups === undefined || scale === null) {
     return { groups: undefined, scale: null, failed, retry };
   }
-  const groups = groupBalances(
-    accounts.data,
-    balances.data,
-    settings.data.base_currency,
-  );
   return { groups, scale, failed, retry };
 }

@@ -33,7 +33,6 @@ import {
   balancesQuery,
   connectionsListQuery,
 } from "@/features/accounts/api";
-import { groupBalances } from "@/features/accounts/balance-sheet/balance-groups";
 import { sides } from "@/features/accounts/balance-sheet/balance-sheet";
 import styles from "@/features/accounts/balance-sheet/balance-sheet.module.css";
 import { SheetGroups } from "@/features/accounts/balance-sheet/sheet-groups";
@@ -46,6 +45,7 @@ import {
 import { SheetControls } from "@/features/accounts/balance-sheet/sheet-controls";
 import { useDifferingAccounts } from "@/features/accounts/balance-sheet/use-differing-accounts";
 import { useSheetPreference } from "@/features/accounts/balance-sheet/use-sheet-preference";
+import { useValuedGroups } from "@/features/accounts/model/use-valued-groups";
 import { institutionsQuery, settingsQuery, useScale } from "@/features/setup";
 import { formatDate, shiftDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -91,24 +91,22 @@ export function AccountsPage() {
   const scale = useScale();
   const base = settings.data?.base_currency;
 
-  const groups = useMemo(
-    () =>
-      accounts.data === undefined ||
-      balances.data === undefined ||
-      base === undefined
-        ? undefined
-        : groupBalances(accounts.data, balances.data, base, shown.closed),
-    [accounts.data, balances.data, base, shown.closed],
-  );
-  const previous = useMemo(
-    () =>
-      accounts.data === undefined ||
-      before.data === undefined ||
-      base === undefined
-        ? undefined
-        : sides(groupBalances(accounts.data, before.data, base)),
-    [accounts.data, before.data, base],
-  );
+  const groups = useValuedGroups({
+    accounts: accounts.data,
+    balances: balances.data,
+    base,
+    date: shown.date,
+    basis: shown.basis,
+    includeClosed: shown.closed,
+  });
+  const beforeGroups = useValuedGroups({
+    accounts: accounts.data,
+    balances: before.data,
+    base,
+    date: shiftDate(shown.date, -30),
+    basis: shown.basis,
+  });
+  const previous = beforeGroups === undefined ? undefined : sides(beforeGroups);
   const now = groups === undefined ? undefined : sides(groups);
   const byInstitution = useMemo(
     () => new Map((institutions.data ?? []).map((i) => [i.id, i])),
