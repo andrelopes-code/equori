@@ -1,6 +1,7 @@
 import type { ComponentType } from "react";
 
 import type { AssistantIconName } from "@/features/assistant/panel/assistant-icon";
+import { BudgetBody } from "@/features/assistant/view/forms/budget-body";
 import { CompareBody } from "@/features/assistant/view/forms/compare-body";
 import { HelpBody } from "@/features/assistant/view/forms/help-body";
 import { RankingBody } from "@/features/assistant/view/forms/ranking-body";
@@ -27,4 +28,5 @@ export const FORMS: Partial<Record<string, ViewForm>> = {
   ranking: { icon: "pie", unit: true, Body: RankingBody },
   compare: { icon: "chart", Body: CompareBody },
   help: { icon: "book", Body: HelpBody },
+  budget: { icon: "target", Body: BudgetBody },
 };

@@ -186,3 +186,84 @@ export const viewScenarios: Scenario[] = [
     ],
   },
 ];
+
+const budgetItem = (
+  id: string,
+  name: string,
+  spent: number,
+  limit: number,
+) => ({
+  budget_id: id,
+  name,
+  spent: brl(spent),
+  limit: brl(limit),
+  over: brl(Math.max(spent - limit, 0)),
+});
+
+viewScenarios.push({
+  id: "view-budget",
+  form: "budget",
+  note: "get_budgets_and_goals → show budget",
+  handled: true,
+  question: "Como estou no orçamento de novembro?",
+  answer: "Dois orçamentos passaram do limite; transporte e lazer têm folga.",
+  views: [
+    {
+      id: "v-budget",
+      form: "budget",
+      payload: {
+        title: { key: "assistantView.budget.title" },
+        window: { from: "2026-11-01", to: "2026-11-30" },
+        verdict: {
+          key: "assistantView.budget.verdict_over",
+          params: {
+            count: { count: 2 },
+            name: { text: "Restaurantes" },
+            amount: { money: brl(11890) },
+          },
+        },
+        open: {
+          screen: "/planning",
+          params: { tab: "budgets", month: "2026-11" },
+        },
+        next: ["Onde cortar em restaurantes?"],
+        rows: {
+          head: [
+            "assistantView.col.category",
+            "assistantView.col.spent",
+            "assistantView.col.limit",
+          ],
+          rows: [
+            [
+              { text: "Mercado" },
+              { money: brl(151230) },
+              { money: brl(140000) },
+            ],
+            [
+              { text: "Restaurantes" },
+              { money: brl(71890) },
+              { money: brl(60000) },
+            ],
+            [
+              { text: "Transporte" },
+              { money: brl(21240) },
+              { money: brl(50000) },
+            ],
+            [{ text: "Lazer" }, { money: brl(9500) }, { money: brl(40000) }],
+          ],
+        },
+        data: {
+          month: "2026-11",
+          day: 19,
+          days: 30,
+          items: [
+            budgetItem("b1", "Mercado", 151230, 140000),
+            budgetItem("b2", "Restaurantes", 71890, 60000),
+            budgetItem("b3", "Transporte", 21240, 50000),
+            budgetItem("b4", "Lazer", 9500, 40000),
+          ],
+        },
+      },
+    },
+  ],
+});

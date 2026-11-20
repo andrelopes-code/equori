@@ -204,3 +204,83 @@
     }
   }
 }
+
+/* Budget: limit tick, pace mark and the excess past the limit. */
+@layer app {
+  .overFill {
+    position: absolute;
+    inset-block: 0;
+    border-radius: 0 999px 999px 0;
+    background: var(--slotted-tone-danger-solid);
+    transform-origin: left;
+    animation: grow var(--slotted-duration-long) var(--slotted-easing-enter)
+      both;
+  }
+
+  .tick {
+    position: absolute;
+    inset-block: -3px;
+    inline-size: 2px;
+    margin-inline-start: -1px;
+    border-radius: 1px;
+    background: var(--slotted-text);
+  }
+
+  .pace {
+    position: absolute;
+    inset-block: 1px;
+    box-sizing: border-box;
+    inline-size: 6px;
+    margin-inline-start: -3px;
+    border: 1.5px solid var(--slotted-text);
+    border-radius: 2px;
+    background: var(--slotted-panel-surface, var(--slotted-surface-raised));
+  }
+
+  .over {
+    flex: none;
+    color: var(--slotted-tone-danger-text);
+    font-size: var(--slotted-font-size-xs);
+    font-weight: var(--slotted-font-weight-semibold);
+  }
+
+  .keyOver,
+  .keyTick,
+  .keyPace {
+    flex: none;
+    box-sizing: border-box;
+    inline-size: 10px;
+    block-size: 10px;
+    border-radius: 3px;
+  }
+
+  .keyOver {
+    background: var(--slotted-tone-danger-solid);
+  }
+
+  .keyTick {
+    inline-size: 2px;
+    border-radius: 1px;
+    background: var(--slotted-text);
+  }
+
+  .keyPace {
+    inline-size: 6px;
+    border: 1.5px solid var(--slotted-text);
+    border-radius: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .overFill {
+      animation: none;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .overFill,
+    .keyOver {
+      forced-color-adjust: none;
+      border: 1px solid CanvasText;
+    }
+  }
+}

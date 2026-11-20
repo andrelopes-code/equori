@@ -1911,6 +1911,20 @@ export const catalogPtBR: Catalog = {
   "assistantPreview.views": "Visões montadas pelo servidor",
   "assistantPreview.views_description":
     "Cada número vem de uma leitura do turno; o modelo indica a leitura e a forma.",
+  "assistantView.col.spent": "Gasto",
+  "assistantView.col.limit": "Limite",
+  "assistantView.budget.title": "Orçamento do mês",
+  "assistantView.budget.verdict_over":
+    "{count} orçamentos acima do limite; {name} passou {amount}.",
+  "assistantView.budget.verdict_within":
+    "Todos os orçamentos estão dentro do limite.",
+  "assistantView.budget.empty": "Nenhum orçamento no mês.",
+  "assistantView.budget.over": "acima {amount}",
+  "assistantView.budget.of": "de {limit}",
+  "assistantView.budget.legend_spent": "Gasto",
+  "assistantView.budget.legend_over": "Acima do limite",
+  "assistantView.budget.legend_limit": "Limite",
+  "assistantView.budget.legend_pace": "Ritmo do dia {day}",
   "assistantPreview.handled": "Forma própria",
   "assistantPreview.fallback": "Sem forma própria",
   "assistantPreview.read": "Respostas de leitura com forma",

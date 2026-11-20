@@ -58,10 +58,12 @@ func (m *Module) ConversationFile(
 }
 
 // UseViews adds the view builders of the other modules to the assistant's own (answer views design, V3).
-func (m *Module) UseViews(builders map[ViewKey]ViewBuilder) {
+func (m *Module) UseViews(modules ...map[ViewKey]ViewBuilder) {
 	all := toolapi.Views()
-	for k, b := range builders {
-		all[k] = b
+	for _, builders := range modules {
+		for k, b := range builders {
+			all[k] = b
+		}
 	}
 
 	m.svc.UseViews(all)

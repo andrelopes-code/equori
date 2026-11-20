@@ -26,6 +26,7 @@ export type AssistantIconName =
   | "table"
   | "pie"
   | "chevron"
+  | "target"
   | "dot";
 
 // Lucide geometry (ISC licence) on its 24-unit grid: square-pen, history, sparkles, and the marks
@@ -119,6 +120,11 @@ const PATHS: Record<AssistantIconName, readonly string[]> = {
     "M21.21 15.89A10 10 0 1 1 8 2.83",
   ],
   chevron: ["m6 9 6 6 6-6"],
+  target: [
+    "M2 12a10 10 0 1 0 20 0a10 10 0 1 0-20 0",
+    "M6 12a6 6 0 1 0 12 0a6 6 0 1 0-12 0",
+    "M10 12a2 2 0 1 0 4 0a2 2 0 1 0-4 0",
+  ],
   dot: ["M12 12h.01"],
 };
 
