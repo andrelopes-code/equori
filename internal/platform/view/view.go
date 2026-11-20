@@ -53,6 +53,8 @@ type Value struct {
 	Rate *int64 `json:"rate,omitempty"`
 	// Points is a difference of two rates in basis points: 19 reads 0.19 p.p.
 	Points *int64 `json:"points,omitempty"`
+	// Decimal is a number written with a dot ("38.92"), such as a price, shown in the locale.
+	Decimal string `json:"decimal,omitempty"`
 }
 
 // Money is an amount in minor units of its currency.

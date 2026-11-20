@@ -62,3 +62,5 @@ func TimesValue(bp int64) Value { return Value{Times: &bp} }
 func RateValue(bp int64) Value { return Value{Rate: &bp} }
 
 func PointsValue(bp int64) Value { return Value{Points: &bp} }
+
+func DecimalValue(d string) Value { return Value{Decimal: d} }

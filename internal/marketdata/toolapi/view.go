@@ -133,11 +133,11 @@ func institutionTable(rows []institutionRow) view.Table {
 	for _, r := range rows {
 		limit := view.TextValue("")
 		if r.LimitBP != nil {
-			limit = view.BPValue(*r.LimitBP)
+			limit = view.RateValue(*r.LimitBP)
 		}
 
 		t.Rows = append(t.Rows, []view.Value{
-			view.TextValue("assistantView.institution." + r.Kind), view.BPValue(r.ValueBP), limit,
+			view.TextValue("assistantView.institution." + r.Kind), view.RateValue(r.ValueBP), limit,
 		})
 	}
 
@@ -195,7 +195,7 @@ func priceFormView(outputs []json.RawMessage, _ view.Select, _ time.Time) (view.
 	for _, p := range out.Prices {
 		day := p.Date.Format(time.DateOnly)
 		data.Points = append(data.Points, pricePoint{Date: day, Value: p.Value})
-		rows.Rows = append(rows.Rows, []view.Value{view.DateValue(day), view.TextValue(p.Value)})
+		rows.Rows = append(rows.Rows, []view.Value{view.DateValue(day), view.DecimalValue(p.Value)})
 	}
 
 	last := data.Points[len(data.Points)-1]
@@ -207,7 +207,7 @@ func priceFormView(outputs []json.RawMessage, _ view.Select, _ time.Time) (view.
 		},
 		Window: view.Window{From: data.Points[0].Date, To: last.Date},
 		Verdict: view.Text{Key: "assistantView.price.verdict", Params: map[string]view.Value{
-			"change": view.RateValue(data.ChangeBP), "last": view.TextValue(last.Value),
+			"change": view.RateValue(data.ChangeBP), "last": view.DecimalValue(last.Value),
 		}},
 		Rows: rows,
 		Data: data,

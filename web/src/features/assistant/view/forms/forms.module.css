@@ -1581,3 +1581,167 @@
     }
   }
 }
+
+/* Statements, categorization, redemption, banks, prices, imports and calculators. */
+@layer app {
+  .stk .col {
+    flex-direction: column-reverse;
+    justify-content: flex-start;
+    gap: 2px;
+  }
+
+  .stk .col > i {
+    flex: none;
+    border-radius: 0;
+    background: var(--fill);
+  }
+
+  .stk .col > i:last-of-type {
+    border-radius: 4px 4px 0 0;
+  }
+
+  .flowRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-block-size: 52px;
+    border-block-end: 1px solid var(--slotted-border-subtle);
+  }
+
+  .flowRow:last-child {
+    border-block-end: 0;
+  }
+
+  .node,
+  .nodeHot {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-inline-size: 0;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: color-mix(in oklab, var(--slotted-text) 5%, transparent);
+  }
+
+  .nodeHot {
+    background: var(--slotted-tone-accent-surface);
+  }
+
+  .nodeKey {
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+  }
+
+  .nodeValue {
+    font-size: var(--slotted-font-size-sm);
+    font-weight: var(--slotted-font-weight-semibold);
+    white-space: nowrap;
+  }
+
+  .code {
+    overflow: hidden;
+    padding: 1px 4px;
+    border-radius: 4px;
+    background: color-mix(in oklab, var(--slotted-text) 7%, transparent);
+    font-family: var(--slotted-font-family-mono, ui-monospace, monospace);
+    font-size: var(--slotted-font-size-xs);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .zone {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    border-radius: inherit;
+    background: repeating-linear-gradient(
+      135deg,
+      color-mix(in oklab, var(--slotted-tone-danger-solid) 30%, transparent) 0
+        2px,
+      transparent 2px 5px
+    );
+  }
+
+  .priceLine {
+    display: block;
+    inline-size: 100%;
+    block-size: 96px;
+    overflow: visible;
+  }
+
+  .priceLine path {
+    fill: none;
+    stroke: var(--slotted-tone-accent-solid);
+    stroke-width: 2px;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .importRow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 64px 64px;
+    align-items: center;
+    column-gap: 10px;
+    box-sizing: border-box;
+    block-size: 48px;
+    border-block-end: 1px solid var(--slotted-border-subtle);
+  }
+
+  .importRow:last-child {
+    border-block-end: 0;
+  }
+
+  .count,
+  .countWarn {
+    display: flex;
+    flex-direction: column;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+    text-align: end;
+    white-space: nowrap;
+  }
+
+  .count b,
+  .countWarn b {
+    color: var(--slotted-text);
+    font-size: var(--slotted-font-size-md);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .countWarn {
+    color: var(--slotted-tone-warning-text);
+  }
+
+  .countWarn b {
+    color: var(--slotted-tone-warning-text);
+  }
+
+  .inputs {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    gap: 8px;
+  }
+
+  .inp {
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 0;
+    padding: 6px 10px;
+    border: 1px solid var(--slotted-border-subtle);
+    border-radius: 8px;
+    font-size: var(--slotted-font-size-sm);
+    font-weight: var(--slotted-font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .inp small {
+    overflow: hidden;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+    font-weight: var(--slotted-font-weight-regular);
+    text-overflow: ellipsis;
+  }
+}

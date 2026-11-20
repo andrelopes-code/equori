@@ -2199,4 +2199,656 @@ export const builtScenarios: Scenario[] = [
       },
     ],
   },
+  {
+    id: "built-statement",
+    form: "statement",
+    note: "statement",
+    handled: true,
+    question: "Como está dividida a fatura de novembro?",
+    answer: "Restaurantes pesa mais.",
+    views: [
+      {
+        id: "v-statement",
+        form: "statement",
+        payload: {
+          title: { key: "assistantView.statement.title" },
+          window: { from: "2026-11-01", to: "2026-11-30" },
+          verdict: {
+            key: "assistantView.statement.verdict",
+            params: {
+              name: { text: "Restaurantes" },
+              share: { bp: 3800 },
+              total: { money: { amount: 376000, currency: "BRL" } },
+            },
+          },
+          open: { screen: "/cards" },
+          next: [],
+          rows: {
+            head: [
+              "assistantView.col.category",
+              "assistantView.col.total",
+              "assistantView.col.share",
+            ],
+            rows: [
+              [
+                { text: "Restaurantes" },
+                { money: { amount: 142880, currency: "BRL" } },
+                { bp: 3800 },
+              ],
+              [
+                { text: "Mercado" },
+                { money: { amount: 101520, currency: "BRL" } },
+                { bp: 2700 },
+              ],
+              [
+                { text: "Transporte" },
+                { money: { amount: 71440, currency: "BRL" } },
+                { bp: 1900 },
+              ],
+              [
+                { text: "Assinaturas" },
+                { money: { amount: 33840, currency: "BRL" } },
+                { bp: 900 },
+              ],
+              [
+                { text: "Outros" },
+                { money: { amount: 26320, currency: "BRL" } },
+                { bp: 700 },
+              ],
+            ],
+          },
+          data: {
+            reference: "2026-11",
+            parts: {
+              purchases: { amount: 376000, currency: "BRL" },
+              installments: { amount: 0, currency: "BRL" },
+              charges: { amount: 0, currency: "BRL" },
+              credits: { amount: 0, currency: "BRL" },
+              total: { amount: 376000, currency: "BRL" },
+            },
+            categories: [
+              {
+                category_id: "c1",
+                name: "Restaurantes",
+                total: { amount: 142880, currency: "BRL" },
+                share_bp: 3800,
+              },
+              {
+                category_id: "c2",
+                name: "Mercado",
+                total: { amount: 101520, currency: "BRL" },
+                share_bp: 2700,
+              },
+              {
+                category_id: "c3",
+                name: "Transporte",
+                total: { amount: 71440, currency: "BRL" },
+                share_bp: 1900,
+              },
+              {
+                category_id: "c4",
+                name: "Assinaturas",
+                total: { amount: 33840, currency: "BRL" },
+                share_bp: 900,
+              },
+              {
+                category_id: "c5",
+                name: "Outros",
+                total: { amount: 26320, currency: "BRL" },
+                share_bp: 700,
+              },
+            ],
+          },
+        },
+      },
+    ],
+  },
+  {
+    id: "built-statement_history",
+    form: "statement_history",
+    note: "statement_history",
+    handled: true,
+    question: "Como minhas faturas andaram?",
+    answer: "As parcelas dominam.",
+    views: [
+      {
+        id: "v-statement_history",
+        form: "statement_history",
+        payload: {
+          title: { key: "assistantView.statement_history.title" },
+          window: { from: "2026-05-01", to: "2026-10-31" },
+          verdict: {
+            key: "assistantView.statement_history.verdict",
+            params: {
+              installments: { bp: 8108 },
+              month: { month: "2026-10" },
+              total: { money: { amount: 152940, currency: "BRL" } },
+            },
+          },
+          open: { screen: "/cards" },
+          next: [],
+          rows: {
+            head: [
+              "assistantView.col.month",
+              "assistantView.col.installments",
+              "assistantView.col.total",
+            ],
+            rows: [
+              [
+                { month: "2026-05" },
+                { money: { amount: 124000, currency: "BRL" } },
+                { money: { amount: 206000, currency: "BRL" } },
+              ],
+              [
+                { month: "2026-06" },
+                { money: { amount: 124000, currency: "BRL" } },
+                { money: { amount: 215000, currency: "BRL" } },
+              ],
+              [
+                { month: "2026-07" },
+                { money: { amount: 98000, currency: "BRL" } },
+                { money: { amount: 163250, currency: "BRL" } },
+              ],
+              [
+                { month: "2026-08" },
+                { money: { amount: 98000, currency: "BRL" } },
+                { money: { amount: 208500, currency: "BRL" } },
+              ],
+              [
+                { month: "2026-09" },
+                { money: { amount: 73100, currency: "BRL" } },
+                { money: { amount: 143100, currency: "BRL" } },
+              ],
+              [
+                { month: "2026-10" },
+                { money: { amount: 124000, currency: "BRL" } },
+                { money: { amount: 152940, currency: "BRL" } },
+              ],
+            ],
+          },
+          data: {
+            statements: [
+              {
+                reference: "2026-05",
+                parts: {
+                  purchases: { amount: 82000, currency: "BRL" },
+                  installments: { amount: 124000, currency: "BRL" },
+                  charges: { amount: 0, currency: "BRL" },
+                  credits: { amount: 0, currency: "BRL" },
+                  total: { amount: 206000, currency: "BRL" },
+                },
+              },
+              {
+                reference: "2026-06",
+                parts: {
+                  purchases: { amount: 91000, currency: "BRL" },
+                  installments: { amount: 124000, currency: "BRL" },
+                  charges: { amount: 0, currency: "BRL" },
+                  credits: { amount: 0, currency: "BRL" },
+                  total: { amount: 215000, currency: "BRL" },
+                },
+              },
+              {
+                reference: "2026-07",
+                parts: {
+                  purchases: { amount: 64000, currency: "BRL" },
+                  installments: { amount: 98000, currency: "BRL" },
+                  charges: { amount: 1250, currency: "BRL" },
+                  credits: { amount: 0, currency: "BRL" },
+                  total: { amount: 163250, currency: "BRL" },
+                },
+              },
+              {
+                reference: "2026-08",
+                parts: {
+                  purchases: { amount: 110500, currency: "BRL" },
+                  installments: { amount: 98000, currency: "BRL" },
+                  charges: { amount: 0, currency: "BRL" },
+                  credits: { amount: 0, currency: "BRL" },
+                  total: { amount: 208500, currency: "BRL" },
+                },
+              },
+              {
+                reference: "2026-09",
+                parts: {
+                  purchases: { amount: 70000, currency: "BRL" },
+                  installments: { amount: 73100, currency: "BRL" },
+                  charges: { amount: 0, currency: "BRL" },
+                  credits: { amount: 0, currency: "BRL" },
+                  total: { amount: 143100, currency: "BRL" },
+                },
+              },
+              {
+                reference: "2026-10",
+                parts: {
+                  purchases: { amount: 28940, currency: "BRL" },
+                  installments: { amount: 124000, currency: "BRL" },
+                  charges: { amount: 0, currency: "BRL" },
+                  credits: { amount: 0, currency: "BRL" },
+                  total: { amount: 152940, currency: "BRL" },
+                },
+              },
+            ],
+          },
+        },
+      },
+    ],
+  },
+  {
+    id: "built-explain",
+    form: "explain",
+    note: "explain",
+    handled: true,
+    question: "Por que essa compra caiu em Eletrônicos?",
+    answer: "Uma regra decidiu.",
+    views: [
+      {
+        id: "v-explain",
+        form: "explain",
+        payload: {
+          title: { key: "assistantView.explain.title" },
+          window: {},
+          verdict: {
+            key: "assistantView.explain.verdict_rule",
+            params: { rule: { text: "MERCADOLIVRE*" } },
+          },
+          open: { screen: "/categories/rules" },
+          next: [],
+          rows: {
+            head: ["assistantView.col.method", "assistantView.col.rule"],
+            rows: [
+              [
+                { text: "assistantView.method.rule" },
+                { text: "MERCADOLIVRE*" },
+              ],
+            ],
+          },
+          data: {
+            items: [
+              {
+                transaction_id: "t1",
+                method: "rule",
+                rule_name: "MERCADOLIVRE*",
+                decided_at: "2026-11-16T10:00:00Z",
+              },
+            ],
+          },
+        },
+      },
+    ],
+  },
+  {
+    id: "built-categorization",
+    form: "categorization",
+    note: "categorization",
+    handled: true,
+    question: "Quanto do mês foi categorizado sozinho?",
+    answer: "Quase tudo.",
+    views: [
+      {
+        id: "v-categorization",
+        form: "categorization",
+        payload: {
+          title: { key: "assistantView.categorization.title" },
+          window: { from: "2026-10-01", to: "2026-10-31" },
+          verdict: {
+            key: "assistantView.categorization.verdict",
+            params: {
+              open: { count: 5 },
+              share: { bp: 9000 },
+              total: { count: 200 },
+            },
+          },
+          open: { screen: "/categories/rules" },
+          next: [],
+          rows: {
+            head: [
+              "assistantView.col.method",
+              "assistantView.col.count",
+              "assistantView.col.share",
+            ],
+            rows: [
+              [
+                { text: "assistantView.method.rule" },
+                { count: 150 },
+                { bp: 7500 },
+              ],
+              [
+                { text: "assistantView.method.source" },
+                { count: 20 },
+                { bp: 1000 },
+              ],
+              [
+                { text: "assistantView.method.history" },
+                { count: 10 },
+                { bp: 500 },
+              ],
+              [
+                { text: "assistantView.method.manual" },
+                { count: 15 },
+                { bp: 750 },
+              ],
+              [
+                { text: "assistantView.method.uncategorized" },
+                { count: 5 },
+                { bp: 250 },
+              ],
+            ],
+          },
+          data: {
+            from: "2026-10-01",
+            to: "2026-10-31",
+            total: 200,
+            methods: [
+              { method: "rule", count: 150, share_bp: 7500 },
+              { method: "source", count: 20, share_bp: 1000 },
+              { method: "history", count: 10, share_bp: 500 },
+              { method: "manual", count: 15, share_bp: 750 },
+              { method: "uncategorized", count: 5, share_bp: 250 },
+            ],
+          },
+        },
+      },
+    ],
+  },
+  {
+    id: "built-redemption",
+    form: "redemption",
+    note: "redemption",
+    handled: true,
+    question: "Quanto recebo se resgatar o CDB hoje?",
+    answer: "O IR leva uma parte.",
+    views: [
+      {
+        id: "v-redemption",
+        form: "redemption",
+        payload: {
+          title: { key: "assistantView.redemption.title" },
+          window: { at: "2026-11-19" },
+          verdict: {
+            key: "assistantView.redemption.verdict",
+            params: {
+              net: { money: { amount: 1117150, currency: "BRL" } },
+              tax: { money: { amount: 24850, currency: "BRL" } },
+            },
+          },
+          next: [],
+          rows: {
+            head: ["assistantView.col.step", "assistantView.col.value"],
+            rows: [
+              [
+                { text: "assistantView.redemption.gross" },
+                { money: { amount: 1142000, currency: "BRL" } },
+              ],
+              [
+                { text: "assistantView.redemption.income_tax" },
+                { money: { amount: 24850, currency: "BRL" } },
+              ],
+              [
+                { text: "assistantView.redemption.iof" },
+                { money: { amount: 0, currency: "BRL" } },
+              ],
+              [
+                { text: "assistantView.redemption.custody_fee" },
+                { money: { amount: 0, currency: "BRL" } },
+              ],
+              [
+                { text: "assistantView.redemption.net" },
+                { money: { amount: 1117150, currency: "BRL" } },
+              ],
+            ],
+          },
+          data: {
+            gross: { amount: 1142000, currency: "BRL" },
+            income_tax: { amount: 24850, currency: "BRL" },
+            iof: { amount: 0, currency: "BRL" },
+            custody_fee: { amount: 0, currency: "BRL" },
+            net: { amount: 1117150, currency: "BRL" },
+          },
+        },
+      },
+    ],
+  },
+  {
+    id: "built-institution",
+    form: "institution",
+    note: "institution",
+    handled: true,
+    question: "O Banco Aurora é seguro?",
+    answer: "Cumpre os mínimos.",
+    views: [
+      {
+        id: "v-institution",
+        form: "institution",
+        payload: {
+          title: {
+            key: "assistantView.institution.title",
+            params: { name: { text: "Banco Aurora" } },
+          },
+          window: { at: "2026-06-30" },
+          verdict: {
+            key: "assistantView.institution.verdict_above",
+            params: {
+              gap: { points: 60 },
+              name: { text: "assistantView.institution.principal_capital" },
+            },
+          },
+          prov: {
+            key: "assistantView.prov.source",
+            params: { source: { text: "bcb" } },
+          },
+          next: [],
+          rows: {
+            head: [
+              "assistantView.col.indicator",
+              "assistantView.col.value",
+              "assistantView.col.minimum",
+            ],
+            rows: [
+              [
+                { text: "assistantView.institution.basel" },
+                { rate: 1320 },
+                { rate: 1050 },
+              ],
+              [
+                { text: "assistantView.institution.principal_capital" },
+                { rate: 910 },
+                { rate: 850 },
+              ],
+              [
+                { text: "assistantView.institution.fixed_asset" },
+                { rate: 2200 },
+                {},
+              ],
+            ],
+          },
+          data: {
+            name: "Banco Aurora",
+            period: "2026-06-30",
+            source: "bcb",
+            rows: [
+              { kind: "basel", value_bp: 1320, limit_bp: 1050 },
+              { kind: "principal_capital", value_bp: 910, limit_bp: 850 },
+              { kind: "fixed_asset", value_bp: 2200 },
+            ],
+          },
+        },
+      },
+    ],
+  },
+  {
+    id: "built-price",
+    form: "price",
+    note: "price",
+    handled: true,
+    question: "Como a PETR4 andou no ano?",
+    answer: "Subiu.",
+    views: [
+      {
+        id: "v-price",
+        form: "price",
+        payload: {
+          title: {
+            key: "assistantView.price.title",
+            params: { code: { text: "PETR4" } },
+          },
+          window: { from: "2025-12-01", to: "2026-11-01" },
+          verdict: {
+            key: "assistantView.price.verdict",
+            params: { change: { rate: 3060 }, last: { decimal: "38.92" } },
+          },
+          next: [],
+          rows: {
+            head: ["assistantView.col.date", "assistantView.col.price"],
+            rows: [
+              [{ date: "2025-12-01" }, { decimal: "29.80" }],
+              [{ date: "2026-01-01" }, { decimal: "30.90" }],
+              [{ date: "2026-02-01" }, { decimal: "30.10" }],
+              [{ date: "2026-03-01" }, { decimal: "31.40" }],
+              [{ date: "2026-04-01" }, { decimal: "33.00" }],
+              [{ date: "2026-05-01" }, { decimal: "32.20" }],
+              [{ date: "2026-06-01" }, { decimal: "34.60" }],
+              [{ date: "2026-07-01" }, { decimal: "35.90" }],
+              [{ date: "2026-08-01" }, { decimal: "36.80" }],
+              [{ date: "2026-09-01" }, { decimal: "38.40" }],
+              [{ date: "2026-10-01" }, { decimal: "37.60" }],
+              [{ date: "2026-11-01" }, { decimal: "38.92" }],
+            ],
+          },
+          data: {
+            points: [
+              { date: "2025-12-01", value: "29.80" },
+              { date: "2026-01-01", value: "30.90" },
+              { date: "2026-02-01", value: "30.10" },
+              { date: "2026-03-01", value: "31.40" },
+              { date: "2026-04-01", value: "33.00" },
+              { date: "2026-05-01", value: "32.20" },
+              { date: "2026-06-01", value: "34.60" },
+              { date: "2026-07-01", value: "35.90" },
+              { date: "2026-08-01", value: "36.80" },
+              { date: "2026-09-01", value: "38.40" },
+              { date: "2026-10-01", value: "37.60" },
+              { date: "2026-11-01", value: "38.92" },
+            ],
+            change_bp: 3060,
+          },
+        },
+      },
+    ],
+  },
+  {
+    id: "built-imports",
+    form: "imports",
+    note: "imports",
+    handled: true,
+    question: "Como foram as importações?",
+    answer: "Uma linha espera revisão.",
+    views: [
+      {
+        id: "v-imports",
+        form: "imports",
+        payload: {
+          title: { key: "assistantView.imports.title" },
+          window: {},
+          verdict: {
+            key: "assistantView.imports.verdict",
+            params: { count: { count: 2 }, review: { count: 5 } },
+          },
+          open: { screen: "/imports" },
+          next: [],
+          rows: {
+            head: [
+              "assistantView.col.account",
+              "assistantView.col.created",
+              "assistantView.col.review",
+            ],
+            rows: [
+              [{ text: "Itaú" }, { count: 48 }, { count: 5 }],
+              [{ text: "Nubank" }, { count: 0 }, { count: 0 }],
+            ],
+          },
+          data: {
+            batches: [
+              {
+                batch_id: "b1",
+                account: "Itaú",
+                source: "ofx",
+                file_name: "outubro.ofx",
+                started_at: "2026-11-19T13:00:00Z",
+                created: 48,
+                matched: 0,
+                needs_review: 5,
+                ignored: 3,
+              },
+              {
+                batch_id: "b2",
+                account: "Nubank",
+                source: "ofx",
+                started_at: "2026-11-18T10:00:00Z",
+                created: 0,
+                matched: 10,
+                needs_review: 0,
+                ignored: 0,
+              },
+            ],
+            review: 5,
+          },
+        },
+      },
+    ],
+  },
+  {
+    id: "built-calculator",
+    form: "calculator",
+    note: "calculator",
+    handled: true,
+    question: "Quanto rende 10 mil a 110% do CDI em 2 anos?",
+    answer: "Abri a calculadora preenchida.",
+    views: [
+      {
+        id: "v-calculator",
+        form: "calculator",
+        payload: {
+          title: {
+            key: "assistantView.calculator.title",
+            params: { name: { text: "Renda fixa" } },
+          },
+          window: {},
+          verdict: {
+            key: "assistantView.calculator.verdict",
+            params: { count: { count: 4 } },
+          },
+          open: {
+            screen: "/calculators/fixed-income",
+            params: {
+              amount: "10000",
+              index: "cdi",
+              months: "24",
+              rate: "110",
+            },
+          },
+          next: [],
+          rows: {
+            head: ["assistantView.col.input", "assistantView.col.value"],
+            rows: [
+              [{ text: "amount" }, { text: "10000" }],
+              [{ text: "index" }, { text: "cdi" }],
+              [{ text: "months" }, { text: "24" }],
+              [{ text: "rate" }, { text: "110" }],
+            ],
+          },
+          data: {
+            title: "Renda fixa",
+            path: "/calculators/fixed-income",
+            inputs: [
+              { key: "amount", value: "10000" },
+              { key: "index", value: "cdi" },
+              { key: "months", value: "24" },
+              { key: "rate", value: "110" },
+            ],
+          },
+        },
+      },
+    ],
+  },
 ];

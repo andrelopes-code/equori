@@ -26,6 +26,7 @@ export function valueText(v: ViewValue, f: ValueFormat): string {
   if (v.month !== undefined) return monthText(v.month, f.locale);
   if (v.times !== undefined) return times(v.times, f.locale);
   if (v.rate !== undefined) return rate(v.rate, f.locale);
+  if (v.decimal !== undefined) return decimal(v.decimal, f.locale);
   if (v.points !== undefined)
     return f.label("assistantView.unit.points", v.points);
   if (v.text?.startsWith(LABEL) === true) return f.label(v.text, v.count);
@@ -63,4 +64,14 @@ export function rate(bp: number, locale: string): string {
     minimumFractionDigits: 1,
     maximumFractionDigits: 2,
   }).format(bp / 10000);
+}
+
+// A number written with a dot ("38.92"), in the locale with the decimals it was written with.
+function decimal(d: string, locale: string): string {
+  const digits = d.split(".")[1]?.length ?? 0;
+
+  return numberFormatter(locale, {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(Number(d));
 }

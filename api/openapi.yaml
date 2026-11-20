@@ -8590,6 +8590,7 @@ components:
         times: {type: integer, format: int64, description: a multiple in basis points}
         rate: {type: integer, format: int64, description: a return in basis points}
         points: {type: integer, format: int64, description: a difference of two rates in basis points}
+        decimal: {type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: a number written with a dot}
     AssistantViewMoney:
       type: object
       additionalProperties: false

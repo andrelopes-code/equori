@@ -24,6 +24,15 @@ import { ContributionBody } from "@/features/assistant/view/forms/portfolio/cont
 import { FigureBody } from "@/features/assistant/view/forms/portfolio/figure-body";
 import { HoldingsBody } from "@/features/assistant/view/forms/portfolio/holdings-body";
 import { TaxYearBody } from "@/features/assistant/view/forms/portfolio/tax-year-body";
+import { StatementBody } from "@/features/assistant/view/forms/more/statement-body";
+import { StatementHistoryBody } from "@/features/assistant/view/forms/more/statement-history-body";
+import { ExplainBody } from "@/features/assistant/view/forms/more/explain-body";
+import { CategorizationBody } from "@/features/assistant/view/forms/more/categorization-body";
+import { RedemptionBody } from "@/features/assistant/view/forms/more/redemption-body";
+import { InstitutionBody } from "@/features/assistant/view/forms/more/institution-body";
+import { PriceBody } from "@/features/assistant/view/forms/more/price-body";
+import { ImportsBody } from "@/features/assistant/view/forms/more/imports-body";
+import { CalculatorBody } from "@/features/assistant/view/forms/more/calculator-body";
 import type { ViewWindow } from "@/features/assistant/view/view-types";
 
 export type ViewUnit = "amount" | "share";
@@ -67,4 +76,13 @@ export const FORMS: Partial<Record<string, ViewForm>> = {
   holdings: { icon: "chart", Body: HoldingsBody },
   benchmark: { icon: "trend", Body: BenchmarkBody },
   tax_year: { icon: "receipt", Body: TaxYearBody },
+  statement: { icon: "card", Body: StatementBody },
+  statement_history: { icon: "card", Body: StatementHistoryBody },
+  explain: { icon: "wand", Body: ExplainBody },
+  categorization: { icon: "wand", Body: CategorizationBody },
+  redemption: { icon: "receipt", Body: RedemptionBody },
+  institution: { icon: "book", Body: InstitutionBody },
+  price: { icon: "trend", Body: PriceBody },
+  imports: { icon: "fileDown", Body: ImportsBody },
+  calculator: { icon: "chart", Body: CalculatorBody },
 };

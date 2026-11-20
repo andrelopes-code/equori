@@ -5055,6 +5055,8 @@ export interface components {
              * @description a difference of two rates in basis points
              */
             points?: number;
+            /** @description a number written with a dot */
+            decimal?: string;
         };
         AssistantViewMoney: {
             /**

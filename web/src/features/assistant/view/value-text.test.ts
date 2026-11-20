@@ -63,6 +63,11 @@ describe("valueText", () => {
     );
   });
 
+  it("writes a decimal in the locale with its own decimals", () => {
+    expect(valueText({ decimal: "38.92" }, format)).toBe("38,92");
+    expect(valueText({ decimal: "1250.5" }, format)).toBe("1.250,5");
+  });
+
   it("names a month", () => {
     expect(valueText({ month: "2026-10" }, format)).toBe("outubro 2026");
   });
