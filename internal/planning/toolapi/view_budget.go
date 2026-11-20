@@ -28,6 +28,10 @@ type budgetData struct {
 func Views() map[view.Key]view.Builder {
 	return map[view.Key]view.Builder{
 		{Tool: "get_budgets_and_goals", Form: "budget"}: budgetFormView,
+		{Tool: "get_budgets_and_goals", Form: "goals"}:  goalsView,
+		{Tool: "list_schedules", Form: "agenda"}:        agendaView,
+		{Tool: "project_balance", Form: "balance"}:      projectionView,
+		{Tool: "find_recurring", Form: "recurring"}:     recurringView,
 	}
 }
 
