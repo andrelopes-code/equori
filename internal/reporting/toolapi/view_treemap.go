@@ -48,34 +48,7 @@ func treemapView(outputs []json.RawMessage, _ view.Select, _ time.Time) (view.Pa
 	}
 
 	fold := rankingFold(items, total, treemapSlots)
-	cells := make([]treemapCell, 0, len(fold.Items)+1)
-	for _, it := range fold.Items {
-		if it.Amount.Amount > 0 {
-			cells = append(
-				cells,
-				treemapCell{
-					AccountID: it.AccountID,
-					Name:      it.Name,
-					Amount:    it.Amount,
-					ShareBP:   it.ShareBP,
-				},
-			)
-		}
-	}
-
-	if fold.Rest != nil && fold.Rest.Amount.Amount > 0 {
-		cells = append(
-			cells,
-			treemapCell{
-				Name:    "assistantView.ranking.rest",
-				Amount:  fold.Rest.Amount,
-				ShareBP: fold.Rest.ShareBP,
-				Rest:    true,
-				Count:   fold.Rest.Count,
-			},
-		)
-	}
-
+	cells := treemapCells(fold)
 	squarify(cells, total.Amount)
 
 	return view.Payload{
@@ -99,6 +72,33 @@ func treemapView(outputs []json.RawMessage, _ view.Select, _ time.Time) (view.Pa
 		Rows: rankingRows(fold),
 		Data: treemapData{Total: total, Cells: cells},
 	}, nil
+}
+
+// treemapCells is one cell per category with an amount, and one for the rest when it holds any.
+func treemapCells(fold rankingData) []treemapCell {
+	cells := make([]treemapCell, 0, len(fold.Items)+1)
+	for _, it := range fold.Items {
+		if it.Amount.Amount > 0 {
+			cells = append(cells, treemapCell{
+				AccountID: it.AccountID,
+				Name:      it.Name,
+				Amount:    it.Amount,
+				ShareBP:   it.ShareBP,
+			})
+		}
+	}
+
+	if fold.Rest != nil && fold.Rest.Amount.Amount > 0 {
+		cells = append(cells, treemapCell{
+			Name:    "assistantView.ranking.rest",
+			Amount:  fold.Rest.Amount,
+			ShareBP: fold.Rest.ShareBP,
+			Rest:    true,
+			Count:   fold.Rest.Count,
+		})
+	}
+
+	return cells
 }
 
 // treemapVerdict names the two largest categories and the share they take together.
