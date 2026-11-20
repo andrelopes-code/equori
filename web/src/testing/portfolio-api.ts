@@ -150,6 +150,7 @@ export function portfolioApi(routes: Record<string, Route> = {}) {
         ],
       ),
     "GET /api/v1/reports/return": () => json(200, plainReturn),
+    "GET /api/v1/reports/attribution": () => json(200, { years: [] }),
     [`GET /api/v1/accounts/${cashID}/balance`]: () =>
       json(200, { balance: brl(40000), value: brl(40000) }),
     "GET /api/v1/income-events": () =>

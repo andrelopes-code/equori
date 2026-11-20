@@ -186,4 +186,33 @@ export const portfolioEn = {
   "fixedIncome.issuers.sovereign": "Government security",
   "fixedIncome.issuers.uncovered": "Not covered",
   "fixedIncome.issuers.mark": "Limit per issuer",
+  "portfolio.attribution.title": "What moved the portfolio",
+  "portfolio.attribution.note":
+    "How much each holding added to the year's result.",
+  "portfolio.attribution.help":
+    "The result of a holding in the year is how much its value rose, plus what its sales and income brought, net of fees and taxes. The holdings add up to the portfolio's gain. The percentage is the return on the money that stayed in the holding during the year, counting the date of each purchase and sale.",
+  "portfolio.attribution.year": "Year",
+  "portfolio.attribution.period.partial": "{year} to {day}",
+  "portfolio.attribution.lead.gain":
+    "In {period}, the portfolio gained {amount}.",
+  "portfolio.attribution.lead.loss":
+    "In {period}, the portfolio lost {amount}.",
+  "portfolio.attribution.gains.one": "1 holding added {amount}",
+  "portfolio.attribution.gains.other": "{count} holdings added {amount}",
+  "portfolio.attribution.losses.one": "1 took away {amount}",
+  "portfolio.attribution.losses.other": "{count} took away {amount}",
+  "portfolio.attribution.tally.both": "{gains}; {losses}.",
+  "portfolio.attribution.tally.one": "{part}.",
+  "portfolio.attribution.others.one": "Another holding",
+  "portfolio.attribution.others.other": "Other {count} holdings",
+  "portfolio.attribution.stale": "No quote since {date}",
+  "portfolio.attribution.other": "Cash, fees and exchange",
+  "portfolio.attribution.total": "Portfolio",
+  "portfolio.attribution.missing":
+    "No quote of {codes} at the year end: the year cannot be measured.",
+  "portfolio.attribution.unpriced": "Quotes are missing to measure this year.",
+  "portfolio.attribution.col.holding": "Holding",
+  "portfolio.attribution.col.result": "Result in the year",
+  "portfolio.attribution.col.rate": "Return",
+  "portfolio.attribution.rows": "Result of each holding in {period}",
 } as const;

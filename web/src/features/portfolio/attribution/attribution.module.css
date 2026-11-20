@@ -1,0 +1,94 @@
+@layer app {
+  .layout {
+    display: grid;
+    gap: var(--slotted-space-5);
+  }
+
+  .lead {
+    display: grid;
+    gap: var(--slotted-space-1);
+  }
+
+  /* Instrument, bar, result and rate: the text columns size to their widest cell, so every value
+     ends on one vertical line. */
+  .rows {
+    display: grid;
+    grid-template-columns: max-content minmax(8rem, 1fr) max-content max-content;
+    column-gap: var(--slotted-space-5);
+  }
+
+  .row {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    align-items: center;
+    min-block-size: var(--slotted-space-8);
+    border-block-end: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+  }
+
+  .total {
+    border-block-end: none;
+  }
+
+  .head {
+    min-block-size: auto;
+    padding-block-end: var(--slotted-space-1);
+  }
+
+  .end {
+    justify-self: end;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .track {
+    position: relative;
+    block-size: var(--slotted-space-5);
+  }
+
+  .zero {
+    position: absolute;
+    inset-block: 0;
+    inline-size: var(--slotted-border-width-thin);
+    background: var(--slotted-text-muted);
+  }
+
+  .bar {
+    position: absolute;
+    inset-block: var(--slotted-space-1);
+    border-radius: var(--slotted-radius-xs);
+  }
+
+  .gain {
+    background: var(--slotted-tone-success-solid);
+  }
+
+  .loss {
+    background: var(--slotted-tone-danger-solid);
+  }
+
+  .stale {
+    white-space: nowrap;
+  }
+
+  .pendingLead {
+    inline-size: 60%;
+  }
+
+  /* Five rows of the ranking and the total. */
+  .pendingRows {
+    block-size: calc(var(--slotted-space-8) * 6);
+  }
+
+  @media (forced-colors: active) {
+    .zero,
+    .gain {
+      background: CanvasText;
+    }
+
+    .loss {
+      background: GrayText;
+    }
+  }
+}

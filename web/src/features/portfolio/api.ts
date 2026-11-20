@@ -56,6 +56,15 @@ export function valuedBalanceQuery(
   });
 }
 
+// AT1 to AT7 (docs/specs/2026-11-20-portfolio-attribution-design.md): every year at once, so the
+// choice of a year never waits for the network.
+export function attributionQuery(api: Client<paths>) {
+  return queryOptions({
+    queryKey: ["attribution"] as const,
+    queryFn: async () => unwrap(await api.GET("/reports/attribution")),
+  });
+}
+
 export function returnQuery(
   api: Client<paths>,
   accountID: string | null | undefined,

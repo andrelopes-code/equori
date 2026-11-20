@@ -26,7 +26,7 @@ Measured on the demo book (2026-11-20): the sum of the holdings' results of form
 
 The section "Quem puxou a carteira" sits below "Como rendeu" on `/portfolio`:
 
-- A row of years. Each year shows its rate (`period_bp`); the current year is selected on load and is marked as partial.
+- A segmented control of the last six years; the current year is selected on load, and the sentence states the day a partial year ends. The rate of the year (`period_bp`) stands on the total row.
 - One sentence: "Em {year}, a carteira ganhou {result} ({rate}). {n} ativos somaram {gains}; {m} tiraram {losses}." The second sentence names only the counts that are not zero.
 - Rows of the five largest results and of the five smallest negative ones; the rest adds into one row "Outros {n} ativos". Each row: instrument, a bar on an axis centered on zero, the result and the rate. A stale row writes "Sem cotação desde {date}" in place of its bar and rate.
 - A row "Saldo em conta, tarifas e câmbio" with `other` when it is not zero, and the total row "Carteira" with `result` and `period_bp`.
@@ -50,7 +50,7 @@ The section "Quem puxou a carteira" sits below "Como rendeu" on `/portfolio`:
 - B3: Does not apply: no setting; the selected year is not stored.
 - D1 to D5: Does not apply: no table, no schema change, no recorded fact changes.
 - S1: `getAttribution`; tool exposure: the assistant reads it through the `attribution` view of `get_portfolio`.
-- S2: Shown on a phone: rows keep the instrument, the result and the bar; the rate moves under the result.
+- S2: Does not apply: `/portfolio` is not a phone route (ADR 027).
 - S3: `internal/assistant/guide/articles/investments.md` describes the section.
 - S4: The `attribution` view of `get_portfolio` returns the same years.
 - X1: S656 (results, sum and rate), S657 (sale with taxes and `other` = 0), S658 (stale price), S659 (missing price).

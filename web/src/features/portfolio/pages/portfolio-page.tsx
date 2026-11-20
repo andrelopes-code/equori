@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 
 import { useApi } from "@/api/api-context";
+import { AttributionSection } from "@/features/portfolio/attribution/attribution-section";
 import { FixedIncomePanel } from "@/features/portfolio/fixed-income/fixed-income-panel";
 import { HoldingsSection } from "@/features/portfolio/holdings/holdings-section";
 import { PortfolioHeader } from "@/features/portfolio/summary/portfolio-header";
@@ -98,6 +99,8 @@ export function PortfolioPage() {
             search={search}
             onChange={change}
           />
+
+          <AttributionSection />
 
           {!empty && !positions.isError && (
             <WhereMoneySection
