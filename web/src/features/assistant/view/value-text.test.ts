@@ -44,6 +44,10 @@ describe("valueText", () => {
     ).toBe("assistantView.ranking.rest:7");
   });
 
+  it("writes a multiple with one decimal", () => {
+    expect(valueText({ times: 107098 }, format)).toBe("10,7×");
+  });
+
   it("names a month", () => {
     expect(valueText({ month: "2026-10" }, format)).toBe("outubro 2026");
   });

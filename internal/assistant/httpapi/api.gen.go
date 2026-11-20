@@ -359,6 +359,9 @@ type AssistantViewValue struct {
 	Money *AssistantViewMoney `json:"money,omitempty"`
 	Month *string             `json:"month,omitempty"`
 	Text  *string             `json:"text,omitempty"`
+
+	// Times a multiple in basis points
+	Times *int64 `json:"times,omitempty"`
 }
 
 // AssistantViewWindow defines model for AssistantViewWindow.

@@ -47,6 +47,8 @@ type Value struct {
 	Date  string `json:"date,omitempty"`
 	// Month is a calendar month written YYYY-MM.
 	Month string `json:"month,omitempty"`
+	// Times is a multiple in basis points: 107098 reads 10.7×.
+	Times *int64 `json:"times,omitempty"`
 }
 
 // Money is an amount in minor units of its currency.

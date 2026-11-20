@@ -131,7 +131,7 @@ func outliersVerdict(rows []outlierRow) view.Text {
 	return view.Text{Key: "assistantView.outliers.verdict", Params: map[string]view.Value{
 		"name":     view.TextValue(o.Name),
 		"amount":   view.MoneyValue(o.Amount),
-		"ratio":    view.BPValue(o.RatioBP),
+		"ratio":    view.TimesValue(o.RatioBP),
 		"category": view.TextValue(rows[0].Category),
 	}}
 }

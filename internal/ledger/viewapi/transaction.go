@@ -104,14 +104,12 @@ func transactionRows(postings []transactionPosting) view.Table {
 }
 
 func transactionVerdict(d transactionData) view.Text {
-	params := map[string]view.Value{
-		"name":    view.TextValue(d.Item.Name),
-		"amount":  view.MoneyValue(d.Item.Amount),
-		"account": view.TextValue(d.Item.Account),
-	}
+	params := map[string]view.Value{"account": view.TextValue(d.Item.Account)}
 
 	switch {
-	case len(d.History) > 0:
+	case len(d.History) == 1:
+		return view.Text{Key: "assistantView.transaction.verdict_changed_once", Params: params}
+	case len(d.History) > 1:
 		params["count"] = view.CountValue(int64(len(d.History)))
 		return view.Text{Key: "assistantView.transaction.verdict_changed", Params: params}
 	case len(d.Attachments) > 0:

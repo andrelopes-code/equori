@@ -152,7 +152,7 @@ func TestViewOutliers(t *testing.T) {
 
 	if p.Verdict.Key != "assistantView.outliers.verdict" ||
 		p.Verdict.Params["name"].Text != "Loja 5" ||
-		*p.Verdict.Params["ratio"].BP != 107098 {
+		*p.Verdict.Params["ratio"].Times != 107098 {
 		t.Fatalf("verdict = %+v", p.Verdict)
 	}
 }
@@ -217,7 +217,7 @@ func TestViewTransaction(t *testing.T) {
 		t.Fatalf("data = %+v", d)
 	}
 
-	if p.Verdict.Key != "assistantView.transaction.verdict_changed" ||
+	if p.Verdict.Key != "assistantView.transaction.verdict_changed_once" ||
 		p.Open.Screen != "/transactions/t9" {
 		t.Fatalf("verdict = %+v, open = %+v", p.Verdict, p.Open)
 	}

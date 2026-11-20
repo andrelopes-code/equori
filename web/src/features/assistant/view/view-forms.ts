@@ -10,6 +10,10 @@ import { RankingBody } from "@/features/assistant/view/forms/ranking-body";
 import { SeriesBody } from "@/features/assistant/view/forms/series-body";
 import { TreemapBody } from "@/features/assistant/view/forms/treemap-body";
 import { WaterfallBody } from "@/features/assistant/view/forms/waterfall-body";
+import { HeatBody } from "@/features/assistant/view/forms/heat-body";
+import { OutliersBody } from "@/features/assistant/view/forms/outliers-body";
+import { TransactionBody } from "@/features/assistant/view/forms/transaction-body";
+import { TxsBody } from "@/features/assistant/view/forms/txs-body";
 import type { ViewWindow } from "@/features/assistant/view/view-types";
 
 export type ViewUnit = "amount" | "share";
@@ -39,4 +43,8 @@ export const FORMS: Partial<Record<string, ViewForm>> = {
   series: { icon: "chart", Body: SeriesBody },
   waterfall: { icon: "chart", Body: WaterfallBody },
   indicators: { icon: "trend", Body: IndicatorsBody },
+  txs: { icon: "search", Body: TxsBody },
+  outliers: { icon: "search", Body: OutliersBody },
+  heat: { icon: "calendar", Body: HeatBody },
+  transaction: { icon: "receipt", Body: TransactionBody },
 };

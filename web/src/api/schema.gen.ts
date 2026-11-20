@@ -5040,6 +5040,11 @@ export interface components {
             /** Format: date */
             date?: string;
             month?: string;
+            /**
+             * Format: int64
+             * @description a multiple in basis points
+             */
+            times?: number;
         };
         AssistantViewMoney: {
             /**

@@ -563,4 +563,582 @@ export const builtScenarios: Scenario[] = [
       },
     ],
   },
+  {
+    id: "built-txs",
+    form: "txs",
+    note: "search_transactions → show txs",
+    handled: true,
+    question: "Quanto gastei no iFood este mês?",
+    answer: "Cinco pedidos no mês.",
+    views: [
+      {
+        id: "v-txs",
+        form: "txs",
+        payload: {
+          title: { key: "assistantView.txs.title" },
+          window: { from: "2026-11-02", to: "2026-11-14" },
+          verdict: {
+            key: "assistantView.txs.verdict",
+            params: {
+              average: { money: { amount: -5794, currency: "BRL" } },
+              count: { count: 5 },
+              total: { money: { amount: -28970, currency: "BRL" } },
+            },
+          },
+          open: { screen: "/transactions" },
+          next: [],
+          rows: {
+            head: [
+              "assistantView.col.date",
+              "assistantView.col.name",
+              "assistantView.col.amount",
+            ],
+            rows: [
+              [
+                { date: "2026-11-14" },
+                { text: "iFood *Padaria" },
+                { money: { amount: -2850, currency: "BRL" } },
+              ],
+              [
+                { date: "2026-11-12" },
+                { text: "iFood *Burger King" },
+                { money: { amount: -4590, currency: "BRL" } },
+              ],
+              [
+                { date: "2026-11-09" },
+                { text: "iFood *Sushi Leblon" },
+                { money: { amount: -11200, currency: "BRL" } },
+              ],
+              [
+                { date: "2026-11-06" },
+                { text: "iFood *Pizzaria Bráz" },
+                { money: { amount: -3840, currency: "BRL" } },
+              ],
+              [
+                { date: "2026-11-02" },
+                { text: "iFood *Madero" },
+                { money: { amount: -6490, currency: "BRL" } },
+              ],
+            ],
+          },
+          data: {
+            count: 5,
+            total: { amount: -28970, currency: "BRL" },
+            average: { amount: -5794, currency: "BRL" },
+            items: [
+              {
+                id: "t1",
+                date: "2026-11-14",
+                name: "iFood *Padaria",
+                account: "Nubank",
+                category: "Restaurantes",
+                amount: { amount: -2850, currency: "BRL" },
+              },
+              {
+                id: "t2",
+                date: "2026-11-12",
+                name: "iFood *Burger King",
+                account: "Nubank",
+                category: "Restaurantes",
+                amount: { amount: -4590, currency: "BRL" },
+              },
+              {
+                id: "t3",
+                date: "2026-11-09",
+                name: "iFood *Sushi Leblon",
+                account: "Cartão Itaú",
+                category: "Restaurantes",
+                amount: { amount: -11200, currency: "BRL" },
+              },
+              {
+                id: "t4",
+                date: "2026-11-06",
+                name: "iFood *Pizzaria Bráz",
+                account: "Nubank",
+                category: "Restaurantes",
+                amount: { amount: -3840, currency: "BRL" },
+              },
+              {
+                id: "t5",
+                date: "2026-11-02",
+                name: "iFood *Madero",
+                account: "Cartão Itaú",
+                category: "Restaurantes",
+                amount: { amount: -6490, currency: "BRL" },
+              },
+            ],
+          },
+        },
+      },
+    ],
+  },
+  {
+    id: "built-outliers",
+    form: "outliers",
+    note: "search_transactions → show outliers",
+    handled: true,
+    question: "Teve alguma compra fora do normal?",
+    answer: "Uma compra de eletrônicos foge do padrão.",
+    views: [
+      {
+        id: "v-outliers",
+        form: "outliers",
+        payload: {
+          title: { key: "assistantView.outliers.title" },
+          window: {},
+          verdict: {
+            key: "assistantView.outliers.verdict",
+            params: {
+              amount: { money: { amount: 239900, currency: "BRL" } },
+              category: { text: "Eletrônicos" },
+              name: { text: "Fast Shop" },
+              ratio: { times: 107098 },
+            },
+          },
+          open: { screen: "/transactions" },
+          next: [],
+          rows: {
+            head: [
+              "assistantView.col.category",
+              "assistantView.col.median",
+              "assistantView.col.largest",
+            ],
+            rows: [
+              [
+                { text: "Eletrônicos" },
+                { money: { amount: 22400, currency: "BRL" } },
+                { money: { amount: 239900, currency: "BRL" } },
+              ],
+              [
+                { text: "Mercado" },
+                { money: { amount: 10495, currency: "BRL" } },
+                { money: { amount: 30170, currency: "BRL" } },
+              ],
+              [
+                { text: "Restaurantes" },
+                { money: { amount: 5200, currency: "BRL" } },
+                { money: { amount: 14500, currency: "BRL" } },
+              ],
+            ],
+          },
+          data: {
+            rows: [
+              {
+                category: "Eletrônicos",
+                median: { amount: 22400, currency: "BRL" },
+                points: [
+                  {
+                    id: "e0",
+                    name: "Loja 0",
+                    amount: { amount: 8990, currency: "BRL" },
+                    ratio_bp: 4013,
+                  },
+                  {
+                    id: "e1",
+                    name: "Loja 1",
+                    amount: { amount: 12900, currency: "BRL" },
+                    ratio_bp: 5759,
+                  },
+                  {
+                    id: "e2",
+                    name: "Loja 2",
+                    amount: { amount: 19900, currency: "BRL" },
+                    ratio_bp: 8884,
+                  },
+                  {
+                    id: "e3",
+                    name: "Loja 3",
+                    amount: { amount: 24900, currency: "BRL" },
+                    ratio_bp: 11116,
+                  },
+                  {
+                    id: "e4",
+                    name: "Loja 4",
+                    amount: { amount: 34900, currency: "BRL" },
+                    ratio_bp: 15580,
+                  },
+                  {
+                    id: "e5",
+                    name: "Fast Shop",
+                    amount: { amount: 239900, currency: "BRL" },
+                    ratio_bp: 107098,
+                  },
+                ],
+                outlier: {
+                  id: "e5",
+                  name: "Fast Shop",
+                  amount: { amount: 239900, currency: "BRL" },
+                  ratio_bp: 107098,
+                },
+              },
+              {
+                category: "Mercado",
+                median: { amount: 10495, currency: "BRL" },
+                points: [
+                  {
+                    id: "m0",
+                    name: "Mercado 0",
+                    amount: { amount: 1890, currency: "BRL" },
+                    ratio_bp: 1801,
+                  },
+                  {
+                    id: "m1",
+                    name: "Mercado 1",
+                    amount: { amount: 3240, currency: "BRL" },
+                    ratio_bp: 3087,
+                  },
+                  {
+                    id: "m2",
+                    name: "Mercado 2",
+                    amount: { amount: 4510, currency: "BRL" },
+                    ratio_bp: 4297,
+                  },
+                  {
+                    id: "m3",
+                    name: "Mercado 3",
+                    amount: { amount: 6200, currency: "BRL" },
+                    ratio_bp: 5908,
+                  },
+                  {
+                    id: "m4",
+                    name: "Mercado 4",
+                    amount: { amount: 8830, currency: "BRL" },
+                    ratio_bp: 8414,
+                  },
+                  {
+                    id: "m5",
+                    name: "Mercado 5",
+                    amount: { amount: 9750, currency: "BRL" },
+                    ratio_bp: 9290,
+                  },
+                  {
+                    id: "m6",
+                    name: "Mercado 6",
+                    amount: { amount: 11240, currency: "BRL" },
+                    ratio_bp: 10710,
+                  },
+                  {
+                    id: "m7",
+                    name: "Mercado 7",
+                    amount: { amount: 13400, currency: "BRL" },
+                    ratio_bp: 12768,
+                  },
+                  {
+                    id: "m8",
+                    name: "Mercado 8",
+                    amount: { amount: 15620, currency: "BRL" },
+                    ratio_bp: 14883,
+                  },
+                  {
+                    id: "m9",
+                    name: "Mercado 9",
+                    amount: { amount: 21240, currency: "BRL" },
+                    ratio_bp: 20238,
+                  },
+                  {
+                    id: "m10",
+                    name: "Mercado 10",
+                    amount: { amount: 24800, currency: "BRL" },
+                    ratio_bp: 23630,
+                  },
+                  {
+                    id: "m11",
+                    name: "Mercado 11",
+                    amount: { amount: 30170, currency: "BRL" },
+                    ratio_bp: 28747,
+                  },
+                ],
+              },
+              {
+                category: "Restaurantes",
+                median: { amount: 5200, currency: "BRL" },
+                points: [
+                  {
+                    id: "r0",
+                    name: "Restaurante 0",
+                    amount: { amount: 2200, currency: "BRL" },
+                    ratio_bp: 4231,
+                  },
+                  {
+                    id: "r1",
+                    name: "Restaurante 1",
+                    amount: { amount: 2850, currency: "BRL" },
+                    ratio_bp: 5481,
+                  },
+                  {
+                    id: "r2",
+                    name: "Restaurante 2",
+                    amount: { amount: 3400, currency: "BRL" },
+                    ratio_bp: 6538,
+                  },
+                  {
+                    id: "r3",
+                    name: "Restaurante 3",
+                    amount: { amount: 3840, currency: "BRL" },
+                    ratio_bp: 7385,
+                  },
+                  {
+                    id: "r4",
+                    name: "Restaurante 4",
+                    amount: { amount: 4590, currency: "BRL" },
+                    ratio_bp: 8827,
+                  },
+                  {
+                    id: "r5",
+                    name: "Restaurante 5",
+                    amount: { amount: 5200, currency: "BRL" },
+                    ratio_bp: 10000,
+                  },
+                  {
+                    id: "r6",
+                    name: "Restaurante 6",
+                    amount: { amount: 6490, currency: "BRL" },
+                    ratio_bp: 12481,
+                  },
+                  {
+                    id: "r7",
+                    name: "Restaurante 7",
+                    amount: { amount: 7100, currency: "BRL" },
+                    ratio_bp: 13654,
+                  },
+                  {
+                    id: "r8",
+                    name: "Restaurante 8",
+                    amount: { amount: 8800, currency: "BRL" },
+                    ratio_bp: 16923,
+                  },
+                  {
+                    id: "r9",
+                    name: "Restaurante 9",
+                    amount: { amount: 11200, currency: "BRL" },
+                    ratio_bp: 21538,
+                  },
+                  {
+                    id: "r10",
+                    name: "Restaurante 10",
+                    amount: { amount: 14500, currency: "BRL" },
+                    ratio_bp: 27885,
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      },
+    ],
+  },
+  {
+    id: "built-heat",
+    form: "heat",
+    note: "search_transactions → show heat",
+    handled: true,
+    question: "Em que dias eu gasto mais?",
+    answer: "Os fins de semana pesam mais.",
+    views: [
+      {
+        id: "v-heat",
+        form: "heat",
+        payload: {
+          title: { key: "assistantView.heat.title" },
+          window: { from: "2026-11-01", to: "2026-11-30" },
+          verdict: {
+            key: "assistantView.heat.verdict",
+            params: {
+              amount: { money: { amount: 61240, currency: "BRL" } },
+              day: { date: "2026-11-08" },
+            },
+          },
+          open: {
+            screen: "/transactions",
+            params: { from: "2026-11-01", to: "2026-11-30" },
+          },
+          next: [],
+          rows: {
+            head: ["assistantView.col.date", "assistantView.col.spent"],
+            rows: [
+              [
+                { date: "2026-11-01" },
+                { money: { amount: 11020, currency: "BRL" } },
+              ],
+              [
+                { date: "2026-11-02" },
+                { money: { amount: 25720, currency: "BRL" } },
+              ],
+              [
+                { date: "2026-11-03" },
+                { money: { amount: 7350, currency: "BRL" } },
+              ],
+              [
+                { date: "2026-11-04" },
+                { money: { amount: 18370, currency: "BRL" } },
+              ],
+              [
+                { date: "2026-11-05" },
+                { money: { amount: 4899, currency: "BRL" } },
+              ],
+              [
+                { date: "2026-11-06" },
+                { money: { amount: 15920, currency: "BRL" } },
+              ],
+              [
+                { date: "2026-11-07" },
+                { money: { amount: 42870, currency: "BRL" } },
+              ],
+              [
+                { date: "2026-11-08" },
+                { money: { amount: 61240, currency: "BRL" } },
+              ],
+              [
+                { date: "2026-11-09" },
+                { money: { amount: 20820, currency: "BRL" } },
+              ],
+              [
+                { date: "2026-11-10" },
+                { money: { amount: 8570, currency: "BRL" } },
+              ],
+              [
+                { date: "2026-11-11" },
+                { money: { amount: 12250, currency: "BRL" } },
+              ],
+              [
+                { date: "2026-11-12" },
+                { money: { amount: 23270, currency: "BRL" } },
+              ],
+              [
+                { date: "2026-11-13" },
+                { money: { amount: 6120, currency: "BRL" } },
+              ],
+              [
+                { date: "2026-11-14" },
+                { money: { amount: 39194, currency: "BRL" } },
+              ],
+              [
+                { date: "2026-11-15" },
+                { money: { amount: 50217, currency: "BRL" } },
+              ],
+              [
+                { date: "2026-11-16" },
+                { money: { amount: 13470, currency: "BRL" } },
+              ],
+              [
+                { date: "2026-11-17" },
+                { money: { amount: 9798, currency: "BRL" } },
+              ],
+              [
+                { date: "2026-11-18" },
+                { money: { amount: 17140, currency: "BRL" } },
+              ],
+              [
+                { date: "2026-11-19" },
+                { money: { amount: 7350, currency: "BRL" } },
+              ],
+            ],
+          },
+          data: {
+            month: "2026-11",
+            days: [
+              { amount: 11020, currency: "BRL" },
+              { amount: 25720, currency: "BRL" },
+              { amount: 7350, currency: "BRL" },
+              { amount: 18370, currency: "BRL" },
+              { amount: 4899, currency: "BRL" },
+              { amount: 15920, currency: "BRL" },
+              { amount: 42870, currency: "BRL" },
+              { amount: 61240, currency: "BRL" },
+              { amount: 20820, currency: "BRL" },
+              { amount: 8570, currency: "BRL" },
+              { amount: 12250, currency: "BRL" },
+              { amount: 23270, currency: "BRL" },
+              { amount: 6120, currency: "BRL" },
+              { amount: 39194, currency: "BRL" },
+              { amount: 50217, currency: "BRL" },
+              { amount: 13470, currency: "BRL" },
+              { amount: 9798, currency: "BRL" },
+              { amount: 17140, currency: "BRL" },
+              { amount: 7350, currency: "BRL" },
+              { amount: 0, currency: "" },
+              { amount: 0, currency: "" },
+              { amount: 0, currency: "" },
+              { amount: 0, currency: "" },
+              { amount: 0, currency: "" },
+              { amount: 0, currency: "" },
+              { amount: 0, currency: "" },
+              { amount: 0, currency: "" },
+              { amount: 0, currency: "" },
+              { amount: 0, currency: "" },
+              { amount: 0, currency: "" },
+            ],
+            until: 19,
+            peak: 8,
+          },
+        },
+      },
+    ],
+  },
+  {
+    id: "built-transaction",
+    form: "transaction",
+    note: "get_transaction → show transaction",
+    handled: true,
+    question: "Me mostra a compra do Pão de Açúcar",
+    answer: "A compra foi corrigida hoje.",
+    views: [
+      {
+        id: "v-transaction",
+        form: "transaction",
+        payload: {
+          title: { key: "assistantView.transaction.title" },
+          window: { at: "2026-11-18" },
+          verdict: {
+            key: "assistantView.transaction.verdict_changed_once",
+            params: { account: { text: "Nubank" } },
+          },
+          open: { screen: "/transactions/t9" },
+          next: [],
+          rows: {
+            head: ["assistantView.col.account", "assistantView.col.amount"],
+            rows: [
+              [
+                { text: "Nubank" },
+                { money: { amount: -21240, currency: "BRL" } },
+              ],
+              [
+                { text: "Mercado" },
+                { money: { amount: 21240, currency: "BRL" } },
+              ],
+            ],
+          },
+          data: {
+            item: {
+              id: "t9",
+              date: "2026-11-18",
+              name: "Pão de Açúcar",
+              account: "Nubank",
+              category: "Mercado",
+              amount: { amount: -21240, currency: "BRL" },
+            },
+            tags: ["casa"],
+            postings: [
+              {
+                account: "Nubank",
+                class: "asset",
+                amount: { amount: -21240, currency: "BRL" },
+              },
+              {
+                account: "Mercado",
+                class: "expense",
+                amount: { amount: 21240, currency: "BRL" },
+              },
+            ],
+            history: [
+              { version: 1, reason: "amount", at: "2026-11-19T12:58:00Z" },
+            ],
+            attachments: [
+              { file_name: "nota-fiscal-pao-de-acucar.pdf", size: 86016 },
+            ],
+          },
+        },
+      },
+    ],
+  },
 ];

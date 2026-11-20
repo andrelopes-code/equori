@@ -24,6 +24,7 @@ export function valueText(v: ViewValue, f: ValueFormat): string {
   if (v.bp !== undefined) return percent(v.bp, f.locale);
   if (v.date !== undefined) return formatDate(v.date, f.locale);
   if (v.month !== undefined) return monthText(v.month, f.locale);
+  if (v.times !== undefined) return times(v.times, f.locale);
   if (v.text?.startsWith(LABEL) === true) return f.label(v.text, v.count);
   if (v.count !== undefined) return numberFormatter(f.locale).format(v.count);
 
@@ -39,4 +40,14 @@ function percent(bp: number, locale: string): string {
     maximumFractionDigits: digits,
     minimumFractionDigits: digits,
   }).format(bp / 10000);
+}
+
+// A multiple in basis points with one decimal: 107098 reads 10.7× (10,7× in pt-BR).
+function times(bp: number, locale: string): string {
+  const n = numberFormatter(locale, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  }).format(bp / 10000);
+
+  return `${n}×`;
 }

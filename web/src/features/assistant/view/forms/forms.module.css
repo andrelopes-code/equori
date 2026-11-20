@@ -732,3 +732,426 @@
     }
   }
 }
+
+/* Transactions, outliers, the day calendar and the receipt. */
+@layer app {
+  .events {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .event {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr) max-content;
+    align-items: center;
+    column-gap: 10px;
+    box-sizing: border-box;
+    block-size: 44px;
+    border-block-end: 1px solid var(--slotted-border-subtle);
+  }
+
+  .event:last-child {
+    border-block-end: 0;
+  }
+
+  .day {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    inline-size: 36px;
+    block-size: 32px;
+    border-radius: 8px;
+    background: color-mix(in oklab, var(--slotted-text) 6%, transparent);
+    font-size: var(--slotted-font-size-xs);
+    line-height: 1.1; /* two stacked lines in a 32 px box */
+    font-variant-numeric: tabular-nums;
+  }
+
+  .day b {
+    font-size: var(--slotted-font-size-sm);
+  }
+
+  .eventText {
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 0;
+  }
+
+  .eventName,
+  .eventMeta {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .eventName {
+    font-size: var(--slotted-font-size-sm);
+  }
+
+  .eventMeta {
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+  }
+
+  .eventValue,
+  .num {
+    font-size: var(--slotted-font-size-sm);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .eventValue {
+    font-weight: var(--slotted-font-weight-semibold);
+  }
+
+  .down {
+    color: var(--slotted-tone-danger-text);
+  }
+
+  .strips {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .strip {
+    display: grid;
+    grid-template-columns: 96px minmax(0, 1fr) 40px;
+    align-items: center;
+    column-gap: 10px;
+    box-sizing: border-box;
+    block-size: 44px;
+    border-block-end: 1px solid var(--slotted-border-subtle);
+  }
+
+  .stripName {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    font-size: var(--slotted-font-size-sm);
+    white-space: nowrap;
+  }
+
+  .stripName small {
+    overflow: hidden;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+    font-variant-numeric: tabular-nums;
+    text-overflow: ellipsis;
+  }
+
+  .stripTrack {
+    position: relative;
+    block-size: 28px;
+  }
+
+  .stripTrack::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    inset-block-start: 50%;
+    border-block-start: 1px solid var(--slotted-border-subtle);
+  }
+
+  .med {
+    position: absolute;
+    inset-block: 2px;
+    inline-size: 2px;
+    margin-inline-start: -1px;
+    background: var(--slotted-text-muted);
+  }
+
+  .dot {
+    position: absolute;
+    inset-block-start: 50%;
+    inline-size: 8px;
+    block-size: 8px;
+    translate: -4px -4px;
+    border-radius: 50%;
+    background: color-mix(
+      in oklab,
+      var(--slotted-tone-accent-solid) 55%,
+      transparent
+    );
+    box-shadow: 0 0 0 1.5px
+      var(--slotted-panel-surface, var(--slotted-surface-raised));
+    outline: none;
+  }
+
+  .dotOut {
+    inline-size: 12px;
+    block-size: 12px;
+    translate: -6px -6px;
+    background: var(--slotted-tone-accent-solid);
+    box-shadow:
+      0 0 0 2px var(--slotted-panel-surface, var(--slotted-surface-raised)),
+      0 0 0 4px var(--slotted-tone-accent-border);
+  }
+
+  .dot:hover,
+  .dot:focus-visible {
+    z-index: 3;
+    background: var(--slotted-tone-accent-solid);
+  }
+
+  .dot:focus-visible {
+    outline: 2px solid var(--slotted-tone-accent-solid);
+    outline-offset: 2px;
+  }
+
+  .dot .tip {
+    inset-block-start: -6px;
+    inset-inline-start: 0;
+  }
+
+  .dot.tipEnd .tip {
+    inset-inline: auto 0;
+  }
+
+  .dot:hover .tip,
+  .dot:focus-visible .tip {
+    display: block;
+  }
+
+  .outLabel {
+    position: absolute;
+    inset-block-start: -6px;
+    transform: translateX(-100%);
+    padding-inline-end: 10px;
+    font-size: var(--slotted-font-size-xs);
+    font-weight: var(--slotted-font-weight-semibold);
+    white-space: nowrap;
+  }
+
+  .stripMax {
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+    white-space: nowrap;
+  }
+
+  .stripHot {
+    color: var(--slotted-text);
+    font-weight: var(--slotted-font-weight-semibold);
+  }
+
+  .stripAxis {
+    position: relative;
+    block-size: 16px;
+    margin-inline: 106px 50px;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+  }
+
+  .stripAxis span {
+    position: absolute;
+    transform: translateX(-50%);
+    white-space: nowrap;
+  }
+
+  .stripAxis span:first-child {
+    transform: none;
+  }
+
+  .heat {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .heatHead {
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+    text-align: center;
+  }
+
+  .heatCell {
+    position: relative;
+    display: grid;
+    place-items: center;
+    block-size: 28px;
+    border-radius: 6px;
+    background: color-mix(
+      in oklab,
+      var(--slotted-tone-accent-solid) var(--v),
+      color-mix(in oklab, var(--slotted-text) 6%, transparent)
+    );
+    font-size: var(--slotted-font-size-xs);
+    font-variant-numeric: tabular-nums;
+    outline: none;
+  }
+
+  .heatHigh {
+    color: var(--slotted-tone-accent-on-solid);
+  }
+
+  .heatFuture {
+    background: none;
+    box-shadow: inset 0 0 0 1px var(--slotted-border-subtle);
+    color: var(--slotted-text-muted);
+  }
+
+  .heatCell:focus-visible {
+    outline: 2px solid var(--slotted-tone-accent-solid);
+    outline-offset: 2px;
+  }
+
+  .heatCell .tip {
+    inset-block-start: -4px;
+    inset-inline-start: 0;
+  }
+
+  .heatCell.tipEnd .tip {
+    inset-inline: auto 0;
+  }
+
+  .heatCell:hover .tip,
+  .heatCell:focus-visible .tip {
+    display: block;
+  }
+
+  .ramp {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+  }
+
+  .ramp i {
+    inline-size: 14px;
+    block-size: 10px;
+    border-radius: 3px;
+    background: color-mix(
+      in oklab,
+      var(--slotted-tone-accent-solid) var(--v),
+      color-mix(in oklab, var(--slotted-text) 6%, transparent)
+    );
+  }
+
+  .rcpt {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .rcptHead {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) max-content;
+    align-items: center;
+    column-gap: 10px;
+  }
+
+  .rcptWho {
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 0;
+    overflow: hidden;
+    font-size: var(--slotted-font-size-sm);
+    white-space: nowrap;
+  }
+
+  .rcptWho small {
+    overflow: hidden;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+    text-overflow: ellipsis;
+  }
+
+  .rcptAmt {
+    font-size: var(--slotted-font-size-xl);
+    font-weight: var(--slotted-font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .ledger {
+    margin: 0;
+    padding: 4px 10px;
+    border-radius: 10px;
+    background: color-mix(in oklab, var(--slotted-text) 4%, transparent);
+    list-style: none;
+    font-size: var(--slotted-font-size-sm);
+  }
+
+  .ledger li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    block-size: 30px;
+  }
+
+  .ledger small {
+    margin-inline-start: 6px;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+  }
+
+  .ledger .ledgerSum {
+    border-block-start: 1px dashed var(--slotted-border-strong);
+    font-weight: var(--slotted-font-weight-semibold);
+  }
+
+  .trail {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--slotted-font-size-xs);
+  }
+
+  .trail li {
+    display: grid;
+    grid-template-columns: 14px minmax(0, 1fr) max-content;
+    align-items: center;
+    column-gap: 8px;
+    block-size: 24px;
+  }
+
+  .trailDot {
+    inline-size: 8px;
+    block-size: 8px;
+    margin-inline-start: 3px;
+    border-radius: 50%;
+    background: var(--slotted-tone-accent-solid);
+  }
+
+  .trailAt {
+    color: var(--slotted-text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .attach {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-sizing: border-box;
+    block-size: 36px;
+    padding-inline: 10px;
+    border: 1px solid var(--slotted-border-subtle);
+    border-radius: 10px;
+    font-size: var(--slotted-font-size-xs);
+  }
+
+  .icon14 {
+    display: inline-flex;
+    flex: none;
+    inline-size: 14px;
+    block-size: 14px;
+  }
+
+  @media (forced-colors: active) {
+    .dot,
+    .heatCell {
+      forced-color-adjust: none;
+      border: 1px solid CanvasText;
+    }
+  }
+}
