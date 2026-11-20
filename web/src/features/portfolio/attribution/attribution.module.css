@@ -4,11 +4,6 @@
     gap: var(--slotted-space-5);
   }
 
-  .lead {
-    display: grid;
-    gap: var(--slotted-space-1);
-  }
-
   /* Instrument, bar, weight, rate, contribution and result: the text columns size to their widest
      cell, so every value ends on one vertical line. */
   .rows {
@@ -74,8 +69,9 @@
     white-space: nowrap;
   }
 
-  .pendingLead {
-    inline-size: 60%;
+  /* Its title, three lines and the figures under them. */
+  .pendingSummary {
+    block-size: calc(var(--slotted-space-8) * 4);
   }
 
   /* Five rows of the ranking and the total. */

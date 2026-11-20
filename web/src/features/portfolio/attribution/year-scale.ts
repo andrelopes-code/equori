@@ -6,7 +6,6 @@ export interface YearColumn {
   year: number;
   returnBp?: number | undefined;
   rateBp?: number | undefined;
-  inflationBp?: number | undefined;
 }
 
 export interface YearScale {
@@ -16,16 +15,15 @@ export interface YearScale {
   high: number;
 }
 
-// The columns of the years and one axis for every column and mark (section 3 of the spec).
+// The columns of the years and one axis for the portfolio and the CDI of every year (section 3 of the spec).
 export function yearScale(years: readonly AttributionYear[]): YearScale {
   const columns = years.map((y) => ({
     year: y.year,
     returnBp: y.return_bp,
     rateBp: y.rate?.index_bp,
-    inflationBp: y.inflation?.index_bp,
   }));
   const values = columns.flatMap((c) =>
-    [c.returnBp, c.rateBp, c.inflationBp].filter((v) => v !== undefined),
+    [c.returnBp, c.rateBp].filter((v) => v !== undefined),
   );
 
   return {

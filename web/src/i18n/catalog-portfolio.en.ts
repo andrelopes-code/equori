@@ -191,37 +191,26 @@ export const portfolioEn = {
     "How much each holding added to the year's return.",
   "portfolio.attribution.help":
     "Every return in this section is the gain divided by the average money at work in the period, counting the date of each contribution, purchase and sale. The year starts on the day there was money at work. Weight is the part of that average money that stayed in the holding; contribution is the holding's gain divided by the portfolio's average money, so the contributions add up to the portfolio's return. The CDI and the IPCA are measured as if the same contributions, on the same dates, had earned the index. This return can differ from \"How it performed\", which measures the period without the effect of contributions.",
-  "portfolio.attribution.years": "Return by year",
+  "portfolio.attribution.years": "Portfolio return in each year",
+  "portfolio.attribution.legend.rate": "{index} with the same contributions",
+  "portfolio.attribution.summary.title": "How {period} went",
+  "portfolio.attribution.summary.portfolio": "Portfolio",
+  "portfolio.attribution.summary.rate": "Same money at the {index}{window}",
+  "portfolio.attribution.summary.inflation": "Inflation ({index}){window}",
+  "portfolio.attribution.summary.note":
+    "Each index gets the same contributions, on the same dates as the portfolio.",
+  "portfolio.attribution.fact.rate": "Difference from the {index}{window}",
+  "portfolio.attribution.fact.real": "Real return{window}",
+  "portfolio.attribution.fact.gains.one": "1 holding gained",
+  "portfolio.attribution.fact.gains.other": "{count} holdings gained",
+  "portfolio.attribution.fact.losses.one": "1 holding lost",
+  "portfolio.attribution.fact.losses.other": "{count} holdings lost",
   "portfolio.attribution.yearColumn": "{year}: {rate}",
   "portfolio.attribution.legend.portfolio": "Portfolio",
-  "portfolio.attribution.legend.rate": "Same money at the {index}",
-  "portfolio.attribution.legend.inflation": "{index}",
   "portfolio.attribution.period.partial": "{year} to {day}",
   "portfolio.attribution.period.since": "{year}, since {since}",
   "portfolio.attribution.period.between": "{year}, from {since} to {day}",
   "portfolio.attribution.window": " to {day}",
-  "portfolio.attribution.lead.gain":
-    "In {period}, the portfolio returned {rate} and gained {amount}.",
-  "portfolio.attribution.lead.loss":
-    "In {period}, the portfolio returned {rate} and lost {amount}.",
-  "portfolio.attribution.lead.gain.bare":
-    "In {period}, the portfolio gained {amount}.",
-  "portfolio.attribution.lead.loss.bare":
-    "In {period}, the portfolio lost {amount}.",
-  "portfolio.attribution.compare.above":
-    "{amount} above the same money at the {index}{window} ({indexRate})",
-  "portfolio.attribution.compare.below":
-    "{amount} below the same money at the {index}{window} ({indexRate})",
-  "portfolio.attribution.compare.equal":
-    "The same as the money at the {index}{window} ({indexRate})",
-  "portfolio.attribution.compare.real":
-    "{index}{window} of {inflation}: real return of {real}",
-  "portfolio.attribution.join.one": "{part}.",
-  "portfolio.attribution.join.two": "{first}; {second}.",
-  "portfolio.attribution.gains.one": "1 holding added {amount}",
-  "portfolio.attribution.gains.other": "{count} holdings added {amount}",
-  "portfolio.attribution.losses.one": "1 took away {amount}",
-  "portfolio.attribution.losses.other": "{count} took away {amount}",
   "portfolio.attribution.others.one": "Another holding",
   "portfolio.attribution.others.other": "Other {count} holdings",
   "portfolio.attribution.stale": "No quote since {date}",

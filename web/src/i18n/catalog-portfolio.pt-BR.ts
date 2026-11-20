@@ -194,37 +194,26 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.attribution.note": "Quanto cada ativo somou ao rendimento do ano.",
   "portfolio.attribution.help":
     'Todo rendimento deste quadro é o ganho dividido pelo dinheiro médio aplicado no período, contando a data de cada aporte e de cada compra e venda. O ano começa no dia em que havia dinheiro aplicado. Peso é a parte desse dinheiro médio que ficou no ativo; contribuição é o ganho do ativo dividido pelo dinheiro médio da carteira, por isso as contribuições somam o rendimento da carteira. O CDI e o IPCA são calculados como se os mesmos aportes, nas mesmas datas, tivessem rendido o índice. Este rendimento pode diferir do de "Como rendeu", que mede o período sem o efeito dos aportes.',
-  "portfolio.attribution.years": "Rendimento por ano",
+  "portfolio.attribution.years": "Rendimento da carteira em cada ano",
+  "portfolio.attribution.legend.rate": "{index} com os mesmos aportes",
+  "portfolio.attribution.summary.title": "Como foi {period}",
+  "portfolio.attribution.summary.portfolio": "Carteira",
+  "portfolio.attribution.summary.rate": "Mesmo dinheiro no {index}{window}",
+  "portfolio.attribution.summary.inflation": "Inflação ({index}){window}",
+  "portfolio.attribution.summary.note":
+    "Cada índice recebe os mesmos aportes, nas mesmas datas da carteira.",
+  "portfolio.attribution.fact.rate": "Diferença para o {index}{window}",
+  "portfolio.attribution.fact.real": "Rendimento real{window}",
+  "portfolio.attribution.fact.gains.one": "1 ativo ganhou",
+  "portfolio.attribution.fact.gains.other": "{count} ativos ganharam",
+  "portfolio.attribution.fact.losses.one": "1 ativo perdeu",
+  "portfolio.attribution.fact.losses.other": "{count} ativos perderam",
   "portfolio.attribution.yearColumn": "{year}: {rate}",
   "portfolio.attribution.legend.portfolio": "Carteira",
-  "portfolio.attribution.legend.rate": "Mesmo dinheiro no {index}",
-  "portfolio.attribution.legend.inflation": "{index}",
   "portfolio.attribution.period.partial": "{year} até {day}",
   "portfolio.attribution.period.since": "{year}, desde {since}",
   "portfolio.attribution.period.between": "{year}, de {since} a {day}",
   "portfolio.attribution.window": " até {day}",
-  "portfolio.attribution.lead.gain":
-    "Em {period}, a carteira rendeu {rate} e ganhou {amount}.",
-  "portfolio.attribution.lead.loss":
-    "Em {period}, a carteira rendeu {rate} e perdeu {amount}.",
-  "portfolio.attribution.lead.gain.bare":
-    "Em {period}, a carteira ganhou {amount}.",
-  "portfolio.attribution.lead.loss.bare":
-    "Em {period}, a carteira perdeu {amount}.",
-  "portfolio.attribution.compare.above":
-    "{amount} acima do mesmo dinheiro no {index}{window} ({indexRate})",
-  "portfolio.attribution.compare.below":
-    "{amount} abaixo do mesmo dinheiro no {index}{window} ({indexRate})",
-  "portfolio.attribution.compare.equal":
-    "O mesmo que o dinheiro no {index}{window} ({indexRate})",
-  "portfolio.attribution.compare.real":
-    "{index}{window} de {inflation}: rendimento real de {real}",
-  "portfolio.attribution.join.one": "{part}.",
-  "portfolio.attribution.join.two": "{first}; {second}.",
-  "portfolio.attribution.gains.one": "1 ativo somou {amount}",
-  "portfolio.attribution.gains.other": "{count} ativos somaram {amount}",
-  "portfolio.attribution.losses.one": "1 tirou {amount}",
-  "portfolio.attribution.losses.other": "{count} tiraram {amount}",
   "portfolio.attribution.others.one": "Outro ativo",
   "portfolio.attribution.others.other": "Outros {count} ativos",
   "portfolio.attribution.stale": "Sem cotação desde {date}",

@@ -1,7 +1,15 @@
 @layer app {
   .block {
     display: grid;
-    gap: var(--slotted-space-3);
+    gap: var(--slotted-space-2);
+  }
+
+  /* The heading of the chart and its legend share one line. */
+  .top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--slotted-space-5);
   }
 
   .columns {
@@ -9,7 +17,7 @@
     gap: var(--slotted-space-2);
   }
 
-  /* A year is a toggle: its column, its year and its rate. */
+  /* A year is a toggle: its bars, its rate and its year. */
   .column {
     display: grid;
     justify-items: center;
@@ -51,43 +59,41 @@
     background: var(--slotted-text-muted);
   }
 
-  .bar {
-    background: var(--slotted-tone-accent-solid);
+  /* The portfolio and the CDI stand side by side, centred in the column. */
+  .pair {
+    position: absolute;
+    inset-block: 0;
+    inset-inline: 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: var(--slotted-space-1);
   }
 
-  .plot .bar {
-    position: absolute;
-    inset-inline: 30%;
+  .pair .bar {
+    position: relative;
+    inline-size: var(--slotted-space-8);
     border-radius: var(--slotted-radius-xs);
+  }
+
+  .pair .rate {
+    inline-size: var(--slotted-space-4);
+  }
+
+  .portfolio {
+    background: var(--slotted-tone-success-solid);
   }
 
   .negative {
     background: var(--slotted-tone-danger-solid);
   }
 
-  /* The marks cross the column: the CDI solid, the IPCA dashed, both in the text colour. */
-  .rateMark,
-  .inflationMark {
-    position: absolute;
-    inset-inline: 18%;
-    block-size: 0;
-  }
-
-  .rateMark,
-  .rateKey {
-    border-block-start: calc(var(--slotted-border-width-thin) * 2) solid
-      var(--slotted-text);
-  }
-
-  .inflationMark,
-  .inflationKey {
-    border-block-start: calc(var(--slotted-border-width-thin) * 2) dashed
-      var(--slotted-text);
+  .rate {
+    background: var(--slotted-tone-info-solid);
   }
 
   .legend {
     display: flex;
-    flex-wrap: wrap;
     gap: var(--slotted-space-5);
   }
 
@@ -95,24 +101,23 @@
     display: inline-flex;
     align-items: center;
     gap: var(--slotted-space-2);
+    white-space: nowrap;
   }
 
   .swatch {
-    inline-size: var(--slotted-space-4);
-    block-size: var(--slotted-space-2);
+    inline-size: var(--slotted-space-3);
+    block-size: var(--slotted-space-3);
     border-radius: var(--slotted-radius-xs);
   }
 
-  .rateKey,
-  .inflationKey {
-    block-size: 0;
-    border-radius: 0;
-  }
-
   @media (forced-colors: active) {
-    .bar,
+    .portfolio,
     .negative {
       background: CanvasText;
+    }
+
+    .rate {
+      background: GrayText;
     }
 
     .column[aria-pressed="true"] {

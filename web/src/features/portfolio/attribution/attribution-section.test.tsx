@@ -105,20 +105,36 @@ async function renderReport(body: unknown) {
 }
 
 describe("Attribution section", () => {
-  it("AT8 to AT12: opens on the current year with its sentences, its rows and the portfolio", async () => {
+  it("AT8 to AT12: opens on the current year with its summary, its rows and the portfolio", async () => {
     const region = await renderReport(report);
 
     expect(
-      await within(region).findByText(
-        "In 2026 to 11/01, the portfolio returned 4.49% and gained R$447.00.",
-      ),
+      await within(region).findByText("How 2026 to 11/01 went"),
     ).toBeInTheDocument();
+    // One line each on one axis: name, rate and money.
+    for (const text of [
+      "Same money at the CDI to 10/30",
+      "Inflation (IPCA)",
+      "10.50%",
+      "+R$1,050.00",
+      "+R$400.00",
+    ])
+      expect(within(region).getByText(text)).toBeInTheDocument();
     // 440.00 against 1,050.00 at the CDI until 10/30: 610.00 below.
     expect(
-      within(region).getByText(
-        "R$610.00 below the same money at the CDI to 10/30 (10.50%); IPCA of 4.00%: real return of 0.47%.",
-      ),
-    ).toBeInTheDocument();
+      within(region).getByText("Difference from the CDI to 10/30").nextSibling
+        ?.textContent,
+    ).toBe("−R$610.00");
+    expect(
+      within(region).getByText("Real return").nextSibling?.textContent,
+    ).toBe("0.47%");
+    // PETR4 and MXRF11: 345.00 + 100.00.
+    expect(
+      within(region).getByText("2 holdings gained").nextSibling?.textContent,
+    ).toBe("+R$445.00");
+    expect(
+      within(region).queryByText(/holdings? lost/),
+    ).not.toBeInTheDocument();
 
     const rows = within(region).getAllByRole("listitem");
     expect(rows.map((r) => r.textContent)).toEqual([
@@ -129,7 +145,7 @@ describe("Attribution section", () => {
     ]);
   });
 
-  it("AT5, AT13: a past year names its first day and writes a stale quote in place of the bar and the rate", async () => {
+  it("AT5, AT13: a past year names its first day, tallies its holdings and writes a stale quote in place of the bar and the rate", async () => {
     const region = await renderReport(report);
 
     await userEvent
@@ -139,10 +155,11 @@ describe("Attribution section", () => {
       );
 
     expect(
-      within(region).getByText(
-        "In 2025, since 01/02, the portfolio returned −0.50% and lost R$50.00.",
-      ),
+      within(region).getByText("How 2025, since 01/02 went"),
     ).toBeInTheDocument();
+    expect(
+      within(region).getByText("1 holding lost").nextSibling?.textContent,
+    ).toBe("−R$200.00");
     expect(
       within(region).getByText("No quote since 06/30/2025"),
     ).toBeInTheDocument();

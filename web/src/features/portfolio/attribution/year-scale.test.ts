@@ -46,12 +46,13 @@ function year(
 }
 
 describe("yearScale", () => {
-  it("spans every column and mark, with zero inside", () => {
-    const scale = yearScale([year(2024, -300, 1000, 450), year(2025, 1361)]);
+  it("spans the portfolio and the CDI of every year, with zero inside", () => {
+    const scale = yearScale([year(2024, -300, 1000, 2000), year(2025, 1361)]);
 
+    // The IPCA of 2024 stays off the columns: it is drawn in the year's summary.
     expect(scale.columns).toEqual([
-      { year: 2024, returnBp: -300, rateBp: 1000, inflationBp: 450 },
-      { year: 2025, returnBp: 1361, rateBp: undefined, inflationBp: undefined },
+      { year: 2024, returnBp: -300, rateBp: 1000 },
+      { year: 2025, returnBp: 1361, rateBp: undefined },
     ]);
     expect([scale.low, scale.high]).toEqual([-300, 1361]);
     expect(heightOf(scale, 0)).toBeCloseTo((300 / 1661) * 100);

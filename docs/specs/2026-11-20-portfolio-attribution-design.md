@@ -35,8 +35,8 @@ An independent check (2026-11-20) recomputed every row of 2021 to 2026 from the 
 
 The section "Quem puxou a carteira" sits below "Como rendeu" on `/portfolio`:
 
-- Columns by year, the last six: each column is the return of AT8 of its year, with a mark of the rate comparison and one of the inflation comparison. A column is a choice: the current year is chosen on load. A partial year names its last day.
-- Two sentences: "Em {period}, a carteira rendeu {rate} ({result})." and the comparisons of the year: "{difference} acima/abaixo do mesmo dinheiro no CDI; rendimento real de {real}." Each comparison that ends before the year names its `until`.
+- Columns by year, the last six, under the heading "Rendimento da carteira em cada ano": each column is the bar of the return of AT8 of its year, beside a thinner bar of `index_bp` of the rate comparison when the year has one, with the return written under it in the tone of its sign. A legend names both bars. A column is a choice: the current year is chosen on load.
+- The summary "Como foi {period}": one line each for the portfolio (`return_bp`, `result`), the same money at the CDI (`index_bp`, `index_result`) and inflation (`index_bp`, `index_result`), as bars on one axis with the rate and the money end-aligned; a note says each index gets the same contributions on the same dates. Under the lines, figures with the name above the value: the difference from the CDI (`rate.result − rate.index_result`), the real return (`real_bp`), the count and sum of the holdings that gained and of those that lost. A gain is written in the success tone, a loss in the danger tone. Each comparison that ends before the year names its `until`; a partial year names its last day. (Amended 2026-11-20: the sentences and the marks on the columns read as confusing.)
 - Rows: instrument, a bar of the contribution on an axis centred on zero, weight, rate, contribution and result. The five largest and the five smallest results show one by one; the rest adds into one row "Outros {n} ativos" with the sums of their weights, contributions and results and no rate. A stale row writes "Sem cotação desde {date}" in place of its bar and rate.
 - A row "Saldo em conta, tarifas e câmbio" with `other` when its weight or result is not zero, and the total row "Carteira": 100%, the return of AT8 as rate and contribution, and the result.
 
@@ -46,7 +46,7 @@ The section "Quem puxou a carteira" sits below "Como rendeu" on `/portfolio`:
 - R2: A region without an index has no comparison of that kind; the rest of the year stands.
 - R3: Does not apply: no value set.
 - R4: Does not apply: no extension point.
-- R5: Section title, sentence, row labels, partial year mark, stale text and help text: catalog keys `portfolio.attribution.*` in pt-BR and en.
+- R5: Section title, summary labels, row labels, partial year mark, stale text and help text: catalog keys `portfolio.attribution.*` in pt-BR and en.
 - R6: Money through `useMoneyFormat()`, rates through `formatBasisPoints`, dates and years through `Intl` with the active tag.
 - C1: Every amount is an integer of minor units of the base currency.
 - C2: Market values are converted to the base currency at the date of each end (`Convert`); cost basis, proceeds and income are recorded in the base currency (ledger weights). A missing price is AT6, never zero.

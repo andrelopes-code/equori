@@ -1,0 +1,105 @@
+@layer app {
+  .summary {
+    display: grid;
+    gap: var(--slotted-space-3);
+  }
+
+  /* Name, bar, rate and money: the text columns size to their widest cell, so every value ends on
+     one vertical line. */
+  .lines {
+    display: grid;
+    grid-template-columns: max-content minmax(6rem, 1fr) max-content max-content;
+    column-gap: var(--slotted-space-5);
+    row-gap: var(--slotted-space-1);
+  }
+
+  .line {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    align-items: center;
+    min-block-size: var(--slotted-space-7);
+  }
+
+  .end {
+    justify-self: end;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .track {
+    position: relative;
+    block-size: var(--slotted-space-5);
+  }
+
+  .own .track {
+    block-size: var(--slotted-space-6);
+  }
+
+  .zero {
+    position: absolute;
+    inset-block: 0;
+    inline-size: var(--slotted-border-width-thin);
+    background: var(--slotted-text-muted);
+  }
+
+  .bar {
+    position: absolute;
+    inset-block: var(--slotted-space-1);
+    border-radius: var(--slotted-radius-xs);
+  }
+
+  .portfolio {
+    background: var(--slotted-tone-success-solid);
+  }
+
+  .rate {
+    background: var(--slotted-tone-info-solid);
+  }
+
+  .inflation {
+    background: var(--slotted-text-muted);
+  }
+
+  .portfolio.loss {
+    background: var(--slotted-tone-danger-solid);
+  }
+
+  /* The figures under the lines, each its name above its value; a figure that does not fit moves
+     whole to the next line. */
+  .facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--slotted-space-3) var(--slotted-space-10);
+    padding-block-start: var(--slotted-space-3);
+    border-block-start: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+  }
+
+  .fact {
+    display: grid;
+    gap: var(--slotted-space-1);
+  }
+
+  .nowrap,
+  .figure {
+    white-space: nowrap;
+  }
+
+  .figure {
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (forced-colors: active) {
+    .zero,
+    .portfolio {
+      background: CanvasText;
+    }
+
+    .rate,
+    .inflation,
+    .portfolio.loss {
+      background: GrayText;
+    }
+  }
+}

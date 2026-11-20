@@ -2,15 +2,14 @@ import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
 import styles from "@/features/portfolio/attribution/attribution.module.css";
-import { attributionLead } from "@/features/portfolio/attribution/attribution-lead";
+import { attributionPeriod } from "@/features/portfolio/attribution/attribution-period";
 import { AttributionRow } from "@/features/portfolio/attribution/attribution-row";
 import { attributionFigures } from "@/features/portfolio/attribution/attribution-rows";
 import { AttributionTotals } from "@/features/portfolio/attribution/attribution-totals";
-import { indexName } from "@/features/calculators";
+import { YearSummary } from "@/features/portfolio/attribution/year-summary";
 import { useScale } from "@/features/setup";
-import { formatBasisPoints, formatDayMonthNumeric } from "@/i18n/format";
+import { formatDayMonthNumeric } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { useMoneyFormat } from "@/privacy/use-money-format";
 import { cx } from "@/ui/cx";
 
 type AttributionYear = components["schemas"]["AttributionYear"];
@@ -19,23 +18,19 @@ interface AttributionYearViewProps {
   year: AttributionYear;
 }
 
-// The year: what the portfolio made, how it stands beside the CDI and the IPCA, how many holdings
-// added and took away, one row per holding in the order of AT7, then the rest and the portfolio.
+// The year: what the portfolio made beside the CDI and the IPCA, how many holdings added and took
+// away, one row per holding in the order of AT7, then the rest and the portfolio.
 export function AttributionYearView({ year }: AttributionYearViewProps) {
   const t = useT();
   const [tag] = useAppLocale();
-  const fmt = useMoneyFormat();
   const scale = useScale();
 
   const currency = year.result?.currency ?? "";
   const digits = scale?.(currency) ?? 0;
   const figures = attributionFigures(year.items ?? []);
-  const text = attributionLead(year, figures.gains, figures.losses, t, {
-    money: (amount) => fmt.money({ amount, currency }, digits),
-    percent: (bp) => formatBasisPoints(bp, tag),
-    dayMonth: (iso) => formatDayMonthNumeric(iso, tag),
-    indexName,
-  });
+  const period = attributionPeriod(year, t, (iso) =>
+    formatDayMonthNumeric(iso, tag),
+  );
 
   if (year.missing !== undefined) {
     return (
@@ -51,20 +46,19 @@ export function AttributionYearView({ year }: AttributionYearViewProps) {
 
   return (
     <div className={styles.layout}>
-      <div className={styles.lead}>
-        <Text weight="semibold">{text.lead}</Text>
-        {text.compare !== undefined && <Text size="sm">{text.compare}</Text>}
-        {text.tally !== undefined && (
-          <Text size="sm" tone="muted">
-            {text.tally}
-          </Text>
-        )}
-      </div>
+      <YearSummary
+        year={year}
+        period={period}
+        gains={figures.gains}
+        losses={figures.losses}
+        currency={currency}
+        scale={digits}
+      />
 
       <div
         role="list"
         className={styles.rows}
-        aria-label={t("portfolio.attribution.rows", { period: text.period })}
+        aria-label={t("portfolio.attribution.rows", { period })}
       >
         <div className={cx(styles.row, styles.head)} aria-hidden="true">
           <Text size="xs" tone="muted">
