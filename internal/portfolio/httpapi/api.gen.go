@@ -242,6 +242,33 @@ type AllocationGroup struct {
 	Value   Money  `json:"value"`
 }
 
+// AttributionItem defines model for AttributionItem.
+type AttributionItem struct {
+	Instrument string              `json:"instrument"`
+	Result     Money               `json:"result"`
+	ReturnBp   *int                `json:"return_bp,omitempty"`
+	StaleSince *openapi_types.Date `json:"stale_since,omitempty"`
+}
+
+// AttributionReport defines model for AttributionReport.
+type AttributionReport struct {
+	Years []AttributionYear `json:"years"`
+}
+
+// AttributionYear defines model for AttributionYear.
+type AttributionYear struct {
+	From  openapi_types.Date `json:"from"`
+	Items *[]AttributionItem `json:"items,omitempty"`
+
+	// Missing Present when the year could not be valued; the instruments without a price at an end of it.
+	Missing  *[]string          `json:"missing,omitempty"`
+	Other    *Money             `json:"other,omitempty"`
+	PeriodBp *int               `json:"period_bp,omitempty"`
+	Result   *Money             `json:"result,omitempty"`
+	To       openapi_types.Date `json:"to"`
+	Year     int                `json:"year"`
+}
+
 // ContributionClass defines model for ContributionClass.
 type ContributionClass struct {
 	AfterShareBp *int   `json:"after_share_bp,omitempty"`

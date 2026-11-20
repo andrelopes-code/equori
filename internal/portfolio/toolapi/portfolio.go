@@ -22,6 +22,7 @@ func (getPortfolioView) Values() []string {
 		"contribution",
 		"fixed_income_events",
 		"issuer_exposure",
+		"attribution",
 	}
 }
 
@@ -147,6 +148,8 @@ type getPortfolioOut struct {
 	PeriodNote    bool                 `json:"period_note,omitzero"    jsonschema:"for issuer_exposure: covered values exceed the period limit"`
 	MissingPrices []string             `json:"missing_prices,omitzero" jsonschema:"for issuer_exposure: instruments without a price"`
 
+	Years []attributionYearView `json:"years,omitzero" jsonschema:"for attribution: result of the portfolio and of each instrument per year"`
+
 	Current currentView `json:"current,omitzero" jsonschema:"for positions, allocation and net_worth at today: set when market values took current quotes read during the trading session instead of closes"`
 }
 
@@ -158,6 +161,7 @@ func getPortfolio(
 	return tool.New(tool.Spec{
 		Name: "get_portfolio",
 		Description: "Returns investment views at a date: positions with quantity, cost and market value; allocation by instrument type, currency or institution; net worth; or the annual return of an account over a period, with its time-weighted return and the percent of the default index of the region (the region's daily reference rate) that grows as much. " +
+			"View attribution splits the money result of each calendar year by instrument. " +
 			"With view contribution it returns the saved contribution plan, a target split of the portfolio by class, valued today, and with amount the split of a contribution over its classes. " +
 			"Also lists the income types and instrument subtypes the book's tax jurisdiction accepts. " +
 			"At today a view with current holds values read during the trading session, not closes; with open true they are partial and change until the close. " +
@@ -246,6 +250,8 @@ func portfolioView(
 		return fixedIncomeEventsView(ctx, svc, names, booksID, in)
 	case "issuer_exposure":
 		return issuerExposureResult(ctx, svc, booksID, date)
+	case "attribution":
+		return attributionView(ctx, svc, booksID)
 	case "income_types":
 		types, err := svc.IncomeTypes(ctx, booksID)
 		return getPortfolioOut{IncomeTypes: nonNil(types)}, err

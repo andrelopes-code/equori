@@ -4344,6 +4344,33 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/reports/attribution": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Result of each instrument in each calendar year beside the portfolio's (portfolio attribution AT1 to AT7).
+         * @description One year per calendar year from the first posting of the brokerage trees to today of the book, oldest
+         *     first; the current year ends today. result is closing - opening - flows of GET /reports/return over the
+         *     year and period_bp its time-weighted return. The result of an instrument is (market value - cost basis) at
+         *     the end of the year less the same at the end of the previous year, plus its sales net of fees and taxes
+         *     less their cost, plus its income net of withholding; other is result less the sum of the items. return_bp
+         *     is the modified Dietz return of the instrument. An instrument whose price at a year end is more than 14
+         *     days old carries stale_since and no return_bp. A year with an instrument without price lists it in
+         *     missing and holds no figure.
+         */
+        get: operations["getAttribution"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/reports/allocation": {
         parameters: {
             query?: never;
@@ -8604,6 +8631,29 @@ export interface components {
             /** Format: date */
             date: string;
             amount: components["schemas"]["Money"];
+        };
+        AttributionReport: {
+            years: components["schemas"]["AttributionYear"][];
+        };
+        AttributionYear: {
+            year: number;
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+            /** @description Present when the year could not be valued; the instruments without a price at an end of it. */
+            missing?: string[];
+            result?: components["schemas"]["Money"];
+            period_bp?: number;
+            other?: components["schemas"]["Money"];
+            items?: components["schemas"]["AttributionItem"][];
+        };
+        AttributionItem: {
+            instrument: string;
+            result: components["schemas"]["Money"];
+            return_bp?: number;
+            /** Format: date */
+            stale_since?: string;
         };
         ReturnReport: {
             annual_bp: number;
@@ -16739,6 +16789,27 @@ export interface operations {
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+        };
+    };
+    getAttribution: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttributionReport"];
+                };
+            };
+            401: components["responses"]["Problem"];
         };
     };
     getAllocation: {

@@ -120,6 +120,7 @@ var exposure = map[string]string{
 	"listInvestmentIncomeTypes":        "get_portfolio",
 	"listInstrumentSubtypes":           "get_portfolio",
 	"listFixedIncomeEvents":            "get_portfolio",
+	"getAttribution":                   "get_portfolio",
 	"getReturn":                        "get_portfolio",
 	"getInstrumentTerms":               "get_market_data",
 	"putInstrumentTerms":               "manage_instrument",

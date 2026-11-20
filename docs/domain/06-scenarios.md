@@ -1255,3 +1255,19 @@ Coverage row T-09, through the HTTP API. 100 units bought at 100.00 on 2026-01-0
 ### S644 Monthly payment of an RendA+ and its custody fee
 
 Coverage rows T-06 and T-09, through the HTTP API. 3,000.00 units of RENDA.20451215 bought on 2026-01-05 and a VNI of 1,726.926459 on 2026-01-15: the payment of that day amortizes 12.50 units for 21,586.58 and carries a custody fee of 11.86.
+
+### S656 Result of each holding in a year
+
+Portfolio attribution AT1 to AT4 and AT7 (`docs/specs/2026-11-20-portfolio-attribution-design.md`), through the HTTP API. 10,000.00 deposited on 2025-01-02, 100 MXRF11 bought at 10.00 and 100 PETR4 at 20.00 on 2025-01-10, a dividend of 50.00 of MXRF11, closes of 2025-12-31 at 11.00 and 18.00: 2025 holds MXRF11 +150.00 (15.42%) and PETR4 −200.00 (−10.28%), which add up to the portfolio's −50.00. In 2026 to 2026-11-01, with closes of 12.00 and 21.00 and 50 PETR4 sold at 22.00: PETR4 +345.00 (37.34%) first, MXRF11 +100.00 (9.09%), the portfolio +445.00. Each year's rate equals `period_bp` of the return report of the same days.
+
+### S657 Taxes of a sale in the result of its holding
+
+AT2 and AT3, through the HTTP API. The sale of S656 withholds 5.00 of tax: PETR4's result takes it (1,050.00 + 1,095.00 − 1,800.00) and `other` is 0.00.
+
+### S658 Holding with an old price at a year end
+
+AT5, through the HTTP API. PETR4 of S656 holds the close of 2025-06-30 on 2025-12-31: its row of 2025 carries `stale_since` 2025-06-30 and no rate, and its −200.00 stays in the sum.
+
+### S659 Holding without a price at a year end
+
+AT6, through the HTTP API. PETR4 of S656 without any close: the year 2025 lists PETR4 in `missing` and holds no result, rate, `other` or rows. A book without a brokerage has no year.

@@ -230,6 +230,30 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /reports/attribution:
+    get:
+      tags: [portfolio]
+      operationId: getAttribution
+      x-book-role: read
+      summary: Result of each instrument in each calendar year beside the portfolio's (portfolio attribution AT1 to AT7).
+      description: |
+        One year per calendar year from the first posting of the brokerage trees to today of the book, oldest
+        first; the current year ends today. result is closing - opening - flows of GET /reports/return over the
+        year and period_bp its time-weighted return. The result of an instrument is (market value - cost basis) at
+        the end of the year less the same at the end of the previous year, plus its sales net of fees and taxes
+        less their cost, plus its income net of withholding; other is result less the sum of the items. return_bp
+        is the modified Dietz return of the instrument. An instrument whose price at a year end is more than 14
+        days old carries stale_since and no return_bp. A year with an instrument without price lists it in
+        missing and holds no figure.
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttributionReport"
+        "401":
+          $ref: "#/components/responses/Problem"
   /reports/allocation:
     get:
       tags: [portfolio]
@@ -532,6 +556,54 @@ schemas:
         format: date
       amount:
         $ref: "#/components/schemas/Money"
+  AttributionReport:
+    type: object
+    required: [years]
+    properties:
+      years:
+        type: array
+        items:
+          $ref: "#/components/schemas/AttributionYear"
+  AttributionYear:
+    type: object
+    required: [year, from, to]
+    properties:
+      year:
+        type: integer
+      from:
+        type: string
+        format: date
+      to:
+        type: string
+        format: date
+      missing:
+        type: array
+        description: Present when the year could not be valued; the instruments without a price at an end of it.
+        items:
+          type: string
+      result:
+        $ref: "#/components/schemas/Money"
+      period_bp:
+        type: integer
+      other:
+        $ref: "#/components/schemas/Money"
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/AttributionItem"
+  AttributionItem:
+    type: object
+    required: [instrument, result]
+    properties:
+      instrument:
+        type: string
+      result:
+        $ref: "#/components/schemas/Money"
+      return_bp:
+        type: integer
+      stale_since:
+        type: string
+        format: date
   ReturnReport:
     type: object
     required: [annual_bp, flows, opening, closing, profile]
