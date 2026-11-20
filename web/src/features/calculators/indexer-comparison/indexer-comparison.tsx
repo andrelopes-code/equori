@@ -28,6 +28,8 @@ interface IndexerComparisonProps {
   // The initial amount, in minor units of the currency.
   amount: number;
   currency: string;
+  // Drawn inside a dialog, without the page of the calculator's route.
+  embedded?: boolean;
 }
 
 // The comparison of fixed income securities by indexer (IC1 to IC5, IC13): two to six
@@ -37,6 +39,7 @@ interface IndexerComparisonProps {
 export function IndexerComparison({
   amount,
   currency,
+  embedded = false,
 }: IndexerComparisonProps) {
   const t = useT();
   const { locale: profile } = useAppLocaleState();
@@ -102,6 +105,7 @@ export function IndexerComparison({
   return (
     <CalculatorFrame
       id="indexer-comparison"
+      embedded={embedded}
       answer={
         <IndexerComparisonAnswerView
           format={money.format}

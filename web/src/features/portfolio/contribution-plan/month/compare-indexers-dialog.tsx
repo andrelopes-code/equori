@@ -48,6 +48,7 @@ export function CompareIndexersDialog({
           <IndexerComparison
             amount={amount.amount}
             currency={amount.currency}
+            embedded
           />
         </DialogBody>
       </DialogContent>

@@ -55,6 +55,27 @@ describe("CalculatorFrame with an answer", () => {
   });
 });
 
+describe("CalculatorFrame embedded", () => {
+  it("draws the grid alone, with no page, header or way back, inside a container of its own", () => {
+    const { container } = renderWithProviders(
+      <CalculatorFrame
+        id="financing"
+        embedded
+        answer={<section data-testid="answer" />}
+        inputs={<p>inputs</p>}
+        method={null}
+      />,
+      { fetch: fakeApi({}) },
+    );
+
+    expect(container.querySelector('[data-ui="page"]')).toBeNull();
+    expect(container.querySelector('[data-ui="page-header"]')).toBeNull();
+    expect(screen.queryByRole("heading")).toBeNull();
+    expect(screen.queryByRole("link")).toBeNull();
+    expect(calcOf().parentElement?.className).toMatch(/embedded/);
+  });
+});
+
 describe("CalculatorFrame layout", () => {
   it("marks the grid when there is no evidence, so the inputs card starts at the first column", () => {
     renderFrame();

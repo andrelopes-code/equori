@@ -28,6 +28,19 @@
     grid-area: inputs;
   }
 
+  /* A calculator drawn inside a dialog: the grid reads the width of the dialog, as it reads the
+     page's on its own route, and the answer takes the ground of a frame inside an overlay
+     (docs/contributing/web.md, "Items inside an overlay"). */
+  .embedded {
+    container: slotted-page / inline-size;
+  }
+
+  .embedded .answer {
+    background: color-mix(in srgb, var(--slotted-text) 3%, transparent);
+    border-color: color-mix(in srgb, var(--slotted-text) 14%, transparent);
+    box-shadow: none;
+  }
+
   /* No evidence: the inputs card starts at column 1 on the 5/12 track under the answer, which
      spans the page; the other track stays empty. */
   @container slotted-page (min-width: 1024px) {

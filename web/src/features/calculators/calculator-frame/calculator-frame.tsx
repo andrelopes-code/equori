@@ -38,6 +38,9 @@ interface AnswerFrameProps extends CalculatorFrameBase {
   optional?: ReactNode;
   details?: ReactNode;
   method: ReactNode;
+  // Drawn inside another surface (a dialog): the grid alone, without the page, its header and
+  // the way back, which belong to the calculator's own route.
+  embedded?: boolean;
 }
 
 // A calculator not yet written draws its title and the unavailable message only.
@@ -55,6 +58,33 @@ export function CalculatorFrame(props: CalculatorFrameProps) {
     !props.unavailable &&
     props.evidence !== undefined &&
     props.evidence !== null;
+
+  const grid = props.unavailable ? null : (
+    <div className={gridClass(hasEvidence)}>
+      {props.answer}
+
+      {hasEvidence && <div className={design.evidence}>{props.evidence}</div>}
+
+      {props.inputs !== null && (
+        <Card className={design.inputs}>
+          <CardBody>
+            <Stack gap={8}>
+              {props.inputs}
+              {props.optional}
+            </Stack>
+          </CardBody>
+        </Card>
+      )}
+
+      <div className={design.after}>
+        {props.details}
+        {props.method}
+      </div>
+    </div>
+  );
+
+  if (!props.unavailable && props.embedded === true)
+    return <div className={design.embedded}>{grid}</div>;
 
   return (
     <Page width="full">
@@ -87,29 +117,7 @@ export function CalculatorFrame(props: CalculatorFrameProps) {
               </ResultStateContent>
             </ResultState>
           ) : (
-            <div className={gridClass(hasEvidence)}>
-              {props.answer}
-
-              {hasEvidence && (
-                <div className={design.evidence}>{props.evidence}</div>
-              )}
-
-              {props.inputs !== null && (
-                <Card className={design.inputs}>
-                  <CardBody>
-                    <Stack gap={8}>
-                      {props.inputs}
-                      {props.optional}
-                    </Stack>
-                  </CardBody>
-                </Card>
-              )}
-
-              <div className={design.after}>
-                {props.details}
-                {props.method}
-              </div>
-            </div>
+            grid
           )}
         </PageStack>
       </PageBody>
