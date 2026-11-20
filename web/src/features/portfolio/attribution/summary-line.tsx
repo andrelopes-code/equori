@@ -64,6 +64,7 @@ export function SummaryLine({
             styles.bar,
             styles[line.kind],
             own && loss && styles.loss,
+            (line.bp ?? 0) < 0 && styles.below,
           )}
           style={{
             insetInlineStart: `${String(span.start)}%`,

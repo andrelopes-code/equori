@@ -26,12 +26,17 @@ export function YearColumnBars({ column, scale }: YearColumnBarsProps) {
             styles.bar,
             styles.portfolio,
             value < 0 && styles.negative,
+            value < 0 && styles.below,
           )}
           style={span(scale, value)}
         />
         {column.rateBp !== undefined && (
           <span
-            className={cx(styles.bar, styles.rate)}
+            className={cx(
+              styles.bar,
+              styles.rate,
+              column.rateBp < 0 && styles.below,
+            )}
             style={span(scale, column.rateBp)}
           />
         )}

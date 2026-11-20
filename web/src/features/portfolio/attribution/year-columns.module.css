@@ -70,10 +70,15 @@
     gap: var(--slotted-space-1);
   }
 
+  /* A bar stands on the zero line: only its far end is rounded. */
   .pair .bar {
     position: relative;
     inline-size: var(--slotted-space-8);
-    border-radius: var(--slotted-radius-xs);
+    border-radius: var(--slotted-radius-xs) var(--slotted-radius-xs) 0 0;
+  }
+
+  .pair .below {
+    border-radius: 0 0 var(--slotted-radius-xs) var(--slotted-radius-xs);
   }
 
   .pair .rate {

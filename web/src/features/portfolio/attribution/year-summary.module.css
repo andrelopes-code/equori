@@ -46,7 +46,16 @@
   .bar {
     position: absolute;
     inset-block: var(--slotted-space-1);
-    border-radius: var(--slotted-radius-xs);
+    border-start-end-radius: var(--slotted-radius-xs);
+    border-end-end-radius: var(--slotted-radius-xs);
+  }
+
+  /* A bar below zero ends on the start side, so that side is the rounded one. */
+  .below {
+    border-start-end-radius: 0;
+    border-end-end-radius: 0;
+    border-start-start-radius: var(--slotted-radius-xs);
+    border-end-start-radius: var(--slotted-radius-xs);
   }
 
   .portfolio {
