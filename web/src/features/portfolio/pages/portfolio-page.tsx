@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 
 import { useApi } from "@/api/api-context";
+import { riskQuery } from "@/features/portfolio/api";
 import { FixedIncomePanel } from "@/features/portfolio/fixed-income/fixed-income-panel";
 import { HoldingsSection } from "@/features/portfolio/holdings/holdings-section";
 import { PortfolioHeader } from "@/features/portfolio/summary/portfolio-header";
@@ -30,6 +31,11 @@ export function PortfolioPage() {
 
   const date = search.date ?? today;
   const valueIn = search.value_in ?? base;
+  // The risk report takes seconds on a long book: it starts with the positions, not after them.
+  useQuery({
+    ...riskQuery(api, date, valueIn),
+    enabled: valueIn !== undefined,
+  });
   const by = search.by ?? "type";
   const { holdings, summary, pending, positions, accounts } = useHoldings(
     date,
@@ -101,7 +107,7 @@ export function PortfolioPage() {
           />
 
           {!empty && !positions.isError && (
-            <RiskSection date={date} valueIn={valueIn} />
+            <RiskSection date={date} valueIn={valueIn} total={summary.total} />
           )}
 
           {!empty && !positions.isError && (

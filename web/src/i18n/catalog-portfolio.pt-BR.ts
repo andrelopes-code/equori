@@ -192,53 +192,68 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "fixedIncome.issuers.mark": "Limite por emissor",
   "portfolio.risk.title": "Risco ao longo do tempo",
   "portfolio.risk.description":
-    "Quanto a carteira oscila, quanto já caiu e de onde vem a oscilação.",
-  "portfolio.risk.verdict.swing": "Oscilação típica ao ano",
-  "portfolio.risk.verdict.swingShort":
-    "Oscilação típica ao ano · {count} meses",
-  "portfolio.risk.verdict.swingMeaning":
-    "2 em 3 anos ficam nessa faixa da média",
+    "Quanto a carteira costuma variar, quanto já caiu e o que causa isso.",
+  "portfolio.risk.verdict.swing":
+    "é quanto a carteira costuma variar em um ano: cerca de {money} para cima ou para baixo.",
   "portfolio.risk.verdict.swingFloor":
-    "Aparece com 12 meses medidos; há {count}",
-  "portfolio.risk.verdict.fall": "Pior queda desde o pico",
-  "portfolio.risk.verdict.fallBack": "em {month}, recuperada em {back}",
-  "portfolio.risk.verdict.fallBelow": "em {month}, ainda abaixo do pico",
-  "portfolio.risk.verdict.fallUnmeasured": "em {month}, recuperação sem medida",
-  "portfolio.risk.verdict.noFall": "Nenhuma queda medida",
-  "portfolio.risk.verdict.source": "Oscilação vinda de {class}",
-  "portfolio.risk.verdict.sourceNone": "Maior fonte de oscilação",
-  "portfolio.risk.verdict.sourceWeight": "com {weight} do dinheiro",
-  "portfolio.risk.verdict.sourceFloor": "Aparece com 12 meses medidos",
+    "A variação típica aparece com 12 meses medidos; há {count}.",
+  "portfolio.risk.verdict.fallBack":
+    "foi a maior queda, de {from} a {to}; a carteira voltou ao topo em {back}.",
+  "portfolio.risk.verdict.fallBelow":
+    "foi a maior queda, de {from} a {to}; a carteira ainda não voltou ao topo.",
+  "portfolio.risk.verdict.fallUnmeasured":
+    "foi a maior queda, de {from} a {to}; a volta ao topo não foi medida.",
+  "portfolio.risk.verdict.noFall":
+    "A carteira não teve queda nos meses medidos.",
+  "portfolio.risk.verdict.source":
+    "das variações vêm de {class}, que são {weight} do seu dinheiro.",
+  "portfolio.risk.verdict.sourceFloor":
+    "A origem das variações aparece com 12 meses medidos.",
   "portfolio.risk.coverage.one":
-    "{code} sem preço de {from} a {to}: {months} meses fora da oscilação e da queda.",
+    "Faltam cotações de {code} de {from} a {to}; esses meses ficaram fora das contas.",
   "portfolio.risk.coverage.many":
-    "{code} sem preço de {from} a {to}; outros ativos sem preço: {others}.",
-  "portfolio.risk.coverage.action": "Registrar preços de {code}",
-  "portfolio.risk.sources": "De onde vem a oscilação",
+    "Faltam cotações de {code} de {from} a {to} e de outros ativos; esses meses ficaram fora das contas.",
+  "portfolio.risk.coverage.action": "Buscar cotações",
+  "portfolio.risk.coverage.fetching":
+    "Buscando; os números se atualizam quando as cotações chegarem.",
+  "portfolio.risk.coverage.failed": "Não foi possível pedir as cotações.",
+  "portfolio.risk.sources": "Quem causa as variações",
   "portfolio.risk.sourcesHint":
-    "A barra é a parte da oscilação; o traço, a parte do dinheiro.",
-  "portfolio.risk.classes": "Oscilação por classe",
+    "Barra além do traço: a classe varia mais do que pesa no dinheiro.",
+  "portfolio.risk.classes": "Variações por classe",
   "portfolio.risk.class": "Classe",
-  "portfolio.risk.compare": "Oscilação × dinheiro",
-  "portfolio.risk.share": "Da oscilação",
-  "portfolio.risk.weight": "Do dinheiro",
-  "portfolio.risk.volatilityShort": "Oscila ao ano",
-  "portfolio.risk.maxDrawdown": "Pior queda",
+  "portfolio.risk.weight": "Do seu dinheiro",
+  "portfolio.risk.share": "Das variações",
+  "portfolio.risk.compare": "Variações (barra) e dinheiro (traço)",
   "portfolio.risk.reduces": "reduz {value}",
   "portfolio.risk.unmeasured": "sem medida",
-  "portfolio.risk.accrualHint": "{share} sem cotação",
-  "portfolio.risk.barLabel": "{share} da oscilação, {weight} do dinheiro",
+  "portfolio.risk.accrualHint": "{share} com preço pela taxa",
+  "portfolio.risk.barLabel": "{share} das variações, {weight} do dinheiro",
   "portfolio.risk.history": "Mês a mês",
   "portfolio.risk.historyHint":
-    "Oscilação anual e queda desde o pico, nos mesmos meses.",
-  "portfolio.risk.volatility": "Oscilação anual (36 meses)",
-  "portfolio.risk.drawdown": "Queda desde o pico",
+    "Como a variação típica e a distância do topo mudaram ao longo do tempo.",
+  "portfolio.risk.volatility": "Variação típica em um ano",
+  "portfolio.risk.drawdown": "Distância do topo",
   "portfolio.risk.portfolio": "Carteira",
-  "portfolio.risk.band.excluded": "Parte da carteira sem preço",
+  "portfolio.risk.band.excluded": "Mês com parte da carteira sem cotação",
   "portfolio.risk.band.short": "Menos de 12 meses medidos",
+  "portfolio.risk.details": "Detalhes e como ler",
+  "portfolio.risk.term.volatility": "Variação típica",
+  "portfolio.risk.term.volatility.meaning":
+    "Volatilidade anual dos últimos 36 meses: em 2 de cada 3 anos o retorno fica nessa faixa da média.",
+  "portfolio.risk.term.drawdown": "Queda",
+  "portfolio.risk.term.drawdown.meaning":
+    "Quanto a carteira ficou abaixo do seu valor mais alto, sem contar aportes e resgates.",
+  "portfolio.risk.term.share": "Das variações",
+  "portfolio.risk.term.share.meaning":
+    "A parte da variação da carteira que cada classe causa; somadas, dão 100%.",
+  "portfolio.risk.term.correlation": "Correlação",
+  "portfolio.risk.term.correlation.meaning":
+    "De −1 a 1, quanto duas classes sobem e descem juntas; perto de 0, uma não segue a outra.",
+  "portfolio.risk.measures": "Medidas por classe",
+  "portfolio.risk.volatilityShort": "Variação típica ao ano",
+  "portfolio.risk.maxDrawdown": "Maior queda",
   "portfolio.risk.correlations": "Como as classes andam juntas",
-  "portfolio.risk.correlationsHint":
-    "Correlação dos retornos mensais nos últimos 36 meses, de −1 a 1.",
   "portfolio.risk.pair": "Classes",
   "portfolio.risk.reading": "Leitura",
   "portfolio.risk.reading.independent": "Quase independentes",

@@ -8,13 +8,11 @@ import {
   TableHead,
   TableRow,
   TableRowHeader,
-  TableSummary,
 } from "@slotted/react/table";
 import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
 import { classLabel } from "@/features/portfolio/risk/class-label";
-import { portfolioKey } from "@/features/portfolio/risk/risk-figures";
 import { RiskShareBar } from "@/features/portfolio/risk/risk-share-bar";
 import { formatBasisPoints } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -25,11 +23,11 @@ interface RiskClassesTableProps {
   report: RiskReport;
 }
 
-const columns = 6;
+const columns = 4;
 
-// RK10: each class's share of the swing beside its share of the money, the class that swings the
-// most first. A class whose bar passes its mark swings more than its size; one priced by accrual
-// says so on its row (RK11).
+// RK10: each class's share of the money beside its share of the variation, the class that varies
+// the portfolio the most first; the bar draws the second against a mark at the first. A class
+// priced by its rate says so on its row (RK11). The measures of each class are in the details.
 export function RiskClassesTable({ report }: RiskClassesTableProps) {
   const t = useT();
   const [tag] = useAppLocale();
@@ -45,19 +43,13 @@ export function RiskClassesTable({ report }: RiskClassesTableProps) {
         <TableHead>
           <TableRow>
             <TableColumnHeader>{t("portfolio.risk.class")}</TableColumnHeader>
-            <TableColumnHeader>{t("portfolio.risk.compare")}</TableColumnHeader>
-            <TableColumnHeader numeric>
-              {t("portfolio.risk.share")}
-            </TableColumnHeader>
             <TableColumnHeader numeric>
               {t("portfolio.risk.weight")}
             </TableColumnHeader>
             <TableColumnHeader numeric>
-              {t("portfolio.risk.volatilityShort")}
+              {t("portfolio.risk.share")}
             </TableColumnHeader>
-            <TableColumnHeader numeric>
-              {t("portfolio.risk.maxDrawdown")}
-            </TableColumnHeader>
+            <TableColumnHeader>{t("portfolio.risk.compare")}</TableColumnHeader>
           </TableRow>
         </TableHead>
 
@@ -76,6 +68,10 @@ export function RiskClassesTable({ report }: RiskClassesTableProps) {
                   )}
                 </Inline>
               </TableRowHeader>
+              <TableCell numeric>{percent(c.weight_bp ?? 0)}</TableCell>
+              <TableCell numeric>
+                {shareText(c.risk_share_bp, t, percent)}
+              </TableCell>
               <TableCell>
                 {c.risk_share_bp !== undefined && (
                   <RiskShareBar
@@ -88,42 +84,9 @@ export function RiskClassesTable({ report }: RiskClassesTableProps) {
                   />
                 )}
               </TableCell>
-              <TableCell numeric>
-                {shareText(c.risk_share_bp, t, percent)}
-              </TableCell>
-              <TableCell numeric>{percent(c.weight_bp ?? 0)}</TableCell>
-              <TableCell numeric>
-                {c.volatility_bp === undefined
-                  ? t("portfolio.risk.unmeasured")
-                  : percent(c.volatility_bp)}
-              </TableCell>
-              <TableCell numeric>
-                {c.max_drawdown_bp === undefined
-                  ? t("portfolio.risk.unmeasured")
-                  : percent(c.max_drawdown_bp)}
-              </TableCell>
             </TableRow>
           ))}
         </TableBody>
-
-        <TableSummary>
-          <TableRow>
-            <TableRowHeader>{classLabel(t, portfolioKey)}</TableRowHeader>
-            <TableCell />
-            <TableCell numeric>{percent(10000)}</TableCell>
-            <TableCell numeric>{percent(10000)}</TableCell>
-            <TableCell numeric>
-              {report.portfolio.volatility_bp === undefined
-                ? t("portfolio.risk.unmeasured")
-                : percent(report.portfolio.volatility_bp)}
-            </TableCell>
-            <TableCell numeric>
-              {report.portfolio.max_drawdown_bp === undefined
-                ? t("portfolio.risk.unmeasured")
-                : percent(report.portfolio.max_drawdown_bp)}
-            </TableCell>
-          </TableRow>
-        </TableSummary>
       </TableContent>
     </Table>
   );

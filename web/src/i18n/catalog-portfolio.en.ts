@@ -188,52 +188,68 @@ export const portfolioEn = {
   "fixedIncome.issuers.mark": "Limit per issuer",
   "portfolio.risk.title": "Risk over time",
   "portfolio.risk.description":
-    "How much the portfolio swings, how far it fell and where the swing comes from.",
-  "portfolio.risk.verdict.swing": "Typical swing a year",
-  "portfolio.risk.verdict.swingShort": "Typical swing a year · {count} months",
-  "portfolio.risk.verdict.swingMeaning":
-    "2 years in 3 stay this close to the mean",
+    "How much the portfolio usually varies, how far it fell and what causes it.",
+  "portfolio.risk.verdict.swing":
+    "is how much the portfolio usually varies in a year: about {money} up or down.",
   "portfolio.risk.verdict.swingFloor":
-    "Shown after 12 measured months; {count} so far",
-  "portfolio.risk.verdict.fall": "Deepest fall from the peak",
-  "portfolio.risk.verdict.fallBack": "in {month}, recovered in {back}",
-  "portfolio.risk.verdict.fallBelow": "in {month}, still below the peak",
-  "portfolio.risk.verdict.fallUnmeasured": "in {month}, recovery not measured",
-  "portfolio.risk.verdict.noFall": "No fall measured",
-  "portfolio.risk.verdict.source": "Swing from {class}",
-  "portfolio.risk.verdict.sourceNone": "Largest source of swing",
-  "portfolio.risk.verdict.sourceWeight": "with {weight} of the money",
-  "portfolio.risk.verdict.sourceFloor": "Shown after 12 measured months",
+    "The typical variation shows after 12 measured months; {count} so far.",
+  "portfolio.risk.verdict.fallBack":
+    "was the deepest fall, from {from} to {to}; the portfolio was back at its peak in {back}.",
+  "portfolio.risk.verdict.fallBelow":
+    "was the deepest fall, from {from} to {to}; the portfolio is not back at its peak yet.",
+  "portfolio.risk.verdict.fallUnmeasured":
+    "was the deepest fall, from {from} to {to}; the way back was not measured.",
+  "portfolio.risk.verdict.noFall":
+    "The portfolio did not fall in the measured months.",
+  "portfolio.risk.verdict.source":
+    "of the variation comes from {class}, which is {weight} of your money.",
+  "portfolio.risk.verdict.sourceFloor":
+    "Where the variation comes from shows after 12 measured months.",
   "portfolio.risk.coverage.one":
-    "{code} without a price from {from} to {to}: {months} months out of the swing and the fall.",
+    "Quotes of {code} are missing from {from} to {to}; those months are out of the figures.",
   "portfolio.risk.coverage.many":
-    "{code} without a price from {from} to {to}; other securities without one: {others}.",
-  "portfolio.risk.coverage.action": "Record prices of {code}",
-  "portfolio.risk.sources": "Where the swing comes from",
+    "Quotes of {code} are missing from {from} to {to}, and of other securities; those months are out of the figures.",
+  "portfolio.risk.coverage.action": "Fetch quotes",
+  "portfolio.risk.coverage.fetching":
+    "Fetching; the figures update when the quotes arrive.",
+  "portfolio.risk.coverage.failed": "The quotes could not be requested.",
+  "portfolio.risk.sources": "What causes the variation",
   "portfolio.risk.sourcesHint":
-    "The bar is the share of the swing; the mark, the share of the money.",
-  "portfolio.risk.classes": "Swing by class",
+    "Bar past the mark: the class varies more than its share of money.",
+  "portfolio.risk.classes": "Variation by class",
   "portfolio.risk.class": "Class",
-  "portfolio.risk.compare": "Swing × money",
-  "portfolio.risk.share": "Of the swing",
-  "portfolio.risk.weight": "Of the money",
-  "portfolio.risk.volatilityShort": "Swing a year",
-  "portfolio.risk.maxDrawdown": "Deepest fall",
+  "portfolio.risk.weight": "Of your money",
+  "portfolio.risk.share": "Of the variation",
+  "portfolio.risk.compare": "Variation (bar) and money (mark)",
   "portfolio.risk.reduces": "reduces {value}",
   "portfolio.risk.unmeasured": "not measured",
-  "portfolio.risk.accrualHint": "{share} unquoted",
-  "portfolio.risk.barLabel": "{share} of the swing, {weight} of the money",
+  "portfolio.risk.accrualHint": "{share} priced by its rate",
+  "portfolio.risk.barLabel": "{share} of the variation, {weight} of the money",
   "portfolio.risk.history": "Month by month",
   "portfolio.risk.historyHint":
-    "Yearly swing and fall from the peak, over the same months.",
-  "portfolio.risk.volatility": "Yearly swing (36 months)",
-  "portfolio.risk.drawdown": "Fall from the peak",
+    "How the typical variation and the distance from the peak changed over time.",
+  "portfolio.risk.volatility": "Typical variation in a year",
+  "portfolio.risk.drawdown": "Distance from the peak",
   "portfolio.risk.portfolio": "Portfolio",
-  "portfolio.risk.band.excluded": "Part of the portfolio without a price",
+  "portfolio.risk.band.excluded": "Month with part of the portfolio unquoted",
   "portfolio.risk.band.short": "Under 12 measured months",
+  "portfolio.risk.details": "Details and how to read",
+  "portfolio.risk.term.volatility": "Typical variation",
+  "portfolio.risk.term.volatility.meaning":
+    "Yearly volatility of the last 36 months: in 2 years out of 3 the return stays this close to the mean.",
+  "portfolio.risk.term.drawdown": "Fall",
+  "portfolio.risk.term.drawdown.meaning":
+    "How far the portfolio stood below its highest value, leaving deposits and withdrawals out.",
+  "portfolio.risk.term.share": "Of the variation",
+  "portfolio.risk.term.share.meaning":
+    "The part of the portfolio's variation each class causes; together they make 100%.",
+  "portfolio.risk.term.correlation": "Correlation",
+  "portfolio.risk.term.correlation.meaning":
+    "From −1 to 1, how much two classes rise and fall together; near 0, one does not follow the other.",
+  "portfolio.risk.measures": "Measures by class",
+  "portfolio.risk.volatilityShort": "Typical variation a year",
+  "portfolio.risk.maxDrawdown": "Deepest fall",
   "portfolio.risk.correlations": "How the classes move together",
-  "portfolio.risk.correlationsHint":
-    "Correlation of the monthly returns over the last 36 months, from −1 to 1.",
   "portfolio.risk.pair": "Classes",
   "portfolio.risk.reading": "Reading",
   "portfolio.risk.reading.independent": "Nearly independent",

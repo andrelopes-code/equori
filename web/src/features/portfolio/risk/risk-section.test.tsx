@@ -96,35 +96,36 @@ describe("Risk section", () => {
     localStorage.removeItem(collapsedKey);
   });
 
-  it("RK7, RK8, RK10: leads with the typical swing, the deepest fall and the class behind the swing", async () => {
+  it("RK7, RK8, RK10: leads with three plain sentences, each with its figure", async () => {
     const fetch = portfolioApi({
       "GET /api/v1/reports/risk": () => json(200, report),
     });
     await renderApp("/portfolio", { fetch });
     const region = await section();
 
+    expect(await within(region).findByText("±24.03%")).toBeInTheDocument();
     expect(
-      await within(region).findByText("Typical swing a year · 13 months"),
+      within(region).getByText(
+        /^is how much the portfolio usually varies in a year: about .+ up or down\.$/,
+      ),
     ).toBeInTheDocument();
-    expect(within(region).getByText("±24.03%")).toBeInTheDocument();
+    expect(within(region).getByText("−6.45%")).toBeInTheDocument();
     expect(
-      within(region).getByText("2 years in 3 stay this close to the mean"),
+      within(region).getByText(
+        "was the deepest fall, from Jan 2026 to Mar 2026; the portfolio is not back at its peak yet.",
+      ),
     ).toBeInTheDocument();
-    const fall = within(region)
-      .getByText("Deepest fall from the peak")
-      .closest<HTMLElement>('[data-ui="stat-card"]');
-    expect(fall).not.toBeNull();
-    expect(within(fall ?? region).getByText("−6.45%")).toBeInTheDocument();
+    const verdict = region.querySelector("dl");
+    expect(verdict).not.toBeNull();
+    expect(within(verdict ?? region).getByText("82.84%")).toBeInTheDocument();
     expect(
-      within(region).getByText("in Mar-2026, still below the peak"),
-    ).toBeInTheDocument();
-    expect(within(region).getByText("Swing from Stocks")).toBeInTheDocument();
-    expect(
-      within(region).getByText("with 53.64% of the money"),
+      within(region).getByText(
+        "of the variation comes from Stocks, which is 53.64% of your money.",
+      ),
     ).toBeInTheDocument();
   });
 
-  it("RK10, RK11: ranks the classes by their share of the swing beside their share of the money", async () => {
+  it("RK10, RK11: sets each class's share of the money beside its share of the variation", async () => {
     const fetch = portfolioApi({
       "GET /api/v1/reports/risk": () => json(200, report),
     });
@@ -134,40 +135,102 @@ describe("Risk section", () => {
     const classes = await within(region).findByRole("table", {
       name: catalogEn["portfolio.risk.classes"],
     });
-    await waitFor(() => {
-      expect(rows(classes)).toEqual([
-        "Stocks||82.84%|53.64%|38.93%|−10.62%",
-        "REITs100.00% unquoted||17.16%|46.36%|8.53%|−1.96%",
-        "Portfolio||100.00%|100.00%|24.03%|−6.45%",
-      ]);
-    });
+    expect(rows(classes)).toEqual([
+      "Stocks|53.64%|82.84%|",
+      "REITs100.00% priced by its rate|46.36%|17.16%|",
+    ]);
     expect(
       within(classes).getByRole("img", {
-        name: "82.84% of the swing, 53.64% of the money",
+        name: "82.84% of the variation, 53.64% of the money",
       }),
     ).toBeInTheDocument();
-
-    const pairs = within(region).getByRole("table", {
-      name: catalogEn["portfolio.risk.correlations"],
-    });
-    expect(rows(pairs)).toEqual(["Stocks and REITs|Together|0.98|13"]);
   });
 
-  it("RK3: names the security left out the longest, its months, and the way to its prices", async () => {
+  it("RK7 to RK9: keeps the terms, the measures and the correlations in a closed block", async () => {
     const fetch = portfolioApi({
       "GET /api/v1/reports/risk": () => json(200, report),
     });
     await renderApp("/portfolio", { fetch });
     const region = await section();
 
+    await userEvent.click(
+      await within(region).findByText(catalogEn["portfolio.risk.details"]),
+    );
+
     expect(
-      await within(region).findByText(
-        "B5P211 without a price from Apr-2022 to Dec-2025; other securities without one: 1.",
+      within(region).getByText(
+        catalogEn["portfolio.risk.term.volatility.meaning"],
       ),
     ).toBeInTheDocument();
     expect(
-      within(region).getByRole("link", { name: "Record prices of B5P211" }),
-    ).toHaveAttribute("href", "/instruments/B5P211");
+      rows(
+        within(region).getByRole("table", {
+          name: catalogEn["portfolio.risk.measures"],
+        }),
+      ),
+    ).toEqual([
+      "Stocks|38.93%|−10.62%",
+      "REITs|8.53%|−1.96%",
+      "Portfolio|24.03%|−6.45%",
+    ]);
+    expect(
+      rows(
+        within(region).getByRole("table", {
+          name: catalogEn["portfolio.risk.correlations"],
+        }),
+      ),
+    ).toEqual(["Stocks and REITs|Together|0.98|13"]);
+  });
+
+  it("RK3: names the missing quotes and fetches them from the first month of the report", async () => {
+    const asked: string[] = [];
+    const history = async (req: Request) => {
+      asked.push(`${new URL(req.url).pathname} ${await req.text()}`);
+      return new Response(null, {
+        status: 202,
+        headers: { "Content-Length": "0" },
+      });
+    };
+    const fetch = portfolioApi({
+      "GET /api/v1/reports/risk": () => json(200, report),
+      "POST /api/v1/instruments/B5P211/history": history,
+      "POST /api/v1/instruments/PETR4/history": history,
+    });
+    await renderApp("/portfolio", { fetch });
+    const region = await section();
+
+    expect(
+      await within(region).findByText(
+        "Quotes of B5P211 are missing from Apr 2022 to Dec 2025, and of other securities; those months are out of the figures.",
+      ),
+    ).toBeInTheDocument();
+
+    await userEvent.click(
+      within(region).getByRole("button", {
+        name: catalogEn["portfolio.risk.coverage.action"],
+      }),
+    );
+
+    expect(
+      await within(region).findByText(
+        catalogEn["portfolio.risk.coverage.fetching"],
+      ),
+    ).toBeInTheDocument();
+    expect(asked).toEqual([
+      '/api/v1/instruments/B5P211/history {"from":"2026-01-01"}',
+      '/api/v1/instruments/PETR4/history {"from":"2026-01-01"}',
+    ]);
+  });
+
+  it("holds its place with a placeholder while the report loads", async () => {
+    const fetch = portfolioApi({
+      "GET /api/v1/reports/risk": () => new Promise<Response>(() => undefined),
+    });
+    await renderApp("/portfolio", { fetch });
+
+    const region = await section();
+
+    expect(region.querySelector('[data-ui="skeleton"]')).not.toBeNull();
   });
 
   it("minimizes from a click on its header, and keeps the choice", async () => {
