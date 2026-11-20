@@ -1602,4 +1602,601 @@ export const builtScenarios: Scenario[] = [
       },
     ],
   },
+  {
+    id: "built-figure",
+    form: "figure",
+    note: "get_portfolio net_worth + net_worth_days → show figure",
+    handled: true,
+    question: "Qual é o meu patrimônio hoje?",
+    answer: "Subiu no mês, puxado pelos investimentos.",
+    views: [
+      {
+        id: "v-figure",
+        form: "figure",
+        payload: {
+          title: { key: "assistantView.figure.title" },
+          window: { at: "2026-11-19" },
+          verdict: {
+            key: "assistantView.figure.verdict_up",
+            params: {
+              change: { money: { amount: 291800, currency: "BRL" } },
+              days: { count: 29 },
+              share: { bp: 158 },
+            },
+          },
+          open: { screen: "/" },
+          next: [],
+          rows: {
+            head: ["assistantView.col.part", "assistantView.col.value"],
+            rows: [
+              [
+                { text: "assistantView.figure.assets" },
+                { money: { amount: 19119218, currency: "BRL" } },
+              ],
+              [
+                { text: "assistantView.figure.liabilities" },
+                { money: { amount: 376000, currency: "BRL" } },
+              ],
+              [
+                { text: "assistantView.figure.net" },
+                { money: { amount: 18743218, currency: "BRL" } },
+              ],
+            ],
+          },
+          data: {
+            net: { amount: 18743218, currency: "BRL" },
+            assets: { amount: 19119218, currency: "BRL" },
+            liabilities: { amount: 376000, currency: "BRL" },
+            series: [
+              {
+                date: "2026-10-21",
+                net: { amount: 18451418, currency: "BRL" },
+              },
+              {
+                date: "2026-10-22",
+                net: { amount: 18412000, currency: "BRL" },
+              },
+              {
+                date: "2026-10-23",
+                net: { amount: 18490000, currency: "BRL" },
+              },
+              {
+                date: "2026-10-24",
+                net: { amount: 18521000, currency: "BRL" },
+              },
+              {
+                date: "2026-10-25",
+                net: { amount: 18480000, currency: "BRL" },
+              },
+              {
+                date: "2026-10-26",
+                net: { amount: 18560000, currency: "BRL" },
+              },
+              {
+                date: "2026-10-27",
+                net: { amount: 18510000, currency: "BRL" },
+              },
+              {
+                date: "2026-10-28",
+                net: { amount: 18590000, currency: "BRL" },
+              },
+              {
+                date: "2026-10-29",
+                net: { amount: 18620000, currency: "BRL" },
+              },
+              {
+                date: "2026-10-30",
+                net: { amount: 18570000, currency: "BRL" },
+              },
+              {
+                date: "2026-10-31",
+                net: { amount: 18540000, currency: "BRL" },
+              },
+              {
+                date: "2026-11-01",
+                net: { amount: 18610000, currency: "BRL" },
+              },
+              {
+                date: "2026-11-02",
+                net: { amount: 18660000, currency: "BRL" },
+              },
+              {
+                date: "2026-11-03",
+                net: { amount: 18600000, currency: "BRL" },
+              },
+              {
+                date: "2026-11-04",
+                net: { amount: 18630000, currency: "BRL" },
+              },
+              {
+                date: "2026-11-05",
+                net: { amount: 18690000, currency: "BRL" },
+              },
+              {
+                date: "2026-11-06",
+                net: { amount: 18640000, currency: "BRL" },
+              },
+              {
+                date: "2026-11-07",
+                net: { amount: 18680000, currency: "BRL" },
+              },
+              {
+                date: "2026-11-08",
+                net: { amount: 18710000, currency: "BRL" },
+              },
+              {
+                date: "2026-11-09",
+                net: { amount: 18670000, currency: "BRL" },
+              },
+              {
+                date: "2026-11-10",
+                net: { amount: 18690000, currency: "BRL" },
+              },
+              {
+                date: "2026-11-11",
+                net: { amount: 18730000, currency: "BRL" },
+              },
+              {
+                date: "2026-11-12",
+                net: { amount: 18690000, currency: "BRL" },
+              },
+              {
+                date: "2026-11-13",
+                net: { amount: 18700000, currency: "BRL" },
+              },
+              {
+                date: "2026-11-14",
+                net: { amount: 18760000, currency: "BRL" },
+              },
+              {
+                date: "2026-11-15",
+                net: { amount: 18720000, currency: "BRL" },
+              },
+              {
+                date: "2026-11-16",
+                net: { amount: 18700000, currency: "BRL" },
+              },
+              {
+                date: "2026-11-17",
+                net: { amount: 18750000, currency: "BRL" },
+              },
+              {
+                date: "2026-11-18",
+                net: { amount: 18720000, currency: "BRL" },
+              },
+              {
+                date: "2026-11-19",
+                net: { amount: 18743218, currency: "BRL" },
+              },
+            ],
+            change: { amount: 291800, currency: "BRL" },
+          },
+        },
+      },
+    ],
+  },
+  {
+    id: "built-allocation",
+    form: "allocation",
+    note: "get_portfolio allocation → show allocation",
+    handled: true,
+    question: "Como está dividida minha carteira?",
+    answer: "Renda fixa é metade.",
+    views: [
+      {
+        id: "v-allocation",
+        form: "allocation",
+        payload: {
+          title: { key: "assistantView.allocation.title" },
+          window: { at: "2026-11-19" },
+          verdict: {
+            key: "assistantView.allocation.verdict",
+            params: {
+              name: { text: "assistantView.group.fixed_income" },
+              share: { bp: 5200 },
+              total: { money: { amount: 17698178, currency: "BRL" } },
+            },
+          },
+          open: { screen: "/portfolio" },
+          next: [],
+          rows: {
+            head: [
+              "assistantView.col.group",
+              "assistantView.col.value",
+              "assistantView.col.share",
+            ],
+            rows: [
+              [
+                { text: "assistantView.group.fixed_income" },
+                { money: { amount: 9203053, currency: "BRL" } },
+                { bp: 5200 },
+              ],
+              [
+                { text: "assistantView.group.stock" },
+                { money: { amount: 5486435, currency: "BRL" } },
+                { bp: 3100 },
+              ],
+              [
+                { text: "assistantView.group.reit" },
+                { money: { amount: 2123781, currency: "BRL" } },
+                { bp: 1200 },
+              ],
+              [
+                { text: "assistantView.group.etf" },
+                { money: { amount: 884909, currency: "BRL" } },
+                { bp: 500 },
+              ],
+            ],
+          },
+          data: {
+            total: { amount: 17698178, currency: "BRL" },
+            groups: [
+              {
+                key: "fixed_income",
+                value: { amount: 9203053, currency: "BRL" },
+                share_bp: 5200,
+              },
+              {
+                key: "stock",
+                value: { amount: 5486435, currency: "BRL" },
+                share_bp: 3100,
+              },
+              {
+                key: "reit",
+                value: { amount: 2123781, currency: "BRL" },
+                share_bp: 1200,
+              },
+              {
+                key: "etf",
+                value: { amount: 884909, currency: "BRL" },
+                share_bp: 500,
+              },
+            ],
+          },
+        },
+      },
+    ],
+  },
+  {
+    id: "built-contribution",
+    form: "contribution",
+    note: "get_portfolio contribution → show contribution",
+    handled: true,
+    question: "Onde aplico 5 mil este mês?",
+    answer: "Tudo em renda fixa.",
+    views: [
+      {
+        id: "v-contribution",
+        form: "contribution",
+        payload: {
+          title: { key: "assistantView.contribution.title" },
+          window: { at: "2026-11-19" },
+          verdict: {
+            key: "assistantView.contribution.verdict",
+            params: {
+              after: { bp: 5330 },
+              amount: { money: { amount: 500000, currency: "BRL" } },
+              name: { text: "Renda fixa" },
+            },
+          },
+          open: { screen: "/portfolio/contribution-plan" },
+          next: [],
+          rows: {
+            head: [
+              "assistantView.col.class",
+              "assistantView.col.share",
+              "assistantView.col.target",
+            ],
+            rows: [
+              [{ text: "Renda fixa" }, { bp: 5200 }, { bp: 6000 }],
+              [{ text: "Ações" }, { bp: 3100 }, { bp: 2500 }],
+              [{ text: "FIIs" }, { bp: 1200 }, { bp: 1000 }],
+              [{ text: "Exterior" }, { bp: 500 }, { bp: 500 }],
+            ],
+          },
+          data: {
+            amount: { amount: 500000, currency: "BRL" },
+            total: { amount: 17698178, currency: "BRL" },
+            classes: [
+              {
+                name: "Renda fixa",
+                target_bp: 6000,
+                share_bp: 5200,
+                after_bp: 5330,
+                amount: { amount: 500000, currency: "BRL" },
+              },
+              {
+                name: "Ações",
+                target_bp: 2500,
+                share_bp: 3100,
+                after_bp: 3010,
+                amount: { amount: 0, currency: "BRL" },
+              },
+              {
+                name: "FIIs",
+                target_bp: 1000,
+                share_bp: 1200,
+                after_bp: 1170,
+                amount: { amount: 0, currency: "BRL" },
+              },
+              {
+                name: "Exterior",
+                target_bp: 500,
+                share_bp: 500,
+                after_bp: 490,
+                amount: { amount: 0, currency: "BRL" },
+              },
+            ],
+          },
+        },
+      },
+    ],
+  },
+  {
+    id: "built-holdings",
+    form: "holdings",
+    note: "get_portfolio positions → show holdings",
+    handled: true,
+    question: "Como estão minhas ações?",
+    answer: "Só uma está no negativo.",
+    views: [
+      {
+        id: "v-holdings",
+        form: "holdings",
+        payload: {
+          title: { key: "assistantView.holdings.title" },
+          window: { at: "2026-11-19" },
+          verdict: {
+            key: "assistantView.holdings.verdict_one_down",
+            params: {
+              count: { count: 1 },
+              name: { text: "BBAS3" },
+              result: { rate: 934 },
+            },
+          },
+          open: { screen: "/portfolio" },
+          next: [],
+          rows: {
+            head: [
+              "assistantView.col.instrument",
+              "assistantView.col.value",
+              "assistantView.col.result",
+              "assistantView.col.weight",
+            ],
+            rows: [
+              [
+                { text: "PETR4" },
+                { money: { amount: 389200, currency: "BRL" } },
+                { rate: 1380 },
+                { bp: 4639 },
+              ],
+              [
+                { text: "ITSA4" },
+                { money: { amount: 210400, currency: "BRL" } },
+                { rate: 691 },
+                { bp: 2508 },
+              ],
+              [
+                { text: "BBAS3" },
+                { money: { amount: 141850, currency: "BRL" } },
+                { rate: -420 },
+                { bp: 1691 },
+              ],
+              [
+                { text: "WEGE3" },
+                { money: { amount: 97600, currency: "BRL" } },
+                { rate: 2127 },
+                { bp: 1163 },
+              ],
+            ],
+          },
+          data: {
+            rows: [
+              {
+                account: "XP",
+                instrument: "PETR4",
+                quantity: "100",
+                cost: { amount: 342000, currency: "BRL" },
+                value: { amount: 389200, currency: "BRL" },
+                result_bp: 1380,
+                weight_bp: 4639,
+              },
+              {
+                account: "XP",
+                instrument: "ITSA4",
+                quantity: "100",
+                cost: { amount: 196800, currency: "BRL" },
+                value: { amount: 210400, currency: "BRL" },
+                result_bp: 691,
+                weight_bp: 2508,
+              },
+              {
+                account: "XP",
+                instrument: "BBAS3",
+                quantity: "100",
+                cost: { amount: 148069, currency: "BRL" },
+                value: { amount: 141850, currency: "BRL" },
+                result_bp: -420,
+                weight_bp: 1691,
+              },
+              {
+                account: "XP",
+                instrument: "WEGE3",
+                quantity: "100",
+                cost: { amount: 80480, currency: "BRL" },
+                value: { amount: 97600, currency: "BRL" },
+                result_bp: 2127,
+                weight_bp: 1163,
+              },
+            ],
+            cost: { amount: 767349, currency: "BRL" },
+            value: { amount: 839050, currency: "BRL" },
+            result_bp: 934,
+          },
+        },
+      },
+    ],
+  },
+  {
+    id: "built-benchmark",
+    form: "benchmark",
+    note: "get_portfolio return → show benchmark",
+    handled: true,
+    question: "Minha carteira bateu o CDI?",
+    answer: "Por pouco.",
+    views: [
+      {
+        id: "v-benchmark",
+        form: "benchmark",
+        payload: {
+          title: {
+            key: "assistantView.benchmark.title",
+            params: { index: { text: "assistantView.index.cdi" } },
+          },
+          window: { from: "2025-12-01", to: "2026-11-18" },
+          verdict: {
+            key: "assistantView.benchmark.verdict_above",
+            params: {
+              excess: { points: 19 },
+              index: { text: "assistantView.index.cdi" },
+              index_return: { rate: 1410 },
+              return: { rate: 1429 },
+            },
+          },
+          open: { screen: "/portfolio" },
+          next: [],
+          rows: {
+            head: ["assistantView.col.series", "assistantView.col.return"],
+            rows: [
+              [{ text: "assistantView.benchmark.portfolio" }, { rate: 1429 }],
+              [{ text: "assistantView.index.cdi" }, { rate: 1410 }],
+            ],
+          },
+          data: {
+            index: "cdi",
+            from: "2025-12-01",
+            until: "2026-11-18",
+            return_bp: 1429,
+            index_bp: 1410,
+            excess_bp: 19,
+          },
+        },
+      },
+    ],
+  },
+  {
+    id: "built-tax_year",
+    form: "tax_year",
+    note: "get_tax_year gain_tax → show tax_year",
+    handled: true,
+    question: "Devo imposto sobre as ações este ano?",
+    answer: "Dois meses deveram, já pagos.",
+    views: [
+      {
+        id: "v-tax_year",
+        form: "tax_year",
+        payload: {
+          title: { key: "assistantView.tax_year.title" },
+          window: { from: "2026-01-01", to: "2026-12-31" },
+          verdict: {
+            key: "assistantView.tax_year.verdict",
+            params: {
+              count: { count: 2 },
+              total: { money: { amount: 83880, currency: "BRL" } },
+            },
+          },
+          open: { screen: "/portfolio" },
+          next: [],
+          rows: {
+            head: [
+              "assistantView.col.month",
+              "assistantView.col.result",
+              "assistantView.col.tax",
+            ],
+            rows: [
+              [
+                { month: "2026-01" },
+                { money: { amount: 62000, currency: "BRL" } },
+                { money: { amount: 0, currency: "BRL" } },
+              ],
+              [
+                { month: "2026-03" },
+                { money: { amount: 90000, currency: "BRL" } },
+                { money: { amount: 0, currency: "BRL" } },
+              ],
+              [
+                { month: "2026-04" },
+                { money: { amount: 284000, currency: "BRL" } },
+                { money: { amount: 42600, currency: "BRL" } },
+              ],
+              [
+                { month: "2026-07" },
+                { money: { amount: 111000, currency: "BRL" } },
+                { money: { amount: 0, currency: "BRL" } },
+              ],
+              [
+                { month: "2026-09" },
+                { money: { amount: 275200, currency: "BRL" } },
+                { money: { amount: 41280, currency: "BRL" } },
+              ],
+              [
+                { month: "2026-11" },
+                { money: { amount: 145000, currency: "BRL" } },
+                { money: { amount: 0, currency: "BRL" } },
+              ],
+            ],
+          },
+          data: {
+            from: "2026-01-01",
+            to: "2026-12-31",
+            months: [
+              {
+                month: "2026-01",
+                result: { amount: 62000, currency: "BRL" },
+                exempt: { amount: 0, currency: "BRL" },
+                tax: { amount: 0, currency: "BRL" },
+                due: { amount: 0, currency: "BRL" },
+              },
+              {
+                month: "2026-03",
+                result: { amount: 90000, currency: "BRL" },
+                exempt: { amount: 0, currency: "BRL" },
+                tax: { amount: 0, currency: "BRL" },
+                due: { amount: 0, currency: "BRL" },
+              },
+              {
+                month: "2026-04",
+                result: { amount: 284000, currency: "BRL" },
+                exempt: { amount: 0, currency: "BRL" },
+                tax: { amount: 42600, currency: "BRL" },
+                due: { amount: 42600, currency: "BRL" },
+              },
+              {
+                month: "2026-07",
+                result: { amount: 111000, currency: "BRL" },
+                exempt: { amount: 0, currency: "BRL" },
+                tax: { amount: 0, currency: "BRL" },
+                due: { amount: 0, currency: "BRL" },
+              },
+              {
+                month: "2026-09",
+                result: { amount: 275200, currency: "BRL" },
+                exempt: { amount: 0, currency: "BRL" },
+                tax: { amount: 41280, currency: "BRL" },
+                due: { amount: 41280, currency: "BRL" },
+              },
+              {
+                month: "2026-11",
+                result: { amount: 145000, currency: "BRL" },
+                exempt: { amount: 0, currency: "BRL" },
+                tax: { amount: 0, currency: "BRL" },
+                due: { amount: 0, currency: "BRL" },
+              },
+            ],
+            total: { amount: 83880, currency: "BRL" },
+          },
+        },
+      },
+    ],
+  },
 ];

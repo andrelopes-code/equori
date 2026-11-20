@@ -8588,6 +8588,8 @@ components:
         date: {type: string, format: date}
         month: {type: string, pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$"}
         times: {type: integer, format: int64, description: a multiple in basis points}
+        rate: {type: integer, format: int64, description: a return in basis points}
+        points: {type: integer, format: int64, description: a difference of two rates in basis points}
     AssistantViewMoney:
       type: object
       additionalProperties: false

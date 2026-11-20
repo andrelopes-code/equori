@@ -16,6 +16,10 @@ describe("valueText", () => {
     expect(valueText({ bp: 3907 }, format)).toBe("39%");
   });
 
+  it("keeps one decimal for a share below 10%", () => {
+    expect(valueText({ bp: 158 }, format)).toBe("1,6%");
+  });
+
   it("keeps one decimal for a share below 1%", () => {
     expect(valueText({ bp: 45 }, format)).toBe("0,5%");
   });
@@ -46,6 +50,17 @@ describe("valueText", () => {
 
   it("writes a multiple with one decimal", () => {
     expect(valueText({ times: 107098 }, format)).toBe("10,7×");
+  });
+
+  it("writes a return with one or two decimals", () => {
+    expect(valueText({ rate: 1429 }, format)).toBe("14,29%");
+    expect(valueText({ rate: 1380 }, format)).toBe("13,8%");
+  });
+
+  it("writes a difference of rates as points", () => {
+    expect(valueText({ points: 19 }, format)).toBe(
+      "assistantView.unit.points:19",
+    );
   });
 
   it("names a month", () => {

@@ -49,6 +49,10 @@ type Value struct {
 	Month string `json:"month,omitempty"`
 	// Times is a multiple in basis points: 107098 reads 10.7×.
 	Times *int64 `json:"times,omitempty"`
+	// Rate is a return in basis points, written with up to two decimals: 1429 reads 14.29%.
+	Rate *int64 `json:"rate,omitempty"`
+	// Points is a difference of two rates in basis points: 19 reads 0.19 p.p.
+	Points *int64 `json:"points,omitempty"`
 }
 
 // Money is an amount in minor units of its currency.

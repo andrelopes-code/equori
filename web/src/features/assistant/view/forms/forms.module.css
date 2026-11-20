@@ -1359,3 +1359,225 @@
     pointer-events: none;
   }
 }
+
+/* Portfolio: the net worth figure, the allocation bar, the holdings table. */
+@layer app {
+  .up {
+    color: var(--slotted-tone-success-text);
+  }
+
+  .figure {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 120px;
+    align-items: end;
+    gap: 12px;
+  }
+
+  .figureText {
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 0;
+  }
+
+  .figureValue {
+    font-size: var(--slotted-font-size-3xl);
+    line-height: var(--slotted-line-height-3xl);
+    font-weight: var(--slotted-font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .figureDelta {
+    font-size: var(--slotted-font-size-sm);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .spark {
+    display: block;
+    inline-size: 120px;
+    block-size: 44px;
+    overflow: visible;
+  }
+
+  .spark path {
+    fill: none;
+    stroke: var(--slotted-tone-accent-solid);
+    stroke-width: 2px;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .parts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .part {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-inline-size: 0;
+    padding-block-start: 8px;
+    border-block-start: 2px solid var(--equori-slot-1);
+  }
+
+  .partLiability {
+    border-block-start-color: var(--equori-slot-3);
+  }
+
+  .partKey {
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+  }
+
+  .partValue {
+    font-size: var(--slotted-font-size-sm);
+    font-weight: var(--slotted-font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .stack {
+    display: flex;
+    gap: 2px;
+    block-size: 14px;
+    overflow: hidden;
+    border-radius: var(--slotted-radius-full);
+  }
+
+  .seg {
+    flex-basis: 0;
+    min-inline-size: 4px;
+    background: var(--fill);
+    transform-origin: left;
+    animation: grow var(--slotted-duration-long) var(--slotted-easing-enter)
+      both;
+  }
+
+  .shares {
+    display: grid;
+    grid-template-columns: 10px minmax(0, 1fr) max-content 64px;
+    column-gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .share {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    align-items: center;
+    box-sizing: border-box;
+    block-size: 32px;
+    border-block-end: 1px solid var(--slotted-border-subtle);
+    font-size: var(--slotted-font-size-sm);
+  }
+
+  .share:last-child {
+    border-block-end: 0;
+  }
+
+  .share .key {
+    background: var(--fill);
+  }
+
+  .sharePct {
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+    white-space: nowrap;
+  }
+
+  .tbl {
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-size: var(--slotted-font-size-sm);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tbl th,
+  .tbl td {
+    block-size: 36px;
+    padding: 0 6px;
+    border-block-end: 1px solid var(--slotted-border-subtle);
+    text-align: end;
+    white-space: nowrap;
+  }
+
+  .tbl th:first-child,
+  .tbl td:first-child {
+    padding-inline-start: 0;
+    text-align: start;
+  }
+
+  .tbl th:last-child,
+  .tbl td:last-child {
+    padding-inline-end: 0;
+  }
+
+  .tbl th {
+    block-size: 28px;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+    font-weight: var(--slotted-font-weight-medium);
+  }
+
+  .tbl tfoot td {
+    border-block-end: 0;
+    font-weight: var(--slotted-font-weight-semibold);
+  }
+
+  .sort {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  th[aria-sort="descending"] .sort {
+    color: var(--slotted-text);
+  }
+
+  .sort:focus-visible {
+    outline: 2px solid var(--slotted-tone-accent-solid);
+    outline-offset: 2px;
+  }
+
+  .icon12 {
+    display: inline-flex;
+    flex: none;
+    inline-size: 12px;
+    block-size: 12px;
+  }
+
+  .alloc {
+    display: inline-block;
+    inline-size: 48px;
+    block-size: 6px;
+    overflow: hidden;
+    border-radius: var(--slotted-radius-full);
+    background: color-mix(in oklab, var(--slotted-text) 7%, transparent);
+    vertical-align: middle;
+  }
+
+  .alloc i {
+    display: block;
+    block-size: 100%;
+    background: var(--slotted-tone-accent-solid);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .seg {
+      animation: none;
+    }
+  }
+}

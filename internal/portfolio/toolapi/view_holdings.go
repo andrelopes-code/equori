@@ -154,7 +154,7 @@ func contributionVerdict(d contributionData) view.Text {
 	)
 
 	return view.Text{Key: "assistantView.contribution.verdict_drift", Params: map[string]view.Value{
-		"name": view.TextValue(low.Name), "gap": view.BPValue(low.TargetBP - low.ShareBP),
+		"name": view.TextValue(low.Name), "gap": view.PointsValue(low.TargetBP - low.ShareBP),
 	}}
 }
 
@@ -240,7 +240,7 @@ func holdingsVerdict(d holdingsData) view.Text {
 	}
 
 	params := map[string]view.Value{
-		"result": view.BPValue(d.ResultBP),
+		"result": view.RateValue(d.ResultBP),
 		"count":  view.CountValue(int64(len(down))),
 	}
 
@@ -271,7 +271,7 @@ func holdingsRows(rows []holdingRow) view.Table {
 			[]view.Value{
 				view.TextValue(r.Instrument),
 				view.MoneyValue(r.Value),
-				view.BPValue(r.ResultBP),
+				view.RateValue(r.ResultBP),
 				view.BPValue(r.WeightBP),
 			},
 		)
@@ -320,15 +320,18 @@ func benchmarkFormView(
 		},
 		Window: view.Window{From: b.From, To: b.Until},
 		Verdict: view.Text{Key: key, Params: map[string]view.Value{
-			"return": view.BPValue(data.ReturnBP), "index_return": view.BPValue(data.IndexBP),
-			"excess": view.BPValue(excess), "index": view.TextValue(index),
+			"return": view.RateValue(data.ReturnBP), "index_return": view.RateValue(data.IndexBP),
+			"excess": view.PointsValue(excess), "index": view.TextValue(index),
 		}},
 		Open: &view.Link{Screen: "/portfolio"},
 		Rows: view.Table{
 			Head: []string{"assistantView.col.series", "assistantView.col.return"},
 			Rows: [][]view.Value{
-				{view.TextValue("assistantView.benchmark.portfolio"), view.BPValue(data.ReturnBP)},
-				{view.TextValue(index), view.BPValue(data.IndexBP)},
+				{
+					view.TextValue("assistantView.benchmark.portfolio"),
+					view.RateValue(data.ReturnBP),
+				},
+				{view.TextValue(index), view.RateValue(data.IndexBP)},
 			},
 		},
 		Data: data,

@@ -358,7 +358,13 @@ type AssistantViewValue struct {
 	Date  *openapi_types.Date `json:"date,omitempty"`
 	Money *AssistantViewMoney `json:"money,omitempty"`
 	Month *string             `json:"month,omitempty"`
-	Text  *string             `json:"text,omitempty"`
+
+	// Points a difference of two rates in basis points
+	Points *int64 `json:"points,omitempty"`
+
+	// Rate a return in basis points
+	Rate *int64  `json:"rate,omitempty"`
+	Text *string `json:"text,omitempty"`
 
 	// Times a multiple in basis points
 	Times *int64 `json:"times,omitempty"`

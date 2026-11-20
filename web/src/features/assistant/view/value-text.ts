@@ -25,15 +25,19 @@ export function valueText(v: ViewValue, f: ValueFormat): string {
   if (v.date !== undefined) return formatDate(v.date, f.locale);
   if (v.month !== undefined) return monthText(v.month, f.locale);
   if (v.times !== undefined) return times(v.times, f.locale);
+  if (v.rate !== undefined) return rate(v.rate, f.locale);
+  if (v.points !== undefined)
+    return f.label("assistantView.unit.points", v.points);
   if (v.text?.startsWith(LABEL) === true) return f.label(v.text, v.count);
   if (v.count !== undefined) return numberFormatter(f.locale).format(v.count);
 
   return v.text ?? "";
 }
 
-// A share below 1% keeps one decimal so it never reads as zero.
+// A share below 10% keeps one decimal: 158 bp reads 1.6%, not 2%, and a small share never reads as
+// zero.
 function percent(bp: number, locale: string): string {
-  const digits = bp !== 0 && Math.abs(bp) < 100 ? 1 : 0;
+  const digits = bp !== 0 && Math.abs(bp) < 1000 ? 1 : 0;
 
   return numberFormatter(locale, {
     style: "percent",
@@ -50,4 +54,13 @@ function times(bp: number, locale: string): string {
   }).format(bp / 10000);
 
   return `${n}×`;
+}
+
+// A return in basis points with one or two decimals: 1429 reads 14.29%, 1380 reads 13.8%.
+export function rate(bp: number, locale: string): string {
+  return numberFormatter(locale, {
+    style: "percent",
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 2,
+  }).format(bp / 10000);
 }

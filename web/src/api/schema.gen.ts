@@ -5045,6 +5045,16 @@ export interface components {
              * @description a multiple in basis points
              */
             times?: number;
+            /**
+             * Format: int64
+             * @description a return in basis points
+             */
+            rate?: number;
+            /**
+             * Format: int64
+             * @description a difference of two rates in basis points
+             */
+            points?: number;
         };
         AssistantViewMoney: {
             /**

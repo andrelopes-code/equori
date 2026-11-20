@@ -18,6 +18,12 @@ import { AgendaBody } from "@/features/assistant/view/forms/planning/agenda-body
 import { BalanceBody } from "@/features/assistant/view/forms/planning/balance-body";
 import { GoalsBody } from "@/features/assistant/view/forms/planning/goals-body";
 import { RecurringBody } from "@/features/assistant/view/forms/planning/recurring-body";
+import { AllocationBody } from "@/features/assistant/view/forms/portfolio/allocation-body";
+import { BenchmarkBody } from "@/features/assistant/view/forms/portfolio/benchmark-body";
+import { ContributionBody } from "@/features/assistant/view/forms/portfolio/contribution-body";
+import { FigureBody } from "@/features/assistant/view/forms/portfolio/figure-body";
+import { HoldingsBody } from "@/features/assistant/view/forms/portfolio/holdings-body";
+import { TaxYearBody } from "@/features/assistant/view/forms/portfolio/tax-year-body";
 import type { ViewWindow } from "@/features/assistant/view/view-types";
 
 export type ViewUnit = "amount" | "share";
@@ -55,4 +61,10 @@ export const FORMS: Partial<Record<string, ViewForm>> = {
   balance: { icon: "trend", Body: BalanceBody },
   goals: { icon: "target", Body: GoalsBody },
   recurring: { icon: "repeat", Body: RecurringBody },
+  figure: { icon: "wallet", Body: FigureBody },
+  allocation: { icon: "pie", unit: true, Body: AllocationBody },
+  contribution: { icon: "pie", Body: ContributionBody },
+  holdings: { icon: "chart", Body: HoldingsBody },
+  benchmark: { icon: "trend", Body: BenchmarkBody },
+  tax_year: { icon: "receipt", Body: TaxYearBody },
 };

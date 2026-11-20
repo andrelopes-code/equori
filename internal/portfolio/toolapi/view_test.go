@@ -238,7 +238,7 @@ func TestViewBenchmark(t *testing.T) {
 
 	p := build(t, "benchmark", out)
 	if p.Verdict.Key != "assistantView.benchmark.verdict_above" ||
-		*p.Verdict.Params["excess"].BP != 19 ||
+		*p.Verdict.Params["excess"].Points != 19 ||
 		p.Verdict.Params["index"].Text != "assistantView.index.cdi" {
 		t.Fatalf("verdict = %+v", p.Verdict)
 	}
