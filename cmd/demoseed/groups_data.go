@@ -23,7 +23,7 @@ var groups = []group{
 		name: "Renda fixa",
 		bp:   3000,
 		members: []member{
-			{"B5P211", 2}, {"TSELIC29", 3}, {"TIPCA35", 3}, {"CDBXP27", 2},
+			{"LFT.20290301", 3}, {"NTNBP.20350515", 4}, {"CDBXP27", 2},
 		},
 	},
 	{

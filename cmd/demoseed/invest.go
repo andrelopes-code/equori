@@ -10,7 +10,7 @@ import (
 )
 
 // investMonths is the length of the investment history; the rest of the persona keeps historyMonths.
-const investMonths = 60
+const investMonths = 120
 
 // quote is the price of a security on one date.
 type quote struct {
@@ -79,10 +79,16 @@ func (s *seeder) series(sec security) {
 	n := len(months(s.investStart(), s.today)) + 1
 	pts := make([]float64, n)
 
+	issued, _ := sec.terms["issued_on"].(string)
+
 	pts[0] = sec.start
 	for i := 1; i < n; i++ {
 		if sec.accrual > 0 {
-			pts[i] = pts[i-1] * math.Pow(1+sec.accrual, 1.0/12)
+			pts[i] = pts[i-1]
+			if iso(s.investStart().AddDate(0, i, 0)) > issued {
+				pts[i] *= math.Pow(1+sec.accrual, 1.0/12)
+			}
+
 			continue
 		}
 

@@ -9,7 +9,7 @@ import (
 
 const buyPrefix = "Compra de "
 
-// assertPortfolioHistory checks the portfolio of the persona: an investor who began five years before
+// assertPortfolioHistory checks the portfolio of the persona: an investor who began ten years before
 // today and bought every month with a regular contribution that grew with the salary.
 func assertPortfolioHistory(t *testing.T, s *seeder) {
 	t.Helper()
@@ -37,6 +37,10 @@ func assertPortfolioHistory(t *testing.T, s *seeder) {
 	}
 
 	begin := s.investStart()
+
+	if want := firstOfMonth(s.today).AddDate(-10, 0, 0); !begin.Equal(want) {
+		t.Errorf("investments begin on %s, want %s", iso(begin), iso(want))
+	}
 
 	if first == "" || first > iso(begin.AddDate(0, 0, 10)) {
 		t.Errorf("first purchase on %q, want within 10 days of %s", first, iso(begin))
@@ -118,6 +122,8 @@ func assertContributionPlan(t *testing.T, s *seeder) {
 	off := 0
 
 	for _, c := range plan.Class {
+		t.Logf("class %q holds %d bp against an ideal of %d", c.Name, c.ShareBP, c.TargetBP)
+
 		gap := c.ShareBP - c.TargetBP
 		if gap < -1000 || gap > 1000 {
 			t.Errorf(

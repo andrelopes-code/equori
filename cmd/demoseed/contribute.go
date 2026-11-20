@@ -15,6 +15,9 @@ const (
 
 	// minOrder is the smallest amount the owner sends to the broker, in cents.
 	minOrder = 20000
+
+	// rebalanceBand is how far above its target share, in basis points, a group sits before the persona sells some of it.
+	rebalanceBand = 300
 )
 
 // order is a purchase of about cents of a security.
@@ -23,11 +26,16 @@ type order struct {
 	cents int64
 }
 
-// contributions schedules, for every month since the first one, the deposit that the records lack, the purchases of the contribution and the reinvestment of the income and of what the month left.
+// contributions schedules, for every month since the first one, the deposit that the records lack, the purchases of the contribution and the reinvestment of the income and of what the month left. Each January and July the persona rebalances.
 func (s *seeder) contributions() {
 	for k, m := range months(s.investStart(), s.today) {
 		amount := monthlyContribution(k)
 		payday := s.businessDay(m, 6)
+
+		if (m.Month() == time.January || m.Month() == time.July) && k > 0 {
+			sellDay := s.businessDay(m, 3)
+			s.investAt(sellDay, func() { s.rebalance(sellDay) })
+		}
 
 		if m.Before(s.start) {
 			s.investAt(payday, func() { s.depositBeforeRecords(payday, amount) })
@@ -45,7 +53,40 @@ func (s *seeder) contributions() {
 
 // monthlyContribution is the amount of the k-th month since the start of the investments, in cents. It grows with the salary and reaches the monthly transfer of the records.
 func monthlyContribution(k int) int64 {
-	return []int64{60000, 80000, 100000, 110000}[min(k/12, 3)]
+	steps := []int64{40000, 50000, 60000, 70000, 80000, 90000, 100000, 110000}
+
+	return steps[min(k/12, len(steps)-1)]
+}
+
+// rebalance sells, from the largest holding of each group above its target share by more than rebalanceBand, the
+// value above the target. The sweep of the month buys the groups below their target with the proceeds. The contracts of the fixed income group are held to maturity.
+func (s *seeder) rebalance(d time.Time) {
+	values := s.groupValues(d)
+
+	var total int64
+	for _, v := range values {
+		total += v
+	}
+
+	for i, g := range groups {
+		target := int64(g.bp) * total / 10000
+		if i == fixedIncomeGroup || values[i]-target <= rebalanceBand*total/10000 {
+			continue
+		}
+
+		code := s.largestHolding(g, d)
+		if code == "" {
+			continue
+		}
+
+		sec := s.security(code)
+		price := s.priceOn(code, d) * (1 + (s.inv.Float64()*2-1)*.006)
+		units := float64(values[i]-target) / 100 / price * math.Pow(10, float64(sec.scale))
+
+		if qty := min(int64(units), s.hold[code]); qty > 0 {
+			s.trade(d, code, "sell", qty, price)
+		}
+	}
 }
 
 // depositBeforeRecords brings the contribution of a month before the records began into the brokerage; its source is outside the books.
@@ -59,7 +100,7 @@ func (s *seeder) depositBeforeRecords(d time.Time, cents int64) {
 	)
 }
 
-// contribute buys on d, with cents of the brokerage cash, in the two groups furthest below their target share. It never sells.
+// contribute buys on d, with cents of the brokerage cash, in the two groups furthest below their target share.
 func (s *seeder) contribute(d time.Time, cents int64) {
 	cents = min(cents, s.bal[s.id("xp.cash")]*9/10)
 	if cents < minOrder {
@@ -190,9 +231,9 @@ func (s *seeder) earmarked() {
 		date string
 		order
 	}{
-		{"2024-12-23", order{"TSELIC29", 150000}},
+		{"2024-12-23", order{"LFT.20290301", 150000}},
 		{"2025-03-17", order{"CDBXP27", 600000}},
-		{"2025-12-22", order{"TSELIC29", 150000}},
+		{"2025-12-22", order{"LFT.20290301", 150000}},
 		{"2026-03-16", order{"CDBXP27", 600000}},
 	} {
 		d := day(e.date)

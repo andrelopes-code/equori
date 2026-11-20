@@ -69,6 +69,7 @@ func seed(s *seeder, cfg config) error {
 	s.localizeSystemAccounts()
 	s.buildChart(start)
 	s.buildInvestments()
+	s.awaitRawHistory(s.requestHistory())
 	s.openBalances(start)
 	s.postPrices()
 	s.loadPrices()

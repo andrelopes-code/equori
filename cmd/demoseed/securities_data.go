@@ -1,6 +1,6 @@
 package main
 
-// security is an instrument the persona holds. The instance prices it with the real quotes of its feeds; the start price, drift and volatility below draw a random walk (an accrual for fixed income) only for an instrument the instance has no prices of. start is the price at the first month of the investments.
+// security is an instrument the persona holds. The instance prices it with the real quotes of its feeds; the start price, drift and volatility below draw a random walk (an accrual for fixed income) only for an instrument the instance has no prices of. start is the price at the first month of the investments, or at the issue of an accruing bond.
 type security struct {
 	code, name, typ, subtype, exchange string
 	scale                              int
@@ -79,7 +79,7 @@ var securities = []security{
 		exchange: "BVMF",
 		holder:   "xp",
 		start:    40.0,
-		drift:    0.2,
+		drift:    0.15,
 		vol:      0.25,
 	},
 	{
@@ -153,16 +153,6 @@ var securities = []security{
 		vol:      0.6,
 	},
 	{
-		code:     "B5P211",
-		name:     "It Now IMA-B 5 P2 Fundo de Índice",
-		typ:      "etf",
-		exchange: "BVMF",
-		holder:   "xp",
-		start:    105.0,
-		drift:    0.1,
-		vol:      0.03,
-	},
-	{
 		code:     "HGLG11",
 		name:     "CSHG Logística FII",
 		typ:      "reit",
@@ -193,17 +183,17 @@ var securities = []security{
 		vol:      0.08,
 	},
 	{
-		code:    "TSELIC29",
+		code:    "LFT.20290301",
 		name:    "Tesouro Selic 2029",
 		typ:     "fixed_income",
 		subtype: "tesouro",
 		scale:   2,
 		issuer:  "Tesouro Nacional",
 		holder:  "xp",
-		start:   10050,
-		accrual: 0.142,
+		start:   12520,
+		accrual: 0.13,
 		terms: map[string]any{
-			"issued_on":           "2023-03-01",
+			"issued_on":           "2023-01-09",
 			"matures_on":          "2029-03-01",
 			"index_id":            "cdi",
 			"percent_of_index_bp": 10000,
@@ -219,7 +209,7 @@ var securities = []security{
 		scale:   2,
 		issuer:  "Banco XP",
 		holder:  "xp",
-		start:   678,
+		start:   1000,
 		accrual: 0.152,
 		terms: map[string]any{
 			"issued_on":           "2024-08-12",
@@ -231,21 +221,21 @@ var securities = []security{
 		},
 	},
 	{
-		code:    "TIPCA35",
+		code:    "NTNBP.20350515",
 		name:    "Tesouro IPCA+ 2035",
 		typ:     "fixed_income",
 		subtype: "tesouro",
 		scale:   2,
 		issuer:  "Tesouro Nacional",
 		holder:  "xp",
-		start:   734,
-		drift:   0.12,
-		vol:     0.05,
+		start:   1026,
+		drift:   0.089,
+		vol:     0.08,
 		terms: map[string]any{
-			"issued_on":  "2024-05-02",
+			"issued_on":  "2010-03-08",
 			"matures_on": "2035-05-15",
 			"index_id":   "ipca",
-			"spread_bp":  650,
+			"spread_bp":  588,
 			"day_count":  "act365",
 			"face_value": 100000,
 		},

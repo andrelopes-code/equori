@@ -769,7 +769,7 @@ func TestSeed(t *testing.T) {
 		}
 	})
 
-	t.Run("five-year portfolio", func(t *testing.T) { assertPortfolioHistory(t, s) })
+	t.Run("ten-year portfolio", func(t *testing.T) { assertPortfolioHistory(t, s) })
 
 	t.Run("investments", func(t *testing.T) {
 		// Positions of the second brokerage appear only after a rebuild, as make demo runs it.
