@@ -17,7 +17,7 @@ interface PeriodLabelProps {
 export function PeriodLabel({ current, widest, children }: PeriodLabelProps) {
   return (
     <span className={styles["period-label"]}>
-      <SteadyLabel widest={widest}>
+      <SteadyLabel widest={widest} className={styles.reserve}>
         <span className={styles.text}>
           <span
             className={styles.mark}

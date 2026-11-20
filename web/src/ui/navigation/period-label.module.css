@@ -1,31 +1,35 @@
 @layer app {
-  /* The label of a period inside its trigger. The text stays centred in the trigger whether
-     the mark shows or not: the mark hangs before the text, out of the flow, and the box keeps
-     the same room on both sides for it. */
+  /* The label of a period inside its trigger. The mark and the text form one group, centred in
+     the trigger. The box reserves the widest text plus the mark and its gap, so the trigger keeps
+     one width whether the mark shows or not. */
   .period-label {
     display: flex;
     align-items: center;
-    /* The mark's gap plus its 6 px: the button's label clips what overflows it. */
-    padding-inline: calc(var(--slotted-space-3) + 6px);
+    padding-inline: calc((var(--slotted-space-3) + 6px) / 2);
+  }
+
+  /* The room of the mark and its gap, added to the widest text the label reserves. */
+  .reserve::after {
+    padding-inline-start: calc(var(--slotted-space-3) + 6px);
   }
 
   .text {
-    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--slotted-space-3);
   }
 
   /* The mark of the period that holds today. */
   .mark {
-    position: absolute;
-    inset-block-start: calc(50% - 3px); /* literal: half of the 6 px dot */
-    inset-inline-end: calc(100% + var(--slotted-space-3));
+    display: none;
+    flex: none;
     inline-size: 6px; /* literal: a whole-pixel circle; no token holds a dot size */
     block-size: 6px; /* literal: a whole-pixel circle; no token holds a dot size */
     border-radius: var(--slotted-radius-full);
     background: var(--slotted-tone-accent-solid);
-    visibility: hidden;
   }
 
   .mark[data-on] {
-    visibility: visible;
+    display: block;
   }
 }
