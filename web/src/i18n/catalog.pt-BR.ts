@@ -1895,7 +1895,7 @@ export const catalogPtBR: Catalog = {
   "assistantView.ranking.verdict": "{name} leva {share} dos {total} gastos.",
   "assistantView.ranking.empty": "Nenhuma despesa no período.",
   "assistantView.ranking.rest": "Outras {count} categorias",
-  "assistantView.compare.title": "Dois períodos por categoria",
+  "assistantView.compare.title": "Dois períodos",
   "assistantView.compare.verdict_more":
     "O período mais recente gastou {amount} a mais; {name} responde por {name_amount}.",
   "assistantView.compare.verdict_less":
@@ -1908,6 +1908,9 @@ export const catalogPtBR: Catalog = {
   "assistantView.help.verdict": "Onde isso se faz no equori, tela por tela.",
   "assistantView.help.screen": "Tela",
   "assistantView.help.task": "O que se faz",
+  "assistantPreview.views": "Visões montadas pelo servidor",
+  "assistantPreview.views_description":
+    "Cada número vem de uma leitura do turno; o modelo indica a leitura e a forma.",
   "assistantPreview.handled": "Forma própria",
   "assistantPreview.fallback": "Sem forma própria",
   "assistantPreview.read": "Respostas de leitura com forma",

@@ -1883,7 +1883,7 @@ export const catalogEn = {
   "assistantView.ranking.verdict": "{name} takes {share} of the {total} spent.",
   "assistantView.ranking.empty": "No spending in the period.",
   "assistantView.ranking.rest": "Other {count} categories",
-  "assistantView.compare.title": "Two periods by category",
+  "assistantView.compare.title": "Two periods",
   "assistantView.compare.verdict_more":
     "The later period spent {amount} more; {name} accounts for {name_amount}.",
   "assistantView.compare.verdict_less":
@@ -1897,6 +1897,9 @@ export const catalogEn = {
     "Where this is done in equori, screen by screen.",
   "assistantView.help.screen": "Screen",
   "assistantView.help.task": "What is done there",
+  "assistantPreview.views": "Views built by the server",
+  "assistantPreview.views_description":
+    "Each figure comes from a read of the turn; the model names the read and the form.",
   "assistantPreview.handled": "Own form",
   "assistantPreview.fallback": "No own form",
   "assistantPreview.read": "Read answers with a form",

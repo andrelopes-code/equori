@@ -16,11 +16,14 @@ export function windowText(w: ViewWindow, locale: string): string {
     from.getUTCMonth() === to.getUTCMonth() &&
     from.getUTCFullYear() === to.getUTCFullYear()
   ) {
-    return new Intl.DateTimeFormat(locale, {
+    // The month and the year side by side, as a column head reads ("outubro 2026"): the
+    // preposition Intl adds in some languages would push the view's title into an ellipsis.
+    const month = new Intl.DateTimeFormat(locale, {
       month: "long",
-      year: "numeric",
       timeZone: "UTC",
     }).format(from);
+
+    return `${month} ${String(from.getUTCFullYear())}`;
   }
 
   return new Intl.DateTimeFormat(locale, {

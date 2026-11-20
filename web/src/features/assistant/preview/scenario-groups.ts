@@ -9,8 +9,14 @@ import {
   writeHandled,
   writeOutcomes,
 } from "@/features/assistant/preview/scenarios-write";
+import { viewScenarios } from "@/features/assistant/preview/scenarios-views";
 
 export const scenarioGroups: ScenarioGroup[] = [
+  {
+    title: "assistantPreview.views",
+    description: "assistantPreview.views_description",
+    scenarios: viewScenarios,
+  },
   {
     title: "assistantPreview.read",
     description: "assistantPreview.read_description",

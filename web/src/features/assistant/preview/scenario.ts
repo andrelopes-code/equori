@@ -15,6 +15,7 @@ export interface Scenario {
   proposals?: Message["proposals"];
   outcome?: Message["outcome"];
   steps?: string[];
+  views?: Message["views"];
 }
 
 export interface ScenarioGroup {
@@ -31,7 +32,7 @@ export function scenarioMessage(scenario: Scenario): Message {
     outcome: scenario.outcome ?? "answered",
     created_at: "2026-11-19T10:00:00Z",
     files: [],
-    views: [],
+    views: scenario.views ?? [],
     proposals: scenario.proposals ?? [],
   };
 }

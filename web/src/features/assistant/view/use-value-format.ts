@@ -17,6 +17,8 @@ export function useValueFormat(): ValueFormat {
     () => ({
       locale,
       money: (m) => fmt.money(m, scaleOf?.(m.currency) ?? 2),
+      delta: (m) =>
+        fmt.signed(m, scaleOf?.(m.currency) ?? 2, { symbol: false }),
       label: (key, count) => {
         const k = catalogKey(key);
         return k === undefined ? key : t(k, { count: String(count ?? 0) });

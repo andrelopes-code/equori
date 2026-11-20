@@ -5,7 +5,7 @@ import { windowText } from "@/features/assistant/view/window-text";
 describe("windowText", () => {
   it("names a whole month", () => {
     expect(windowText({ from: "2026-10-01", to: "2026-10-31" }, "pt-BR")).toBe(
-      "outubro de 2026",
+      "outubro 2026",
     );
   });
 

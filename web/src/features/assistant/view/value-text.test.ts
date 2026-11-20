@@ -5,6 +5,7 @@ import type { ValueFormat } from "@/features/assistant/view/value-text";
 
 const format: ValueFormat = {
   money: (m) => `${m.currency} ${String(m.amount)}`,
+  delta: (m) => `±${String(m.amount)}`,
   label: (key, count) => `${key}:${String(count)}`,
   locale: "pt-BR",
 };

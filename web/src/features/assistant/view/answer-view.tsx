@@ -1,8 +1,9 @@
 import { useState } from "react";
 
 import { AssistantIcon } from "@/features/assistant/panel/assistant-icon";
-import { FORMS } from "@/features/assistant/view/forms";
-import type { ViewUnit } from "@/features/assistant/view/forms";
+import { currencySymbol } from "@/features/assistant/view/currency-symbol";
+import { FORMS } from "@/features/assistant/view/view-forms";
+import type { ViewUnit } from "@/features/assistant/view/view-forms";
 import { FollowUpChips } from "@/features/assistant/view/follow-up-chips";
 import { SegmentedToggle } from "@/features/assistant/view/segmented-toggle";
 import { useViewText } from "@/features/assistant/view/use-view-text";
@@ -14,7 +15,7 @@ import { ViewTable } from "@/features/assistant/view/view-table";
 import type { AssistantView as View } from "@/features/assistant/view/view-types";
 import { ViewVerdict } from "@/features/assistant/view/view-verdict";
 import styles from "@/features/assistant/view/answer-view.module.css";
-import { useT } from "@/i18n/i18n-provider";
+import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
 interface AnswerViewProps {
   view: View;
@@ -23,12 +24,14 @@ interface AnswerViewProps {
 // A view of an answer: one anatomy for every form, the form only draws its body (V11).
 export function AnswerView({ view }: AnswerViewProps) {
   const t = useT();
+  const [locale] = useAppLocale();
   const texts = useViewText(view.payload);
 
   const [mode, setMode] = useState<ViewMode>("chart");
   const [unit, setUnit] = useState<ViewUnit>("amount");
 
   const form = FORMS[view.form];
+  const symbol = currencySymbol(view.payload, locale);
   const Body = mode === "chart" ? form?.Body : undefined;
   const verdict = texts.verdict.map((p) => p.text).join("");
 
@@ -53,7 +56,7 @@ export function AnswerView({ view }: AnswerViewProps) {
                   {
                     value: "amount",
                     title: t("assistantView.unit.amount"),
-                    content: t("assistantView.unit.amount"),
+                    content: symbol ?? t("assistantView.unit.amount"),
                   },
                   {
                     value: "share",
@@ -71,7 +74,13 @@ export function AnswerView({ view }: AnswerViewProps) {
         {Body === undefined && (
           <ViewTable head={texts.head} rows={texts.rows} />
         )}
-        {Body !== undefined && <Body data={view.payload.data} unit={unit} />}
+        {Body !== undefined && (
+          <Body
+            data={view.payload.data}
+            unit={unit}
+            window={view.payload.window}
+          />
+        )}
 
         {texts.prov !== "" && (
           <p className={styles.prov}>

@@ -4,8 +4,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AnswerView } from "@/features/assistant/view/answer-view";
 import { AskContext } from "@/features/assistant/view/ask-context";
-import { FORMS } from "@/features/assistant/view/forms";
-import type { FormBodyProps } from "@/features/assistant/view/forms";
+import { FORMS } from "@/features/assistant/view/view-forms";
+import type { FormBodyProps } from "@/features/assistant/view/view-forms";
 import type { AssistantView } from "@/features/assistant/view/view-types";
 import { fakeApi } from "@/testing/fake-api";
 import { renderWithProviders } from "@/testing/render-app";

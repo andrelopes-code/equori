@@ -83,6 +83,7 @@ The owner review of 2026-11-15 set these rules for everything the assistant draw
 | Recorded transaction | Receipt with the amount first                                                          |
 | Credit limit         | One gauge with the current limit and the requested one                                 |
 | Payment              | Source account, amount and destination                                                 |
+| Guide article        | Numbered steps, each one a task on its screen                                          |
 
 ## Utility classes
 
