@@ -41,6 +41,8 @@ func Views() map[view.Key]view.Builder {
 	return map[view.Key]view.Builder{
 		{Tool: "get_category_totals", Form: "ranking"}: rankingView,
 		{Tool: "get_category_totals", Form: "compare"}: compareView,
+		{Tool: "get_category_totals", Form: "changes"}: changesView,
+		{Tool: "get_category_totals", Form: "treemap"}: treemapView,
 	}
 }
 

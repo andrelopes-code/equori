@@ -2,9 +2,11 @@ import type { ComponentType } from "react";
 
 import type { AssistantIconName } from "@/features/assistant/panel/assistant-icon";
 import { BudgetBody } from "@/features/assistant/view/forms/budget-body";
+import { ChangesBody } from "@/features/assistant/view/forms/changes-body";
 import { CompareBody } from "@/features/assistant/view/forms/compare-body";
 import { HelpBody } from "@/features/assistant/view/forms/help-body";
 import { RankingBody } from "@/features/assistant/view/forms/ranking-body";
+import { TreemapBody } from "@/features/assistant/view/forms/treemap-body";
 import type { ViewWindow } from "@/features/assistant/view/view-types";
 
 export type ViewUnit = "amount" | "share";
@@ -29,4 +31,6 @@ export const FORMS: Partial<Record<string, ViewForm>> = {
   compare: { icon: "chart", Body: CompareBody },
   help: { icon: "book", Body: HelpBody },
   budget: { icon: "target", Body: BudgetBody },
+  changes: { icon: "chart", Body: ChangesBody },
+  treemap: { icon: "pie", Body: TreemapBody },
 };

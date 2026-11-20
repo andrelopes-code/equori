@@ -1907,12 +1907,28 @@ export const catalogEn = {
     "{count} budgets past their limit; {name} passed it by {amount}.",
   "assistantView.budget.verdict_within": "Every budget is within its limit.",
   "assistantView.budget.empty": "No budget in the month.",
-  "assistantView.budget.over": "over {amount}",
+  "assistantView.budget.over": "+{amount} over",
   "assistantView.budget.of": "of {limit}",
   "assistantView.budget.legend_spent": "Spent",
   "assistantView.budget.legend_over": "Over the limit",
   "assistantView.budget.legend_limit": "Limit",
   "assistantView.budget.legend_pace": "Pace of day {day}",
+  "assistantView.col.change": "Change",
+  "assistantView.changes.title": "What changed",
+  "assistantView.changes.verdict_more":
+    "The later period spent {amount} more; {first} and {second} make {top} of it.",
+  "assistantView.changes.verdict_more_one":
+    "The later period spent {amount} more; {first} makes {top} of it.",
+  "assistantView.changes.verdict_less":
+    "The later period spent {amount} less; {first} and {second} fell {top}.",
+  "assistantView.changes.verdict_less_one":
+    "The later period spent {amount} less; {first} fell {top}.",
+  "assistantView.changes.legend_less": "Spent less",
+  "assistantView.changes.legend_more": "Spent more",
+  "assistantView.treemap.title": "Map of spending",
+  "assistantView.treemap.verdict":
+    "{first} and {second} take {share} of the {total} spent.",
+  "assistantView.cell_tip": "{name} \u00b7 {amount} \u00b7 {share}",
   "assistantPreview.handled": "Own form",
   "assistantPreview.fallback": "No own form",
   "assistantPreview.read": "Read answers with a form",

@@ -1919,12 +1919,28 @@ export const catalogPtBR: Catalog = {
   "assistantView.budget.verdict_within":
     "Todos os orçamentos estão dentro do limite.",
   "assistantView.budget.empty": "Nenhum orçamento no mês.",
-  "assistantView.budget.over": "acima {amount}",
+  "assistantView.budget.over": "+{amount} acima",
   "assistantView.budget.of": "de {limit}",
   "assistantView.budget.legend_spent": "Gasto",
   "assistantView.budget.legend_over": "Acima do limite",
   "assistantView.budget.legend_limit": "Limite",
   "assistantView.budget.legend_pace": "Ritmo do dia {day}",
+  "assistantView.col.change": "Variação",
+  "assistantView.changes.title": "O que mudou",
+  "assistantView.changes.verdict_more":
+    "O período mais recente gastou {amount} a mais; {first} e {second} somam {top} do aumento.",
+  "assistantView.changes.verdict_more_one":
+    "O período mais recente gastou {amount} a mais; {first} responde por {top}.",
+  "assistantView.changes.verdict_less":
+    "O período mais recente gastou {amount} a menos; {first} e {second} caíram {top}.",
+  "assistantView.changes.verdict_less_one":
+    "O período mais recente gastou {amount} a menos; {first} caiu {top}.",
+  "assistantView.changes.legend_less": "Gastou menos",
+  "assistantView.changes.legend_more": "Gastou mais",
+  "assistantView.treemap.title": "Mapa dos gastos",
+  "assistantView.treemap.verdict":
+    "{first} e {second} levam {share} dos {total} gastos.",
+  "assistantView.cell_tip": "{name} \u00b7 {amount} \u00b7 {share}",
   "assistantPreview.handled": "Forma própria",
   "assistantPreview.fallback": "Sem forma própria",
   "assistantPreview.read": "Respostas de leitura com forma",

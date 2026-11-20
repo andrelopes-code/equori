@@ -23,22 +23,24 @@ export function BudgetBody({ data }: FormBodyProps) {
             <div className={styles.row}>
               <span className={styles.rowKey}>
                 <span className={styles.rowName}>{row.name}</span>
-                {row.over.amount > 0 && (
-                  <span className={styles.over}>
-                    {t("assistantView.budget.over", {
-                      amount: format.money(row.over),
-                    })}
-                  </span>
-                )}
               </span>
 
               <span className={styles.rowValue}>
                 {format.money(row.spent)}
-                <small>
-                  {t("assistantView.budget.of", {
-                    limit: format.money(row.limit),
-                  })}
-                </small>
+                {row.over.amount > 0 && (
+                  <small className={styles.over}>
+                    {t("assistantView.budget.over", {
+                      amount: format.money(row.over),
+                    })}
+                  </small>
+                )}
+                {row.over.amount === 0 && (
+                  <small>
+                    {t("assistantView.budget.of", {
+                      limit: format.money(row.limit),
+                    })}
+                  </small>
+                )}
               </span>
 
               <BudgetTrack row={row} />
