@@ -571,13 +571,42 @@ WITH RECURSIVE
             JOIN tree ON c.parent_id = tree.id
         WHERE
             c.books_id = $1
+    ),
+    -- The transactions that post to the tree or pay an income of it, found from the tree's own
+    -- postings rather than by testing every transaction of the book.
+    moved AS (
+        SELECT
+            p.transaction_id
+        FROM
+            ledger_posting p
+        WHERE
+            NOT p.voided
+            AND p.account_id IN (
+                SELECT
+                    id
+                FROM
+                    tree
+            )
+        UNION
+        SELECT
+            i.transaction_id
+        FROM
+            ledger_investment_income i
+        WHERE
+            i.account_id IN (
+                SELECT
+                    id
+                FROM
+                    tree
+            )
     )
 SELECT
     t.date,
     t.balancing_currency,
     (- sum(o.weight))::bigint AS flow
 FROM
-    ledger_transaction t
+    moved m
+    JOIN ledger_transaction t ON t.id = m.transaction_id
     JOIN ledger_posting o ON o.transaction_id = t.id
     AND NOT o.voided
     AND o.account_id NOT IN (
@@ -592,37 +621,6 @@ WHERE
     t.books_id = $1
     AND t.voided_at IS NULL
     AND t.date BETWEEN $2 AND $3
-    AND (
-        EXISTS (
-            SELECT
-                1
-            FROM
-                ledger_posting p
-            WHERE
-                p.transaction_id = t.id
-                AND NOT p.voided
-                AND p.account_id IN (
-                    SELECT
-                        id
-                    FROM
-                        tree
-                )
-        )
-        OR EXISTS (
-            SELECT
-                1
-            FROM
-                ledger_investment_income i
-            WHERE
-                i.transaction_id = t.id
-                AND i.account_id IN (
-                    SELECT
-                        id
-                    FROM
-                        tree
-                )
-        )
-    )
 GROUP BY
     t.id,
     t.date,
