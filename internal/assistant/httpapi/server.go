@@ -111,6 +111,11 @@ func toProblem(err error) (problem.Details, bool) {
 			"assistant_unavailable",
 			"no language model provider serves the assistant; add one in Settings",
 		), true
+	case errors.Is(err, app.ErrTargetUnknown):
+		d := problem.New(http.StatusUnprocessableEntity, "assistant_target_unknown", err.Error())
+		d.Errors = []problem.FieldError{{Field: "target", Message: "is not a target of the chat"}}
+
+		return d, true
 	case errors.Is(err, app.ErrTurnFailed):
 		return problem.New(
 			http.StatusBadGateway,

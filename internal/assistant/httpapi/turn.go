@@ -41,6 +41,10 @@ func (s *Server) sendAssistantMessage(w http.ResponseWriter, r *http.Request) {
 		in.Page = *body.Page
 	}
 
+	if body.Target != nil {
+		in.Target = &app.TargetChoice{ProviderID: body.Target.ProviderId, Model: body.Target.Model}
+	}
+
 	st := &eventStream{s: s, ctx: ctx, w: w, rc: http.NewResponseController(w)}
 	if err := s.svc.Turn(ctx, booksID, memberID, in, st); err != nil {
 		s.writeProblem(ctx, w, err)

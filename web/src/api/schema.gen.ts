@@ -171,7 +171,8 @@ export interface paths {
          *     The stream ends after answer or error. Problems before the stream: 404 conversation_not_found,
          *     429 assistant_exhausted with retry_at, 503 assistant_unavailable, 400 invalid_request for text that is
          *     empty without a file or over 4000 characters after trimming, 404 file_not_found for a file_ids entry
-         *     that is not an unsent file of the member. An error event carries assistant_exhausted,
+         *     that is not an unsent file of the member, 422 assistant_target_unknown for a target absent from the
+         *     targets of getAssistantChat. An error event carries assistant_exhausted,
          *     assistant_unavailable or assistant_failed.
          */
         post: operations["sendAssistantMessage"];
@@ -4965,6 +4966,21 @@ export interface components {
             reads_files?: boolean;
             /** Format: date-time */
             retry_at?: string;
+            /** @description The targets of the chain a turn may choose, in chain order; a target over its daily limit is absent (model choice design, MC1). */
+            targets: components["schemas"]["AssistantChatTarget"][];
+        };
+        AssistantChatTarget: {
+            provider_id: string;
+            provider_name: string;
+            model: string;
+            notice: string;
+            /** @description The model reads the content of a pdf, image or text file (F5). */
+            reads_files: boolean;
+        };
+        /** @description The only target a turn calls; without it the turn follows the chain (model choice design, MC2). */
+        AssistantTargetChoice: {
+            provider_id: string;
+            model: string;
         };
         AssistantFile: {
             /** Format: uuid */
@@ -4986,6 +5002,7 @@ export interface components {
             /** @description Unsent files of createAssistantFile the message carries. */
             file_ids?: string[];
             page?: string;
+            target?: components["schemas"]["AssistantTargetChoice"];
         };
         AssistantConversation: {
             /** Format: uuid */
@@ -9449,6 +9466,7 @@ export interface operations {
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
             429: components["responses"]["Problem"];
             503: components["responses"]["Problem"];
         };

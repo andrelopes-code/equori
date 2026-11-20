@@ -1271,3 +1271,15 @@ AT5, through the HTTP API. PETR4 of S656 holds the close of 2025-06-30 on 2025-1
 ### S659 Holding without a price at a year end
 
 AT6, through the HTTP API. PETR4 of S656 without any close: the year 2025 lists PETR4 in `missing` and holds no result, rate, `other` or rows. A book without a brokerage has no year.
+
+### S660 Turn on a chosen model
+
+Model choice MC2 (`docs/specs/2026-11-20-assistant-model-choice-design.md`), through the HTTP API. The instance provider serves `gemini-3.5-flash` first; a turn with `target` `gemini-3.5-flash-lite` sends its one request to `gemini-3.5-flash-lite` and stores its answer.
+
+### S661 Chosen model in cooldown
+
+MC3, through the HTTP API. `gemini-3.5-flash` cools down for an hour while `gemini-3.5-flash-lite` answers; a turn with `target` `gemini-3.5-flash` answers 429 `assistant_exhausted` with `retry_at` and sends no request.
+
+### S662 Chosen model outside the chain
+
+MC4, through the HTTP API. A turn with `target` `unknown-model` answers 422 `assistant_target_unknown` on the field `target`, stores no conversation and sends no request.

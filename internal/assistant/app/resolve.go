@@ -33,6 +33,10 @@ func (s *Service) Resolve(
 	use Use,
 ) ([]Target, error) {
 	targets, err := s.candidates(ctx, booksID, hasBooks, use)
+	if err == nil {
+		targets, err = chosen(ctx, use.ID, targets)
+	}
+
 	if err != nil || !hasBooks || len(targets) == 0 {
 		return targets, err
 	}

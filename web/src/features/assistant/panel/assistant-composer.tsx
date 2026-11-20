@@ -10,10 +10,13 @@ import type { RefObject } from "react";
 
 import type { components } from "@/api/schema.gen";
 import type { AssistantFile } from "@/features/assistant/api";
+import { chatWithTarget } from "@/features/assistant/model/chat-target";
+import { useChatTarget } from "@/features/assistant/model/use-chat-target";
 import styles from "@/features/assistant/panel/assistant-panel.module.css";
 import { ComposerFiles } from "@/features/assistant/panel/composer-files";
 import filesStyles from "@/features/assistant/panel/composer-files.module.css";
 import { filesLine } from "@/features/assistant/panel/files-line";
+import { ModelMenu } from "@/features/assistant/panel/model-menu";
 import type { ComposerFiles as Files } from "@/features/assistant/panel/use-composer-files";
 import { useT } from "@/i18n/i18n-provider";
 
@@ -50,11 +53,13 @@ export function AssistantComposer({
   onValueChange,
 }: AssistantComposerProps) {
   const t = useT();
+  const target = useChatTarget(chat);
 
+  const shown = chatWithTarget(chat, target);
   const line = filesLine(
     files.stored.map((f) => f.kind),
-    chat?.provider_name,
-    chat?.reads_files ?? false,
+    shown?.provider_name,
+    shown?.reads_files ?? false,
   );
   const ready = files.stored.length > 0 && !files.uploading;
 
@@ -105,6 +110,7 @@ export function AssistantComposer({
       )}
       <PromptComposerFooter>
         <PromptComposerAttach />
+        <ModelMenu chat={chat} />
         <Text size="xs" tone="muted" className={styles.hint}>
           {t("assistant.composer.hint")}
         </Text>

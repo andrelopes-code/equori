@@ -16,6 +16,7 @@ const chat = {
   provider_name: "Gemini",
   model: "flash-lite",
   notice: "trains",
+  targets: [],
 };
 
 function message(content: string) {
@@ -260,7 +261,11 @@ describe("AssistantPanel", () => {
   it("disables the composer and says when the assistant returns", async () => {
     setup({
       "GET /api/v1/assistant/chat": () =>
-        json(200, { available: false, retry_at: "2026-10-24T00:00:00Z" }),
+        json(200, {
+          available: false,
+          targets: [],
+          retry_at: "2026-10-24T00:00:00Z",
+        }),
     });
     expect(
       await screen.findByText(/^The assistant returns at /),
@@ -456,7 +461,11 @@ describe("AssistantPanel", () => {
       setup({
         "GET /api/v1/assistant/chat": () =>
           calls++ === 0
-            ? json(200, { available: false, retry_at: "2026-10-23T10:01:00Z" })
+            ? json(200, {
+                available: false,
+                targets: [],
+                retry_at: "2026-10-23T10:01:00Z",
+              })
             : json(200, chat),
       });
       const input = await screen.findByPlaceholderText(
@@ -479,7 +488,11 @@ describe("AssistantPanel", () => {
     sessionStorage.setItem("equori.assistant.conversation", "c1");
     setup({
       "GET /api/v1/assistant/chat": () =>
-        json(200, { available: false, retry_at: "2099-01-01T00:00:00Z" }),
+        json(200, {
+          available: false,
+          targets: [],
+          retry_at: "2099-01-01T00:00:00Z",
+        }),
       "GET /api/v1/assistant/conversations/c1": () =>
         json(200, unanswered("failed")),
     });
@@ -519,7 +532,11 @@ describe("AssistantPanel", () => {
       setup({
         "GET /api/v1/assistant/chat": () =>
           calls++ < 2
-            ? json(200, { available: false, retry_at: "2026-10-23T09:59:00Z" })
+            ? json(200, {
+                available: false,
+                targets: [],
+                retry_at: "2026-10-23T09:59:00Z",
+              })
             : json(200, chat),
       });
       const input = await screen.findByPlaceholderText(
@@ -542,7 +559,8 @@ describe("AssistantPanel", () => {
 
   it("links the settings when no provider serves the assistant (U14, P8)", async () => {
     const { navigate, onOpenChange } = setup({
-      "GET /api/v1/assistant/chat": () => json(200, { available: false }),
+      "GET /api/v1/assistant/chat": () =>
+        json(200, { available: false, targets: [] }),
     });
     await userEvent.click(
       await screen.findByRole("button", {
@@ -764,7 +782,8 @@ describe("AssistantPanel", () => {
 
   it("links the MCP settings when no provider serves the assistant (P8)", async () => {
     const { navigate, onOpenChange } = setup({
-      "GET /api/v1/assistant/chat": () => json(200, { available: false }),
+      "GET /api/v1/assistant/chat": () =>
+        json(200, { available: false, targets: [] }),
     });
     await userEvent.click(
       await screen.findByRole("button", {
@@ -916,7 +935,11 @@ describe("AssistantPanel", () => {
         json(
           200,
           refused
-            ? { available: false, retry_at: "2026-10-24T00:00:00Z" }
+            ? {
+                available: false,
+                targets: [],
+                retry_at: "2026-10-24T00:00:00Z",
+              }
             : chat,
         ),
       "POST /api/v1/assistant/turns": () => {

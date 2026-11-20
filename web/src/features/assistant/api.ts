@@ -4,6 +4,7 @@ import type { Client } from "openapi-fetch";
 import { useApi } from "@/api/api-context";
 import { parseProblem, ProblemError, unwrap } from "@/api/problem";
 import type { components, paths } from "@/api/schema.gen";
+import type { TargetChoice } from "@/features/assistant/model/chat-target";
 import { parseEvents } from "@/features/assistant/model/sse";
 import type { AssistantEvent } from "@/features/assistant/model/sse";
 
@@ -153,6 +154,7 @@ export async function sendMessage(
     text: string;
     fileIds?: string[];
     page?: string;
+    target?: TargetChoice;
   },
   onEvent: (e: AssistantEvent) => void,
   signal: AbortSignal,
@@ -163,6 +165,7 @@ export async function sendMessage(
     text: input.text,
     file_ids: input.fileIds,
     page: input.page,
+    target: input.target,
   });
   const response = await fetchImpl("/api/v1/assistant/turns", {
     method: "POST",

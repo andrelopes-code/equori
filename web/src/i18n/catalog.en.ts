@@ -451,6 +451,8 @@ export const catalogEn = {
   "problem.secret_key_missing":
     "The server has no EQUORI_SECRET_KEY, so it cannot store keys.",
   "problem.capability_missing": "A model lacks a capability the feature needs.",
+  "problem.assistant_target_unknown":
+    "The chosen model is no longer in the assistant's chain. Choose another model.",
   "problem.provider_not_found": "The provider no longer exists.",
   "problem.use_not_found": "The feature does not exist.",
   "problem.provider_unauthorized": "The provider rejected the key.",
@@ -1803,6 +1805,10 @@ export const catalogEn = {
   "assistant.welcome.body":
     "Ask about balances, spending and statements, have a transaction recorded or fixed, or ask where something is in the app. Nothing changes until you confirm it.",
   "assistant.composer.hint": "Enter sends · Shift+Enter adds a line",
+  "assistant.model.title": "Model of the next messages",
+  "assistant.model.label": "Model: {model}",
+  "assistant.model.automatic": "Automatic",
+  "assistant.model.automaticHint": "Follows Settings",
   "assistant.files.group": "Files of the message",
   "assistant.files.sent": "Files sent",
   "assistant.files.retry": "Send {name} again",

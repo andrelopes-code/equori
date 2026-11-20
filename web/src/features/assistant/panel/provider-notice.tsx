@@ -6,14 +6,18 @@ import {
 } from "@slotted/react/alert";
 
 import type { components } from "@/api/schema.gen";
+import { chatWithTarget } from "@/features/assistant/model/chat-target";
+import { useChatTarget } from "@/features/assistant/model/use-chat-target";
 import { useT } from "@/i18n/i18n-provider";
 
 type Chat = components["schemas"]["AssistantChat"];
 
 // Shown before the first message of a conversation: where the content goes, what that host does
-// with it.
-export function ProviderNotice({ chat }: { chat: Chat }) {
+// with it. A chosen target names its own provider and notice (MC7).
+export function ProviderNotice({ chat: offered }: { chat: Chat }) {
   const t = useT();
+  const chat = chatWithTarget(offered, useChatTarget(offered));
+
   if (chat.provider_name === undefined || chat.model === undefined) return null;
   const sentence =
     chat.notice === "trains"

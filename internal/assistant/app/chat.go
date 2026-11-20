@@ -13,6 +13,14 @@ type ChatState struct {
 	// ReadsFiles tells that a model of the chat reads a pdf, image or text file (F5, FU4).
 	ReadsFiles bool
 	RetryAt    time.Time
+	// Targets are the targets a turn may choose, in chain order (model choice MC1).
+	Targets []ChatTarget
+}
+
+// ChatTarget is one target of the chat with the notice of its preset.
+type ChatTarget struct {
+	ProviderID, ProviderName, Model, Notice string
+	ReadsFiles                              bool
 }
 
 func (s *Service) ChatState(ctx context.Context, booksID int64, use Use) (ChatState, error) {
@@ -47,8 +55,24 @@ func (s *Service) ChatState(ctx context.Context, booksID int64, use Use) (ChatSt
 			Model:        t.Model,
 			Notice:       string(notice(t.Preset)),
 			ReadsFiles:   reads,
+			Targets:      chatTargets(targets),
 		}, nil
 	}
 
 	return ChatState{}, nil
+}
+
+func chatTargets(targets []Target) []ChatTarget {
+	out := make([]ChatTarget, len(targets))
+	for i, t := range targets {
+		out[i] = ChatTarget{
+			ProviderID:   t.ProviderID,
+			ProviderName: t.ProviderName,
+			Model:        t.Model,
+			Notice:       string(notice(t.Preset)),
+			ReadsFiles:   readsFiles(t),
+		}
+	}
+
+	return out
 }

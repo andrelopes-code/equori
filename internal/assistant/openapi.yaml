@@ -218,7 +218,8 @@ paths:
         The stream ends after answer or error. Problems before the stream: 404 conversation_not_found,
         429 assistant_exhausted with retry_at, 503 assistant_unavailable, 400 invalid_request for text that is
         empty without a file or over 4000 characters after trimming, 404 file_not_found for a file_ids entry
-        that is not an unsent file of the member. An error event carries assistant_exhausted,
+        that is not an unsent file of the member, 422 assistant_target_unknown for a target absent from the
+        targets of getAssistantChat. An error event carries assistant_exhausted,
         assistant_unavailable or assistant_failed.
       requestBody:
         required: true
@@ -238,6 +239,8 @@ paths:
         "401":
           $ref: "#/components/responses/Problem"
         "404":
+          $ref: "#/components/responses/Problem"
+        "422":
           $ref: "#/components/responses/Problem"
         "429":
           $ref: "#/components/responses/Problem"
@@ -763,7 +766,7 @@ schemas:
   AssistantChat:
     type: object
     additionalProperties: false
-    required: [available]
+    required: [available, targets]
     properties:
       available: {type: boolean}
       provider_name: {type: string}
@@ -773,6 +776,31 @@ schemas:
         type: boolean
         description: A model of the chat reads the content of a pdf, image or text file (F5).
       retry_at: {type: string, format: date-time}
+      targets:
+        type: array
+        description: The targets of the chain a turn may choose, in chain order; a target over its daily limit is absent (model choice design, MC1).
+        items:
+          $ref: "#/components/schemas/AssistantChatTarget"
+  AssistantChatTarget:
+    type: object
+    additionalProperties: false
+    required: [provider_id, provider_name, model, notice, reads_files]
+    properties:
+      provider_id: {type: string}
+      provider_name: {type: string}
+      model: {type: string}
+      notice: {type: string, pattern: "^[a-z0-9_]{2,40}$"}
+      reads_files:
+        type: boolean
+        description: The model reads the content of a pdf, image or text file (F5).
+  AssistantTargetChoice:
+    type: object
+    description: The only target a turn calls; without it the turn follows the chain (model choice design, MC2).
+    additionalProperties: false
+    required: [provider_id, model]
+    properties:
+      provider_id: {type: string, minLength: 1, maxLength: 200}
+      model: {type: string, minLength: 1, maxLength: 200}
   AssistantFile:
     type: object
     additionalProperties: false
@@ -801,6 +829,8 @@ schemas:
         items: {type: string, format: uuid}
         description: Unsent files of createAssistantFile the message carries.
       page: {type: string, pattern: "^/[A-Za-z0-9/_$.-]{0,199}$"}
+      target:
+        $ref: "#/components/schemas/AssistantTargetChoice"
   AssistantConversation:
     type: object
     additionalProperties: false

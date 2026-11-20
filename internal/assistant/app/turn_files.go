@@ -117,11 +117,22 @@ func (s *Service) chatReadsFiles(ctx context.Context, booksID int64) (bool, erro
 		return false, nil
 	}
 
-	use.Needs = append(slices.Clone(use.Needs), domain.CapImageInput)
-
 	targets, err := s.candidates(ctx, booksID, true, use)
+	if err != nil {
+		return false, err
+	}
 
-	return len(targets) > 0, err
+	// A chosen target reads files only by its own capabilities (model choice MC2).
+	if targets, err = chosen(ctx, use.ID, targets); err != nil {
+		return false, err
+	}
+
+	return slices.ContainsFunc(targets, readsFiles), nil
+}
+
+// readsFiles tells that the target declares image_input.
+func readsFiles(t Target) bool {
+	return len(domain.Missing([]string{domain.CapImageInput}, t.Capabilities)) == 0
 }
 
 // turnTitle titles a conversation by its first text, or by the name of its first file.

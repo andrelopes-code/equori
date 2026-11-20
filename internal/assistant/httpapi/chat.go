@@ -26,7 +26,17 @@ func (s *Server) getAssistantChat(
 		return AssistantChat{}, err
 	}
 
-	out := AssistantChat{Available: st.Available}
+	out := AssistantChat{Available: st.Available, Targets: []AssistantChatTarget{}}
+	for _, t := range st.Targets {
+		out.Targets = append(out.Targets, AssistantChatTarget{
+			ProviderId:   t.ProviderID,
+			ProviderName: t.ProviderName,
+			Model:        t.Model,
+			Notice:       t.Notice,
+			ReadsFiles:   t.ReadsFiles,
+		})
+	}
+
 	if st.ProviderName != "" {
 		out.ProviderName, out.Model, out.Notice = &st.ProviderName, &st.Model, &st.Notice
 		out.ReadsFiles = &st.ReadsFiles

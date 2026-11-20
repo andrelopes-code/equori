@@ -27,8 +27,8 @@ belongs to `/settings`.
 
 ## Folders
 
-- `panel/`: the panel shell, its aside and drawer layouts, header, composer, welcome and notices.
+- `panel/`: the panel shell, its aside and drawer layouts, header, composer and its model menu, welcome and notices.
 - `conversation/`: the message feed, the conversation list, the pending turn and the turn hook.
 - `message/`: one message: the question, the answer, the copy action and the turn activity.
 - `proposal/`: the proposal card, its changes, actions, state and screen suggestion.
-- `model/`: functions used by two or more folders: `sse`, `mask-amounts`, `catalog-key`.
+- `model/`: functions used by two or more folders: `sse`, `mask-amounts`, `catalog-key`, `chat-target` and its hook.

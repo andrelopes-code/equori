@@ -24,7 +24,12 @@ function assistantFetch(turn?: () => Response) {
     const req = new Request(input, init);
     if (req.url.endsWith("/api/v1/assistant/chat"))
       return Promise.resolve(
-        json(200, { available: true, provider_name: "G", model: "m" }),
+        json(200, {
+          available: true,
+          provider_name: "G",
+          model: "m",
+          targets: [],
+        }),
       );
     if (req.url.endsWith("/api/v1/assistant/turns") && turn !== undefined) {
       posts++;
@@ -228,7 +233,12 @@ describe("desktop column", () => {
       (input: RequestInfo | URL, init?: RequestInit) =>
         new Request(input, init).url.endsWith("/api/v1/assistant/chat")
           ? Promise.resolve(
-              json(200, { available: true, provider_name: "G", model: "m" }),
+              json(200, {
+                available: true,
+                provider_name: "G",
+                model: "m",
+                targets: [],
+              }),
             )
           : routes(input, init),
       { calls: routes.calls },

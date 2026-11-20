@@ -172,6 +172,20 @@ type AssistantChat struct {
 	// ReadsFiles A model of the chat reads the content of a pdf, image or text file (F5).
 	ReadsFiles *bool      `json:"reads_files,omitempty"`
 	RetryAt    *time.Time `json:"retry_at,omitempty"`
+
+	// Targets The targets of the chain a turn may choose, in chain order; a target over its daily limit is absent (model choice design, MC1).
+	Targets []AssistantChatTarget `json:"targets"`
+}
+
+// AssistantChatTarget defines model for AssistantChatTarget.
+type AssistantChatTarget struct {
+	Model        string `json:"model"`
+	Notice       string `json:"notice"`
+	ProviderId   string `json:"provider_id"`
+	ProviderName string `json:"provider_name"`
+
+	// ReadsFiles The model reads the content of a pdf, image or text file (F5).
+	ReadsFiles bool `json:"reads_files"`
 }
 
 // AssistantConversation defines model for AssistantConversation.
@@ -294,6 +308,12 @@ type AssistantRecurrence struct {
 	Interval  int    `json:"interval"`
 }
 
+// AssistantTargetChoice The only target a turn calls; without it the turn follows the chain (model choice design, MC2).
+type AssistantTargetChoice struct {
+	Model      string `json:"model"`
+	ProviderId string `json:"provider_id"`
+}
+
 // AssistantTurnInput defines model for AssistantTurnInput.
 type AssistantTurnInput struct {
 	ConversationId *openapi_types.UUID `json:"conversation_id,omitempty"`
@@ -301,6 +321,9 @@ type AssistantTurnInput struct {
 	// FileIds Unsent files of createAssistantFile the message carries.
 	FileIds *[]openapi_types.UUID `json:"file_ids,omitempty"`
 	Page    *string               `json:"page,omitempty"`
+
+	// Target The only target a turn calls; without it the turn follows the chain (model choice design, MC2).
+	Target *AssistantTargetChoice `json:"target,omitempty"`
 
 	// Text Empty only when file_ids names a file.
 	Text string `json:"text"`

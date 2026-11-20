@@ -21,6 +21,7 @@ const chat = {
   provider_name: "Gemini",
   model: "m",
   reads_files: false,
+  targets: [],
 };
 
 describe("AssistantComposer", () => {

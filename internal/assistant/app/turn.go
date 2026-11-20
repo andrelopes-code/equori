@@ -76,6 +76,7 @@ type TurnInput struct {
 	ConversationID uuid.UUID // Nil starts a conversation
 	Text, Page     string
 	FileIDs        []uuid.UUID // unsent files the message carries (F2)
+	Target         *TargetChoice
 }
 
 func truncateRunes(s string, n int) string {
@@ -94,18 +95,15 @@ func (s *Service) Turn(
 	in TurnInput,
 	ev TurnEvents,
 ) error {
+	ctx = withChoice(ctx, chatUseID, in.Target)
+
 	text, files, parts, err := s.turnMessage(ctx, booksID, memberID, in)
 	if err != nil {
 		return err
 	}
 
 	now := s.now()
-	conv := domain.Conversation{
-		ID:        in.ConversationID,
-		Title:     turnTitle(text, files),
-		CreatedAt: now,
-		UpdatedAt: now,
-	}
+	conv := newConversation(in.ConversationID, turnTitle(text, files), now)
 
 	messages, proposals, err := s.conversationHistory(ctx, booksID, memberID, in.ConversationID)
 	if err != nil {
@@ -144,6 +142,11 @@ func (s *Service) Turn(
 	)
 
 	return s.runTurn(ctx, ev, booksID, memberID, conv.ID, req, now)
+}
+
+// newConversation is the conversation of a turn; a turn that starts one gets its ID when it is stored.
+func newConversation(id uuid.UUID, title string, now time.Time) domain.Conversation {
+	return domain.Conversation{ID: id, Title: title, CreatedAt: now, UpdatedAt: now}
 }
 
 // runTurn runs the agent on req and stores its answer or its failure.

@@ -459,6 +459,8 @@ export const catalogPtBR: Catalog = {
     "O servidor não tem EQUORI_SECRET_KEY e não consegue armazenar chaves.",
   "problem.capability_missing":
     "Um modelo não tem uma capacidade que a função exige.",
+  "problem.assistant_target_unknown":
+    "O modelo escolhido não está mais na cadeia do assistente. Escolha outro modelo.",
   "problem.provider_not_found": "O provedor não existe mais.",
   "problem.use_not_found": "A função não existe.",
   "problem.provider_unauthorized": "O provedor recusou a chave.",
@@ -1813,6 +1815,10 @@ export const catalogPtBR: Catalog = {
   "assistant.welcome.body":
     "Pergunte sobre saldos, gastos e faturas, peça para registrar ou corrigir uma transação, ou pergunte onde fica algo no app. Nada muda sem a sua confirmação.",
   "assistant.composer.hint": "Enter envia · Shift+Enter quebra a linha",
+  "assistant.model.title": "Modelo das próximas mensagens",
+  "assistant.model.label": "Modelo: {model}",
+  "assistant.model.automatic": "Automático",
+  "assistant.model.automaticHint": "Segue Configurações",
   "assistant.files.group": "Arquivos da mensagem",
   "assistant.files.sent": "Arquivos enviados",
   "assistant.files.retry": "Enviar {name} de novo",

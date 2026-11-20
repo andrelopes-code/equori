@@ -92,6 +92,14 @@
     min-inline-size: 0;
   }
 
+  /* A model ID is not shortened by the design: past 12rem it ends in an ellipsis (MC6). */
+  .model {
+    max-inline-size: 12rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   /* A coarse pointer types on a screen keyboard, where Enter and Shift+Enter are not at hand. */
   @media (pointer: coarse) {
     .hint {

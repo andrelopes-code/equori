@@ -5,6 +5,10 @@ import type { components } from "@/api/schema.gen";
 import { assistantKeys, sendMessage } from "@/features/assistant/api";
 import type { AssistantFile } from "@/features/assistant/api";
 import {
+  chosenTarget,
+  readStoredChoice,
+} from "@/features/assistant/model/chat-target";
+import {
   readOpenConversation,
   writeOpenConversation,
 } from "@/features/assistant/conversation/open-conversation";
@@ -15,6 +19,7 @@ import type {
 } from "@/features/assistant/model/sse";
 
 type ConversationDetail = components["schemas"]["AssistantConversationDetail"];
+type Chat = components["schemas"]["AssistantChat"];
 
 export interface AssistantTurn {
   conversationId: string | undefined;
@@ -148,10 +153,23 @@ export function useAssistantTurn(page: string): AssistantTurn {
           setError(event.problem);
         }
       };
+      // The choice of the menu, read at send so that a retry takes the current one (MC5).
+      const target = chosenTarget(
+        queryClient.getQueryData<Chat>(assistantKeys.chat()),
+        readStoredChoice(),
+      );
       void sendMessage(
         {
           text,
           page,
+          ...(target === undefined
+            ? {}
+            : {
+                target: {
+                  provider_id: target.provider_id,
+                  model: target.model,
+                },
+              }),
           ...(files.length === 0 ? {} : { fileIds: files.map((f) => f.id) }),
           ...(current.current === undefined
             ? {}
