@@ -628,10 +628,17 @@ type Money struct {
 
 // NetWorth defines model for NetWorth.
 type NetWorth struct {
-	Assets      Money          `json:"assets"`
-	Current     *CurrentQuotes `json:"current,omitempty"`
-	Liabilities Money          `json:"liabilities"`
-	Net         Money          `json:"net"`
+	Accounts    []NetWorthAccount `json:"accounts"`
+	Assets      Money             `json:"assets"`
+	Current     *CurrentQuotes    `json:"current,omitempty"`
+	Liabilities Money             `json:"liabilities"`
+	Net         Money             `json:"net"`
+}
+
+// NetWorthAccount defines model for NetWorthAccount.
+type NetWorthAccount struct {
+	AccountId openapi_types.UUID `json:"account_id"`
+	Value     Money              `json:"value"`
 }
 
 // NetWorthDay defines model for NetWorthDay.

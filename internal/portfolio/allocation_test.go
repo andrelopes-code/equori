@@ -193,3 +193,41 @@ func TestS129NetWorth(t *testing.T) {
 		"",
 	)
 }
+
+// S672 (A260, VB1): the net worth values each account with a balance, a liability below zero.
+func TestS672NetWorthAccounts(t *testing.T) {
+	t.Parallel()
+	f, checking := allocationFixture(t)
+	loan := f.h.Account("Loan", "liability", "loan", nil)
+	f.h.Record("2026-10-20", apitest.Posting(checking, 120000), apitest.Posting(loan, -120000))
+	f.h.Dispatch()
+
+	var out struct {
+		Accounts []struct {
+			AccountID string         `json:"account_id"`
+			Value     map[string]any `json:"value"`
+		} `json:"accounts"`
+	}
+	f.h.MustDo(
+		http.MethodGet,
+		"/api/v1/reports/net-worth?date=2026-11-01",
+		nil,
+		http.StatusOK,
+		&out,
+	)
+
+	got := map[string]string{}
+	for _, a := range out.Accounts {
+		got[a.AccountID] = fmt.Sprint(a.Value["amount"], " ", a.Value["currency"])
+	}
+
+	want := map[string]string{
+		checking: "170000 BRL",
+		f.cash:   "40000 BRL",
+		f.mxrf11: "10500 BRL",
+		loan:     "-120000 BRL",
+	}
+	if fmt.Sprint(got) != fmt.Sprint(want) {
+		t.Fatalf("accounts = %v, want %v", got, want)
+	}
+}

@@ -67,7 +67,9 @@ type AllocationReport struct {
 // NetWorthReport is the value of the assets and of the liabilities at a date.
 type NetWorthReport struct {
 	Assets, Liabilities, Net money.Money
-	Current                  *CurrentQuotes
+	// Each account's own balance valued in the report currency, a liability below zero (VB1).
+	Accounts []AccountBalance
+	Current  *CurrentQuotes
 }
 
 // valuedBalance is the balance of an account valued in the report currency.
@@ -267,6 +269,8 @@ func (s *Service) NetWorth(
 		return NetWorthReport{}, err
 	}
 
+	report := NetWorthReport{Current: currentQuotes(pricesOf(balances))}
+
 	var assets, liabilities int64
 	for _, v := range balances {
 		switch v.account.Class {
@@ -274,10 +278,16 @@ func (s *Service) NetWorth(
 			assets += v.value.Amount()
 		case classLiability:
 			liabilities -= v.value.Amount()
+		default:
+			continue
 		}
+
+		report.Accounts = append(
+			report.Accounts,
+			AccountBalance{AccountID: v.balance.AccountID, Amount: v.value},
+		)
 	}
 
-	report := NetWorthReport{Current: currentQuotes(pricesOf(balances))}
 	for _, f := range []struct {
 		to     *money.Money
 		amount int64

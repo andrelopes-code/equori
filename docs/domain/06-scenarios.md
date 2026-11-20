@@ -1301,6 +1301,10 @@ AT10 to AT12, through the HTTP API. S656 with a CDI on every day of 2025 from 20
 
 AT11, R2, through the HTTP API. S656 in a book of Germany: no rate and no inflation comparison; the return of 2025 stays −0.50%.
 
+### S672 The accounts of the net worth
+
+Amendment A260, VB1 (`docs/specs/2026-11-20-valued-balance-sheet-design.md`), through the HTTP API. The book of S129 holds checking 1,700.00, XP cash 400.00, 10 MXRF11 at 10.50 and a loan of 1,200.00. The net worth of 2026-11-01 lists checking 170000 BRL, XP cash 40000 BRL, XP MXRF11 10500 BRL and the loan -120000 BRL. Test in `internal/portfolio/allocation_test.go`.
+
 ### S673 A sync line dated before a reconciled balance
 
 Amendment A261 (`docs/specs/2026-11-20-reconciled-sync-line-design.md`), through the HTTP API. A checking account synced on 2026-11-12 reconciles its balance of 2,834.10. The next sync returns a new line of +4.35 dated 2026-11-05 and a new line of −10.00 dated 2026-11-12: the first waits for review with reason `reconciled` and books nothing, the second is created. The owner creates the first through `POST /external-records/{id}/resolve`. Test `TestS673LineBeforeReconciledBalance` in `internal/ingestion`.

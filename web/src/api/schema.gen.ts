@@ -4408,7 +4408,9 @@ export interface paths {
         };
         /**
          * Assets, liabilities and their difference at a date (investments design 4.3).
-         * @description Liabilities are the balances of the liability accounts as a positive amount, valued like the assets.
+         * @description Liabilities are the balances of the liability accounts as a positive amount, valued like the assets. accounts
+         *     holds each asset and liability account with a non-zero balance at the date, its own balance valued in value_in
+         *     with the sign of the ledger: a liability is below zero (valued balance sheet design, VB1).
          */
         get: operations["getNetWorth"];
         put?: never;
@@ -8629,10 +8631,16 @@ export interface components {
             groups: components["schemas"]["AllocationGroup"][];
             current?: components["schemas"]["CurrentQuotes"];
         };
+        NetWorthAccount: {
+            /** Format: uuid */
+            account_id: string;
+            value: components["schemas"]["Money"];
+        };
         NetWorth: {
             assets: components["schemas"]["Money"];
             liabilities: components["schemas"]["Money"];
             net: components["schemas"]["Money"];
+            accounts: components["schemas"]["NetWorthAccount"][];
             current?: components["schemas"]["CurrentQuotes"];
         };
         NetWorthDay: {

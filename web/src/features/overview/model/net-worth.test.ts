@@ -6,6 +6,7 @@ const worth = (assets: number, liabilities: number) => ({
   assets: { amount: assets, currency: "BRL" },
   liabilities: { amount: liabilities, currency: "BRL" },
   net: { amount: assets - liabilities, currency: "BRL" },
+  accounts: [],
 });
 
 describe("netWorthChange", () => {

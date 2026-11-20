@@ -7464,7 +7464,10 @@ paths:
       operationId: getNetWorth
       x-book-role: read
       summary: Assets, liabilities and their difference at a date (investments design 4.3).
-      description: Liabilities are the balances of the liability accounts as a positive amount, valued like the assets.
+      description: |
+        Liabilities are the balances of the liability accounts as a positive amount, valued like the assets. accounts
+        holds each asset and liability account with a non-zero balance at the date, its own balance valued in value_in
+        with the sign of the ledger: a liability is below zero (valued balance sheet design, VB1).
       parameters:
         - name: date
           in: query
@@ -15314,9 +15317,18 @@ components:
             $ref: "#/components/schemas/AllocationGroup"
         current:
           $ref: "#/components/schemas/CurrentQuotes"
+    NetWorthAccount:
+      type: object
+      required: [account_id, value]
+      properties:
+        account_id:
+          type: string
+          format: uuid
+        value:
+          $ref: "#/components/schemas/Money"
     NetWorth:
       type: object
-      required: [assets, liabilities, net]
+      required: [assets, liabilities, net, accounts]
       properties:
         assets:
           $ref: "#/components/schemas/Money"
@@ -15324,6 +15336,10 @@ components:
           $ref: "#/components/schemas/Money"
         net:
           $ref: "#/components/schemas/Money"
+        accounts:
+          type: array
+          items:
+            $ref: "#/components/schemas/NetWorthAccount"
         current:
           $ref: "#/components/schemas/CurrentQuotes"
     NetWorthDay:

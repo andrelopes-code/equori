@@ -12,6 +12,7 @@ const worth = (assets: number, liabilities: number) => ({
   assets: money(assets),
   liabilities: money(liabilities),
   net: money(assets - liabilities),
+  accounts: [],
 });
 
 describe("monthEnds", () => {

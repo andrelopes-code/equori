@@ -62,10 +62,19 @@ func (s *Server) getNetWorth(
 		return NetWorth{}, err
 	}
 
+	accounts := make([]NetWorthAccount, 0, len(res.Accounts))
+	for _, a := range res.Accounts {
+		accounts = append(
+			accounts,
+			NetWorthAccount{AccountId: a.AccountID, Value: toMoney(a.Amount)},
+		)
+	}
+
 	return NetWorth{
 		Assets:      toMoney(res.Assets),
 		Liabilities: toMoney(res.Liabilities),
 		Net:         toMoney(res.Net),
+		Accounts:    accounts,
 		Current:     toCurrent(res.Current),
 	}, nil
 }
