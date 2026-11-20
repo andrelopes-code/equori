@@ -3,7 +3,9 @@ package portfolio_test
 import (
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
@@ -14,25 +16,49 @@ type attributionOut struct {
 }
 
 type attributionYearOut struct {
-	Year     int                  `json:"year"`
-	From     string               `json:"from"`
-	To       string               `json:"to"`
-	Result   *moneyOut            `json:"result"`
-	PeriodBP *int                 `json:"period_bp"`
-	Other    *moneyOut            `json:"other"`
-	Missing  []string             `json:"missing"`
-	Items    []attributionItemOut `json:"items"`
+	Year      int                    `json:"year"`
+	From      string                 `json:"from"`
+	Since     string                 `json:"since"`
+	To        string                 `json:"to"`
+	Result    *moneyOut              `json:"result"`
+	Capital   *moneyOut              `json:"capital"`
+	ReturnBP  *int                   `json:"return_bp"`
+	Other     *attributionPartOut    `json:"other"`
+	Missing   []string               `json:"missing"`
+	Items     []attributionItemOut   `json:"items"`
+	Rate      *attributionCompareOut `json:"rate"`
+	Inflation *attributionCompareOut `json:"inflation"`
+}
+
+type attributionPartOut struct {
+	Result         moneyOut `json:"result"`
+	WeightBP       int      `json:"weight_bp"`
+	ContributionBP int      `json:"contribution_bp"`
+	ReturnBP       *int     `json:"return_bp"`
 }
 
 type attributionItemOut struct {
-	Instrument string   `json:"instrument"`
-	Result     moneyOut `json:"result"`
-	ReturnBP   *int     `json:"return_bp"`
-	StaleSince *string  `json:"stale_since"`
+	Instrument     string   `json:"instrument"`
+	Result         moneyOut `json:"result"`
+	WeightBP       int      `json:"weight_bp"`
+	ContributionBP int      `json:"contribution_bp"`
+	ReturnBP       *int     `json:"return_bp"`
+	StaleSince     *string  `json:"stale_since"`
 }
 
-// S656 (portfolio attribution AT1 to AT4, AT7): two holdings of 2025 and 2026; each year splits
-// the portfolio's money result into the result of each holding, and the rows add up to it.
+type attributionCompareOut struct {
+	Index       string   `json:"index"`
+	Until       string   `json:"until"`
+	ReturnBP    int      `json:"return_bp"`
+	Result      moneyOut `json:"result"`
+	IndexBP     int      `json:"index_bp"`
+	IndexResult moneyOut `json:"index_result"`
+	RealBP      *int     `json:"real_bp"`
+}
+
+// S656 (portfolio attribution AT1 to AT4, AT7 to AT9): two holdings of 2025 and 2026; each year
+// splits the portfolio's money result into the result of each holding, the weights add up to
+// 100% and the contributions to the portfolio's return.
 // S657 (AT2, AT3): a sale of 2026 withholds R$ 5.00 of tax; the holding's result takes it, so
 // other stays zero.
 func TestS656S657Attribution(t *testing.T) {
@@ -49,30 +75,43 @@ func TestS656S657Attribution(t *testing.T) {
 		t.Fatalf("years = %+v", got.Years)
 	}
 
-	// 2025: MXRF11 1,100.00 − 1,000.00 + 50.00 of dividend = 150.00 on 1,000.00 × 355/365;
-	// PETR4 1,800.00 − 2,000.00 = −200.00 on 2,000.00 × 355/365. The portfolio: 9,950.00 −
-	// 10,000.00 of contribution = −50.00.
+	// 2025 is measured from 2025-01-02, the day the money came (AT13): 364 days from 2025-01-01,
+	// the deposit at work 363 of them, a capital of 10,000.00 × 363/364 = 9,972.53. MXRF11 is
+	// measured from its purchase: 1,100.00 − 1,000.00 + 50.00 = 150.00, its dividend leaving for
+	// the cash on 2025-06-16, 198 days before the end: 150.00 on (1,000.00 × 355 − 50.00 × 198)
+	// ÷ 356 (15.47%); on the capital of the portfolio it weighs (1,000.00 × 355 − 50.00 × 198) ÷
+	// 363 (9.51%) and adds 150.00 ÷ 9,972.53 (1.50 points). PETR4: −200.00, −10.03%, 19.56%,
+	// −2.00 points. The portfolio: −50.00 ÷ 9,972.53 = −0.50%. The cash weighs the rest, 70.93%,
+	// and adds nothing.
 	y := got.Years[0]
-	assertYear(t, y, 2025, "2025-01-01", "2025-12-31", -5000)
-	assertItems(t, y, []wantItem{{"MXRF11", 15000, 1542}, {"PETR4", -20000, -1028}})
+	assertYear(t, y, wantYear{2025, "2025-01-01", "2025-12-31", -5000, 997253, -50, 7093})
+	assertItems(t, y, []wantItem{
+		{"MXRF11", 15000, 1547, 951, 150},
+		{"PETR4", -20000, -1003, 1956, -200},
+	})
 
-	// 2026 to 2026-11-01 (305 days): MXRF11 1,200.00 − 1,100.00 = 100.00 on 1,100.00; PETR4
-	// sells 50 at 22.00 for 1,095.00 after the tax and ends at 1,050.00: 1,050.00 + 1,095.00 −
-	// 1,800.00 = 345.00 on 1,800.00 − 1,095.00 × 244/305.
+	if y.Since != "2025-01-02" {
+		t.Fatalf("since = %q", y.Since)
+	}
+
+	// 2026 to 2026-11-01 (305 days): a capital of 9,950.00. MXRF11 1,200.00 − 1,100.00 = 100.00 on
+	// 1,100.00; PETR4 sells 50 at 22.00 for 1,095.00 after the tax and ends at 1,050.00: 1,050.00
+	// + 1,095.00 − 1,800.00 = 345.00 on 1,800.00 − 1,095.00 × 244/305 = 924.00. The portfolio:
+	// 445.00 ÷ 9,950.00 = 4.47%.
 	y = got.Years[1]
-	assertYear(t, y, 2026, "2026-01-01", "2026-11-01", 44500)
-	assertItems(t, y, []wantItem{{"PETR4", 34500, 3734}, {"MXRF11", 10000, 909}})
+	assertYear(t, y, wantYear{2026, "2026-01-01", "2026-11-01", 44500, 995000, 447, 7966})
+	assertItems(t, y, []wantItem{
+		{"PETR4", 34500, 3734, 929, 347},
+		{"MXRF11", 10000, 909, 1105, 100},
+	})
 
-	for _, y := range got.Years {
-		ret := f.periodBP(t, y.From, y.To)
-		if y.PeriodBP == nil || *y.PeriodBP != ret {
-			t.Fatalf("%d period_bp = %v, the return report says %d", y.Year, y.PeriodBP, ret)
-		}
+	if y.Rate != nil || y.Inflation != nil {
+		t.Fatalf("comparisons without rates = %+v, %+v", y.Rate, y.Inflation)
 	}
 }
 
 // S658 (AT5): PETR4 holds the price of 2025-06-30 at the end of 2025; its row states the date
-// and has no rate, and its result stays in the sum.
+// and has no rate, and its result, weight and contribution stay in the sums.
 func TestS658AttributionStalePrice(t *testing.T) {
 	t.Parallel()
 
@@ -81,8 +120,11 @@ func TestS658AttributionStalePrice(t *testing.T) {
 
 	y := f.attribution(t).Years[0]
 
-	assertYear(t, y, 2025, "2025-01-01", "2025-12-31", -5000)
-	assertItems(t, y, []wantItem{{"MXRF11", 15000, 1542}, {"PETR4", -20000, 0}})
+	assertYear(t, y, wantYear{2025, "2025-01-01", "2025-12-31", -5000, 997253, -50, 7093})
+	assertItems(t, y, []wantItem{
+		{"MXRF11", 15000, 1547, 951, 150},
+		{"PETR4", -20000, 0, 1956, -200},
+	})
 
 	if s := y.Items[1].StaleSince; s == nil || *s != "2025-06-30" {
 		t.Fatalf("stale_since = %v", s)
@@ -103,7 +145,7 @@ func TestS659AttributionMissingPrice(t *testing.T) {
 	y := f.attribution(t).Years[0]
 
 	if y.Year != 2025 || len(y.Missing) != 1 || y.Missing[0] != "PETR4" || y.Result != nil ||
-		y.Other != nil || y.PeriodBP != nil || len(y.Items) != 0 {
+		y.Other != nil || y.ReturnBP != nil || len(y.Items) != 0 {
 		t.Fatalf("year = %+v", y)
 	}
 
@@ -122,10 +164,130 @@ func TestS659AttributionMissingPrice(t *testing.T) {
 	}
 }
 
+// S670 (AT10 to AT12): a CDI on every day of 2025 from 2025-01-02, zero but for 0.1% on three
+// days, the last 2025-12-31, and an IPCA of 0.31% in December only. The 10,000.00 of 2025-01-02
+// would have earned 30.03 in the CDI and 31.00 in the IPCA, on the capital of 9,972.53: 0.30%
+// and 0.31%. The portfolio lost 50.00, so its real return is (9,972.53 − 50.00) ÷ (9,972.53 +
+// 31.00) − 1 = −0.81%. A CDI that starts in June, 151 days after the money came, would read the
+// days before it as no growth: the comparison is then absent (AT11).
+func TestS670AttributionComparisons(t *testing.T) {
+	t.Parallel()
+
+	// The index feeds are enabled so their stored rates are read; their source answers nothing.
+	silent := httptest.NewServer(http.NotFoundHandler())
+	t.Cleanup(silent.Close)
+
+	urls := map[string]string{"br_cdi": silent.URL, "br_ipca": silent.URL}
+	f := attributionBook(t, newFixture(t, apitest.IndexFeeds([]string{"br_cdi", "br_ipca"}, urls)))
+
+	late := attributionBook(t, newFixture(t, apitest.IndexFeeds([]string{"br_cdi"}, urls)))
+	late.indexRate(t, "cdi", "2025-06-02", "0.001")
+
+	if y := late.attribution(t).Years[0]; y.Rate != nil {
+		t.Fatalf("rate over a hole = %+v", y.Rate)
+	}
+
+	for d := day("2025-01-02"); !d.After(day("2025-12-31")); d = d.AddDate(0, 0, 1) {
+		rate := "0"
+
+		switch d.Format(time.DateOnly) {
+		case "2025-06-02", "2025-06-03", "2025-12-31":
+			rate = "0.001"
+		}
+
+		f.indexRate(t, "cdi", d.Format(time.DateOnly), rate)
+	}
+
+	for m := 1; m <= 12; m++ {
+		rate := "0"
+		if m == 12 {
+			rate = "0.0031"
+		}
+
+		f.indexRate(t, "ipca", fmt.Sprintf("2025-%02d-01", m), rate)
+	}
+
+	y := f.attribution(t).Years[0]
+
+	if c := y.Rate; c == nil || c.Index != "cdi" || c.Until != "2025-12-31" ||
+		c.ReturnBP != -50 || c.Result.Amount != -5000 || c.IndexBP != 30 ||
+		c.IndexResult.Amount != 3003 || c.RealBP != nil {
+		t.Fatalf("rate = %+v", c)
+	}
+
+	if c := y.Inflation; c == nil || c.Index != "ipca" || c.Until != "2025-12-31" ||
+		c.ReturnBP != -50 || c.IndexBP != 31 || c.IndexResult.Amount != 3100 ||
+		c.RealBP == nil || *c.RealBP != -81 {
+		t.Fatalf("inflation = %+v", c)
+	}
+}
+
+// S671 (AT11, R2): a book of a region whose indexes are not of its base currency, or that has
+// none, has no comparison; the rest of the year stands.
+func TestS671AttributionWithoutIndex(t *testing.T) {
+	t.Parallel()
+
+	f := attributionFixture(t)
+	f.indexRate(t, "cdi", "2025-12-31", "0.001")
+	f.moveToRegion(t, "DE")
+
+	y := f.attribution(t).Years[0]
+
+	if y.Rate != nil || y.Inflation != nil || y.ReturnBP == nil || *y.ReturnBP != -50 {
+		t.Fatalf("year outside Brazil = %+v", y)
+	}
+}
+
+// S656 through the tool: the view attribution returns the same years.
+func TestGetPortfolioToolAttribution(t *testing.T) {
+	t.Parallel()
+
+	f := attributionFixture(t)
+	f.h.Dispatch()
+
+	var got struct {
+		Years []struct {
+			Year     int        `json:"year"`
+			Result   tool.Money `json:"result"`
+			ReturnBP int        `json:"return_bp"`
+			Items    []struct {
+				Instrument     string     `json:"instrument"`
+				Result         tool.Money `json:"result"`
+				WeightBP       int        `json:"weight_bp"`
+				ContributionBP int        `json:"contribution_bp"`
+				ReturnBP       int        `json:"return_bp"`
+			} `json:"items"`
+		} `json:"years"`
+	}
+	toolOutput(t, f.h, "get_portfolio", map[string]any{"view": "attribution"}, &got)
+
+	if len(got.Years) != 2 || got.Years[0].Result.Amount != "-50.00" ||
+		got.Years[0].ReturnBP != -50 || len(got.Years[0].Items) != 2 {
+		t.Fatalf("attribution = %+v", got)
+	}
+
+	first := got.Years[0].Items[0]
+	if first.Instrument != "MXRF11" || first.Result.Amount != "150.00" || first.ReturnBP != 1547 ||
+		first.WeightBP != 951 || first.ContributionBP != 150 {
+		t.Fatalf("first item = %+v", first)
+	}
+}
+
+type wantYear struct {
+	year          int
+	from, to      string
+	result        int64
+	capital       int64
+	returnBP      int
+	otherWeightBP int
+}
+
 type wantItem struct {
-	instrument string
-	result     int64
-	returnBP   int
+	instrument     string
+	result         int64
+	returnBP       int
+	weightBP       int
+	contributionBP int
 }
 
 // attributionFixture deposits 10,000.00 on 2025-01-02, buys 100 MXRF11 at 10.00 and 100 PETR4
@@ -135,7 +297,12 @@ type wantItem struct {
 func attributionFixture(t *testing.T, skip ...string) fixture {
 	t.Helper()
 
-	f := newFixture(t)
+	return attributionBook(t, newFixture(t), skip...)
+}
+
+func attributionBook(t *testing.T, f fixture, skip ...string) fixture {
+	t.Helper()
+
 	checking := f.h.Account("Checking", "asset", "checking", nil)
 	f.h.Record("2025-01-02", apitest.Posting(checking, -1000000), apitest.Posting(f.cash, 1000000))
 	f.trade(t, "buy", "2025-01-10", 100, "10.00", 0)
@@ -181,6 +348,20 @@ func (f fixture) datedPrice(t *testing.T, code, date, value string) {
 	}, http.StatusCreated, nil)
 }
 
+func (f fixture) indexRate(t *testing.T, index, date, rate string) {
+	t.Helper()
+
+	if _, err := f.h.Pool.Exec(
+		t.Context(),
+		`INSERT INTO marketdata_index_rate (index_id, date, rate, source) VALUES ($1, $2, $3, 'test')`,
+		index,
+		date,
+		rate,
+	); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func (f fixture) attribution(t *testing.T) attributionOut {
 	t.Helper()
 	f.h.Dispatch()
@@ -191,30 +372,15 @@ func (f fixture) attribution(t *testing.T) attributionOut {
 	return out
 }
 
-func (f fixture) periodBP(t *testing.T, from, to string) int {
+func assertYear(t *testing.T, y attributionYearOut, w wantYear) {
 	t.Helper()
 
-	var out struct {
-		PeriodBP int `json:"period_bp"`
-	}
-	f.h.MustDo(
-		http.MethodGet,
-		fmt.Sprintf("/api/v1/reports/return?from=%s&to=%s", from, to),
-		nil,
-		http.StatusOK,
-		&out,
-	)
-
-	return out.PeriodBP
-}
-
-func assertYear(t *testing.T, y attributionYearOut, year int, from, to string, result int64) {
-	t.Helper()
-
-	if y.Year != year || y.From != from || y.To != to || y.Result == nil ||
-		y.Result.Amount != result || y.Result.Currency != "BRL" || y.Other == nil ||
-		y.Other.Amount != 0 || len(y.Missing) != 0 {
-		t.Fatalf("year = %+v, want %d %s..%s result %d other 0", y, year, from, to, result)
+	if y.Year != w.year || y.From != w.from || y.To != w.to || y.Result == nil ||
+		y.Result.Amount != w.result || y.Result.Currency != "BRL" || y.Capital == nil ||
+		y.Capital.Amount != w.capital || y.ReturnBP == nil || *y.ReturnBP != w.returnBP ||
+		y.Other == nil || y.Other.Result.Amount != 0 || y.Other.WeightBP != w.otherWeightBP ||
+		y.Other.ContributionBP != 0 || len(y.Missing) != 0 {
+		t.Fatalf("year = %+v (other %+v), want %+v", y, y.Other, w)
 	}
 }
 
@@ -231,36 +397,18 @@ func assertItems(t *testing.T, y attributionYearOut, want []wantItem) {
 
 		rateOK := (w.returnBP == 0 && got.ReturnBP == nil) ||
 			(got.ReturnBP != nil && *got.ReturnBP == w.returnBP)
-		if got.Instrument != w.instrument || got.Result.Amount != w.result || !rateOK {
+		if got.Instrument != w.instrument || got.Result.Amount != w.result || !rateOK ||
+			got.WeightBP != w.weightBP || got.ContributionBP != w.contributionBP {
 			t.Fatalf("%d item %d = %+v (return_bp %v), want %+v", y.Year, i, got, got.ReturnBP, w)
 		}
 	}
 }
 
-// S656 through the tool: the view attribution returns the same years.
-func TestGetPortfolioToolAttribution(t *testing.T) {
-	t.Parallel()
-
-	f := attributionFixture(t)
-	f.h.Dispatch()
-
-	var got struct {
-		Years []struct {
-			Year   int        `json:"year"`
-			Result tool.Money `json:"result"`
-			Items  []struct {
-				Instrument string     `json:"instrument"`
-				Result     tool.Money `json:"result"`
-				ReturnBP   *int       `json:"return_bp"`
-			} `json:"items"`
-		} `json:"years"`
+func day(s string) time.Time {
+	d, err := time.Parse(time.DateOnly, s)
+	if err != nil {
+		panic(err)
 	}
-	toolOutput(t, f.h, "get_portfolio", map[string]any{"view": "attribution"}, &got)
 
-	if len(got.Years) != 2 || got.Years[0].Result.Amount != "-50.00" ||
-		len(got.Years[0].Items) != 2 || got.Years[0].Items[0].Instrument != "MXRF11" ||
-		got.Years[0].Items[0].Result.Amount != "150.00" ||
-		got.Years[0].Items[0].ReturnBP == nil || *got.Years[0].Items[0].ReturnBP != 1542 {
-		t.Fatalf("attribution = %+v", got)
-	}
+	return d
 }

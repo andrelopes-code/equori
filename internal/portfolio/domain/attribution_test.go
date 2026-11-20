@@ -1,6 +1,8 @@
 package domain
 
 import (
+	"math/big"
+	"slices"
 	"testing"
 	"time"
 
@@ -112,8 +114,82 @@ func TestHoldingPeriods(t *testing.T) {
 		flows[c.Date.Format(time.DateOnly)] = c.Amount
 	}
 
-	// The sale takes out 1,100.00 − 3.00 − 5.00; the purchase puts in 210.00.
-	if len(flows) != 2 || flows["2026-03-02"] != -109200 || flows["2026-04-01"] != 21000 {
+	// The sale takes out 1,100.00 − 3.00 − 5.00; the purchase puts in 210.00; the income takes out
+	// 50.00 − 7.50.
+	if len(flows) != 3 || flows["2026-03-02"] != -109200 || flows["2026-04-01"] != 21000 ||
+		flows["2026-06-16"] != -4250 {
 		t.Fatalf("flows = %v", flows)
+	}
+}
+
+func TestIndexedResult(t *testing.T) {
+	t.Parallel()
+
+	onePercent := func(time.Time) float64 { return 1.01 }
+
+	// 1,000.00 grows 1% a day for two days: 1,020.10.
+	if got := IndexedResult(
+		day("2025-12-31"),
+		day("2026-01-02"),
+		100000,
+		nil,
+		onePercent,
+	); got != 2010 {
+		t.Fatalf("no flow = %d, want 2010", got)
+	}
+
+	// 500.00 in on the first day earns from the second: 1,010.00 + 500.00, then 1%: 1,525.10.
+	flows := []CashFlow{{Date: day("2026-01-01"), Amount: 50000}}
+	if got := IndexedResult(
+		day("2025-12-31"),
+		day("2026-01-02"),
+		100000,
+		flows,
+		onePercent,
+	); got != 2510 {
+		t.Fatalf("with a flow = %d, want 2510", got)
+	}
+
+	// A flow after until is left out.
+	late := []CashFlow{{Date: day("2026-01-03"), Amount: 50000}}
+	if got := IndexedResult(
+		day("2025-12-31"),
+		day("2026-01-02"),
+		100000,
+		late,
+		onePercent,
+	); got != 2010 {
+		t.Fatalf("late flow = %d, want 2010", got)
+	}
+}
+
+func TestSharesBP(t *testing.T) {
+	t.Parallel()
+
+	r := func(n, d int64) *big.Rat { return big.NewRat(n, d) }
+
+	tests := []struct {
+		name  string
+		parts []*big.Rat
+		total int
+		want  []int
+	}{
+		// 3333.33 three times: the floors give 9999, the first remainder takes the unit.
+		{
+			"thirds",
+			[]*big.Rat{r(10000, 3), r(10000, 3), r(10000, 3)},
+			10000,
+			[]int{3334, 3333, 3333},
+		},
+		// 150.6 and -20.4 add to 130.2, rounded 130: floors 150 and -21 give 129.
+		{"negative part", []*big.Rat{r(1506, 10), r(-204, 10)}, 130, []int{151, -21}},
+		{"exact", []*big.Rat{r(100, 1), r(-30, 1)}, 70, []int{100, -30}},
+	}
+
+	for _, tc := range tests {
+		got := SharesBP(tc.parts, tc.total)
+		if !slices.Equal(got, tc.want) {
+			t.Fatalf("%s: SharesBP = %v, want %v", tc.name, got, tc.want)
+		}
 	}
 }

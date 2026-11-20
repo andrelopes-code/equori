@@ -188,21 +188,40 @@ export const portfolioEn = {
   "fixedIncome.issuers.mark": "Limit per issuer",
   "portfolio.attribution.title": "What moved the portfolio",
   "portfolio.attribution.note":
-    "How much each holding added to the year's result.",
+    "How much each holding added to the year's return.",
   "portfolio.attribution.help":
-    "The result of a holding in the year is how much its value rose, plus what its sales and income brought, net of fees and taxes. The holdings add up to the portfolio's gain. The percentage is the return on the money that stayed in the holding during the year, counting the date of each purchase and sale.",
-  "portfolio.attribution.year": "Year",
+    "Every return in this section is the gain divided by the average money at work in the period, counting the date of each contribution, purchase and sale. The year starts on the day there was money at work. Weight is the part of that average money that stayed in the holding; contribution is the holding's gain divided by the portfolio's average money, so the contributions add up to the portfolio's return. The CDI and the IPCA are measured as if the same contributions, on the same dates, had earned the index. This return can differ from \"How it performed\", which measures the period without the effect of contributions.",
+  "portfolio.attribution.years": "Return by year",
+  "portfolio.attribution.yearColumn": "{year}: {rate}",
+  "portfolio.attribution.legend.portfolio": "Portfolio",
+  "portfolio.attribution.legend.rate": "Same money at the {index}",
+  "portfolio.attribution.legend.inflation": "{index}",
   "portfolio.attribution.period.partial": "{year} to {day}",
+  "portfolio.attribution.period.since": "{year}, since {since}",
+  "portfolio.attribution.period.between": "{year}, from {since} to {day}",
+  "portfolio.attribution.window": " to {day}",
   "portfolio.attribution.lead.gain":
-    "In {period}, the portfolio gained {amount}.",
+    "In {period}, the portfolio returned {rate} and gained {amount}.",
   "portfolio.attribution.lead.loss":
+    "In {period}, the portfolio returned {rate} and lost {amount}.",
+  "portfolio.attribution.lead.gain.bare":
+    "In {period}, the portfolio gained {amount}.",
+  "portfolio.attribution.lead.loss.bare":
     "In {period}, the portfolio lost {amount}.",
+  "portfolio.attribution.compare.above":
+    "{amount} above the same money at the {index}{window} ({indexRate})",
+  "portfolio.attribution.compare.below":
+    "{amount} below the same money at the {index}{window} ({indexRate})",
+  "portfolio.attribution.compare.equal":
+    "The same as the money at the {index}{window} ({indexRate})",
+  "portfolio.attribution.compare.real":
+    "{index}{window} of {inflation}: real return of {real}",
+  "portfolio.attribution.join.one": "{part}.",
+  "portfolio.attribution.join.two": "{first}; {second}.",
   "portfolio.attribution.gains.one": "1 holding added {amount}",
   "portfolio.attribution.gains.other": "{count} holdings added {amount}",
   "portfolio.attribution.losses.one": "1 took away {amount}",
   "portfolio.attribution.losses.other": "{count} took away {amount}",
-  "portfolio.attribution.tally.both": "{gains}; {losses}.",
-  "portfolio.attribution.tally.one": "{part}.",
   "portfolio.attribution.others.one": "Another holding",
   "portfolio.attribution.others.other": "Other {count} holdings",
   "portfolio.attribution.stale": "No quote since {date}",
@@ -212,7 +231,10 @@ export const portfolioEn = {
     "No quote of {codes} at the year end: the year cannot be measured.",
   "portfolio.attribution.unpriced": "Quotes are missing to measure this year.",
   "portfolio.attribution.col.holding": "Holding",
-  "portfolio.attribution.col.result": "Result in the year",
+  "portfolio.attribution.col.weight": "Weight",
   "portfolio.attribution.col.rate": "Return",
+  "portfolio.attribution.col.contribution": "Contribution",
+  "portfolio.attribution.col.result": "Result",
+  "portfolio.attribution.points": "{value} pp",
   "portfolio.attribution.rows": "Result of each holding in {period}",
 } as const;

@@ -9,11 +9,13 @@
     gap: var(--slotted-space-1);
   }
 
-  /* Instrument, bar, result and rate: the text columns size to their widest cell, so every value
-     ends on one vertical line. */
+  /* Instrument, bar, weight, rate, contribution and result: the text columns size to their widest
+     cell, so every value ends on one vertical line. */
   .rows {
     display: grid;
-    grid-template-columns: max-content minmax(8rem, 1fr) max-content max-content;
+    grid-template-columns:
+      max-content minmax(6rem, 1fr) max-content max-content max-content
+      max-content;
     column-gap: var(--slotted-space-5);
   }
 

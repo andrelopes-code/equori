@@ -5,10 +5,13 @@ import {
   barSpan,
 } from "@/features/portfolio/attribution/attribution-rows";
 
+// A holding whose weight is a tenth of its result and whose contribution is its result.
 function item(instrument: string, amount: number, stale?: string) {
   return {
     instrument,
     result: { amount, currency: "BRL" },
+    weight_bp: Math.abs(amount) / 10,
+    contribution_bp: amount,
     ...(stale === undefined ? { return_bp: amount } : { stale_since: stale }),
   };
 }
@@ -49,7 +52,13 @@ describe("attributionFigures", () => {
       "B3",
       "B4",
     ]);
-    expect(got.rows[5]).toEqual({ key: "others", others: 2, result: 20 });
+    expect(got.rows[5]).toEqual({
+      key: "others",
+      others: 2,
+      result: 20,
+      weightBp: 6,
+      contributionBp: 20,
+    });
     expect(got.rows[6]?.staleSince).toBe("2022-03-08");
     expect(got.gains).toEqual({ count: 7, sum: 3570 });
     expect(got.losses).toEqual({ count: 6, sum: -1520 });

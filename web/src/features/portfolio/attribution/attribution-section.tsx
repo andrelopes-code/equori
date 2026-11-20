@@ -1,26 +1,26 @@
-import { Inline } from "@slotted/react/inline";
-import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { useApi } from "@/api/api-context";
 import { attributionQuery } from "@/features/portfolio/api";
+import styles from "@/features/portfolio/attribution/attribution.module.css";
 import { AttributionPending } from "@/features/portfolio/attribution/attribution-pending";
 import { AttributionYearView } from "@/features/portfolio/attribution/attribution-year-view";
+import { YearColumns } from "@/features/portfolio/attribution/year-columns";
 import { CollapsibleSection } from "@/features/portfolio/collapsible-section/collapsible-section";
 import { useT } from "@/i18n/i18n-provider";
 import { HelpTip } from "@/ui/display/help-tip";
 import { QueryError } from "@/ui/feedback/query-error";
 
-// shortcut: the control offers the last six years only, the width of one header line; a book with
-// more years needs a select for the older ones.
+// shortcut: the columns hold the last six years, the width of the section at 1024 px; a book
+// with more years needs a way to the older ones.
 const YEARS_SHOWN = 6;
 
 const storageKey = "equori.portfolio.attribution.collapsed";
 
-// "Quem puxou a carteira" (docs/specs/2026-11-20-portfolio-attribution-design.md): the result of
-// each holding in the chosen year, the current year first. It minimizes as "Renda fixa" does. A
-// book with no measured year draws nothing.
+// "Quem puxou a carteira" (docs/specs/2026-11-20-portfolio-attribution-design.md): the return of
+// each year as columns, then the share of each holding in the chosen year, the current year
+// first. It minimizes as "Renda fixa" does. A book with no measured year draws nothing.
 export function AttributionSection() {
   const t = useT();
   const api = useApi();
@@ -34,36 +34,16 @@ export function AttributionSection() {
 
   if (report.isSuccess && year === undefined) return null;
 
-  const yearControl = years.length > 1 && year !== undefined && (
-    <SegmentedControl
-      size="sm"
-      aria-label={t("portfolio.attribution.year")}
-      value={String(year.year)}
-      onValueChange={(value) => {
-        setChosen(Number(value));
-      }}
-    >
-      {years.map((y) => (
-        <Segment key={y.year} value={String(y.year)}>
-          {String(y.year)}
-        </Segment>
-      ))}
-    </SegmentedControl>
-  );
-
   return (
     <CollapsibleSection
       title={title}
       description={t("portfolio.attribution.note")}
       storageKey={storageKey}
       actions={
-        <Inline gap={3} align="center" wrap="nowrap">
-          {yearControl}
-          <HelpTip
-            label={t("return.help.about", { term: title })}
-            text={t("portfolio.attribution.help")}
-          />
-        </Inline>
+        <HelpTip
+          label={t("return.help.about", { term: title })}
+          text={t("portfolio.attribution.help")}
+        />
       }
     >
       {report.isPending && <AttributionPending />}
@@ -75,7 +55,19 @@ export function AttributionSection() {
         />
       )}
 
-      {year !== undefined && <AttributionYearView year={year} />}
+      {year !== undefined && (
+        <div className={styles.layout}>
+          {years.length > 1 && (
+            <YearColumns
+              years={years}
+              chosen={year.year}
+              onChoose={setChosen}
+            />
+          )}
+
+          <AttributionYearView year={year} />
+        </div>
+      )}
     </CollapsibleSection>
   );
 }

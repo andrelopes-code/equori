@@ -6,8 +6,9 @@ import { attributionLead } from "@/features/portfolio/attribution/attribution-le
 import { AttributionRow } from "@/features/portfolio/attribution/attribution-row";
 import { attributionFigures } from "@/features/portfolio/attribution/attribution-rows";
 import { AttributionTotals } from "@/features/portfolio/attribution/attribution-totals";
+import { indexName } from "@/features/calculators";
 import { useScale } from "@/features/setup";
-import { formatDayMonthNumeric } from "@/i18n/format";
+import { formatBasisPoints, formatDayMonthNumeric } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { cx } from "@/ui/cx";
@@ -18,8 +19,8 @@ interface AttributionYearViewProps {
   year: AttributionYear;
 }
 
-// The year: what the portfolio made, how many holdings added and took away, one row per holding
-// in the order of AT7, then the rest and the portfolio (AT3).
+// The year: what the portfolio made, how it stands beside the CDI and the IPCA, how many holdings
+// added and took away, one row per holding in the order of AT7, then the rest and the portfolio.
 export function AttributionYearView({ year }: AttributionYearViewProps) {
   const t = useT();
   const [tag] = useAppLocale();
@@ -29,14 +30,12 @@ export function AttributionYearView({ year }: AttributionYearViewProps) {
   const currency = year.result?.currency ?? "";
   const digits = scale?.(currency) ?? 0;
   const figures = attributionFigures(year.items ?? []);
-  const text = attributionLead(
-    year,
-    figures.gains,
-    figures.losses,
-    t,
-    (amount) => fmt.money({ amount, currency }, digits),
-    (iso) => formatDayMonthNumeric(iso, tag),
-  );
+  const text = attributionLead(year, figures.gains, figures.losses, t, {
+    money: (amount) => fmt.money({ amount, currency }, digits),
+    percent: (bp) => formatBasisPoints(bp, tag),
+    dayMonth: (iso) => formatDayMonthNumeric(iso, tag),
+    indexName,
+  });
 
   if (year.missing !== undefined) {
     return (
@@ -54,6 +53,7 @@ export function AttributionYearView({ year }: AttributionYearViewProps) {
     <div className={styles.layout}>
       <div className={styles.lead}>
         <Text weight="semibold">{text.lead}</Text>
+        {text.compare !== undefined && <Text size="sm">{text.compare}</Text>}
         {text.tally !== undefined && (
           <Text size="sm" tone="muted">
             {text.tally}
@@ -72,10 +72,16 @@ export function AttributionYearView({ year }: AttributionYearViewProps) {
           </Text>
           <span />
           <Text size="xs" tone="muted" className={styles.end}>
-            {t("portfolio.attribution.col.result")}
+            {t("portfolio.attribution.col.weight")}
           </Text>
           <Text size="xs" tone="muted" className={styles.end}>
             {t("portfolio.attribution.col.rate")}
+          </Text>
+          <Text size="xs" tone="muted" className={styles.end}>
+            {t("portfolio.attribution.col.contribution")}
+          </Text>
+          <Text size="xs" tone="muted" className={styles.end}>
+            {t("portfolio.attribution.col.result")}
           </Text>
         </div>
 

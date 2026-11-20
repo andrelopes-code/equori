@@ -28,7 +28,7 @@ func (s *Server) getAttribution(
 }
 
 func toAttributionYear(y app.AttributionYear) AttributionYear {
-	out := AttributionYear{Year: y.Year, From: date(y.From), To: date(y.To), PeriodBp: y.PeriodBP}
+	out := AttributionYear{Year: y.Year, From: date(y.From), To: date(y.To)}
 
 	if y.Missing != nil {
 		missing := make([]string, len(y.Missing))
@@ -41,22 +41,56 @@ func toAttributionYear(y app.AttributionYear) AttributionYear {
 		return out
 	}
 
-	result, other := toMoney(*y.Result), toMoney(*y.Other)
+	result, capital := toMoney(*y.Result), toMoney(*y.Capital)
+	other := toAttributionPart(*y.Other)
 	items := make([]AttributionItem, len(y.Items))
 
 	for i, it := range y.Items {
+		part := toAttributionPart(it.AttributionPart)
 		items[i] = AttributionItem{
-			Instrument: string(it.Instrument),
-			Result:     toMoney(it.Result),
-			ReturnBp:   it.ReturnBP,
+			Instrument:     string(it.Instrument),
+			Result:         part.Result,
+			WeightBp:       part.WeightBp,
+			ContributionBp: part.ContributionBp,
+			ReturnBp:       part.ReturnBp,
 		}
+
 		if it.StaleSince != nil {
 			d := date(*it.StaleSince)
 			items[i].StaleSince = &d
 		}
 	}
 
-	out.Result, out.Other, out.Items = &result, &other, &items
+	since := date(y.Since)
+	out.Since = &since
+	out.Result, out.Capital, out.ReturnBp = &result, &capital, y.ReturnBP
+	out.Other, out.Items = &other, &items
+	out.Rate, out.Inflation = toAttributionCompare(y.Rate), toAttributionCompare(y.Inflation)
 
 	return out
+}
+
+func toAttributionPart(p app.AttributionPart) AttributionPart {
+	return AttributionPart{
+		Result:         toMoney(p.Result),
+		WeightBp:       p.WeightBP,
+		ContributionBp: p.ContributionBP,
+		ReturnBp:       p.ReturnBP,
+	}
+}
+
+func toAttributionCompare(c *app.AttributionCompare) *AttributionCompare {
+	if c == nil {
+		return nil
+	}
+
+	return &AttributionCompare{
+		Index:       c.Index,
+		Until:       date(c.Until),
+		ReturnBp:    c.ReturnBP,
+		Result:      toMoney(c.Result),
+		IndexBp:     c.IndexBP,
+		IndexResult: toMoney(c.IndexResult),
+		RealBp:      c.RealBP,
+	}
 }

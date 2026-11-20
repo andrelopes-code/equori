@@ -7396,12 +7396,14 @@ paths:
       description: |
         One year per calendar year from the first posting of the brokerage trees to today of the book, oldest
         first; the current year ends today. result is closing - opening - flows of GET /reports/return over the
-        year and period_bp its time-weighted return. The result of an instrument is (market value - cost basis) at
-        the end of the year less the same at the end of the previous year, plus its sales net of fees and taxes
-        less their cost, plus its income net of withholding; other is result less the sum of the items. return_bp
-        is the modified Dietz return of the instrument. An instrument whose price at a year end is more than 14
-        days old carries stale_since and no return_bp. A year with an instrument without price lists it in
-        missing and holds no figure.
+        year. The result of an instrument is (market value - cost basis) at the end of the year less the same at
+        the end of the previous year, plus its sales net of fees and taxes less their cost, plus its income net of
+        withholding; other is result less the sum of the items. Every rate is the modified Dietz return: a result
+        over the average money at work. Weights and contributions share the capital of the year and add up to
+        10000 and to return_bp. rate and inflation set the portfolio beside what the same flows would have earned
+        at the region's daily and monthly index. An instrument whose price at a year end is more than 14 days old
+        carries stale_since and no return_bp. A year with an instrument without price lists it in missing and
+        holds no figure.
       responses:
         "200":
           description: OK.
@@ -15376,34 +15378,88 @@ components:
         to:
           type: string
           format: date
+        since:
+          type: string
+          format: date
+          description: The first day with money at work; from when the year opens with a value (AT13). Present with result.
         missing:
           type: array
-          description: Present when the year could not be valued; the instruments without a price at an end of it.
+          description: Present when the year could not be valued; the instruments without a price at an end of it. The year then has no other figure.
           items:
             type: string
         result:
           $ref: "#/components/schemas/Money"
-        period_bp:
+        capital:
+          description: The average money at work in the year (AT8).
+          allOf:
+            - $ref: "#/components/schemas/Money"
+        return_bp:
           type: integer
+          description: result over capital (modified Dietz); absent when the capital is not positive.
         other:
-          $ref: "#/components/schemas/Money"
+          $ref: "#/components/schemas/AttributionPart"
         items:
           type: array
           items:
             $ref: "#/components/schemas/AttributionItem"
+        rate:
+          $ref: "#/components/schemas/AttributionCompare"
+        inflation:
+          $ref: "#/components/schemas/AttributionCompare"
+    AttributionPart:
+      type: object
+      description: The rest of the year that no instrument owns (cash, fees, exchange).
+      required: [result, weight_bp, contribution_bp]
+      properties:
+        result:
+          $ref: "#/components/schemas/Money"
+        weight_bp:
+          type: integer
+        contribution_bp:
+          type: integer
+        return_bp:
+          type: integer
     AttributionItem:
       type: object
-      required: [instrument, result]
+      required: [instrument, result, weight_bp, contribution_bp]
       properties:
         instrument:
           type: string
         result:
           $ref: "#/components/schemas/Money"
+        weight_bp:
+          type: integer
+          description: Capital of the instrument over the capital of the year; the weights add up to 10000.
+        contribution_bp:
+          type: integer
+          description: Result of the instrument over the capital of the year; the contributions add up to return_bp of the year.
         return_bp:
           type: integer
         stale_since:
           type: string
           format: date
+    AttributionCompare:
+      type: object
+      description: The portfolio beside the same money at an index over [from, until], on one capital (AT10).
+      required: [index, until, return_bp, result, index_bp, index_result]
+      properties:
+        index:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
+        until:
+          type: string
+          format: date
+        return_bp:
+          type: integer
+        result:
+          $ref: "#/components/schemas/Money"
+        index_bp:
+          type: integer
+        index_result:
+          $ref: "#/components/schemas/Money"
+        real_bp:
+          type: integer
+          description: For inflation, (1 + return) / (1 + index) - 1 (AT12).
     ReturnReport:
       type: object
       required: [annual_bp, flows, opening, closing, profile]

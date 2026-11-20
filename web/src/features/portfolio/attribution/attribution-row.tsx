@@ -1,6 +1,7 @@
 import { Text } from "@slotted/react/typography";
 
 import styles from "@/features/portfolio/attribution/attribution.module.css";
+import { pointsText } from "@/features/portfolio/attribution/attribution-points";
 import {
   barSpan,
   type AttributionRow as Row,
@@ -18,8 +19,9 @@ interface AttributionRowProps {
   scale: number;
 }
 
-// One holding, or the sum of the others: name, a bar on the axis centred on zero (none for the
-// others), the result and the rate. A stale holding writes the date of its quote where the bar and the rate stand (AT5).
+// One holding, or the sum of the others: name, a bar of its contribution on an axis centred on
+// zero (none for the others), weight, rate, contribution and result. A stale holding writes the
+// date of its quote where the bar stands and has no rate (AT5).
 export function AttributionRow({
   row,
   low,
@@ -31,7 +33,7 @@ export function AttributionRow({
   const [tag] = useAppLocale();
   const fmt = useMoneyFormat();
 
-  const span = barSpan(low, high, row.result);
+  const span = barSpan(low, high, row.contributionBp);
   const name =
     row.instrument ??
     t(
@@ -40,7 +42,7 @@ export function AttributionRow({
         : "portfolio.attribution.others.other",
       { count: String(row.others ?? 0) },
     );
-  const tone = row.result < 0 ? styles.loss : styles.gain;
+  const tone = row.contributionBp < 0 ? styles.loss : styles.gain;
   const bar = row.staleSince === undefined && row.others === undefined;
 
   return (
@@ -52,6 +54,8 @@ export function AttributionRow({
         {name}
       </Text>
 
+      {row.others !== undefined && <span />}
+
       {row.staleSince !== undefined && (
         <Text size="sm" tone="warning" className={styles.stale}>
           {t("portfolio.attribution.stale", {
@@ -59,8 +63,6 @@ export function AttributionRow({
           })}
         </Text>
       )}
-
-      {row.others !== undefined && <span />}
 
       {bar && (
         <div className={styles.track} aria-hidden="true">
@@ -78,12 +80,20 @@ export function AttributionRow({
         </div>
       )}
 
-      <Text size="sm" className={styles.end}>
-        {fmt.signed({ amount: row.result, currency }, scale)}
+      <Text size="sm" tone="muted" className={styles.end}>
+        {formatBasisPoints(row.weightBp, tag)}
       </Text>
 
       <Text size="sm" tone="muted" className={styles.end}>
         {row.returnBp === undefined ? "" : formatBasisPoints(row.returnBp, tag)}
+      </Text>
+
+      <Text size="sm" className={styles.end}>
+        {pointsText(row.contributionBp, tag, t)}
+      </Text>
+
+      <Text size="sm" className={styles.end}>
+        {fmt.signed({ amount: row.result, currency }, scale)}
       </Text>
     </div>
   );

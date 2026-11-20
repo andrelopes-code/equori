@@ -59,9 +59,18 @@ func HoldingPeriods(f Facts, start, end time.Time) []HoldingPeriod {
 		sales[t.AccountID][t.Date] += net
 	}
 
+	// Net income leaves the holding for the cash on its date (AT4): a flow out, so the cash keeps
+	// the capital it adds.
 	for _, in := range f.Incomes {
 		if i, ok := index[in.AccountID]; ok && within(in.Date, start, end) {
-			out[i].Income += in.Gross - in.Withheld
+			net := in.Gross - in.Withheld
+			out[i].Income += net
+
+			if sales[in.AccountID] == nil {
+				sales[in.AccountID] = map[time.Time]int64{}
+			}
+
+			sales[in.AccountID][in.Date] += net
 		}
 	}
 
@@ -70,14 +79,15 @@ func HoldingPeriods(f Facts, start, end time.Time) []HoldingPeriod {
 	return out
 }
 
-// addPostings sets the holding at both ends and the daily flows: the cost a day adds less the net
-// result of the day's sales, so a purchase puts in gross + fees and a sale takes out its proceeds
-// net of fees and taxes.
+// addPostings sets the holding at both ends and the daily flows: the cost a day adds less the money
+// the day takes out beyond cost (outs: the net result of its sales and its net income), so a
+// purchase puts in gross + fees, a sale takes out its proceeds net of fees and taxes and an
+// income takes out what it paid.
 func addPostings(
 	out []HoldingPeriod,
 	index map[uuid.UUID]int,
 	postings []Posting,
-	sales map[uuid.UUID]map[time.Time]int64,
+	outs map[uuid.UUID]map[time.Time]int64,
 	start, end time.Time,
 ) {
 	days := map[uuid.UUID]map[time.Time]int64{}
@@ -105,7 +115,7 @@ func addPostings(
 		days[p.AccountID][p.Date] += p.Weight
 	}
 
-	for id, byDay := range sales {
+	for id, byDay := range outs {
 		for day, net := range byDay {
 			if days[id] == nil {
 				days[id] = map[time.Time]int64{}
@@ -131,28 +141,43 @@ func addPostings(
 // to even (AT4): result ÷ (startValue + Σ wᵢ × Fᵢ), wᵢ = (end − dateᵢ) ÷ (end − start) in days.
 // ok is false when the denominator is not positive or the period is empty.
 func DietzBP(start, end time.Time, startValue, result int64, flows []CashFlow) (bp int, ok bool) {
+	return RatioBP(result, Capital(start, end, startValue, flows))
+}
+
+// Capital is the money at work over (start, end] in minor units times days: startValue × T +
+// Σ Fᵢ × (end − dateᵢ), T the days of the period. Divided by T it is the average capital, the
+// denominator of the modified Dietz return (AT4, AT8).
+func Capital(start, end time.Time, startValue int64, flows []CashFlow) DayCapital {
 	days := dayCount(start, end)
 	if days <= 0 {
-		return 0, false
+		return DayCapital{Sum: big.NewInt(0)}
 	}
 
-	total := big.NewInt(0)
-	weighted := new(big.Int).Mul(big.NewInt(startValue), big.NewInt(days))
-
+	sum := new(big.Int).Mul(big.NewInt(startValue), big.NewInt(days))
 	for _, f := range flows {
-		w := new(big.Int).Mul(big.NewInt(f.Amount), big.NewInt(dayCount(f.Date, end)))
-		weighted.Add(weighted, w)
+		sum.Add(sum, new(big.Int).Mul(big.NewInt(f.Amount), big.NewInt(dayCount(f.Date, end))))
 	}
 
-	if weighted.Sign() <= 0 {
+	return DayCapital{Sum: sum, Days: days}
+}
+
+// DayCapital is a capital times days and the days of its period.
+type DayCapital struct {
+	Sum  *big.Int
+	Days int64
+}
+
+// RatioBP is result ÷ (capital ÷ days) in basis points, rounded half to even; ok is false when
+// the capital is not positive.
+func RatioBP(result int64, c DayCapital) (bp int, ok bool) {
+	if c.Days <= 0 || c.Sum.Sign() <= 0 {
 		return 0, false
 	}
 
-	// result × days × 10000 ÷ weighted.
-	total.Mul(big.NewInt(result), big.NewInt(days))
-	total.Mul(total, big.NewInt(10000))
+	num := new(big.Int).Mul(big.NewInt(result), big.NewInt(c.Days))
+	num.Mul(num, big.NewInt(10000))
 
-	return int(halfEven(new(big.Rat).SetFrac(total, weighted))), true
+	return int(halfEven(new(big.Rat).SetFrac(num, c.Sum))), true
 }
 
 func within(d, start, end time.Time) bool { return d.After(start) && !d.After(end) }

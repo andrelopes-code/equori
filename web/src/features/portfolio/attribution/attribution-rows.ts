@@ -12,6 +12,8 @@ export interface AttributionRow {
   // How many instruments the row of the others adds.
   others?: number;
   result: number;
+  weightBp: number;
+  contributionBp: number;
   returnBp?: number | undefined;
   staleSince?: string | undefined;
 }
@@ -25,13 +27,14 @@ export interface AttributionFigures {
   rows: AttributionRow[];
   gains: AttributionTally;
   losses: AttributionTally;
-  // The ends of the bar axis, in minor units; low ≤ 0 ≤ high.
+  // The ends of the bar axis, in basis points of contribution; low ≤ 0 ≤ high.
   low: number;
   high: number;
 }
 
 // AT7 on screen: the largest and the smallest results one by one, a stale row always on its own
-// (AT5 is written, never hidden in a sum), and the rest as one row where they stand in the ranking.
+// (AT5 is written, never hidden in a sum), and the rest as one row where they stand in the
+// ranking, with the sums of their weights, contributions and results (AT9 keeps the sums exact).
 export function attributionFigures(
   items: readonly AttributionItem[],
 ): AttributionFigures {
@@ -54,25 +57,33 @@ export function attributionFigures(
     }
 
     if (others === undefined) {
-      others = { key: "others", others: 0, result: 0 };
+      others = {
+        key: "others",
+        others: 0,
+        result: 0,
+        weightBp: 0,
+        contributionBp: 0,
+      };
       rows.push(others);
     }
 
     others.others = (others.others ?? 0) + 1;
     others.result += item.result.amount;
+    others.weightBp += item.weight_bp;
+    others.contributionBp += item.contribution_bp;
   });
 
   // The row of the others is a sum of many holdings: it has no bar and leaves the axis to them.
-  const results = rows
+  const points = rows
     .filter((r) => r.others === undefined)
-    .map((r) => r.result);
+    .map((r) => r.contributionBp);
 
   return {
     rows,
     gains: tally(items, (amount) => amount > 0),
     losses: tally(items, (amount) => amount < 0),
-    low: Math.min(0, ...results),
-    high: Math.max(0, ...results),
+    low: Math.min(0, ...points),
+    high: Math.max(0, ...points),
   };
 }
 
@@ -81,6 +92,8 @@ function rowOf(item: AttributionItem): AttributionRow {
     key: item.instrument,
     instrument: item.instrument,
     result: item.result.amount,
+    weightBp: item.weight_bp,
+    contributionBp: item.contribution_bp,
     returnBp: item.return_bp,
     staleSince: item.stale_since,
   };

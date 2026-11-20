@@ -1,7 +1,6 @@
 package app
 
 import (
-	"cmp"
 	"context"
 	"errors"
 	"maps"
@@ -20,24 +19,50 @@ const staleDays = 14
 
 // AttributionYear splits the money result of the portfolio in a calendar year into the result of
 // each instrument (docs/specs/2026-11-20-portfolio-attribution-design.md). Missing is non-nil
-// when the year could not be valued (AT6); Result, Other and Items are then empty.
+// when the year could not be valued (AT6); every other figure is then empty. ReturnBP is nil when
+// the capital is not positive; Rate and Inflation are nil without a comparison (AT11).
 type AttributionYear struct {
 	Year     int
 	From, To time.Time
-	Missing  []money.Currency
-	Result   *money.Money
-	PeriodBP *int
-	Other    *money.Money
-	Items    []AttributionItem
+	// Since is the first day with money at work, From when the year opens with a value (AT13).
+	Since     time.Time
+	Missing   []money.Currency
+	Result    *money.Money
+	Capital   *money.Money
+	ReturnBP  *int
+	Other     *AttributionPart
+	Items     []AttributionItem
+	Rate      *AttributionCompare
+	Inflation *AttributionCompare
 }
 
-// AttributionItem is the result of one instrument in a year; ReturnBP is nil under AT4 and AT5,
-// StaleSince is the date of the old price under AT5.
+// AttributionPart is a share of the year: its result, its weight in the capital, its
+// contribution to the return of the portfolio (AT9) and its own return, nil without capital.
+type AttributionPart struct {
+	Result                   money.Money
+	WeightBP, ContributionBP int
+	ReturnBP                 *int
+}
+
+// AttributionItem is the share of one instrument; ReturnBP is also nil under AT5, and StaleSince
+// is the date of the old price.
 type AttributionItem struct {
 	Instrument money.Currency
-	Result     money.Money
-	ReturnBP   *int
+	AttributionPart
 	StaleSince *time.Time
+}
+
+// AttributionCompare sets the portfolio beside what the same money earned at an index over
+// [From, Until] (AT10): both results and both returns on one capital. RealBP is set for inflation
+// (AT12).
+type AttributionCompare struct {
+	Index       string
+	Until       time.Time
+	ReturnBP    int
+	Result      money.Money
+	IndexBP     int
+	IndexResult money.Money
+	RealBP      *int
 }
 
 // attributionRow gathers the holdings of one instrument in a year.
@@ -74,7 +99,7 @@ func (s *Service) Attribution(ctx context.Context, booksID int64) ([]Attribution
 
 	today := s.ledger.Today(ctx)
 
-	return s.attributionYears(ctx, booksID, facts, base, first.Year(), today)
+	return s.attributionYears(ctx, booksID, roots, facts, base, first.Year(), today)
 }
 
 // attributionYears measures the years from first to today's, each in its own goroutine: the
@@ -82,6 +107,7 @@ func (s *Service) Attribution(ctx context.Context, booksID int64) ([]Attribution
 func (s *Service) attributionYears(
 	ctx context.Context,
 	booksID int64,
+	roots []uuid.UUID,
 	facts []domain.Facts,
 	base money.Currency,
 	first int,
@@ -96,7 +122,7 @@ func (s *Service) attributionYears(
 	for i := range n {
 		wg.Go(func() {
 			years[i], measured[i], errs[i] = s.attributionYear(
-				ctx, booksID, facts, base, first+i, today,
+				ctx, booksID, roots, facts, base, first+i, today,
 			)
 		})
 	}
@@ -151,10 +177,11 @@ func (s *Service) holdingFacts(ctx context.Context, booksID int64) ([]domain.Fac
 	return out, nil
 }
 
-// attributionYear measures year up to today; ok is false when no money was invested in it.
+// attributionYear measures year up to today; ok is false when no money was at work in it.
 func (s *Service) attributionYear(
 	ctx context.Context,
 	booksID int64,
+	roots []uuid.UUID,
 	facts []domain.Facts,
 	base money.Currency,
 	year int,
@@ -180,18 +207,22 @@ func (s *Service) attributionYear(
 		return out, true, nil
 	}
 
-	report, err := s.Return(ctx, booksID, uuid.Nil, from, to, base, "")
-	switch {
-	case errors.Is(err, ErrReturnUndefined):
-		return AttributionYear{}, false, nil
-	case errors.Is(err, ErrPriceMissing):
+	tree, err := s.treeMoney(ctx, booksID, roots, from, to, base)
+	if errors.Is(err, ErrPriceMissing) {
 		out.Missing = []money.Currency{}
 		return out, true, nil
-	case err != nil:
+	}
+
+	if err != nil {
 		return AttributionYear{}, false, err
 	}
 
-	if err := fillAttribution(&out, report, rows, base, start); err != nil {
+	measured, err := fillAttribution(&out, tree, rows, start)
+	if err != nil || !measured {
+		return AttributionYear{}, false, err
+	}
+
+	if err := s.compareYear(ctx, booksID, roots, base, &out); err != nil {
 		return AttributionYear{}, false, err
 	}
 
@@ -306,80 +337,6 @@ func (s *Service) heldValue(
 	}
 
 	return v.Amount(), true, nil
-}
-
-// fillAttribution sets the result of the portfolio (AT3) and of each instrument (AT2, AT4), sorted
-// by result (AT7).
-func fillAttribution(
-	out *AttributionYear,
-	report ReturnReport,
-	rows map[money.Currency]*attributionRow,
-	base money.Currency,
-	start time.Time,
-) error {
-	total := report.Closing.Amount() - report.Opening.Amount()
-	for _, f := range report.Flows {
-		total -= f.Amount.Amount()
-	}
-
-	sum := int64(0)
-	out.Items = make([]AttributionItem, 0, len(rows))
-
-	for code, row := range rows {
-		result := row.endValue - row.endCost - (row.startValue - row.startCost) +
-			row.realized + row.income
-		sum += result
-
-		item, err := attributionItem(code, row, result, base, start, out.To)
-		if err != nil {
-			return err
-		}
-
-		out.Items = append(out.Items, item)
-	}
-
-	slices.SortFunc(out.Items, func(a, b AttributionItem) int {
-		return cmp.Or(
-			cmp.Compare(b.Result.Amount(), a.Result.Amount()),
-			cmp.Compare(a.Instrument, b.Instrument),
-		)
-	})
-
-	result, err := money.New(total, base)
-	if err != nil {
-		return err
-	}
-
-	other, err := money.New(total-sum, base)
-	if err != nil {
-		return err
-	}
-
-	out.Result, out.Other, out.PeriodBP = &result, &other, report.PeriodBP
-
-	return nil
-}
-
-func attributionItem(
-	code money.Currency,
-	row *attributionRow,
-	result int64,
-	base money.Currency,
-	start, end time.Time,
-) (AttributionItem, error) {
-	amount, err := money.New(result, base)
-	if err != nil {
-		return AttributionItem{}, err
-	}
-
-	item := AttributionItem{Instrument: code, Result: amount, StaleSince: row.staleSince}
-	if row.staleSince == nil {
-		if bp, ok := domain.DietzBP(start, end, row.startValue, result, row.flows); ok {
-			item.ReturnBP = &bp
-		}
-	}
-
-	return item, nil
 }
 
 func heldCodes(periods []domain.HoldingPeriod) []money.Currency {

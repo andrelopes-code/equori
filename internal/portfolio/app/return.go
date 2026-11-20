@@ -128,38 +128,17 @@ func (s *Service) returnOf(
 		return ReturnReport{}, ErrInvalidReturnRange
 	}
 
-	in, err := s.returnCurrency(ctx, booksID, in)
+	report, err := s.treeMoney(ctx, booksID, accountIDs, from, to, in)
 	if err != nil {
 		return ReturnReport{}, err
 	}
-
-	start := from.AddDate(0, 0, -1)
-
-	opening, err := s.valued(ctx, booksID, accountIDs, start, in)
-	if err != nil {
-		return ReturnReport{}, err
-	}
-
-	closing, err := s.valued(ctx, booksID, accountIDs, to, in)
-	if err != nil {
-		return ReturnReport{}, err
-	}
-
-	flows, err := s.ledger.ExternalFlows(ctx, booksID, accountIDs, from, to)
-	if err != nil {
-		return ReturnReport{}, err
-	}
-
-	report := ReturnReport{Opening: opening, Closing: closing}
 
 	cash := []domain.CashFlow{
-		{Date: start, Amount: -opening.Amount()},
-		{Date: to, Amount: closing.Amount()},
+		{Date: from.AddDate(0, 0, -1), Amount: -report.Opening.Amount()},
+		{Date: to, Amount: report.Closing.Amount()},
 	}
-
-	cash, err = s.addFlows(ctx, &report, cash, flows, in)
-	if err != nil {
-		return ReturnReport{}, err
+	for _, f := range report.Flows {
+		cash = append(cash, domain.CashFlow{Date: f.Date, Amount: -f.Amount.Amount()})
 	}
 
 	bp, ok := domain.AnnualReturnBP(cash)
@@ -184,25 +163,47 @@ func (s *Service) returnCurrency(
 	return s.ledger.BaseCurrency(ctx, booksID)
 }
 
-// addFlows values each flow in in, appends it to the report and returns cash with its flows.
-func (s *Service) addFlows(
+// treeMoney values the accounts as one tree the day before from and on to, and each external flow
+// of [from, to] at the price of its date, in in (the base currency when empty).
+func (s *Service) treeMoney(
 	ctx context.Context,
-	report *ReturnReport,
-	cash []domain.CashFlow,
-	flows []Flow,
+	booksID int64,
+	accountIDs []uuid.UUID,
+	from, to time.Time,
 	in money.Currency,
-) ([]domain.CashFlow, error) {
+) (ReturnReport, error) {
+	in, err := s.returnCurrency(ctx, booksID, in)
+	if err != nil {
+		return ReturnReport{}, err
+	}
+
+	opening, err := s.valued(ctx, booksID, accountIDs, from.AddDate(0, 0, -1), in)
+	if err != nil {
+		return ReturnReport{}, err
+	}
+
+	closing, err := s.valued(ctx, booksID, accountIDs, to, in)
+	if err != nil {
+		return ReturnReport{}, err
+	}
+
+	flows, err := s.ledger.ExternalFlows(ctx, booksID, accountIDs, from, to)
+	if err != nil {
+		return ReturnReport{}, err
+	}
+
+	report := ReturnReport{Opening: opening, Closing: closing}
+
 	for _, f := range flows {
 		value, err := s.valueIn(ctx, f.Value, in, f.Date)
 		if err != nil {
-			return nil, err
+			return ReturnReport{}, err
 		}
 
 		report.Flows = append(report.Flows, ReturnFlow{Date: f.Date, Amount: value})
-		cash = append(cash, domain.CashFlow{Date: f.Date, Amount: -value.Amount()})
 	}
 
-	return cash, nil
+	return report, nil
 }
 
 // valued sums the value of each account tree in currency in.

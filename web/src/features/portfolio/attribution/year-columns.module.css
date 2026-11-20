@@ -1,0 +1,128 @@
+@layer app {
+  .block {
+    display: grid;
+    gap: var(--slotted-space-3);
+  }
+
+  .columns {
+    display: grid;
+    gap: var(--slotted-space-2);
+  }
+
+  /* A year is a toggle: its column, its year and its rate. */
+  .column {
+    display: grid;
+    justify-items: center;
+    gap: var(--slotted-space-1);
+    padding: var(--slotted-space-2);
+    border: var(--slotted-border-width-thin) solid transparent;
+    border-radius: var(--slotted-radius-md);
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .column:hover {
+    background: var(--slotted-state-hover);
+  }
+
+  .column[aria-pressed="true"] {
+    border-color: var(--slotted-border-subtle);
+    background: var(--slotted-state-selected);
+  }
+
+  .column:focus-visible {
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: var(--slotted-focus-ring-offset);
+  }
+
+  .plot {
+    position: relative;
+    inline-size: 100%;
+    block-size: calc(var(--slotted-space-12) * 2);
+  }
+
+  .zero {
+    position: absolute;
+    inset-inline: 0;
+    block-size: var(--slotted-border-width-thin);
+    background: var(--slotted-text-muted);
+  }
+
+  .bar {
+    background: var(--slotted-tone-accent-solid);
+  }
+
+  .plot .bar {
+    position: absolute;
+    inset-inline: 30%;
+    border-radius: var(--slotted-radius-xs);
+  }
+
+  .negative {
+    background: var(--slotted-tone-danger-solid);
+  }
+
+  /* The marks cross the column: the CDI solid, the IPCA dashed, both in the text colour. */
+  .rateMark,
+  .inflationMark {
+    position: absolute;
+    inset-inline: 18%;
+    block-size: 0;
+  }
+
+  .rateMark,
+  .rateKey {
+    border-block-start: calc(var(--slotted-border-width-thin) * 2) solid
+      var(--slotted-text);
+  }
+
+  .inflationMark,
+  .inflationKey {
+    border-block-start: calc(var(--slotted-border-width-thin) * 2) dashed
+      var(--slotted-text);
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--slotted-space-5);
+  }
+
+  .key {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--slotted-space-2);
+  }
+
+  .swatch {
+    inline-size: var(--slotted-space-4);
+    block-size: var(--slotted-space-2);
+    border-radius: var(--slotted-radius-xs);
+  }
+
+  .rateKey,
+  .inflationKey {
+    block-size: 0;
+    border-radius: 0;
+  }
+
+  @media (forced-colors: active) {
+    .bar,
+    .negative {
+      background: CanvasText;
+    }
+
+    .column[aria-pressed="true"] {
+      border-color: Highlight;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .column {
+      transition: background-color 120ms ease;
+    }
+  }
+}

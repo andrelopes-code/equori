@@ -6304,6 +6304,10 @@
               "to": {
                 "type": "string"
               },
+              "since": {
+                "type": "string",
+                "description": "first day with money at work"
+              },
               "missing": {
                 "type": "array",
                 "items": {
@@ -6323,18 +6327,13 @@
                     "description": "currency or instrument code"
                   }
                 },
-                "description": "closing - opening - contributions of the portfolio in the year",
                 "required": [
                   "amount",
                   "currency"
                 ],
                 "additionalProperties": false
               },
-              "period_bp": {
-                "type": "integer",
-                "description": "time-weighted return of the year in basis points; absent when undefined or zero"
-              },
-              "other": {
+              "capital": {
                 "type": "object",
                 "properties": {
                   "amount": {
@@ -6346,10 +6345,55 @@
                     "description": "currency or instrument code"
                   }
                 },
-                "description": "result less the items: cash, fees and exchange",
+                "description": "average money at work",
                 "required": [
                   "amount",
                   "currency"
+                ],
+                "additionalProperties": false
+              },
+              "return_bp": {
+                "type": "integer",
+                "description": "result over capital; every rate here is this modified Dietz return"
+              },
+              "other": {
+                "type": "object",
+                "properties": {
+                  "result": {
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "type": "string",
+                        "description": "decimal amount in the instrument's scale, such as -1234.56"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "description": "currency or instrument code"
+                      }
+                    },
+                    "required": [
+                      "amount",
+                      "currency"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "weight_bp": {
+                    "type": "integer",
+                    "description": "share of capital; weights add up to 10000"
+                  },
+                  "contribution_bp": {
+                    "type": "integer",
+                    "description": "result over the year's capital; adds up to return_bp"
+                  },
+                  "return_bp": {
+                    "type": "integer"
+                  }
+                },
+                "description": "cash, fees and exchange",
+                "required": [
+                  "result",
+                  "weight_bp",
+                  "contribution_bp"
                 ],
                 "additionalProperties": false
               },
@@ -6373,29 +6417,168 @@
                           "description": "currency or instrument code"
                         }
                       },
-                      "description": "change of market value less cost, plus sales net of fees, taxes and cost, plus net income",
                       "required": [
                         "amount",
                         "currency"
                       ],
                       "additionalProperties": false
                     },
-                    "return_bp": {
+                    "weight_bp": {
                       "type": "integer",
-                      "description": "modified Dietz return of the year in basis points; absent when zero, stale or nothing was invested"
+                      "description": "share of capital; weights add up to 10000"
+                    },
+                    "contribution_bp": {
+                      "type": "integer",
+                      "description": "result over the year's capital; adds up to return_bp"
+                    },
+                    "return_bp": {
+                      "type": "integer"
                     },
                     "stale_since": {
                       "type": "string",
-                      "description": "date of the price used at a year end when older than 14 days"
+                      "description": "date of a year-end price over 14 days old; no return_bp then"
                     }
                   },
                   "required": [
                     "instrument",
-                    "result"
+                    "result",
+                    "weight_bp",
+                    "contribution_bp"
                   ],
                   "additionalProperties": false
+                }
+              },
+              "rate": {
+                "type": "object",
+                "properties": {
+                  "index": {
+                    "type": "string"
+                  },
+                  "until": {
+                    "type": "string"
+                  },
+                  "return_bp": {
+                    "type": "integer"
+                  },
+                  "result": {
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "type": "string",
+                        "description": "decimal amount in the instrument's scale, such as -1234.56"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "description": "currency or instrument code"
+                      }
+                    },
+                    "required": [
+                      "amount",
+                      "currency"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "index_bp": {
+                    "type": "integer",
+                    "description": "what the same flows earned at the index"
+                  },
+                  "index_result": {
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "type": "string",
+                        "description": "decimal amount in the instrument's scale, such as -1234.56"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "description": "currency or instrument code"
+                      }
+                    },
+                    "required": [
+                      "amount",
+                      "currency"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "real_bp": {
+                    "type": "integer"
+                  }
                 },
-                "description": "largest result first"
+                "required": [
+                  "index",
+                  "until",
+                  "return_bp",
+                  "result",
+                  "index_bp",
+                  "index_result"
+                ],
+                "additionalProperties": false
+              },
+              "inflation": {
+                "type": "object",
+                "properties": {
+                  "index": {
+                    "type": "string"
+                  },
+                  "until": {
+                    "type": "string"
+                  },
+                  "return_bp": {
+                    "type": "integer"
+                  },
+                  "result": {
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "type": "string",
+                        "description": "decimal amount in the instrument's scale, such as -1234.56"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "description": "currency or instrument code"
+                      }
+                    },
+                    "required": [
+                      "amount",
+                      "currency"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "index_bp": {
+                    "type": "integer",
+                    "description": "what the same flows earned at the index"
+                  },
+                  "index_result": {
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "type": "string",
+                        "description": "decimal amount in the instrument's scale, such as -1234.56"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "description": "currency or instrument code"
+                      }
+                    },
+                    "required": [
+                      "amount",
+                      "currency"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "real_bp": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "index",
+                  "until",
+                  "return_bp",
+                  "result",
+                  "index_bp",
+                  "index_result"
+                ],
+                "additionalProperties": false
               }
             },
             "required": [

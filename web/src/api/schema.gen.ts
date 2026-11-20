@@ -4356,12 +4356,14 @@ export interface paths {
          * Result of each instrument in each calendar year beside the portfolio's (portfolio attribution AT1 to AT7).
          * @description One year per calendar year from the first posting of the brokerage trees to today of the book, oldest
          *     first; the current year ends today. result is closing - opening - flows of GET /reports/return over the
-         *     year and period_bp its time-weighted return. The result of an instrument is (market value - cost basis) at
-         *     the end of the year less the same at the end of the previous year, plus its sales net of fees and taxes
-         *     less their cost, plus its income net of withholding; other is result less the sum of the items. return_bp
-         *     is the modified Dietz return of the instrument. An instrument whose price at a year end is more than 14
-         *     days old carries stale_since and no return_bp. A year with an instrument without price lists it in
-         *     missing and holds no figure.
+         *     year. The result of an instrument is (market value - cost basis) at the end of the year less the same at
+         *     the end of the previous year, plus its sales net of fees and taxes less their cost, plus its income net of
+         *     withholding; other is result less the sum of the items. Every rate is the modified Dietz return: a result
+         *     over the average money at work. Weights and contributions share the capital of the year and add up to
+         *     10000 and to return_bp. rate and inflation set the portfolio beside what the same flows would have earned
+         *     at the region's daily and monthly index. An instrument whose price at a year end is more than 14 days old
+         *     carries stale_since and no return_bp. A year with an instrument without price lists it in missing and
+         *     holds no figure.
          */
         get: operations["getAttribution"];
         put?: never;
@@ -8658,19 +8660,52 @@ export interface components {
             from: string;
             /** Format: date */
             to: string;
-            /** @description Present when the year could not be valued; the instruments without a price at an end of it. */
+            /**
+             * Format: date
+             * @description The first day with money at work; from when the year opens with a value (AT13). Present with result.
+             */
+            since?: string;
+            /** @description Present when the year could not be valued; the instruments without a price at an end of it. The year then has no other figure. */
             missing?: string[];
             result?: components["schemas"]["Money"];
-            period_bp?: number;
-            other?: components["schemas"]["Money"];
+            /** @description The average money at work in the year (AT8). */
+            capital?: components["schemas"]["Money"];
+            /** @description result over capital (modified Dietz); absent when the capital is not positive. */
+            return_bp?: number;
+            other?: components["schemas"]["AttributionPart"];
             items?: components["schemas"]["AttributionItem"][];
+            rate?: components["schemas"]["AttributionCompare"];
+            inflation?: components["schemas"]["AttributionCompare"];
+        };
+        /** @description The rest of the year that no instrument owns (cash, fees, exchange). */
+        AttributionPart: {
+            result: components["schemas"]["Money"];
+            weight_bp: number;
+            contribution_bp: number;
+            return_bp?: number;
         };
         AttributionItem: {
             instrument: string;
             result: components["schemas"]["Money"];
+            /** @description Capital of the instrument over the capital of the year; the weights add up to 10000. */
+            weight_bp: number;
+            /** @description Result of the instrument over the capital of the year; the contributions add up to return_bp of the year. */
+            contribution_bp: number;
             return_bp?: number;
             /** Format: date */
             stale_since?: string;
+        };
+        /** @description The portfolio beside the same money at an index over [from, until], on one capital (AT10). */
+        AttributionCompare: {
+            index: string;
+            /** Format: date */
+            until: string;
+            return_bp: number;
+            result: components["schemas"]["Money"];
+            index_bp: number;
+            index_result: components["schemas"]["Money"];
+            /** @description For inflation, (1 + return) / (1 + index) - 1 (AT12). */
+            real_bp?: number;
         };
         ReturnReport: {
             annual_bp: number;

@@ -9,21 +9,41 @@ import (
 )
 
 type attributionYearView struct {
-	Year     int                   `json:"year"`
-	From     string                `json:"from"`
-	To       string                `json:"to"`
-	Missing  []string              `json:"missing,omitzero"   jsonschema:"instruments without a price at a year end; the year has no figures"`
-	Result   tool.Money            `json:"result,omitzero"    jsonschema:"closing - opening - contributions of the portfolio in the year"`
-	PeriodBP int                   `json:"period_bp,omitzero" jsonschema:"time-weighted return of the year in basis points; absent when undefined or zero"`
-	Other    tool.Money            `json:"other,omitzero"     jsonschema:"result less the items: cash, fees and exchange"`
-	Items    []attributionItemView `json:"items,omitzero"     jsonschema:"largest result first"`
+	Year      int                   `json:"year"`
+	From      string                `json:"from"`
+	To        string                `json:"to"`
+	Since     string                `json:"since,omitzero"     jsonschema:"first day with money at work"`
+	Missing   []string              `json:"missing,omitzero"   jsonschema:"instruments without a price at a year end; the year has no figures"`
+	Result    tool.Money            `json:"result,omitzero"`
+	Capital   tool.Money            `json:"capital,omitzero"   jsonschema:"average money at work"`
+	ReturnBP  int                   `json:"return_bp,omitzero" jsonschema:"result over capital; every rate here is this modified Dietz return"`
+	Other     attributionPartView   `json:"other,omitzero"     jsonschema:"cash, fees and exchange"`
+	Items     []attributionItemView `json:"items,omitzero"`
+	Rate      attributionCompare    `json:"rate,omitzero"`
+	Inflation attributionCompare    `json:"inflation,omitzero"`
+}
+
+type attributionPartView struct {
+	Result         tool.Money `json:"result"`
+	WeightBP       int        `json:"weight_bp"          jsonschema:"share of capital; weights add up to 10000"`
+	ContributionBP int        `json:"contribution_bp"    jsonschema:"result over the year's capital; adds up to return_bp"`
+	ReturnBP       int        `json:"return_bp,omitzero"`
 }
 
 type attributionItemView struct {
-	Instrument string     `json:"instrument"`
-	Result     tool.Money `json:"result"               jsonschema:"change of market value less cost, plus sales net of fees, taxes and cost, plus net income"`
-	ReturnBP   int        `json:"return_bp,omitzero"   jsonschema:"modified Dietz return of the year in basis points; absent when zero, stale or nothing was invested"`
-	StaleSince string     `json:"stale_since,omitzero" jsonschema:"date of the price used at a year end when older than 14 days"`
+	Instrument string `json:"instrument"`
+	attributionPartView
+	StaleSince string `json:"stale_since,omitzero" jsonschema:"date of a year-end price over 14 days old; no return_bp then"`
+}
+
+type attributionCompare struct {
+	Index       string     `json:"index"`
+	Until       string     `json:"until"`
+	ReturnBP    int        `json:"return_bp"`
+	Result      tool.Money `json:"result"`
+	IndexBP     int        `json:"index_bp"         jsonschema:"what the same flows earned at the index"`
+	IndexResult tool.Money `json:"index_result"`
+	RealBP      int        `json:"real_bp,omitzero"`
 }
 
 func attributionView(
@@ -59,19 +79,21 @@ func attributionYearOf(y app.AttributionYear) attributionYearView {
 		return v
 	}
 
-	v.Result, v.Other, v.PeriodBP = tool.MoneyOf(
+	v.Result, v.Capital, v.ReturnBP = tool.MoneyOf(
 		*y.Result,
 	), tool.MoneyOf(
-		*y.Other,
+		*y.Capital,
 	), valueOf(
-		y.PeriodBP,
+		y.ReturnBP,
 	)
+	v.Since = y.Since.Format(time.DateOnly)
+	v.Other = attributionPartOf(*y.Other)
+	v.Rate, v.Inflation = attributionCompareOf(y.Rate), attributionCompareOf(y.Inflation)
 
 	for _, it := range y.Items {
 		item := attributionItemView{
-			Instrument: string(it.Instrument),
-			Result:     tool.MoneyOf(it.Result),
-			ReturnBP:   valueOf(it.ReturnBP),
+			Instrument:          string(it.Instrument),
+			attributionPartView: attributionPartOf(it.AttributionPart),
 		}
 		if it.StaleSince != nil {
 			item.StaleSince = it.StaleSince.Format(time.DateOnly)
@@ -81,4 +103,29 @@ func attributionYearOf(y app.AttributionYear) attributionYearView {
 	}
 
 	return v
+}
+
+func attributionPartOf(p app.AttributionPart) attributionPartView {
+	return attributionPartView{
+		Result:         tool.MoneyOf(p.Result),
+		WeightBP:       p.WeightBP,
+		ContributionBP: p.ContributionBP,
+		ReturnBP:       valueOf(p.ReturnBP),
+	}
+}
+
+func attributionCompareOf(c *app.AttributionCompare) attributionCompare {
+	if c == nil {
+		return attributionCompare{}
+	}
+
+	return attributionCompare{
+		Index:       c.Index,
+		Until:       c.Until.Format(time.DateOnly),
+		ReturnBP:    c.ReturnBP,
+		Result:      tool.MoneyOf(c.Result),
+		IndexBP:     c.IndexBP,
+		IndexResult: tool.MoneyOf(c.IndexResult),
+		RealBP:      valueOf(c.RealBP),
+	}
 }

@@ -242,12 +242,38 @@ type AllocationGroup struct {
 	Value   Money  `json:"value"`
 }
 
+// AttributionCompare The portfolio beside the same money at an index over [from, until], on one capital (AT10).
+type AttributionCompare struct {
+	Index       string `json:"index"`
+	IndexBp     int    `json:"index_bp"`
+	IndexResult Money  `json:"index_result"`
+
+	// RealBp For inflation, (1 + return) / (1 + index) - 1 (AT12).
+	RealBp   *int               `json:"real_bp,omitempty"`
+	Result   Money              `json:"result"`
+	ReturnBp int                `json:"return_bp"`
+	Until    openapi_types.Date `json:"until"`
+}
+
 // AttributionItem defines model for AttributionItem.
 type AttributionItem struct {
-	Instrument string              `json:"instrument"`
-	Result     Money               `json:"result"`
-	ReturnBp   *int                `json:"return_bp,omitempty"`
-	StaleSince *openapi_types.Date `json:"stale_since,omitempty"`
+	// ContributionBp Result of the instrument over the capital of the year; the contributions add up to return_bp of the year.
+	ContributionBp int                 `json:"contribution_bp"`
+	Instrument     string              `json:"instrument"`
+	Result         Money               `json:"result"`
+	ReturnBp       *int                `json:"return_bp,omitempty"`
+	StaleSince     *openapi_types.Date `json:"stale_since,omitempty"`
+
+	// WeightBp Capital of the instrument over the capital of the year; the weights add up to 10000.
+	WeightBp int `json:"weight_bp"`
+}
+
+// AttributionPart The rest of the year that no instrument owns (cash, fees, exchange).
+type AttributionPart struct {
+	ContributionBp int   `json:"contribution_bp"`
+	Result         Money `json:"result"`
+	ReturnBp       *int  `json:"return_bp,omitempty"`
+	WeightBp       int   `json:"weight_bp"`
 }
 
 // AttributionReport defines model for AttributionReport.
@@ -257,16 +283,31 @@ type AttributionReport struct {
 
 // AttributionYear defines model for AttributionYear.
 type AttributionYear struct {
-	From  openapi_types.Date `json:"from"`
-	Items *[]AttributionItem `json:"items,omitempty"`
+	// Capital The average money at work in the year (AT8).
+	Capital *Money             `json:"capital,omitempty"`
+	From    openapi_types.Date `json:"from"`
 
-	// Missing Present when the year could not be valued; the instruments without a price at an end of it.
-	Missing  *[]string          `json:"missing,omitempty"`
-	Other    *Money             `json:"other,omitempty"`
-	PeriodBp *int               `json:"period_bp,omitempty"`
-	Result   *Money             `json:"result,omitempty"`
-	To       openapi_types.Date `json:"to"`
-	Year     int                `json:"year"`
+	// Inflation The portfolio beside the same money at an index over [from, until], on one capital (AT10).
+	Inflation *AttributionCompare `json:"inflation,omitempty"`
+	Items     *[]AttributionItem  `json:"items,omitempty"`
+
+	// Missing Present when the year could not be valued; the instruments without a price at an end of it. The year then has no other figure.
+	Missing *[]string `json:"missing,omitempty"`
+
+	// Other The rest of the year that no instrument owns (cash, fees, exchange).
+	Other *AttributionPart `json:"other,omitempty"`
+
+	// Rate The portfolio beside the same money at an index over [from, until], on one capital (AT10).
+	Rate   *AttributionCompare `json:"rate,omitempty"`
+	Result *Money              `json:"result,omitempty"`
+
+	// ReturnBp result over capital (modified Dietz); absent when the capital is not positive.
+	ReturnBp *int `json:"return_bp,omitempty"`
+
+	// Since The first day with money at work; from when the year opens with a value (AT13). Present with result.
+	Since *openapi_types.Date `json:"since,omitempty"`
+	To    openapi_types.Date  `json:"to"`
+	Year  int                 `json:"year"`
 }
 
 // ContributionClass defines model for ContributionClass.

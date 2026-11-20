@@ -1258,7 +1258,7 @@ Coverage rows T-06 and T-09, through the HTTP API. 3,000.00 units of RENDA.20451
 
 ### S656 Result of each holding in a year
 
-Portfolio attribution AT1 to AT4 and AT7 (`docs/specs/2026-11-20-portfolio-attribution-design.md`), through the HTTP API. 10,000.00 deposited on 2025-01-02, 100 MXRF11 bought at 10.00 and 100 PETR4 at 20.00 on 2025-01-10, a dividend of 50.00 of MXRF11, closes of 2025-12-31 at 11.00 and 18.00: 2025 holds MXRF11 +150.00 (15.42%) and PETR4 −200.00 (−10.28%), which add up to the portfolio's −50.00. In 2026 to 2026-11-01, with closes of 12.00 and 21.00 and 50 PETR4 sold at 22.00: PETR4 +345.00 (37.34%) first, MXRF11 +100.00 (9.09%), the portfolio +445.00. Each year's rate equals `period_bp` of the return report of the same days.
+Portfolio attribution AT1 to AT4, AT7 to AT9 and AT13 (`docs/specs/2026-11-20-portfolio-attribution-design.md`), through the HTTP API. 10,000.00 deposited on 2025-01-02, 100 MXRF11 bought at 10.00 and 100 PETR4 at 20.00 on 2025-01-10, a dividend of 50.00 of MXRF11 on 2025-06-16, closes of 2025-12-31 at 11.00 and 18.00. 2025 is measured from 2025-01-02, with a capital of 9,972.53: the portfolio returns −0.50% (−50.00); MXRF11 +150.00, 15.47% over its own days, weight 9.51%, +1.50 points; PETR4 −200.00, −10.03%, weight 19.56%, −2.00 points; the cash weighs 70.93% and adds nothing. In 2026 to 2026-11-01, with closes of 12.00 and 21.00 and 50 PETR4 sold at 22.00: the portfolio returns 4.47% (+445.00) on 9,950.00; PETR4 +345.00, 37.34%, weight 9.29%, +3.47 points; MXRF11 +100.00, 9.09%, weight 11.05%, +1.00 point. Weights add up to 100% and points to the return.
 
 ### S657 Taxes of a sale in the result of its holding
 
@@ -1266,7 +1266,7 @@ AT2 and AT3, through the HTTP API. The sale of S656 withholds 5.00 of tax: PETR4
 
 ### S658 Holding with an old price at a year end
 
-AT5, through the HTTP API. PETR4 of S656 holds the close of 2025-06-30 on 2025-12-31: its row of 2025 carries `stale_since` 2025-06-30 and no rate, and its −200.00 stays in the sum.
+AT5, through the HTTP API. PETR4 of S656 holds the close of 2025-06-30 on 2025-12-31: its row of 2025 carries `stale_since` 2025-06-30 and no rate, and its −200.00, its weight and its points stay in the sums.
 
 ### S659 Holding without a price at a year end
 
@@ -1283,3 +1283,11 @@ MC3, through the HTTP API. `gemini-3.5-flash` cools down for an hour while `gemi
 ### S662 Chosen model outside the chain
 
 MC4, through the HTTP API. A turn with `target` `unknown-model` answers 422 `assistant_target_unknown` on the field `target`, stores no conversation and sends no request.
+
+### S670 The year beside the same money at the CDI and the IPCA
+
+AT10 to AT12, through the HTTP API. S656 with a CDI on every day of 2025 from 2025-01-02, zero but for 0.1% on 2025-06-02, 2025-06-03 and 2025-12-31, and an IPCA of 0.31% in December only: the 10,000.00 of 2025-01-02 would have earned 30.03 at the CDI (0.30%) and 31.00 at the IPCA (0.31%) on the capital of 9,972.53; the real return is −0.81%. A CDI whose first rate comes 151 days after the money gives no comparison.
+
+### S671 A region without indexes
+
+AT11, R2, through the HTTP API. S656 in a book of Germany: no rate and no inflation comparison; the return of 2025 stays −0.50%.

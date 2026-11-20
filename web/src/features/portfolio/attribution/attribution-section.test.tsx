@@ -9,32 +9,82 @@ import { renderApp } from "@/testing/render-app";
 
 const brl = (amount: number) => ({ amount, currency: "BRL" });
 
-// S656 to S658 as the API returns them, with one year of a stale holding.
+// S656 and S658 as the API returns them; 2026 also holds the comparisons of S670.
 const report = {
   years: [
     {
       year: 2025,
       from: "2025-01-01",
       to: "2025-12-31",
+      since: "2025-01-02",
       result: brl(-5000),
-      period_bp: -50,
-      other: brl(0),
+      capital: brl(997253),
+      return_bp: -50,
+      other: { result: brl(0), weight_bp: 7066, contribution_bp: 0 },
       items: [
-        { instrument: "MXRF11", result: brl(15000), return_bp: 1542 },
-        { instrument: "PETR4", result: brl(-20000), stale_since: "2025-06-30" },
+        {
+          instrument: "MXRF11",
+          result: brl(15000),
+          weight_bp: 978,
+          contribution_bp: 150,
+          return_bp: 1504,
+        },
+        {
+          instrument: "PETR4",
+          result: brl(-20000),
+          weight_bp: 1956,
+          contribution_bp: -200,
+          stale_since: "2025-06-30",
+        },
       ],
     },
     {
       year: 2026,
       from: "2026-01-01",
       to: "2026-11-01",
+      since: "2026-01-01",
       result: brl(44700),
-      period_bp: 445,
-      other: brl(200),
+      capital: brl(995000),
+      return_bp: 449,
+      other: {
+        result: brl(200),
+        weight_bp: 7966,
+        contribution_bp: 2,
+        return_bp: 3,
+      },
       items: [
-        { instrument: "PETR4", result: brl(34500), return_bp: 3734 },
-        { instrument: "MXRF11", result: brl(10000), return_bp: 909 },
+        {
+          instrument: "PETR4",
+          result: brl(34500),
+          weight_bp: 929,
+          contribution_bp: 347,
+          return_bp: 3734,
+        },
+        {
+          instrument: "MXRF11",
+          result: brl(10000),
+          weight_bp: 1105,
+          contribution_bp: 100,
+          return_bp: 909,
+        },
       ],
+      rate: {
+        index: "cdi",
+        until: "2026-10-30",
+        return_bp: 440,
+        result: brl(44000),
+        index_bp: 1050,
+        index_result: brl(105000),
+      },
+      inflation: {
+        index: "ipca",
+        until: "2026-11-01",
+        return_bp: 449,
+        result: brl(44700),
+        index_bp: 400,
+        index_result: brl(40000),
+        real_bp: 47,
+      },
     },
   ],
 };
@@ -44,75 +94,71 @@ const section = () =>
     name: catalogEn["portfolio.attribution.title"],
   });
 
+async function renderReport(body: unknown) {
+  await renderApp("/portfolio", {
+    fetch: portfolioApi({
+      "GET /api/v1/reports/attribution": () => json(200, body),
+    }),
+  });
+
+  return section();
+}
+
 describe("Attribution section", () => {
-  it("AT1, AT3: opens on the current year with its sentence, its rows and the portfolio", async () => {
-    await renderApp("/portfolio", {
-      fetch: portfolioApi({
-        "GET /api/v1/reports/attribution": () => json(200, report),
-      }),
-    });
-    const region = await section();
+  it("AT8 to AT12: opens on the current year with its sentences, its rows and the portfolio", async () => {
+    const region = await renderReport(report);
 
     expect(
       await within(region).findByText(
-        "In 2026 to 11/01, the portfolio gained R$447.00.",
+        "In 2026 to 11/01, the portfolio returned 4.49% and gained R$447.00.",
       ),
     ).toBeInTheDocument();
+    // 440.00 against 1,050.00 at the CDI until 10/30: 610.00 below.
     expect(
-      within(region).getByText("2 holdings added R$445.00."),
+      within(region).getByText(
+        "R$610.00 below the same money at the CDI to 10/30 (10.50%); IPCA of 4.00%: real return of 0.47%.",
+      ),
     ).toBeInTheDocument();
 
     const rows = within(region).getAllByRole("listitem");
     expect(rows.map((r) => r.textContent)).toEqual([
-      "PETR4+R$345.0037.34%",
-      "MXRF11+R$100.009.09%",
-      `${catalogEn["portfolio.attribution.other"]}+R$2.00`,
-      `${catalogEn["portfolio.attribution.total"]}+R$447.004.45%`,
+      "PETR49.29%37.34%+3.47 pp+R$345.00",
+      "MXRF1111.05%9.09%+1.00 pp+R$100.00",
+      `${catalogEn["portfolio.attribution.other"]}79.66%0.03%+0.02 pp+R$2.00`,
+      `${catalogEn["portfolio.attribution.total"]}100.00%4.49%+4.49 pp+R$447.00`,
     ]);
   });
 
-  it("AT5: a past year writes the date of a stale quote in place of the bar and the rate", async () => {
-    await renderApp("/portfolio", {
-      fetch: portfolioApi({
-        "GET /api/v1/reports/attribution": () => json(200, report),
-      }),
-    });
-    const region = await section();
+  it("AT5, AT13: a past year names its first day and writes a stale quote in place of the bar and the rate", async () => {
+    const region = await renderReport(report);
 
     await userEvent
       .setup()
-      .click(await within(region).findByRole("radio", { name: "2025" }));
+      .click(
+        await within(region).findByRole("button", { name: "2025: −0.50%" }),
+      );
 
     expect(
-      within(region).getByText("In 2025, the portfolio lost R$50.00."),
-    ).toBeInTheDocument();
-    expect(
       within(region).getByText(
-        "1 holding added R$150.00; 1 took away R$200.00.",
+        "In 2025, since 01/02, the portfolio returned −0.50% and lost R$50.00.",
       ),
     ).toBeInTheDocument();
     expect(
       within(region).getByText("No quote since 06/30/2025"),
     ).toBeInTheDocument();
     expect(
-      within(region).queryByText(catalogEn["portfolio.attribution.other"]),
-    ).not.toBeInTheDocument();
+      within(region).getByRole("button", { name: "2025: −0.50%" }),
+    ).toHaveAttribute("aria-pressed", "true");
   });
 
   it("chooses a year without minimizing, and minimizes from the header", async () => {
-    await renderApp("/portfolio", {
-      fetch: portfolioApi({
-        "GET /api/v1/reports/attribution": () => json(200, report),
-      }),
-    });
-    const region = await section();
+    const region = await renderReport(report);
     const user = userEvent.setup();
     const title = catalogEn["portfolio.attribution.title"];
 
     await user.click(
-      await within(region).findByRole("radio", { name: "2025" }),
+      await within(region).findByRole("button", { name: "2025: −0.50%" }),
     );
-
     await user.click(
       within(region).getByRole("button", { name: `About “${title}”` }),
     );
@@ -129,22 +175,16 @@ describe("Attribution section", () => {
   });
 
   it("AT6: a year without a quote names the holdings", async () => {
-    await renderApp("/portfolio", {
-      fetch: portfolioApi({
-        "GET /api/v1/reports/attribution": () =>
-          json(200, {
-            years: [
-              {
-                year: 2025,
-                from: "2025-01-01",
-                to: "2025-12-31",
-                missing: ["PETR4"],
-              },
-            ],
-          }),
-      }),
+    const region = await renderReport({
+      years: [
+        {
+          year: 2025,
+          from: "2025-01-01",
+          to: "2025-12-31",
+          missing: ["PETR4"],
+        },
+      ],
     });
-    const region = await section();
 
     expect(
       await within(region).findByText(

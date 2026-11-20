@@ -191,19 +191,40 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "fixedIncome.issuers.uncovered": "Sem cobertura",
   "fixedIncome.issuers.mark": "Limite por emissor",
   "portfolio.attribution.title": "Quem puxou a carteira",
-  "portfolio.attribution.note": "Quanto cada ativo somou ao resultado do ano.",
+  "portfolio.attribution.note": "Quanto cada ativo somou ao rendimento do ano.",
   "portfolio.attribution.help":
-    "O resultado de um ativo no ano é quanto ele valorizou, mais o que rendeu em vendas e proventos, já descontados taxas e impostos. A soma dos ativos é o ganho da carteira. A porcentagem é o rendimento sobre o dinheiro que ficou no ativo durante o ano, contando a data de cada compra e venda.",
-  "portfolio.attribution.year": "Ano",
+    'Todo rendimento deste quadro é o ganho dividido pelo dinheiro médio aplicado no período, contando a data de cada aporte e de cada compra e venda. O ano começa no dia em que havia dinheiro aplicado. Peso é a parte desse dinheiro médio que ficou no ativo; contribuição é o ganho do ativo dividido pelo dinheiro médio da carteira, por isso as contribuições somam o rendimento da carteira. O CDI e o IPCA são calculados como se os mesmos aportes, nas mesmas datas, tivessem rendido o índice. Este rendimento pode diferir do de "Como rendeu", que mede o período sem o efeito dos aportes.',
+  "portfolio.attribution.years": "Rendimento por ano",
+  "portfolio.attribution.yearColumn": "{year}: {rate}",
+  "portfolio.attribution.legend.portfolio": "Carteira",
+  "portfolio.attribution.legend.rate": "Mesmo dinheiro no {index}",
+  "portfolio.attribution.legend.inflation": "{index}",
   "portfolio.attribution.period.partial": "{year} até {day}",
-  "portfolio.attribution.lead.gain": "Em {period}, a carteira ganhou {amount}.",
-  "portfolio.attribution.lead.loss": "Em {period}, a carteira perdeu {amount}.",
+  "portfolio.attribution.period.since": "{year}, desde {since}",
+  "portfolio.attribution.period.between": "{year}, de {since} a {day}",
+  "portfolio.attribution.window": " até {day}",
+  "portfolio.attribution.lead.gain":
+    "Em {period}, a carteira rendeu {rate} e ganhou {amount}.",
+  "portfolio.attribution.lead.loss":
+    "Em {period}, a carteira rendeu {rate} e perdeu {amount}.",
+  "portfolio.attribution.lead.gain.bare":
+    "Em {period}, a carteira ganhou {amount}.",
+  "portfolio.attribution.lead.loss.bare":
+    "Em {period}, a carteira perdeu {amount}.",
+  "portfolio.attribution.compare.above":
+    "{amount} acima do mesmo dinheiro no {index}{window} ({indexRate})",
+  "portfolio.attribution.compare.below":
+    "{amount} abaixo do mesmo dinheiro no {index}{window} ({indexRate})",
+  "portfolio.attribution.compare.equal":
+    "O mesmo que o dinheiro no {index}{window} ({indexRate})",
+  "portfolio.attribution.compare.real":
+    "{index}{window} de {inflation}: rendimento real de {real}",
+  "portfolio.attribution.join.one": "{part}.",
+  "portfolio.attribution.join.two": "{first}; {second}.",
   "portfolio.attribution.gains.one": "1 ativo somou {amount}",
   "portfolio.attribution.gains.other": "{count} ativos somaram {amount}",
   "portfolio.attribution.losses.one": "1 tirou {amount}",
   "portfolio.attribution.losses.other": "{count} tiraram {amount}",
-  "portfolio.attribution.tally.both": "{gains}; {losses}.",
-  "portfolio.attribution.tally.one": "{part}.",
   "portfolio.attribution.others.one": "Outro ativo",
   "portfolio.attribution.others.other": "Outros {count} ativos",
   "portfolio.attribution.stale": "Sem cotação desde {date}",
@@ -213,7 +234,10 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
     "Sem cotação de {codes} no fim do ano: o ano não pode ser medido.",
   "portfolio.attribution.unpriced": "Faltam cotações para medir este ano.",
   "portfolio.attribution.col.holding": "Ativo",
-  "portfolio.attribution.col.result": "Resultado no ano",
+  "portfolio.attribution.col.weight": "Peso",
   "portfolio.attribution.col.rate": "Rendimento",
+  "portfolio.attribution.col.contribution": "Contribuição",
+  "portfolio.attribution.col.result": "Resultado",
+  "portfolio.attribution.points": "{value} p.p.",
   "portfolio.attribution.rows": "Resultado de cada ativo em {period}",
 };
