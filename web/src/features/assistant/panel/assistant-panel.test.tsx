@@ -26,6 +26,7 @@ function message(content: string) {
     created_at: "2026-10-23T10:00:01Z",
     proposals: [],
     files: [],
+    views: [],
   };
 }
 
@@ -43,6 +44,7 @@ function detail(content: string) {
         created_at: "2026-10-23T10:00:00Z",
         proposals: [],
         files: [],
+        views: [],
       },
       message(content),
     ],
