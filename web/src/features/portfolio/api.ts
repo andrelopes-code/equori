@@ -137,29 +137,6 @@ export function usePreviewContributionPlan() {
   });
 }
 
-// The monthly risk history of the portfolio up to date (portfolio risk design, RK14).
-export function riskQuery(
-  api: Client<paths>,
-  date: string,
-  valueIn: string | undefined,
-) {
-  return queryOptions({
-    queryKey: ["risk", date, valueIn] as const,
-    queryFn: async () =>
-      unwrap(
-        await api.GET("/reports/risk", {
-          params: {
-            query: {
-              to: date,
-              ...(valueIn === undefined ? {} : { value_in: valueIn }),
-            },
-          },
-        }),
-      ),
-    enabled: valueIn !== undefined,
-  });
-}
-
 export function issuerExposureQuery(api: Client<paths>, date: string) {
   return queryOptions({
     queryKey: ["issuer-exposure", date] as const,

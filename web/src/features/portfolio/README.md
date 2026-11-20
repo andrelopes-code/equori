@@ -14,7 +14,6 @@ Guide topic (`navigation-map.json`): `investments`.
 - `GET /reports/allocation`
 - `GET /accounts/{id}/balance`
 - `GET /reports/return`
-- `GET /reports/risk`
 - `GET /realized-results`
 - `GET /income-events`
 
@@ -27,8 +26,7 @@ Guide topic (`navigation-map.json`): `investments`.
 - `summary/`: portfolio header, summary and income hook.
 - `notices/`: problem, missing price and quote warning notices.
 - `return/`: return panel, period, view, bars, method, yield group list and options hook.
-- `risk/`: risk section: verdict sentences, missing-quotes line with its fetch action, class table with its share bar, stacked charts with their band key and the chart workarounds, the closed details (terms, measures, correlations), and the figures they read.
-- `collapsible-section/`: the surface section a click on its header minimizes to its first lines (`peek-body`), with the choice kept per browser (risk, fixed income).
+- `collapsible-section/`: the surface section a click on its header minimizes to its first lines (`peek-body`), with the choice kept per browser (fixed income).
 - `return-money/`: origin of the closing balance: its list, its bar (`origin-parts`) and the money figures.
 - `account-yield/`: account yield, its section, hook and measured tops.
 - `income-events/`: income events tab, table and charts.

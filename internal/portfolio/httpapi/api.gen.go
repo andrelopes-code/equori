@@ -207,33 +207,6 @@ func (e ReturnReportProfile) Valid() bool {
 	}
 }
 
-// Defines values for RiskMonthState.
-const (
-	Known       RiskMonthState = "known"
-	Missing     RiskMonthState = "missing"
-	NoBase      RiskMonthState = "no_base"
-	NothingHeld RiskMonthState = "nothing_held"
-	Stale       RiskMonthState = "stale"
-)
-
-// Valid indicates whether the value is a known member of the RiskMonthState enum.
-func (e RiskMonthState) Valid() bool {
-	switch e {
-	case Known:
-		return true
-	case Missing:
-		return true
-	case NoBase:
-		return true
-	case NothingHeld:
-		return true
-	case Stale:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for GetAllocationParamsBy.
 const (
 	GetAllocationParamsByCurrency    GetAllocationParamsBy = "currency"
@@ -839,71 +812,6 @@ type ReturnReport struct {
 // ReturnReportProfile rate when every holding is the value_in currency or a fixed income instrument quoted in it; market otherwise (amendment A208 R11).
 type ReturnReportProfile string
 
-// RiskCorrelation defines model for RiskCorrelation.
-type RiskCorrelation struct {
-	A             string `json:"a"`
-	B             string `json:"b"`
-	CorrelationBp int    `json:"correlation_bp"`
-	Months        int    `json:"months"`
-}
-
-// RiskLeftOut A security with months left out for a stale or missing price; from and to are the first and the last of those month ends.
-type RiskLeftOut struct {
-	From       openapi_types.Date `json:"from"`
-	Instrument string             `json:"instrument"`
-	Months     int                `json:"months"`
-	To         openapi_types.Date `json:"to"`
-}
-
-// RiskMonth defines model for RiskMonth.
-type RiskMonth struct {
-	DrawdownBp *int `json:"drawdown_bp,omitempty"`
-
-	// ExcludedBp The share of the value at the end of the month left out of the return for a stale or missing price; above 1000 the month leaves the volatility, the correlations and the risk shares.
-	ExcludedBp *int `json:"excluded_bp,omitempty"`
-
-	// Month The last day of the month.
-	Month    openapi_types.Date `json:"month"`
-	ReturnBp *int               `json:"return_bp,omitempty"`
-
-	// SpanMonths The months of the span the return covers; above 1 after a stale or missing month.
-	SpanMonths       *int           `json:"span_months,omitempty"`
-	State            RiskMonthState `json:"state"`
-	VolatilityBp     *int           `json:"volatility_bp,omitempty"`
-	VolatilityMonths *int           `json:"volatility_months,omitempty"`
-}
-
-// RiskMonthState defines model for RiskMonth.State.
-type RiskMonthState string
-
-// RiskReport defines model for RiskReport.
-type RiskReport struct {
-	Classes      []RiskSeries        `json:"classes"`
-	Correlations []RiskCorrelation   `json:"correlations"`
-	From         *openapi_types.Date `json:"from,omitempty"`
-
-	// LeftOut The securities with a month left out for a stale or missing price, the most months first.
-	LeftOut      []RiskLeftOut       `json:"left_out"`
-	Portfolio    RiskSeries          `json:"portfolio"`
-	To           *openapi_types.Date `json:"to,omitempty"`
-	ValueIn      string              `json:"value_in"`
-	WindowMonths int                 `json:"window_months"`
-}
-
-// RiskSeries defines model for RiskSeries.
-type RiskSeries struct {
-	AccrualBp *int `json:"accrual_bp,omitempty"`
-
-	// Key The instrument type of the class; empty for the portfolio.
-	Key              string      `json:"key"`
-	MaxDrawdownBp    *int        `json:"max_drawdown_bp,omitempty"`
-	Months           []RiskMonth `json:"months"`
-	RiskShareBp      *int        `json:"risk_share_bp,omitempty"`
-	VolatilityBp     *int        `json:"volatility_bp,omitempty"`
-	VolatilityMonths *int        `json:"volatility_months,omitempty"`
-	WeightBp         *int        `json:"weight_bp,omitempty"`
-}
-
 // SubtypeList defines model for SubtypeList.
 type SubtypeList struct {
 	Items []string `json:"items"`
@@ -988,12 +896,6 @@ type GetReturnParams struct {
 	To        openapi_types.Date  `form:"to" json:"to"`
 	ValueIn   *string             `form:"value_in,omitempty" json:"value_in,omitempty"`
 	Index     *string             `form:"index,omitempty" json:"index,omitempty"`
-}
-
-// GetRiskParams defines parameters for GetRisk.
-type GetRiskParams struct {
-	To      *openapi_types.Date `form:"to,omitempty" json:"to,omitempty"`
-	ValueIn *string             `form:"value_in,omitempty" json:"value_in,omitempty"`
 }
 
 // SaveContributionPlanJSONRequestBody defines body for SaveContributionPlan for application/json ContentType.

@@ -22,7 +22,6 @@ func (getPortfolioView) Values() []string {
 		"contribution",
 		"fixed_income_events",
 		"issuer_exposure",
-		"risk",
 	}
 }
 
@@ -148,8 +147,6 @@ type getPortfolioOut struct {
 	PeriodNote    bool                 `json:"period_note,omitzero"    jsonschema:"for issuer_exposure: covered values exceed the period limit"`
 	MissingPrices []string             `json:"missing_prices,omitzero" jsonschema:"for issuer_exposure: instruments without a price"`
 
-	Risk riskView `json:"risk,omitzero" jsonschema:"for risk: the portfolio and each instrument type"`
-
 	Current currentView `json:"current,omitzero" jsonschema:"for positions, allocation and net_worth at today: set when market values took current quotes read during the trading session instead of closes"`
 }
 
@@ -162,7 +159,6 @@ func getPortfolio(
 		Name: "get_portfolio",
 		Description: "Returns investment views at a date: positions with quantity, cost and market value; allocation by instrument type, currency or institution; net worth; or the annual return of an account over a period, with its time-weighted return and the percent of the default index of the region (the region's daily reference rate) that grows as much. " +
 			"With view contribution it returns the saved contribution plan, a target split of the portfolio by class, valued today, and with amount the split of a contribution over its classes. " +
-			"View risk: monthly volatility, drawdown and risk share by instrument type. " +
 			"Also lists the income types and instrument subtypes the book's tax jurisdiction accepts. " +
 			"At today a view with current holds values read during the trading session, not closes; with open true they are partial and change until the close. " +
 			"Use it for investments and net worth. " +
@@ -208,8 +204,6 @@ func validatePortfolioIn(in getPortfolioIn) error {
 		err = required(name, fields, "instrument_type")
 	case "contribution":
 		err = optionalFields(name, fields, "amount")
-	case "risk":
-		err = optionalFields(name, fields, "to")
 	default:
 		err = required(name, fields)
 	}
@@ -252,8 +246,6 @@ func portfolioView(
 		return fixedIncomeEventsView(ctx, svc, names, booksID, in)
 	case "issuer_exposure":
 		return issuerExposureResult(ctx, svc, booksID, date)
-	case "risk":
-		return riskResult(ctx, svc, booksID, in)
 	case "income_types":
 		types, err := svc.IncomeTypes(ctx, booksID)
 		return getPortfolioOut{IncomeTypes: nonNil(types)}, err

@@ -4917,7 +4917,7 @@
   },
   {
     "name": "get_portfolio",
-    "description": "Returns investment views at a date: positions with quantity, cost and market value; allocation by instrument type, currency or institution; net worth; or the annual return of an account over a period, with its time-weighted return and the percent of the default index of the region (the region's daily reference rate) that grows as much. With view contribution it returns the saved contribution plan, a target split of the portfolio by class, valued today, and with amount the split of a contribution over its classes. View risk: monthly volatility, drawdown and risk share by instrument type. Also lists the income types and instrument subtypes the book's tax jurisdiction accepts. At today a view with current holds values read during the trading session, not closes; with open true they are partial and change until the close. Use it for investments and net worth. Do not use it for cash balances only (get_balances) nor for a tax year (get_tax_year).",
+    "description": "Returns investment views at a date: positions with quantity, cost and market value; allocation by instrument type, currency or institution; net worth; or the annual return of an account over a period, with its time-weighted return and the percent of the default index of the region (the region's daily reference rate) that grows as much. With view contribution it returns the saved contribution plan, a target split of the portfolio by class, valued today, and with amount the split of a contribution over its classes. Also lists the income types and instrument subtypes the book's tax jurisdiction accepts. At today a view with current holds values read during the trading session, not closes; with open true they are partial and change until the close. Use it for investments and net worth. Do not use it for cash balances only (get_balances) nor for a tax year (get_tax_year).",
     "effect": "read_only",
     "idempotent": true,
     "input_schema": {
@@ -4936,8 +4936,7 @@
             "subtypes",
             "contribution",
             "fixed_income_events",
-            "issuer_exposure",
-            "risk"
+            "issuer_exposure"
           ]
         },
         "date": {
@@ -6289,147 +6288,6 @@
             "type": "string"
           },
           "description": "for issuer_exposure: instruments without a price"
-        },
-        "risk": {
-          "type": "object",
-          "properties": {
-            "value_in": {
-              "type": "string"
-            },
-            "from": {
-              "type": "string"
-            },
-            "to": {
-              "type": "string"
-            },
-            "portfolio": {
-              "type": "object",
-              "properties": {
-                "key": {
-                  "type": "string"
-                },
-                "volatility_bp": {
-                  "type": "integer",
-                  "description": "annualized, from the monthly returns of the last 36 months"
-                },
-                "volatility_months": {
-                  "type": "integer",
-                  "description": "below 36 is a short sample"
-                },
-                "max_drawdown_bp": {
-                  "type": "integer"
-                },
-                "weight_bp": {
-                  "type": "integer"
-                },
-                "risk_share_bp": {
-                  "type": "integer",
-                  "description": "share of the portfolio variance; above weight_bp swings more than its size"
-                },
-                "accrual_bp": {
-                  "type": "integer",
-                  "description": "share of the value priced by accrual, near zero volatility by construction"
-                },
-                "unknown_months": {
-                  "type": "integer",
-                  "description": "months left out: over a tenth of the value without a fresh price"
-                }
-              },
-              "additionalProperties": false
-            },
-            "classes": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "key": {
-                    "type": "string"
-                  },
-                  "volatility_bp": {
-                    "type": "integer",
-                    "description": "annualized, from the monthly returns of the last 36 months"
-                  },
-                  "volatility_months": {
-                    "type": "integer",
-                    "description": "below 36 is a short sample"
-                  },
-                  "max_drawdown_bp": {
-                    "type": "integer"
-                  },
-                  "weight_bp": {
-                    "type": "integer"
-                  },
-                  "risk_share_bp": {
-                    "type": "integer",
-                    "description": "share of the portfolio variance; above weight_bp swings more than its size"
-                  },
-                  "accrual_bp": {
-                    "type": "integer",
-                    "description": "share of the value priced by accrual, near zero volatility by construction"
-                  },
-                  "unknown_months": {
-                    "type": "integer",
-                    "description": "months left out: over a tenth of the value without a fresh price"
-                  }
-                },
-                "additionalProperties": false
-              }
-            },
-            "correlations": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "a": {
-                    "type": "string"
-                  },
-                  "b": {
-                    "type": "string"
-                  },
-                  "correlation_bp": {
-                    "type": "integer"
-                  },
-                  "months": {
-                    "type": "integer"
-                  }
-                },
-                "required": [
-                  "a",
-                  "b",
-                  "correlation_bp",
-                  "months"
-                ],
-                "additionalProperties": false
-              }
-            },
-            "left_out": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "instrument": {
-                    "type": "string"
-                  },
-                  "months": {
-                    "type": "integer"
-                  }
-                },
-                "required": [
-                  "instrument",
-                  "months"
-                ],
-                "additionalProperties": false
-              }
-            }
-          },
-          "description": "for risk: the portfolio and each instrument type",
-          "required": [
-            "value_in",
-            "portfolio",
-            "classes",
-            "correlations"
-          ],
-          "additionalProperties": false
         },
         "current": {
           "type": "object",

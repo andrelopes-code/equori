@@ -9,7 +9,6 @@ export {
   pricesQuery,
   subtypesQuery,
   termsQuery,
-  useRequestHistory,
 } from "@/features/instruments/api";
 export { TrendLine } from "@/features/instruments/price-trend/trend-line";
 export {
