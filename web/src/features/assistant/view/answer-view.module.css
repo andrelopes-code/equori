@@ -12,6 +12,7 @@
 
   .view {
     composes: edge from "../../../ui/display/panel-edge.module.css";
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: 12px;
