@@ -3,4 +3,10 @@
   .header {
     cursor: pointer;
   }
+
+  /* A control inside the header keeps the default cursor of its own parts. */
+  .contained {
+    display: contents;
+    cursor: auto;
+  }
 }

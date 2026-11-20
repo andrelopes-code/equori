@@ -1,5 +1,6 @@
 import { IconButton } from "@slotted/react/button";
 import { Glyph, Icon } from "@slotted/react/icon";
+import { Inline } from "@slotted/react/inline";
 import {
   Section,
   SectionActions,
@@ -13,6 +14,7 @@ import { useId } from "react";
 import type { ReactNode } from "react";
 
 import styles from "@/features/portfolio/collapsible-section/collapsible-section.module.css";
+import { Contained } from "@/features/portfolio/collapsible-section/contained";
 import { PeekBody } from "@/features/portfolio/collapsible-section/peek-body";
 import { useStoredCollapsed } from "@/features/portfolio/collapsible-section/use-stored-collapsed";
 import { useT } from "@/i18n/i18n-provider";
@@ -22,6 +24,10 @@ interface CollapsibleSectionProps {
   description: ReactNode;
   // The browser key that keeps the reader's choice.
   storageKey: string;
+  // Beside the heading (a help mark) and before the chevron (a control of the section); a press
+  // on either acts on itself and leaves the section as it is.
+  titleEnd?: ReactNode;
+  actions?: ReactNode;
   children: ReactNode;
 }
 
@@ -32,6 +38,8 @@ export function CollapsibleSection({
   title,
   description,
   storageKey,
+  titleEnd,
+  actions,
   children,
 }: CollapsibleSectionProps) {
   const t = useT();
@@ -39,7 +47,7 @@ export function CollapsibleSection({
   const bodyId = useId();
 
   return (
-    <Section size="lg" ground="surface">
+    <Section size="lg" ground="surface" aria-label={title}>
       <SectionHeader
         className={styles.header}
         onClick={() => {
@@ -47,10 +55,19 @@ export function CollapsibleSection({
         }}
       >
         <SectionTitle>
-          <SectionHeading>{title}</SectionHeading>
+          {titleEnd === undefined && <SectionHeading>{title}</SectionHeading>}
+
+          {titleEnd !== undefined && (
+            <Inline gap={0} align="center" wrap="nowrap">
+              <SectionHeading>{title}</SectionHeading>
+              <Contained>{titleEnd}</Contained>
+            </Inline>
+          )}
+
           <SectionDescription>{description}</SectionDescription>
         </SectionTitle>
         <SectionActions>
+          {actions !== undefined && <Contained>{actions}</Contained>}
           <IconButton
             size="sm"
             variant="ghost"

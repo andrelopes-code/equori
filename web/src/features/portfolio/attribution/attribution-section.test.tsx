@@ -99,6 +99,35 @@ describe("Attribution section", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("chooses a year without minimizing, and minimizes from the header", async () => {
+    await renderApp("/portfolio", {
+      fetch: portfolioApi({
+        "GET /api/v1/reports/attribution": () => json(200, report),
+      }),
+    });
+    const region = await section();
+    const user = userEvent.setup();
+    const title = catalogEn["portfolio.attribution.title"];
+
+    await user.click(
+      await within(region).findByRole("radio", { name: "2025" }),
+    );
+
+    await user.click(
+      within(region).getByRole("button", { name: `About “${title}”` }),
+    );
+
+    expect(
+      within(region).getByRole("button", { name: `Minimize ${title}` }),
+    ).toHaveAttribute("aria-expanded", "true");
+
+    await user.click(within(region).getByText(title));
+
+    expect(
+      within(region).getByRole("button", { name: `Expand ${title}` }),
+    ).toHaveAttribute("aria-expanded", "false");
+  });
+
   it("AT6: a year without a quote names the holdings", async () => {
     await renderApp("/portfolio", {
       fetch: portfolioApi({

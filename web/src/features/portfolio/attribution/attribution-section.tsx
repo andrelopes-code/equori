@@ -1,13 +1,3 @@
-import { Inline } from "@slotted/react/inline";
-import {
-  Section,
-  SectionActions,
-  SectionBody,
-  SectionDescription,
-  SectionHeader,
-  SectionHeading,
-  SectionTitle,
-} from "@slotted/react/section";
 import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -16,6 +6,7 @@ import { useApi } from "@/api/api-context";
 import { attributionQuery } from "@/features/portfolio/api";
 import { AttributionPending } from "@/features/portfolio/attribution/attribution-pending";
 import { AttributionYearView } from "@/features/portfolio/attribution/attribution-year-view";
+import { CollapsibleSection } from "@/features/portfolio/collapsible-section/collapsible-section";
 import { useT } from "@/i18n/i18n-provider";
 import { HelpTip } from "@/ui/display/help-tip";
 import { QueryError } from "@/ui/feedback/query-error";
@@ -24,9 +15,11 @@ import { QueryError } from "@/ui/feedback/query-error";
 // more years needs a select for the older ones.
 const YEARS_SHOWN = 6;
 
+const storageKey = "equori.portfolio.attribution.collapsed";
+
 // "Quem puxou a carteira" (docs/specs/2026-11-20-portfolio-attribution-design.md): the result of
-// each holding in the chosen year, the current year first. A book with no measured year draws
-// nothing.
+// each holding in the chosen year, the current year first. It minimizes as "Renda fixa" does. A
+// book with no measured year draws nothing.
 export function AttributionSection() {
   const t = useT();
   const api = useApi();
@@ -40,54 +33,46 @@ export function AttributionSection() {
 
   if (report.isSuccess && year === undefined) return null;
 
+  const yearControl = years.length > 1 && year !== undefined && (
+    <SegmentedControl
+      size="sm"
+      aria-label={t("portfolio.attribution.year")}
+      value={String(year.year)}
+      onValueChange={(value) => {
+        setChosen(Number(value));
+      }}
+    >
+      {years.map((y) => (
+        <Segment key={y.year} value={String(y.year)}>
+          {String(y.year)}
+        </Segment>
+      ))}
+    </SegmentedControl>
+  );
+
   return (
-    <Section size="lg" ground="surface" aria-label={title}>
-      <SectionHeader>
-        <SectionTitle>
-          <Inline gap={0} align="center" wrap="nowrap">
-            <SectionHeading>{title}</SectionHeading>
-            <HelpTip
-              label={t("return.help.about", { term: title })}
-              text={t("portfolio.attribution.help")}
-            />
-          </Inline>
-          <SectionDescription>
-            {t("portfolio.attribution.note")}
-          </SectionDescription>
-        </SectionTitle>
+    <CollapsibleSection
+      title={title}
+      description={t("portfolio.attribution.note")}
+      storageKey={storageKey}
+      titleEnd={
+        <HelpTip
+          label={t("return.help.about", { term: title })}
+          text={t("portfolio.attribution.help")}
+        />
+      }
+      actions={yearControl === false ? undefined : yearControl}
+    >
+      {report.isPending && <AttributionPending />}
 
-        {years.length > 1 && year !== undefined && (
-          <SectionActions>
-            <SegmentedControl
-              size="sm"
-              aria-label={t("portfolio.attribution.year")}
-              value={String(year.year)}
-              onValueChange={(value) => {
-                setChosen(Number(value));
-              }}
-            >
-              {years.map((y) => (
-                <Segment key={y.year} value={String(y.year)}>
-                  {String(y.year)}
-                </Segment>
-              ))}
-            </SegmentedControl>
-          </SectionActions>
-        )}
-      </SectionHeader>
+      {report.isError && (
+        <QueryError
+          error={report.error}
+          onRetry={() => void report.refetch()}
+        />
+      )}
 
-      <SectionBody>
-        {report.isPending && <AttributionPending />}
-
-        {report.isError && (
-          <QueryError
-            error={report.error}
-            onRetry={() => void report.refetch()}
-          />
-        )}
-
-        {year !== undefined && <AttributionYearView year={year} />}
-      </SectionBody>
-    </Section>
+      {year !== undefined && <AttributionYearView year={year} />}
+    </CollapsibleSection>
   );
 }
