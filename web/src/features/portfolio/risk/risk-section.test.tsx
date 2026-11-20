@@ -149,34 +149,48 @@ describe("Risk section", () => {
     ).toBeInTheDocument();
   });
 
-  it("collapses from its whole header, and keeps the choice", async () => {
+  it("minimizes from a click on its header, and keeps the choice", async () => {
     const fetch = portfolioApi({
       "GET /api/v1/reports/risk": () => json(200, report),
     });
     const first = await renderApp("/portfolio", { fetch });
     const region = await section();
-    const header = within(region).getByRole("button", {
-      name: new RegExp(`^${catalogEn["portfolio.risk.title"]}`),
+    await within(region).findByRole("table", {
+      name: catalogEn["portfolio.risk.classes"],
     });
 
-    await userEvent.click(header);
+    await userEvent.click(
+      within(region).getByRole("heading", {
+        name: catalogEn["portfolio.risk.title"],
+      }),
+    );
 
-    expect(header).toHaveAttribute("aria-expanded", "false");
+    expect(region.querySelector("[data-peek]")).toHaveAttribute(
+      "data-peek",
+      "closed",
+    );
     expect(localStorage.getItem(collapsedKey)).toBe("true");
 
     first.unmount();
     await renderApp("/portfolio", { fetch });
+    const again = await section();
 
-    expect(
-      within(await section()).getByRole("button", {
-        name: new RegExp(`^${catalogEn["portfolio.risk.title"]}`),
+    expect(again.querySelector("[data-peek]")).toHaveAttribute(
+      "data-peek",
+      "closed",
+    );
+
+    await userEvent.click(
+      within(again).getByRole("button", {
+        name: `Expand ${catalogEn["portfolio.risk.title"]}`,
       }),
-    ).toHaveAttribute("aria-expanded", "false");
-    expect(
-      within(await section()).queryByRole("table", {
-        name: catalogEn["portfolio.risk.classes"],
-      }),
-    ).toBeNull();
+    );
+
+    expect(again.querySelector("[data-peek]")).toHaveAttribute(
+      "data-peek",
+      "open",
+    );
+    expect(localStorage.getItem(collapsedKey)).toBe("false");
   });
 
   it("states a failure of the report", async () => {

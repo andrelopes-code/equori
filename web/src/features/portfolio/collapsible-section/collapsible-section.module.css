@@ -1,0 +1,6 @@
+@layer app {
+  /* The whole header toggles the section. */
+  .header {
+    cursor: pointer;
+  }
+}

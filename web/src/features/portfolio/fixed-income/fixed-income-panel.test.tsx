@@ -163,9 +163,9 @@ describe("Fixed income panel", () => {
     expect(
       within(root)
         .getAllByRole("heading")
-        .map((h) => h.textContent.replaceAll("\u00a0", " ")),
+        .map((h) => h.textContent),
     ).toEqual([
-      "Renda fixaR$ 412.300,00 em 6 contratos · em 18/11/2026",
+      "Renda fixa",
       "Como rende",
       "Quando volta",
       "Próximos 90 dias",
@@ -230,7 +230,7 @@ describe("Fixed income panel", () => {
     expect(texts([issuers])[0]).toContain("Limite por emissor");
   });
 
-  it("collapses from its whole header, and keeps the choice", async () => {
+  it("minimizes to the heading and the start of the body, and keeps the choice", async () => {
     localStorage.setItem("equori.locale", portuguese);
     const first = await renderApp("/portfolio", {
       today: "2026-11-18",
@@ -238,15 +238,19 @@ describe("Fixed income panel", () => {
     });
     const root = await panel("Renda fixa");
     await within(root).findByText("R$ 50.000,00 acima do FGC no Banco X");
-    const header = within(root).getByRole("button", { name: /^Renda fixa/ });
+    const body = root.querySelector("[data-peek]");
 
-    expect(header).toHaveAttribute("aria-expanded", "true");
+    expect(body).toHaveAttribute("data-peek", "open");
+    expect(body).not.toHaveAttribute("inert");
 
-    await userEvent.click(header);
+    await userEvent.click(
+      within(root).getByRole("button", { name: "Minimizar Renda fixa" }),
+    );
 
-    expect(header).toHaveAttribute("aria-expanded", "false");
+    expect(body).toHaveAttribute("data-peek", "closed");
+    expect(body).toHaveAttribute("inert");
     expect(
-      within(root).getByRole("heading", { name: /^Renda fixa/ }),
+      within(root).getByRole("heading", { name: "Renda fixa" }),
     ).toBeInTheDocument();
     expect(localStorage.getItem(collapsedKey)).toBe("true");
 
@@ -255,15 +259,50 @@ describe("Fixed income panel", () => {
       today: "2026-11-18",
       fetch: fixedIncomeApi(),
     });
-    const again = within(await panel("Renda fixa")).getByRole("button", {
-      name: /^Renda fixa/,
+    const again = await panel("Renda fixa");
+
+    expect(again.querySelector("[data-peek]")).toHaveAttribute(
+      "data-peek",
+      "closed",
+    );
+
+    await userEvent.click(
+      within(again).getByRole("button", { name: "Ver mais" }),
+    );
+
+    expect(again.querySelector("[data-peek]")).toHaveAttribute(
+      "data-peek",
+      "open",
+    );
+    expect(localStorage.getItem(collapsedKey)).toBe("false");
+  });
+
+  it("toggles from a click anywhere on its header", async () => {
+    localStorage.setItem("equori.locale", portuguese);
+    await renderApp("/portfolio", {
+      today: "2026-11-18",
+      fetch: fixedIncomeApi(),
     });
+    const root = await panel("Renda fixa");
+    await within(root).findByText("R$ 50.000,00 acima do FGC no Banco X");
+    const body = root.querySelector("[data-peek]");
 
-    expect(again).toHaveAttribute("aria-expanded", "false");
+    await userEvent.click(
+      within(root).getByRole("heading", { name: "Renda fixa" }),
+    );
 
-    await userEvent.click(again);
+    expect(body).toHaveAttribute("data-peek", "closed");
+    expect(
+      within(root).getByRole("button", { name: "Expandir Renda fixa" }),
+    ).toHaveAttribute("aria-expanded", "false");
 
-    expect(again).toHaveAttribute("aria-expanded", "true");
+    await userEvent.click(
+      within(root).getByText("R$ 412.300,00 em 6 contratos · em 18/11/2026", {
+        normalizer: (text) => text.replaceAll("\u00a0", " "),
+      }),
+    );
+
+    expect(body).toHaveAttribute("data-peek", "open");
     expect(localStorage.getItem(collapsedKey)).toBe("false");
   });
 

@@ -1,12 +1,21 @@
+import { IconButton } from "@slotted/react/button";
+import { Glyph, Icon } from "@slotted/react/icon";
 import {
-  Collapsible,
-  CollapsibleHeader,
-  CollapsiblePanel,
-  CollapsibleTrigger,
-} from "@slotted/react/collapsible";
+  Section,
+  SectionActions,
+  SectionBody,
+  SectionDescription,
+  SectionHeader,
+  SectionHeading,
+  SectionTitle,
+} from "@slotted/react/section";
+import { useId } from "react";
 import type { ReactNode } from "react";
 
+import styles from "@/features/portfolio/collapsible-section/collapsible-section.module.css";
+import { PeekBody } from "@/features/portfolio/collapsible-section/peek-body";
 import { useStoredCollapsed } from "@/features/portfolio/collapsible-section/use-stored-collapsed";
+import { useT } from "@/i18n/i18n-provider";
 
 interface CollapsibleSectionProps {
   title: string;
@@ -16,37 +25,62 @@ interface CollapsibleSectionProps {
   children: ReactNode;
 }
 
-// A framed section of the page whose whole header opens and closes it. The root is a section
-// named by its title, a landmark as the page's other sections are; the panel mounts on the
-// first open, so a section kept closed loads none of its charts.
+// A surface section that minimizes to its header and the start of its body. A click anywhere on
+// the header toggles it: the chevron is the control a keyboard and a reader reach, and its click
+// bubbles to the header, so the press is counted once.
 export function CollapsibleSection({
   title,
   description,
   storageKey,
   children,
 }: CollapsibleSectionProps) {
+  const t = useT();
   const [collapsed, setCollapsed] = useStoredCollapsed(storageKey);
+  const bodyId = useId();
 
   return (
-    <Collapsible
-      variant="framed"
-      size="lg"
-      level="2"
-      mount="lazy"
-      truncate
-      open={!collapsed}
-      onOpenChange={(open) => {
-        setCollapsed(!open);
-      }}
-      render={(props) => <section {...props} aria-label={title} />}
-    >
-      <CollapsibleHeader>
-        <CollapsibleTrigger description={description}>
-          {title}
-        </CollapsibleTrigger>
-      </CollapsibleHeader>
-
-      <CollapsiblePanel>{children}</CollapsiblePanel>
-    </Collapsible>
+    <Section size="lg" ground="surface">
+      <SectionHeader
+        className={styles.header}
+        onClick={() => {
+          setCollapsed(!collapsed);
+        }}
+      >
+        <SectionTitle>
+          <SectionHeading>{title}</SectionHeading>
+          <SectionDescription>{description}</SectionDescription>
+        </SectionTitle>
+        <SectionActions>
+          <IconButton
+            size="sm"
+            variant="ghost"
+            tone="secondary"
+            aria-label={t(
+              collapsed
+                ? "fixedIncome.panel.expand"
+                : "fixedIncome.panel.minimize",
+              { name: title },
+            )}
+            aria-expanded={!collapsed}
+            aria-controls={bodyId}
+          >
+            <Icon>
+              <Glyph name={collapsed ? "chevron-down" : "chevron-up"} />
+            </Icon>
+          </IconButton>
+        </SectionActions>
+      </SectionHeader>
+      <SectionBody>
+        <PeekBody
+          id={bodyId}
+          collapsed={collapsed}
+          onExpand={() => {
+            setCollapsed(false);
+          }}
+        >
+          {children}
+        </PeekBody>
+      </SectionBody>
+    </Section>
   );
 }
