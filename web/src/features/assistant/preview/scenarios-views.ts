@@ -267,3 +267,123 @@ viewScenarios.push({
     },
   ],
 });
+
+// Proposals with the fields the real previews send, drawn by the bodies of the answer views design.
+const pending = (
+  id: string,
+  tool: string,
+  preview: Record<string, unknown>,
+) => ({
+  id,
+  tool,
+  status: "pending" as const,
+  suggested: false,
+  waiting_for: [],
+  preview: preview as never,
+  created_at: "2026-11-19T10:00:00Z",
+  expires_at: "2099-11-19T10:15:00Z",
+});
+
+viewScenarios.push(
+  {
+    id: "write-goal",
+    form: "goal",
+    note: "manage_budget_or_goal.create_goal",
+    handled: true,
+    question: "Quero juntar 15 mil para viajar até julho",
+    answer: "Confirme a meta:",
+    proposals: [
+      pending("w-goal", "manage_budget_or_goal", {
+        action: "manage_budget_or_goal.create_goal",
+        changes: [
+          { field: "goal", after: { text: "Viagem Japão" } },
+          { field: "target", after: { amount: "15000.00", currency: "BRL" } },
+          { field: "due_on", after: { date: "2027-07-31" } },
+          { field: "accounts", after: { text: "Inter" } },
+        ],
+      }),
+    ],
+  },
+  {
+    id: "write-budget",
+    form: "budget",
+    note: "manage_budget_or_goal.set_budget_amount",
+    handled: true,
+    question: "Limita delivery a 350 por mês",
+    answer: "Confirme o limite:",
+    proposals: [
+      pending("w-budget", "manage_budget_or_goal", {
+        action: "manage_budget_or_goal.set_budget_amount",
+        changes: [
+          { field: "budget", after: { text: "Delivery" } },
+          { field: "amount", after: { amount: "350.00", currency: "BRL" } },
+          { field: "date", after: { date: "2026-12-01" } },
+        ],
+      }),
+    ],
+  },
+  {
+    id: "write-application",
+    form: "application",
+    note: "record_fixed_income",
+    handled: true,
+    question: "Apliquei 10 mil num CDB do Inter",
+    answer: "Confirme a aplicação:",
+    proposals: [
+      pending("w-app", "record_fixed_income", {
+        action: "record_fixed_income",
+        target: "CDB Banco Inter",
+        changes: [
+          { field: "amount", after: { amount: "10000.00", currency: "BRL" } },
+          { field: "account", after: { text: "Inter" } },
+          { field: "date", after: { date: "2026-11-19" } },
+        ],
+      }),
+    ],
+  },
+  {
+    id: "write-move",
+    form: "move",
+    note: "transfer_custody",
+    handled: true,
+    question: "Transferi 200 ITSA4 da Clear para a XP",
+    answer: "Confirme a transferência:",
+    proposals: [
+      pending("w-move", "transfer_custody", {
+        action: "transfer_custody",
+        target: "ITSA4 · Clear",
+        changes: [
+          { field: "account", after: { text: "XP" } },
+          { field: "quantity", after: { text: "200" } },
+          { field: "date", after: { date: "2026-11-19" } },
+        ],
+      }),
+    ],
+  },
+  {
+    id: "write-diff",
+    form: "diff",
+    note: "change_transaction",
+    handled: true,
+    question: "O mercado de ontem foi 212,40, não 21,24",
+    answer: "Confirme a correção:",
+    proposals: [
+      pending("w-diff", "change_transaction", {
+        action: "change_transaction",
+        target: "Pão de Açúcar",
+        changes: [
+          {
+            field: "amount",
+            before: { amount: "-21.24", currency: "BRL" },
+            after: { amount: "-212.40", currency: "BRL" },
+          },
+          {
+            field: "account",
+            before: { text: "Itaú" },
+            after: { text: "Nubank" },
+          },
+        ],
+      }),
+    ],
+  },
+);

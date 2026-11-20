@@ -27,6 +27,13 @@ const sources: Record<string, AssistantIconName> = {
   get_imports: "receipt",
   review_investment_movement: "trend",
   get_help: "book",
+  estimate_redemption: "trend",
+  find_recurring: "repeat",
+  get_appearance: "info",
+  get_book_access: "book",
+  get_csv_profile: "fileDown",
+  get_financial_indicators: "chart",
+  open_calculator: "chart",
 };
 
 // The icon of each write tool a proposal runs (spec 2026-11-15, section 4).
@@ -58,6 +65,14 @@ const actions: Record<string, AssistantIconName> = {
   import_price_file: "chart",
   attach_file: "paperclip",
   detach_attachment: "paperclip",
+  record_fixed_income: "trend",
+  manage_book: "book",
+  manage_imports: "fileDown",
+  save_csv_profile: "fileDown",
+  set_appearance: "info",
+  set_payment_schedule: "calendar",
+  set_rate_steps: "trend",
+  update_profile: "info",
 };
 
 export function sourceIcon(tool: string): AssistantIconName {

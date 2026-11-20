@@ -415,3 +415,118 @@
     font-variant-numeric: tabular-nums;
   }
 }
+
+/* Before → after rows, the one-line plan of a write, and units moving between accounts (answer
+   views design, write bodies). */
+@layer app {
+  .diff {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    column-gap: 12px;
+    margin: 0;
+  }
+
+  .diffRow {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    align-items: center;
+    box-sizing: border-box;
+    min-block-size: 32px;
+    border-block-end: 1px solid var(--slotted-border-subtle);
+  }
+
+  .diffRow:last-child {
+    border-block-end: 0;
+  }
+
+  .diffKey {
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+  }
+
+  .diffValues {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    min-inline-size: 0;
+    margin: 0;
+    font-size: var(--slotted-font-size-sm);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .was {
+    overflow: hidden;
+    color: var(--slotted-text-muted);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .is {
+    overflow: hidden;
+    font-weight: var(--slotted-font-weight-semibold);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .diffArrow {
+    display: inline-flex;
+    flex: none;
+    inline-size: 14px;
+    block-size: 14px;
+    color: var(--slotted-text-muted);
+    transform: rotate(45deg);
+  }
+
+  .eqLine {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 8px;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-sm);
+  }
+
+  .eqLine b {
+    color: var(--slotted-text);
+    font-size: var(--slotted-font-size-lg);
+    font-weight: var(--slotted-font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .moveFlow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 14px minmax(0, 1fr) 14px minmax(
+        0,
+        1fr
+      );
+    align-items: center;
+    gap: 6px;
+  }
+
+  .moveNode,
+  .moveNodeHot {
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 0;
+    padding: 6px 10px;
+    overflow: hidden;
+    border-radius: 8px;
+    background: color-mix(in oklab, var(--slotted-text) 5%, transparent);
+    font-size: var(--slotted-font-size-sm);
+    font-weight: var(--slotted-font-weight-semibold);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .moveNodeHot {
+    background: var(--slotted-tone-accent-surface);
+  }
+
+  .moveNode small {
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+    font-weight: var(--slotted-font-weight-regular);
+  }
+}

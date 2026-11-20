@@ -8,6 +8,10 @@ export type BodyKind =
   | "limit"
   | "payment"
   | "file"
+  | "goal"
+  | "budget"
+  | "application"
+  | "move"
   | "fields";
 
 const BODY_KINDS = new Map<string, BodyKind>(
@@ -27,6 +31,11 @@ const BODY_KINDS = new Map<string, BodyKind>(
     import_statement_file: "file",
     import_price_file: "file",
     attach_file: "file",
+    "manage_budget_or_goal.create_goal": "goal",
+    "manage_budget_or_goal.set_budget_amount": "budget",
+    "manage_budget_or_goal.create_budget": "budget",
+    record_fixed_income: "application",
+    transfer_custody: "move",
   } satisfies Record<string, BodyKind>),
 );
 
