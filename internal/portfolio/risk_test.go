@@ -107,19 +107,32 @@ func TestS648MonthlyReturnsByClass(t *testing.T) {
 		{"2026-05-31", "known", 0, 1},
 	})
 	// The portfolio: (101000 − 102000) / 102000, (104000 − 101000) / 101000; April holds the cash
-	// alone, the fund left out (103000 of 104000); May holds the two months of the fund:
-	// (102000 − 104000) / 104000.
+	// alone, the fund left out (103000 of 104000); May holds the cash alone too, since the fund's
+	// return covers two months (RK6): 101000 of 102000 left out.
 	assertMonths(t, "portfolio", got.Portfolio.Months, []monthWant{
 		{"2026-01-31", "known", 214, 1},
 		{"2026-02-28", "known", -98, 1},
 		{"2026-03-31", "known", 297, 1},
 		{"2026-04-30", "known", 0, 1},
-		{"2026-05-31", "known", -192, 2},
+		{"2026-05-31", "known", 0, 1},
 	})
 
 	if april := got.Portfolio.Months[3]; intOf(april.ExcludedBP) != 9904 ||
 		reit.Months[3].ExcludedBP == nil || got.Portfolio.Months[2].ExcludedBP != nil {
 		t.Errorf("left out = %+v, reit %+v", april, reit.Months[3])
+	}
+
+	// April and May measure a hundredth of the value: no drawdown in them (RK8).
+	if may := got.Portfolio.Months[4]; intOf(may.ExcludedBP) != 9902 ||
+		may.DrawdownBP != nil || got.Portfolio.Months[3].DrawdownBP != nil ||
+		got.Portfolio.Months[2].DrawdownBP == nil {
+		t.Errorf(
+			"may left out %d, drawdown %v; april %v; march %v",
+			intOf(may.ExcludedBP),
+			may.DrawdownBP,
+			got.Portfolio.Months[3].DrawdownBP,
+			got.Portfolio.Months[2].DrawdownBP,
+		)
 	}
 
 	if len(got.LeftOut) != 1 || got.LeftOut[0].Instrument != "MXRF11" ||

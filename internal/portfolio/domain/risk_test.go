@@ -70,6 +70,30 @@ func TestRiskStates(t *testing.T) {
 	}
 }
 
+// TestRiskDrawdownGap checks RK8: a month that leaves out more than the limit has no drawdown,
+// and the run starts again after it.
+func TestRiskDrawdownGap(t *testing.T) {
+	t.Parallel()
+
+	got := Finish([]MonthRisk{
+		{State: MonthKnown, Span: 1, Return: -0.10},
+		{State: MonthKnown, Span: 1, Return: -0.20, Excluded: 0.30},
+		{State: MonthKnown, Span: 1, Return: -0.05},
+		{State: MonthKnown, Span: 1, Return: -0.05, Excluded: 0.05},
+	})
+
+	want := []struct {
+		has bool
+		bp  int
+	}{{true, -1000}, {false, 0}, {true, -500}, {true, -975}}
+	for i, w := range want {
+		if got[i].HasDrawdown != w.has || BP(got[i].Drawdown) != w.bp {
+			t.Errorf("month %d drawdown = %d (%v), want %d (%v)",
+				i, BP(got[i].Drawdown), got[i].HasDrawdown, w.bp, w.has)
+		}
+	}
+}
+
 // TestRiskVolatility checks RK7: twelve returns of +1% and -1% give 0.01 × √(12/11) × √12.
 func TestRiskVolatility(t *testing.T) {
 	t.Parallel()
@@ -203,11 +227,13 @@ func TestRiskAggregate(t *testing.T) {
 		other    int64
 		excluded int
 		counts   bool
+		// March: the share of the stale holding, whose span of two months is left out.
+		marchExcluded int
 	}{
 		// 1100 of 10100 is 1089 basis points left out: above the limit of 1000.
-		{"a large share left out", 9000, 1089, false},
+		{"a large share left out", 9000, 1089, false, 1089},
 		// 1100 of 100100 is 110 basis points.
-		{"a small share left out", 99000, 110, true},
+		{"a small share left out", 99000, 110, true, 110},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -232,11 +258,23 @@ func TestRiskAggregate(t *testing.T) {
 				)
 			}
 
-			// March holds the two months of the stale holding: 10% on both.
-			if got[2].Span != 2 || BP(got[2].Return) != 1000 || got[2].OneMonth() {
-				t.Errorf("march = %+v, want 1000 bp over two months", got[2])
+			// March is one month: the stale holding's return covers two, so it is left out and
+			// the month holds the other holding's 10%.
+			if got[2].Span != 1 || BP(got[2].Return) != 1000 ||
+				BP(got[2].Excluded) != tt.marchExcluded || got[2].OneMonth() != tt.counts {
+				t.Errorf(
+					"march = %+v, want 1000 bp over one month, %d bp left out",
+					got[2],
+					tt.marchExcluded,
+				)
 			}
 		})
+	}
+
+	// When every holding counted spans two months, the month carries the two (RK6).
+	both := Aggregate([][]MonthRisk{stale, stale})
+	if both[2].Span != 2 || BP(both[2].Return) != 1000 || both[2].Excluded != 0 {
+		t.Errorf("march of two stale holdings = %+v, want 1000 bp over two months", both[2])
 	}
 
 	// A month whose every holding lacks a fresh price takes the worst state.

@@ -77,7 +77,8 @@ func Finish(months []MonthRisk) []MonthRisk {
 
 // Aggregate sums holdings that cover the same months into one series (RK3). A holding whose month
 // is stale or missing is left out of that month, and its value counts in Excluded; the others
-// make the month. Span is the longest span among the holdings counted.
+// make the month. A known holding whose span is longer than the shortest one is left out too:
+// one return covers one period. Span is the span of the holdings counted.
 func Aggregate(holdings [][]MonthRisk) []MonthRisk {
 	if len(holdings) == 0 {
 		return nil
@@ -227,17 +228,22 @@ func aggregateMonth(holdings [][]MonthRisk, i int) MonthRisk {
 
 	var counted, excluded int64
 
+	span := shortestSpan(holdings, i)
+
 	for _, h := range holdings {
 		m := h[i]
 
-		switch m.State {
-		case MonthKnown, MonthNoBase:
+		switch {
+		case m.State == MonthKnown && m.Span > span:
+			// Its return covers months the others already measured (RK6).
+			excluded += m.Value
+		case m.State == MonthKnown, m.State == MonthNoBase:
 			out.Gain += m.Gain
 			out.Base += m.Base
 			out.Span = max(out.Span, m.Span)
 			counted += m.Value
 			out.State = MonthKnown
-		case MonthStale, MonthMissing:
+		case m.State == MonthStale, m.State == MonthMissing:
 			excluded += m.Value
 
 			if out.State != MonthKnown {
@@ -266,6 +272,19 @@ func aggregateMonth(holdings [][]MonthRisk, i int) MonthRisk {
 	return out
 }
 
+// shortestSpan is the shortest span among the known holdings of month i; 0 when none is known.
+func shortestSpan(holdings [][]MonthRisk, i int) int {
+	span := 0
+
+	for _, h := range holdings {
+		if m := h[i]; m.State == MonthKnown && (span == 0 || m.Span < span) {
+			span = m.Span
+		}
+	}
+
+	return span
+}
+
 // worseState is missing over stale over any other state.
 func worseState(a, b string) string {
 	if a == MonthMissing || b == MonthMissing {
@@ -281,11 +300,15 @@ func addDrawdowns(months []MonthRisk) {
 	index, peak := 1.0, 1.0
 
 	for i := range months {
-		switch months[i].State {
-		case MonthKnown:
+		switch {
+		case months[i].State == MonthKnown && months[i].Excluded > MaxExcluded:
+			// A month that measures too small a share of the value ends the run.
+			index, peak = 1, 1
+			continue
+		case months[i].State == MonthKnown:
 			index *= 1 + months[i].Return
-		case MonthNothingHeld:
-		case MonthNoBase:
+		case months[i].State == MonthNothingHeld:
+		case months[i].State == MonthNoBase:
 			index, peak = 1, 1
 			continue
 		default:
