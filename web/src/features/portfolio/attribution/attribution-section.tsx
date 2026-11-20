@@ -1,3 +1,4 @@
+import { Inline } from "@slotted/react/inline";
 import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -55,13 +56,15 @@ export function AttributionSection() {
       title={title}
       description={t("portfolio.attribution.note")}
       storageKey={storageKey}
-      titleEnd={
-        <HelpTip
-          label={t("return.help.about", { term: title })}
-          text={t("portfolio.attribution.help")}
-        />
+      actions={
+        <Inline gap={3} align="center" wrap="nowrap">
+          {yearControl}
+          <HelpTip
+            label={t("return.help.about", { term: title })}
+            text={t("portfolio.attribution.help")}
+          />
+        </Inline>
       }
-      actions={yearControl === false ? undefined : yearControl}
     >
       {report.isPending && <AttributionPending />}
 

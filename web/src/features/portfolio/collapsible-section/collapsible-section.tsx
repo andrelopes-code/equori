@@ -1,6 +1,5 @@
 import { IconButton } from "@slotted/react/button";
 import { Glyph, Icon } from "@slotted/react/icon";
-import { Inline } from "@slotted/react/inline";
 import {
   Section,
   SectionActions,
@@ -24,9 +23,8 @@ interface CollapsibleSectionProps {
   description: ReactNode;
   // The browser key that keeps the reader's choice.
   storageKey: string;
-  // Beside the heading (a help mark) and before the chevron (a control of the section); a press
-  // on either acts on itself and leaves the section as it is.
-  titleEnd?: ReactNode;
+  // Before the chevron: the controls of the section. A press on them acts on itself and leaves the
+  // section as it is.
   actions?: ReactNode;
   children: ReactNode;
 }
@@ -38,7 +36,6 @@ export function CollapsibleSection({
   title,
   description,
   storageKey,
-  titleEnd,
   actions,
   children,
 }: CollapsibleSectionProps) {
@@ -55,15 +52,7 @@ export function CollapsibleSection({
         }}
       >
         <SectionTitle>
-          {titleEnd === undefined && <SectionHeading>{title}</SectionHeading>}
-
-          {titleEnd !== undefined && (
-            <Inline gap={0} align="center" wrap="nowrap">
-              <SectionHeading>{title}</SectionHeading>
-              <Contained>{titleEnd}</Contained>
-            </Inline>
-          )}
-
+          <SectionHeading>{title}</SectionHeading>
           <SectionDescription>{description}</SectionDescription>
         </SectionTitle>
         <SectionActions>
