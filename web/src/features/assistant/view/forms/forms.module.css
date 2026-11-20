@@ -639,7 +639,7 @@
 
   .step > b {
     position: absolute;
-    inset-inline: -4px;
+    inset-inline: 0;
     inset-block-end: calc(var(--from) + var(--h) + 4px);
     font-size: var(--slotted-font-size-xs);
     font-weight: var(--slotted-font-weight-semibold);
