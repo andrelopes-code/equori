@@ -2,6 +2,7 @@ package domain
 
 import (
 	"math"
+	"slices"
 	"time"
 )
 
@@ -24,26 +25,42 @@ const (
 )
 
 // MonthValue is a holding at the end of one month: its value and the flows of the month in minor
-// units of one currency, and a State when the price of the value is stale or missing.
+// units of one currency, and a State when the price of the value is stale or missing. Marks are
+// its values at the end of each flow date of the portfolio inside the month (RK5).
 type MonthValue struct {
 	End   time.Time
 	State string
 	Value int64
 	Flows []CashFlow
+	Marks []Mark
 }
 
-// MonthRisk is the figure of one month. Gain, Base and Return are those of the span that ends
-// at the month (RK5, RK6); Span is its length in months, 0 when the month is not known. Value
-// is the value at the end of the month, priced or not; Excluded is the share of the value of an
-// aggregate left out for a stale or missing price (RK3).
-type MonthRisk struct {
-	End        time.Time
-	State      string
+// Mark is the value of a holding at the end of one day; Known is false when a balance of it had
+// no price on that day.
+type Mark struct {
+	Date  time.Time
+	Value int64
+	Known bool
+}
+
+// Sub is one piece of a month between two flow dates: the gain of the piece and the value it
+// started from (RK5).
+type Sub struct {
 	Gain, Base float64
-	Return     float64
-	Span       int
-	Value      int64
-	Excluded   float64
+}
+
+// MonthRisk is the figure of one month. Subs are the pieces of the span that ends at the month
+// and Return their chained return (RK5, RK6); Span is its length in months, 0 when the month is
+// not known. Value is the value at the end of the month, priced or not; Excluded is the share of
+// the value of an aggregate left out for a stale or missing price (RK3).
+type MonthRisk struct {
+	End      time.Time
+	State    string
+	Subs     []Sub
+	Return   float64
+	Span     int
+	Value    int64
+	Excluded float64
 
 	Drawdown    float64
 	HasDrawdown bool
@@ -117,13 +134,15 @@ func Correlation(a, b []MonthRisk) (float64, int, bool) {
 }
 
 // RiskShares is the share of the variance of the portfolio each class carries over the last
-// RiskWindow months with a one-month portfolio return (RK10). The contribution of a class in a
-// month is its gain over the base of the portfolio; the classes cover the portfolio's months.
-func RiskShares(classes [][]MonthRisk, portfolio []MonthRisk) ([]float64, bool) {
+// RiskWindow months with a one-month portfolio return (RK10). holdings lists the holdings of each
+// class. The contribution of a class in a month adds, over the month's pieces, the gain of its
+// holdings the portfolio counted over the portfolio's base, grown by the portfolio's earlier
+// pieces: the contributions of the classes add up to the portfolio's return.
+func RiskShares(holdings [][][]MonthRisk, portfolio []MonthRisk) ([]float64, bool) {
 	var months []int
 
 	for i := max(0, len(portfolio)-RiskWindow); i < len(portfolio); i++ {
-		if portfolio[i].OneMonth() && portfolio[i].Base > 0 {
+		if portfolio[i].OneMonth() {
 			months = append(months, i)
 		}
 	}
@@ -142,11 +161,11 @@ func RiskShares(classes [][]MonthRisk, portfolio []MonthRisk) ([]float64, bool) 
 		return nil, false
 	}
 
-	shares := make([]float64, len(classes))
-	for c, class := range classes {
+	shares := make([]float64, len(holdings))
+	for c, class := range holdings {
 		contribution := make([]float64, len(months))
 		for j, i := range months {
-			contribution[j] = class[i].Gain / portfolio[i].Base
+			contribution[j] = contributionOf(class, portfolio[i], i)
 		}
 
 		shares[c] = covariance(contribution, total) / variance
@@ -158,67 +177,6 @@ func RiskShares(classes [][]MonthRisk, portfolio []MonthRisk) ([]float64, bool) 
 // BP is x in basis points, rounded half to even (RK13).
 func BP(x float64) int {
 	return int(math.RoundToEven(x * 10000))
-}
-
-// Spans computes the modified Dietz return of each span between two known month ends of one
-// holding (RK5, RK6).
-func Spans(start time.Time, opening int64, months []MonthValue) []MonthRisk {
-	out := make([]MonthRisk, len(months))
-	from, value := start, opening
-
-	var pending []CashFlow
-
-	length := 0
-
-	for i, m := range months {
-		pending = append(pending, m.Flows...)
-		length++
-		out[i] = MonthRisk{End: m.End, State: m.State, Value: m.Value}
-
-		if m.State == MonthStale || m.State == MonthMissing {
-			continue
-		}
-
-		out[i] = dietz(from, m.End, value, m.Value, pending)
-		out[i].Span, out[i].Value = length, m.Value
-		from, value, pending, length = m.End, m.Value, nil, 0
-	}
-
-	return out
-}
-
-// dietz is the modified Dietz figure of the span (from, to]: a flow on day d of a span of L days
-// weighs (L − d) / L, so it earns from the next day.
-func dietz(from, to time.Time, opening, closing int64, flows []CashFlow) MonthRisk {
-	out := MonthRisk{End: to, State: MonthKnown}
-	if opening == 0 && closing == 0 && len(flows) == 0 {
-		out.State = MonthNothingHeld
-		return out
-	}
-
-	days := to.Sub(from).Hours() / 24
-	out.Gain = float64(closing - opening)
-	out.Base = float64(opening)
-
-	for _, f := range flows {
-		weight := (days - f.Date.Sub(from).Hours()/24) / days
-		out.Gain -= float64(f.Amount)
-		out.Base += weight * float64(f.Amount)
-	}
-
-	if out.Base == 0 && out.Gain == 0 {
-		out.State = MonthNothingHeld
-		return out
-	}
-
-	if out.Base <= 0 {
-		out.State = MonthNoBase
-		return out
-	}
-
-	out.Return = out.Gain / out.Base
-
-	return out
 }
 
 // aggregateMonth sums month i of the holdings: the counted ones give the gain and the base, the
@@ -238,8 +196,7 @@ func aggregateMonth(holdings [][]MonthRisk, i int) MonthRisk {
 			// Its return covers months the others already measured (RK6).
 			excluded += m.Value
 		case m.State == MonthKnown, m.State == MonthNoBase:
-			out.Gain += m.Gain
-			out.Base += m.Base
+			out.Subs = addSubs(out.Subs, m.Subs)
 			out.Span = max(out.Span, m.Span)
 			counted += m.Value
 			out.State = MonthKnown
@@ -258,16 +215,55 @@ func aggregateMonth(holdings [][]MonthRisk, i int) MonthRisk {
 	}
 
 	if out.State != MonthKnown {
-		out.Span, out.Gain, out.Base = 0, 0, 0
+		out.Span, out.Subs = 0, nil
 		return out
 	}
 
-	if out.Base <= 0 {
-		out.State = MonthNoBase
-		return out
+	return chained(out)
+}
+
+// addSubs adds the pieces of b to those of a, piece by piece: the holdings of one month share
+// the portfolio's flow dates, so their pieces cover the same days.
+func addSubs(a, b []Sub) []Sub {
+	out := slices.Clone(a)
+	for len(out) < len(b) {
+		out = append(out, Sub{})
 	}
 
-	out.Return = out.Gain / out.Base
+	for k, s := range b {
+		out[k].Gain += s.Gain
+		out[k].Base += s.Base
+	}
+
+	return out
+}
+
+// contributionOf is the part of the portfolio's return of month i that the holdings of one class
+// make: their gain in each piece over the portfolio's base of the piece, grown by the portfolio's
+// pieces before it. Only the holdings the portfolio counted that month enter (RK3, RK6).
+func contributionOf(class [][]MonthRisk, portfolio MonthRisk, i int) float64 {
+	var gains []Sub
+
+	for _, h := range class {
+		if m := h[i]; (m.State == MonthKnown && m.Span == portfolio.Span) ||
+			m.State == MonthNoBase {
+			gains = addSubs(gains, m.Subs)
+		}
+	}
+
+	out, growth := 0.0, 1.0
+
+	for k, p := range portfolio.Subs {
+		if p.Base <= 0 {
+			continue
+		}
+
+		if k < len(gains) {
+			out += gains[k].Gain / p.Base * growth
+		}
+
+		growth *= 1 + p.Gain/p.Base
+	}
 
 	return out
 }

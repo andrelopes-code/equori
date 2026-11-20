@@ -88,13 +88,14 @@ func TestS648MonthlyReturnsByClass(t *testing.T) {
 
 	got := f.risk(t, "to=2026-05-31&value_in=BRL")
 
-	// Hand-computed by RK5: January 2000 / (100000 × 29/31); February −1000 / (102000 − 1000 ×
-	// 13/28) with the income of 10.00; March 3000 / 100000; April stale; May −2000 / 103000
-	// over two months. The cash receives the income from the fund and gains nothing.
+	// Hand-computed by RK5: January earns from the day after the purchase, 102000 / 100000;
+	// February splits at the income of the 15th, (102000 + 1000) / 102000 × 100000 / 102000;
+	// March 3000 / 100000; April stale; May −2000 / 103000 over two months (modified Dietz).
+	// The cash receives the income from the fund and gains nothing.
 	reit := classOf(t, got, "reit")
 	assertMonths(t, "reit", reit.Months, []monthWant{
-		{"2026-01-31", "known", 214, 1},
-		{"2026-02-28", "known", -98, 1},
+		{"2026-01-31", "known", 200, 1},
+		{"2026-02-28", "known", -100, 1},
 		{"2026-03-31", "known", 300, 1},
 		{"2026-04-30", "stale", 0, 0},
 		{"2026-05-31", "known", -194, 2},
@@ -106,11 +107,11 @@ func TestS648MonthlyReturnsByClass(t *testing.T) {
 		{"2026-04-30", "known", 0, 1},
 		{"2026-05-31", "known", 0, 1},
 	})
-	// The portfolio: (101000 − 102000) / 102000, (104000 − 101000) / 101000; April holds the cash
+	// The portfolio: 102000 / 100000, (101000 − 102000) / 102000, (104000 − 101000) / 101000; April holds the cash
 	// alone, the fund left out (103000 of 104000); May holds the cash alone too, since the fund's
 	// return covers two months (RK6): 101000 of 102000 left out.
 	assertMonths(t, "portfolio", got.Portfolio.Months, []monthWant{
-		{"2026-01-31", "known", 214, 1},
+		{"2026-01-31", "known", 200, 1},
 		{"2026-02-28", "known", -98, 1},
 		{"2026-03-31", "known", 297, 1},
 		{"2026-04-30", "known", 0, 1},
@@ -159,14 +160,16 @@ func TestS648MonthlyReturnsByClass(t *testing.T) {
 		t.Errorf("reit summary = %+v, portfolio accrual %d", reit, intOf(got.Portfolio.AccrualBP))
 	}
 
-	if intOf(reit.Months[1].DrawdownBP) != -98 || intOf(reit.Months[2].DrawdownBP) != 0 ||
+	if intOf(reit.Months[1].DrawdownBP) != -100 || intOf(reit.Months[2].DrawdownBP) != 0 ||
 		reit.Months[3].DrawdownBP != nil || intOf(reit.Months[4].DrawdownBP) != -194 {
 		t.Errorf("reit drawdowns = %+v", reit.Months)
 	}
 }
 
 // S649 and S651: thirteen months of a fund and a stock give a volatility, a correlation and the
-// risk shares (RK7, RK9, RK10). The values were derived independently in Python.
+// risk shares (RK7, RK9, RK10). The values were derived independently in Python from the prices:
+// January earns from the day after the purchases, and each class contributes its gain over the
+// portfolio's value of the month before.
 func TestS649VolatilityCorrelationAndRiskShare(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -200,8 +203,8 @@ func TestS649VolatilityCorrelationAndRiskShare(t *testing.T) {
 		volatility, drawdown        int
 		weight, share, months, last int
 	}{
-		{"stock", 3893, -1062, 5364, 8284, 13, 1364},
-		{"reit", 853, -196, 4636, 1716, 13, 286},
+		{"stock", 3890, -1062, 5364, 8286, 13, 1364},
+		{"reit", 851, -196, 4636, 1714, 13, 286},
 	}
 	for _, tt := range tests {
 		c := classOf(t, got, tt.key)
@@ -222,12 +225,12 @@ func TestS649VolatilityCorrelationAndRiskShare(t *testing.T) {
 		)
 	}
 
-	if intOf(got.Portfolio.VolatilityBP) != 2403 || intOf(got.Portfolio.MaxDrawdownBP) != -645 {
+	if intOf(got.Portfolio.VolatilityBP) != 2400 || intOf(got.Portfolio.MaxDrawdownBP) != -645 {
 		t.Errorf("portfolio = %+v", got.Portfolio)
 	}
 
 	if len(got.Correlations) != 1 || got.Correlations[0].A != "stock" ||
-		got.Correlations[0].B != "reit" || got.Correlations[0].CorrelationBP != 9819 ||
+		got.Correlations[0].B != "reit" || got.Correlations[0].CorrelationBP != 9826 ||
 		got.Correlations[0].Months != 13 {
 		t.Errorf("correlations = %+v", got.Correlations)
 	}
@@ -248,8 +251,8 @@ func TestS649VolatilityCorrelationAndRiskShare(t *testing.T) {
 	toolOutput(t, f.h, "get_portfolio", map[string]any{"view": "risk", "to": "2026-02-15"}, &tool)
 
 	if len(tool.Risk.Classes) != 3 || tool.Risk.Classes[0].Key != "stock" ||
-		tool.Risk.Classes[0].VolatilityBP != 3893 || tool.Risk.Classes[0].RiskShareBP != 8284 ||
-		len(tool.Risk.Correlations) != 1 || tool.Risk.Correlations[0].CorrelationBP != 9819 {
+		tool.Risk.Classes[0].VolatilityBP != 3890 || tool.Risk.Classes[0].RiskShareBP != 8286 ||
+		len(tool.Risk.Correlations) != 1 || tool.Risk.Correlations[0].CorrelationBP != 9826 {
 		t.Errorf("tool risk = %+v", tool.Risk)
 	}
 
@@ -285,6 +288,38 @@ func TestS650MissingPrice(t *testing.T) {
 		{"2026-01-31", "missing", 0, 0},
 		{"2026-02-28", "known", 1035, 2},
 	})
+}
+
+// S654: a deposit as large as the portfolio does not bend the month: the portfolio's monthly
+// return chains the pieces between flow dates and equals the time-weighted return of the return
+// report over the same days (RK5).
+func TestS654MonthMatchesReturnReport(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t)
+	f.fundCash(t, "2026-01-02", 100000)
+	f.trade(t, "buy", "2026-01-02", 100, "10.00", 0)
+	f.postPrice(t, "MXRF11", "BRL", "2026-01-02", "10.00")
+	f.postPrice(t, "MXRF11", "BRL", "2026-01-09", "11.00")
+	f.fundCash(t, "2026-01-15", 100000)
+	f.postPrice(t, "MXRF11", "BRL", "2026-01-31", "9.90")
+
+	got := f.risk(t, "to=2026-01-31&value_in=BRL")
+	r := f.h.Do(http.MethodGet, "/api/v1/reports/return?from=2026-01-01&to=2026-01-31", nil)
+	if r.Status != http.StatusOK {
+		t.Fatalf("return report status = %d: %s", r.Status, r.Body)
+	}
+
+	var report comparedReturn
+	r.Decode(t, &report)
+
+	// 110000 + 100000 at the deposit, 99000 + 100000 at the end: 1.10 × 199000 / 210000 − 1.
+	assertMonths(t, "portfolio", got.Portfolio.Months, []monthWant{
+		{"2026-01-31", "known", 424, 1},
+	})
+
+	if report.PeriodBP == nil || *report.PeriodBP != 424 {
+		t.Errorf("return report = %v, want 424", report.PeriodBP)
+	}
 }
 
 // S652: values in a currency other than the security's carry the rate of each month (C3).

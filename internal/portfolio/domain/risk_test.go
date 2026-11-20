@@ -6,11 +6,17 @@ import (
 )
 
 // TestRiskSpans checks RK5, RK6 and RK8; the expected values were derived with exact fractions.
+// April spans two months without a price inside them, so it keeps the modified Dietz figure.
 func TestRiskSpans(t *testing.T) {
 	t.Parallel()
 
 	months := []MonthValue{
-		{End: day("2026-01-31"), Value: 103000, Flows: []CashFlow{flow("2026-01-01", 100000)}},
+		{
+			End:   day("2026-01-31"),
+			Value: 103000,
+			Flows: []CashFlow{flow("2026-01-01", 100000)},
+			Marks: []Mark{{Date: day("2026-01-01"), Value: 100000, Known: true}},
+		},
 		{End: day("2026-02-28"), Value: 98000},
 		{End: day("2026-03-31"), State: MonthStale},
 		{End: day("2026-04-30"), Value: 100940, Flows: []CashFlow{flow("2026-04-15", -2000)}},
@@ -24,7 +30,8 @@ func TestRiskSpans(t *testing.T) {
 		span     int
 		drawdown int
 	}{
-		{MonthKnown, 310, 1, 0},
+		// January earns from the day after its deposit: 103000 / 100000 (RK5).
+		{MonthKnown, 300, 1, 0},
 		{MonthKnown, -485, 1, -485},
 		{MonthStale, 0, 0, 0},
 		{MonthKnown, 507, 2, -3},
@@ -156,23 +163,88 @@ func TestRiskCorrelation(t *testing.T) {
 func TestRiskShares(t *testing.T) {
 	t.Parallel()
 
-	portfolio := returns(1, -2, 3, -1, 2, -3, 1, 2, -2, 3, -1, 1)
-	for i := range portfolio {
-		portfolio[i].Base = 1000
+	percents := []float64{1, -2, 3, -1, 2, -3, 1, 2, -2, 3, -1, 1}
+	moving := make([]MonthRisk, len(percents))
+	still := make([]MonthRisk, len(percents))
+
+	for i, p := range percents {
+		moving[i] = MonthRisk{State: MonthKnown, Span: 1, Subs: []Sub{{Gain: p * 10, Base: 1000}}}
+		still[i] = MonthRisk{State: MonthKnown, Span: 1, Subs: []Sub{{Base: 1000}}}
 	}
 
-	moving := make([]MonthRisk, len(portfolio))
-	still := make([]MonthRisk, len(portfolio))
+	holdings := [][][]MonthRisk{{moving}, {still}}
+	portfolio := Aggregate([][]MonthRisk{moving, still})
 
-	for i, m := range portfolio {
-		moving[i] = MonthRisk{State: MonthKnown, Span: 1, Gain: m.Return * 1000}
-		still[i] = MonthRisk{State: MonthKnown, Span: 1}
-	}
-
-	got, ok := RiskShares([][]MonthRisk{moving, still}, portfolio)
+	got, ok := RiskShares(holdings, portfolio)
 
 	if !ok || BP(got[0]) != 10000 || BP(got[1]) != 0 {
 		t.Errorf("shares = %v (%v), want 10000 and 0", got, ok)
+	}
+
+	// Two moving classes over two periods a month: the linked contributions add up to the
+	// portfolio's return each month, so the shares sum to 1.
+	a := make([]MonthRisk, len(percents))
+	b := make([]MonthRisk, len(percents))
+
+	for i, p := range percents {
+		a[i] = MonthRisk{State: MonthKnown, Span: 1, Subs: []Sub{
+			{Gain: p * 10, Base: 1000}, {Gain: -p * 5, Base: 1000 + p*10},
+		}}
+		b[i] = MonthRisk{State: MonthKnown, Span: 1, Subs: []Sub{
+			{Gain: p * 3, Base: 500}, {Gain: p * 8, Base: 500 + p*3},
+		}}
+	}
+
+	shares, ok := RiskShares([][][]MonthRisk{{a}, {b}}, Aggregate([][]MonthRisk{a, b}))
+	if !ok || BP(shares[0]+shares[1]) != 10000 {
+		t.Errorf("shares = %v (%v), want a sum of 10000", shares, ok)
+	}
+}
+
+// TestRiskTimeWeighted checks RK5: the value at each flow date splits the month, and the pieces
+// chain, so a flow as large as the holding does not bend the return.
+func TestRiskTimeWeighted(t *testing.T) {
+	t.Parallel()
+
+	// 100000 gains 10% to the 15th, then 100000 arrives; the 210000 lose 10% to the end:
+	// 1.10 × 0.90 − 1 = −1%.
+	months := []MonthValue{{
+		End:   day("2026-01-31"),
+		Value: 189000,
+		Flows: []CashFlow{flow("2026-01-15", 100000)},
+		Marks: []Mark{{Date: day("2026-01-15"), Value: 210000, Known: true}},
+	}}
+
+	got := Spans(day("2025-12-31"), 100000, months)[0]
+
+	if got.State != MonthKnown || BP(got.Return) != -100 || len(got.Subs) != 2 {
+		t.Errorf("month = %s %d bp, %d pieces; want -100 over 2", got.State, BP(got.Return),
+			len(got.Subs))
+	}
+
+	// A mark without a price carries the value before it plus its flows: that piece returns 0,
+	// and the month is (189000 − 200000) / 200000.
+	months[0].Marks[0].Known = false
+	if got := Spans(day("2025-12-31"), 100000, months)[0]; BP(got.Return) != -550 {
+		t.Errorf("month without the mark's price = %d bp, want -550", BP(got.Return))
+	}
+
+	// The fund falls 10% after the 15th while the cash it received waits: the portfolio's
+	// pieces are 10% and (99000 + 100000 − 210000) / 210000, chained: 424 basis points.
+	fund := Spans(day("2025-12-31"), 100000, []MonthValue{{
+		End:   day("2026-01-31"),
+		Value: 99000,
+		Marks: []Mark{{Date: day("2026-01-15"), Value: 110000, Known: true}},
+	}})
+	cash := Spans(day("2025-12-31"), 0, []MonthValue{{
+		End:   day("2026-01-31"),
+		Value: 100000,
+		Flows: []CashFlow{flow("2026-01-15", 100000)},
+		Marks: []Mark{{Date: day("2026-01-15"), Value: 100000, Known: true}},
+	}})
+
+	if p := Aggregate([][]MonthRisk{fund, cash})[0]; BP(p.Return) != 424 {
+		t.Errorf("portfolio = %d bp, want 424", BP(p.Return))
 	}
 }
 

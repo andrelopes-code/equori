@@ -130,12 +130,12 @@ func riskSeries(start time.Time, inputs riskInputs) (RiskSeries, []RiskSeries) {
 		}
 	}
 
-	months := make([][]domain.MonthRisk, len(classes))
+	holdings := make([][][]domain.MonthRisk, len(classes))
 	for i, c := range classes {
-		months[i] = c.Months
+		holdings[i] = byClass[c.Key]
 	}
 
-	if shares, ok := domain.RiskShares(months, portfolio.Months); ok {
+	if shares, ok := domain.RiskShares(holdings, portfolio.Months); ok {
 		for i := range classes {
 			classes[i].RiskShareBP = ptr(domain.BP(shares[i]))
 		}

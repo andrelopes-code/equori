@@ -128,6 +128,10 @@ func (s *Service) riskInputs(
 		return riskInputs{}, err
 	}
 
+	if err := s.addRiskMarks(ctx, booksID, book, in, &out); err != nil {
+		return riskInputs{}, err
+	}
+
 	return out, nil
 }
 
