@@ -2304,6 +2304,7 @@ export const catalogPtBR: Catalog = {
   "assistant.proposal.status.discarded": "Descartada",
   "assistant.proposal.status.waiting": "Aguardando",
   "assistant.proposal.status.blocked": "Bloqueada",
+  "assistant.proposal.status.undone": "Desfeita",
   "assistant.proposal.suggested": "Sugestão",
   "assistant.proposal.waiting": "Aguarda a confirmação de: {actions}",
   "assistant.proposal.blocked":
@@ -2322,6 +2323,10 @@ export const catalogPtBR: Catalog = {
   "assistant.sheet.irreversible_tag": "Irreversível",
   "assistant.result.not_applied": "Não aplicado.",
   "assistant.result.receipt": "Transação registrada",
+  "assistant.undo.action": "Desfazer",
+  "assistant.undo.done": "Desfeita",
+  "assistant.undo.failed": "Não desfeita.",
+  "assistant.undo.reason": "Desfeita no assistente",
   "assistant.dock.one": "1 folha aguarda sua decisão",
   "assistant.dock.many": "{count} folhas aguardam sua decisão",
   "assistant.dock.review": "Revisar",

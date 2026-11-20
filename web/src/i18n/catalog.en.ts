@@ -2290,6 +2290,7 @@ export const catalogEn = {
   "assistant.proposal.status.discarded": "Discarded",
   "assistant.proposal.status.waiting": "Waiting",
   "assistant.proposal.status.blocked": "Blocked",
+  "assistant.proposal.status.undone": "Undone",
   "assistant.proposal.suggested": "Suggestion",
   "assistant.proposal.waiting": "Waits for the confirmation of: {actions}",
   "assistant.proposal.blocked":
@@ -2308,6 +2309,10 @@ export const catalogEn = {
   "assistant.sheet.irreversible_tag": "Irreversible",
   "assistant.result.not_applied": "Not applied.",
   "assistant.result.receipt": "Transaction recorded",
+  "assistant.undo.action": "Undo",
+  "assistant.undo.done": "Undone",
+  "assistant.undo.failed": "Not undone.",
+  "assistant.undo.reason": "Undone in the assistant",
   "assistant.dock.one": "1 sheet awaits your decision",
   "assistant.dock.many": "{count} sheets await your decision",
   "assistant.dock.review": "Review",

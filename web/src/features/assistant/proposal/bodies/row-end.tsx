@@ -4,14 +4,14 @@ import { Text } from "@slotted/react/typography";
 import { AssistantIcon } from "@/features/assistant/panel/assistant-icon";
 import { DeadlineRing } from "@/features/assistant/proposal/deadline-ring";
 import styles from "@/features/assistant/proposal/decision-sheet.module.css";
-import type { ProposalCardState } from "@/features/assistant/proposal/proposal-card-state";
 import { ResultLabel } from "@/features/assistant/proposal/result-label";
+import type { ResultStatus } from "@/features/assistant/proposal/result-label";
 import { useT } from "@/i18n/i18n-provider";
 import { routeTo } from "@/ui/navigation/route-to";
 import { useServed } from "@/ui/navigation/use-served";
 
 interface RowEndProps {
-  status: ProposalCardState["status"];
+  status: ResultStatus;
   // The proposal's request runs now.
   running: boolean;
   // The screen of the record an executed proposal wrote.

@@ -5,14 +5,16 @@ import type { ProposalCardState } from "@/features/assistant/proposal/proposal-c
 import { useT } from "@/i18n/i18n-provider";
 import { cx } from "@/ui/cx";
 
-const tones: Partial<Record<ProposalCardState["status"], string | undefined>> =
-  {
-    executed: styles.success,
-    failed: styles.danger,
-  };
+// A write an executed undo reversed reads "undone" (answer views design V19).
+export type ResultStatus = ProposalCardState["status"] | "undone";
+
+const tones: Partial<Record<ResultStatus, string | undefined>> = {
+  executed: styles.success,
+  failed: styles.danger,
+};
 
 interface ResultLabelProps {
-  status: ProposalCardState["status"];
+  status: ResultStatus;
 }
 
 // Families read: typography. The state of a decided proposal as a word after a 6 px dot in the

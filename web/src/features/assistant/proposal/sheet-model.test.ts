@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { components } from "@/api/schema.gen";
 import {
   defaultMarks,
+  sessionProposals,
   sheetModel,
   sheetSummary,
   timeLeft,
@@ -10,6 +11,22 @@ import {
 import type { SheetRow } from "@/features/assistant/proposal/sheet-model";
 
 type Proposal = components["schemas"]["AssistantProposal"];
+
+describe("sessionProposals", () => {
+  it("keeps the session's answer and takes a later undo from the refreshed answer", () => {
+    const fresh = { ...p("p1", "executed"), undone_by: "u1", undoable: false };
+    const answer = { ...p("p1", "executed"), undoable: true };
+    const other = p("p2", "pending");
+
+    const got = sessionProposals([fresh, other], { p1: { proposal: answer } });
+
+    expect(got[0]).toEqual({ ...answer, undoable: false, undone_by: "u1" });
+    expect(got[1]).toBe(other);
+    expect(sessionProposals([answer], { p1: { proposal: answer } })[0]).toBe(
+      answer,
+    );
+  });
+});
 
 describe("sheetModel", () => {
   it("splits open and decided", () => {

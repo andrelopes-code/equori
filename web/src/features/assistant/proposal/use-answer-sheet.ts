@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import type { components } from "@/api/schema.gen";
 import {
   earliest,
+  sessionProposals,
   sheetModel,
 } from "@/features/assistant/proposal/sheet-model";
 import type { SheetModel } from "@/features/assistant/proposal/sheet-model";
@@ -28,7 +29,7 @@ export function useAnswerSheet(
   proposals: readonly Proposal[],
   decisions: Record<string, Decision>,
 ): AnswerSheet {
-  const decided = proposals.map((p) => decisions[p.id]?.proposal ?? p);
+  const decided = sessionProposals(proposals, decisions);
   const session = new Set(
     proposals.filter((p) => decisions[p.id]?.proposal).map((p) => p.id),
   );

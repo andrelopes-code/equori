@@ -26,6 +26,23 @@ export interface SheetSummary {
 
 const OPEN: readonly Proposal["status"][] = ["pending", "executing", "waiting"];
 
+// sessionProposals gives each proposal decided in this session the server's answer to the
+// decision; an undo that later reversed it, which the refreshed answer carries, applies over it
+// (answer views design V19).
+export function sessionProposals(
+  proposals: readonly Proposal[],
+  decisions: Readonly<Record<string, { proposal?: Proposal }>>,
+): Proposal[] {
+  return proposals.map((p) => {
+    const session = decisions[p.id]?.proposal;
+    if (session === undefined) return p;
+
+    return p.undone_by === undefined
+      ? session
+      : { ...session, undoable: false, undone_by: p.undone_by };
+  });
+}
+
 // `session` holds the proposals decided since the answer arrived: they stay rows, with their
 // outcome, instead of becoming results.
 export function sheetModel(

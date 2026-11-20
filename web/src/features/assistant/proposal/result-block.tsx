@@ -13,6 +13,7 @@ import { ResultLabel } from "@/features/assistant/proposal/result-label";
 import styles from "@/features/assistant/proposal/results.module.css";
 import { useExpired } from "@/features/assistant/proposal/use-expired";
 import { useValueText } from "@/features/assistant/proposal/use-value-text";
+import { UndoAction } from "@/features/assistant/undo/undo-action";
 import { useT } from "@/i18n/i18n-provider";
 import { routeTo } from "@/ui/navigation/route-to";
 import { useServed } from "@/ui/navigation/use-served";
@@ -64,7 +65,9 @@ export function ResultBlock({ proposal }: ResultBlockProps) {
           )}
         </span>
 
-        <ResultLabel status={status} />
+        <ResultLabel
+          status={proposal.undone_by === undefined ? status : "undone"}
+        />
       </div>
 
       <OperationBody preview={preview} />
@@ -94,6 +97,8 @@ export function ResultBlock({ proposal }: ResultBlockProps) {
           </Link>
         </Text>
       )}
+
+      <UndoAction proposal={proposal} labelled />
     </article>
   );
 }

@@ -1,0 +1,27 @@
+@layer app {
+  .undo {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    min-inline-size: 0;
+  }
+
+  .failure {
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .icon {
+    display: inline-flex;
+    inline-size: 14px;
+    block-size: 14px;
+  }
+
+  .icon svg {
+    inline-size: 100%;
+    block-size: 100%;
+  }
+}

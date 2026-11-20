@@ -64,6 +64,18 @@ export async function rejectProposal(api: Client<paths>, id: string) {
   );
 }
 
+export async function undoProposal(
+  api: Client<paths>,
+  { id, reason }: { id: string; reason: string },
+) {
+  return unwrap(
+    await api.POST("/assistant/proposals/{id}/undo", {
+      params: { path: { id } },
+      body: { reason },
+    }),
+  );
+}
+
 export async function deleteConversation(api: Client<paths>, id: string) {
   await unwrap(
     await api.DELETE("/assistant/conversations/{id}", {
@@ -127,6 +139,7 @@ function useApiMutation<V, R>(fn: (api: Client<paths>, vars: V) => Promise<R>) {
 
 export const useConfirmProposal = () => useApiMutation(confirmProposal);
 export const useRejectProposal = () => useApiMutation(rejectProposal);
+export const useUndoProposal = () => useApiMutation(undoProposal);
 export const useDeleteConversation = () => useApiMutation(deleteConversation);
 export function useDeleteConversations() {
   const api = useApi();

@@ -18,6 +18,7 @@ export type AssistantIconName =
   | "repeat"
   | "info"
   | "check"
+  | "undo"
   | "corner"
   | "link"
   | "fileDown"
@@ -94,6 +95,10 @@ const PATHS: Record<AssistantIconName, readonly string[]> = {
   ],
   info: ["M2 12a10 10 0 1 0 20 0a10 10 0 1 0-20 0", "M12 16v-4", "M12 8h.01"],
   check: ["M20 6 9 17l-5-5"],
+  undo: [
+    "M9 14 4 9l5-5",
+    "M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11",
+  ],
   corner: ["m15 10 5 5-5 5", "M4 4v7a4 4 0 0 0 4 4h12"],
   link: ["M7 7h10v10", "M7 17 17 7"],
   fileDown: [

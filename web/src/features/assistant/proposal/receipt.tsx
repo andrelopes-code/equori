@@ -8,6 +8,7 @@ import { proposalScreen } from "@/features/assistant/proposal/proposal-screen";
 import { receiptFields } from "@/features/assistant/proposal/receipt-fields";
 import styles from "@/features/assistant/proposal/results.module.css";
 import { useValueText } from "@/features/assistant/proposal/use-value-text";
+import { UndoAction } from "@/features/assistant/undo/undo-action";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { routeTo } from "@/ui/navigation/route-to";
 import { useServed } from "@/ui/navigation/use-served";
@@ -102,6 +103,8 @@ export function Receipt({ proposal }: ReceiptProps) {
           );
         })}
       </div>
+
+      <UndoAction proposal={proposal} />
     </article>
   );
 }

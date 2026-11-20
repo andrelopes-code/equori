@@ -172,6 +172,10 @@
     padding: 0 16px 16px 58px;
   }
 
+  .opUndo {
+    padding: 0 16px 12px 58px;
+  }
+
   /* The info glyph sits on the first line of the reason: 14 px beside a 20 px line. */
   .why {
     display: flex;

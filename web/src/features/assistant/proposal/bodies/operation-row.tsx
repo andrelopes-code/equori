@@ -15,6 +15,7 @@ import { ProposalWaiting } from "@/features/assistant/proposal/proposal-waiting"
 import { RowEnd } from "@/features/assistant/proposal/bodies/row-end";
 import { targetShownElsewhere } from "@/features/assistant/proposal/target-shown";
 import { useValueText } from "@/features/assistant/proposal/use-value-text";
+import { UndoAction } from "@/features/assistant/undo/undo-action";
 import { useT } from "@/i18n/i18n-provider";
 
 type Proposal = components["schemas"]["AssistantProposal"];
@@ -105,7 +106,11 @@ export function OperationRow({
           )}
         </span>
 
-        <RowEnd status={state.status} running={running} screen={state.screen} />
+        <RowEnd
+          status={proposal.undone_by === undefined ? state.status : "undone"}
+          running={running}
+          screen={state.screen}
+        />
       </div>
 
       {state.status === "failed" && (
@@ -114,6 +119,10 @@ export function OperationRow({
             {`${t("assistant.result.not_applied")} ${state.outcome ?? ""}`.trim()}
           </Text>
         </div>
+      )}
+
+      {decided && (
+        <UndoAction proposal={proposal} className={styles.opUndo} labelled />
       )}
 
       {!decided && (

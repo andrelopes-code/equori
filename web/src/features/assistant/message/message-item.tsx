@@ -54,7 +54,9 @@ export function MessageItem({
   const { hidden } = usePrivacy();
 
   const [decisions, setDecisions] = useState<Record<string, Decision>>({});
-  const sheet = useAnswerSheet(message.proposals, decisions);
+  // An undo shows on the proposal it reverses, not as a card of its own (V19).
+  const proposals = message.proposals.filter((p) => p.undoes === undefined);
+  const sheet = useAnswerSheet(proposals, decisions);
 
   const own = message.role === "user";
   const tree = useMemo(() => {
@@ -93,8 +95,7 @@ export function MessageItem({
             <AnswerView key={view.id} view={view} />
           ))}
 
-          {(message.outcome === "step_limit" ||
-            message.proposals.length > 0) && (
+          {(message.outcome === "step_limit" || proposals.length > 0) && (
             <Stack gap={3} className={styles.attached}>
               {message.outcome === "step_limit" && (
                 <FormNotice tone="warning">
@@ -105,7 +106,7 @@ export function MessageItem({
                 rows={sheet.rows}
                 deadline={sheet.deadline}
                 now={sheet.now}
-                siblings={message.proposals}
+                siblings={proposals}
                 reveal={reveal}
                 onDecided={handleDecided}
               />
