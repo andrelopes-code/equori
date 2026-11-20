@@ -69,21 +69,40 @@ The owner review of 2026-11-15 set these rules for everything the assistant draw
 - **Icons with care.** One geometry (Lucide, stroke 1.75) at one size per text size: 14 px beside 12 to 13 px text, 16 px beside 14 to 15 px text. An icon sits centred on the first line of its text, never on the block. A failure is written in words in the danger tone; a circled cross beside a sentence is not used. An icon that repeats what its word says is dropped.
 - **Inner space.** A block keeps at least 12 px between its edge and its content, a sheet 16 px, and its inner padding is never smaller than the gap between its rows. A row has a fixed height that leaves 8 px above and below its tallest line. Before a commit, the screen is captured at 390 and 1440 px in both schemes and no element shows content wider or taller than its box.
 
-| Kind                 | Form                                                                                   |
-| -------------------- | -------------------------------------------------------------------------------------- |
-| Two periods compared | Paired bars on one axis; the difference written in words                               |
-| Ranking              | Bars in order, the value at the end, a zero written                                    |
-| Balance over time    | Step line, since a balance changes only at events; the lowest point marked and written |
-| Categorize           | From one category to another, with the transactions moved                              |
-| Rule                 | When and then; the pattern in the monospace font                                       |
-| Dependent operation  | Under the operation it waits for, marked with it                                       |
-| Void                 | The record struck through, outside the sheet until marked                              |
-| Schedule             | Amount per period and the next occurrences                                             |
-| Asset purchase       | Quantity times price equals total, and the paying account                              |
-| Recorded transaction | Receipt with the amount first                                                          |
-| Credit limit         | One gauge with the current limit and the requested one                                 |
-| Payment              | Source account, amount and destination                                                 |
-| Guide article        | Numbered steps, each one a task on its screen                                          |
+| Kind                    | Form                                                                                                     |
+| ----------------------- | -------------------------------------------------------------------------------------------------------- |
+| Two periods compared    | Paired bars on one axis; the difference written in words                                                 |
+| Ranking                 | Bars in order, the value at the end, a zero written                                                      |
+| Balance over time       | Step line, since a balance changes only at events; the lowest point marked and written                   |
+| Categorize              | From one category to another, with the transactions moved                                                |
+| Rule                    | When and then; the pattern in the monospace font                                                         |
+| Dependent operation     | Under the operation it waits for, marked with it                                                         |
+| Void                    | The record struck through, outside the sheet until marked                                                |
+| Schedule                | Amount per period and the next occurrences                                                               |
+| Asset purchase          | Quantity times price equals total, and the paying account                                                |
+| Recorded transaction    | Receipt with the amount first                                                                            |
+| Credit limit            | One gauge with the current limit and the requested one                                                   |
+| Payment                 | Source account, amount and destination                                                                   |
+| Guide article           | Numbered steps, each one a task on its screen                                                            |
+| Composition             | Segmented bar in the theme's slots, one row per part with value and share                                |
+| Changes between periods | Diverging bars around one axis; rises right, falls left                                                  |
+| Spending map            | Squarified areas sized by share; the rest neutral and last                                               |
+| Series of months        | Columns, the last closed month in the accent, the open month hatched, the average dashed                 |
+| Month walk              | Floating columns from the starting balance through income, expense and others to the end                 |
+| Indicators              | Three tiles, each value with its months as a sparkline                                                   |
+| Transactions            | Dated rows with account and category, the amount at the end                                              |
+| Outliers                | Dots on a log axis of the category's median, spread into lanes; the outlier ringed and named             |
+| Day calendar            | The month in weeks from the locale's first weekday, each day's spending as the accent's strength         |
+| Transaction             | Receipt: amount first, postings that sum to zero, versions and attachments                               |
+| Budget                  | Spent against the limit on one scale, the limit tick, the pace of the day, the excess in the danger tone |
+| Goals                   | Saved against target and the monthly amount to the date                                                  |
+| Agenda                  | Commitments grouped by week with each week's total                                                       |
+| Holdings                | Table that sorts by value, result or weight; weight also as a bar                                        |
+| Return against index    | Two bars on one scale; the difference in percentage points                                               |
+| Tax year                | Monthly results as columns, months that owe tax in the accent and listed                                 |
+| Bank ratios             | Bars against the minimum tick, the zone below it hatched                                                 |
+| Imports                 | Batches with what each created and what waits for review                                                 |
+| Change without a body   | The records it touches, then each value before → after                                                   |
 
 ## Utility classes
 
