@@ -211,6 +211,9 @@ export const contributionPlanEn = {
   "contributionPlan.rule.dialog.subtypes": "Subtypes",
   "contributionPlan.rule.dialog.returnKind": "Form of return",
   "contributionPlan.rule.dialog.maturity": "Maturity",
+  "contributionPlan.rule.dialog.maturityHint":
+    "The year the security matures. Both years count.",
+  "contributionPlan.rule.dialog.anyYear": "Any year",
   "contributionPlan.rule.dialog.from": "From",
   "contributionPlan.rule.dialog.to": "To",
   "contributionPlan.rule.dialog.liquidity": "Daily liquidity",

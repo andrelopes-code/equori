@@ -1,8 +1,11 @@
 import { Field, FieldError, FieldLabel } from "@slotted/react/field";
-import { NumberField } from "@slotted/react/number-field";
 
+import { maturityYears } from "@/features/portfolio/contribution-plan/rules/maturity-years";
 import type { yearProblem } from "@/features/portfolio/contribution-plan/rules/rule-form";
-import { useT } from "@/i18n/i18n-provider";
+import { numberFormatter } from "@/i18n/format";
+import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useToday } from "@/i18n/today";
+import { ChoiceSelect } from "@/ui/form-fields/choice-select";
 import { FormRow } from "@/ui/form-layout/form-row";
 import { FormSection } from "@/ui/form-layout/form-section";
 
@@ -23,25 +26,49 @@ export function RuleMaturityFields({
   onTo,
 }: RuleMaturityFieldsProps) {
   const t = useT();
+  const [tag] = useAppLocale();
+  const today = useToday();
+
+  const year = numberFormatter(tag, { useGrouping: false });
+  const choices = [
+    { value: "", label: t("contributionPlan.rule.dialog.anyYear") },
+    ...maturityYears(today, [from, to]).map((y) => ({
+      value: String(y),
+      label: year.format(y),
+    })),
+  ];
+  const toYear = (value: string | string[] | null) =>
+    typeof value === "string" && value !== "" ? Number(value) : null;
 
   return (
-    <FormSection legend={t("contributionPlan.rule.dialog.maturity")}>
+    <FormSection
+      legend={t("contributionPlan.rule.dialog.maturity")}
+      description={t("contributionPlan.rule.dialog.maturityHint")}
+    >
       <FormRow>
         <Field invalid={problem !== undefined}>
           <FieldLabel>{t("contributionPlan.rule.dialog.from")}</FieldLabel>
-          <NumberField
-            value={from}
-            format={{ useGrouping: false }}
-            onValueChange={onFrom}
+          <ChoiceSelect
+            label={t("contributionPlan.rule.dialog.from")}
+            choices={choices}
+            value={from === null ? "" : String(from)}
+            multiple={false}
+            onChange={(value) => {
+              onFrom(toYear(value));
+            }}
           />
         </Field>
 
         <Field invalid={problem !== undefined}>
           <FieldLabel>{t("contributionPlan.rule.dialog.to")}</FieldLabel>
-          <NumberField
-            value={to}
-            format={{ useGrouping: false }}
-            onValueChange={onTo}
+          <ChoiceSelect
+            label={t("contributionPlan.rule.dialog.to")}
+            choices={choices}
+            value={to === null ? "" : String(to)}
+            multiple={false}
+            onChange={(value) => {
+              onTo(toYear(value));
+            }}
           />
           {problem !== undefined && (
             <FieldError>

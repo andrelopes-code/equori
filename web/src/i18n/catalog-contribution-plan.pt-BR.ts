@@ -212,6 +212,9 @@ export const contributionPlanPtBR: Record<
   "contributionPlan.rule.dialog.subtypes": "Subtipos",
   "contributionPlan.rule.dialog.returnKind": "Forma do retorno",
   "contributionPlan.rule.dialog.maturity": "Vencimento",
+  "contributionPlan.rule.dialog.maturityHint":
+    "Ano em que o título vence. Os dois anos entram.",
+  "contributionPlan.rule.dialog.anyYear": "Qualquer ano",
   "contributionPlan.rule.dialog.from": "De",
   "contributionPlan.rule.dialog.to": "Até",
   "contributionPlan.rule.dialog.liquidity": "Liquidez diária",

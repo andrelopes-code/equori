@@ -161,9 +161,9 @@ With `guarantee` set and no `guarantee_name`, the summary ends with "garantia in
 "Adicionar regra" and the edit button open a dialog titled "Regra do grupo {name}". It is one column under `docs/contributing/forms.md`, each choice with its question:
 
 1. "Tipo de investimento": select with "Qualquer" and the security types of the catalog.
-2. "Subtipos": a checkbox group of the subtypes of the type (`subtypesQuery`), shown when a type with subtypes is chosen.
+2. "Subtipos": a select of many choices over the subtypes of the type (`subtypesQuery`), shown when a type with subtypes is chosen (owner, 2026-11-20: a checkbox per subtype drew a long column).
 3. "Forma do retorno": segmented "Qualquer" | "Pós-fixado" | "Inflação" | "Prefixado", shown when the type is "Qualquer" or fixed income.
-4. "Vencimento": two year fields, "De" and "Até", each optional.
+4. "Vencimento": two year selects, "De" and "Até", each "Qualquer ano" by default and listing the year of today and the 40 after it, plus a year the rule already holds; the line "Ano em que o título vence. Os dois anos entram." under the legend (owner, 2026-11-20: a bare number field did not say what it asks).
 5. "Liquidez diária": segmented "Qualquer" | "Sim" | "Não".
 6. "Garantia": segmented "Qualquer" | "Coberto pelo {name}" | "Título público" | "Sem garantia", shown with a `guarantee_name`.
 7. "Moeda de cotação": select with "Qualquer" and the currencies of the catalog.

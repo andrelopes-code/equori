@@ -52,18 +52,8 @@ describe("RuleDialog", () => {
         name: catalogEn["fixedIncome.kind.inflation"],
       }),
     );
-    await user.type(
-      screen.getByRole("spinbutton", {
-        name: /^From/,
-      }),
-      "2031",
-    );
-    await user.type(
-      screen.getByRole("spinbutton", {
-        name: /^To/,
-      }),
-      "2035",
-    );
+    await chooseYear(user, "From", "2031");
+    await chooseYear(user, "To", "2035");
     await user.click(
       screen.getByRole("button", {
         name: word("contributionPlan.rule.dialog.save"),
@@ -126,18 +116,8 @@ describe("RuleDialog", () => {
   it("names the order of the years when the last comes before the first", async () => {
     const { user } = setup();
 
-    await user.type(
-      await screen.findByRole("spinbutton", {
-        name: /^From/,
-      }),
-      "2035",
-    );
-    await user.type(
-      screen.getByRole("spinbutton", {
-        name: /^To/,
-      }),
-      "2030",
-    );
+    await chooseYear(user, "From", "2035");
+    await chooseYear(user, "To", "2030");
 
     expect(
       await screen.findByText(word("contributionPlan.rule.dialog.yearOrder")),
@@ -167,3 +147,12 @@ describe("RuleDialog", () => {
     });
   });
 });
+
+async function chooseYear(
+  user: ReturnType<typeof userEvent.setup>,
+  bound: "From" | "To",
+  year: string,
+) {
+  await user.click(await screen.findByRole("combobox", { name: bound }));
+  await user.click(await screen.findByRole("option", { name: year }));
+}
