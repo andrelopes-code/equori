@@ -9,8 +9,9 @@ import (
 // rawWait is how long the seeder waits for the instance to fetch the official history it requested.
 const rawWait = 20 * time.Minute
 
-// adjustedSources publish closes adjusted for later splits, or prices no market printed: the persona trades, and the
-// instance values its holdings, on the unadjusted closes of the official sources.
+// adjustedSources are no official market close: yahoo_chart is unofficial and stored closes adjusted for later splits
+// until migration 138; manual, csv and accrual prices were printed by no market. The persona trades on the closes of
+// the official sources.
 var adjustedSources = []string{"yahoo_chart", "manual", "csv", "accrual"}
 
 // sourcedPrice is the date and the source of a chosen price.

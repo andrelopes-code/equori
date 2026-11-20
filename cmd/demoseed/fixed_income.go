@@ -1,11 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"math"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // appliedGrowth is the annual rate the persona assumes for a contract when weighing the fixed income group.
@@ -71,7 +72,7 @@ func (s *seeder) apply(i int, a application, d time.Time) {
 	}
 
 	s.do(http.MethodPost, "/fixed-income-applications", map[string]any{
-		"application_id":  fmt.Sprintf("d0000000-0000-4000-8000-%012d", i+1),
+		"application_id":  applicationID(s.id("xp"), i),
 		"brokerage_id":    s.id("xp"),
 		"cash_account_id": s.id("xp.cash"),
 		"applied_on":      iso(d),
@@ -261,4 +262,10 @@ func (s *seeder) appliedValue(d time.Time) int64 {
 	}
 
 	return int64(total)
+}
+
+// applicationID is the id of the i-th application under the brokerage account brokerage. The code
+// of the contract derives from it (A236 FC2), so each book seeded on the instance gets its own.
+func applicationID(brokerage string, i int) string {
+	return uuid.NewSHA1(uuid.MustParse(brokerage), []byte(strconv.Itoa(i))).String()
 }
