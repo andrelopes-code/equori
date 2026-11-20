@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	openapi_types "github.com/oapi-codegen/runtime/types"
+
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/portfolio/app"
@@ -57,7 +59,12 @@ func (s *Server) getRisk(
 	}
 
 	for i, l := range res.LeftOut {
-		out.LeftOut[i] = RiskLeftOut{Instrument: string(l.Instrument), Months: l.Months}
+		out.LeftOut[i] = RiskLeftOut{
+			Instrument: string(l.Instrument),
+			Months:     l.Months,
+			From:       openapi_types.Date{Time: l.From},
+			To:         openapi_types.Date{Time: l.To},
+		}
 	}
 
 	return out, nil

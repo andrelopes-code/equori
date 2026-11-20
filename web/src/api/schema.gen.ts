@@ -8629,9 +8629,14 @@ export interface components {
             correlation_bp: number;
             months: number;
         };
+        /** @description A security with months left out for a stale or missing price; from and to are the first and the last of those month ends. */
         RiskLeftOut: {
             instrument: string;
             months: number;
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
         };
         RiskReport: {
             value_in: string;

@@ -847,10 +847,12 @@ type RiskCorrelation struct {
 	Months        int    `json:"months"`
 }
 
-// RiskLeftOut defines model for RiskLeftOut.
+// RiskLeftOut A security with months left out for a stale or missing price; from and to are the first and the last of those month ends.
 type RiskLeftOut struct {
-	Instrument string `json:"instrument"`
-	Months     int    `json:"months"`
+	From       openapi_types.Date `json:"from"`
+	Instrument string             `json:"instrument"`
+	Months     int                `json:"months"`
+	To         openapi_types.Date `json:"to"`
 }
 
 // RiskMonth defines model for RiskMonth.

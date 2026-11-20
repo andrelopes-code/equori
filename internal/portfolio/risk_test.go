@@ -48,6 +48,8 @@ type riskOut struct {
 	LeftOut []struct {
 		Instrument string `json:"instrument"`
 		Months     int    `json:"months"`
+		From       string `json:"from"`
+		To         string `json:"to"`
 	} `json:"left_out"`
 }
 
@@ -137,8 +139,9 @@ func TestS648MonthlyReturnsByClass(t *testing.T) {
 	}
 
 	if len(got.LeftOut) != 1 || got.LeftOut[0].Instrument != "MXRF11" ||
-		got.LeftOut[0].Months != 1 {
-		t.Errorf("left out = %+v, want MXRF11 for one month", got.LeftOut)
+		got.LeftOut[0].Months != 1 || got.LeftOut[0].From != "2026-04-30" ||
+		got.LeftOut[0].To != "2026-04-30" {
+		t.Errorf("left out = %+v, want MXRF11 for April only", got.LeftOut)
 	}
 
 	if got.From != "2026-01-31" || got.To != "2026-05-31" || got.WindowMonths != 36 ||

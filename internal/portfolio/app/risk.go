@@ -31,10 +31,12 @@ type RiskCorrelation struct {
 	Months        int
 }
 
-// RiskLeftOut is a security whose months were left out for a stale or missing price (RK3).
+// RiskLeftOut is a security whose months were left out for a stale or missing price (RK3); From
+// and To are the first and the last of those month ends.
 type RiskLeftOut struct {
 	Instrument money.Currency
 	Months     int
+	From, To   time.Time
 }
 
 // RiskReport is the risk history of the brokerage trees of a book in one currency; From and To
@@ -227,20 +229,29 @@ func correlations(classes []RiskSeries) []RiskCorrelation {
 // leftOut lists the securities with a stale or missing month, the most months first, then by
 // code; a security held by two accounts adds its months.
 func leftOut(inputs riskInputs) []RiskLeftOut {
-	months := map[money.Currency]int{}
+	byCode := map[money.Currency]*RiskLeftOut{}
 
 	for _, h := range inputs.holdings {
 		for _, m := range h.months {
-			if h.instrument != "" &&
-				(m.State == domain.MonthStale || m.State == domain.MonthMissing) {
-				months[h.instrument]++
+			if h.instrument == "" ||
+				(m.State != domain.MonthStale && m.State != domain.MonthMissing) {
+				continue
 			}
+
+			l := byCode[h.instrument]
+			if l == nil {
+				l = &RiskLeftOut{Instrument: h.instrument, From: m.End, To: m.End}
+				byCode[h.instrument] = l
+			}
+
+			l.Months++
+			l.From, l.To = minTime(l.From, m.End), maxTime(l.To, m.End)
 		}
 	}
 
-	out := make([]RiskLeftOut, 0, len(months))
-	for code, n := range months {
-		out = append(out, RiskLeftOut{Instrument: code, Months: n})
+	out := make([]RiskLeftOut, 0, len(byCode))
+	for _, l := range byCode {
+		out = append(out, *l)
 	}
 
 	slices.SortFunc(out, func(a, b RiskLeftOut) int {
@@ -278,6 +289,22 @@ func addInts(a, b []int64) []int64 {
 
 	for i := range b {
 		a[i] += b[i]
+	}
+
+	return a
+}
+
+func minTime(a, b time.Time) time.Time {
+	if b.Before(a) {
+		return b
+	}
+
+	return a
+}
+
+func maxTime(a, b time.Time) time.Time {
+	if b.After(a) {
+		return b
 	}
 
 	return a
