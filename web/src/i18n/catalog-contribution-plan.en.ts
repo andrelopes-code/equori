@@ -42,6 +42,7 @@ export const contributionPlanEn = {
   "contributionPlan.addClass": "Add group",
   "contributionPlan.className": "Group name",
   "contributionPlan.addAsset": "Add asset",
+  "contributionPlan.registerAsset": "Register asset",
   "contributionPlan.pickAccounts": "Investment accounts",
   "contributionPlan.pickInstruments": "Assets",
   "contributionPlan.inClass": "In {name}",
@@ -93,6 +94,8 @@ export const contributionPlanEn = {
     "Enter the contribution amount to see where to apply it.",
   "contributionPlan.verdictMissingPrice":
     "{name} has no price; without it the contribution is not split.",
+  "contributionPlan.recordPrice": "Record price of {name}",
+  "contributionPlan.recordRate": "Record rate of {name}",
   "contributionPlan.verdictMissingRate":
     "{name} has no exchange rate; without it the contribution is not split.",
   "contributionPlan.ideal": "Portfolio against the target",

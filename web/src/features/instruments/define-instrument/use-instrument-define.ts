@@ -22,7 +22,8 @@ export const none = "-";
 
 // State, queries and submit of the define dialog. The subtype choices come from the jurisdiction
 // through listInstrumentSubtypes for the chosen type; a type without subtypes has none.
-export function useInstrumentDefine(onDone: () => void) {
+// onDone receives the code of the defined instrument.
+export function useInstrumentDefine(onDone: (code: string) => void) {
   const t = useT();
   const api = useApi();
   const define = useDefineInstrument();
@@ -95,9 +96,10 @@ export function useInstrumentDefine(onDone: () => void) {
       chosenScale === null
     )
       return;
+    const defined = code.trim().toUpperCase();
     define
       .mutateAsync({
-        code: code.trim().toUpperCase(),
+        code: defined,
         type,
         scale: chosenScale,
         name: name.trim(),
@@ -105,7 +107,9 @@ export function useInstrumentDefine(onDone: () => void) {
         ...(exchange.trim() === "" ? {} : { exchange: exchange.trim() }),
         ...(subtype === none ? {} : { subtype }),
       })
-      .then(onDone)
+      .then(() => {
+        onDone(defined);
+      })
       .catch((caught: unknown) => {
         const fields =
           caught instanceof ProblemError ? fieldErrors(caught.problem) : {};

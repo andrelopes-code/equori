@@ -20,7 +20,8 @@ import { useOverlayOpen } from "@/ui/dialogs/use-overlay-open";
 import { useStableCallback } from "@/ui/runtime/use-stable-callback";
 
 interface DefineInstrumentDialogProps {
-  onDone: () => void;
+  // Receives the code of the defined instrument.
+  onDone: (code: string) => void;
   onCancel: () => void;
 }
 

@@ -46,6 +46,7 @@ export const contributionPlanPtBR: Record<
   "contributionPlan.addClass": "Adicionar grupo",
   "contributionPlan.className": "Nome do grupo",
   "contributionPlan.addAsset": "Adicionar ativo",
+  "contributionPlan.registerAsset": "Cadastrar ativo",
   "contributionPlan.pickAccounts": "Contas de investimento",
   "contributionPlan.pickInstruments": "Ativos",
   "contributionPlan.inClass": "Em {name}",
@@ -95,6 +96,8 @@ export const contributionPlanPtBR: Record<
     "Informe o valor do aporte para ver onde aplicar.",
   "contributionPlan.verdictMissingPrice":
     "{name} está sem cotação; sem ela o aporte não é dividido.",
+  "contributionPlan.recordPrice": "Registrar cotação de {name}",
+  "contributionPlan.recordRate": "Registrar câmbio de {name}",
   "contributionPlan.verdictMissingRate":
     "{name} está sem câmbio; sem ele o aporte não é dividido.",
   "contributionPlan.ideal": "Carteira frente ao ideal",
