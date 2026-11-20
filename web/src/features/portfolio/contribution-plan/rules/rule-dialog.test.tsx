@@ -13,11 +13,11 @@ import { renderWithProviders } from "@/testing/render-app";
 
 const word = (key: keyof typeof catalogEn) => catalogEn[key];
 
-function setup() {
+function setup(subtypes: string[] = []) {
   const onSave = vi.fn();
   const fetch = fakeApi({
     "GET /api/v1/instruments": () => json(200, { items: [] }),
-    "GET /api/v1/instrument-subtypes": () => json(200, { items: [] }),
+    "GET /api/v1/instrument-subtypes": () => json(200, { items: subtypes }),
     "POST /api/v1/contribution-plan/preview": previewRoute,
   });
 
@@ -75,6 +75,38 @@ describe("RuleDialog", () => {
       return_kind: "inflation",
       matures_from_year: 2031,
       matures_to_year: 2035,
+    });
+  });
+
+  it("picks the subtypes in one select of many choices", async () => {
+    const { onSave, user } = setup(["cdb", "lci"]);
+
+    await user.click(
+      await screen.findByRole("combobox", {
+        name: word("contributionPlan.rule.dialog.type"),
+      }),
+    );
+    await user.click(
+      await screen.findByRole("option", { name: "Fixed income" }),
+    );
+    await user.click(
+      await screen.findByRole("combobox", {
+        name: word("contributionPlan.rule.dialog.subtypes"),
+      }),
+    );
+    await user.click(await screen.findByRole("option", { name: "cdb" }));
+    await user.click(screen.getByRole("option", { name: "lci" }));
+    await user.keyboard("{Escape}");
+    await user.click(
+      screen.getByRole("button", {
+        name: word("contributionPlan.rule.dialog.save"),
+      }),
+    );
+
+    expect(screen.queryByRole("checkbox")).toBeNull();
+    expect(onSave).toHaveBeenCalledWith({
+      instrument_type: "fixed_income",
+      subtypes: ["cdb", "lci"],
     });
   });
 

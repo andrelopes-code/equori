@@ -1,5 +1,3 @@
-import { Checkbox } from "@slotted/react/checkbox";
-import { CheckboxGroup } from "@slotted/react/checkbox-group";
 import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
 import { useQuery } from "@tanstack/react-query";
 
@@ -66,19 +64,18 @@ export function RuleDialogFields({
       {subtypeItems.length > 0 && (
         <Field>
           <FieldLabel>{t("contributionPlan.rule.dialog.subtypes")}</FieldLabel>
-          <CheckboxGroup
-            aria-label={t("contributionPlan.rule.dialog.subtypes")}
+          <ChoiceSelect
+            label={t("contributionPlan.rule.dialog.subtypes")}
+            choices={subtypeItems.map((subtype) => ({
+              value: subtype,
+              label: subtypeLabel(t, subtype),
+            }))}
             value={form.subtypes}
-            onValueChange={(value) => {
-              change({ subtypes: [...value] });
+            multiple
+            onChange={(value) => {
+              change({ subtypes: Array.isArray(value) ? value : [] });
             }}
-          >
-            {subtypeItems.map((subtype) => (
-              <Checkbox key={subtype} value={subtype}>
-                {subtypeLabel(t, subtype)}
-              </Checkbox>
-            ))}
-          </CheckboxGroup>
+          />
         </Field>
       )}
 
