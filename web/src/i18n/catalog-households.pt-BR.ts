@@ -21,8 +21,7 @@ export const householdsPtBR: Record<keyof typeof householdsEn, string> = {
   "books.region.help": "A moeda base do novo livro segue esta região.",
   "books.create": "Criar livro",
   "settings.members.title": "Membros",
-  "settings.summary.members":
-    "Quem acessa os dados deste livro e com qual papel.",
+  "settings.summary.members": "Quem acessa este livro e com qual papel.",
   "members.role": "Papel",
   "members.role.owner": "Dono",
   "members.role.write": "Editor",

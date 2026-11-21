@@ -7,13 +7,11 @@ export const settingsPtBR: Record<keyof typeof settingsEn, string> = {
   "settings.group.connections": "Conexões",
   "settings.group.system": "Sistema",
   "settings.summary.account": "Identidade conectada, papel e sessão.",
-  "settings.summary.appearance":
-    "Tema, forma, texto, idioma e valores ocultos na tela.",
+  "settings.summary.appearance": "Tema, forma, texto, idioma e privacidade.",
   "settings.summary.finances": "Moeda base, região, fuso horário e cotações.",
   "settings.summary.calendars": "Feriados que deslocam datas agendadas.",
   "settings.summary.integrations": "Credenciais de agregadores.",
-  "settings.summary.assistant":
-    "Provedores de modelos de linguagem, usos e gastos.",
+  "settings.summary.assistant": "Modelos de linguagem, usos e gastos.",
   "settings.external_access.title": "Acesso externo (MCP)",
   "settings.summary.external_access": "Claude, Codex e outros agentes.",
   "settings.external_access.description":

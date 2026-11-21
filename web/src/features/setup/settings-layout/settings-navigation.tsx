@@ -38,6 +38,10 @@ export function SettingsNavigation({
   const api = useApi();
   const admin = useQuery(meQuery(api)).data?.role === "admin";
   const topics = settingsTopics.filter((topic) => admin || !("admin" in topic));
+  // A group whose every section is hidden draws no label (spec 2026-11-21-mobile-settings, ST1).
+  const groups = settingsGroups.filter((group) =>
+    topics.some((topic) => topic.group === group.id),
+  );
 
   return (
     <SideNavigation
@@ -47,9 +51,10 @@ export function SettingsNavigation({
       // A navigation of its own inside the page, not the shell's column.
       landmark
       size={index ? "lg" : "md"}
-      truncate={index ? "none" : "end"}
+      // One line per row: a summary longer than the row cuts (ST2).
+      truncate="end"
     >
-      {settingsGroups.map((group) => (
+      {groups.map((group) => (
         <SideNavigationSection key={group.id}>
           <SideNavigationSectionLabel>
             {t(group.title)}

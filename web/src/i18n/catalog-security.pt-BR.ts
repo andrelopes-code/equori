@@ -13,8 +13,7 @@ export const securityPtBR: Record<keyof typeof securityEn, string> = {
   "problem.second_factor_missing":
     "Ative o app autenticador ou adicione uma chave de acesso antes.",
   "settings.security.title": "Segurança",
-  "settings.summary.security":
-    "Segundo fator no login: app autenticador, chaves de acesso e códigos de recuperação.",
+  "settings.summary.security": "Autenticador, chaves de acesso e códigos.",
   "security.on": "Ativado",
   "security.off": "Desativado",
   "security.done": "Concluir",

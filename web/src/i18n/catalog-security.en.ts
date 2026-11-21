@@ -10,8 +10,7 @@ export const securityEn = {
   "problem.second_factor_missing":
     "Turn on the authenticator app or add a passkey first.",
   "settings.security.title": "Security",
-  "settings.summary.security":
-    "Second factor at sign-in: authenticator app, passkeys and recovery codes.",
+  "settings.summary.security": "Authenticator, passkeys and recovery codes.",
   "security.on": "On",
   "security.off": "Off",
   "security.done": "Done",

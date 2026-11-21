@@ -2,8 +2,7 @@ import type { marketDataEn } from "@/i18n/catalog-market-data.en";
 
 export const marketDataPtBR: Record<keyof typeof marketDataEn, string> = {
   "settings.market_data.title": "Dados de mercado",
-  "settings.summary.market_data":
-    "Fontes públicas de preços e índices que esta instalação busca a cada 6 horas.",
+  "settings.summary.market_data": "Fontes públicas de preços e índices.",
   "marketData.prices": "Preços",
   "marketData.indexes": "Índices",
   "marketData.refresh": "Atualizar agora",

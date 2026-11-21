@@ -280,6 +280,22 @@ describe("settings page", () => {
       expect(names).not.toContain(catalogPtBR["settings.backup.title"]);
       expect(names).not.toContain(catalogPtBR["settings.about.title"]);
     });
+
+    // Spec 2026-11-21-mobile-settings, ST1: a group whose every section is hidden left its
+    // label alone at the end of the list.
+    it("draws no label for a group the member has no section of", async () => {
+      await renderApp("/settings", {
+        fetch: api([], { role: "member" }),
+        width: 390,
+      });
+      const contents = await screen.findByRole("navigation", {
+        name: catalogPtBR["settings.contents"],
+      });
+
+      expect(
+        within(contents).queryByText(catalogPtBR["settings.group.system"]),
+      ).toBeNull();
+    });
   });
 
   describe("privacy", () => {

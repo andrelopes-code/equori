@@ -5,12 +5,11 @@ export const settingsEn = {
   "settings.group.connections": "Connections",
   "settings.group.system": "System",
   "settings.summary.account": "Signed-in identity, role and session.",
-  "settings.summary.appearance":
-    "Theme, shape, text, language and amounts hidden on screen.",
+  "settings.summary.appearance": "Theme, shape, text, language and privacy.",
   "settings.summary.finances": "Base currency, region, time zone and prices.",
   "settings.summary.calendars": "Holidays that move scheduled dates.",
   "settings.summary.integrations": "Aggregator credentials.",
-  "settings.summary.assistant": "Language model providers, uses and spending.",
+  "settings.summary.assistant": "Language models, uses and spending.",
   "settings.external_access.title": "External access (MCP)",
   "settings.summary.external_access": "Claude, Codex and other agents.",
   "settings.external_access.description":

@@ -22,8 +22,7 @@ export const householdsEn = {
   "books.region.help": "The base currency of the new book follows this region.",
   "books.create": "Create book",
   "settings.members.title": "Members",
-  "settings.summary.members":
-    "Who reaches this book's data, and with which role.",
+  "settings.summary.members": "Who reaches this book, and with which role.",
   "members.role": "Role",
   "members.role.owner": "Owner",
   "members.role.write": "Editor",
