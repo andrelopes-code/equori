@@ -20,6 +20,11 @@ type Money = components["schemas"]["Money"];
 type Budget = components["schemas"]["Budget"];
 
 const tones = { over: "danger", near: "warning", within: "accent" } as const;
+const tags = {
+  over: "budget.overspent",
+  near: "budget.near",
+  within: "budget.near",
+} as const;
 
 interface BudgetTableRowProps {
   row: BudgetRow;
@@ -63,6 +68,9 @@ export function BudgetTableRow({
     p.goal_paid.amount > 0
       ? t("budget.restGoalPaid", { rest, paid: money(p.goal_paid) })
       : withCarried;
+  // Spent to exactly the limit is near by its share, but nothing is left: it reads as reached.
+  const reached = state === "near" && p.available.amount === 0;
+  const tag = reached ? "budget.reached" : tags[state];
 
   return (
     <TableRow value={row.budget.id} aria-label={row.label}>
@@ -117,7 +125,7 @@ export function BudgetTableRow({
         <Inline gap={4} wrap="nowrap">
           {state !== "within" && (
             <Tag tone={tones[state]} size="sm">
-              {t(state === "over" ? "budget.overspent" : "budget.near")}
+              {t(tag)}
             </Tag>
           )}
           <Text

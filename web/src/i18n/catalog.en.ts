@@ -2874,6 +2874,7 @@ export const catalogEn = {
   "budget.left": "{amount} left",
   "budget.over": "{amount} over the budget",
   "budget.near": "Near the limit",
+  "budget.reached": "Limit reached",
   "budget.groupTotal": "{spent} of {room}",
   "budget.spendingChart": "Where the spending went",
   "budget.unbudgetedSlice": "No budget",

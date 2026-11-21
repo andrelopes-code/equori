@@ -2900,6 +2900,7 @@ export const catalogPtBR: Catalog = {
   "budget.left": "Restam {amount}",
   "budget.over": "{amount} acima do orçado",
   "budget.near": "Perto do limite",
+  "budget.reached": "Limite atingido",
   "budget.groupTotal": "{spent} de {room}",
   "budget.spendingChart": "Para onde foi o gasto",
   "budget.unbudgetedSlice": "Sem orçamento",

@@ -51,6 +51,31 @@ describe("PlanningPage budgets", () => {
     ).toBeInTheDocument();
   });
 
+  it("marks a budget spent to exactly its limit as reached", async () => {
+    await renderApp(november, {
+      fetch: budgetApi({
+        [`GET /api/v1/budgets/${fuelBudget.id}/progress`]: () =>
+          json(200, {
+            month: "2026-11",
+            planned: money(990),
+            carried: money(0),
+            spent: money(990),
+            goal_paid: money(0),
+            available: money(0),
+          }),
+      }),
+    });
+
+    const fuel = await screen.findByRole("row", { name: "Fuel" });
+
+    expect(
+      within(fuel).getByText(catalogEn["budget.reached"]),
+    ).toBeInTheDocument();
+    expect(
+      within(fuel).queryByText(catalogEn["budget.near"]),
+    ).not.toBeInTheDocument();
+  });
+
   it("carries the month before into available (S60)", async () => {
     await renderApp("/planning?tab=budgets&view=track&month=2026-12", {
       fetch: budgetApi(),
