@@ -8,6 +8,7 @@ import {
   ListItemStart,
 } from "@slotted/react/list-item";
 
+import styles from "@/features/accounts/balance-sheet/balance-sheet.module.css";
 import { listRailClass } from "@/features/accounts/balance-sheet/rail-class";
 import type { SheetLine } from "@/features/accounts/balance-sheet/sheet-lines";
 import { useT } from "@/i18n/i18n-provider";
@@ -21,7 +22,8 @@ interface SheetPositionsListItemProps {
 }
 
 // The positions of a parent on a phone: one row that opens or folds them, with the codes of the
-// first ones on its second line (AL9, AL12).
+// first ones on its second line (AL9, AL12). The codes cut before the count of the others, which
+// stays whole, so the line holds one row (spec 2026-11-21-mobile-accounts, MA2).
 export function SheetPositionsListItem({
   line,
   parentName,
@@ -29,10 +31,6 @@ export function SheetPositionsListItem({
 }: SheetPositionsListItemProps) {
   const t = useT();
   const more = line.count - line.codes.length;
-  const codes = [
-    ...line.codes,
-    ...(more > 0 ? [t("balanceSheet.morePositions", { count: more })] : []),
-  ].join(" · ");
 
   return (
     <ListItem className={listRailClass(true, line.first, line.last)}>
@@ -62,7 +60,17 @@ export function SheetPositionsListItem({
               { count: line.count },
             )}
           </ListItemLabel>
-          {!line.open && <ListItemDescription>{codes}</ListItemDescription>}
+          {!line.open && (
+            <ListItemDescription>
+              <span className={styles.codes}>
+                <span className={styles.codesCut}>
+                  {line.codes.join(" · ")}
+                </span>
+                {more > 0 &&
+                  ` · ${t("balanceSheet.morePositions", { count: more })}`}
+              </span>
+            </ListItemDescription>
+          )}
         </ListItemBody>
       </ListItemButton>
     </ListItem>

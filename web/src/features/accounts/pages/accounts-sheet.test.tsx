@@ -62,6 +62,22 @@ describe("AccountsPage list", () => {
     ).toBeInTheDocument();
   });
 
+  // Spec 2026-11-21-mobile-accounts, MA1: on a phone the net worth card holds the figure; the
+  // subheading repeated it and was cut by the header's actions.
+  it("draws no subheading on a phone", async () => {
+    await renderApp("/accounts", {
+      width: 390,
+      fetch: fakeApi(accountRoutes()),
+    });
+    await screen.findByRole("heading", {
+      level: 1,
+      name: catalogEn["nav.accounts"],
+    });
+
+    expect(screen.queryByText(/^Net worth .+ on /)).toBeNull();
+    expect(screen.queryByText(catalogEn["accounts.subtitle"])).toBeNull();
+  });
+
   it("orders the accounts by name when the address says so", async () => {
     await renderApp("/accounts?order=name", {
       fetch: fakeApi(accountRoutes()),

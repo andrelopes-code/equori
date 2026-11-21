@@ -68,7 +68,9 @@ export function SheetAccountListItem({
         <ListItemBody>
           <ListItemLabel className={styles.name}>{account.name}</ListItemLabel>
           {caption !== "" && (
-            <ListItemDescription>{caption}</ListItemDescription>
+            <ListItemDescription className={styles.name}>
+              {caption}
+            </ListItemDescription>
           )}
           {!parent && !row.position && shape !== "loan" && (
             <ListItemDescription>

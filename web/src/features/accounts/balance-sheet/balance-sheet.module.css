@@ -53,4 +53,16 @@
     justify-content: space-between;
     gap: var(--slotted-space-4);
   }
+
+  /* The codes of folded positions: one line, the codes cut, the count of the others whole. */
+  .codes {
+    display: flex;
+    min-inline-size: 0;
+    white-space: nowrap;
+  }
+
+  .codesCut {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }

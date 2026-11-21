@@ -19,6 +19,7 @@ import { connectionsListQuery } from "@/features/accounts/api";
 import { useT } from "@/i18n/i18n-provider";
 import { HeaderProgress } from "@/ui/navigation/header-progress";
 import { useServed } from "@/ui/navigation/use-served";
+import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
 
 export type AccountsTab = "accounts" | "institutions" | "links";
 
@@ -47,6 +48,7 @@ export function AccountsHeader({
   refreshing: boolean;
 }) {
   const t = useT();
+  const compact = useMediaQuery(compactQuery);
   const navigate = useNavigate();
   const connections = useQuery(connectionsListQuery(useApi()));
   const pending = (connections.data?.items ?? []).reduce(
@@ -66,9 +68,13 @@ export function AccountsHeader({
         <PageHeaderTitleRow>
           <PageHeaderTitle>
             <PageHeaderHeading>{t("nav.accounts")}</PageHeaderHeading>
-            <PageHeaderSubheading>
-              <span ref={subheadingRef} className={styles.slot} />
-            </PageHeaderSubheading>
+            {/* On a phone the net worth card holds the figure (spec 2026-11-21-mobile-accounts,
+                MA1). */}
+            {!compact && (
+              <PageHeaderSubheading>
+                <span ref={subheadingRef} className={styles.slot} />
+              </PageHeaderSubheading>
+            )}
           </PageHeaderTitle>
           <PageHeaderActions>
             <span ref={actionsRef} className={styles.slot} />
