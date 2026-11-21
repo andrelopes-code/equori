@@ -169,8 +169,9 @@ demo-reset: db-up
 
 demo: demo-user
 	go run ./cmd/demoseed -email $(DEMO_EMAIL)
-	@# The rebuilds collide with the dispatcher while it still drains the events of the seeding, so they retry.
-	$(LOAD_ENV) && for i in 1 2 3 4 5 6 7 8 9 10 11 12; do sleep 15; go run ./cmd/equori portfolio rebuild && go run ./cmd/equori reporting rebuild && exit 0; done; exit 1
+	@# The rebuilds collide with the dispatcher while it still drains the events of the seeding, so they
+	@# retry for up to 10 minutes: the dispatcher rebuilds the ten-year brokerage once per event.
+	$(LOAD_ENV) && for i in $$(seq 40); do sleep 15; go run ./cmd/equori portfolio rebuild && go run ./cmd/equori reporting rebuild && exit 0; done; exit 1
 
 # The figures and videos of the help (ADR 037, docs/contributing/help.md). Only a contributor who
 # rebuilds them installs the tool; check and CI need Node alone.
