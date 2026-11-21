@@ -2,7 +2,7 @@
 
 The Cards widget of the overview lists the statements that owe something. Today each row holds the card's name, a due date and an amount: a card with a closed and an open statement appears twice, nothing adds up what is due, the closing date and the credit limit are absent, and the face of the card, which the Cards page draws, is not used.
 
-The approved mock is the contract of the form: `docs/specs/assets/2026-11-17-overview-cards-mock/` (owner, 2026-11-17, concept C "wallet"). `design.css` moves to the widget's stylesheet without edits and the markup follows `design.html` element by element.
+The approved mock is the contract of the form: `docs/superpowers/mocks/2026-11-17-overview-cards-mock/` (local, owner, 2026-11-17, concept C "wallet"). `design.css` moves to the widget's stylesheet without edits and the markup follows `design.html` element by element.
 
 ## 1. Scope
 

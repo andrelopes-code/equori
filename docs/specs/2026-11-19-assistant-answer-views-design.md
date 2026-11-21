@@ -2,7 +2,7 @@
 
 - Date: 2026-11-19
 - Status: approved by the owner on 2026-11-19 (concept A of the mock; "gostei! apenas garanta que vai estar tudo com acabamento impecavel"; "pode seguir")
-- Mock (contract): `docs/specs/2026-11-19-assistant-answer-views-design-mock/` (`design.html`, `design.css`, `mock.json`, `shots/approved-*.png`; `gen.mjs` writes `design.html`)
+- Mock (contract): `docs/superpowers/mocks/2026-11-19-assistant-answer-views-design-mock/` (local, `design.html`, `design.css`, `mock.json`, `shots/approved-*.png`; `gen.mjs` writes `design.html`)
 - Amends: `internal/assistant/app/guide.tmpl` (rule "no other table … no charts"); `docs/contributing/web.md`, "Assistant conversation" (table "A form per kind")
 - Web feature: `assistant`
 

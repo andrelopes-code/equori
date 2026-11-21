@@ -1,6 +1,6 @@
 /* The anatomy of an assistant view: the approved mock of the answer views design
-   (docs/specs/2026-11-19-assistant-answer-views-design-mock/design.css, round 2). Geometry in px
-   follows the assistant's "Inner space" rule. */
+   (docs/superpowers/mocks/2026-11-19-assistant-answer-views-design-mock/design.css, round 2).
+   Geometry in px follows the assistant's "Inner space" rule. */
 @layer app {
   .answer {
     display: flex;

@@ -1,6 +1,6 @@
 # Return card: gain first
 
-Status: accepted. The owner confirmed the order of the blocks and approved concept A of the mock on 2026-11-17 (`docs/specs/assets/2026-11-17-return-card/`, opened through `index.html` on a static server). The mock is the contract for every measure this document does not state.
+Status: accepted. The owner confirmed the order of the blocks and approved concept A of the mock on 2026-11-17 (`docs/superpowers/mocks/2026-11-17-return-card/` (local), opened through `index.html` on a static server). The mock is the contract for every measure this document does not state.
 
 ## 1. Intent
 

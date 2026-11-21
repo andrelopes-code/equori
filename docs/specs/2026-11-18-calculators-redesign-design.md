@@ -2,7 +2,7 @@
 
 The calculators (`web/src/features/calculators`, design `2026-10-26-calculators-design.md`) answer correct questions with a poor form. A results column of 7/12 of the page shows "The result appears here" until three inputs are typed. Every figure has the same weight: the financing screen asks the reader to combine a four-row table and six loose pairs to compare Price with SAC and to judge a prepayment. Field descriptions run to two lines, no label defines its term, optional inputs are always open under an uppercase overline, and two schedules of 360 rows stand open by default. The list holds 13 rows of text in three framed lists over a third of a 1440 px page; two of them, `reserve` and `independence`, open a frame that says the calculator is not written. The assistant reaches no calculator.
 
-The approved mocks are the contract of the form: `docs/specs/assets/2026-11-18-calculators-redesign-mock/` (one calculator, owner, 2026-11-18, concept A "answer first") and `docs/specs/assets/2026-11-18-calculators-list-mock/` (the list, same date, concept A "by question"). `design.css` of each moves to the feature's stylesheets without edits and the markup follows `design.html` element by element.
+The approved mocks are the contract of the form: `docs/superpowers/mocks/2026-11-18-calculators-redesign-mock/` (local, one calculator, owner, 2026-11-18, concept A "answer first") and `docs/superpowers/mocks/2026-11-18-calculators-list-mock/` (local, the list, same date, concept A "by question"). `design.css` of each moves to the feature's stylesheets without edits and the markup follows `design.html` element by element.
 
 ## 1. Scope
 

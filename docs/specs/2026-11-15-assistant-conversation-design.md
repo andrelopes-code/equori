@@ -1,6 +1,6 @@
 # Assistant conversation: typed operations, decision sheet and receipts
 
-Issue #50. Rules: `docs/contributing/web.md`, section "Assistant conversation". Approved mock: `docs/specs/assets/2026-11-15-assistant-conversation/mock.html` (concept D, owner review of 2026-11-15), open in a browser with `?s=light`, `?s=dark`, `?w=phone`. The mock is the contract except for the two defects the owner named (section 9).
+Issue #50. Rules: `docs/contributing/web.md`, section "Assistant conversation". Approved mock: `docs/superpowers/mocks/2026-11-15-assistant-conversation/mock.html` (concept D, owner review of 2026-11-15), open in a browser with `?s=light`, `?s=dark`, `?w=phone`. The mock is the contract except for the two defects the owner named (section 9).
 
 This spec amends `docs/specs/2026-10-26-mcp-agent-design.md`: P5 (section 4.3), P13 (the sheet's footer scrolls into view), P15 (the deadline is shown once per sheet), P17 ("Confirmar todas" becomes the sheet's "Confirmar M" over the marked proposals). P14 and P16 hold inside the sheet and the results.
 

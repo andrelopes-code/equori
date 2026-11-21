@@ -1,4 +1,4 @@
-/* The stylesheet of the approved mock (docs/specs/assets/2026-11-17-help-mock/design.css), moved
+/* The stylesheet of the approved mock (docs/superpowers/mocks/2026-11-17-help-mock/design.css), moved
    whole: the index, the search and the page share its rows and its steps. */
 @layer app {
   /* ---- Shared: one row, one group head, one way to the assistant -------------------------- */

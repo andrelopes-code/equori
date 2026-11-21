@@ -2,7 +2,7 @@
 
 `PeriodControl` and `MonthControl` (`web/src/ui/navigation`) step a period with two arrows around its label. Today the label takes the width of its text, so the arrows move at each step; no part of the control states whether the period on screen holds today; and the return to the current month takes the popover and one of its choices.
 
-The approved mock is the contract of the form: `docs/specs/assets/2026-11-17-period-controls-mock/` (owner, 2026-11-17, concept B, no change). `design.css` moves to `steady-label.module.css` and `period-label.module.css` without edits.
+The approved mock is the contract of the form: `docs/superpowers/mocks/2026-11-17-period-controls-mock/` (local, owner, 2026-11-17, concept B, no change). `design.css` moves to `steady-label.module.css` and `period-label.module.css` without edits.
 
 ## 1. Scope
 

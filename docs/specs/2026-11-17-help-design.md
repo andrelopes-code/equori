@@ -2,7 +2,7 @@
 
 The help holds 14 Markdown pages. The index lists them as three cards by kind; a page draws its text with the list of every page beside it. A reader with a task has no search, the index does not follow the areas of the app, a symptom is reachable only by opening one long page, and no page shows the screen it describes.
 
-The approved mock is the contract of the form: `docs/specs/assets/2026-11-17-help-mock/` (owner, 2026-11-17, concept A "Guia", round 3, one change: the assistant button carries no shortcut key). `design.css` moves to the feature's stylesheets without edits and the markup follows `design.html` element by element.
+The approved mock is the contract of the form: `docs/superpowers/mocks/2026-11-17-help-mock/` (local, owner, 2026-11-17, concept A "Guia", round 3, one change: the assistant button carries no shortcut key). `design.css` moves to the feature's stylesheets without edits and the markup follows `design.html` element by element.
 
 ## 1. Scope
 

@@ -2,7 +2,7 @@
 
 Amends section 5 of `docs/specs/2026-11-15-income-buckets-design.md` (the dialog) and the field Valid from of A240 (`docs/specs/2026-11-17-income-split-versions-design.md`). No rule of the split changes: only the dialog that edits it.
 
-The approved mock is the contract of the layout: `docs/specs/2026-11-17-income-split-dialog-design-mock/` (`design.html`, `design.css`, `mock.json`, `shots/approved-*.png`), approved by the owner on 2026-11-17.
+The approved mock is the contract of the layout: `docs/superpowers/mocks/2026-11-17-income-split-dialog-design-mock/` (local, `design.html`, `design.css`, `mock.json`, `shots/approved-*.png`), approved by the owner on 2026-11-17.
 
 ## 1. Problem
 

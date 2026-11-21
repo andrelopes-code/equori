@@ -2,7 +2,7 @@
 
 The Upcoming widget of the overview lists the overdue occurrences and the open ones of the next 7 days. Today each row holds a description, a date and an amount: an income reads as an expense, an overdue occurrence differs from the others by one word, the reader counts the days and adds the amounts.
 
-The approved mock is the contract of the form: `docs/specs/assets/2026-11-17-overview-upcoming-mock/` (owner, 2026-11-17, concept A, no change). `design.css` moves to the widget's stylesheet without edits and the markup follows `design.html` element by element.
+The approved mock is the contract of the form: `docs/superpowers/mocks/2026-11-17-overview-upcoming-mock/` (local, owner, 2026-11-17, concept A, no change). `design.css` moves to the widget's stylesheet without edits and the markup follows `design.html` element by element.
 
 ## 1. Scope
 

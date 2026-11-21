@@ -1,1 +1,0 @@
-{"body":"[data-part=\"cards\"]","due":"[data-part=\"due\"]","open":"[data-part=\"open\"]","row":"label:has(input:checked) + [data-part=\"row\"]","pocket":"[role=\"radiogroup\"]","chosen":"label:has(input:checked)"}

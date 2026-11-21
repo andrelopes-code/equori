@@ -23,7 +23,7 @@ None. `model/help-pages.ts` loads the Markdown through `import.meta.glob` with t
 
 ## Design
 
-`docs/specs/2026-11-17-help-design.md`; the approved mock is `docs/specs/assets/2026-11-17-help-mock/`.
+`docs/specs/2026-11-17-help-design.md`; the approved mock is `docs/superpowers/mocks/2026-11-17-help-mock/` (local).
 
 ## Folders
 
