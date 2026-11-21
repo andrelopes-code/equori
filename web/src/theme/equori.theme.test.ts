@@ -432,6 +432,20 @@ test("a table caption inside a dialog or a drawer takes the header's tone", () =
   );
 });
 
+// Two washes over the panel land near, not on, the opaque 6% of a pinned header: the caption of a
+// table with a pinned header takes the header's own value.
+test("a table caption above a pinned header takes the header's value", () => {
+  const block =
+    /:is\([^{]*data-part="content"[^{]*data-mode="overlay"[^{]*\) \[data-ui="table"\]\[data-sticky-header\] \[data-part="caption"\] \{([^}]*)\}/.exec(
+      css,
+    );
+  assert.ok(block, "no overlay rule for the caption of a pinned header");
+  assert.match(
+    block[1] ?? "",
+    /background-color: color-mix\(in oklab, var\(--slotted-text\) 6%, var\(--slotted-surface-raised\)\)/,
+  );
+});
+
 // A row paints the table's surface token again over the frame, so a wash in the token stacked: the
 // body read at 6% beside a card at 3%. The frame paints its wash on its own root and the token the
 // rows read is clear.

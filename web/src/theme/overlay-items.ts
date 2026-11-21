@@ -80,7 +80,8 @@ export const overlayItemRules: readonly string[] = [
   `${overlays} ${family("table")} [data-part="group-row"][data-sticky] > [data-part="group-header"] {\n  background-color: ${pinned};\n}`,
   `${overlays} ${family("table")} [data-sticky] {\n  --slotted-table-sticky-surface: ${pinned};\n}`,
   // Workaround for Slotted issue #159: the caption paints no ground of its own, so above a
-  // header with a surface it reads as a band of another tone. A wash over the frame's lands on
-  // the header's 6%.
+  // header with a surface it reads as a band of another tone. It paints what the header paints: a
+  // wash over the frame's, or the opaque value of a pinned header.
   `${overlays} ${family("table")} [data-part="caption"] {\n  background-color: ${wash};\n}`,
+  `${overlays} ${family("table")}[data-sticky-header] [data-part="caption"] {\n  background-color: ${pinned};\n}`,
 ];

@@ -2045,6 +2045,10 @@
       background-color: color-mix(in oklab, var(--slotted-text) 3%, transparent);
     }
 
+    :is([data-ui="dialog"] > [data-part="viewport"] > [data-part="content"]:not(:has(> [data-ui="command-palette"])), [data-ui="drawer"][data-mode="overlay"] > [data-part="panel"]) [data-ui="table"][data-sticky-header] [data-part="caption"] {
+      background-color: color-mix(in oklab, var(--slotted-text) 6%, var(--slotted-surface-raised));
+    }
+
     [data-ui="table"] {
       --slotted-table-sticky-surface: var(--slotted-ground, var(--slotted-surface-sunken));
     }
