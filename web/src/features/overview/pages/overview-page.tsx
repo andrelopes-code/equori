@@ -45,7 +45,11 @@ import {
   subscribeOverviewLayout,
 } from "@/theme/overview-layout";
 import { PageStack } from "@/ui/page-layout/page-stack";
-import { useMediaQuery, wideQuery } from "@/ui/runtime/use-media-query";
+import {
+  compactQuery,
+  useMediaQuery,
+  wideQuery,
+} from "@/ui/runtime/use-media-query";
 
 const desk: [DesktopFigureKind, MessageKey][] = [
   ["net", "overview.figures.net"],
@@ -73,6 +77,7 @@ export function OverviewPage() {
   const t = useT();
   const month = useToday().slice(0, 7);
   const wide = useMediaQuery(wideQuery);
+  const compact = useMediaQuery(compactQuery);
   const [editing, setEditing] = useState(false);
   const restores = useSyncExternalStore(
     subscribeOverviewLayout,
@@ -107,9 +112,12 @@ export function OverviewPage() {
           <PageHeaderTitleRow>
             <PageHeaderTitle>
               <PageHeaderHeading>{t("nav.overview")}</PageHeaderHeading>
-              <PageHeaderSubheading>
-                {t("overview.subtitle")}
-              </PageHeaderSubheading>
+              {/* Spec 2026-11-21-mobile-accounts, MA4. */}
+              {!compact && (
+                <PageHeaderSubheading>
+                  {t("overview.subtitle")}
+                </PageHeaderSubheading>
+              )}
             </PageHeaderTitle>
             {!editing && (
               <PageHeaderActions>

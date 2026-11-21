@@ -17,11 +17,13 @@ import { firstSteps } from "@/features/overview/first-steps/first-steps";
 import { useFirstStepsDismissal } from "@/features/overview/first-steps/use-first-steps-dismissal";
 import { useT } from "@/i18n/i18n-provider";
 import { routeTo } from "@/ui/navigation/route-to";
+import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
 
 // What a newcomer does before the overview has anything to show, as numbered steps with the next
 // one's action; gone once every step is done, or once the reader dismisses it.
 export function FirstStepsBlock() {
   const t = useT();
+  const compact = useMediaQuery(compactQuery);
   const api = useApi();
   const accounts = useQuery(accountsQuery(api));
   const anyTransaction = useQuery(anyTransactionQuery(api));
@@ -51,9 +53,12 @@ export function FirstStepsBlock() {
         <Heading level={2} size="md">
           {t("firstSteps.title")}
         </Heading>
-        <Text size="sm" tone="muted">
-          {t("firstSteps.description")}
-        </Text>
+        {/* On a phone the steps say it (spec 2026-11-21-mobile-accounts, MA4). */}
+        {!compact && (
+          <Text size="sm" tone="muted">
+            {t("firstSteps.description")}
+          </Text>
+        )}
         <CardActions>
           <Inline gap={3} align="center" wrap="nowrap">
             <Tag size="sm" tone="secondary">

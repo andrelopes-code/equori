@@ -396,6 +396,30 @@ describe("overview page", () => {
     expectNoAmounts(container, ["2,205.00", "1,005.00", "975.00"]);
   });
 
+  // Spec 2026-11-21-mobile-accounts, MA4: on a phone the header's sentence was cut at its action
+  // and the first steps' sentence took three lines beside their progress; the steps say it.
+  it("draws neither the subheading nor the first steps' sentence on a phone", async () => {
+    await renderApp("/", { fetch: api(), width: 390 });
+    await screen.findByRole("list", { name: catalogEn["firstSteps.title"] });
+
+    expect(screen.queryByText(catalogEn["overview.subtitle"])).toBeNull();
+    expect(screen.queryByText(catalogEn["firstSteps.description"])).toBeNull();
+  });
+
+  // MA4: beside a trend, the comparison of a figure took two lines on a phone; the trend takes its
+  // own row under the figure.
+  it("stacks each figure's trend under it on a phone", async () => {
+    await renderApp("/", { fetch: api(), width: 390 });
+    await screen.findByRole("article", { name: "Net worth" });
+
+    const cards = document.querySelectorAll('[data-ui="stat-card"]');
+
+    expect(cards.length).toBeGreaterThan(0);
+    for (const card of cards) {
+      expect(card).toHaveAttribute("data-layout", "stacked");
+    }
+  });
+
   it("puts the attention list before the figures on a phone", async () => {
     await renderApp("/", { fetch: api(), width: 390 });
     const attention = await screen.findByRole("article", { name: "Attention" });

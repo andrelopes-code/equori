@@ -16,6 +16,7 @@ import {
 } from "@/features/overview/overview-block/overview-block";
 import { MoneyValue } from "@/ui/money/money-value";
 import type { MoneyAmount } from "@/ui/money/money-value";
+import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
 
 // One figure of the overview as a widget of its own: the widget's title is the figure's label
 // and the widget is its only frame, so the card inside is plain and has no header (OV-05).
@@ -49,6 +50,8 @@ export function FigureWidget({
   trend?: ReactNode;
   footer?: ReactNode;
 }) {
+  const compact = useMediaQuery(compactQuery);
+
   return (
     <OverviewBlock
       placement={placement}
@@ -63,8 +66,9 @@ export function FigureWidget({
         size="md"
         fill="plain"
         // A trend sits beside the figure, inside the widget's height; with no trend, stacked keeps
-        // no empty trend column.
-        layout={trend === undefined ? "stacked" : "inline"}
+        // no empty trend column. On a phone the trend takes its own row, so the comparison holds
+        // one line (spec 2026-11-21-mobile-accounts, MA4).
+        layout={trend === undefined || compact ? "stacked" : "inline"}
         loading={loading}
         status={!loading && value === undefined ? "empty" : "ready"}
         goodWhen={goodWhen}

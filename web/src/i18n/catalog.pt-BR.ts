@@ -65,11 +65,9 @@ export const catalogPtBR: Catalog = {
   "firstSteps.account": "Cadastre uma conta ou um cartão",
   "firstSteps.accountHint": "Com o saldo que a instituição mostra hoje.",
   "firstSteps.transactions": "Registre ou importe transações",
-  "firstSteps.transactionsHint":
-    "À mão, por um extrato ou por uma conexão bancária.",
+  "firstSteps.transactionsHint": "À mão, por extrato ou por conexão.",
   "firstSteps.categories": "Dê uma categoria a cada transação",
-  "firstSteps.categoriesHint":
-    "Assim a visão geral mostra os gastos por categoria.",
+  "firstSteps.categoriesHint": "Para ver os gastos por categoria.",
   "firstSteps.progress": "{done} de {total} feitos",
   "firstSteps.action.account": "Cadastrar uma conta",
   "firstSteps.action.transactions": "Registrar uma transação",
@@ -2996,11 +2994,9 @@ export const catalogPtBR: Catalog = {
   "overview.indicators.savingsNote": "Média de 12 meses: {mean}",
   "overview.indicators.savingsNoMean": "Ainda sem média de 12 meses",
   "overview.indicators.reserveNote":
-    "{liquid} contra uma despesa média mensal de {expense}",
-  "overview.indicators.committedNote":
-    "{committed} contra uma renda média mensal de {income}",
-  "overview.indicators.debtNote":
-    "{debt} contra uma renda média mensal de {income}",
+    "{liquid} para um gasto médio de {expense}",
+  "overview.indicators.committedNote": "{committed} da renda média de {income}",
+  "overview.indicators.debtNote": "{debt} da renda média de {income}",
   "overview.indicators.formula": "Conta:",
   "overview.indicators.example": "Exemplo:",
   "overview.indicators.savingsHelp":

@@ -64,10 +64,9 @@ export const catalogEn = {
   "firstSteps.account": "Add an account or a card",
   "firstSteps.accountHint": "With the balance the institution shows today.",
   "firstSteps.transactions": "Record or import transactions",
-  "firstSteps.transactionsHint":
-    "By hand, from a statement or through a bank connection.",
+  "firstSteps.transactionsHint": "By hand, from a statement or a link.",
   "firstSteps.categories": "Give each transaction a category",
-  "firstSteps.categoriesHint": "Then the overview shows spending by category.",
+  "firstSteps.categoriesHint": "To see spending by category.",
   "firstSteps.progress": "{done} of {total} done",
   "firstSteps.action.account": "Add an account",
   "firstSteps.action.transactions": "Record a transaction",
@@ -2968,12 +2967,10 @@ export const catalogEn = {
   "overview.indicators.months": "{months} months",
   "overview.indicators.savingsNote": "12-month mean: {mean}",
   "overview.indicators.savingsNoMean": "No 12-month mean yet",
-  "overview.indicators.reserveNote":
-    "{liquid} against a mean monthly expense of {expense}",
+  "overview.indicators.reserveNote": "{liquid} for a mean spend of {expense}",
   "overview.indicators.committedNote":
-    "{committed} against a mean monthly income of {income}",
-  "overview.indicators.debtNote":
-    "{debt} against a mean monthly income of {income}",
+    "{committed} of a mean income of {income}",
+  "overview.indicators.debtNote": "{debt} of a mean income of {income}",
   "overview.indicators.formula": "Formula:",
   "overview.indicators.example": "Example:",
   "overview.indicators.savingsHelp":
