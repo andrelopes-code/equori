@@ -51,6 +51,15 @@ describe("CardsPage", () => {
     expect(faces).toHaveLength(2);
   });
 
+  // Spec 2026-11-21-mobile-accounts, MA4: on a phone the sentence under the title leaves; it was
+  // cut at the header's action, and the figures below say what it described.
+  it("draws no subheading on a phone", async () => {
+    await renderApp("/cards", { width: 390, fetch: api() });
+    await screen.findByRole("region", { name: catalogEn["cards.figures"] });
+
+    expect(screen.queryByText(/: what (each|it) bills now/)).toBeNull();
+  });
+
   it("adds up the open statements, what is due and the free limit", async () => {
     await renderApp("/cards", { fetch: api() });
     const figures = await screen.findByRole("region", {

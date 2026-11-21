@@ -36,6 +36,7 @@ import { useT } from "@/i18n/i18n-provider";
 import { HeaderAction } from "@/ui/navigation/header-action";
 import { QueryError } from "@/ui/feedback/query-error";
 import { useServed } from "@/ui/navigation/use-served";
+import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
 
 // The credit cards: what each one bills now, what is due and when, and how much limit is free.
 const newCard = {
@@ -48,6 +49,7 @@ const pendingTiles = [0, 1];
 
 export function CardsPage() {
   const t = useT();
+  const compact = useMediaQuery(compactQuery);
   const api = useApi();
   const navigate = useNavigate();
   const served = useServed();
@@ -88,11 +90,14 @@ export function CardsPage() {
           <PageHeaderTitleRow>
             <PageHeaderTitle>
               <PageHeaderHeading>{t("nav.cards")}</PageHeaderHeading>
-              <PageHeaderSubheading>
-                {t(openCount === 1 ? "cards.subtitleOne" : "cards.subtitle", {
-                  count: openCount,
-                })}
-              </PageHeaderSubheading>
+              {/* Spec 2026-11-21-mobile-accounts, MA4. */}
+              {!compact && (
+                <PageHeaderSubheading>
+                  {t(openCount === 1 ? "cards.subtitleOne" : "cards.subtitle", {
+                    count: openCount,
+                  })}
+                </PageHeaderSubheading>
+              )}
             </PageHeaderTitle>
             <PageHeaderActions>
               <RefreshButton

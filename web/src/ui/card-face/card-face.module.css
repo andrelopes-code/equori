@@ -447,9 +447,10 @@
     gap: calc(var(--u) * 1.1);
   }
 
+  /* Whole pixels on both sides: a dot of a fractional side rounds differently on each axis. */
   .dots i {
-    inline-size: calc(var(--u) * 1.15);
-    block-size: calc(var(--u) * 1.15);
+    inline-size: round(nearest, calc(var(--u) * 1.15), 1px);
+    block-size: round(nearest, calc(var(--u) * 1.15), 1px);
     border-radius: 50%;
     background: currentcolor;
     opacity: 0.8;
