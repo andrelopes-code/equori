@@ -87,6 +87,7 @@ export const catalogPtBR: Catalog = {
   "help.next": "Próxima",
   "help.start": "Começar o roteiro",
   "help.screen": "Ajuda sobre esta tela",
+  "header.actions": "Ações da página",
   "help.notFound": "Esta página de ajuda não existe",
   "help.notFoundHint":
     "O link pode estar errado. A lista de páginas está na ajuda.",

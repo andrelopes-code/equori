@@ -85,6 +85,7 @@ export const catalogEn = {
   "help.next": "Next",
   "help.start": "Start the walkthrough",
   "help.screen": "Help about this screen",
+  "header.actions": "Page actions",
   "help.notFound": "This help page does not exist",
   "help.notFoundHint": "The link may be wrong. The list of pages is in Help.",
   "help.loadFailed": "Help could not be loaded",

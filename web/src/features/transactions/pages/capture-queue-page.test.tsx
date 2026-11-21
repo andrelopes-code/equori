@@ -78,6 +78,21 @@ it("lists only the signed-in user's entries", async () => {
   expect(screen.queryByText("someone else")).toBeNull();
 });
 
+// Spec 2026-11-21-mobile-entry-forms, MF3: on a phone the sentence under the title leaves; it
+// took two lines above the queue.
+it("draws no description under the title on a phone", async () => {
+  await renderApp("/transactions/queue", {
+    width: 390,
+    fetch: routes(() => json(200, { lines: [] })),
+  });
+  await screen.findByRole("heading", {
+    level: 1,
+    name: catalogEn["queue.title"],
+  });
+
+  expect(screen.queryByText(catalogEn["queue.subheading"])).toBeNull();
+});
+
 it("previews a queued text against the day it was written and removes it once recorded", async () => {
   const queued = enqueueCapture({
     userId: 1,

@@ -9,7 +9,7 @@ import {
   PageHeaderTitleRow,
 } from "@slotted/react/page-header";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 
 import { useApi } from "@/api/api-context";
 import { HelpLink } from "@/features/help";
@@ -18,7 +18,13 @@ import { readQueue } from "@/features/transactions/capture-model/capture-queue";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { PageBack } from "@/ui/navigation/page-back";
-import { useMediaQuery, wideQuery } from "@/ui/runtime/use-media-query";
+import { HeaderToolbar } from "@/ui/page-layout/header-toolbar";
+import type { HeaderToolbarAction } from "@/ui/page-layout/header-toolbar";
+import {
+  compactQuery,
+  useMediaQuery,
+  wideQuery,
+} from "@/ui/runtime/use-media-query";
 
 interface CaptureHeaderProps {
   // The day a text of the offline queue was written; undefined for the session's draft.
@@ -30,6 +36,8 @@ export function CaptureHeader({ queuedOn }: CaptureHeaderProps) {
   const api = useApi();
   const [locale] = useAppLocale();
   const wide = useMediaQuery(wideQuery);
+  const compact = useMediaQuery(compactQuery);
+  const navigate = useNavigate();
   const me = useQuery({ ...meQuery(api), staleTime: Infinity });
 
   const waiting = me.data === undefined ? 0 : readQueue(me.data.id).length;
@@ -37,6 +45,38 @@ export function CaptureHeader({ queuedOn }: CaptureHeaderProps) {
     queuedOn === undefined
       ? t("capture.subheading")
       : t("capture.queuedFrom", { date: formatDate(queuedOn, locale) });
+  const form: HeaderToolbarAction = {
+    id: "form",
+    label: t("capture.useForm"),
+    onSelect: () => {
+      void navigate({ to: "/transactions/new" });
+    },
+    control: (
+      <ButtonLink
+        variant="outline"
+        tone="secondary"
+        render={(props) => <Link {...props} to="/transactions/new" />}
+      >
+        {t("capture.useForm")}
+      </ButtonLink>
+    ),
+  };
+  const queue: HeaderToolbarAction = {
+    id: "queue",
+    label: t("capture.queue", { count: waiting }),
+    onSelect: () => {
+      void navigate({ to: "/transactions/queue" });
+    },
+    control: (
+      <ButtonLink
+        variant="outline"
+        tone="secondary"
+        render={(props) => <Link {...props} to="/transactions/queue" />}
+      >
+        {t("capture.queue", { count: waiting })}
+      </ButtonLink>
+    ),
+  };
 
   return (
     <PageHeader size="lg">
@@ -54,28 +94,20 @@ export function CaptureHeader({ queuedOn }: CaptureHeaderProps) {
           </PageHeaderTitle>
 
           <PageHeaderActions>
-            <HelpLink page="text-capture" />
-            <ButtonLink
-              variant="outline"
-              tone="secondary"
-              render={(props) => <Link {...props} to="/transactions/new" />}
-            >
-              {t("capture.useForm")}
-            </ButtonLink>
-
-            {queuedOn === undefined && waiting > 0 && (
-              <ButtonLink
-                variant="outline"
-                tone="secondary"
-                render={(props) => <Link {...props} to="/transactions/queue" />}
-              >
-                {t("capture.queue", { count: waiting })}
-              </ButtonLink>
-            )}
+            <HeaderToolbar
+              pinned={<HelpLink page="text-capture" />}
+              actions={
+                queuedOn === undefined && waiting > 0 ? [form, queue] : [form]
+              }
+            />
           </PageHeaderActions>
         </PageHeaderTitleRow>
 
-        <PageHeaderDescription>{description}</PageHeaderDescription>
+        {/* On a phone the general sentence leaves; the day of a queued text stays (spec
+            2026-11-21-mobile-entry-forms, MF3). */}
+        {(!compact || queuedOn !== undefined) && (
+          <PageHeaderDescription>{description}</PageHeaderDescription>
+        )}
       </PageHeaderTitleArea>
     </PageHeader>
   );

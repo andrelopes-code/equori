@@ -19,6 +19,7 @@ import { isBuiltKind } from "@/features/transactions/entry-model/entry-kind";
 import type { EntryKind } from "@/features/transactions/entry-model/entry-kind";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useT } from "@/i18n/i18n-provider";
+import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
 
 const kinds: {
   value: EntryKind;
@@ -95,21 +96,24 @@ interface EntryKindPickerProps {
 
 // docs/contributing/forms.md, F13: the three frequent kinds are segments read at a glance; the
 // others, each needing a sentence, sit in a menu beside them that names the one chosen. A lone
-// other kind (a correction offers only the advanced one) is a fourth segment.
+// other kind (a correction offers only the advanced one) is a fourth segment; on a phone the three
+// segments take the row and every other kind sits in the menu under them (spec
+// 2026-11-21-mobile-entry-forms, MF2).
 export function EntryKindPicker({
   value,
   onChange,
   investments = false,
 }: EntryKindPickerProps) {
   const t = useT();
+  const compact = useMediaQuery(compactQuery);
 
   const shown = kinds.filter((kind) => investments || !isBuiltKind(kind.value));
   const others = shown.filter((kind) => !frequent.includes(kind.value));
-  const segments =
-    others.length === 1
-      ? shown
-      : shown.filter((kind) => frequent.includes(kind.value));
-  const menu = others.length > 1 ? others : [];
+  const lone = others.length === 1 && !compact;
+  const segments = lone
+    ? shown
+    : shown.filter((kind) => frequent.includes(kind.value));
+  const menu = lone ? [] : others;
   const chosenOther = menu.find((kind) => kind.value === value);
 
   function handleChange(next: string) {
@@ -124,6 +128,7 @@ export function EntryKindPicker({
         <Inline gap={4} wrap="wrap" align="center">
           <SegmentedControl
             aria-label={t("entry.kind")}
+            fullWidth={compact}
             value={chosenOther === undefined ? value : ""}
             onValueChange={handleChange}
           >
@@ -140,7 +145,7 @@ export function EntryKindPicker({
                 render={(props) => (
                   <Button
                     {...props}
-                    variant="outline"
+                    variant={compact ? "ghost" : "outline"}
                     tone={chosenOther === undefined ? "secondary" : "accent"}
                     end={<Glyph name="chevron-down" />}
                   >

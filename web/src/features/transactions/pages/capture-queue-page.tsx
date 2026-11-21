@@ -29,6 +29,7 @@ import {
 } from "@/features/transactions/capture-model/capture-queue";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
 
 // P5 of ADR 022: the signed-in user's texts written offline; Review opens one in the text capture.
 export function CaptureQueuePage() {
@@ -36,6 +37,7 @@ export function CaptureQueuePage() {
   const api = useApi();
   const [locale] = useAppLocale();
   const navigate = useNavigate();
+  const compact = useMediaQuery(compactQuery);
   const me = useQuery({ ...meQuery(api), staleTime: Infinity });
   // A discard bumps the version, so the list is read again from storage.
   const [, setVersion] = useState(0);
@@ -50,7 +52,12 @@ export function CaptureQueuePage() {
               <PageHeaderHeading>{t("queue.title")}</PageHeaderHeading>
             </PageHeaderTitle>
           </PageHeaderTitleRow>
-          <PageHeaderDescription>{t("queue.subheading")}</PageHeaderDescription>
+          {/* Spec 2026-11-21-mobile-entry-forms, MF3. */}
+          {!compact && (
+            <PageHeaderDescription>
+              {t("queue.subheading")}
+            </PageHeaderDescription>
+          )}
         </PageHeaderTitleArea>
       </PageHeader>
       <PageBody>

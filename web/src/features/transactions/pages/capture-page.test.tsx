@@ -131,6 +131,20 @@ describe("CapturePage", () => {
     expect(link.getAttribute("href")).toBe("/help/text-capture");
   });
 
+  // Spec 2026-11-21-mobile-entry-forms, MF3: on a phone the sentence under the title leaves.
+  it("draws no description under the title on a phone", async () => {
+    await renderApp("/transactions/capture", {
+      width: 390,
+      fetch: api([], []),
+    });
+    await screen.findByRole("heading", {
+      level: 1,
+      name: catalogEn["capture.title"],
+    });
+
+    expect(screen.queryByText(catalogEn["capture.subheading"])).toBeNull();
+  });
+
   it("records every draft in one batch once each reading is settled", async () => {
     const previews: { text: string }[] = [];
     const sent: unknown[] = [];

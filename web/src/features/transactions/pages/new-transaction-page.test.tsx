@@ -86,6 +86,23 @@ describe("NewTransactionPage", () => {
     expect(link.getAttribute("href")).toBe("/help/record-transaction");
   });
 
+  // Spec 2026-11-21-mobile-entry-forms, MF1: on a phone the header's links stay on the title row
+  // in a toolbar that folds into a menu what does not fit.
+  it("holds its header links in one toolbar", async () => {
+    await renderApp("/transactions/new", { width: 390, fetch: api([]) });
+
+    const toolbar = await screen.findByRole("toolbar", {
+      name: catalogEn["header.actions"],
+    });
+
+    expect(
+      within(toolbar).getByRole("link", { name: catalogEn["capture.useText"] }),
+    ).toHaveAttribute("href", "/transactions/capture");
+    expect(
+      within(toolbar).getByRole("link", { name: catalogEn["help.screen"] }),
+    ).toHaveAttribute("href", "/help/record-transaction");
+  });
+
   it("records an expense and returns to the list", async () => {
     const sent: unknown[] = [];
     const { router } = await renderApp("/transactions/new", {

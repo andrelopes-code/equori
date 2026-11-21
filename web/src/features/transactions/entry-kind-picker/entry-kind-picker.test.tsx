@@ -8,6 +8,7 @@ import { catalogEn } from "@/i18n/catalog.en";
 import { chooseEntryKind } from "@/testing/entry-kind";
 import { fakeApi } from "@/testing/fake-api";
 import { renderWithProviders } from "@/testing/render-app";
+import { setViewport } from "@/testing/viewport";
 
 // docs/contributing/forms.md, F13: the frequent kinds are segments, the others a menu.
 describe("EntryKindPicker", () => {
@@ -111,5 +112,32 @@ describe("EntryKindPicker", () => {
       screen.queryByRole("button", { name: catalogEn["entry.otherKinds"] }),
     ).toBeNull();
     expect(chosen).toEqual(["advanced"]);
+  });
+
+  // Spec 2026-11-21-mobile-entry-forms, MF2: on a phone the three frequent kinds hold one row; a
+  // lone other kind (a correction's advanced one) moves to the menu instead of a cut fourth segment.
+  it("keeps three segments on a phone and puts a lone other kind in the menu", async () => {
+    setViewport(390);
+    renderWithProviders(
+      <EntryKindPicker value="expense" onChange={() => undefined} />,
+      { fetch: fakeApi({}) },
+    );
+
+    const user = userEvent.setup();
+    const segments = screen.getAllByRole("radio");
+    await user.click(
+      screen.getByRole("button", { name: catalogEn["entry.otherKinds"] }),
+    );
+
+    expect(segments.map((segment) => segment.getAttribute("value"))).toEqual([
+      "expense",
+      "income",
+      "transfer",
+    ]);
+    expect(
+      await screen.findByRole("menuitemradio", {
+        name: catalogEn["entry.kind.advanced"],
+      }),
+    ).toBeInTheDocument();
   });
 });
