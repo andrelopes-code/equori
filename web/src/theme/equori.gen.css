@@ -1995,6 +1995,14 @@
       --slotted-table-header-surface: var(--slotted-ground, var(--slotted-surface-sunken));
     }
 
+    @container slotted-page (width < 600px) {
+      [data-ui="page"] [data-ui="container"] {
+        grid-template-columns:
+          [full-start] var(--slotted-space-6) [content-start] minmax(0, 1fr)
+          [content-end] var(--slotted-space-6) [full-end];
+      }
+    }
+
     :is([data-ui="dialog"] > [data-part="viewport"] > [data-part="content"]:not(:has(> [data-ui="command-palette"])), [data-ui="drawer"][data-mode="overlay"] > [data-part="panel"]) [data-ui="card"] {
       --slotted-card-background: color-mix(in oklab, var(--slotted-text) 3%, transparent);
       --slotted-card-border-color: color-mix(in oklab, var(--slotted-text) 14%, transparent);

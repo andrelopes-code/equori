@@ -472,3 +472,12 @@ for (const [name, selector, token] of frames) {
     );
   });
 }
+
+// Spec 2026-11-21-mobile-statement, MS1: a phone page keeps 16 px between the screen edge and
+// its content (Slotted issue #163).
+test("a page container keeps a 16 px inset below 600 px", () => {
+  assert.match(
+    css,
+    /@container slotted-page \(width < 600px\) \{\s*\[data-ui="page"\] \[data-ui="container"\] \{\s*grid-template-columns:\s*\[full-start\] var\(--slotted-space-6\) \[content-start\] minmax\(0, 1fr\)\s*\[content-end\] var\(--slotted-space-6\) \[full-end\];/,
+  );
+});

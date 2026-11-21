@@ -234,6 +234,20 @@ const stickyHeaderRule = `
 }
 `;
 
+// Workaround for Slotted issue #163: below 600 px every page container keeps 7 px between the
+// screen edge and the content, and no token sets it. A phone page keeps 16 px, the margin of the
+// platforms (spec 2026-11-21-mobile-statement, MS1). The tracks are restated with that margin:
+// below 600 px the content is narrower than every container size, so no maximum applies.
+const compactInsetRule = `
+@container slotted-page (width < 600px) {
+  [data-ui="page"] [data-ui="container"] {
+    grid-template-columns:
+      [full-start] var(--slotted-space-6) [content-start] minmax(0, 1fr)
+      [content-end] var(--slotted-space-6) [full-end];
+  }
+}
+`;
+
 // Workaround for Slotted issue #86: a column pinned to a side paints the raised surface, a shade off
 // the ground the table stands on. It takes that ground: the section's, or the page's sunken one
 // where no section sets it, because the page does not publish its ground (issue #85).
@@ -550,6 +564,7 @@ export default extendTheme(
       listHeightRule,
       emptyStatusRule,
       stickyHeaderRule,
+      compactInsetRule,
       ...overlayItemRules,
       stickyColumnRule,
       collapsibleCornerRule,
