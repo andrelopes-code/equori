@@ -6,15 +6,26 @@
     grid-template-columns: minmax(0, 1fr);
     gap: var(--slotted-space-4);
     min-inline-size: 0;
-    padding: var(--slotted-space-2);
-    border-radius: 16px;
     cursor: pointer;
     font-family: var(--slotted-font-family-sans);
     font-variant-numeric: tabular-nums;
+    outline: none;
   }
 
-  .option:focus-visible,
-  .option[aria-selected="true"] {
+  /* The chosen and the focused card draw their ring on the face alone; the caption stays outside
+     it. The face's corner is 4.4 units of 1% of its width (ui/card-face), so the frame takes the
+     same radius in container units of .face. */
+  .face > :first-child {
+    border-radius: 4.4cqw;
+  }
+
+  .option[aria-selected="true"] .face > :first-child {
+    outline: var(--slotted-border-width-medium) solid
+      var(--slotted-tone-accent-text);
+    outline-offset: 3px;
+  }
+
+  .option:focus-visible .face > :first-child {
     outline: var(--slotted-focus-ring-width) solid
       var(--slotted-focus-ring-color);
     outline-offset: var(--slotted-focus-ring-offset);
@@ -27,6 +38,7 @@
   .face {
     position: relative;
     display: block;
+    container-type: inline-size;
     transition: translate var(--slotted-duration-short)
       var(--slotted-easing-standard);
   }
