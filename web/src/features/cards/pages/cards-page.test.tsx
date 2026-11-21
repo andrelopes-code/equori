@@ -51,7 +51,7 @@ describe("CardsPage", () => {
     expect(faces).toHaveLength(2);
   });
 
-  // Spec 2026-11-21-mobile-accounts, MA4: on a phone the sentence under the title leaves; it was
+  // Spec 2026-11-21-mobile-accounts, MA3: on a phone the sentence under the title leaves; it was
   // cut at the header's action, and the figures below say what it described.
   it("draws no subheading on a phone", async () => {
     await renderApp("/cards", { width: 390, fetch: api() });

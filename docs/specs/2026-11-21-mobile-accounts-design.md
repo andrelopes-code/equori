@@ -9,8 +9,8 @@ Below 600 px the balance sheet of `/accounts` and the list of `/cards` hold one 
 | ID | Rule |
 |---|---|
 | MA1 | The header of `/accounts` draws no subheading: the net worth card holds the figure, and the subheading repeated it cut by the header's actions. |
-| MA4 | The header of `/cards` draws no subheading: the figures under it hold what it described, and it was cut at the header's action. The dots of a card face's masked number measure whole pixels at every width. |
 | MA2 | A row of folded positions holds one line: the codes cut with an ellipsis before the count of the others (`+23`), which stays whole. An account row's caption (kind and institution) holds one line and cuts with an ellipsis. |
+| MA3 | The header of `/cards` draws no subheading: the figures under it hold what it described, and it was cut at the header's action. The dots of a card face's masked number measure whole pixels at every width. |
 
 Known gaps: the dot of a statement's status measures 5.25 px at a 14 px root (Slotted issue #169). Below 22rem of its own width a list item draws its amount under the name (Slotted issue #168). On a 360 px screen an indented sub-account row is about 290 px wide, so its balance drops under its name; from 390 px it stays beside it.
 

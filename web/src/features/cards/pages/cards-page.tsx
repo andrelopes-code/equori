@@ -90,7 +90,7 @@ export function CardsPage() {
           <PageHeaderTitleRow>
             <PageHeaderTitle>
               <PageHeaderHeading>{t("nav.cards")}</PageHeaderHeading>
-              {/* Spec 2026-11-21-mobile-accounts, MA4. */}
+              {/* Spec 2026-11-21-mobile-accounts, MA3. */}
               {!compact && (
                 <PageHeaderSubheading>
                   {t(openCount === 1 ? "cards.subtitleOne" : "cards.subtitle", {
