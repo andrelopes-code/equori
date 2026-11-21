@@ -8,3 +8,26 @@ web/dist/*
 
 # TypeScript incremental build state.
 *.tsbuildinfo
+
+# Editor, merge and tool leftovers (scripts/check-hygiene.sh rejects them).
+*.orig
+*.rej
+*.bak
+*.swp
+*.swo
+*~
+*.log
+*.tmp
+*.prof
+*.pprof
+*.test
+coverage.out
+web/coverage/
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.zed/
+
+# docs/specs holds Markdown only; approved design mocks stay local in docs/superpowers/mocks/.
+/docs/specs/*/
