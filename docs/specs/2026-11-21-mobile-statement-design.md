@@ -20,6 +20,7 @@ Below 600 px the transaction list of `/transactions` reads as a bank statement: 
 | MS10 | The page scroller asks for the next page when the last row comes within one screen (mobile.md M3). |
 | MS11 | Below 600 px the period is one ghost button that names it and opens the period control's choices (`PeriodMenu`); it stands under the search with the row count at the end of the same line. The filter bar draws no empty pills, no count and no voided switch. |
 | MS12 | Below 600 px the header's actions are one menu (`TransactionsMenu`): Select or End selection, Refresh, and Show voided outside the uncategorized queue. |
+| MS13 | The statement's parts are shared in `web/src/ui/statement/` (`StatementList`, `StatementDay`, `StatementItem`, `StatementPlaceholder`). Below 600 px the activity tab of `/accounts/$id` draws its movements with them: each day ends with its net change; each row has the mark of the category it went to (the arrows for a movement between own accounts, "?" for the uncategorized account), the other accounts under the title, the signed amount and, for a leaf account, the balance it left under the amount. Cleared and reconciled are the normal state and carry no word; a pending or voided movement names its state before the accounts. |
 
 The category mark of the categorization method (`Manual`, rule), the tags and the description that differs from the payee leave the phone row; the transaction page shows them.
 

@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import {
+  accountFixtures,
   accountRoutes,
   cashID,
   checkingID,
@@ -154,6 +155,105 @@ describe("Account movements", () => {
     await userEvent.click(
       await within(table).findByRole("link", { name: /Entry t1/ }),
     );
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/transactions/t1");
+    });
+  });
+});
+
+// Spec 2026-11-21-mobile-statement: below 600 px the movements read as the statement of
+// /transactions, with the balance each one left under its amount.
+describe("Account movements on a phone", () => {
+  // The placeholder list carries the same name while the first page loads; a day's heading
+  // appears only in the statement.
+  async function statement() {
+    await screen.findAllByRole("heading", { level: 3 });
+    return screen.getByRole("list", { name: catalogEn["ledger.caption"] });
+  }
+
+  it("reads the movements as a statement of days", async () => {
+    await renderApp(`/accounts/${checkingID}`, { fetch: api(), width: 390 });
+    const list = await statement();
+
+    expect(
+      within(list).getByRole("heading", { name: "Thu, Oct 15−R$150.00" }),
+    ).toBeInTheDocument();
+    const row = await within(list).findByRole("button", { name: /Entry t3/ });
+    expect(within(row).getByText("Mercado")).toBeInTheDocument();
+    expect(within(row).getByText("−R$120.00")).toBeInTheDocument();
+    expect(within(row).getByText("R$5,240.55")).toBeInTheDocument();
+    expect(
+      within(list).queryByText(catalogEn["posting.status.cleared"]),
+    ).toBeNull();
+  });
+
+  it("names a pending movement's state before its accounts", async () => {
+    const pending = tx("t5", "2026-10-16", [
+      [checkingID, -4000, "pending"],
+      [foodID, 4000],
+    ]);
+    await renderApp(`/accounts/${checkingID}`, {
+      fetch: api([], [pending]),
+      width: 390,
+    });
+    const list = await statement();
+
+    const row = await within(list).findByRole("button", { name: /Entry t5/ });
+    expect(
+      within(row).getByText(catalogEn["posting.status.pending"]),
+    ).toBeInTheDocument();
+  });
+
+  // The uncategorized system account reads as "?", as on /transactions.
+  it("marks a movement to the uncategorized account with a question mark", async () => {
+    const uncategorizedID = "a1000000-0000-4000-8000-0000000000ff";
+    const loose = tx("t6", "2026-10-16", [
+      [checkingID, -4000],
+      [uncategorizedID, 4000],
+    ]);
+    const fetch = fakeApi(
+      accountRoutes({
+        "GET /api/v1/accounts": () =>
+          json(200, {
+            items: [
+              ...accountFixtures,
+              {
+                id: uncategorizedID,
+                name: "Uncategorized expense",
+                class: "expense",
+                currency: "BRL",
+                system_role: "uncategorized_expense",
+              },
+            ],
+          }),
+        "GET /api/v1/transactions": () => json(200, { items: [loose] }),
+        [`GET /api/v1/accounts/${checkingID}/balance`]: () =>
+          json(200, {
+            account_id: checkingID,
+            date: "2026-10-17",
+            basis: "booked",
+            balance: money(524055),
+          }),
+      }),
+    );
+    await renderApp(`/accounts/${checkingID}`, { fetch, width: 390 });
+    const list = await statement();
+
+    const row = await within(list).findByRole("button", { name: /Entry t6/ });
+    expect(within(row).getByText("?")).toBeInTheDocument();
+  });
+
+  it("opens the transaction of a row", async () => {
+    const { router } = await renderApp(`/accounts/${checkingID}`, {
+      fetch: api(),
+      width: 390,
+    });
+    const list = await statement();
+
+    await userEvent.click(
+      await within(list).findByRole("button", { name: /Entry t1/ }),
+    );
+
     await waitFor(() => {
       expect(router.state.location.pathname).toBe("/transactions/t1");
     });

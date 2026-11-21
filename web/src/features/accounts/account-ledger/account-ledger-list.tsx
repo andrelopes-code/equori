@@ -1,121 +1,116 @@
-import { Inline } from "@slotted/react/inline";
-import { Stack } from "@slotted/react/stack";
-import { Tag } from "@slotted/react/tag";
 import { Text } from "@slotted/react/typography";
-import type { ReactNode } from "react";
+import { useNavigate } from "@tanstack/react-router";
 
 import styles from "@/features/accounts/account-ledger/account-ledger.module.css";
+import { LedgerMark } from "@/features/accounts/account-ledger/ledger-mark";
 import type { LedgerRow } from "@/features/accounts/account-ledger/running-balance";
-import { PhoneGroup } from "@/ui/form-fields/phone-group";
+import type { CategoryEntry } from "@/features/categories";
 import { useT } from "@/i18n/i18n-provider";
-import type { MessageKey } from "@/i18n/catalog.en";
 import { PhoneList } from "@/ui/form-fields/phone-list";
+import { StatementDay } from "@/ui/statement/statement-day";
+import { StatementItem } from "@/ui/statement/statement-item";
+import { StatementList } from "@/ui/statement/statement-list";
+import { StatementPlaceholder } from "@/ui/statement/statement-placeholder";
 
-const statusLabel: Record<LedgerRow["status"], MessageKey> = {
-  pending: "posting.status.pending",
-  cleared: "posting.status.cleared",
-  reconciled: "posting.status.reconciled",
-};
-
-const statusTone = {
-  pending: "warning",
-  cleared: "info",
-  reconciled: "success",
-} as const;
-
-// Below 600 px the movements are rows grouped by day (mobile.md M1): the title, then the other
-// account and the state, with the signed change and the balance it left at the end.
-export function AccountLedgerList({
-  days,
-  loading,
-  title,
-  counterparts,
-  amount,
-  balance,
-  dayEnd,
-  dayLabel,
-}: {
+interface AccountLedgerListProps {
   days: [string, LedgerRow[]][];
   loading: boolean;
+  categories: Map<string, CategoryEntry>;
+  uncategorized: ReadonlySet<string>;
   title: (row: LedgerRow) => string;
   counterparts: (row: LedgerRow) => string;
   amount: (row: LedgerRow) => string;
   balance: (row: LedgerRow) => string | undefined;
   dayEnd: (rows: LedgerRow[]) => string;
   dayLabel: (day: string) => string;
-}) {
+}
+
+// Below 600 px the movements read as the statement of /transactions (spec
+// 2026-11-21-mobile-statement): days with their net change, each row with the other accounts
+// under its title and the balance it left under its amount. A cleared or reconciled movement is
+// the normal state and carries no word; a pending one names it.
+export function AccountLedgerList({
+  days,
+  loading,
+  categories,
+  uncategorized,
+  title,
+  counterparts,
+  amount,
+  balance,
+  dayEnd,
+  dayLabel,
+}: AccountLedgerListProps) {
   const t = useT();
-  if (loading || days.length === 0)
+  const navigate = useNavigate();
+
+  if (loading) return <StatementPlaceholder label={t("ledger.caption")} />;
+
+  if (days.length === 0) {
     return (
       <PhoneList
         label={t("ledger.caption")}
         rows={[]}
-        loading={loading}
+        loading={false}
         empty={t("ledger.empty")}
       />
     );
+  }
+
   return (
-    <Stack gap={4}>
+    <StatementList label={t("ledger.caption")}>
       {days.map(([day, rows]) => (
-        <PhoneGroup key={day} label={dayLabel(day)} end={dayEnd(rows)}>
-          <PhoneList
-            label={dayLabel(day)}
-            loading={false}
-            empty=""
-            rows={rows.map((row) => {
-              const left = balance(row);
-              const end: ReactNode = (
-                <Stack gap={0} align="end">
+        <StatementDay key={day} label={dayLabel(day)} end={dayEnd(rows)}>
+          {rows.map((row) => (
+            <StatementItem
+              key={row.id}
+              mark={
+                <LedgerMark
+                  row={row}
+                  categories={categories}
+                  uncategorized={uncategorized}
+                />
+              }
+              title={title(row)}
+              struck={row.voided}
+              flag={
+                (row.voided || row.status === "pending") && (
                   <Text
                     size="sm"
-                    weight="semibold"
-                    className={
-                      row.voided
-                        ? styles.voided
-                        : row.amount > 0
-                          ? styles.positive
-                          : undefined
-                    }
+                    weight="medium"
+                    tone={row.voided ? "default" : "warning"}
                   >
-                    {amount(row)}
+                    {t(row.voided ? "ledger.voided" : "posting.status.pending")}
                   </Text>
-                  {left !== undefined && (
-                    <Text size="xs" tone="muted">
-                      {left}
-                    </Text>
-                  )}
-                </Stack>
-              );
-              return {
-                key: row.id,
-                title: (
-                  <span className={row.voided ? styles.voided : undefined}>
-                    {title(row)}
-                  </span>
-                ),
-                link: {
+                )
+              }
+              detail={counterparts(row)}
+              amount={
+                <Text
+                  weight="semibold"
+                  numeric="tabular"
+                  className={row.voided ? styles.voided : undefined}
+                  tone={!row.voided && row.amount > 0 ? "success" : "default"}
+                >
+                  {amount(row)}
+                </Text>
+              }
+              note={
+                <Text size="xs" tone="muted" numeric="tabular">
+                  {balance(row)}
+                </Text>
+              }
+              onOpen={() => {
+                void navigate({
                   to: "/transactions/$id",
                   params: { id: row.id },
-                },
-                lines: [
-                  counterparts(row),
-                  <Inline key="status" gap={4}>
-                    <Tag size="sm" tone={statusTone[row.status]}>
-                      {t(statusLabel[row.status])}
-                    </Tag>
-                    {row.voided && (
-                      <Tag size="sm" tone="secondary">
-                        {t("ledger.voided")}
-                      </Tag>
-                    )}
-                  </Inline>,
-                ],
-                end,
-              };
-            })}
-          />
-        </PhoneGroup>
+                });
+              }}
+              selection={undefined}
+            />
+          ))}
+        </StatementDay>
       ))}
-    </Stack>
+    </StatementList>
   );
 }

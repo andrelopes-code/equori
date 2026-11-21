@@ -1,4 +1,3 @@
-import { List, ListSection } from "@slotted/react/list";
 import type { ReactNode } from "react";
 import { useMemo } from "react";
 
@@ -6,13 +5,16 @@ import type { CategoryEntry } from "@/features/categories";
 import { dayLabel } from "@/features/transactions/model/day-label";
 import type { TransactionList } from "@/features/transactions/transactions-grid/use-transaction-list";
 import { groupByDay } from "@/features/transactions/transactions-statement/group-by-day";
-import { StatementDayTotal } from "@/features/transactions/transactions-statement/statement-day-total";
-import { StatementPlaceholder } from "@/features/transactions/transactions-statement/statement-placeholder";
+import { periodTotals } from "@/features/transactions/model/period-totals";
 import { StatementRow } from "@/features/transactions/transactions-statement/statement-row";
-import styles from "@/features/transactions/transactions-statement/transactions-statement.module.css";
-import { useLoadMore } from "@/features/transactions/transactions-statement/use-load-more";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
+import type { ListRow } from "@/features/transactions/transactions-grid/use-transaction-list";
+import { useMoneyFormat } from "@/privacy/use-money-format";
+import { useLoadMore } from "@/ui/runtime/use-load-more";
+import { StatementDay } from "@/ui/statement/statement-day";
+import { StatementList } from "@/ui/statement/statement-list";
+import { StatementPlaceholder } from "@/ui/statement/statement-placeholder";
 
 interface TransactionsStatementProps {
   list: TransactionList;
@@ -40,6 +42,7 @@ export function TransactionsStatement({
   const t = useT();
   const [locale] = useAppLocale();
   const today = useToday();
+  const fmt = useMoneyFormat();
   const end = useLoadMore(list.hasMore && !list.pending, list.loadMore);
 
   const days = useMemo(() => groupByDay(list.rows), [list.rows]);
@@ -51,24 +54,34 @@ export function TransactionsStatement({
     );
   }
 
-  if (list.pending) return <StatementPlaceholder />;
+  // What the day changed: money in less money out of its loaded rows, transfers and voided rows
+  // left out; nothing for a day of more than one currency (spec MS3).
+  function dayTotal(rows: readonly ListRow[]) {
+    const totals = periodTotals(rows);
+    if (totals === null) return undefined;
+
+    const money = {
+      amount: totals.income + totals.expense,
+      currency: totals.currency,
+    };
+
+    return fmt.signed(money, scale(totals.currency));
+  }
+
+  if (list.pending)
+    return <StatementPlaceholder label={t("nav.transactions")} />;
 
   if (list.rows.length === 0)
     return empty(list.error === null ? "empty" : "error");
 
   return (
-    <div aria-busy={list.refreshing}>
-      <List
-        aria-label={t("nav.transactions")}
-        variant="plain"
-        className={styles.statement}
-      >
+    <div>
+      <StatementList label={t("nav.transactions")} busy={list.refreshing}>
         {days.map((day) => (
-          <ListSection
+          <StatementDay
             key={day.date}
             label={dayLabel(day.date, today, locale, words)}
-            end={<StatementDayTotal rows={day.rows} scale={scale} />}
-            sticky
+            end={dayTotal(day.rows)}
           >
             {day.rows.map((row) => (
               <StatementRow
@@ -82,9 +95,9 @@ export function TransactionsStatement({
                 onSelectedChange={handleSelectedChange}
               />
             ))}
-          </ListSection>
+          </StatementDay>
         ))}
-      </List>
+      </StatementList>
 
       <div ref={end} />
     </div>

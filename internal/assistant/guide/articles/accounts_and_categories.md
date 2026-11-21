@@ -12,6 +12,8 @@ The page of a property shows its current value with the date of the last valuati
 
 An account whose institution has an ISPB identifier gets the tab Institution once an admin enables the IF.data feed on the market data settings and the Banco Central publishes figures for it: Basel index, principal capital, fixed-asset ratio, equity and net income of the prudential conglomerate, each with a quarterly trend, the base date and a link to IF.data. A Basel index or principal capital under the minimum of Resolução CMN 4.958/2021 is highlighted; a blank figure reads Not informed. A phone does not offer the tab.
 
+On a phone, the activity of an account reads as a statement: the movements grouped by day, each day with its net change, each row with the category or the other account under its title and the amount at the end, with the balance it left under it. A pending or voided movement names its state; a cleared or reconciled one carries no word.
+
 The month composition chart on the Categories screen ranks the top-level categories by their share of the month. Selecting a category that has children shows the composition of that category: each child and the amount booked on the category itself. The Back to the groups button returns to the top level. The Categories tree hides categories without movement behind the switch Show categories without movement, which names how many it hides.
 
 The assistant can also set the colour and the icon of an account or category, when it creates or changes one, and the identifier of an institution; each change waits for the user's confirmation.

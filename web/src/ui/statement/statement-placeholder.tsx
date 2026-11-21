@@ -9,18 +9,23 @@ import {
 } from "@slotted/react/list-item";
 import { Skeleton } from "@slotted/react/skeleton";
 
-import styles from "@/features/transactions/transactions-statement/transactions-statement.module.css";
 import { useT } from "@/i18n/i18n-provider";
+import styles from "@/ui/statement/statement.module.css";
 
 const rows = Array.from({ length: 8 }, (_, index) => index);
 
-// Eight rows in the shape of a statement row while the first page loads (spec MS9).
-export function StatementPlaceholder() {
+interface StatementPlaceholderProps {
+  label: string;
+}
+
+// Eight rows in the shape of a statement row while the first page loads (spec
+// 2026-11-21-mobile-statement, MS9).
+export function StatementPlaceholder({ label }: StatementPlaceholderProps) {
   const t = useT();
 
   return (
     <List
-      aria-label={t("nav.transactions")}
+      aria-label={label}
       variant="plain"
       loading
       className={styles.statement}

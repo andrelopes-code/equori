@@ -27,6 +27,7 @@ import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
 import styles from "@/features/accounts/account-ledger/account-ledger.module.css";
 import { AccountLedgerList } from "@/features/accounts/account-ledger/account-ledger-list";
+import { isUncategorizedRole, useCategoryEntries } from "@/features/categories";
 import type { AccountSearch } from "@/features/accounts/model/account-search";
 import {
   accountTransactionsQuery,
@@ -103,6 +104,20 @@ export function AccountLedger({
     () => new Map((accounts.data ?? []).map((a) => [a.id, a.name])),
     [accounts.data],
   );
+  const categoryEntries = useCategoryEntries(accounts.data);
+  const categoriesById = useMemo(
+    () => new Map(categoryEntries.map((c) => [c.id, c])),
+    [categoryEntries],
+  );
+  const uncategorizedIds = useMemo(
+    () =>
+      new Set(
+        (accounts.data ?? [])
+          .filter((a) => isUncategorizedRole(a.system_role))
+          .map((a) => a.id),
+      ),
+    [accounts.data],
+  );
   const payeeNames = useMemo(
     () => new Map((payees.data ?? []).map((p) => [p.id, p.name])),
     [payees.data],
@@ -176,6 +191,8 @@ export function AccountLedger({
         <AccountLedgerList
           days={days}
           loading={pages.isPending}
+          categories={categoriesById}
+          uncategorized={uncategorizedIds}
           title={titleOf}
           counterparts={(row) =>
             row.counterparts
