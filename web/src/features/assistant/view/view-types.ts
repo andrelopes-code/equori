@@ -6,3 +6,4 @@ export type ViewValue = components["schemas"]["AssistantViewValue"];
 export type ViewText = components["schemas"]["AssistantViewText"];
 export type ViewWindow = components["schemas"]["AssistantViewWindow"];
 export type ViewMoney = components["schemas"]["AssistantViewMoney"];
+export type ViewPlot = components["schemas"]["AssistantViewPlot"];

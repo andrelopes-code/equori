@@ -90,6 +90,31 @@ describe("AnswerView", () => {
     expect(screen.getByRole("table")).toBeInTheDocument();
   });
 
+  // V25: a plot draws the rows as a chart in place of the form's body, without the unit toggle.
+  it("draws the rows of a plot as a chart and switches to the table", async () => {
+    FORMS.ranking_test = { icon: "pie", unit: true, Body: ShareBody };
+    renderWithProviders(
+      <AnswerView
+        view={{
+          ...view,
+          payload: {
+            ...view.payload,
+            plot: { chart: "pie", label: 0, series: [1] },
+          },
+        }}
+      />,
+      { fetch: fakeApi({}) },
+    );
+
+    expect(screen.queryByText("body in amount")).toBeNull();
+    expect(screen.queryByRole("radio", { name: "Share" })).toBeNull();
+    expect(document.querySelector('[data-ui="chart"]')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("radio", { name: "Table" }));
+    expect(document.querySelector('[data-ui="chart"]')).toBeNull();
+    expect(screen.getByRole("table")).toBeInTheDocument();
+  });
+
   it("sends a follow-up question as the next message", async () => {
     const ask = vi.fn();
     renderView(ask);

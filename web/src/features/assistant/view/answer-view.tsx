@@ -5,6 +5,7 @@ import { currencySymbol } from "@/features/assistant/view/currency-symbol";
 import { FORMS } from "@/features/assistant/view/view-forms";
 import type { ViewUnit } from "@/features/assistant/view/view-forms";
 import { FollowUpChips } from "@/features/assistant/view/follow-up-chips";
+import { PlotBody } from "@/features/assistant/view/plot/plot-body";
 import { SegmentedToggle } from "@/features/assistant/view/segmented-toggle";
 import { useViewText } from "@/features/assistant/view/use-view-text";
 import { viewCopy } from "@/features/assistant/view/view-copy";
@@ -31,8 +32,10 @@ export function AnswerView({ view }: AnswerViewProps) {
   const [unit, setUnit] = useState<ViewUnit>("amount");
 
   const form = FORMS[view.form];
+  const plot = view.payload.plot;
   const symbol = currencySymbol(view.payload, locale);
-  const Body = mode === "chart" ? form?.Body : undefined;
+  const plotted = mode === "chart" && plot !== undefined;
+  const Body = mode === "chart" && plot === undefined ? form?.Body : undefined;
   const verdict = texts.verdict.map((p) => p.text).join("");
 
   function handleCopy() {
@@ -47,7 +50,8 @@ export function AnswerView({ view }: AnswerViewProps) {
           title={texts.title}
           window={texts.window}
           unit={
-            form?.unit === true && (
+            form?.unit === true &&
+            plot === undefined && (
               <SegmentedToggle
                 label={t("assistantView.unit")}
                 value={unit}
@@ -71,8 +75,17 @@ export function AnswerView({ view }: AnswerViewProps) {
 
         <ViewVerdict parts={texts.verdict} />
 
-        {Body === undefined && (
+        {Body === undefined && !plotted && (
           <ViewTable head={texts.head} rows={texts.rows} />
+        )}
+        {plotted && (
+          <PlotBody
+            title={texts.title}
+            plot={plot}
+            rows={view.payload.rows.rows}
+            head={texts.head}
+            labels={texts.rows}
+          />
         )}
         {Body !== undefined && (
           <Body
@@ -93,7 +106,7 @@ export function AnswerView({ view }: AnswerViewProps) {
 
         <ViewFoot
           open={view.payload.open}
-          switchable={form !== undefined}
+          switchable={form !== undefined || plot !== undefined}
           mode={mode}
           onMode={setMode}
           onCopy={handleCopy}
