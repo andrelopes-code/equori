@@ -28,6 +28,7 @@ import {
   uncategorizedCountQuery,
 } from "@/features/transactions/api";
 import { PeriodSummary } from "@/features/transactions/transactions-header/period-summary";
+import { TransactionsMenu } from "@/features/transactions/transactions-header/transactions-menu";
 import type {
   TransactionSearch,
   TransactionSearchDraft,
@@ -41,6 +42,8 @@ interface TransactionsHeaderProps {
   listRefreshing: boolean;
   onSearchChange: (next: TransactionSearchDraft) => void;
   listID: string;
+  showVoided: boolean;
+  onShowVoidedChange: (show: boolean) => void;
 }
 
 export function TransactionsHeader({
@@ -49,6 +52,8 @@ export function TransactionsHeader({
   listRefreshing,
   onSearchChange,
   listID,
+  showVoided,
+  onShowVoidedChange,
 }: TransactionsHeaderProps) {
   const t = useT();
 
@@ -89,27 +94,38 @@ export function TransactionsHeader({
             )}
           </PageHeaderTitle>
 
-          <PageHeaderActions>
-            <PeriodControl
-              value={
-                search.from !== undefined && search.to !== undefined
-                  ? { from: search.from, to: search.to }
-                  : undefined
-              }
-              onChange={(period) => {
-                onSearchChange({
-                  ...search,
-                  from: period?.from,
-                  to: period?.to,
-                });
-              }}
-            />
-            <RefreshButton
-              label={t("transactions.refresh")}
-              refreshing={refresh.refreshing}
-              onRefresh={refresh.refresh}
-            />
-            {!compact && (
+          {compact && (
+            <PageHeaderActions>
+              <TransactionsMenu
+                refreshing={refresh.refreshing}
+                onRefresh={refresh.refresh}
+                showVoided={queue ? undefined : showVoided}
+                onShowVoidedChange={onShowVoidedChange}
+              />
+            </PageHeaderActions>
+          )}
+
+          {!compact && (
+            <PageHeaderActions>
+              <PeriodControl
+                value={
+                  search.from !== undefined && search.to !== undefined
+                    ? { from: search.from, to: search.to }
+                    : undefined
+                }
+                onChange={(period) => {
+                  onSearchChange({
+                    ...search,
+                    from: period?.from,
+                    to: period?.to,
+                  });
+                }}
+              />
+              <RefreshButton
+                label={t("transactions.refresh")}
+                refreshing={refresh.refreshing}
+                onRefresh={refresh.refresh}
+              />
               <Button
                 start={
                   <Icon size="sm">
@@ -122,8 +138,8 @@ export function TransactionsHeader({
               >
                 {t("nav.new")}
               </Button>
-            )}
-          </PageHeaderActions>
+            </PageHeaderActions>
+          )}
         </PageHeaderTitleRow>
       </PageHeaderTitleArea>
 

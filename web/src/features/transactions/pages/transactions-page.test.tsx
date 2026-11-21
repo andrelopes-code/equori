@@ -516,6 +516,65 @@ describe("TransactionsPage on a phone", () => {
     expect(screen.queryByText(catalogEn["transactions.subtitle"])).toBeNull();
   });
 
+  // MS11: on a phone the period is one button beside the count, under the search; the steps,
+  // Today and the empty filter pills leave the first screen.
+  it("puts the period and the count on one line under the search", async () => {
+    await renderApp("/transactions", {
+      fetch: api({ queries: [] }),
+      today: "2026-10-17",
+      width: 390,
+    });
+    await screen.findByRole("list", { name: catalogEn["nav.transactions"] });
+
+    expect(
+      screen.getByRole("button", {
+        name: catalogEn["transactions.period.all"],
+      }),
+    ).toBeInTheDocument();
+    expect(await screen.findByText("2+ transactions")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", {
+        name: catalogEn["transactions.period.previous"],
+      }),
+    ).toBeNull();
+    expect(
+      screen.queryByRole("button", {
+        name: catalogEn["transactions.filter.account"],
+      }),
+    ).toBeNull();
+  });
+
+  // MS12: refresh and the voided switch stand in the header menu on a phone.
+  it("holds refresh and show voided in the header menu", async () => {
+    const user = userEvent.setup();
+    await renderApp("/transactions", {
+      fetch: api({ queries: [] }),
+      today: "2026-10-17",
+      width: 390,
+    });
+    await screen.findByRole("list", { name: catalogEn["nav.transactions"] });
+    expect(
+      screen.queryByRole("switch", {
+        name: catalogEn["transactions.showVoided"],
+      }),
+    ).toBeNull();
+
+    await user.click(
+      screen.getByRole("button", { name: catalogEn["transactions.actions"] }),
+    );
+
+    expect(
+      await screen.findByRole("menuitem", {
+        name: catalogEn["transactions.refresh"],
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("menuitemcheckbox", {
+        name: catalogEn["transactions.showVoided"],
+      }),
+    ).not.toBeChecked();
+  });
+
   // MS7: a row opens its transaction's page.
   it("opens the transaction page when a row is tapped", async () => {
     const { router } = await renderApp("/transactions", {

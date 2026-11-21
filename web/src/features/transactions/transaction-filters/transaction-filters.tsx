@@ -18,6 +18,7 @@ import type {
 } from "@/features/transactions/model/search";
 import { VoidedSwitch } from "@/features/transactions/transaction-filters/voided-switch";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
 
 type Account = components["schemas"]["Account"];
 type Payee = components["schemas"]["Payee"];
@@ -51,6 +52,9 @@ export function TransactionFilters({
   const [locale] = useAppLocale();
   const settings = useQuery(settingsQuery(useApi()));
   const scaleOf = useScale();
+  // On a phone the empty pills, the count and the voided switch leave the bar: the count stands
+  // beside the period and the switch in the header menu (spec 2026-11-21-mobile-statement, MS11).
+  const compact = useMediaQuery(compactQuery);
   // The amount is the base currency's: the API compares the weights of a transaction.
   const base = settings.data?.base_currency;
   const scale =
@@ -75,14 +79,14 @@ export function TransactionFilters({
         key: filterFields.account,
         label: t("transactions.filter.account"),
         kind: "set",
-        pinned: true,
+        pinned: !compact,
         options: balance.map((a) => ({ value: a.id, label: a.name })),
       },
       {
         key: filterFields.category,
         label: t("transactions.filter.category"),
         kind: "set",
-        pinned: true,
+        pinned: !compact,
         options: categories
           .filter((c) => !c.archived)
           .map((c) => ({ value: c.id, label: c.path })),
@@ -117,7 +121,7 @@ export function TransactionFilters({
             },
           ]),
     ];
-  }, [accounts, categories, payees, tags, scale, t, locale]);
+  }, [accounts, categories, payees, tags, scale, t, locale, compact]);
 
   // The period is the header's control (PeriodControl); the bar holds the other filters.
   const { uncategorized, q, from, to, ...filtered } = search;
@@ -152,7 +156,7 @@ export function TransactionFilters({
       }}
       shortcut="/"
       loading={loading}
-      {...(count === undefined ? {} : { count })}
+      {...(count === undefined || compact ? {} : { count })}
       messages={{
         countOnly: hasMore
           ? t("transactions.countMore")
@@ -161,7 +165,7 @@ export function TransactionFilters({
       }}
     >
       {/* The queue never lists voided transactions, so the choice has no effect there. */}
-      {uncategorized === undefined && (
+      {uncategorized === undefined && !compact && (
         <VoidedSwitch
           checked={showVoided}
           onCheckedChange={onShowVoidedChange}

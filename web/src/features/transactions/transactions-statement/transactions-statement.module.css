@@ -62,3 +62,15 @@
     block-size: 32px;
   }
 }
+
+@layer app {
+  /* The period and the count on one line; the ghost button's own padding is pulled back so its
+     label starts on the page margin. */
+  .context {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--slotted-space-4);
+    margin-inline-start: calc(var(--slotted-control-padding-inline-md) * -1);
+  }
+}

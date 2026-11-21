@@ -18,6 +18,8 @@ Below 600 px the transaction list of `/transactions` reads as a bank statement: 
 | MS8 | Below 600 px the page header holds the title and the tabs; the subheading leaves. |
 | MS9 | Loading draws eight placeholder rows in the row's shape; empty, no result and failure draw `TransactionsEmpty`, as the grid does. |
 | MS10 | The page scroller asks for the next page when the last row comes within one screen (mobile.md M3). |
+| MS11 | Below 600 px the period is one ghost button that names it and opens the period control's choices (`PeriodMenu`); it stands under the search with the row count at the end of the same line. The filter bar draws no empty pills, no count and no voided switch. |
+| MS12 | Below 600 px the header's actions are one menu (`TransactionsMenu`): Refresh, and Show voided outside the uncategorized queue. |
 
 The category mark of the categorization method (`Manual`, rule), the tags and the description that differs from the payee leave the phone row; the transaction page shows them.
 
@@ -27,7 +29,7 @@ The category mark of the categorization method (`Manual`, rule), the tags and th
 - R2: Does not apply: no regional behaviour.
 - R3: Does not apply: no value set.
 - R4: Does not apply: no extension point.
-- R5: No new text: the rows reuse `transactions.uncategorized`, `transactions.voided`, `transactions.split`, `transactions.untitled`, `day.today` and `day.yesterday`.
+- R5: New keys `transactions.actions` and `transactions.statement.count.one`, `.other`, `.more`, in pt-BR and en; the rows reuse `transactions.uncategorized`, `transactions.voided`, `transactions.split`, `transactions.untitled`, `day.today` and `day.yesterday`.
 - R6: The day label through `formatDayHeader` and `formatDate`; the amounts through `useMoneyFormat()`.
 - C1: Does not apply: nothing stored; the day total is computed by `periodTotals` in minor units.
 - C2: The day total holds one currency: `periodTotals` returns null for a day with more than one, and the section draws no total.

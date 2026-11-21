@@ -19,8 +19,10 @@ import styles from "@/features/transactions/pages/transactions-page.module.css";
 import { useCategorizeActions } from "@/features/transactions/selection/use-categorize-actions";
 import { useSelectionCommands } from "@/features/transactions/selection/use-selection-commands";
 import { useTransactionList } from "@/features/transactions/transactions-grid/use-transaction-list";
+import { StatementContext } from "@/features/transactions/transactions-statement/statement-context";
 import { useT } from "@/i18n/i18n-provider";
 import { BulkOutcomeNotice } from "@/ui/feedback/bulk-outcome-notice";
+import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
 
 const listID = "transactions-list";
 
@@ -37,6 +39,7 @@ export function TransactionsPage() {
   // The tab and the bar paint at once; the grid follows from the deferred search (CP-09).
   const shown = useDeferredValue(search);
   const [showVoided, setShowVoided] = useShowVoided();
+  const compact = useMediaQuery(compactQuery);
   const list = useTransactionList(shown, !showVoided);
   const accounts = useQuery(accountsQuery(api));
   const payees = useQuery(payeesQuery(api));
@@ -92,6 +95,8 @@ export function TransactionsPage() {
         listRefreshing={list.refreshing}
         onSearchChange={setSearch}
         listID={listID}
+        showVoided={showVoided}
+        onShowVoidedChange={handleShowVoidedChange}
       />
 
       <PageBody id={listID}>
@@ -117,6 +122,15 @@ export function TransactionsPage() {
             showVoided={showVoided}
             onShowVoidedChange={handleShowVoidedChange}
           />
+
+          {compact && (
+            <StatementContext
+              search={search}
+              onSearchChange={setSearch}
+              count={list.pending ? undefined : list.rows.length}
+              hasMore={list.hasMore}
+            />
+          )}
 
           <TransactionsListing
             list={list}
