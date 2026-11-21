@@ -68,4 +68,11 @@
     flex-direction: column;
     align-items: flex-end;
   }
+
+  /* A day of rows with a menu beside the amount: the menu's button and the gap before it. */
+  .endInset {
+    padding-inline-end: calc(
+      var(--slotted-target-comfortable) + var(--slotted-space-4)
+    );
+  }
 }

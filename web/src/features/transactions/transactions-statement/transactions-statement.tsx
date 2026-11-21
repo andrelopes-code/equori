@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import type { CategoryEntry } from "@/features/categories";
 import { dayLabel } from "@/features/transactions/model/day-label";
 import type { TransactionList } from "@/features/transactions/transactions-grid/use-transaction-list";
-import { groupByDay } from "@/features/transactions/transactions-statement/group-by-day";
+import { groupByDay } from "@/ui/statement/group-by-day";
 import { periodTotals } from "@/features/transactions/model/period-totals";
 import { StatementRow } from "@/features/transactions/transactions-statement/statement-row";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";

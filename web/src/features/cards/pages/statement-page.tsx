@@ -21,10 +21,12 @@ import type { StatementDialog } from "@/features/cards/statement-header/statemen
 import { neighbours } from "@/features/cards/model/statement-groups";
 import { StatementAnalysis } from "@/features/cards/analysis-view/statement-analysis";
 import { StatementLines } from "@/features/cards/statement-lines/statement-lines";
+import { StatementLinesList } from "@/features/cards/statement-lines/statement-lines-list";
 import { unconfirmedQuery } from "@/features/accounts";
 import { useScale } from "@/features/setup";
 import { useToday } from "@/i18n/today";
 import { QueryError } from "@/ui/feedback/query-error";
+import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
 
 // One statement: its terms, its lines by day, and the commands its state allows.
 export function StatementPage() {
@@ -44,6 +46,7 @@ export function StatementPage() {
   );
   // A secondary mark: a failed read leaves the lines unmarked.
   const unconfirmed = useQuery(unconfirmedQuery(api, accountId));
+  const compact = useMediaQuery(compactQuery);
   const [dialog, setDialog] = useState<StatementDialog | null>(
     search.pay === true ? "pay" : null,
   );
@@ -55,6 +58,12 @@ export function StatementPage() {
     setAction(null);
   };
   const around = neighbours(all.data ?? [], statementId);
+  // One transaction (an installment plan) spans statements; the entry names its own.
+  const unconfirmedIds = new Set(
+    (unconfirmed.data ?? [])
+      .filter((entry) => entry.statement_id === statementId)
+      .map((entry) => entry.transaction_id),
+  );
   const close = () => {
     setDialog(null);
     if (search.pay === true) {
@@ -84,23 +93,27 @@ export function StatementPage() {
         ) : s === undefined ? null : (
           <Stack gap={6}>
             <StatementFigures statement={s} scale={sc} />
-            <StatementLines
-              lines={s.postings}
-              scale={sc}
-              unconfirmed={
-                // One transaction (an installment plan) spans statements; the entry names its own.
-                new Set(
-                  (unconfirmed.data ?? [])
-                    .filter((entry) => entry.statement_id === statementId)
-                    .map((entry) => entry.transaction_id),
-                )
-              }
-              lineActions={(line) =>
-                line.card_role === "charge" ? (
-                  <ChargeActions line={line} onAction={setAction} />
-                ) : null
-              }
-            />
+            {compact && (
+              <StatementLinesList
+                lines={s.postings}
+                scale={sc}
+                unconfirmed={unconfirmedIds}
+                onAction={setAction}
+              />
+            )}
+
+            {!compact && (
+              <StatementLines
+                lines={s.postings}
+                scale={sc}
+                unconfirmed={unconfirmedIds}
+                lineActions={(line) =>
+                  line.card_role === "charge" ? (
+                    <ChargeActions line={line} onAction={setAction} />
+                  ) : null
+                }
+              />
+            )}
             {s.status !== "open" && (
               <StatementAnalysis
                 accountId={accountId}

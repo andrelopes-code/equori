@@ -36,3 +36,5 @@ handle_card_purchase records an event on one card purchase, with transaction_id 
 - anticipate_installments pays installments early: from_installment and to_installment, and amount, the amount paid.
 
 statement names the statement month (YYYY-MM) that receives the credit or the anticipated installments; the next open statement when absent.
+
+On a phone, the lines of a statement read as the transactions do: grouped by day with each day's net, each line with its description, the installment or the role of a credit or a payment under it, the amount at the end, and the commands of a purchase in the menu beside it. A line the bank has not reported or a provisional one says so first.

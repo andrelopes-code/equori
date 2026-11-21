@@ -1,6 +1,7 @@
 import { Checkbox } from "@slotted/react/checkbox";
 import {
   ListItem,
+  ListItemActions,
   ListItemBody,
   ListItemButton,
   ListItemContent,
@@ -33,6 +34,8 @@ interface StatementItemProps {
   onOpen: () => void;
   // Present in selection mode: the row is the label of its checkbox and a tap toggles it.
   selection: StatementSelection | undefined;
+  // Commands of the row besides opening it, beside the row's box (mobile.md M5).
+  actions?: ReactNode;
 }
 
 // One 64 px line of a phone statement: the mark, the title over one line of detail, the amount
@@ -47,6 +50,7 @@ export function StatementItem({
   note,
   onOpen,
   selection,
+  actions,
 }: StatementItemProps) {
   const text = (
     <>
@@ -95,9 +99,10 @@ export function StatementItem({
   return (
     <ListItem className={styles.row}>
       <ListItemButton onClick={onOpen}>
-        <ListItemStart>{mark}</ListItemStart>
+        {mark !== undefined && <ListItemStart>{mark}</ListItemStart>}
         {text}
       </ListItemButton>
+      {actions !== undefined && <ListItemActions>{actions}</ListItemActions>}
     </ListItem>
   );
 }

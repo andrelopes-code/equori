@@ -943,3 +943,51 @@ describe("Statement line actions", () => {
     ).not.toBeInTheDocument();
   });
 });
+
+// Spec 2026-11-21-mobile-statement, MS14: below 600 px the lines read as the statement of
+// /transactions, a row per line with its installment and role under the description.
+describe("StatementPage on a phone", () => {
+  it("reads the lines as a statement of days", async () => {
+    await renderApp(path, { fetch: api(), width: 390 });
+    const list = await screen.findByRole("list", {
+      name: catalogEn["statement.lines"],
+    });
+
+    const row = await within(list).findByRole("button", { name: /^Geladeira/ });
+    expect(within(row).getByText(/2\/10/)).toBeInTheDocument();
+    expect(
+      within(list).getAllByRole("button", {
+        name: /^(Mercado|Geladeira|Pagamento)/,
+      }),
+    ).toHaveLength(3);
+    expect(
+      screen.queryByRole("table", { name: catalogEn["statement.lines"] }),
+    ).toBeNull();
+  });
+
+  it("names a line the bank has not reported", async () => {
+    await renderApp(path, {
+      width: 390,
+      fetch: api([], {
+        [`GET /api/v1/accounts/${cardID}/unconfirmed`]: () =>
+          json(200, {
+            items: [
+              {
+                transaction_id: "tx2",
+                date: "2026-10-03",
+                amount: { amount: -100000, currency: "BRL" },
+                description: "Geladeira",
+                statement_id: closedStatementID,
+              },
+            ],
+          }),
+      }),
+    });
+    const list = await screen.findByRole("list", {
+      name: catalogEn["statement.lines"],
+    });
+
+    const row = await within(list).findByRole("button", { name: /^Geladeira/ });
+    expect(await within(row).findByText("No bank line")).toBeInTheDocument();
+  });
+});

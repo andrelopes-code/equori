@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { groupByDay } from "@/features/transactions/transactions-statement/group-by-day";
+import { groupByDay } from "@/ui/statement/group-by-day";
 
 describe("groupByDay", () => {
   it("groups consecutive rows of one date and keeps the order of the API", () => {
