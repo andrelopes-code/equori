@@ -47,7 +47,7 @@ export function SheetPositionsRow({
             }}
           />
           <Inline gap={4} wrap="nowrap" align="center">
-            <Text size="sm" tone="muted">
+            <Text size="sm" tone="muted" wrap="nowrap">
               {t(
                 line.count === 1
                   ? "balanceSheet.positionsOne"
@@ -62,7 +62,7 @@ export function SheetPositionsRow({
                 </Tag>
               ))}
             {!line.open && more > 0 && (
-              <Text size="xs" tone="muted">
+              <Text size="xs" tone="muted" wrap="nowrap">
                 {t("balanceSheet.morePositions", { count: more })}
               </Text>
             )}
