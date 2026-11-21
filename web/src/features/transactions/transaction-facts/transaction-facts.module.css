@@ -1,0 +1,8 @@
+@layer app {
+  /* The phone receipt keeps its facts in rows down to 360 px: a 13rem term track and a 10rem
+     value fit the 23rem a 360 px screen leaves inside its margins (spec
+     2026-11-21-mobile-transaction-detail, MD4). */
+  .row {
+    --slotted-description-list-value-min: 10rem;
+  }
+}

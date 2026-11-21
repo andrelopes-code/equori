@@ -1,4 +1,4 @@
-import { Button, IconButton } from "@slotted/react/button";
+import { IconButton } from "@slotted/react/button";
 import {
   DetailPanel,
   DetailPanelBody,
@@ -15,23 +15,17 @@ import {
   PageHeaderTitleArea,
   PageHeaderTitleRow,
 } from "@slotted/react/page-header";
-import {
-  ResultState,
-  ResultStateActions,
-  ResultStateContent,
-  ResultStateDescription,
-  ResultStateTitle,
-} from "@slotted/react/result-state";
 import { SectionDefaultsProvider } from "@slotted/react/section";
 import { Tag } from "@slotted/react/tag";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
-import { ProblemError, errorText } from "@/api/problem";
 import { useCategoryEntries } from "@/features/categories";
 import { GoalPaymentSection } from "@/features/goals";
 import { RealizedOccurrences } from "@/features/planning";
 import { DetailActions } from "@/features/transactions/transaction-detail/detail-actions";
+import { DetailAmount } from "@/features/transactions/transaction-detail/detail-amount";
+import { DetailUnready } from "@/features/transactions/transaction-detail/detail-unready";
 import { AttachmentsSection } from "@/features/transactions/attachments/attachments-section";
 import { CategorySection } from "@/features/transactions/category-section/category-section";
 import { HistorySection } from "@/features/transactions/transaction-detail/history-section";
@@ -55,6 +49,7 @@ import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { PageBack } from "@/ui/navigation/page-back";
+import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
 
 // One transaction as a page of its own (level 1) or as the pane beside the list.
 export function TransactionDetail({
@@ -71,12 +66,15 @@ export function TransactionDetail({
   const fmt = useMoneyFormat();
   const data = useTransactionData(id);
   const navigate = useNavigate();
+  const compact = useMediaQuery(compactQuery);
   const [voiding, setVoiding] = useState(false);
   const [transferring, setTransferring] = useState(false);
   const [reimbursing, setReimbursing] = useState(false);
   const [repaying, setRepaying] = useState(false);
 
   const ready = data.status === "ready" ? data : undefined;
+  // Below 600 px the page reads as a receipt (spec 2026-11-21-mobile-transaction-detail).
+  const phone = host === "page" && compact;
   const entries = useCategoryEntries(ready?.accounts);
   const categories = useMemo(
     () => new Map(entries.map((c) => [c.id, c])),
@@ -107,73 +105,34 @@ export function TransactionDetail({
       </PageBack>
     ) : null;
 
-  if (ready === undefined) {
-    const notFound =
-      data.status === "error" &&
-      data.error instanceof ProblemError &&
-      data.error.status === 404;
+  if (data.status !== "ready") {
     return (
-      <DetailPanel
-        level={host === "page" ? "1" : "2"}
-        scroll={host === "pane" ? "self" : "ancestor"}
-        loading={data.status === "loading"}
-        status={
-          data.status === "error" ? (notFound ? "not-found" : "error") : "ready"
-        }
-      >
-        <PageHeader loading={data.status === "loading"}>
-          <PageHeaderTitleArea>
-            {back}
-            <PageHeaderTitleRow>
-              <PageHeaderTitle>
-                <PageHeaderHeading>{t("detail.title")}</PageHeaderHeading>
-              </PageHeaderTitle>
-              {close !== null && <PageHeaderActions>{close}</PageHeaderActions>}
-            </PageHeaderTitleRow>
-          </PageHeaderTitleArea>
-        </PageHeader>
-        <DetailPanelBody
-          message={
-            data.status === "error" ? (
-              <ResultState status={notFound ? "not-found" : "error"}>
-                <ResultStateContent>
-                  <ResultStateTitle>
-                    {notFound ? t("detail.notFound") : t("detail.loadFailed")}
-                  </ResultStateTitle>
-                  <ResultStateDescription>
-                    {notFound
-                      ? t("detail.notFoundHint")
-                      : errorText(data.error, t)}
-                  </ResultStateDescription>
-                </ResultStateContent>
-                {!notFound && (
-                  <ResultStateActions>
-                    <Button
-                      variant="outline"
-                      tone="secondary"
-                      onClick={data.retry}
-                    >
-                      {t("transactions.tryAgain")}
-                    </Button>
-                  </ResultStateActions>
-                )}
-              </ResultState>
-            ) : undefined
-          }
-        />
-      </DetailPanel>
+      <DetailUnready
+        data={data}
+        host={host}
+        phone={phone}
+        back={back}
+        close={close}
+      />
     );
   }
 
-  const tx = ready.transaction;
-  const payees = new Map(ready.payees.map((p) => [p.id, p.name]));
+  const tx = data.transaction;
+  const payees = new Map(data.payees.map((p) => [p.id, p.name]));
   const row = transactionRow(tx, accounts, payees);
   const title =
     transactionTitle(tx, t, { payee: row.payee, accounts }) || row.title;
   const voided = tx.voided_at !== undefined;
   const pending = tx.postings.some((p) => p.status === "pending");
-  const amount = fmt.money(row.money, ready.scale(row.money.currency));
+  const amount = fmt.money(row.money, data.scale(row.money.currency));
   const hasLinks = tx.links.length > 0 || (tx.referenced_by ?? []).length > 0;
+  const facts = (
+    <TransactionFacts
+      transaction={tx}
+      payee={tx.payee_id === undefined ? undefined : payees.get(tx.payee_id)}
+      layout={phone ? "row" : "stack"}
+    />
+  );
 
   return (
     <DetailPanel
@@ -181,6 +140,7 @@ export function TransactionDetail({
       recordKey={tx.id}
       level={host === "page" ? "1" : "2"}
       scroll={host === "pane" ? "self" : "ancestor"}
+      aside={phone ? "none" : undefined}
     >
       <PageHeader className={host === "pane" ? styles.paneHeader : undefined}>
         <PageHeaderTitleArea>
@@ -191,7 +151,11 @@ export function TransactionDetail({
                 {title || t("transactions.untitled")}
               </PageHeaderHeading>
               <PageHeaderSubheading>
-                {[amount, formatDate(tx.date, locale), row.accounts]
+                {[
+                  phone ? "" : amount,
+                  formatDate(tx.date, locale),
+                  row.accounts,
+                ]
                   .filter((part) => part !== "")
                   .join(" · ")}
               </PageHeaderSubheading>
@@ -211,6 +175,7 @@ export function TransactionDetail({
             <PageHeaderActions>
               <DetailActions
                 host={host}
+                compact={phone}
                 voided={voided}
                 transfer={row.transfer}
                 inflow={reimbursementState(tx, accounts).inflow}
@@ -246,22 +211,22 @@ export function TransactionDetail({
           </PageHeaderTitleRow>
         </PageHeaderTitleArea>
       </PageHeader>
-      <SectionDefaultsProvider sticky>
-        <DetailPanelBody
-          aside={
-            <TransactionFacts
-              transaction={tx}
-              payee={
-                tx.payee_id === undefined ? undefined : payees.get(tx.payee_id)
-              }
+      <SectionDefaultsProvider sticky={!phone}>
+        <DetailPanelBody aside={phone ? undefined : facts}>
+          {phone && (
+            <DetailAmount
+              money={row.money}
+              scale={data.scale}
+              transfer={row.transfer}
+              voided={voided}
             />
-          }
-        >
+          )}
+
           {!voided && (
             <ReimbursementSuggestion
               transaction={tx}
               accounts={accounts}
-              scale={ready.scale}
+              scale={data.scale}
               onChooseAnother={() => {
                 setReimbursing(true);
               }}
@@ -273,10 +238,17 @@ export function TransactionDetail({
                 transaction={tx}
                 accounts={accounts}
                 categories={categories}
-                scale={ready.scale}
+                scale={data.scale}
               />
             </DetailPanelSection>
           )}
+
+          {phone && (
+            <DetailPanelSection name="facts" label={t("detail.facts")}>
+              {facts}
+            </DetailPanelSection>
+          )}
+
           <GoalPaymentSection
             transaction={tx}
             expense={expenseState(tx, accounts).expense}
@@ -285,7 +257,7 @@ export function TransactionDetail({
             postings={tx.postings}
             accounts={accounts}
             categories={categories}
-            scale={ready.scale}
+            scale={data.scale}
           />
           {hasLinks && (
             <DetailPanelSection name="links" label={t("detail.links")}>
@@ -307,21 +279,21 @@ export function TransactionDetail({
       <VoidDialog transaction={tx} open={voiding} onOpenChange={setVoiding} />
       <RepaymentDialog
         transaction={tx}
-        accounts={ready.accounts}
-        scale={ready.scale}
+        accounts={data.accounts}
+        scale={data.scale}
         open={repaying}
         onOpenChange={setRepaying}
       />
       <ReimbursementDialog
         transaction={tx}
-        accounts={ready.accounts}
-        scale={ready.scale}
+        accounts={data.accounts}
+        scale={data.scale}
         open={reimbursing}
         onOpenChange={setReimbursing}
       />
       <TransferDialog
         transaction={tx}
-        accounts={ready.accounts}
+        accounts={data.accounts}
         open={transferring}
         onOpenChange={setTransferring}
       />

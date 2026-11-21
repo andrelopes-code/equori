@@ -794,6 +794,7 @@ export const catalogPtBR: Catalog = {
   "detail.notFoundHint": "Ela pode ser de outro usuário ou o link está errado.",
   "detail.loadFailed": "Não foi possível carregar a transação",
   "detail.category": "Categoria",
+  "detail.facts": "Detalhes",
   "detail.postings": "Lançamentos",
   "detail.accounts": "Contas movimentadas",
   "detail.postingsHelp":

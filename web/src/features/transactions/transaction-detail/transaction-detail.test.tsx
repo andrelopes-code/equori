@@ -23,7 +23,10 @@ interface Sent {
   body: unknown;
 }
 
-function api(sent: Sent[] = [], detail = () => json(200, transaction)) {
+function api(
+  sent: Sent[] = [],
+  detail: () => Response | Promise<Response> = () => json(200, transaction),
+) {
   return fakeApi({
     ...sharedRoutes,
     "GET /api/v1/transactions": () => json(200, { items: [transaction] }),
@@ -200,7 +203,7 @@ describe("transaction detail", () => {
   });
 
   it("shows the transaction as a page with its postings, facts and history", async () => {
-    await renderApp(`/transactions/${txID}`, { width: 390, fetch: api() });
+    await renderApp(`/transactions/${txID}`, { fetch: api() });
     expect(
       await screen.findByRole("heading", { level: 1, name: "Padaria" }),
     ).toBeInTheDocument();
@@ -222,6 +225,109 @@ describe("transaction detail", () => {
     expect(
       await screen.findByText(catalogEn["attachments.none"]),
     ).toBeInTheDocument();
+  });
+
+  describe("on a phone", () => {
+    // Spec 2026-11-21-mobile-transaction-detail, MD1: the header's rule reaches both edges.
+    it("spans the detail panel across the page's margin", async () => {
+      await renderApp(`/transactions/${txID}`, { width: 390, fetch: api() });
+      const heading = await screen.findByRole("heading", {
+        level: 1,
+        name: "Padaria",
+      });
+
+      const panel = heading.closest('[data-ui="detail-panel"]');
+
+      expect(panel?.parentElement).toHaveAttribute("data-part", "breakout");
+    });
+
+    // MD2, MD3: the amount stands alone under the header; the subheading keeps the date and accounts.
+    it("draws the signed amount as the first block and leaves it out of the subheading", async () => {
+      await renderApp(`/transactions/${txID}`, { width: 390, fetch: api() });
+      const heading = await screen.findByRole("heading", {
+        level: 1,
+        name: "Padaria",
+      });
+
+      const hero = screen.getByTestId("detail-amount");
+
+      expect(hero).toHaveTextContent("−R$120.00");
+      expect(heading.closest("header")).not.toHaveTextContent("R$");
+    });
+
+    // MD2: every action of the record in one menu.
+    it("holds the record's actions in one menu", async () => {
+      const user = userEvent.setup();
+      await renderApp(`/transactions/${txID}`, { width: 390, fetch: api() });
+      await screen.findByRole("heading", { level: 1, name: "Padaria" });
+
+      expect(
+        screen.queryByRole("toolbar", { name: catalogEn["detail.actions"] }),
+      ).not.toBeInTheDocument();
+      await user.click(
+        screen.getByRole("button", { name: catalogEn["detail.actions"] }),
+      );
+
+      for (const name of [
+        "detail.correct",
+        "detail.transfer",
+        "detail.void",
+      ] as const) {
+        expect(
+          await screen.findByRole("menuitem", { name: catalogEn[name] }),
+        ).toBeInTheDocument();
+      }
+      expect(
+        screen.queryByRole("menuitem", { name: catalogEn["detail.openPage"] }),
+      ).not.toBeInTheDocument();
+    });
+
+    // MD5: the accounts involved read as statement rows; a row opens its account.
+    it("lists the accounts involved and opens one", async () => {
+      const user = userEvent.setup();
+      const { router } = await renderApp(`/transactions/${txID}`, {
+        width: 390,
+        fetch: api(),
+      });
+      const moved = await screen.findByRole("region", {
+        name: catalogEn["detail.accounts"],
+      });
+
+      const list = within(moved).getByRole("list", {
+        name: catalogEn["postings.caption"],
+      });
+      await user.click(within(list).getByRole("button", { name: /^Itau/ }));
+
+      expect(within(list).getByText("−R$120.00")).toBeInTheDocument();
+      await waitFor(() => {
+        expect(router.state.location.pathname).toBe(`/accounts/${checkingID}`);
+      });
+    });
+
+    // MD6: a stuck label covered the content scrolling under the top bar.
+    it("does not stick the section labels", async () => {
+      await renderApp(`/transactions/${txID}`, { width: 390, fetch: api() });
+      await screen.findByRole("region", { name: catalogEn["detail.accounts"] });
+
+      const sections = document.querySelectorAll('[data-ui="section"]');
+
+      expect(sections.length).toBeGreaterThan(0);
+      for (const section of sections) {
+        expect(section).not.toHaveAttribute("data-sticky");
+      }
+    });
+
+    // MD7: the placeholder has the receipt's shape.
+    it("draws the receipt's shape while the transaction loads", async () => {
+      await renderApp(`/transactions/${txID}`, {
+        width: 390,
+        fetch: api([], () => new Promise<Response>(() => undefined)),
+      });
+
+      const shape = await screen.findByTestId("detail-placeholder");
+
+      expect(shape.querySelectorAll('[data-ui="skeleton"]').length).toBe(16);
+    });
   });
 
   it("titles a purchase with an empty description by its instrument", async () => {
@@ -290,7 +396,7 @@ describe("transaction detail", () => {
   // Owner review 2026-10-22: on a phone the four labelled actions squeezed into one row and broke
   // inside their words. They stand in a toolbar that folds into its menu what does not fit (LA-03).
   it("holds the record's actions in a toolbar that folds into a menu", async () => {
-    await renderApp(`/transactions/${txID}`, { width: 390, fetch: api() });
+    await renderApp(`/transactions/${txID}`, { fetch: api() });
     const actions = await screen.findByRole("toolbar", {
       name: catalogEn["detail.actions"],
     });
@@ -322,7 +428,6 @@ describe("transaction detail", () => {
       },
     };
     await renderApp(`/transactions/${txID}`, {
-      width: 390,
       fetch: api([], () => json(200, action)),
     });
     const actions = await screen.findByRole("toolbar", {

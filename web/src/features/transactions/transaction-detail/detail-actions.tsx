@@ -13,10 +13,11 @@ import {
 import { useT } from "@/i18n/i18n-provider";
 
 // On the page the actions stand in a toolbar that folds into its menu what the width beside the
-// title cannot hold; the pane beside the list folds them all into one menu so the title keeps its
-// line (LA-03).
+// title cannot hold; the pane beside the list and the phone page fold them all into one menu so
+// the title keeps its line (LA-03; spec 2026-11-21-mobile-transaction-detail, MD2).
 export function DetailActions({
   host,
+  compact,
   voided,
   transfer,
   inflow,
@@ -31,6 +32,7 @@ export function DetailActions({
   onClose,
 }: {
   host: "page" | "pane";
+  compact: boolean;
   voided: boolean;
   transfer: boolean;
   inflow: boolean;
@@ -46,8 +48,10 @@ export function DetailActions({
   onClose?: (() => void) | undefined;
 }) {
   const t = useT();
-  if (host === "page") {
-    if (voided) return null;
+  // A voided record on its page has no action left; the pane keeps the way to the page.
+  if (host === "page" && voided) return null;
+
+  if (host === "page" && !compact) {
     return (
       <Toolbar aria-label={t("detail.actions")} overflow="menu">
         {correctable && (
@@ -161,7 +165,9 @@ export function DetailActions({
           {!voided && inflow && (
             <MenuItem onSelect={onReimburse}>{t("detail.reimburse")}</MenuItem>
           )}
-          <MenuItem onSelect={onOpenPage}>{t("detail.openPage")}</MenuItem>
+          {host === "pane" && (
+            <MenuItem onSelect={onOpenPage}>{t("detail.openPage")}</MenuItem>
+          )}
           {!voided && <MenuSeparator />}
           {!voided && (
             <MenuItem tone="danger" onSelect={onVoid}>

@@ -16,4 +16,39 @@
       var(--slotted-radius-lg) - var(--slotted-border-width-thin)
     );
   }
+
+  /* The amount of the phone receipt: its own block, one step above the type scale of Text,
+     which ends at 3xl. */
+  .amount,
+  .struck {
+    display: block;
+    font-size: var(--slotted-font-size-4xl);
+    line-height: var(--slotted-line-height-4xl);
+    letter-spacing: var(--slotted-letter-spacing-tight);
+  }
+
+  .struck {
+    text-decoration: line-through;
+  }
+
+  /* The receipt's shape while it loads: the blocks as far apart as the loaded sections. */
+  .placeholder {
+    display: grid;
+    gap: var(--slotted-space-8);
+  }
+
+  .placeholderFacts {
+    display: grid;
+    gap: var(--slotted-space-6);
+  }
+
+  .placeholderRow {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-4);
+  }
+
+  .placeholderEnd {
+    margin-inline-start: auto;
+  }
 }

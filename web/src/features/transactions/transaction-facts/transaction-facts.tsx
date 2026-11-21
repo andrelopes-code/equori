@@ -12,6 +12,7 @@ import { ActionFacts } from "@/features/transactions/transaction-facts/action-fa
 import { IncomeFacts } from "@/features/transactions/transaction-facts/income-facts";
 import { TradeFacts } from "@/features/transactions/transaction-facts/trade-facts";
 import { CategorizationText } from "@/features/transactions/transaction-facts/categorization-text";
+import styles from "@/features/transactions/transaction-facts/transaction-facts.module.css";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -28,14 +29,21 @@ const originWords: Record<Transaction["origin"], MessageKey> = {
 export function TransactionFacts({
   transaction,
   payee,
+  layout = "stack",
 }: {
   transaction: Transaction;
   payee: string | undefined;
+  // Row on the phone receipt: the term at the start, the value at the end (MD4).
+  layout?: "row" | "stack";
 }) {
   const t = useT();
   const [locale] = useAppLocale();
   return (
-    <DescriptionList layout="stack">
+    <DescriptionList
+      layout={layout}
+      termWidth={layout === "row" ? "13rem" : undefined}
+      className={layout === "row" ? styles.row : undefined}
+    >
       <DescriptionListItem>
         <DescriptionListTerm>{t("facts.date")}</DescriptionListTerm>
         <DescriptionListDescription>

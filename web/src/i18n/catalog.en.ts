@@ -783,6 +783,7 @@ export const catalogEn = {
   "detail.notFoundHint": "It may belong to another user or the link is wrong.",
   "detail.loadFailed": "The transaction could not be loaded",
   "detail.category": "Category",
+  "detail.facts": "Details",
   "detail.postings": "Postings",
   "detail.accounts": "Accounts involved",
   "detail.postingsHelp":
