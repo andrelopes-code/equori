@@ -721,6 +721,8 @@ export const catalogEn = {
   "transactions.statement.count.one": "{count} transaction",
   "transactions.statement.count.other": "{count} transactions",
   "transactions.statement.count.more": "{count}+ transactions",
+  "transactions.select": "Select",
+  "transactions.selectDone": "End selection",
   "transactions.refresh": "Refresh",
   "transactions.tab.all": "All",
   "transactions.tab.uncategorized": "Uncategorized",

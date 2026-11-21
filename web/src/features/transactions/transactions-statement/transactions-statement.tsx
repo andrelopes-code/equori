@@ -20,6 +20,9 @@ interface TransactionsStatementProps {
   scale: (code: string) => number;
   onOpen: (id: string) => void;
   empty: (status: "empty" | "error") => ReactNode;
+  selecting: boolean;
+  selection: readonly string[];
+  onSelectionChange: (ids: readonly string[]) => void;
 }
 
 // The phone form of the transaction list: a statement of days (spec
@@ -30,6 +33,9 @@ export function TransactionsStatement({
   scale,
   onOpen,
   empty,
+  selecting,
+  selection,
+  onSelectionChange,
 }: TransactionsStatementProps) {
   const t = useT();
   const [locale] = useAppLocale();
@@ -38,6 +44,12 @@ export function TransactionsStatement({
 
   const days = useMemo(() => groupByDay(list.rows), [list.rows]);
   const words = { today: t("day.today"), yesterday: t("day.yesterday") };
+
+  function handleSelectedChange(id: string, selected: boolean) {
+    onSelectionChange(
+      selected ? [...selection, id] : selection.filter((key) => key !== id),
+    );
+  }
 
   if (list.pending) return <StatementPlaceholder />;
 
@@ -65,6 +77,9 @@ export function TransactionsStatement({
                 categories={categories}
                 scale={scale}
                 onOpen={onOpen}
+                selecting={selecting}
+                selected={selection.includes(row.id)}
+                onSelectedChange={handleSelectedChange}
               />
             ))}
           </ListSection>

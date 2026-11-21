@@ -575,6 +575,34 @@ describe("TransactionsPage on a phone", () => {
     ).not.toBeChecked();
   });
 
+  // MS7: Select in the header menu turns each mark into a checkbox; a tap then toggles the row
+  // and the selection bar of the footer counts it.
+  it("selects rows from the header menu instead of opening them", async () => {
+    const user = userEvent.setup();
+    const { router } = await renderApp("/transactions", {
+      fetch: api({ queries: [] }),
+      today: "2026-10-17",
+      width: 390,
+    });
+    await screen.findByRole("list", { name: catalogEn["nav.transactions"] });
+
+    await user.click(
+      screen.getByRole("button", { name: catalogEn["transactions.actions"] }),
+    );
+    await user.click(
+      await screen.findByRole("menuitem", {
+        name: catalogEn["transactions.select"],
+      }),
+    );
+    await user.click(screen.getByText("Padaria"));
+
+    expect(
+      screen.getByRole("checkbox", { name: "Select Padaria" }),
+    ).toBeChecked();
+    expect(await screen.findByText("1 selected")).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe("/transactions");
+  });
+
   // MS7: a row opens its transaction's page.
   it("opens the transaction page when a row is tapped", async () => {
     const { router } = await renderApp("/transactions", {

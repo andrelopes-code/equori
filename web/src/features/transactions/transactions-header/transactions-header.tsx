@@ -44,6 +44,8 @@ interface TransactionsHeaderProps {
   listID: string;
   showVoided: boolean;
   onShowVoidedChange: (show: boolean) => void;
+  selecting: boolean;
+  onSelectingChange: (selecting: boolean) => void;
 }
 
 export function TransactionsHeader({
@@ -54,6 +56,8 @@ export function TransactionsHeader({
   listID,
   showVoided,
   onShowVoidedChange,
+  selecting,
+  onSelectingChange,
 }: TransactionsHeaderProps) {
   const t = useT();
 
@@ -101,6 +105,8 @@ export function TransactionsHeader({
                 onRefresh={refresh.refresh}
                 showVoided={queue ? undefined : showVoided}
                 onShowVoidedChange={onShowVoidedChange}
+                selecting={selecting}
+                onSelectingChange={onSelectingChange}
               />
             </PageHeaderActions>
           )}

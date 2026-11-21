@@ -16,6 +16,8 @@ interface TransactionsMenuProps {
   // Absent in the uncategorized queue, which never lists voided transactions.
   showVoided: boolean | undefined;
   onShowVoidedChange: (show: boolean) => void;
+  selecting: boolean;
+  onSelectingChange: (selecting: boolean) => void;
 }
 
 // The utilities of the list on a phone, out of the first screen (spec
@@ -25,6 +27,8 @@ export function TransactionsMenu({
   onRefresh,
   showVoided,
   onShowVoidedChange,
+  selecting,
+  onSelectingChange,
 }: TransactionsMenuProps) {
   const t = useT();
 
@@ -46,6 +50,13 @@ export function TransactionsMenu({
         )}
       />
       <MenuContent>
+        <MenuItem
+          onSelect={() => {
+            onSelectingChange(!selecting);
+          }}
+        >
+          {t(selecting ? "transactions.selectDone" : "transactions.select")}
+        </MenuItem>
         <MenuItem onSelect={onRefresh}>{t("transactions.refresh")}</MenuItem>
         {showVoided !== undefined && (
           <MenuCheckboxItem

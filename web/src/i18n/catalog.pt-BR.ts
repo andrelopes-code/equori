@@ -733,6 +733,8 @@ export const catalogPtBR: Catalog = {
   "transactions.statement.count.one": "{count} transação",
   "transactions.statement.count.other": "{count} transações",
   "transactions.statement.count.more": "{count}+ transações",
+  "transactions.select": "Selecionar",
+  "transactions.selectDone": "Encerrar seleção",
   "transactions.refresh": "Atualizar",
   "transactions.tab.all": "Todas",
   "transactions.tab.uncategorized": "Sem categoria",

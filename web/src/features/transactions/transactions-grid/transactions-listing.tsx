@@ -31,6 +31,8 @@ interface TransactionsListingProps {
   onSearchChange: (next: TransactionSearchDraft) => void;
   voidedHidden: boolean;
   onShowVoided: () => void;
+  // Selection mode of the phone statement (spec mobile-statement, MS7).
+  selecting: boolean;
 }
 
 export function TransactionsListing({
@@ -44,6 +46,7 @@ export function TransactionsListing({
   onSearchChange,
   voidedHidden,
   onShowVoided,
+  selecting,
 }: TransactionsListingProps) {
   const t = useT();
 
@@ -100,6 +103,9 @@ export function TransactionsListing({
             empty={(status) => (
               <TransactionsEmpty status={status} {...emptyProps} />
             )}
+            selecting={selecting}
+            selection={selection}
+            onSelectionChange={onSelectionChange}
           />
         )}
 

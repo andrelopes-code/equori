@@ -14,12 +14,12 @@ Below 600 px the transaction list of `/transactions` reads as a bank statement: 
 | MS4 | A row is 64 px: the category mark; the title over one line of detail; the amount at the end. The detail is `category · accounts`; an uncategorized row reads `Sem categoria` in the accent tone, then the accounts; a transfer reads its accounts. A voided row strikes its title and reads `Anulada` before the accounts. Every text holds one line and cuts with an ellipsis; the amount never cuts. |
 | MS5 | The amount reads money in with `+` in the success tone and money out with `−` in the text colour (`useMoneyFormat().signed`); a transfer and a voided row read in the text colour and muted tone. |
 | MS6 | A row's pressed fill is a rounded tile 8 px inside the page margin (Slotted issue #162). On a touch screen no hover fill is drawn (Slotted issue #160). |
-| MS7 | Tapping a row opens `/transactions/$id`. In selection mode tapping toggles the row and the mark becomes a checkbox; the selection bar of the page footer acts on the selection. |
+| MS7 | Tapping a row opens `/transactions/$id`. Select, in the header menu (MS12), starts selection mode and End selection ends it, clearing the selection: each row becomes the label of its checkbox in place of the mark, a tap toggles it, and the selection bar of the page footer acts on the selection. |
 | MS8 | Below 600 px the page header holds the title and the tabs; the subheading leaves. |
 | MS9 | Loading draws eight placeholder rows in the row's shape; empty, no result and failure draw `TransactionsEmpty`, as the grid does. |
 | MS10 | The page scroller asks for the next page when the last row comes within one screen (mobile.md M3). |
 | MS11 | Below 600 px the period is one ghost button that names it and opens the period control's choices (`PeriodMenu`); it stands under the search with the row count at the end of the same line. The filter bar draws no empty pills, no count and no voided switch. |
-| MS12 | Below 600 px the header's actions are one menu (`TransactionsMenu`): Refresh, and Show voided outside the uncategorized queue. |
+| MS12 | Below 600 px the header's actions are one menu (`TransactionsMenu`): Select or End selection, Refresh, and Show voided outside the uncategorized queue. |
 
 The category mark of the categorization method (`Manual`, rule), the tags and the description that differs from the payee leave the phone row; the transaction page shows them.
 
@@ -29,7 +29,7 @@ The category mark of the categorization method (`Manual`, rule), the tags and th
 - R2: Does not apply: no regional behaviour.
 - R3: Does not apply: no value set.
 - R4: Does not apply: no extension point.
-- R5: New keys `transactions.actions` and `transactions.statement.count.one`, `.other`, `.more`, in pt-BR and en; the rows reuse `transactions.uncategorized`, `transactions.voided`, `transactions.split`, `transactions.untitled`, `day.today` and `day.yesterday`.
+- R5: New keys `transactions.actions`, `transactions.select`, `transactions.selectDone` and `transactions.statement.count.one`, `.other`, `.more`, in pt-BR and en; the rows reuse `transactions.uncategorized`, `transactions.voided`, `transactions.split`, `transactions.untitled`, `day.today` and `day.yesterday`.
 - R6: The day label through `formatDayHeader` and `formatDate`; the amounts through `useMoneyFormat()`.
 - C1: Does not apply: nothing stored; the day total is computed by `periodTotals` in minor units.
 - C2: The day total holds one currency: `periodTotals` returns null for a day with more than one, and the section draws no total.

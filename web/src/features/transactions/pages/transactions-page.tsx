@@ -1,7 +1,7 @@
 import { Page, PageBody } from "@slotted/react/page";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { useDeferredValue, useMemo } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 
 import { useApi } from "@/api/api-context";
 import { accountsQuery } from "@/features/accounts";
@@ -40,6 +40,8 @@ export function TransactionsPage() {
   const shown = useDeferredValue(search);
   const [showVoided, setShowVoided] = useShowVoided();
   const compact = useMediaQuery(compactQuery);
+  // Selection mode of the phone statement; the desktop grid selects by its checkboxes.
+  const [selecting, setSelecting] = useState(false);
   const list = useTransactionList(shown, !showVoided);
   const accounts = useQuery(accountsQuery(api));
   const payees = useQuery(payeesQuery(api));
@@ -70,6 +72,11 @@ export function TransactionsPage() {
     });
   };
 
+  const handleSelectingChange = (next: boolean) => {
+    commands.setSelection([]);
+    setSelecting(next);
+  };
+
   const handleShowVoidedChange = (show: boolean) => {
     commands.setSelection([]);
     setShowVoided(show);
@@ -97,6 +104,8 @@ export function TransactionsPage() {
         listID={listID}
         showVoided={showVoided}
         onShowVoidedChange={handleShowVoidedChange}
+        selecting={selecting}
+        onSelectingChange={handleSelectingChange}
       />
 
       <PageBody id={listID}>
@@ -147,6 +156,7 @@ export function TransactionsPage() {
             onShowVoided={() => {
               handleShowVoidedChange(true);
             }}
+            selecting={compact && selecting}
           />
         </div>
       </PageBody>
