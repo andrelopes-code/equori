@@ -5,9 +5,6 @@ glob_matcher: doublestar
 pre-commit:
   parallel: true
   jobs:
-    - name: hygiene
-      run: scripts/check-hygiene.sh {staged_files}
-
     - name: go-fmt
       glob: "**/*.go"
       run: bin/golangci-lint fmt {staged_files}

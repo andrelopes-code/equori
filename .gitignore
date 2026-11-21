@@ -9,7 +9,7 @@ web/dist/*
 # TypeScript incremental build state.
 *.tsbuildinfo
 
-# Editor, merge and tool leftovers (scripts/check-hygiene.sh rejects them).
+# Editor, merge and tool leftovers.
 *.orig
 *.rej
 *.bak

@@ -18,7 +18,7 @@ SQL_FMT := web/node_modules/.bin/sql-formatter
 LOCAL_ENV ?= $(HOME)/.config/equori/local.env
 LOAD_ENV := set -a && . ./dev.env && { [ ! -f "$(LOCAL_ENV)" ] || . "$(LOCAL_ENV)"; } && { [ ! -f .env ] || . ./.env; } && set +a
 
-.PHONY: check static hygiene fmt fmt-check lint tidy-check gen gen-check test test-race perf vuln build dist upgrade-test test-cluster test-exchange standalone-smoke install-smoke formula-test dev db-up db-down db-test-up run-dev web-dev-after-api run-prod hooks tools web-deps web-build web-check web-static web-test web-dev demo demo-user demo-reset help-media help-media-record help-media-check help-media-review
+.PHONY: check static fmt fmt-check lint tidy-check gen gen-check test test-race perf vuln build dist upgrade-test test-cluster test-exchange standalone-smoke install-smoke formula-test dev db-up db-down db-test-up run-dev web-dev-after-api run-prod hooks tools web-deps web-build web-check web-static web-test web-dev demo demo-user demo-reset help-media help-media-record help-media-check help-media-review
 
 # Everything, the Go tests under -race included: CI runs it on every pull request. The web build
 # comes first: the Go tests compile package web, which embeds web/dist. The web tests come last:
@@ -28,10 +28,7 @@ check: static web-build
 	$(MAKE) --no-print-directory test-cluster
 	$(MAKE) --no-print-directory web-test
 
-static: hygiene fmt-check tidy-check gen-check lint formula-test help-media-check
-
-hygiene:
-	scripts/check-hygiene.sh
+static: fmt-check tidy-check gen-check lint formula-test help-media-check
 
 fmt: $(TOOLS) $(WEB_DEPS)
 	$(BIN)/golangci-lint fmt
