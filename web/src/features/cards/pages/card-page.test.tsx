@@ -929,6 +929,21 @@ describe("Card tabs on a phone (ADR 027, S5)", () => {
     ).toHaveAttribute("aria-selected", "true");
   });
 
+  // Spec 2026-11-21-mobile-accounts, MA5: "Closing: date · Due: date" took two lines at 360 px;
+  // the month in the row's title holds the year.
+  it("reads each statement's closing and due day on one short line", async () => {
+    await renderApp(`/cards/${cardID}`, { width: 390, fetch: api() });
+    const list = await screen.findByRole("list", {
+      name: catalogEn["card.statements"],
+    });
+
+    const lines = within(list).getAllByText(
+      /^Closes \d{2}\/\d{2} · due \d{2}\/\d{2}$/,
+    );
+
+    expect(lines.length).toBeGreaterThan(0);
+  });
+
   it("states a missing billing cycle without the way to the settings", async () => {
     await renderApp(`/cards/${cardID}`, {
       width: 390,

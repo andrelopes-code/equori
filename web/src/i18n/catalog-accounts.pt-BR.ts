@@ -835,6 +835,7 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "card.reference": "Fatura",
   "card.closing": "Fechamento",
   "card.due": "Vencimento",
+  "card.cycleLine": "Fecha {closing} · vence {due}",
   "card.amountDue": "Total",
   "card.settled": "Pago",
   "card.unpaid": "Em aberto",

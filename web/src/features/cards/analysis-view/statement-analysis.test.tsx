@@ -97,4 +97,21 @@ describe("statement analysis", () => {
       "Oct 2026|R$150.00|R$333.33|R$40.00|−R$20.00|R$503.33",
     ]);
   });
+
+  // Spec 2026-11-21-mobile-accounts, MA5: the table scrolls sideways in its frame on a phone; the
+  // column that names each row stays pinned while the figures pass under it.
+  it("pins the column that names each statement", async () => {
+    await renderApp(`/cards/${cardID}`, { width: 390, fetch: api() });
+    const table = await screen.findByRole("table", {
+      name: catalogEn["analysis.card"],
+    });
+
+    const names = within(table).getAllByRole("rowheader");
+    const header = within(table).getAllByRole("columnheader")[0];
+
+    expect(header).toHaveAttribute("data-sticky", "start");
+    for (const name of names) {
+      expect(name).toHaveAttribute("data-sticky", "start");
+    }
+  });
 });

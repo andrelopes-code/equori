@@ -836,6 +836,7 @@ export const accountsEn = {
   "card.reference": "Statement",
   "card.closing": "Closing",
   "card.due": "Due",
+  "card.cycleLine": "Closes {closing} · due {due}",
   "card.amountDue": "Total",
   "card.settled": "Paid",
   "card.unpaid": "Open",

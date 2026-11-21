@@ -22,7 +22,8 @@ type Parts = components["schemas"]["StatementParts"];
 const parts = ["purchases", "installments", "charges", "credits"] as const;
 
 // Rows of statement parts drawn as stacked bars, with the same numbers in a table as the
-// reading for anyone the drawing does not serve.
+// reading for anyone the drawing does not serve. The table scrolls sideways on a phone with the
+// names pinned (spec 2026-11-21-mobile-accounts, MA5).
 export function AnalysisView({
   title,
   label,
@@ -78,7 +79,7 @@ export function AnalysisView({
           <TableCaption>{title}</TableCaption>
           <TableHead>
             <TableRow>
-              <TableColumnHeader>{label}</TableColumnHeader>
+              <TableColumnHeader sticky="start">{label}</TableColumnHeader>
               {parts.map((part) => (
                 <TableColumnHeader key={part} numeric>
                   {t(`analysis.${part}`)}
@@ -92,7 +93,7 @@ export function AnalysisView({
           <TableBody>
             {rows.map((r) => (
               <TableRow key={r.key}>
-                <TableRowHeader>{r.name}</TableRowHeader>
+                <TableRowHeader sticky="start">{r.name}</TableRowHeader>
                 {parts.map((part) => (
                   <TableCell key={part} numeric>
                     {fmt.money(r[part], scale)}

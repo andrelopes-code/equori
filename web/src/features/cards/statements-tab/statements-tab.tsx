@@ -26,7 +26,11 @@ import {
   statementStatusTone,
   statementStatusWords,
 } from "@/features/cards/model/statement-words";
-import { formatDate, formatMonthTitle } from "@/i18n/format";
+import {
+  formatDate,
+  formatDayMonthNumeric,
+  formatMonthTitle,
+} from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { PhoneList } from "@/ui/form-fields/phone-list";
 import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
@@ -72,12 +76,11 @@ export function StatementsTab({
               params: { accountId, statementId: s.id },
             },
             lines: [
-              [
-                [t("card.closing"), formatDate(s.closing_date, locale)].join(
-                  ": ",
-                ),
-                [t("card.due"), formatDate(s.due_date, locale)].join(": "),
-              ].join(" · "),
+              // The month in the title holds the year (spec 2026-11-21-mobile-accounts, MA5).
+              t("card.cycleLine", {
+                closing: formatDayMonthNumeric(s.closing_date, locale),
+                due: formatDayMonthNumeric(s.due_date, locale),
+              }),
               [t("card.unpaid"), money(statementUnpaid(s))].join(": "),
               <Tag key="status" size="sm" tone={statementStatusTone[s.status]}>
                 {t(statementStatusWords[s.status])}
