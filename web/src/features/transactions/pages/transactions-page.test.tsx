@@ -479,24 +479,58 @@ describe("TransactionsPage on a phone", () => {
     expect(seen.queries.map((q) => q.get("cursor"))).toEqual([null, "page-2"]);
   });
 
-  // The amount ends the payee's line, so the line under it takes the cell's whole width.
-  it("draws the amount in the cell of the payee", async () => {
+  // Spec 2026-11-21-mobile-statement, MS2 to MS5: below 600 px the rows read as a statement,
+  // grouped by day with the day's total, the amount at the end of each row. Replaces the grid's
+  // phone form (the amount in the payee's cell), which the spec retires.
+  it("draws the rows as a statement grouped by day", async () => {
     await renderApp("/transactions", {
       fetch: api({ queries: [] }),
       today: "2026-10-17",
       width: 390,
     });
-    await screen.findByText("Padaria");
-    const cell = screen
-      .getByText("Padaria")
-      .closest('[role="rowheader"], [role="gridcell"]');
-    if (!(cell instanceof HTMLElement)) throw new Error("no cell for Padaria");
-    expect(within(cell).getByText("−R$120.00")).toBeInTheDocument();
+    const list = await screen.findByRole("list", {
+      name: catalogEn["nav.transactions"],
+    });
+    expect(screen.queryByRole("grid")).toBeNull();
     expect(
-      screen.queryByRole("columnheader", {
-        name: catalogEn["transactions.column.amount"],
-      }),
-    ).toBeNull();
+      within(list).getByRole("heading", { name: "Sat, Oct 10+R$380.00" }),
+    ).toBeInTheDocument();
+    const padaria = within(list).getByRole("button", { name: /^Padaria/ });
+    expect(within(padaria).getByText("Mercado · Itau")).toBeInTheDocument();
+    expect(within(padaria).getByText("−R$120.00")).toBeInTheDocument();
+    const pix = within(list).getByRole("button", { name: /^PIX RECEBIDO/ });
+    expect(
+      within(pix).getByText(catalogEn["transactions.uncategorized"]),
+    ).toBeInTheDocument();
+    expect(within(pix).getByText("+R$500.00")).toBeInTheDocument();
+  });
+
+  // MS8: on a phone the header holds the title and the tabs; the subheading leaves.
+  it("leaves the subheading out of the header", async () => {
+    await renderApp("/transactions", {
+      fetch: api({ queries: [] }),
+      today: "2026-10-17",
+      width: 390,
+    });
+    await screen.findByRole("list", { name: catalogEn["nav.transactions"] });
+    expect(screen.queryByText(catalogEn["transactions.subtitle"])).toBeNull();
+  });
+
+  // MS7: a row opens its transaction's page.
+  it("opens the transaction page when a row is tapped", async () => {
+    const { router } = await renderApp("/transactions", {
+      fetch: api({ queries: [] }),
+      today: "2026-10-17",
+      width: 390,
+    });
+    await userEvent.click(
+      await screen.findByRole("button", { name: /^Padaria/ }),
+    );
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(
+        `/transactions/${groceries.id as string}`,
+      );
+    });
   });
 });
 

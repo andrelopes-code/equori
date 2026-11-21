@@ -1,0 +1,64 @@
+@layer app {
+  /* The rows' fills sit inside an 8 px band of the page margin: the content keeps the margin
+     and a pressed row reads as a rounded tile, not as a stripe to the screen edge.
+     Workaround for Slotted issue #162: List has no inset, rounded row fill.
+     Workaround for Slotted issue #161: a sticky day label paints the list surface; the list
+     takes the page ground, which Page draws sunken. */
+  .statement {
+    --slotted-list-background: var(--slotted-surface-sunken);
+    --slotted-list-padding-inline: var(--slotted-space-4);
+    --slotted-list-item-padding-inline: var(--slotted-space-4);
+    --slotted-list-item-radius: var(--slotted-radius-lg);
+
+    /* A day reads as a caption on the ground: the day in the text colour, more room above it
+       than below it. List resolves these on its root. */
+    --slotted-list-section-color: var(--slotted-text);
+    --slotted-list-section-font-size: var(--slotted-font-size-sm);
+    --slotted-list-section-font-weight: var(--slotted-font-weight-semibold);
+    --slotted-list-section-padding-block: var(--slotted-space-6)
+      var(--slotted-space-3);
+
+    margin-inline: calc(var(--slotted-space-4) * -1);
+  }
+
+  /* Workaround for Slotted issue #160: a touch screen keeps :hover after a tap, so the hover
+     fill would stay on the opened row; the pressed fill remains the touch feedback. */
+  @media (hover: none) {
+    .statement {
+      --slotted-list-item-background-hover: transparent;
+    }
+  }
+
+  .row {
+    block-size: 64px; /* one fixed row height: 15 px above and below two lines (spec MS4) */
+  }
+
+  /* The text column yields to the amount: it cuts before it runs under it. */
+  .body {
+    min-inline-size: 0;
+    overflow: hidden;
+  }
+
+  .cut {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .struck {
+    text-decoration: line-through;
+  }
+
+  /* The amount keeps its whole width; the text beside it cuts instead. */
+  .end {
+    min-inline-size: max-content;
+    padding-inline-start: var(--slotted-space-5);
+  }
+
+  .placeholderMark {
+    display: inline-block;
+    inline-size: 32px; /* the md category mark */
+    block-size: 32px;
+  }
+}

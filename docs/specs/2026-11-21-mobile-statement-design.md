@@ -27,7 +27,7 @@ The category mark of the categorization method (`Manual`, rule), the tags and th
 - R2: Does not apply: no regional behaviour.
 - R3: Does not apply: no value set.
 - R4: Does not apply: no extension point.
-- R5: New catalog keys: `transactions.statement.uncategorized`, `transactions.statement.voided`, with pt-BR and en.
+- R5: No new text: the rows reuse `transactions.uncategorized`, `transactions.voided`, `transactions.split`, `transactions.untitled`, `day.today` and `day.yesterday`.
 - R6: The day label through `formatDayHeader` and `formatDate`; the amounts through `useMoneyFormat()`.
 - C1: Does not apply: nothing stored; the day total is computed by `periodTotals` in minor units.
 - C2: The day total holds one currency: `periodTotals` returns null for a day with more than one, and the section draws no total.

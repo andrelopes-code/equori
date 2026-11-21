@@ -81,9 +81,12 @@ export function TransactionsHeader({
         <PageHeaderTitleRow>
           <PageHeaderTitle>
             <PageHeaderHeading>{t("nav.transactions")}</PageHeaderHeading>
-            <PageHeaderSubheading>
-              {t("transactions.subtitle")}
-            </PageHeaderSubheading>
+            {/* On a phone the title and the list explain the page (spec mobile-statement MS8). */}
+            {!compact && (
+              <PageHeaderSubheading>
+                {t("transactions.subtitle")}
+              </PageHeaderSubheading>
+            )}
           </PageHeaderTitle>
 
           <PageHeaderActions>

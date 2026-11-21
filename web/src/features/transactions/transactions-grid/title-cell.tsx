@@ -3,8 +3,6 @@ import { Text } from "@slotted/react/typography";
 
 import { CategoryMark } from "@/features/categories";
 import type { CategoryEntry } from "@/features/categories";
-import { AmountCell } from "@/features/transactions/transactions-grid/amount-cell";
-import { CategorizationMark } from "@/features/transactions/transactions-grid/categorization-mark";
 import styles from "@/features/transactions/transactions-grid/transactions-grid.module.css";
 import type { ListRow } from "@/features/transactions/transactions-grid/use-transaction-list";
 import { useT } from "@/i18n/i18n-provider";
@@ -12,16 +10,12 @@ import { cx } from "@/ui/cx";
 
 // The row's mark is its category's; the payee leads, and the line under it says what else the
 // reader needs to place the entry: the description when it adds to the payee, and the accounts.
-// On a phone the amount has no column of its own and ends the payee's line (`amount`), so the
-// line under it takes the cell's whole width.
 export function TitleCell({
   row,
   category,
-  amount,
 }: {
   row: ListRow;
   category: CategoryEntry | undefined;
-  amount?: string | undefined;
 }) {
   const t = useT();
   const detail = [
@@ -61,27 +55,11 @@ export function TitleCell({
               {t("transactions.voided")}
             </Badge>
           )}
-          {amount !== undefined && (
-            <span className={styles.trail}>
-              <AmountCell row={row} text={amount} />
-            </span>
-          )}
         </span>
-        {amount !== undefined && row.categorization?.method != null ? (
-          <span className={styles.line}>
-            <CategorizationMark categorization={row.categorization} />
-            {detail !== "" && (
-              <Text size="sm" tone="muted" className={styles.cut}>
-                {detail}
-              </Text>
-            )}
-          </span>
-        ) : (
-          detail !== "" && (
-            <Text size="sm" tone="muted" className={styles.cut}>
-              {detail}
-            </Text>
-          )
+        {detail !== "" && (
+          <Text size="sm" tone="muted" className={styles.cut}>
+            {detail}
+          </Text>
         )}
       </span>
     </span>

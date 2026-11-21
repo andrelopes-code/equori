@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
@@ -118,17 +118,14 @@ describe("categorization method on the transaction list", () => {
     expect(link).toHaveAttribute("href", `/categories/rules/${ruleID}`);
   });
 
-  // ADR 027, S6: the rules are desktop-only.
-  it("draws the rule mark without a link on a phone", async () => {
+  // ADR 027, S6: the rules are desktop-only. Spec 2026-11-21-mobile-statement: the mark of the
+  // method leaves the phone row for the transaction page, so no rule link stands in the list.
+  it("draws neither the rule mark nor its link on a phone", async () => {
     await renderApp("/transactions", { fetch: api([]), width: 390 });
-    const title = await screen.findByRole("rowheader", { name: /Bakery/ });
+    const row = await screen.findByRole("button", { name: /^Bakery/ });
 
-    await waitFor(() => {
-      expect(
-        within(title).getByText(catalogEn["method.mark.rule"]),
-      ).toBeInTheDocument();
-    });
-    expect(within(title).queryByRole("link")).toBeNull();
+    expect(within(row).queryByText(catalogEn["method.mark.rule"])).toBeNull();
+    expect(within(row).queryByRole("link")).toBeNull();
   });
 
   it("asks the methods of a page in one call", async () => {
@@ -143,13 +140,12 @@ describe("categorization method on the transaction list", () => {
     );
   });
 
-  it("puts the mark on the line of details on a phone", async () => {
+  // Spec 2026-11-21-mobile-statement: the phone row reads category and accounts; the mark of the
+  // method is on the transaction page.
+  it("leaves the mark out of the phone row", async () => {
     await renderApp("/transactions", { fetch: api([]), width: 390 });
-    const title = await screen.findByRole("rowheader", { name: /Pharmacy/ });
-    await waitFor(() => {
-      expect(
-        within(title).getByText(catalogEn["method.mark.manual"]),
-      ).toBeInTheDocument();
-    });
+    const row = await screen.findByRole("button", { name: /^Pharmacy/ });
+
+    expect(within(row).queryByText(catalogEn["method.mark.manual"])).toBeNull();
   });
 });

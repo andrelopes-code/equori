@@ -12,14 +12,11 @@ export function CategoryCell({
   row,
   categories,
   onCategorize,
-  withMark = false,
 }: {
   row: ListRow;
   categories: Map<string, CategoryEntry>;
   // Present when the row can be categorized from the list.
   onCategorize?: (() => void) | undefined;
-  // Below 600 px the mark of the method stands on the title's line of details instead.
-  withMark?: boolean;
 }) {
   const t = useT();
   if (row.transfer) {
@@ -70,7 +67,6 @@ export function CategoryCell({
         {content}
       </Button>
     );
-  if (!withMark) return cell;
   return (
     <span className={styles.marked}>
       {cell}

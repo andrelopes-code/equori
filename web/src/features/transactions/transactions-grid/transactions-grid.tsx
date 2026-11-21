@@ -12,13 +12,13 @@ import type { CategoryEntry } from "@/features/categories";
 import { AmountCell } from "@/features/transactions/transactions-grid/amount-cell";
 import { CategoryCell } from "@/features/transactions/transactions-grid/category-cell";
 import { CategoryEditor } from "@/features/transactions/transactions-grid/category-editor";
+import { dayLabel } from "@/features/transactions/model/day-label";
 import { DayHeader } from "@/features/transactions/transactions-grid/day-header";
 import { TitleCell } from "@/features/transactions/transactions-grid/title-cell";
 import type {
   ListRow,
   TransactionList,
 } from "@/features/transactions/transactions-grid/use-transaction-list";
-import { formatDate, formatDayHeader } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
@@ -38,8 +38,7 @@ export function TransactionsGrid({
   list: TransactionList;
   categories: Map<string, CategoryEntry>;
   scale: (code: string) => number;
-  // Absent below 600 px, where the grid is as tall as its rows and the page scrolls.
-  height: string | undefined;
+  height: string;
   selection: readonly string[];
   onSelectionChange: (ids: readonly string[]) => void;
   onOpen: (id: string) => void;
@@ -54,8 +53,6 @@ export function TransactionsGrid({
   const today = useToday();
   const handle = useRef<DataGridHandle>(null);
   const current = useRef<GridCell | null>(null);
-
-  const growsWithPage = height === undefined;
 
   const editCategory = useCallback((key: string) => {
     handle.current?.startEdit({ row: key, column: "category" });
@@ -87,15 +84,11 @@ export function TransactionsGrid({
         label: t("transactions.column.date"),
         accessor: "date",
         width: 104,
-        format: (value) => {
-          const iso = String(value);
-          return iso.startsWith(today.slice(0, 4))
-            ? formatDayHeader(iso, today, locale, {
-                today: t("day.today"),
-                yesterday: t("day.yesterday"),
-              })
-            : formatDate(iso, locale);
-        },
+        format: (value) =>
+          dayLabel(String(value), today, locale, {
+            today: t("day.today"),
+            yesterday: t("day.yesterday"),
+          }),
       },
       {
         id: "title",
@@ -104,9 +97,7 @@ export function TransactionsGrid({
         accessor: "title",
         rowHeader: true,
         flex: 2,
-        // Beside a table's amount the title may be narrow. On a phone the amount is in the cell, and
-        // a title narrower than this lets the category column fit beside it and squeeze the text.
-        minWidth: growsWithPage ? 240 : 150,
+        minWidth: 150,
       },
       {
         id: "category",
@@ -126,27 +117,22 @@ export function TransactionsGrid({
         accessor: (row) => row.tags.join(", "),
         width: 160,
         priority: 5,
-        // Without room the tags leave the row rather than lengthen it on a phone.
+        // Without room the tags leave the row rather than lengthen it.
         popin: false,
       },
-      // Below 600 px the amount ends the payee's line (TitleCell), which frees 148 px for the text.
-      ...(growsWithPage
-        ? []
-        : [
-            {
-              id: "amount",
-              sortable: false,
-              label: t("transactions.column.amount"),
-              accessor: (row: ListRow) => row.money.amount,
-              numeric: true,
-              width: 148,
-              priority: 1,
-              format: (_value: unknown, row: ListRow) =>
-                fmt.money(row.money, scale(row.money.currency)),
-            },
-          ]),
+      {
+        id: "amount",
+        sortable: false,
+        label: t("transactions.column.amount"),
+        accessor: (row: ListRow) => row.money.amount,
+        numeric: true,
+        width: 148,
+        priority: 1,
+        format: (_value: unknown, row: ListRow) =>
+          fmt.money(row.money, scale(row.money.currency)),
+      },
     ],
-    [t, locale, today, scale, fmt, growsWithPage],
+    [t, locale, today, scale, fmt],
   );
 
   const messages = useMemo(
@@ -169,18 +155,12 @@ export function TransactionsGrid({
         <TitleCell
           row={row}
           category={categories.get(row.categoryIds[0] ?? "")}
-          amount={
-            growsWithPage
-              ? fmt.money(row.money, scale(row.money.currency))
-              : undefined
-          }
         />
       ),
       category: ({ row }: { row: ListRow }) => (
         <CategoryCell
           row={row}
           categories={categories}
-          withMark={!growsWithPage}
           onCategorize={
             row.voided || row.transfer
               ? undefined
@@ -194,7 +174,7 @@ export function TransactionsGrid({
         <AmountCell row={row} text={text} />
       ),
     }),
-    [categories, editCategory, growsWithPage, fmt, scale],
+    [categories, editCategory],
   );
   const editorRenderers = useMemo(
     () => ({
@@ -233,7 +213,7 @@ export function TransactionsGrid({
       rowHeight={56}
       rows={list.rows}
       rowKey="id"
-      {...(height === undefined ? {} : { height })}
+      height={height}
       mode="server"
       hasMore={list.hasMore}
       onLoadMore={list.loadMore}

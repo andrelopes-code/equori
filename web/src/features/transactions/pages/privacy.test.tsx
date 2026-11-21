@@ -67,7 +67,8 @@ describe("transactions with the amounts hidden", () => {
       today: "2026-10-17",
       width: 390,
     });
-    const row = (await screen.findByText("Padaria")).closest('[role="row"]');
+    // Below 600 px the rows are the statement's list items (spec 2026-11-21-mobile-statement).
+    const row = (await screen.findByText("Padaria")).closest("li");
     if (!(row instanceof HTMLElement)) throw new Error("no row");
     expect(within(row).getByText("−R$120.00")).toBeInTheDocument();
     const toggle = screen.getByRole("button", {

@@ -12,6 +12,7 @@ import type {
 import { TransactionDetail } from "@/features/transactions/transaction-detail/transaction-detail";
 import { TransactionsEmpty } from "@/features/transactions/transactions-grid/transactions-empty";
 import { TransactionsGrid } from "@/features/transactions/transactions-grid/transactions-grid";
+import { TransactionsStatement } from "@/features/transactions/transactions-statement/transactions-statement";
 import styles from "@/features/transactions/pages/transactions-page.module.css";
 import type { CategorizeActions } from "@/features/transactions/selection/use-categorize-actions";
 import type { TransactionList } from "@/features/transactions/transactions-grid/use-transaction-list";
@@ -61,6 +62,28 @@ export function TransactionsListing({
 
   const queue = search.uncategorized === true;
   const filtered = Object.keys(search).some((key) => key !== "uncategorized");
+  const emptyProps = {
+    onRetry: list.retry,
+    filtered,
+    queue,
+    voidedHidden: voidedHidden && !queue,
+    onShowVoided,
+    onClear: () => {
+      onSearchChange(queue ? { uncategorized: true } : {});
+    },
+  };
+
+  function handleOpen(id: string) {
+    if (wide) {
+      void navigate({
+        search: { ...search, selected: id },
+        replace: pageSearch.selected !== undefined,
+      });
+      return;
+    }
+
+    void navigate({ to: "/transactions/$id", params: { id } });
+  }
 
   return (
     <div
@@ -68,12 +91,24 @@ export function TransactionsListing({
       data-pane={selected === undefined ? undefined : ""}
     >
       <div className={styles.list}>
-        {scale !== null && (
+        {scale !== null && compact && (
+          <TransactionsStatement
+            list={list}
+            categories={categoriesById}
+            scale={scale}
+            onOpen={handleOpen}
+            empty={(status) => (
+              <TransactionsEmpty status={status} {...emptyProps} />
+            )}
+          />
+        )}
+
+        {scale !== null && !compact && (
           <TransactionsGrid
             list={list}
             categories={categoriesById}
             scale={scale}
-            height={compact ? undefined : "100%"}
+            height="100%"
             selection={selection}
             onSelectionChange={onSelectionChange}
             onCategoryCommit={async (row, categoryId) => {
@@ -86,31 +121,9 @@ export function TransactionsListing({
               }
             }}
             onCategorizeSelection={onCategorizeSelection}
-            onOpen={(id) => {
-              if (wide) {
-                void navigate({
-                  search: { ...search, selected: id },
-                  replace: pageSearch.selected !== undefined,
-                });
-              } else {
-                void navigate({
-                  to: "/transactions/$id",
-                  params: { id },
-                });
-              }
-            }}
+            onOpen={handleOpen}
             empty={(status) => (
-              <TransactionsEmpty
-                status={status}
-                onRetry={list.retry}
-                filtered={filtered}
-                queue={queue}
-                voidedHidden={voidedHidden && !queue}
-                onShowVoided={onShowVoided}
-                onClear={() => {
-                  onSearchChange(queue ? { uncategorized: true } : {});
-                }}
-              />
+              <TransactionsEmpty status={status} {...emptyProps} />
             )}
           />
         )}
