@@ -22,13 +22,21 @@ import type { ThemeValues } from "@/theme/themes";
 
 export interface AppearanceToolbarProps {
   library: ThemeLibrary;
+  // On a phone restore and import join the menu, so the header keeps one row of actions (spec
+  // 2026-11-21-mobile-settings, ST3).
+  compact: boolean;
+  onReset: () => void;
 }
 
 type Open = "save" | "rename" | "delete" | "import" | null;
 
 // The actions on the active theme, as buttons of the page header: save, import, export, rename
 // and delete.
-export function AppearanceToolbar({ library }: AppearanceToolbarProps) {
+export function AppearanceToolbar({
+  library,
+  compact,
+  onReset,
+}: AppearanceToolbarProps) {
   const t = useT();
 
   const [open, setOpen] = useState<Open>(null);
@@ -92,6 +100,21 @@ export function AppearanceToolbar({ library }: AppearanceToolbarProps) {
           )}
         />
         <MenuContent>
+          {compact && (
+            <>
+              <MenuItem onSelect={onReset}>
+                {t("settings.appearance.reset")}
+              </MenuItem>
+              <MenuItem
+                onSelect={() => {
+                  setOpen("import");
+                }}
+              >
+                {t("settings.theme.import")}
+              </MenuItem>
+              <MenuSeparator />
+            </>
+          )}
           <MenuItem onSelect={handleCopy}>{t("settings.theme.copy")}</MenuItem>
           <MenuItem
             onSelect={() => {
@@ -122,15 +145,17 @@ export function AppearanceToolbar({ library }: AppearanceToolbarProps) {
           )}
         </MenuContent>
       </Menu>
-      <Button
-        variant="outline"
-        tone="secondary"
-        onClick={() => {
-          setOpen("import");
-        }}
-      >
-        {t("settings.theme.import")}
-      </Button>
+      {!compact && (
+        <Button
+          variant="outline"
+          tone="secondary"
+          onClick={() => {
+            setOpen("import");
+          }}
+        >
+          {t("settings.theme.import")}
+        </Button>
+      )}
       <Button
         variant={custom ? "solid" : "outline"}
         tone={custom ? "accent" : "secondary"}

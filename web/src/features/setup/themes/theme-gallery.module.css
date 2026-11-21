@@ -73,8 +73,9 @@
   .mark {
     display: grid;
     flex: none;
-    inline-size: 1.125rem;
-    block-size: 1.125rem;
+    /* Whole pixels at any root size: 1.125rem is 15.75 px at a 14 px root, an uneven circle. */
+    inline-size: round(nearest, 1.125rem, 2px);
+    block-size: round(nearest, 1.125rem, 2px);
     place-items: center;
     border-radius: var(--slotted-radius-full);
     background: var(--slotted-tone-accent-solid);

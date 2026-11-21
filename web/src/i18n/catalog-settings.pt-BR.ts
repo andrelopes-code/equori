@@ -88,6 +88,7 @@ export const settingsPtBR: Record<keyof typeof settingsEn, string> = {
   "settings.scheme.description":
     "Sistema segue o sistema operacional. Alto contraste leva todo texto e toda borda ao contraste máximo.",
   "scheme.high-contrast": "Alto contraste",
+  "scheme.high-contrast.short": "Contraste",
   "settings.accent.custom": "Cor personalizada",
   "settings.tone": "Tom das superfícies",
   "settings.tone.description":

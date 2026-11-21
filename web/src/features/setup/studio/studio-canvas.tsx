@@ -7,6 +7,7 @@ import styles from "@/features/setup/pages/appearance-studio.module.css";
 import { oneOf } from "@/features/setup/studio/one-of";
 import { useT } from "@/i18n/i18n-provider";
 import { schemes, useScheme } from "@/theme/scheme";
+import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
 
 const devices = ["desktop", "phone"] as const;
 type Device = (typeof devices)[number];
@@ -17,6 +18,7 @@ export function StudioCanvas() {
   const t = useT();
   const [scheme, setScheme] = useScheme();
   const [device, setDevice] = useState<Device>("desktop");
+  const compact = useMediaQuery(compactQuery);
 
   return (
     <section aria-label={t("studio.canvas")} className={styles.canvas}>
@@ -31,7 +33,11 @@ export function StudioCanvas() {
         >
           {schemes.map((s) => (
             <Segment key={s} value={s}>
-              {t(`scheme.${s}`)}
+              {/* One word on a phone, where the fourth segment cut the two (spec
+                  2026-11-21-mobile-settings, ST3). */}
+              {compact && s === "high-contrast"
+                ? t("scheme.high-contrast.short")
+                : t(`scheme.${s}`)}
             </Segment>
           ))}
         </SegmentedControl>

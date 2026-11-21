@@ -86,6 +86,7 @@ export const settingsEn = {
   "settings.scheme.description":
     "System follows the operating system. High contrast raises every text and edge to the strongest ratio.",
   "scheme.high-contrast": "High contrast",
+  "scheme.high-contrast.short": "Contrast",
   "settings.accent.custom": "Custom colour",
   "settings.tone": "Surface tone",
   "settings.tone.description":

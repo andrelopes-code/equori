@@ -53,6 +53,52 @@ describe("appearance studio", () => {
     expect(seed()).toBe("#10b981");
   });
 
+  // Spec 2026-11-21-mobile-settings, ST3: the header's four actions took two rows of their own on
+  // a phone; restore and import join the theme menu.
+  it("folds restore and import into the theme menu on a phone", async () => {
+    const user = userEvent.setup();
+    await renderApp("/settings/appearance", { fetch: api(), width: 390 });
+    const more = await screen.findByRole("button", {
+      name: catalogPtBR["settings.theme.more"],
+    });
+
+    expect(
+      screen.queryByRole("button", {
+        name: catalogPtBR["settings.theme.import"],
+      }),
+    ).toBeNull();
+    expect(
+      screen.queryByRole("button", {
+        name: catalogPtBR["settings.appearance.reset"],
+      }),
+    ).toBeNull();
+    await user.click(more);
+    expect(
+      await screen.findByRole("menuitem", {
+        name: catalogPtBR["settings.appearance.reset"],
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("menuitem", {
+        name: catalogPtBR["settings.theme.import"],
+      }),
+    ).toBeInTheDocument();
+  });
+
+  // ST3: "Alto contraste" was cut in the fourth segment at 390 px.
+  it("names the high-contrast scheme in one word on a phone", async () => {
+    await renderApp("/settings/appearance", { fetch: api(), width: 390 });
+    const schemes = await screen.findByRole("radiogroup", {
+      name: catalogPtBR["more.scheme"],
+    });
+
+    expect(
+      within(schemes).getByRole("radio", {
+        name: catalogPtBR["scheme.high-contrast.short"],
+      }),
+    ).toBeInTheDocument();
+  });
+
   it("sets the depth of the grounds from the surfaces tab", async () => {
     await renderApp("/settings/appearance", { fetch: api() });
 

@@ -16,6 +16,7 @@ import type { ThemeLibrary } from "@/features/setup/themes/use-theme-library";
 import { useT } from "@/i18n/i18n-provider";
 import { resetAppearance } from "@/theme/appearance";
 import { PageBack } from "@/ui/navigation/page-back";
+import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
 
 export interface StudioHeaderProps {
   library: ThemeLibrary;
@@ -23,6 +24,7 @@ export interface StudioHeaderProps {
 
 export function StudioHeader({ library }: StudioHeaderProps) {
   const t = useT();
+  const compact = useMediaQuery(compactQuery);
 
   const custom = library.activeName === null;
   const name = library.activeName ?? t("settings.theme.custom");
@@ -56,10 +58,20 @@ export function StudioHeader({ library }: StudioHeaderProps) {
             </PageHeaderSubheading>
           </PageHeaderTitle>
           <PageHeaderActions>
-            <Button variant="ghost" tone="secondary" onClick={resetAppearance}>
-              {t("settings.appearance.reset")}
-            </Button>
-            <AppearanceToolbar library={library} />
+            {!compact && (
+              <Button
+                variant="ghost"
+                tone="secondary"
+                onClick={resetAppearance}
+              >
+                {t("settings.appearance.reset")}
+              </Button>
+            )}
+            <AppearanceToolbar
+              library={library}
+              compact={compact}
+              onReset={resetAppearance}
+            />
           </PageHeaderActions>
         </PageHeaderTitleRow>
       </PageHeaderTitleArea>
