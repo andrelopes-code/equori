@@ -14,7 +14,7 @@ import { QueryError } from "@/ui/feedback/query-error";
 
 const storageKey = "equori.portfolio.attribution.collapsed";
 
-// "Quem puxou a carteira" (docs/specs/2026-11-20-portfolio-attribution-design.md): the return of
+// "Rendimento por ativo" (docs/specs/2026-11-20-portfolio-attribution-design.md): the return of
 // each year as a chart of every year, then the share of each holding in the chosen year, the current year
 // first. It minimizes as "Renda fixa" does. A book with no measured year draws nothing.
 export function AttributionSection() {

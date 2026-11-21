@@ -28,7 +28,7 @@ Guide topic (`navigation-map.json`): `investments`.
 - `notices/`: problem, missing price and quote warning notices.
 - `return/`: return panel, period, view, bars, method, yield group list and options hook.
 - `collapsible-section/`: the surface section a click on its header minimizes to its first lines (`peek-body`), with the choice kept per browser (fixed income, attribution); `contained` keeps a press on a header control from toggling it.
-- `attribution/`: result of each holding in a year ("Quem puxou a carteira"): section, year view, rows, totals and their pure functions.
+- `attribution/`: result of each holding in a year ("Rendimento por ativo"): section, year view, rows, totals and their pure functions.
 - `return-money/`: origin of the closing balance: its list, its bar (`origin-parts`) and the money figures.
 - `account-yield/`: account yield, its section, hook and measured tops.
 - `income-events/`: income events tab, table and charts.

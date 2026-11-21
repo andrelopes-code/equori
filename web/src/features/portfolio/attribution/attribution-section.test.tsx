@@ -8,7 +8,7 @@ import { portfolioApi } from "@/testing/portfolio-api";
 import { renderApp } from "@/testing/render-app";
 
 const brl = (amount: number) => ({ amount, currency: "BRL" });
-const yearChoice = catalogEn["portfolio.attribution.yearChoice"];
+const yearsChart = catalogEn["portfolio.attribution.years"];
 
 // S656 and S658 as the API returns them; 2026 also holds the comparisons of S670.
 const report = {
@@ -149,7 +149,7 @@ describe("Attribution section", () => {
   it("AT5, AT13: a past year names its first day, tallies its holdings and writes a stale quote in place of the bar and the rate", async () => {
     const region = await renderReport(report);
 
-    await chooseYear(region, "2025");
+    await chooseYear(region, "{ArrowLeft}");
 
     expect(
       within(region).getByText("How 2025, since 01/02 went"),
@@ -160,9 +160,7 @@ describe("Attribution section", () => {
     expect(
       within(region).getByText("No quote since 06/30/2025"),
     ).toBeInTheDocument();
-    expect(
-      within(region).getByRole("combobox", { name: yearChoice }),
-    ).toHaveTextContent("2025");
+    expect(within(region).queryByRole("combobox")).not.toBeInTheDocument();
   });
 
   it("lists every measured year, not only the last six", async () => {
@@ -174,24 +172,8 @@ describe("Attribution section", () => {
       since: `${String(y)}-01-01`,
     }));
     const region = await renderReport({ years });
-    const user = userEvent.setup();
 
-    await user.click(
-      await within(region).findByRole("combobox", { name: yearChoice }),
-    );
-
-    expect(screen.getAllByRole("option").map((o) => o.textContent)).toEqual([
-      "2023",
-      "2022",
-      "2021",
-      "2020",
-      "2019",
-      "2018",
-      "2017",
-      "2016",
-    ]);
-
-    await user.click(screen.getByRole("option", { name: "2016" }));
+    await chooseYear(region, "{Home}");
 
     expect(within(region).getByText("How 2016 went")).toBeInTheDocument();
   });
@@ -201,7 +183,7 @@ describe("Attribution section", () => {
     const user = userEvent.setup();
     const title = catalogEn["portfolio.attribution.title"];
 
-    await chooseYear(region, "2025");
+    await chooseYear(region, "{ArrowLeft}");
     await user.click(
       within(region).getByRole("button", { name: `About “${title}”` }),
     );
@@ -249,11 +231,10 @@ describe("Attribution section", () => {
   });
 });
 
-async function chooseYear(region: HTMLElement, year: string) {
+// keys moves along the bars from the chosen year, the last one, and Enter chooses the bar reached.
+async function chooseYear(region: HTMLElement, keys: string) {
   const user = userEvent.setup();
 
-  await user.click(
-    await within(region).findByRole("combobox", { name: yearChoice }),
-  );
-  await user.click(screen.getByRole("option", { name: year }));
+  (await within(region).findByRole("group", { name: yearsChart })).focus();
+  await user.keyboard(`${keys}{Enter}`);
 }

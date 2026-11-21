@@ -11,7 +11,6 @@ import {
 import type { YearChartRecord } from "@/features/portfolio/attribution/year-chart-data";
 import { formatBasisPoints } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { ChoiceSelect } from "@/ui/form-fields/choice-select";
 
 type AttributionYear = components["schemas"]["AttributionYear"];
 
@@ -21,9 +20,9 @@ interface YearChartProps {
   onChoose: (year: number) => void;
 }
 
-// The return of every year as bars, beside the same money at the reference rate. A bar or the
-// select above the chart picks the year the rows below detail; a history longer than twelve years
-// opens on its last twelve and zooms to the older ones.
+// The return of every year as bars, beside the same money at the reference rate. A click or Enter
+// on a bar picks the year the rows below detail; a history longer than twelve years opens on its
+// last twelve and zooms to the older ones.
 export function YearChart({ years, chosen, onChoose }: YearChartProps) {
   const t = useT();
   const [tag] = useAppLocale();
@@ -56,20 +55,10 @@ export function YearChart({ years, chosen, onChoose }: YearChartProps) {
     });
   }
 
-  const choices = [...years]
-    .reverse()
-    .map((y) => ({ value: String(y.year), label: String(y.year) }));
-
   function handleSelection(point: ChartPoint | null) {
     if (point === null) return;
 
     onChoose(Number(point.key));
-  }
-
-  function handleChoice(value: string | string[] | null) {
-    if (typeof value !== "string") return;
-
-    onChoose(Number(value));
   }
 
   return (
@@ -85,15 +74,6 @@ export function YearChart({ years, chosen, onChoose }: YearChartProps) {
       onSelectionChange={handleSelection}
       extendOption={(option) => dimUnchosen(option, chosenIndex)}
       {...(zoom === undefined ? {} : { zoomable: true, defaultZoom: zoom })}
-      actions={
-        <ChoiceSelect
-          label={t("portfolio.attribution.yearChoice")}
-          choices={choices}
-          value={String(chosen)}
-          multiple={false}
-          onChange={handleChoice}
-        />
-      }
     />
   );
 }

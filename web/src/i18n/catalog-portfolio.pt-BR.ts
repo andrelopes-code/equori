@@ -190,7 +190,7 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "fixedIncome.issuers.sovereign": "Título público",
   "fixedIncome.issuers.uncovered": "Sem cobertura",
   "fixedIncome.issuers.mark": "Limite por emissor",
-  "portfolio.attribution.title": "Quem puxou a carteira",
+  "portfolio.attribution.title": "Rendimento por ativo",
   "portfolio.attribution.note": "Quanto cada ativo somou ao rendimento do ano.",
   "portfolio.attribution.help":
     'Todo rendimento deste quadro é o ganho dividido pelo dinheiro médio aplicado no período, contando a data de cada aporte e de cada compra e venda. O ano começa no dia em que havia dinheiro aplicado. Peso é a parte desse dinheiro médio que ficou no ativo; contribuição é o ganho do ativo dividido pelo dinheiro médio da carteira, por isso as contribuições somam o rendimento da carteira. O CDI e o IPCA são calculados como se os mesmos aportes, nas mesmas datas, tivessem rendido o índice. Este rendimento pode diferir do de "Como rendeu", que mede o período sem o efeito dos aportes.',
@@ -208,7 +208,6 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.attribution.fact.gains.other": "{count} ativos ganharam",
   "portfolio.attribution.fact.losses.one": "1 ativo perdeu",
   "portfolio.attribution.fact.losses.other": "{count} ativos perderam",
-  "portfolio.attribution.yearChoice": "Ano do detalhe",
   "portfolio.attribution.legend.portfolio": "Carteira",
   "portfolio.attribution.period.partial": "{year} até {day}",
   "portfolio.attribution.period.since": "{year}, desde {since}",

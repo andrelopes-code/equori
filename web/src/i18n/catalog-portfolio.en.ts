@@ -186,7 +186,7 @@ export const portfolioEn = {
   "fixedIncome.issuers.sovereign": "Government security",
   "fixedIncome.issuers.uncovered": "Not covered",
   "fixedIncome.issuers.mark": "Limit per issuer",
-  "portfolio.attribution.title": "What moved the portfolio",
+  "portfolio.attribution.title": "Return by holding",
   "portfolio.attribution.note":
     "How much each holding added to the year's return.",
   "portfolio.attribution.help":
@@ -205,7 +205,6 @@ export const portfolioEn = {
   "portfolio.attribution.fact.gains.other": "{count} holdings gained",
   "portfolio.attribution.fact.losses.one": "1 holding lost",
   "portfolio.attribution.fact.losses.other": "{count} holdings lost",
-  "portfolio.attribution.yearChoice": "Year of the detail",
   "portfolio.attribution.legend.portfolio": "Portfolio",
   "portfolio.attribution.period.partial": "{year} to {day}",
   "portfolio.attribution.period.since": "{year}, since {since}",
