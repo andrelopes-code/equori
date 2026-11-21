@@ -15,6 +15,9 @@ import { AccountRowStatus } from "@/features/accounts/account-mark/account-row-s
 import styles from "@/features/accounts/balance-sheet/balance-group-list.module.css";
 import { listRailClass } from "@/features/accounts/balance-sheet/rail-class";
 import type { SheetLine } from "@/features/accounts/balance-sheet/sheet-lines";
+import { LoanLine } from "@/features/accounts/kind-figures/loan-line";
+import { PropertyChangeNote } from "@/features/accounts/kind-figures/property-change-note";
+import { recordShape } from "@/features/accounts/kind-figures/record-shape";
 import { accountRoute } from "@/features/accounts/model/account-route";
 import { kindTitle } from "@/features/accounts/model/account-kinds";
 import { AccountYield } from "@/features/portfolio";
@@ -46,6 +49,7 @@ export function SheetAccountListItem({
   const parent = row.hasChildren;
   const child = row.depth > 0;
   const amount = parent ? row.subtree : row.balance;
+  const shape = recordShape(account);
   const caption = [
     account.kind === undefined || row.position
       ? undefined
@@ -66,9 +70,14 @@ export function SheetAccountListItem({
           {caption !== "" && (
             <ListItemDescription>{caption}</ListItemDescription>
           )}
-          {!parent && !row.position && (
+          {!parent && !row.position && shape !== "loan" && (
             <ListItemDescription>
               <AccountRowStatus account={account} scale={scale} quiet compact />
+            </ListItemDescription>
+          )}
+          {!parent && shape === "loan" && (
+            <ListItemDescription>
+              <LoanLine account={account} />
             </ListItemDescription>
           )}
         </ListItemBody>
@@ -89,6 +98,9 @@ export function SheetAccountListItem({
               <div className={styles.yield}>
                 <AccountYield accountId={account.id} date={date} compact />
               </div>
+            )}
+            {!parent && shape === "property" && (
+              <PropertyChangeNote account={account} />
             )}
           </Stack>
         </ListItemEnd>

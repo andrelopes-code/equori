@@ -18,6 +18,8 @@ interface AccountTabsInput {
   search: AccountSearch;
   leaf: boolean;
   brokerage: boolean;
+  // K9: a property's reconciliation tab holds its valuations.
+  property: boolean;
   linked: boolean;
   institution: boolean;
   measured: boolean;
@@ -31,6 +33,7 @@ export function useAccountTabs({
   search,
   leaf,
   brokerage,
+  property,
   linked,
   institution,
   measured,
@@ -58,7 +61,12 @@ export function useAccountTabs({
       ? [
           {
             tab: "reconciliation" as const,
-            label: t("account.tab.reconciliation") + count(reconciliationCount),
+            label:
+              t(
+                property
+                  ? "property.tab.valuations"
+                  : "account.tab.reconciliation",
+              ) + count(reconciliationCount),
           },
         ]
       : []),

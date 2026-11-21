@@ -1,15 +1,5 @@
-import { Button, IconButton } from "@slotted/react/button";
-import { Glyph, Icon } from "@slotted/react/icon";
-import {
-  Menu,
-  MenuContent,
-  MenuItem,
-  MenuSeparator,
-  MenuTrigger,
-} from "@slotted/react/menu";
 import {
   PageHeader,
-  PageHeaderActions,
   PageHeaderHeading,
   PageHeaderMarks,
   PageHeaderSubheading,
@@ -19,18 +9,15 @@ import {
   PageHeaderVisual,
 } from "@slotted/react/page-header";
 import { Tag } from "@slotted/react/tag";
-import { useQuery } from "@tanstack/react-query";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 
-import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
 import { kindTitle } from "@/features/accounts/model/account-kinds";
 import { AccountAvatar } from "@/features/accounts/account-mark/account-avatar";
+import { AccountHeaderActions } from "@/features/accounts/account-record/account-header-actions";
 import { AccountHeaderTabs } from "@/features/accounts/account-record/account-header-tabs";
 import { AccountRowStatus } from "@/features/accounts/account-mark/account-row-status";
 import type { AccountTab } from "@/features/accounts/model/account-search";
-import { instrumentsQuery, settingsQuery } from "@/features/setup";
-import type { BuiltKind } from "@/features/transactions";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { HeaderProgress } from "@/ui/navigation/header-progress";
@@ -39,7 +26,6 @@ import {
   useMediaQuery,
   wideQuery,
 } from "@/ui/runtime/use-media-query";
-import { useServed } from "@/ui/navigation/use-served";
 import { PageBack } from "@/ui/navigation/page-back";
 
 type Account = components["schemas"]["Account"];
@@ -80,33 +66,8 @@ export function AccountHeader({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
-  const navigate = useNavigate();
-  const instruments = useQuery(instrumentsQuery(useApi()));
-  // A trade is recorded on the account that holds the security.
-  const security = (instruments.data?.items ?? []).some(
-    (i) => i.code === account.currency && i.type !== "currency",
-  );
-  const base = useQuery(settingsQuery(useApi())).data?.base_currency;
-  // A currency exchange starts from an account that holds a currency other than the base.
-  const foreignCurrency =
-    base !== undefined &&
-    account.currency !== base &&
-    (instruments.data?.items ?? []).some(
-      (i) => i.code === account.currency && i.type === "currency",
-    );
-  const recordInvestment = (kind: BuiltKind) => () => {
-    void navigate({
-      to: "/transactions/new",
-      search: { account_id: account.id, kind },
-    });
-  };
   const wide = useMediaQuery(wideQuery);
   const compact = useMediaQuery(compactQuery);
-  const served = useServed();
-  const edit = {
-    to: "/accounts/$id/edit",
-    params: { id: account.id },
-  } as const;
   const closed = account.closed_on !== undefined;
   const balanceAccount =
     account.class === "asset" || account.class === "liability";
@@ -159,148 +120,13 @@ export function AccountHeader({
               <PageHeaderSubheading>{where.join(" · ")}</PageHeaderSubheading>
             )}
           </PageHeaderTitle>
-          <PageHeaderActions>
-            {!closed && !compact && (
-              <>
-                <Button
-                  variant="outline"
-                  tone="secondary"
-                  onClick={() => {
-                    void navigate({
-                      to: "/accounts/$id/import",
-                      params: { id: account.id },
-                    });
-                  }}
-                >
-                  {t("account.import")}
-                </Button>
-                <Button
-                  variant="outline"
-                  tone="secondary"
-                  onClick={() => {
-                    void navigate({
-                      to: "/accounts/$id",
-                      params: { id: account.id },
-                      search: { tab: "reconciliation", assert: true },
-                    });
-                  }}
-                >
-                  {t("account.recordBalance")}
-                </Button>
-                {foreignCurrency && (
-                  <Button
-                    variant="outline"
-                    tone="secondary"
-                    onClick={recordInvestment("exchange")}
-                  >
-                    {t("exchange.record")}
-                  </Button>
-                )}
-                {security && (
-                  <Button
-                    variant="outline"
-                    tone="secondary"
-                    onClick={recordInvestment("trade")}
-                  >
-                    {t("trade.record")}
-                  </Button>
-                )}
-                {security && (
-                  <Button
-                    variant="outline"
-                    tone="secondary"
-                    onClick={recordInvestment("investment_income")}
-                  >
-                    {t("income.record")}
-                  </Button>
-                )}
-              </>
-            )}
-            {!closed && (
-              <Button
-                start={
-                  <Icon size="sm">
-                    <Glyph name="plus" />
-                  </Icon>
-                }
-                onClick={() => {
-                  void navigate({
-                    to: "/transactions/new",
-                    search: { account_id: account.id },
-                  });
-                }}
-              >
-                {t("account.newTransaction")}
-              </Button>
-            )}
-            <Menu>
-              <MenuTrigger
-                render={(props) => (
-                  <IconButton
-                    {...props}
-                    variant="ghost"
-                    tone="secondary"
-                    aria-label={t("account.more")}
-                  >
-                    <Icon>
-                      <Glyph name="ellipsis" />
-                    </Icon>
-                  </IconButton>
-                )}
-              />
-              <MenuContent>
-                {served(edit) && (
-                  <MenuItem
-                    onSelect={() => {
-                      void navigate(edit);
-                    }}
-                  >
-                    {t("account.edit")}
-                  </MenuItem>
-                )}
-                <MenuItem
-                  onSelect={() => {
-                    void navigate({
-                      to: "/transactions",
-                      search: { account_id: account.id },
-                    });
-                  }}
-                >
-                  {t("account.viewTransactions")}
-                </MenuItem>
-                {compact && !closed && (
-                  <>
-                    {foreignCurrency && (
-                      <MenuItem onSelect={recordInvestment("exchange")}>
-                        {t("exchange.record")}
-                      </MenuItem>
-                    )}
-                    {security && (
-                      <>
-                        <MenuItem onSelect={recordInvestment("trade")}>
-                          {t("trade.record")}
-                        </MenuItem>
-                        <MenuItem
-                          onSelect={recordInvestment("investment_income")}
-                        >
-                          {t("income.record")}
-                        </MenuItem>
-                      </>
-                    )}
-                  </>
-                )}
-                <MenuItem onSelect={onUnlock}>{t("account.unlock")}</MenuItem>
-                <MenuSeparator />
-                {closed ? (
-                  <MenuItem onSelect={onReopen}>{t("account.reopen")}</MenuItem>
-                ) : (
-                  <MenuItem tone="danger" onSelect={onClose}>
-                    {t("account.close")}
-                  </MenuItem>
-                )}
-              </MenuContent>
-            </Menu>
-          </PageHeaderActions>
+          <AccountHeaderActions
+            account={account}
+            compact={compact}
+            onClose={onClose}
+            onReopen={onReopen}
+            onUnlock={onUnlock}
+          />
         </PageHeaderTitleRow>
       </PageHeaderTitleArea>
       <AccountHeaderTabs tabs={tabs} current={current} onTab={onTab} />

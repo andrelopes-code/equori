@@ -454,6 +454,44 @@ export function accountTransactionsQuery(
   });
 }
 
+// Every transaction of an account in the range, following the cursor to the end. Used for a
+// property or a loan, whose whole history is a purchase, revaluations and installments.
+export function allAccountTransactionsQuery(
+  api: Client<paths>,
+  id: string,
+  from: string,
+  to: string,
+) {
+  return queryOptions({
+    queryKey: ["transactions", "list", { account_id: id, from, to }, "all"],
+    queryFn: async () => {
+      const items: components["schemas"]["Transaction"][] = [];
+      let cursor: string | undefined;
+
+      do {
+        const page = await unwrap(
+          await api.GET("/transactions", {
+            params: {
+              query: {
+                account_id: id,
+                from,
+                to,
+                limit: pageLimit,
+                ...(cursor === undefined ? {} : { cursor }),
+              },
+            },
+          }),
+        );
+        items.push(...page.items);
+        // A cursor that does not move would page forever.
+        cursor = page.next_cursor === cursor ? undefined : page.next_cursor;
+      } while (cursor !== undefined);
+
+      return items;
+    },
+  });
+}
+
 export function transactionSummaryQuery(api: Client<paths>, id: string) {
   return queryOptions({
     queryKey: ["transactions", "detail", id] as const,

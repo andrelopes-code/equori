@@ -39,6 +39,13 @@ export function AccountRowStatus({
     enabled: account.kind !== "credit_card",
   });
   if (status.data === undefined) return null;
+
+  // K9, K10: a property is valued, not reconciled with an institution.
+  const property = account.kind === "property";
+  const neverKey = property
+    ? "property.neverValuedTag"
+    : "reconciliation.tag.never";
+  const onKey = property ? "property.valuedTag" : "reconciliation.tag.on";
   const open = status.data.open_difference;
   if (open !== undefined) {
     return (
@@ -53,7 +60,7 @@ export function AccountRowStatus({
   if (quiet) {
     return last === undefined ? (
       <Text size="xs" tone="muted">
-        {t("reconciliation.tag.never")}
+        {t(neverKey)}
       </Text>
     ) : (
       <Inline gap={2} wrap="nowrap" align="center">
@@ -61,7 +68,7 @@ export function AccountRowStatus({
           <Glyph name="check" />
         </Icon>
         <Text size="xs" tone="success">
-          {t("reconciliation.tag.on", {
+          {t(onKey, {
             date:
               compact && last.slice(0, 4) === today.slice(0, 4)
                 ? formatDayMonthNumeric(last, locale)
@@ -73,11 +80,11 @@ export function AccountRowStatus({
   }
   return last === undefined ? (
     <Tag size="sm" tone="secondary">
-      {t("reconciliation.tag.never")}
+      {t(neverKey)}
     </Tag>
   ) : (
     <Tag size="sm" tone="success">
-      {t("reconciliation.tag.on", { date: formatDate(last, locale) })}
+      {t(onKey, { date: formatDate(last, locale) })}
     </Tag>
   );
 }

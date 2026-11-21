@@ -7,7 +7,6 @@ import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
 import { AccountDialogs } from "@/features/accounts/account-dialogs/account-dialogs";
 import type { AccountDialog } from "@/features/accounts/account-dialogs/account-dialogs";
-import { AccountFigures } from "@/features/accounts/account-record/account-figures";
 import { AccountHeader } from "@/features/accounts/account-record/account-header";
 import { CashLeafNotice } from "@/features/accounts/account-record/cash-leaf-notice";
 import { lineage } from "@/features/accounts/account-record/account-lineage";
@@ -16,6 +15,7 @@ import type {
   AccountSearch,
   Range,
 } from "@/features/accounts/model/account-search";
+import { AccountOverview } from "@/features/accounts/account-record/account-overview";
 import { AccountSetupMessage } from "@/features/accounts/account-record/account-setup-message";
 import { AccountTabPanel } from "@/features/accounts/account-record/account-tab-panel";
 import {
@@ -25,10 +25,9 @@ import {
   reconciliationQuery,
   unconfirmedQuery,
 } from "@/features/accounts/api";
-import { BalanceChart } from "@/features/accounts/balance-chart/balance-chart";
 import { useInstitutionIndicators } from "@/features/accounts/institution/use-institution-indicators";
 import { useAccountTabs } from "@/features/accounts/account-record/use-account-tabs";
-import { AccountYieldSection, useMeasuredTops } from "@/features/portfolio";
+import { useMeasuredTops } from "@/features/portfolio";
 import { institutionsQuery } from "@/features/setup";
 import { PageStack } from "@/ui/page-layout/page-stack";
 import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
@@ -85,6 +84,7 @@ export function AccountRecord({ account, search, scale }: AccountRecordProps) {
     search,
     leaf,
     brokerage: isBrokerage,
+    property: account.kind === "property",
     linked: linked !== undefined,
     institution: indicators !== undefined,
     measured,
@@ -110,17 +110,15 @@ export function AccountRecord({ account, search, scale }: AccountRecordProps) {
   // The yield has its own tab; a phone offers no tab but the activity (ADR 027, S5), so its yield stays here.
   const compact = useMediaQuery(compactQuery);
   const overview = accountTabs.shownTab === "activity" && (
-    <>
-      <AccountFigures account={account} scale={scale} />
-      {compact && <AccountYieldSection accountId={account.id} />}
-      <BalanceChart
-        account={account}
-        range={range}
-        onRange={changeRange}
-        scale={scale(account.currency)}
-      />
-    </>
+    <AccountOverview
+      account={account}
+      scale={scale}
+      range={range}
+      onRange={changeRange}
+      compact={compact}
+    />
   );
+
   return (
     <Page width="full">
       <AccountHeader

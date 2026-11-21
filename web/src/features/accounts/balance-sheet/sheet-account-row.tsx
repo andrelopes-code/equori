@@ -12,6 +12,9 @@ import styles from "@/features/accounts/balance-sheet/sheet-rail.module.css";
 import { railClass } from "@/features/accounts/balance-sheet/rail-class";
 import { SheetToggle } from "@/features/accounts/balance-sheet/sheet-toggle";
 import type { SheetLine } from "@/features/accounts/balance-sheet/sheet-lines";
+import { LoanLine } from "@/features/accounts/kind-figures/loan-line";
+import { PropertyChangeNote } from "@/features/accounts/kind-figures/property-change-note";
+import { recordShape } from "@/features/accounts/kind-figures/record-shape";
 import { kindTitle } from "@/features/accounts/model/account-kinds";
 import { AccountYield } from "@/features/portfolio";
 import { useT } from "@/i18n/i18n-provider";
@@ -47,6 +50,7 @@ export function SheetAccountRow({
   const parent = row.hasChildren;
   const child = row.depth > 0;
   const amount = parent ? row.subtree : row.balance;
+  const shape = recordShape(account);
   // A position is a quantity under its parent: the kind of its parent says nothing new.
   const caption = [
     account.kind === undefined || row.position
@@ -111,14 +115,16 @@ export function SheetAccountRow({
       </TableRowHeader>
 
       <TableCell text="nowrap">
-        {!parent && !row.position && (
+        {!parent && !row.position && shape !== "loan" && (
           <AccountRowStatus account={account} scale={scale} quiet />
         )}
+        {!parent && shape === "loan" && <LoanLine account={account} />}
       </TableCell>
 
       <TableCell numeric text="nowrap">
         <Inline gap={5} justify="end" align="center" wrap="nowrap">
-          {row.depth === 0 && (
+          {/* K10: a property or a loan reads its own line, not 90 flat days. */}
+          {row.depth === 0 && shape === "cash" && (
             <AccountTrend
               accountId={account.id}
               name={account.name}
@@ -139,6 +145,9 @@ export function SheetAccountRow({
               <Text size="xs" tone="muted">
                 {t("balanceSheet.sumOfSubAccounts")}
               </Text>
+            )}
+            {!parent && shape === "property" && (
+              <PropertyChangeNote account={account} />
             )}
           </Stack>
         </Inline>
