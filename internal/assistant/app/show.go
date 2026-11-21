@@ -13,6 +13,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/assistant/domain"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
+	pview "github.com/andrelopes-code/equori/internal/platform/view"
 )
 
 // Limits of the chips the model proposes under a view (V2).
@@ -172,6 +173,15 @@ func (s *Service) buildView(
 	p, err := build(outputs, in.Select, today)
 	if err != nil {
 		return nil, showFailure("source", err.Error())
+	}
+
+	if in.Select.Chart != "" {
+		plot, err := pview.PlotOf(p.Rows, in.Select.Chart)
+		if err != nil {
+			return nil, showFailure("select", err.Error())
+		}
+
+		p.Plot = &plot
 	}
 
 	p.Next = in.Next

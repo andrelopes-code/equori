@@ -120,6 +120,33 @@ func (e AssistantProposalStatus) Valid() bool {
 	}
 }
 
+// Defines values for AssistantViewPlotChart.
+const (
+	Area   AssistantViewPlotChart = "area"
+	Bar    AssistantViewPlotChart = "bar"
+	Column AssistantViewPlotChart = "column"
+	Line   AssistantViewPlotChart = "line"
+	Pie    AssistantViewPlotChart = "pie"
+)
+
+// Valid indicates whether the value is a known member of the AssistantViewPlotChart enum.
+func (e AssistantViewPlotChart) Valid() bool {
+	switch e {
+	case Area:
+		return true
+	case Bar:
+		return true
+	case Column:
+		return true
+	case Line:
+		return true
+	case Pie:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for Capability.
 const (
 	ImageInput       Capability = "image_input"
@@ -366,15 +393,32 @@ type AssistantViewMoney struct {
 // AssistantViewPayload defines model for AssistantViewPayload.
 type AssistantViewPayload struct {
 	// Data The body of the form; its shape is the form's (answer views design, V6).
-	Data    map[string]interface{} `json:"data"`
-	Next    []string               `json:"next"`
-	Open    *AssistantViewLink     `json:"open,omitempty"`
-	Prov    *AssistantViewText     `json:"prov,omitempty"`
-	Rows    AssistantViewTable     `json:"rows"`
-	Title   AssistantViewText      `json:"title"`
-	Verdict AssistantViewText      `json:"verdict"`
-	Window  AssistantViewWindow    `json:"window"`
+	Data map[string]interface{} `json:"data"`
+	Next []string               `json:"next"`
+	Open *AssistantViewLink     `json:"open,omitempty"`
+
+	// Plot The rows drawn as a chart in place of the form's body (answer views design, V24).
+	Plot    *AssistantViewPlot  `json:"plot,omitempty"`
+	Prov    *AssistantViewText  `json:"prov,omitempty"`
+	Rows    AssistantViewTable  `json:"rows"`
+	Title   AssistantViewText   `json:"title"`
+	Verdict AssistantViewText   `json:"verdict"`
+	Window  AssistantViewWindow `json:"window"`
 }
+
+// AssistantViewPlot The rows drawn as a chart in place of the form's body (answer views design, V24).
+type AssistantViewPlot struct {
+	Chart AssistantViewPlotChart `json:"chart"`
+
+	// Label index of the label column of rows.head
+	Label int `json:"label"`
+
+	// Series indexes of the value columns of rows.head
+	Series []int `json:"series"`
+}
+
+// AssistantViewPlotChart defines model for AssistantViewPlot.Chart.
+type AssistantViewPlotChart string
 
 // AssistantViewTable defines model for AssistantViewTable.
 type AssistantViewTable struct {

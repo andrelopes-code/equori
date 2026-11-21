@@ -15,7 +15,10 @@ const showDescription = "Presents an earlier read of this turn as a view the app
 	"read (two handles of one tool for compare and changes; up to four pages of one search for txs, " +
 	"outliers and heat), and form, one of the forms of that tool. " +
 	"Call it when the answer has a figure, a comparison, a share, a trend, a schedule or a list of records; " +
-	"then write only what the view does not show. next holds up to 3 short follow-up questions in the " +
+	"then write only what the view does not show. select.chart draws the view's rows as bar, column, " +
+	"line, area or pie in place of the form's drawing; the rows need a column of names, dates or " +
+	"months and a column of numbers, and a pie takes at most 8 rows. " +
+	"next holds up to 3 short follow-up questions in the " +
 	"member's language. At most 3 views per answer. Forms by read tool:\n"
 
 // showSchema is the arguments of show (answer views design, V2).
@@ -24,7 +27,8 @@ const showSchema = `{"type":"object","additionalProperties":false,"required":["s
 	`"source":{"type":"array","minItems":1,"maxItems":4,"items":{"type":"string","pattern":"^r[0-9]{1,2}$"}},` +
 	`"form":{"type":"string","pattern":"^[a-z][a-z0-9_]{1,39}$"},` +
 	`"select":{"type":"object","additionalProperties":false,"properties":{` +
-	`"limit":{"type":"integer","minimum":1,"maximum":12},"highlight":{"type":"string","maxLength":80}}},` +
+	`"limit":{"type":"integer","minimum":1,"maximum":12},"highlight":{"type":"string","maxLength":80},` +
+	`"chart":{"type":"string","enum":["bar","column","line","area","pie"]}}},` +
 	`"next":{"type":"array","maxItems":3,"items":{"type":"string","minLength":1,"maxLength":60}}}}`
 
 // showDecl declares show with the forms each declared read tool has in the registry.

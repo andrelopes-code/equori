@@ -73,6 +73,13 @@ func TestShowRefuses(t *testing.T) {
 		{"form not drawn", `{"source":["r1"],"form":"ranking"}`, "help", 1},
 		{"two handles", `{"source":["r1","r1"],"form":"help"}`, "source", 1},
 		{"fourth view", `{"source":["r1"],"form":"help"}`, "at most 3 views", 4},
+		// V23: the rows of help hold no numbers.
+		{
+			"chart without numbers",
+			`{"source":["r1"],"form":"help","select":{"chart":"bar"}}`,
+			"no column of numbers",
+			1,
+		},
 	}
 
 	for _, c := range cases {
@@ -208,5 +215,59 @@ func TestShowRankingOfReporting(t *testing.T) {
 	if len(answer.Views) != 1 || answer.Views[0].Form != "ranking" ||
 		answer.Views[0].Payload.Verdict.Key != "assistantView.ranking.empty" {
 		t.Fatalf("views = %+v; results %+v", answer.Views, toolResults(p))
+	}
+}
+
+// V22 to V24: select.chart draws the rows of a ranking as a pie of its amount column.
+func TestShowChartOfRows(t *testing.T) {
+	t.Parallel()
+
+	p := llmtest.New(
+		"aistudio",
+		callStep(
+			"get_category_totals",
+			`{"class":"expense","from":"2026-10-01","to":"2026-10-31"}`,
+		),
+		callStep("show", `{"source":["r1"],"form":"ranking","select":{"chart":"pie"}}`),
+		textStep("Mercado e casa."),
+	)
+	h := turnHarness(t, p)
+
+	checking := h.Account("Checking", "asset", "checking", nil)
+	food := h.Account("Food", "expense", "", nil)
+	home := h.Account("Home", "expense", "", nil)
+	h.Record("2026-10-05", h.Posting(checking, -60000), h.Posting(food, 60000))
+	h.Record("2026-10-06", h.Posting(checking, -40000), h.Posting(home, 40000))
+	h.Dispatch()
+
+	r := sendTurn(h, h.Client, map[string]any{"text": "Mostre em pizza"})
+	if r.Status != http.StatusOK {
+		t.Fatalf("status = %d: %s", r.Status, r.Body)
+	}
+
+	events := parseSSE(r.Body)
+
+	var answer struct {
+		Views []struct {
+			Payload struct {
+				Plot *struct {
+					Chart  string `json:"chart"`
+					Label  int    `json:"label"`
+					Series []int  `json:"series"`
+				} `json:"plot"`
+			} `json:"payload"`
+		} `json:"views"`
+	}
+	if err := json.Unmarshal([]byte(events[len(events)-1].Data), &answer); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(answer.Views) != 1 || answer.Views[0].Payload.Plot == nil {
+		t.Fatalf("views = %+v; results %+v", answer.Views, toolResults(p))
+	}
+
+	plot := *answer.Views[0].Payload.Plot
+	if plot.Chart != "pie" || plot.Label != 0 || len(plot.Series) != 1 || plot.Series[0] != 1 {
+		t.Fatalf("plot = %+v", plot)
 	}
 }

@@ -5052,10 +5052,20 @@ export interface components {
             open?: components["schemas"]["AssistantViewLink"];
             next: string[];
             rows: components["schemas"]["AssistantViewTable"];
+            plot?: components["schemas"]["AssistantViewPlot"];
             /** @description The body of the form; its shape is the form's (answer views design, V6). */
             data: {
                 [key: string]: unknown;
             };
+        };
+        /** @description The rows drawn as a chart in place of the form's body (answer views design, V24). */
+        AssistantViewPlot: {
+            /** @enum {string} */
+            chart: "bar" | "column" | "line" | "area" | "pie";
+            /** @description index of the label column of rows.head */
+            label: number;
+            /** @description indexes of the value columns of rows.head */
+            series: number[];
         };
         AssistantViewText: {
             key: string;

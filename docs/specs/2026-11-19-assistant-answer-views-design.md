@@ -176,3 +176,42 @@ Confidence: medium-high. Invalidated if an owner-run eval shows the cheapest mod
 | review_investment_movement confirm, dismiss | undo |
 
 - V21. Writes without Desfazer, by cause: a void (the ledger forbids restoring a voided transaction), a deletion or a merge (the record is gone), a write that replaces values (corrections, amounts, terms, settings, profile, appearance: the earlier value is not in the call), a write of several records (brokerage note, categorization, imports, price files, statement settlement: no single inverse undoes all of them), and an external effect (sync, export, quote probe). Each is corrected by asking the assistant again.
+
+## 10. Amendment of 2026-11-21: a chart of the rows (V22 to V26)
+
+Owner, 2026-11-21: the model chooses the drawing of a view among its form's body only; a figure that the body does not draw as the member asks (a trend as a line, a split as a pie) has no view. Every builder already fills `rows` with typed values (V12), so a drawing of those rows keeps every figure from the read.
+
+- V22. `select` of `show` gains `chart`: `bar` (horizontal bars), `column` (vertical bars), `line`, `area` or `pie`. Without it the view draws its form's body. `chart` is a closed universal set of drawings and not a value that grows with regions, so the schema holds an `enum`.
+- V23. `view.PlotOf(rows, chart)` (`internal/platform/view/plot.go`) chooses the columns. The label column is the first column whose every value is a text, a date or a month. The series are the other columns whose every value is a number (money, bp, count, times, rate, points) of the unit of the first such column: the same field and, for money, the same currency. `pie` keeps the first series, takes at most 8 rows and no value below zero. `line` and `area` take at least 2 rows. A table without a label column or a series, or outside these limits, is a tool error that names the cause; the view is not stored.
+- V24. The payload gains `plot: {chart, label, series[]}`, indexes of `rows.head`. The view stays a snapshot of the read (V10).
+- V25. The client draws a payload with `plot` as a Slotted `Chart` of the rows (`plot-body.tsx`), with the toolbar off: the chart/table switch of the foot (V11) keeps its role. Each value and each axis tick is written by `valueText` through `useValueFormat`, so privacy mode masks amounts (C4). A series is named by its head key.
+- V26. The prompt line of `show` adds: pass `select.chart` when the member asks for a drawing the form does not have, or when a line, a pie or bars read the rows better than the form.
+
+Cross-cutting questions of this amendment:
+
+- R1: Does not apply: no regional value; the chart draws the rows' values.
+- R2: Does not apply: no regional value.
+- R3: `chart` is a closed universal set (bar, column, line, area, pie); the form id keeps its pattern.
+- R4: Does not apply: no extension point.
+- R5: Does not apply: the series names are the existing head keys; the chart's own words come from Slotted `messages` in the active locale.
+- R6: Ticks, tooltips and labels go through `valueText` with the active locale.
+- C1: Values stay integers of minor units or basis points; the chart receives them as numbers and formats them back through their unit.
+- C2: A series holds one unit; money columns of different currencies never share a chart (V23).
+- C3: The currency of a series is the currency of its values in the rows.
+- C4: Every amount passes through `useMoneyFormat()` inside `useValueFormat`.
+- T1: Does not apply: no new date; labels are the rows' dates and months.
+- T2: Does not apply: no business-day count.
+- B1: Does not apply: no table; `plot` lives in the stored payload of `assistant_view`.
+- B2: Does not apply: no operation.
+- B3: Does not apply: no setting.
+- D1: Does not apply: no table.
+- D2: Does not apply: no schema change; the payload is JSON.
+- D3: Does not apply: no recorded fact changes.
+- D4: Does not apply: no write.
+- D5: Does not apply: no diagnostic field.
+- S1: No operation; `AssistantViewPayload` gains `plot`. `show` is chat only.
+- S2: The chart takes the width of the view at 390 px; Slotted draws it at size `sm`.
+- S3: The guide article of the assistant gains one sentence: a view can be asked as bars, columns, a line, an area or a pie.
+- S4: `show` gains `select.chart`; the prompt gains V26.
+- X1: Does not apply: no domain scenario; `internal/assistant` tests a chart through the turn API.
+- X2: Does not apply: no regional value; `PlotOf` tests a table with two currencies.
