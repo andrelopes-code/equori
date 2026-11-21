@@ -89,7 +89,17 @@ func (s *Server) listPositions(
 		return PositionList{}, err
 	}
 
-	return PositionList{Items: items, QuoteWarnings: quoteWarnings(warnings)}, nil
+	realized, income, err := s.svc.ResultTotals(ctx, auth.MustBooksID(ctx), params.Date.Time)
+	if err != nil {
+		return PositionList{}, err
+	}
+
+	return PositionList{
+		Items:         items,
+		QuoteWarnings: quoteWarnings(warnings),
+		Realized:      moneyList(realized),
+		Income:        moneyList(income),
+	}, nil
 }
 
 func positionItems(ps []app.Position) []Position {
@@ -105,6 +115,8 @@ func positionItems(ps []app.Position) []Position {
 			avg := p.AverageCost.String()
 			items[i].AverageCost = &avg
 		}
+
+		items[i].Realized, items[i].Income = optionalMoney(p.Realized), optionalMoney(p.Income)
 
 		if p.MarketValue != nil {
 			v := toMoney(*p.MarketValue)
@@ -125,22 +137,21 @@ func positionItems(ps []app.Position) []Position {
 			}
 
 			items[i].MarketValue, items[i].Prices = &v, &prices
-			items[i].EstimatedTax = estimate(p.EstimatedTax)
-			items[i].EstimatedNet = estimate(p.EstimatedNet)
+			items[i].EstimatedTax = optionalMoney(p.EstimatedTax)
+			items[i].EstimatedNet = optionalMoney(p.EstimatedNet)
 		}
 	}
 
 	return items
 }
 
-func estimate(m *money.Money) *Money {
-	if m == nil {
-		return nil
+func moneyList(ms []money.Money) []Money {
+	out := make([]Money, len(ms))
+	for i, m := range ms {
+		out[i] = toMoney(m)
 	}
 
-	v := toMoney(*m)
-
-	return &v
+	return out
 }
 
 func (s *Server) listInstrumentSubtypes(

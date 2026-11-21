@@ -182,6 +182,9 @@ type Position struct {
 	// EstimatedTax and EstimatedNet are the withholding a sale of the whole quantity at its market
 	// value would suffer and what remains; both are nil when the estimate does not answer.
 	EstimatedTax, EstimatedNet *money.Money
+	// Realized and Income are the results of the account's sales and its net income up to the
+	// date (amendment A262 TR1); each is nil when the account has none.
+	Realized, Income *money.Money
 }
 
 // Positions returns the non-empty positions at the end of date with the cost in the base currency
@@ -205,10 +208,19 @@ func (s *Service) Positions(
 
 	s.warm(ctx, date, positionCodes(rows, base, in))
 
+	results, err := s.accountResults(ctx, booksID, date)
+	if err != nil {
+		return nil, err
+	}
+
 	out := make([]Position, 0, len(rows))
 	for _, row := range rows {
 		p, err := s.position(ctx, booksID, row, base, date, in)
 		if err != nil {
+			return nil, err
+		}
+
+		if p.Realized, p.Income, err = resultParts(results[row.AccountID]); err != nil {
 			return nil, err
 		}
 

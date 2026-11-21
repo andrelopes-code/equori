@@ -1308,3 +1308,7 @@ Amendment A260, VB1 (`docs/specs/2026-11-20-valued-balance-sheet-design.md`), th
 ### S673 A sync line dated before a reconciled balance
 
 Amendment A261 (`docs/specs/2026-11-20-reconciled-sync-line-design.md`), through the HTTP API. A checking account synced on 2026-11-12 reconciles its balance of 2,834.10. The next sync returns a new line of +4.35 dated 2026-11-05 and a new line of −10.00 dated 2026-11-12: the first waits for review with reason `reconciled` and books nothing, the second is created. The owner creates the first through `POST /external-records/{id}/resolve`. Test `TestS673LineBeforeReconciledBalance` in `internal/ingestion`.
+
+### S674 The total result of a holding
+
+Amendment A262, TR1 and TR2 (`docs/specs/2026-11-21-portfolio-total-result-design.md`), through the HTTP API. S64 with a dividend of 10.00 on XP MXRF11 dated 2026-10-26, and XP PETR4 bought 10 at 10.00 on 2026-10-05, sold 10 at 12.00 on 2026-10-15 and paid a JCP of 45.00 on 2026-10-26 (withheld 7.88). `GET /positions?date=2026-11-01` returns XP MXRF11 with `realized` 33.77 and `income` 10.00, and beside the items `realized` 53.77 and `income` 47.12 in BRL. On 2026-10-26, the date of the income, the same; on 2026-10-25 the position has no `income`, and the totals hold `realized` 53.77 and no income. Test `TestS674TotalResult` in `internal/portfolio`.

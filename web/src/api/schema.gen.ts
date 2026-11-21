@@ -8803,10 +8803,18 @@ export interface components {
             estimated_tax?: components["schemas"]["Money"];
             /** @description market_value less estimated_tax. */
             estimated_net?: components["schemas"]["Money"];
+            /** @description The results of the sales of the account dated up to date, every kind, in the currency of the brokerage; absent when it has none (A262 TR1). */
+            realized?: components["schemas"]["Money"];
+            /** @description Gross less withheld of the income events of the account dated up to date, in the currency of the brokerage; absent when it has none (A262 TR1). */
+            income?: components["schemas"]["Money"];
             prices?: components["schemas"]["Price"][];
         };
         PositionList: {
             items: components["schemas"]["Position"][];
+            /** @description The results of the sales of every security account up to date, closed ones included, one amount per currency ordered by code (A262 TR2). */
+            realized: components["schemas"]["Money"][];
+            /** @description Gross less withheld of the income events of every security account up to date, closed ones included, one amount per currency ordered by code (A262 TR2). */
+            income: components["schemas"]["Money"][];
             /** @description The held instruments whose quote is stale or missing at the date (A222 MQ26). */
             quote_warnings: components["schemas"]["PositionQuoteWarning"][];
         };

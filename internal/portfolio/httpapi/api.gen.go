@@ -668,20 +668,31 @@ type Position struct {
 
 	// EstimatedTax Income tax and IOF a sale of the whole quantity at market_value would withhold (A235); absent when the book has no table for the position or value_in is not the base currency.
 	EstimatedTax *Money `json:"estimated_tax,omitempty"`
-	Instrument   string `json:"instrument"`
+
+	// Income Gross less withheld of the income events of the account dated up to date, in the currency of the brokerage; absent when it has none (A262 TR1).
+	Income     *Money `json:"income,omitempty"`
+	Instrument string `json:"instrument"`
 
 	// MarketValue Quantity valued in the base currency; absent without a price.
 	MarketValue *Money   `json:"market_value,omitempty"`
 	Prices      *[]Price `json:"prices,omitempty"`
 	Quantity    Money    `json:"quantity"`
+
+	// Realized The results of the sales of the account dated up to date, every kind, in the currency of the brokerage; absent when it has none (A262 TR1).
+	Realized *Money `json:"realized,omitempty"`
 }
 
 // PositionList defines model for PositionList.
 type PositionList struct {
-	Items []Position `json:"items"`
+	// Income Gross less withheld of the income events of every security account up to date, closed ones included, one amount per currency ordered by code (A262 TR2).
+	Income []Money    `json:"income"`
+	Items  []Position `json:"items"`
 
 	// QuoteWarnings The held instruments whose quote is stale or missing at the date (A222 MQ26).
 	QuoteWarnings []PositionQuoteWarning `json:"quote_warnings"`
+
+	// Realized The results of the sales of every security account up to date, closed ones included, one amount per currency ordered by code (A262 TR2).
+	Realized []Money `json:"realized"`
 }
 
 // PositionQuoteWarning defines model for PositionQuoteWarning.

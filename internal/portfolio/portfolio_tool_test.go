@@ -120,6 +120,8 @@ func TestGetPortfolioToolPositions(t *testing.T) {
 			AverageCost string     `json:"average_cost"`
 			CostBasis   tool.Money `json:"cost_basis"`
 			MarketValue tool.Money `json:"market_value"`
+			Realized    tool.Money `json:"realized"`
+			Income      tool.Money `json:"income"`
 		} `json:"positions"`
 	}
 	toolOutput(
@@ -139,7 +141,9 @@ func TestGetPortfolioToolPositions(t *testing.T) {
 		p.Quantity.Amount != "100" ||
 		p.AverageCost != "10.0827" ||
 		p.CostBasis.Amount != "1008.27" ||
-		p.MarketValue.Amount != "936.00" {
+		p.MarketValue.Amount != "936.00" ||
+		p.Realized != (tool.Money{Amount: "33.77", Currency: "BRL"}) ||
+		p.Income != (tool.Money{}) {
 		t.Errorf("position = %+v", p)
 	}
 }

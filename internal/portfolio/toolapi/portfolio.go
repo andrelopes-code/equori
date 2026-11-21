@@ -66,6 +66,8 @@ type positionView struct {
 	AverageCost string     `json:"average_cost,omitzero"`
 	CostBasis   tool.Money `json:"cost_basis"`
 	MarketValue tool.Money `json:"market_value,omitzero"`
+	Realized    tool.Money `json:"realized,omitzero"     jsonschema:"results of the account's sales up to date; absent when none"`
+	Income      tool.Money `json:"income,omitzero"       jsonschema:"income of the account net of withholding up to date; absent when none"`
 }
 
 type groupView struct {
@@ -358,6 +360,14 @@ func positions(
 
 		if p.MarketValue != nil {
 			v.MarketValue = tool.MoneyOf(*p.MarketValue)
+		}
+
+		if p.Realized != nil {
+			v.Realized = tool.MoneyOf(*p.Realized)
+		}
+
+		if p.Income != nil {
+			v.Income = tool.MoneyOf(*p.Income)
 		}
 
 		out.Positions = append(out.Positions, v)

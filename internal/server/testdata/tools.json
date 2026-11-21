@@ -5067,6 +5067,44 @@
                   "currency"
                 ],
                 "additionalProperties": false
+              },
+              "realized": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "description": "results of the account's sales up to date; absent when none",
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "income": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "description": "income of the account net of withholding up to date; absent when none",
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
               }
             },
             "required": [

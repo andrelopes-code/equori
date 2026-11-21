@@ -835,18 +835,36 @@ schemas:
         description: market_value less estimated_tax.
         allOf:
           - $ref: "#/components/schemas/Money"
+      realized:
+        description: The results of the sales of the account dated up to date, every kind, in the currency of the brokerage; absent when it has none (A262 TR1).
+        allOf:
+          - $ref: "#/components/schemas/Money"
+      income:
+        description: Gross less withheld of the income events of the account dated up to date, in the currency of the brokerage; absent when it has none (A262 TR1).
+        allOf:
+          - $ref: "#/components/schemas/Money"
       prices:
         type: array
         items:
           $ref: "#/components/schemas/Price"
   PositionList:
     type: object
-    required: [items, quote_warnings]
+    required: [items, quote_warnings, realized, income]
     properties:
       items:
         type: array
         items:
           $ref: "#/components/schemas/Position"
+      realized:
+        type: array
+        description: The results of the sales of every security account up to date, closed ones included, one amount per currency ordered by code (A262 TR2).
+        items:
+          $ref: "#/components/schemas/Money"
+      income:
+        type: array
+        description: Gross less withheld of the income events of every security account up to date, closed ones included, one amount per currency ordered by code (A262 TR2).
+        items:
+          $ref: "#/components/schemas/Money"
       quote_warnings:
         type: array
         description: The held instruments whose quote is stale or missing at the date (A222 MQ26).
