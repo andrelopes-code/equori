@@ -418,6 +418,20 @@ for (const [name, selector, property] of pinnedCells) {
   });
 }
 
+// The caption stands in the frame above the header: on the frame's wash alone it read as a lighter
+// band over a header at 6% (owner review of 2026-11-21).
+test("a table caption inside a dialog or a drawer takes the header's tone", () => {
+  const block =
+    /:is\([^{]*data-part="content"[^{]*data-mode="overlay"[^{]*\) \[data-ui="table"\] \[data-part="caption"\] \{([^}]*)\}/.exec(
+      css,
+    );
+  assert.ok(block, "no overlay rule for the caption");
+  assert.match(
+    block[1] ?? "",
+    /background-color: color-mix\(in oklab, var\(--slotted-text\) 3%, transparent\)/,
+  );
+});
+
 // A row paints the table's surface token again over the frame, so a wash in the token stacked: the
 // body read at 6% beside a card at 3%. The frame paints its wash on its own root and the token the
 // rows read is clear.
