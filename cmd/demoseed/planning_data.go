@@ -13,6 +13,7 @@ func schedules(start time.Time) []scheduleSpec {
 	specs = append(specs, scheduleDisney()...)
 	specs = append(specs, scheduleHousehold(start)...)
 	specs = append(specs, scheduleSavings(start)...)
+	specs = append(specs, scheduleCar())
 
 	return specs
 }
@@ -284,6 +285,18 @@ func scheduleSavings(start time.Time) []scheduleSpec {
 			cents:       110000,
 			businessDay: 6,
 			start:       s0,
+			until:       contributionCut + "-01",
+		},
+		// The installments of the car cut the contribution: a new schedule takes over from the old one.
+		{
+			key:         "xp.car",
+			kind:        "savings",
+			account:     "itau.checking",
+			counterpart: "xp.cash",
+			desc:        "Aporte mensal na XP",
+			cents:       contributionAfterCar,
+			businessDay: 6,
+			start:       contributionCut + "-01",
 		},
 		{
 			key:         "reserve",
@@ -317,11 +330,30 @@ var budgetSpecs = []budgetSpec{
 	{"food.delivery", 48000, false, nil},
 	{"food.coffee", 17000, false, nil},
 	{"food.bars", 50000, false, nil},
-	{"transport.rideshare", 25000, false, map[string]int64{"2026-01": 28000}},
+	{"transport.rideshare", 25000, false, map[string]int64{"2025-09": 12000, "2026-01": 13000}},
 	{"shopping", 90000, true, map[string]int64{"2026-01": 95000}},
 	{"leisure", 45000, false, nil},
 	{"travel", 105000, true, map[string]int64{"2026-01": 115000}},
 	{"pets", 33000, false, map[string]int64{"2026-01": 36000}},
 	{"education", 25000, false, nil},
 	{"giving", 5000, false, nil},
+}
+
+// scheduleCar is the installment of the financing of the car, a transfer to the financing on the 15th until the
+// 48th; the interest of each installment rides on the same transaction.
+func scheduleCar() scheduleSpec {
+	last := day(carPurchase).AddDate(0, carInstallments, 1)
+
+	return scheduleSpec{
+		key:         "car.loan",
+		kind:        "transfer",
+		account:     "itau.checking",
+		counterpart: "car.loan",
+		payee:       "Itaú Unibanco",
+		desc:        "Parcela do financiamento do HB20",
+		cents:       carInstallment,
+		day:         15,
+		start:       iso(day(carPurchase).AddDate(0, 1, 0)),
+		until:       iso(last),
+	}
 }

@@ -99,8 +99,9 @@ func assertContributionPlan(t *testing.T, s *seeder) {
 		t.Errorf("status = %q, want complete (missing %v)", plan.Status, plan.Missing)
 	}
 
-	if plan.Amount != brl(110000) {
-		t.Errorf("amount = %+v, want R$ 1.100,00", plan.Amount)
+	// The financing of the car cut the monthly contribution from R$ 1.100,00 to R$ 300,00 in 2025-09.
+	if plan.Amount != brl(30000) {
+		t.Errorf("amount = %+v, want R$ 300,00", plan.Amount)
 	}
 
 	if len(plan.Class) != len(groups) {

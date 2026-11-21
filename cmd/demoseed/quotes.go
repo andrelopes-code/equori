@@ -40,6 +40,15 @@ func (s *seeder) requestHistory() []string {
 		s.tolerate("no_source")
 	}
 
+	// The dollar account is valued at the PTAX of the instance; without a source it stays out of the totals (VB4).
+	s.do(http.MethodPost, "/instruments/USD/history", map[string]any{"from": iso(s.start)}, nil)
+
+	if s.err == nil {
+		out = append(out, "USD")
+	}
+
+	s.tolerate("no_source")
+
 	return out
 }
 

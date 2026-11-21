@@ -108,9 +108,9 @@ func (s *seeder) series(sec security) {
 	s.px[sec.code] = pts
 }
 
-// loadPrices reads back the chosen price of every security since the start of the history, so that a trade is priced like the instance prices it: with the real quotes when the feeds hold them.
+// loadPrices reads back the chosen price of every security and of the dollar since the start of the history, so that a trade and a remittance are priced like the instance prices them: with the real quotes when the feeds hold them.
 func (s *seeder) loadPrices() {
-	for _, sec := range securities {
+	for _, code := range append(securityCodes(), "USD") {
 		var list struct {
 			Items []struct {
 				Date  string `json:"date"`
@@ -120,7 +120,7 @@ func (s *seeder) loadPrices() {
 
 		s.do(
 			http.MethodGet,
-			s.pricesPath(sec.code),
+			s.pricesPath(code),
 			nil,
 			&list,
 		)
@@ -130,15 +130,24 @@ func (s *seeder) loadPrices() {
 		for _, it := range list.Items {
 			value, err := strconv.ParseFloat(it.Value, 64)
 			if err != nil {
-				s.fail("price of %s on %s: %v", sec.code, it.Date, err)
+				s.fail("price of %s on %s: %v", code, it.Date, err)
 				return
 			}
 
 			quotes = append(quotes, quote{date: it.Date, value: value})
 		}
 
-		s.quotes[sec.code] = quotes
+		s.quotes[code] = quotes
 	}
+}
+
+func securityCodes() []string {
+	out := make([]string, len(securities))
+	for i, sec := range securities {
+		out[i] = sec.code
+	}
+
+	return out
 }
 
 // priceOn returns the last price of a security on or before date d, or the interpolated synthetic series when the instance holds none.

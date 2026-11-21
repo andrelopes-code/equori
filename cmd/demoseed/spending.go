@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"slices"
 	"time"
 )
 
@@ -62,21 +63,24 @@ func (s *seeder) dayOf(h habit, month time.Time) time.Time {
 
 func (s *seeder) spending(month time.Time) {
 	loose, essential := s.intensities()
-	for _, h := range habits {
-		if h.from != "" && ym(month) < h.from {
+	for _, h := range allHabits() {
+		if h.from != "" && ym(month) < h.from || h.until != "" && ym(month) >= h.until {
 			continue
 		}
 
-		intensity := essential
+		intensity, scale := essential, int64(lifestyle)
 		if discretionary[h.category] {
 			intensity = loose
+			if ym(month) >= carMonths {
+				scale = leanLifestyle
+			}
 		}
 
 		for range s.count(h, month, intensity) {
 			d := s.dayOf(h, month)
 			payee := h.payees[s.rng.IntN(len(h.payees))]
 
-			cents := s.between(h.lo, h.hi, h.skew) * lifestyle / 100
+			cents := s.between(h.lo, h.hi, h.skew) * scale / 100
 			if h.round {
 				cents -= cents % 10
 			}
@@ -91,6 +95,13 @@ func (s *seeder) spending(month time.Time) {
 	s.sharedDinners(month)
 	s.occasions(month)
 	s.surprises(month)
+}
+
+// allHabits lists the habits in the order the month draws them: the habits of the car follow the rides they replace.
+func allHabits() []habit {
+	i := slices.IndexFunc(habits, func(h habit) bool { return h.category == "transport.rideshare" })
+
+	return slices.Concat(habits[:i+1], carHabits, habits[i+1:])
 }
 
 // therapy is one session every Thursday, with a few cancelled weeks.

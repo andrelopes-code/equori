@@ -43,6 +43,14 @@ func (s *seeder) buildAccounts(start string) {
 			"opened_on": start,
 			"color":     a.color,
 		}
+		if a.currency != "" {
+			body["currency"] = a.currency
+		}
+
+		if a.opened != "" {
+			body["opened_on"] = a.opened
+		}
+
 		// The brokerage holds ten years of investments.
 		if a.institution == "xp" {
 			body["opened_on"] = iso(s.investStart())

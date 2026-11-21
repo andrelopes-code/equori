@@ -127,6 +127,18 @@ var rules = []rule{
 		actions:    setCategory("food.bakery"),
 	},
 	{
+		name: "Postos de combustível",
+		conditions: []map[string]any{
+			anyOf("description", "posto shell", "posto ipiranga", "posto petrobras"),
+		},
+		actions: setCategory("transport.fuel"),
+	},
+	{
+		name:       "Estacionamentos e pedágio",
+		conditions: []map[string]any{anyOf("description", "estapar", "sem parar")},
+		actions:    setCategory("transport.parking"),
+	},
+	{
 		name:       "Aportes na corretora são transferências",
 		conditions: []map[string]any{contains("description", "xp investimentos")},
 		actions: func(s *seeder) []map[string]any {

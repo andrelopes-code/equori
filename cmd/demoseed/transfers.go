@@ -23,9 +23,11 @@ func (s *seeder) transfers() {
 func (s *seeder) monthlyTransfers() {
 	for _, m := range months(s.start, s.today) {
 		d := s.businessDay(m, 6)
+		ted := contributionOn(monthsBetween(s.investStart(), m), m)
+
 		s.at(d, func() {
 			if top := nubankTop(s.bal[s.id("nubank.checking")]); top > 0 {
-				s.ensure(d, "itau.checking", 140000+top)
+				s.ensure(d, "itau.checking", ted+30000+top)
 				s.record(
 					iso(d),
 					"Pix para Nubank",
@@ -35,13 +37,13 @@ func (s *seeder) monthlyTransfers() {
 				)
 			}
 
-			s.ensure(d, "itau.checking", 140000)
+			s.ensure(d, "itau.checking", ted+30000)
 			s.record(
 				iso(d),
 				"TED para XP Investimentos",
 				map[string]any{"payee_id": s.id("payee.XP Investimentos")},
-				post(s.id("xp.cash"), 110000),
-				post(s.id("itau.checking"), -110000),
+				post(s.id("xp.cash"), ted),
+				post(s.id("itau.checking"), -ted),
 			)
 			s.record(
 				iso(d),
@@ -68,8 +70,8 @@ func (s *seeder) lumpTransfers() {
 			)
 		})
 	}
+	// The 13th of 2025 goes to the dollar account instead (remittances).
 	lump("2024-12-23", "TED para XP Investimentos, parte do 13º", 150000)
-	lump("2025-12-22", "TED para XP Investimentos, parte do 13º", 150000)
 	lump("2025-03-17", "TED para XP Investimentos, parte da PLR", 600000)
 	lump("2026-03-16", "TED para XP Investimentos, parte da PLR", 600000)
 }

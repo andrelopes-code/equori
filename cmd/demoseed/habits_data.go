@@ -16,6 +16,7 @@ type habit struct {
 	saturday bool // only on Saturdays.
 	round    bool
 	from     string
+	until    string // the first month without the habit
 	season   *[12]float64
 	tags     []string
 }
@@ -28,7 +29,12 @@ var (
 )
 
 // lifestyle scales every variable purchase, in percent, so that the spending leaves the savings rate of the persona.
-const lifestyle = 70
+// From carMonths the persona cuts the discretionary purchases to leanLifestyle to pay for the car.
+const (
+	lifestyle     = 70
+	leanLifestyle = 62
+	carMonths     = "2025-09"
+)
 
 var habits = []habit{
 	{
@@ -155,6 +161,7 @@ var habits = []habit{
 		vias:     []string{"card.nubank", "card.itau"},
 		weights:  []int{70, 30},
 		weekday:  true,
+		until:    carMonths,
 	},
 	{
 		category: "transport.transit",
@@ -196,6 +203,7 @@ var habits = []habit{
 		skew:     1,
 		vias:     []string{"card.itau"},
 		weights:  []int{1},
+		until:    carMonths,
 	},
 	{
 		category: "health.pharmacy",

@@ -83,6 +83,7 @@ func seed(s *seeder, cfg config) error {
 	s.flushFeeds()
 	s.reopenHistory()
 	s.bookYield()
+	s.reviewCar()
 	s.assertBalances()
 	s.reconcileStatements()
 	s.importStatements()

@@ -32,6 +32,7 @@ func seedHarness(t *testing.T, date string) (*seeder, config, *apitest.Harness) 
 	}
 
 	storeIndexRates(t, h, today)
+	storeDollarRates(t, h, today)
 
 	return newSeeder(context.Background(), h.URL(), c), config{today: today}, h
 }
@@ -794,6 +795,7 @@ func TestSeed(t *testing.T) {
 	})
 
 	t.Run("contribution plan", func(t *testing.T) { assertContributionPlan(t, s) })
+	t.Run("car and dollar", func(t *testing.T) { assertCarAndDollar(t, s) })
 
 	t.Run("planning", func(t *testing.T) {
 		var occ struct {

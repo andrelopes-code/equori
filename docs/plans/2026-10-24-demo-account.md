@@ -23,10 +23,13 @@ Mariana Costa Ribeiro, 34, product analyst in São Paulo, CLT employee, renting,
 | Extras | 13th salary (Nov first half, Dec second), vacation pay (2025-07), PLR (2025-03 and 2026-03) |
 | Benefit | VR/VA credited monthly to a `benefit` account |
 | Housing | rent R$ 3.450,00 (+ annual adjustment), condominium R$ 780,00, electricity, water, gas, internet, mobile |
-| Institutions | Itaú (salary account, Visa card, savings), Nubank (checking, Mastercard, reserve box), XP (brokerage), wallet cash |
-| Investments | began 60 months before today with R$ 600 a month, R$ 1.100 now; five groups with ideals (fixed income 30 %, domestic equities 28 %, foreign ETFs 22 %, real estate funds 15 %, gold and crypto ETFs 5 %), priced from the quotes of the instance; contribution plan of R$ 1.100; dividends reinvested, three small trims |
+| Institutions | Itaú (salary account, Visa card, savings, car financing), Nubank (checking, Mastercard, reserve box), XP (brokerage), Nomad (dollar account), wallet cash |
+| Investments | began 60 months before today with R$ 600 a month, R$ 1.100 until 2025-08, R$ 300 from 2025-09; five groups with ideals (fixed income 30 %, domestic equities 28 %, foreign ETFs 22 %, real estate funds 15 %, gold and crypto ETFs 5 %), priced from the quotes of the instance; contribution plan of R$ 300; the PLR of 2025 and 2026 send R$ 2.000 to the dollar account beside the R$ 6.000 to the brokerage, the 13th of 2025 R$ 1.500 to the dollar account instead of the brokerage; dividends reinvested, three small trims |
+| Dollars | `checking` account in USD at Nomad from 2025-03-18, filled by three remittances from PLR and 13th salary at the PTAX plus a 2 % spread; IOF on the remittance 1.1 % until 2025-05-22, 3.5 % from 2025-05-23, on the category IOF; valued at the PTAX the instance holds |
+| Car | used 2021 Hyundai HB20 1.0 (`property`) bought on 2025-08-15 for R$ 61.900,00: R$ 35.900,00 from a sale of R$ 41.900,00 of Tesouro Selic, then BOVA11, IVVB11, WRLD11, NASD11 and BPAC11 as needed, whose R$ 6.000,00 more pay the costs of the first year; R$ 27.877,46 financed (`loan`) with IOF R$ 781,56, bank fee R$ 850,00 and lien registry R$ 245,90; Itaú CDC at 1.89 % a month in 48 installments of R$ 888,63 (Price table) on the 15th, interest on the system account Interest, a `transfer` schedule to the financing; FIPE value from R$ 62.500,00 less 0.7 % a month, stated at the end of each February, May, August and November as a balance assertion resolved as adjustment (A259 PA3) |
+| Car costs | policy of Porto Seguro in 10x on the Itaú card each August; IPVA of each January in a single payment, 4 % of the value less 3 %; Detran-SP transfer; a service in 3x and a brake job; fuel 2 to 3 times a month, parking and the Sem Parar invoice from 2025-09; rides cut from 8–14 to 3–6 a month, coach trips end, discretionary purchases cut from 70 % to 62 % of the habit range |
 | Savings rate | 15 to 20 % of net income, as monthly transfers to the brokerage and the reserve, plus lump sums from the 13th salary and PLR |
-| Debt | one 12x installment purchase of electronics, one 10x trip, an anticipated installment |
+| Debt | one 12x installment purchase of electronics, one 10x trip, an anticipated installment, the car financing |
 
 ## Tasks
 

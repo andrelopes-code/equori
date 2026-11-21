@@ -26,7 +26,7 @@ func (s *seeder) saveContributionPlan() {
 	classes[fixedIncomeGroup]["members"] = fixed
 
 	s.do(http.MethodPut, "/contribution-plan", map[string]any{
-		"amount":  brl(monthlyContribution(investMonths)),
+		"amount":  brl(contributionOn(investMonths, firstOfMonth(s.today))),
 		"classes": classes,
 	}, nil)
 }

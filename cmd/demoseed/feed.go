@@ -31,6 +31,11 @@ var descriptors = map[string]string{
 	"Droga Raia":             "DROGA RAIA 0118 SAO PAULO",
 	"Pague Menos":            "PAGUE MENOS 2201 SAO PAULO",
 	"Padaria Bella Paulista": "PADARIA BELLA PAULISTA",
+	"Shell":                  "POSTO SHELL SELECT PINHEIROS",
+	"Ipiranga":               "AUTO POSTO IPIRANGA SAO PAULO",
+	"Posto Petrobras":        "POSTO PETROBRAS BR MANIA",
+	"Estapar":                "ESTAPAR ESTACIONAMENTOS",
+	"Sem Parar":              "SEM PARAR FATURA MENSAL",
 }
 
 // feedPrefix names the FITID of the lines of each account.

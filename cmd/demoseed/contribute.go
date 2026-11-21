@@ -18,6 +18,10 @@ const (
 
 	// rebalanceBand is how far above its target share, in basis points, a group sits before the persona sells some of it.
 	rebalanceBand = 300
+
+	// contributionCut is the first month the installments of the car leave the persona contributionAfterCar a month.
+	contributionCut      = "2025-09"
+	contributionAfterCar = 30000
 )
 
 // order is a purchase of about cents of a security.
@@ -29,7 +33,7 @@ type order struct {
 // contributions schedules, for every month since the first one, the deposit that the records lack, the purchases of the contribution and the reinvestment of the income and of what the month left. Each January and July the persona rebalances.
 func (s *seeder) contributions() {
 	for k, m := range months(s.investStart(), s.today) {
-		amount := monthlyContribution(k)
+		amount := contributionOn(k, m)
 		payday := s.businessDay(m, 6)
 
 		if (m.Month() == time.January || m.Month() == time.July) && k > 0 {
@@ -49,6 +53,16 @@ func (s *seeder) contributions() {
 			s.contribute(sweepDay, s.bal[s.id("xp.cash")]-brokerageFloor)
 		})
 	}
+}
+
+// contributionOn is the contribution of month m, the k-th since the start of the investments: from
+// contributionCut the installments of the car leave contributionAfterCar.
+func contributionOn(k int, m time.Time) int64 {
+	if ym(m) >= contributionCut {
+		return contributionAfterCar
+	}
+
+	return monthlyContribution(k)
 }
 
 // monthlyContribution is the amount of the k-th month since the start of the investments, in cents. It grows with the salary and reaches the monthly transfer of the records.
@@ -225,7 +239,7 @@ func (s *seeder) buyUnits(d time.Time, o order) {
 	s.trade(d, o.code, "buy", qty, price)
 }
 
-// earmarked are the purchases of the money set aside for a goal: the 13th salary feeds the emergency fund, the PLR the trip.
+// earmarked are the purchases of the money set aside for a goal: the 13th salary of 2024 feeds the emergency fund, the PLR the trip.
 func (s *seeder) earmarked() {
 	for _, e := range []struct {
 		date string
@@ -233,7 +247,6 @@ func (s *seeder) earmarked() {
 	}{
 		{"2024-12-23", order{"LFT.20290301", 150000}},
 		{"2025-03-17", order{"CDBXP27", 600000}},
-		{"2025-12-22", order{"LFT.20290301", 150000}},
 		{"2026-03-16", order{"CDBXP27", 600000}},
 	} {
 		d := day(e.date)

@@ -267,6 +267,8 @@ func (s *seeder) cashflow() {
 	s.purchases()
 	s.teachRules()
 	s.transfers()
+	s.dollars()
+	s.car()
 	// An action runs before the trades of its date: units bought on the first day without the right are not split.
 	s.corporateActions()
 	s.contributions()
