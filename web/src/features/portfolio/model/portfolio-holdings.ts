@@ -1,6 +1,7 @@
 import type { components } from "@/api/schema.gen";
 import { sharesBP } from "@/features/portfolio/model/portfolio-shares";
 import type { AllocationBy } from "@/features/portfolio/model/portfolio-search";
+import { rowTotal } from "@/features/portfolio/model/total-result";
 import { shiftDate } from "@/i18n/format";
 
 type Account = components["schemas"]["Account"];
@@ -34,6 +35,10 @@ export interface Holding {
   gainBp: number | undefined;
   // Cost and market value are in different currencies, so no gain is stated.
   mixed: boolean;
+  // The gain plus the results of the sales and the income (A262 TR3).
+  total: number | undefined;
+  // The value, a result or an income is in another currency than the cost, so no total is stated.
+  totalOutside: boolean;
   // Basis points of the valued total.
   share: number | undefined;
 }
@@ -212,6 +217,7 @@ function positionRow(
   const mixed = value !== undefined && value.currency !== cost.currency;
   const gain =
     value === undefined || mixed ? undefined : value.amount - cost.amount;
+  const { total, outside } = rowTotal(gain, position);
 
   return {
     key: `${position.account_id}-${position.instrument}`,
@@ -230,6 +236,8 @@ function positionRow(
         ? undefined
         : Math.round((gain * 10000) / cost.amount),
     mixed,
+    total,
+    totalOutside: outside || mixed,
     share: undefined,
   };
 }
@@ -252,6 +260,8 @@ function cashRow(
     gain: undefined,
     gainBp: undefined,
     mixed: false,
+    total: undefined,
+    totalOutside: false,
     share: undefined,
   };
 }

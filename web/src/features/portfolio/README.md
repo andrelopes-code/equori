@@ -24,7 +24,7 @@ Guide topic (`navigation-map.json`): `investments`.
 - `model/`: search, holdings, shares, labels, return summary, axis, accounts, yield and year figures used by several folders.
 - `holdings/`: holdings section, grid, columns, cells and column state.
 - `allocation/`: allocation table, assets allocation, share bar and where-money section.
-- `summary/`: portfolio header, summary and income hook.
+- `summary/`: portfolio header, summary, total result figure and income hook.
 - `notices/`: problem, missing price and quote warning notices.
 - `return/`: return panel, period, view, bars, method, yield group list and options hook.
 - `collapsible-section/`: the surface section a click on its header minimizes to its first lines (`peek-body`), with the choice kept per browser (fixed income, attribution); `contained` keeps a press on a header control from toggling it.

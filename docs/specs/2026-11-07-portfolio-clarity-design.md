@@ -38,6 +38,8 @@ A reader opens the portfolio to answer three questions: how much do I have, how 
 | Gain or loss | Market value minus cost over the positions whose two amounts share a currency; `delta` is the same over cost | The cost it is measured on, and that income is apart. The count of positions left out for a mixed currency, when any. |
 | Income in {year} | Net income of the valuation year up to the valuation date, per currency | The tax withheld. A door to `/portfolio/year?tab=income`. |
 
+Amendment A262 (`docs/specs/2026-11-21-portfolio-total-result-design.md`, TR4) adds a fourth figure, "Total result", between "Gain or loss" and "Income in {year}", and TR5 a column of the same name to PC7.
+
 **PC3 Holdings.** The rows of the page are a pure function of positions, accounts, instruments and cash balances (`portfolio-holdings.ts`). Each row has a kind (`position`, `cash`), the type, currency and institution it groups under, and its share of the valued total by `sharesBP`. Every share on the page comes from it, so the shares of a group add up to the group's bar.
 
 **PC4 Cash.** A cash row is an asset account of kind `brokerage` whose currency is a currency instrument and which has no child account, with a nonzero `value` read through `/accounts/{id}/balance` at the valuation date in the valuation currency (`balance` stays in the account's own currency). A failed read leaves that row without a value and counted as unpriced. Its type is the group `cash`, "Brokerage cash".

@@ -41,10 +41,11 @@ const list = () =>
 const where = () =>
   screen.findByRole("table", { name: catalogEn["holdings.where"] });
 
+// A column of the list can share the label of a figure, so the figure is the match inside a card.
 const figure = async (label: string) =>
-  (await screen.findByText(label)).closest<HTMLElement>(
-    "[data-ui='stat-card']",
-  ) ?? document.body;
+  (await screen.findAllByText(label))
+    .map((e) => e.closest<HTMLElement>("[data-ui='stat-card']"))
+    .find((card) => card !== null) ?? document.body;
 
 const pageHeader = () =>
   document.querySelector<HTMLElement>("[data-ui='page-header']") ??
@@ -148,7 +149,7 @@ describe("Portfolio page", () => {
       `${catalogEn["instruments.type.cash"]}||−R$50.00|—`,
       "Total|R$91.00|100.00%",
     ]);
-    expect(gridRows(await list())).toContain("XP cash||−R$50.00||");
+    expect(gridRows(await list())).toContain("XP cash||−R$50.00|||");
   });
 
   it("PC5: one control groups the bars and the list, from the address", async () => {
@@ -186,17 +187,18 @@ describe("Portfolio page", () => {
         catalogEn["holdings.col.trend"],
         catalogEn["positions.marketValue"],
         catalogEn["positions.result"],
+        catalogEn["holdings.total"],
         catalogEn["portfolio.share"],
       ].join("|"),
-      `${catalogEn["instruments.type.cash"]} · 1|R$400.00||73.93%`,
-      "XP cash||R$400.00||73.93%",
-      "REITs · 2|R$105.00|+R$5.00|19.40%",
-      "MXRF11||R$105.00|+R$5.00+5.00%|19.40%",
-      `MXRF11||${catalogEn["positions.noPrice"]}||`,
-      "Stocks · 2|R$36.00|+R$5.00|6.67%",
-      "PETR4||R$20.00|+R$5.00+33.33%|3.69%",
-      "PETR4||R$16.00||2.98%",
-      "||R$541.00|+R$10.00|100.00%",
+      `${catalogEn["instruments.type.cash"]} · 1|R$400.00|||73.93%`,
+      "XP cash||R$400.00|||73.93%",
+      "REITs · 2|R$105.00|+R$5.00|+R$5.00|19.40%",
+      "MXRF11||R$105.00|+R$5.00+5.00%|+R$5.00|19.40%",
+      `MXRF11||${catalogEn["positions.noPrice"]}|||`,
+      "Stocks · 2|R$36.00|+R$5.00|+R$5.00|6.67%",
+      "PETR4||R$20.00|+R$5.00+33.33%|+R$5.00|3.69%",
+      "PETR4||R$16.00|||2.98%",
+      "||R$541.00|+R$10.00|+R$10.00|100.00%",
     ]);
   });
 
@@ -540,6 +542,86 @@ describe("Portfolio page", () => {
         name: catalogEn["holdings.missing.inBase"].replace("{base}", "BRL"),
       }),
     ).toHaveAttribute("href", "/portfolio");
+  });
+
+  it("TR4: adds every sale and income to the gain, naming what it leaves out", async () => {
+    const fetch = portfolioApi({
+      "GET /api/v1/positions": () =>
+        json(200, {
+          items: positions,
+          quote_warnings: [],
+          realized: [brl(300), { amount: 200, currency: "USD" }],
+          income: [brl(150)],
+        }),
+    });
+    await renderApp("/portfolio", { fetch });
+    const card = await figure(catalogEn["holdings.total"]);
+
+    await within(card).findByText("+R$14.50");
+    expect(card.textContent).toContain(
+      catalogEn["holdings.total.note"]
+        .replace("{realized}", "+R$3.00")
+        .replace("{income}", "+R$1.50"),
+    );
+    expect(card.textContent).toContain(
+      catalogEn["holdings.total.outside"].replace("{amounts}", "$2.00"),
+    );
+  });
+
+  it("TR4: holds no number when the gain reads in the currency of the cost", async () => {
+    const fetch = portfolioApi({
+      "GET /api/v1/positions": () =>
+        json(200, {
+          items: [
+            {
+              account_id: cashID,
+              instrument: "PETR4",
+              quantity: { amount: 5, currency: "PETR4" },
+              cost_basis: brl(1500),
+              market_value: { amount: 300, currency: "USD" },
+              income: brl(100),
+            },
+          ],
+          quote_warnings: [],
+          realized: [],
+          income: [brl(100)],
+        }),
+    });
+    await renderApp("/portfolio?value_in=USD", { fetch });
+    const card = await figure(catalogEn["holdings.total"]);
+
+    expect(
+      await within(card).findByText(
+        catalogEn["holdings.gain.elsewhere"].replace("{currency}", "BRL"),
+      ),
+    ).toBeInTheDocument();
+    expect(card.textContent).not.toContain("$0.00");
+    expect(
+      within(card).getByRole("link", {
+        name: catalogEn["holdings.missing.inBase"].replace("{base}", "BRL"),
+      }),
+    ).toHaveAttribute("href", "/portfolio");
+  });
+
+  it("TR5: lists the total result of each position after its gain", async () => {
+    const fetch = portfolioApi({
+      "GET /api/v1/positions": () =>
+        json(200, {
+          items: positions.map((p, i) =>
+            i === 0 ? { ...p, realized: brl(300), income: brl(150) } : p,
+          ),
+          quote_warnings: [],
+          realized: [brl(300)],
+          income: [brl(150)],
+        }),
+    });
+    await renderApp("/portfolio?by=type", { fetch });
+    const grid = await list();
+
+    await within(grid).findAllByText("+R$9.50");
+    expect(gridRows(grid)).toContain(
+      "MXRF11||R$105.00|+R$5.00+5.00%|+R$9.50|19.40%",
+    );
   });
 
   it("PC24: reads the income of the tax year that holds the valuation date", async () => {

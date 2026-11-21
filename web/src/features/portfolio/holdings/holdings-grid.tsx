@@ -11,6 +11,7 @@ import { useCallback, useMemo, useState } from "react";
 import type { components } from "@/api/schema.gen";
 import { HoldingGainCell } from "@/features/portfolio/holdings/holding-gain-cell";
 import { HoldingNameCell } from "@/features/portfolio/holdings/holding-name-cell";
+import { HoldingTotalCell } from "@/features/portfolio/holdings/holding-total-cell";
 import { HoldingTrendCell } from "@/features/portfolio/holdings/holding-trend-cell";
 import { HoldingValueCell } from "@/features/portfolio/holdings/holding-value-cell";
 import type { GridHolding } from "@/features/portfolio/holdings/holdings-columns";
@@ -64,6 +65,9 @@ export function HoldingsGrid({
       ),
       gain: ({ row }: { row: GridHolding }) => (
         <HoldingGainCell holding={row} valueIn={valueIn} />
+      ),
+      total: ({ row }: { row: GridHolding }) => (
+        <HoldingTotalCell holding={row} valueIn={valueIn} />
       ),
     }),
     [accounts, date, valueIn],

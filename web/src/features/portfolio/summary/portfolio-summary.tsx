@@ -2,6 +2,8 @@ import { Link } from "@slotted/react/link";
 
 import type { components } from "@/api/schema.gen";
 import type { HoldingsSummary } from "@/features/portfolio/model/portfolio-holdings";
+import { InBaseLink } from "@/features/portfolio/summary/in-base-link";
+import { TotalResultCard } from "@/features/portfolio/summary/total-result-card";
 import { usePortfolioIncome } from "@/features/portfolio/summary/use-portfolio-income";
 import { useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
@@ -88,26 +90,17 @@ export function PortfolioSummary({
             : gainNote
         }
         loading={pending}
-        {...(gainElsewhere
-          ? {
-              action: (
-                <Link
-                  render={routeTo({
-                    to: "/portfolio",
-                    search: (previous) => ({
-                      ...previous,
-                      value_in: undefined,
-                    }),
-                  })}
-                >
-                  {t("holdings.missing.inBase", { base: base ?? "" })}
-                </Link>
-              ),
-            }
-          : {})}
+        {...(gainElsewhere ? { action: <InBaseLink base={base} /> } : {})}
         {...(summary.gainFraction === undefined
           ? {}
           : { delta: summary.gainFraction })}
+      />
+      <TotalResultCard
+        summary={summary}
+        date={date}
+        valueIn={valueIn}
+        base={base}
+        pending={pending}
       />
       <FigureCard
         label={t("holdings.income", { year: String(year) })}

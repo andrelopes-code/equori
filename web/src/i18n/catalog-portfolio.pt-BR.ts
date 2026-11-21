@@ -66,6 +66,7 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
     "Posições sem preço, fora do total e da participação: {count}",
   "portfolio.resultMixed":
     "Custo e valor de mercado estão em moedas diferentes",
+  "portfolio.totalOutside": "Parte do resultado está em outra moeda",
   "portfolio.empty": "Nenhuma posição nesta data",
   "portfolio.emptyHint":
     "Registre uma negociação em uma conta de corretora para vê-la aqui.",

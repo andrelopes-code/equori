@@ -196,6 +196,16 @@ export function holdingsColumns({
       format: signed,
     },
     {
+      id: "total",
+      label: t("holdings.total"),
+      accessor: (h) => h.total ?? null,
+      kind: "number",
+      numeric: true,
+      width: 180,
+      aggregate: sum,
+      format: signed,
+    },
+    {
       id: "share",
       label: t("portfolio.share"),
       accessor: (h) => h.share ?? null,

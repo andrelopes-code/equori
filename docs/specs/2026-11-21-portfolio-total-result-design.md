@@ -16,8 +16,8 @@ Trackers keep the parts apart, since a jurisdiction taxes a sale and an income i
 |---|---|
 | TR1 | Each item of `GET /positions` carries `realized` and `income`. `realized` is the sum of the results of the sales of the security account dated up to `date`, every kind. `income` is the sum of gross minus withheld of the income events of the account dated up to `date`. Each one is absent when the account has no such row. Each one is in the currency of its rows, the currency of the brokerage. |
 | TR2 | `GET /positions` returns `realized` and `income` beside `items`: one amount per currency, ordered by currency code, over every security account of the book up to `date`. An account whose position is closed counts. An empty list states that there is none. |
-| TR3 | The total result of a row is its gain plus `realized` plus `income`. It is stated only when the gain is stated and each part present is in the currency of the cost. A row with a part in another currency states no total and names the reason to assistive technology. |
-| TR4 | The summary holds a figure "Total result" between "Gain or loss" and "Income in {year}". Its value is the gain of PC2 plus the amounts of TR2 in the valuation currency. The note writes the three parts. An amount of TR2 in another currency stays out of the value, and the note names it. The count of positions without a price, when any, is named, since their price gain is not in the value. When the gain holds no number (PC23), the figure holds none either and links to the same currency. |
+| TR3 | The total result of a row is its gain plus `realized` plus `income`. It is stated only when the gain is stated and each part present is in the currency of the cost. A row whose value or part is in another currency states no total and names the reason to assistive technology. |
+| TR4 | The summary holds a figure "Total result" between "Gain or loss" and "Income in {year}". Its value is the gain of PC2 plus the amounts of TR2 in the valuation currency. The note writes the sales and the income; the price gain is the figure beside it. An amount of TR2 in another currency stays out of the value, and the note names it. The count of positions without a price stays in the note of "Portfolio value" (PC2), which covers every figure. When the gain holds no number (PC23), the figure holds none either and links to the same currency. |
 | TR5 | The list of PC7 shows a column "Total result" after "Gain or loss", visible by default, signed in the tone of its sign, summed on each group row and on the summary row. The summary row covers the positions held; the figure of TR4 also covers the closed ones. |
 | TR6 | The view `positions` of `get_portfolio` carries `realized` and `income` on each position, as TR1. |
 
@@ -29,7 +29,7 @@ Trackers keep the parts apart, since a jurisdiction taxes a sale and an income i
 | R2 | A book without a jurisdiction keeps its results and income events, so the total reads the same. |
 | R3 | Does not apply: no value set is added. |
 | R4 | Does not apply: no extension point is added. |
-| R5 | `holdings.total`, `holdings.total.note`, `holdings.total.outside`, `holdings.col.total` and `portfolio.totalMixed`, in pt-BR and en. |
+| R5 | `holdings.total` (the figure and the column), `holdings.total.note`, `holdings.total.outside` and `portfolio.totalOutside`, in pt-BR and en. |
 | R6 | The amounts go through `useMoneyFormat()`; no new date. |
 | C1 | `realized` and `income` are integers of minor units with their currency (`Money`). |
 | C2 | A sum holds one currency: TR2 sums per currency; TR3 and TR4 add only the parts in the currency of the cost and name the others. No conversion is made. |

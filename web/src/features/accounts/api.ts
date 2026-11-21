@@ -314,6 +314,23 @@ export function quoteWarningsQuery(
   });
 }
 
+// Shares the key and the request of positionsQuery: the sums of every account (A262 TR2).
+export function positionResultsQuery(
+  api: Client<paths>,
+  date: string,
+  valueIn?: string,
+) {
+  return queryOptions({
+    ...positionListQuery(api, date, valueIn),
+    select: (list) => ({
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- the schema requires the lists; a positions answer written before them, in a fixture, does not carry them
+      realized: list.realized ?? [],
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- as realized
+      income: list.income ?? [],
+    }),
+  });
+}
+
 function positionListQuery(api: Client<paths>, date: string, valueIn?: string) {
   return queryOptions({
     queryKey: ["positions", date, valueIn] as const,

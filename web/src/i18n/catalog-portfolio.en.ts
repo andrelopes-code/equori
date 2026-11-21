@@ -65,6 +65,7 @@ export const portfolioEn = {
   "portfolio.unvalued":
     "Positions without a price, left out of the total and of the shares: {count}",
   "portfolio.resultMixed": "Cost and market value are in different currencies",
+  "portfolio.totalOutside": "Part of the result is in another currency",
   "portfolio.empty": "No positions at this date",
   "portfolio.emptyHint":
     "Record a trade in a brokerage account to see it here.",
