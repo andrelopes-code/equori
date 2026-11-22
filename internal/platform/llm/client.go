@@ -118,6 +118,7 @@ func (c *Client) callTarget(
 	r := c.router
 	t, p := b.Target, b.Provider
 	begin := r.clk.Now()
+	req.WebSearch = req.WebSearch && b.WebSearch
 
 	var call targetCall
 	if s, ok := p.(Streamer); ok && onText != nil {

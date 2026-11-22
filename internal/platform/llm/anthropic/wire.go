@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"slices"
 
 	"github.com/andrelopes-code/equori/internal/platform/llm"
 )
@@ -18,6 +19,16 @@ const (
 	blockToolResult       = "tool_result"
 	blockThinking         = "thinking"
 	blockRedactedThinking = "redacted_thinking"
+	blockServerToolUse    = "server_tool_use"
+	blockSearchResult     = "web_search_tool_result"
+)
+
+// The search Anthropic runs on its servers (web search design, S3): the version without code
+// execution, which every platform that offers the tool serves.
+const (
+	searchToolType = "web_search_20250305"
+	searchToolName = "web_search"
+	searchMaxUses  = 3
 )
 
 type messagesRequest struct {
@@ -25,7 +36,7 @@ type messagesRequest struct {
 	MaxTokens    int           `json:"max_tokens"`
 	System       string        `json:"system,omitempty"`
 	Messages     []message     `json:"messages"`
-	Tools        []tool        `json:"tools,omitempty"`
+	Tools        []any         `json:"tools,omitempty"`
 	ToolChoice   *toolChoice   `json:"tool_choice,omitempty"`
 	OutputConfig *outputConfig `json:"output_config,omitempty"`
 	// CacheControl at the top level caches the prefix up to the last block of the request, so
@@ -79,6 +90,13 @@ type tool struct {
 	InputSchema json.RawMessage `json:"input_schema"`
 }
 
+// searchTool declares the provider's search; it carries no schema.
+type searchTool struct {
+	Type    string `json:"type"`
+	Name    string `json:"name"`
+	MaxUses int    `json:"max_uses"`
+}
+
 type toolChoice struct {
 	Type string `json:"type"`
 }
@@ -105,19 +123,31 @@ type messagesResponse struct {
 
 // contentBlock is the part of an answer's block this adapter reads.
 type contentBlock struct {
-	Type  string          `json:"type"`
-	Text  string          `json:"text"`
-	ID    string          `json:"id"`
-	Name  string          `json:"name"`
-	Input json.RawMessage `json:"input"`
+	Type      string          `json:"type"`
+	Text      string          `json:"text"`
+	ID        string          `json:"id"`
+	Name      string          `json:"name"`
+	Input     json.RawMessage `json:"input"`
+	Citations []citation      `json:"citations"`
+}
+
+// citation is the page a text block cites.
+type citation struct {
+	URL   string `json:"url"`
+	Title string `json:"title"`
 }
 
 // usage splits the prompt by price: InputTokens is only the part read at full price.
 type usage struct {
-	InputTokens              int `json:"input_tokens"`
-	CacheCreationInputTokens int `json:"cache_creation_input_tokens"`
-	CacheReadInputTokens     int `json:"cache_read_input_tokens"`
-	OutputTokens             int `json:"output_tokens"`
+	InputTokens              int           `json:"input_tokens"`
+	CacheCreationInputTokens int           `json:"cache_creation_input_tokens"`
+	CacheReadInputTokens     int           `json:"cache_read_input_tokens"`
+	OutputTokens             int           `json:"output_tokens"`
+	ServerToolUse            serverToolUse `json:"server_tool_use"`
+}
+
+type serverToolUse struct {
+	WebSearchRequests int `json:"web_search_requests"`
 }
 
 type modelList struct {
@@ -158,6 +188,13 @@ func toWire(model string, req llm.Request) messagesRequest {
 		)
 	}
 
+	if req.WebSearch {
+		w.Tools = append(
+			w.Tools,
+			searchTool{Type: searchToolType, Name: searchToolName, MaxUses: searchMaxUses},
+		)
+	}
+
 	if len(w.Tools) > 0 && req.ToolChoice == llm.ToolChoiceNone {
 		w.ToolChoice = &toolChoice{Type: "none"}
 	}
@@ -187,7 +224,8 @@ func roleToWire(r llm.Role) string {
 	return "user"
 }
 
-// contentToWire sends a thinking block back as it arrived, since the API validates it, and
+// contentToWire sends a thinking block, a block of a search and a text with citations back as
+// they arrived, since the API validates them (web search design, S3), and
 // drops the signatures of other providers and empty texts, which the API rejects.
 func contentToWire(m llm.Message) []any {
 	var out []any
@@ -236,6 +274,7 @@ func fromWire(w messagesResponse) llm.Response {
 				w.Usage.CacheCreationInputTokens +
 				w.Usage.CacheReadInputTokens,
 			OutputTokens: w.Usage.OutputTokens,
+			WebSearches:  w.Usage.ServerToolUse.WebSearchRequests,
 		},
 	}
 
@@ -251,6 +290,8 @@ func fromWire(w messagesResponse) llm.Response {
 			hasCall = hasCall || part.ToolCall != nil
 			resp.Message.Parts = append(resp.Message.Parts, part)
 		}
+
+		readSearch(&resp, b)
 	}
 
 	resp.FinishReason = finishReason(w.StopReason, hasCall)
@@ -263,7 +304,12 @@ func fromWire(w messagesResponse) llm.Response {
 func partFromWire(b contentBlock, raw json.RawMessage) (llm.Part, bool) {
 	switch b.Type {
 	case blockText:
-		return llm.Part{Text: b.Text}, b.Text != ""
+		part := llm.Part{Text: b.Text}
+		if len(b.Citations) > 0 {
+			part.Signature = &llm.Signature{Provider: name, Data: raw}
+		}
+
+		return part, b.Text != ""
 	case blockToolUse:
 		args := b.Input
 		if len(args) == 0 {
@@ -271,10 +317,33 @@ func partFromWire(b contentBlock, raw json.RawMessage) (llm.Part, bool) {
 		}
 
 		return llm.Part{ToolCall: &llm.ToolCall{ID: b.ID, Name: b.Name, Args: args}}, true
-	case blockThinking, blockRedactedThinking:
+	case blockThinking, blockRedactedThinking, blockServerToolUse, blockSearchResult:
 		return llm.Part{Signature: &llm.Signature{Provider: name, Data: raw}}, true
 	default:
 		return llm.Part{}, false
+	}
+}
+
+// readSearch adds to resp the query of a search block and the pages a text block cites, each
+// address once (web search design, S4).
+func readSearch(resp *llm.Response, b contentBlock) {
+	if b.Type == blockServerToolUse && b.Name == searchToolName {
+		var in struct {
+			Query string `json:"query"`
+		}
+
+		if json.Unmarshal(b.Input, &in) == nil && in.Query != "" {
+			resp.Searches = append(resp.Searches, in.Query)
+		}
+	}
+
+	for _, c := range b.Citations {
+		s := llm.Source{URL: c.URL, Title: c.Title}
+		if c.URL != "" && !slices.ContainsFunc(resp.Sources, func(o llm.Source) bool {
+			return o.URL == s.URL
+		}) {
+			resp.Sources = append(resp.Sources, s)
+		}
 	}
 }
 
@@ -282,6 +351,8 @@ func finishReason(reason string, hasCall bool) llm.FinishReason {
 	switch {
 	case hasCall:
 		return llm.FinishToolCalls
+	case reason == "pause_turn":
+		return llm.FinishPaused
 	case reason == "end_turn" || reason == "stop_sequence":
 		return llm.FinishStop
 	case reason == "max_tokens":

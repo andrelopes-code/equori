@@ -40,12 +40,14 @@ func RunTools(
 // call after the first on the target that answered the first. OnToolCall runs before each
 // tool; OnRestart runs when a pinned call finds its target exhausted. OnText, when set, receives
 // the text of every model call as it arrives. Concurrent names the tools whose calls of one response
-// run together, before the other calls.
+// run together, before the other calls. OnSearch receives the query of each search the provider
+// ran in a model call.
 type LoopOptions struct {
 	MaxSteps    int
 	ForceAnswer bool
 	Pin         bool
 	OnToolCall  func(ToolCall)
+	OnSearch    func(query string)
 	OnRestart   func()
 	OnText      func(string)
 	Concurrent  func(name string) bool
@@ -110,6 +112,11 @@ func Run(
 			return st.res, err
 		}
 
+		if len(results) == 0 && resp.FinishReason == FinishPaused {
+			st.pause(resp)
+			continue
+		}
+
 		if len(results) == 0 {
 			return st.res, nil
 		}
@@ -129,6 +136,9 @@ type loopState struct {
 	history []Message
 	pin     Target
 	step    int
+	// paused holds the responses of a turn the provider paused: the next response continues
+	// them, so the answer is their text and sources followed by its own (S5).
+	paused []Response
 }
 
 // restartPinned restarts the turn from start when a pinned call found its target exhausted
@@ -151,17 +161,52 @@ func (st *loopState) restartPinned(err error, start []Message, opts LoopOptions)
 // message to the conversation.
 func (st *loopState) accept(resp Response, opts LoopOptions) {
 	st.res.Usage.InputTokens += resp.Usage.InputTokens
-
 	st.res.Usage.OutputTokens += resp.Usage.OutputTokens
+
+	st.res.Usage.WebSearches += resp.Usage.WebSearches
 	if opts.Pin && st.pin == (Target{}) {
 		st.pin = resp.Target
+	}
+
+	if opts.OnSearch != nil {
+		for _, q := range resp.Searches {
+			opts.OnSearch(q)
+		}
 	}
 
 	assignCallIDs(st.step, resp.Message.Parts)
 
 	st.history = append(st.history, resp.Message)
 
-	st.res.Response, st.res.History, st.res.Steps = resp, st.history, st.step
+	st.res.Response, st.res.History, st.res.Steps = st.resumed(resp), st.history, st.step
+}
+
+// pause keeps a paused response for the answer the next call completes.
+func (st *loopState) pause(resp Response) {
+	st.paused = append(st.paused, resp)
+}
+
+// resumed is resp after the responses it continues: their parts and sources first. The
+// conversation keeps each message as it arrived.
+func (st *loopState) resumed(resp Response) Response {
+	if len(st.paused) == 0 || len(collectToolCalls(resp.Message)) > 0 {
+		return resp
+	}
+
+	out := resp
+	out.Message.Parts, out.Sources = nil, nil
+
+	for _, r := range append(slices.Clone(st.paused), resp) {
+		out.Message.Parts = append(out.Message.Parts, r.Message.Parts...)
+
+		for _, s := range r.Sources {
+			if !slices.Contains(out.Sources, s) {
+				out.Sources = append(out.Sources, s)
+			}
+		}
+	}
+
+	return out
 }
 
 func assignCallIDs(step int, parts []Part) {

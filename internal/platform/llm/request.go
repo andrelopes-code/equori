@@ -17,6 +17,10 @@ type Request struct {
 	Pin Target
 	// Thinking is "" for the model's default reasoning depth or "low" (design 2026-10-26 E14).
 	Thinking string
+	// WebSearch asks for the search the provider runs on its own servers (web search design,
+	// S1). Client keeps it only for a target that holds CapWebSearch; an adapter without a
+	// search ignores it.
+	WebSearch bool
 }
 
 // HasFiles reports whether a message of the request carries a file part.

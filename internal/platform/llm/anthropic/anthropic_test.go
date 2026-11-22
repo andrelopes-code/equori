@@ -199,7 +199,8 @@ func TestGenerateFinishReason(t *testing.T) {
 		{stop: "stop_sequence", want: llm.FinishStop},
 		{stop: "max_tokens", want: llm.FinishLength},
 		{stop: "refusal", want: llm.FinishBlocked},
-		{stop: "pause_turn", want: llm.FinishOther},
+		// Web search design, S5: a paused turn continues in the tool loop.
+		{stop: "pause_turn", want: llm.FinishPaused},
 	}
 	for _, tt := range tests {
 		t.Run(tt.stop, func(t *testing.T) {

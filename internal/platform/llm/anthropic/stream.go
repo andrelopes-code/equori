@@ -27,6 +27,8 @@ type streamEvent struct {
 		Thinking    string `json:"thinking"`
 		Signature   string `json:"signature"`
 		StopReason  string `json:"stop_reason"`
+		// Citation is one page a text block cites, of a citations_delta.
+		Citation json.RawMessage `json:"citation"`
 	} `json:"delta"`
 	Usage usage `json:"usage"`
 	Error struct {
@@ -49,6 +51,7 @@ type streamBlock struct {
 	input     strings.Builder
 	thinking  strings.Builder
 	signature string
+	citations []json.RawMessage
 }
 
 func (st *streamState) read(r io.Reader, model string, onText func(string)) error {
@@ -103,6 +106,7 @@ func (st *streamState) apply(ev streamEvent, onText func(string)) error {
 		st.blocks[ev.Index].applyDelta(ev, onText)
 	case "message_delta":
 		st.usage.OutputTokens = ev.Usage.OutputTokens
+		st.usage.ServerToolUse = ev.Usage.ServerToolUse
 		st.stop = ev.Delta.StopReason
 	case "error":
 		return fmt.Errorf("stream error %s: %w", ev.Error.Type, llm.ErrTransient)
@@ -122,6 +126,8 @@ func (b *streamBlock) applyDelta(ev streamEvent, onText func(string)) {
 		b.thinking.WriteString(ev.Delta.Thinking)
 	case "signature_delta":
 		b.signature = ev.Delta.Signature
+	case "citations_delta":
+		b.citations = append(b.citations, ev.Delta.Citation)
 	}
 }
 
@@ -162,6 +168,10 @@ func (b *streamBlock) content() (json.RawMessage, error) {
 
 	if b.signature != "" {
 		fields["signature"] = b.signature
+	}
+
+	if len(b.citations) > 0 {
+		fields["citations"] = b.citations
 	}
 
 	if b.input.Len() > 0 {

@@ -9,6 +9,8 @@ import (
 type Binding struct {
 	Target   Target
 	Provider Provider
+	// WebSearch reports that the owner let this target search the web (web search design, S2).
+	WebSearch bool
 }
 
 // Resolver returns the ordered targets of a use for the request's context.
