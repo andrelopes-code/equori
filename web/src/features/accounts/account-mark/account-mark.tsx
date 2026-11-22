@@ -1,3 +1,4 @@
+import { AccountLogo } from "@/features/accounts/account-mark/account-logo";
 import { AccountMarkRing } from "@/features/accounts/account-mark/account-mark-ring";
 import type { AccountShape } from "@/features/accounts/model/account-shape";
 import styles from "@/features/accounts/account-mark/account-mark.module.css";
@@ -39,9 +40,7 @@ export function AccountMark({
       {logo === undefined ? (
         <span className={styles.face}>{monogram(name)}</span>
       ) : (
-        <span className={styles.plate}>
-          <img className={styles.logo} src={logo} alt="" />
-        </span>
+        <AccountLogo src={logo} />
       )}
       {shape === "card" && <span className={styles.badge} />}
       {ring && <AccountMarkRing progress={progress} size={size} />}

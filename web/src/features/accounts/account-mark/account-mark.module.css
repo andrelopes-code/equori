@@ -98,6 +98,11 @@
       light-dark(var(--slotted-border-subtle), #fff);
   }
 
+  /* The placeholder fills the plate, which clips it to the mark's corner. */
+  .cover {
+    place-self: stretch;
+  }
+
   .logo {
     display: block;
     inline-size: 100%;

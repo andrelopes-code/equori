@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { fireEvent, render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -42,6 +42,32 @@ describe("AccountMark", () => {
     expect(container.textContent).toBe("");
   });
 
+  it("holds a placeholder over the logo until the image loads", () => {
+    const { container } = render(
+      <AccountMark shape="square" name="Nubank" logo="/assets/nu.png" />,
+    );
+    const placeholder = () => container.querySelector("[data-ui-skeleton]");
+    expect(placeholder()?.hasAttribute("data-loading")).toBe(true);
+
+    fireEvent.load(imageOf(container));
+
+    expect(placeholder()?.hasAttribute("data-loading")).toBe(false);
+  });
+
+  it("withdraws the placeholder when the image fails", () => {
+    const { container } = render(
+      <AccountMark shape="square" name="Nubank" logo="/assets/nu.png" />,
+    );
+
+    fireEvent.error(imageOf(container));
+
+    expect(
+      container
+        .querySelector("[data-ui-skeleton]")
+        ?.hasAttribute("data-loading"),
+    ).toBe(false);
+  });
+
   it("badges a card's plate", () => {
     const { container } = render(
       <AccountMark shape="card" name="Itaú" size="lg" />,
@@ -81,3 +107,10 @@ describe("AccountMark", () => {
     );
   });
 });
+
+function imageOf(container: HTMLElement): HTMLImageElement {
+  const img = container.querySelector("img");
+  if (img === null) throw new Error("no image drawn");
+
+  return img;
+}
