@@ -11,13 +11,14 @@ import {
 } from "@/features/assistant/preview/scenarios-write";
 import { withHandled } from "@/features/assistant/preview/scenario-handled";
 import { builtScenarios } from "@/features/assistant/preview/scenarios-built";
+import { chartScenarios } from "@/features/assistant/preview/scenarios-charts";
 import { viewScenarios } from "@/features/assistant/preview/scenarios-views";
 
 export const scenarioGroups: ScenarioGroup[] = [
   {
     title: "assistantPreview.views",
     description: "assistantPreview.views_description",
-    scenarios: [...viewScenarios, ...builtScenarios],
+    scenarios: [...chartScenarios, ...viewScenarios, ...builtScenarios],
   },
   {
     title: "assistantPreview.read",

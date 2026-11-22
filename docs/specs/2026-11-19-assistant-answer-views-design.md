@@ -215,3 +215,42 @@ Cross-cutting questions of this amendment:
 - S4: `show` gains `select.chart`; the prompt gains V26.
 - X1: Does not apply: no domain scenario; `internal/assistant` tests a chart through the turn API.
 - X2: Does not apply: no regional value; `PlotOf` tests a table with two currencies.
+
+## 11. Amendment of 2026-11-21: a chart of any read (V27 to V36; replaces V22 to V26)
+
+Owner, 2026-11-21: "monte um gráfico dos meus rendimentos nos meses desse ano, conta 'Algum dinheiro'" got no view: `get_account_history` has no form, and V22 only redraws rows a form already built. The owner asked for the most versatile solution that stays safe, with the user's experience first. The model now describes a chart over the output of any read of the turn; the server extracts, filters, groups and aggregates the records with exact integer maths, and the client draws the result. The model never states a figure: it names fields, an aggregation and a drawing.
+
+- V27. `select.chart` (V22) is removed, with `view.PlotOf` (V23). The form `chart` is open to every read tool: `show {source: 1 to 4 handles of one tool, form: "chart", chart: Spec, next?}`.
+- V28. Spec: `title` (1 to 60 runes), `items` (the dot path of an array in the output, such as `days`), `where[]` (at most 4 of `{field, op: eq | ne | gt | gte | lt | lte | contains, value}`), `x: {field, bucket?: day | month | year, from?, to?, label?, sort?: x | desc | asc, limit?: 1 to 24}`, `split?: {field, limit?: 2 to 8}`, `series[]` (1 to 6 of `{field?, agg: sum | count | avg | min | max | first | last, sign?: as_is | negate | abs, kind: bar | line | area | pie, label (1 to 40 runes), axis?: start | end, stack?, curve?: linear | monotone | step, tone?: success | danger | warning | info | neutral}`), `orientation?: vertical | horizontal`, `stack_mode?: normal | percent`, `average?: [series index]`. A field is a dot path inside an item. `count` takes no field.
+- V29. Pages: each handle is a page of the same read. When every output carries a non-empty `next_cursor`, more records follow and `show` is a tool error that asks for the next pages or a narrower read. A handle given twice is a tool error. At most 2,000 items.
+- V30. Typing. An object `{amount, currency}` is money, parsed into minor units of its currency (`view.Amount`). An integer is a count. A string `YYYY-MM-DD` is a date, `YYYY-MM` a month, any other string a text. A fractional number, an array and a missing field are not values: a series field that holds one in a kept item is a tool error; a filter on it drops the item. A money value of `where` compares the amount as an exact decimal.
+- V31. Grouping. A date `x` groups by its bucket (`day` when absent): a day keeps its date, a month its `YYYY-MM`, a year its text. When a series sums or counts, every bucket between the first and the last, widened to `x.from` and `x.to`, appears with zero; at most 400 buckets. A text `x` groups by value, sorted by the first series descending unless `sort` says otherwise; `limit` (8 for a pie, 12 otherwise) counts the rows drawn: past it, the first `limit - 1` stay and the rest fold into one row "Outros N" when every series sums or counts, or the rows are cut at `limit` otherwise. Dates sort by `x`.
+- V32. Aggregation. `sum`, `min`, `max`, `first`, `last` keep the unit; `avg` of money rounds half to even in minor units; `count` is a count. `sign` applies to each value before aggregation. A sum holds one currency: a series whose values hold two currencies is a tool error (C2).
+- V33. `split` turns the only series into one series per value of its field, ranked by the absolute total. `limit` (default 6) counts the columns drawn: past it, the first `limit - 1` stay and the rest fold into one column "Outros" when the series sums or counts, or are cut otherwise. It takes exactly one series and no pie.
+- V34. Drawing rules. An axis holds one unit; the series of `end` share a unit different from `start`. A pie is the only series, has no `split`, a text or date `x`, no value below zero and at most 8 rows after folding. `stack` applies to bar and area series of one axis. `average` names series of kind bar, line or area whose aggregation sums or counts; its value is the mean of the rows, rounded half to even.
+- V35. The payload: `rows` holds the label column and one column per drawn series; `plot: {label, orientation, stack_mode, series: [{column, kind, axis, stack, curve, tone}], marks: [{kind: average, column, value}]}`. Title `assistantView.chart.title` with `{title}`. Verdict: with a summing or counting first series, `assistantView.chart.verdict_total` with `{total, label, top}` (the row of the largest value), `assistantView.chart.verdict_empty` when every value is zero; otherwise `assistantView.chart.verdict_range` with `{low, high}`. Provenance `assistantView.chart.prov` with `{count}` items read. The window is the first and last date of the buckets, or `x.from` and `x.to`.
+- V36. Client: `PlotBody` draws each series with its kind, axis, stack, curve and tone, a second value axis when a series reads `end`, the average as a dashed line labelled with its value, horizontal bars when asked. A record without a value leaves a gap. The legend shows when two or more series or a pie are drawn. The foot's chart/table switch shows the rows.
+
+Prompt (replaces V26): for a chart that no form draws, or a drawing the member asks for, call show with form chart and a chart spec over the fields of the read's output; never type a figure.
+
+Cross-cutting questions of this amendment:
+
+- R1: No regional value. Buckets are calendar days, months and years; no week bucket, since the first weekday varies by locale.
+- R2: Does not apply: no regional value.
+- R3: The enums of the spec (`op`, `bucket`, `agg`, `kind`, `tone`, `curve`, `sort`, `orientation`, `stack_mode`, `axis`, `sign`) are closed universal sets.
+- R4: Does not apply: no extension point.
+- R5: Keys `assistantView.chart.title`, `.verdict_total`, `.verdict_range`, `.verdict_empty`, `.prov`, `.rest`, `.none`, `.average`, in pt-BR and en. Series labels and the title are text the model writes in the member's language, as the answer text is.
+- R6: Every number and date goes through `valueText` with the active locale.
+- C1: Amounts are integers of minor units; averages round half to even with `math/big`.
+- C2: A series sums one currency; two currencies in one series are a tool error that names them.
+- C3: A series carries the currency of its values; the base currency is not assumed.
+- C4: Amounts pass through `useMoneyFormat()` inside `useValueFormat`.
+- T1: Dates come from the output; `today` is not read by the chart builder.
+- T2: Does not apply: no business-day count.
+- B1, B2, B3, D1 to D5: Do not apply: no table, operation, setting or write; the view is stored in `assistant_view` as every view.
+- S1: No operation; `AssistantViewPlot` changes shape.
+- S2: The chart takes the width of the view at 390 px at size `sm`; horizontal bars for long names.
+- S3: The guide article of the assistant states that the assistant draws charts of what it reads, in the drawing the member asks for.
+- S4: `show` gains `chart`; the prompt gains the line above.
+- X1: Does not apply: no domain scenario; `internal/assistant` tests a chart of `get_account_history` through the turn API.
+- X2: `view` tests a series in USD in a BRL book and two currencies in one series.

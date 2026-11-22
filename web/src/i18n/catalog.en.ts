@@ -1912,6 +1912,19 @@ export const catalogEn = {
     "Where this is done in equori, screen by screen.",
   "assistantView.help.screen": "Screen",
   "assistantView.help.task": "What is done there",
+  "assistantView.chart.title": "{title}",
+  "assistantView.chart.verdict_total":
+    "{total} in total; the largest value, {top}, is in {label}.",
+  "assistantView.chart.verdict_range": "The values range from {low} to {high}.",
+  "assistantView.chart.verdict_empty":
+    "No value other than zero in the period.",
+  "assistantView.chart.prov": "Computed by equori from {count} records read",
+  "assistantView.chart.rest": "Other {count}",
+  "assistantView.chart.others": "Others",
+  "assistantView.chart.none": "No name",
+  "assistantView.chart.period": "Period",
+  "assistantView.chart.item": "Item",
+  "assistantView.chart.average": "Average {value}",
   "assistantPreview.views": "Views built by the server",
   "assistantPreview.views_description":
     "Each figure comes from a read of the turn; the model names the read and the form.",

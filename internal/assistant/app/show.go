@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/google/uuid"
@@ -31,16 +33,21 @@ var sourceCounts = map[string][2]int{
 	"outliers": {1, maxPages},
 	"heat":     {1, maxPages},
 	"figure":   {1, 2},
+	chartForm:  {1, maxPages},
 }
+
+// chartForm draws a chart the model describes over any read (answer views design, V27).
+const chartForm = "chart"
 
 // The pages of one list a view joins.
 const maxPages = 4
 
 type showArgs struct {
-	Source []string   `json:"source"`
-	Form   string     `json:"form"`
-	Select ViewSelect `json:"select"`
-	Next   []string   `json:"next"`
+	Source []string         `json:"source"`
+	Form   string           `json:"form"`
+	Select ViewSelect       `json:"select"`
+	Chart  *pview.ChartSpec `json:"chart"`
+	Next   []string         `json:"next"`
 }
 
 // StampRead keeps the output of a read of the turn and returns it with its handle in view_source
@@ -89,6 +96,10 @@ func (s *Service) Show(ctx context.Context, args json.RawMessage) (json.RawMessa
 	}
 
 	build, ok := s.views[ViewKey{Tool: toolName, Form: in.Form}]
+	if in.Form == chartForm {
+		build, ok = chartBuilder(in.Chart), true
+	}
+
 	if !ok {
 		forms := strings.Join(s.FormsOf(toolName), ", ")
 
@@ -128,7 +139,7 @@ func (s *Service) showSources(t *turnState, in showArgs) (string, []json.RawMess
 	var toolName string
 
 	outputs := make([]json.RawMessage, 0, len(in.Source))
-	for _, h := range in.Source {
+	for i, h := range in.Source {
 		name, out, ok := t.read(h)
 		if !ok {
 			return "", nil, showFailure(
@@ -139,6 +150,10 @@ func (s *Service) showSources(t *turnState, in showArgs) (string, []json.RawMess
 
 		if toolName != "" && name != toolName {
 			return "", nil, showFailure("source", "handles must name reads of the same tool")
+		}
+
+		if slices.Contains(in.Source[:i], h) {
+			return "", nil, showFailure("source", h+" is given twice")
 		}
 
 		toolName = name
@@ -172,16 +187,12 @@ func (s *Service) buildView(
 
 	p, err := build(outputs, in.Select, today)
 	if err != nil {
-		return nil, showFailure("source", err.Error())
-	}
-
-	if in.Select.Chart != "" {
-		plot, err := pview.PlotOf(p.Rows, in.Select.Chart)
-		if err != nil {
-			return nil, showFailure("select", err.Error())
+		field := "source"
+		if in.Form == chartForm {
+			field = chartForm
 		}
 
-		p.Plot = &plot
+		return nil, showFailure(field, err.Error())
 	}
 
 	p.Next = in.Next
@@ -190,6 +201,17 @@ func (s *Service) buildView(
 	}
 
 	return json.Marshal(p)
+}
+
+// chartBuilder builds the chart spec describes; a missing spec is the builder's error.
+func chartBuilder(spec *pview.ChartSpec) ViewBuilder {
+	return func(outputs []json.RawMessage, _ ViewSelect, _ time.Time) (ViewPayload, error) {
+		if spec == nil {
+			return ViewPayload{}, errors.New("form chart takes a chart spec")
+		}
+
+		return pview.Chart(outputs, *spec)
+	}
 }
 
 func showFailure(field, message string) error {

@@ -6,57 +6,55 @@ import {
 } from "@/features/assistant/view/plot/plot-records";
 import type { ViewValue } from "@/features/assistant/view/view-types";
 
+const brl = (amount: number): ViewValue => ({
+  money: { amount, currency: "BRL" },
+});
+
 describe("plotRecords", () => {
   it("draws one record per row with the label as written and each series as a number", () => {
     const rows: ViewValue[][] = [
-      [
-        { text: "Food" },
-        { money: { amount: 60000, currency: "BRL" } },
-        { bp: 6000 },
-      ],
-      [
-        { text: "Home" },
-        { money: { amount: 40000, currency: "BRL" } },
-        { bp: 4000 },
-      ],
+      [{ month: "2026-08" }, brl(60000), { count: 2 }],
+      [{ month: "2026-09" }, brl(0), { count: 0 }],
     ];
-    const labels = [
-      ["Food", "R$ 600,00", "60%"],
-      ["Home", "R$ 400,00", "40%"],
-    ];
+    const labels = ["ago. de 2026", "set. de 2026"];
 
-    const got = plotRecords(rows, labels, { label: 0, series: [1] });
+    const got = plotRecords(rows, labels, {
+      label: 0,
+      series: [
+        { column: 1, kind: "bar" },
+        { column: 2, kind: "line", axis: "end" },
+      ],
+      marks: [],
+    });
 
     expect(got.records).toEqual([
-      { label: "Food", s1: 60000 },
-      { label: "Home", s1: 40000 },
+      { label: "ago. de 2026", c1: 60000, c2: 2 },
+      { label: "set. de 2026", c1: 0, c2: 0 },
     ]);
-    expect(got.series).toEqual([
-      {
-        field: "s1",
-        column: 1,
-        unit: { money: { amount: 60000, currency: "BRL" } },
-      },
+    expect(got.series.map((s) => [s.field, s.column, s.unit])).toEqual([
+      ["c1", 1, brl(60000)],
+      ["c2", 2, { count: 2 }],
     ]);
   });
 
-  it("reads a missing value as zero", () => {
-    const got = plotRecords([[{ text: "A" }]], [["A"]], {
-      label: 0,
-      series: [1],
-    });
+  it("leaves a gap where a row holds no value", () => {
+    const got = plotRecords(
+      [
+        [{ month: "2026-01" }, {}],
+        [{ month: "2026-02" }, brl(5)],
+      ],
+      ["jan.", "fev."],
+      { label: 0, series: [{ column: 1, kind: "line" }], marks: [] },
+    );
 
-    expect(got.records).toEqual([{ label: "A", s1: 0 }]);
+    expect(got.records).toEqual([{ label: "jan." }, { label: "fev.", c1: 5 }]);
+    expect(got.series[0]?.unit).toEqual(brl(5));
   });
 });
 
 describe("withNumber", () => {
   it("keeps the unit and the currency of the template", () => {
-    expect(withNumber({ money: { amount: 1, currency: "USD" } }, 250)).toEqual({
-      money: { amount: 250, currency: "USD" },
-    });
-    expect(withNumber({ bp: 1 }, 30)).toEqual({ bp: 30 });
-    expect(withNumber({ rate: 1 }, 7)).toEqual({ rate: 7 });
+    expect(withNumber(brl(1), 250)).toEqual(brl(250));
     expect(withNumber({ count: 1 }, 4)).toEqual({ count: 4 });
   });
 });

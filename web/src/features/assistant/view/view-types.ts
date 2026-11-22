@@ -7,3 +7,5 @@ export type ViewText = components["schemas"]["AssistantViewText"];
 export type ViewWindow = components["schemas"]["AssistantViewWindow"];
 export type ViewMoney = components["schemas"]["AssistantViewMoney"];
 export type ViewPlot = components["schemas"]["AssistantViewPlot"];
+export type ViewPlotSeries = components["schemas"]["AssistantViewPlotSeries"];
+export type ViewPlotMark = components["schemas"]["AssistantViewPlotMark"];

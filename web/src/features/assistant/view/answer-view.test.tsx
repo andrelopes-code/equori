@@ -99,7 +99,11 @@ describe("AnswerView", () => {
           ...view,
           payload: {
             ...view.payload,
-            plot: { chart: "pie", label: 0, series: [1] },
+            plot: {
+              label: 0,
+              series: [{ column: 1, kind: "pie" }],
+              marks: [],
+            },
           },
         }}
       />,

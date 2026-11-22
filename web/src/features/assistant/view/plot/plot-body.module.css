@@ -1,0 +1,14 @@
+@layer app {
+  .plot {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* The key of an average: the dashed line the plot draws. */
+  .keyAverage {
+    flex: none;
+    inline-size: 14px;
+    border-block-start: 1px dashed var(--slotted-text-muted);
+  }
+}

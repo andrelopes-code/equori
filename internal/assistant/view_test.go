@@ -3,9 +3,11 @@ package assistant_test
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
 	"testing"
 
+	"github.com/andrelopes-code/equori/internal/apitest"
 	"github.com/andrelopes-code/equori/internal/platform/llm"
 	"github.com/andrelopes-code/equori/internal/platform/llm/llmtest"
 )
@@ -73,13 +75,9 @@ func TestShowRefuses(t *testing.T) {
 		{"form not drawn", `{"source":["r1"],"form":"ranking"}`, "help", 1},
 		{"two handles", `{"source":["r1","r1"],"form":"help"}`, "source", 1},
 		{"fourth view", `{"source":["r1"],"form":"help"}`, "at most 3 views", 4},
-		// V23: the rows of help hold no numbers.
-		{
-			"chart without numbers",
-			`{"source":["r1"],"form":"help","select":{"chart":"bar"}}`,
-			"no column of numbers",
-			1,
-		},
+		// V27, V29: form chart takes a spec, and a handle once.
+		{"chart without spec", `{"source":["r1"],"form":"chart"}`, "takes a chart spec", 1},
+		{"handle twice", `{"source":["r1","r1"],"form":"chart"}`, "given twice", 1},
 	}
 
 	for _, c := range cases {
@@ -218,29 +216,34 @@ func TestShowRankingOfReporting(t *testing.T) {
 	}
 }
 
-// V22 to V24: select.chart draws the rows of a ranking as a pie of its amount column.
-func TestShowChartOfRows(t *testing.T) {
+// The owner's request of 2026-11-21 (V27 to V35): the income of one account by month of the
+// year, from get_account_history, which no form draws.
+func TestShowChartOfAccountHistory(t *testing.T) {
 	t.Parallel()
 
-	p := llmtest.New(
-		"aistudio",
-		callStep(
-			"get_category_totals",
-			`{"class":"expense","from":"2026-10-01","to":"2026-10-31"}`,
-		),
-		callStep("show", `{"source":["r1"],"form":"ranking","select":{"chart":"pie"}}`),
-		textStep("Mercado e casa."),
-	)
-	h := turnHarness(t, p)
+	spec := `{"title":"Entradas de Algum dinheiro em 2026","items":"days",` +
+		`"x":{"field":"date","bucket":"month","from":"2026-08-01","to":"2026-10-31"},` +
+		`"series":[{"field":"inflow","agg":"sum","kind":"bar","label":"Entradas","tone":"success"}],` +
+		`"average":[0]}`
+	late := &lateProvider{}
+	h := apitest.New(t, apitest.LLM(late), apitest.Today("2026-10-23"))
 
-	checking := h.Account("Checking", "asset", "checking", nil)
-	food := h.Account("Food", "expense", "", nil)
-	home := h.Account("Home", "expense", "", nil)
-	h.Record("2026-10-05", h.Posting(checking, -60000), h.Posting(food, 60000))
-	h.Record("2026-10-06", h.Posting(checking, -40000), h.Posting(home, 40000))
+	account := h.Account("Algum dinheiro", "asset", "checking", nil)
+	salary := h.Account("Salary", "income", "", nil)
+	h.Record("2026-08-05", h.Posting(account, 60000), h.Posting(salary, -60000))
+	h.Record("2026-10-06", h.Posting(account, 40000), h.Posting(salary, -40000))
+	h.Record("2026-10-20", h.Posting(account, 2550), h.Posting(salary, -2550))
 	h.Dispatch()
 
-	r := sendTurn(h, h.Client, map[string]any{"text": "Mostre em pizza"})
+	history := `{"account_id":"` + account + `","view":"flows","from":"2026-01-01","to":"2026-10-31"}`
+	late.p = llmtest.New("aistudio",
+		callStep("get_account_history", history),
+		callStep("show", `{"source":["r1"],"form":"chart","chart":`+spec+`}`),
+		textStep("Outubro somou mais."),
+	)
+	p := late.p
+
+	r := sendTurn(h, h.Client, map[string]any{"text": "Gráfico dos meus rendimentos por mês"})
 	if r.Status != http.StatusOK {
 		t.Fatalf("status = %d: %s", r.Status, r.Body)
 	}
@@ -249,11 +252,28 @@ func TestShowChartOfRows(t *testing.T) {
 
 	var answer struct {
 		Views []struct {
+			Form    string `json:"form"`
 			Payload struct {
+				Rows struct {
+					Rows [][]struct {
+						Month string `json:"month"`
+						Money *struct {
+							Amount int64 `json:"amount"`
+						} `json:"money"`
+					} `json:"rows"`
+				} `json:"rows"`
 				Plot *struct {
-					Chart  string `json:"chart"`
-					Label  int    `json:"label"`
-					Series []int  `json:"series"`
+					Series []struct {
+						Kind string `json:"kind"`
+						Tone string `json:"tone"`
+					} `json:"series"`
+					Marks []struct {
+						Value struct {
+							Money struct {
+								Amount int64 `json:"amount"`
+							} `json:"money"`
+						} `json:"value"`
+					} `json:"marks"`
 				} `json:"plot"`
 			} `json:"payload"`
 		} `json:"views"`
@@ -262,12 +282,24 @@ func TestShowChartOfRows(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(answer.Views) != 1 || answer.Views[0].Payload.Plot == nil {
+	if len(answer.Views) != 1 || answer.Views[0].Form != "chart" ||
+		answer.Views[0].Payload.Plot == nil {
 		t.Fatalf("views = %+v; results %+v", answer.Views, toolResults(p))
 	}
 
-	plot := *answer.Views[0].Payload.Plot
-	if plot.Chart != "pie" || plot.Label != 0 || len(plot.Series) != 1 || plot.Series[0] != 1 {
+	// August 600.00, September 0, October 425.50; the mean 1025.50 / 3 = 341.83.
+	got := []string{}
+	for _, row := range answer.Views[0].Payload.Rows.Rows {
+		got = append(got, row[0].Month+" "+strconv.FormatInt(row[1].Money.Amount, 10))
+	}
+
+	if strings.Join(got, ",") != "2026-08 60000,2026-09 0,2026-10 42550" {
+		t.Fatalf("rows = %v", got)
+	}
+
+	plot := answer.Views[0].Payload.Plot
+	if plot.Series[0].Kind != "bar" || plot.Series[0].Tone != "success" ||
+		len(plot.Marks) != 1 || plot.Marks[0].Value.Money.Amount != 34183 {
 		t.Fatalf("plot = %+v", plot)
 	}
 }

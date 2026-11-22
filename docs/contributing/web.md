@@ -103,6 +103,7 @@ The owner review of 2026-11-15 set these rules for everything the assistant draw
 | Bank ratios             | Bars against the minimum tick, the zone below it hatched                                                 |
 | Imports                 | Batches with what each created and what waits for review                                                 |
 | Change without a body   | The records it touches, then each value before → after                                                   |
+| Chart of a read         | The rows the server computed, drawn as asked: bars, a line, an area or a donut; a second axis, the mean dashed in the key |
 
 ## Utility classes
 

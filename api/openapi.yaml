@@ -8615,16 +8615,38 @@ components:
     AssistantViewPlot:
       type: object
       additionalProperties: false
-      description: The rows drawn as a chart in place of the form's body (answer views design, V24).
-      required: [chart, label, series]
+      description: The rows drawn as a chart (answer views design, V35).
+      required: [label, series, marks]
       properties:
-        chart: {type: string, enum: [bar, column, line, area, pie]}
         label: {type: integer, minimum: 0, description: index of the label column of rows.head}
+        orientation: {type: string, enum: [vertical, horizontal]}
+        stack_mode: {type: string, enum: [normal, percent]}
         series:
           type: array
           minItems: 1
-          items: {type: integer, minimum: 0}
-          description: indexes of the value columns of rows.head
+          items: {$ref: "#/components/schemas/AssistantViewPlotSeries"}
+        marks:
+          type: array
+          items: {$ref: "#/components/schemas/AssistantViewPlotMark"}
+    AssistantViewPlotSeries:
+      type: object
+      additionalProperties: false
+      required: [column, kind]
+      properties:
+        column: {type: integer, minimum: 1, description: index of the column of rows.head}
+        kind: {type: string, enum: [bar, line, area, pie]}
+        axis: {type: string, enum: [end], description: the second value axis; absent for the first}
+        stack: {type: boolean}
+        curve: {type: string, enum: [linear, monotone, step]}
+        tone: {type: string, enum: [success, danger, warning, info, neutral]}
+    AssistantViewPlotMark:
+      type: object
+      additionalProperties: false
+      required: [kind, column, value]
+      properties:
+        kind: {type: string, enum: [average]}
+        column: {type: integer, minimum: 1}
+        value: {$ref: "#/components/schemas/AssistantViewValue"}
     AssistantViewText:
       type: object
       additionalProperties: false

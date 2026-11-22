@@ -5058,14 +5058,38 @@ export interface components {
                 [key: string]: unknown;
             };
         };
-        /** @description The rows drawn as a chart in place of the form's body (answer views design, V24). */
+        /** @description The rows drawn as a chart (answer views design, V35). */
         AssistantViewPlot: {
-            /** @enum {string} */
-            chart: "bar" | "column" | "line" | "area" | "pie";
             /** @description index of the label column of rows.head */
             label: number;
-            /** @description indexes of the value columns of rows.head */
-            series: number[];
+            /** @enum {string} */
+            orientation?: "vertical" | "horizontal";
+            /** @enum {string} */
+            stack_mode?: "normal" | "percent";
+            series: components["schemas"]["AssistantViewPlotSeries"][];
+            marks: components["schemas"]["AssistantViewPlotMark"][];
+        };
+        AssistantViewPlotSeries: {
+            /** @description index of the column of rows.head */
+            column: number;
+            /** @enum {string} */
+            kind: "bar" | "line" | "area" | "pie";
+            /**
+             * @description the second value axis; absent for the first
+             * @enum {string}
+             */
+            axis?: "end";
+            stack?: boolean;
+            /** @enum {string} */
+            curve?: "linear" | "monotone" | "step";
+            /** @enum {string} */
+            tone?: "success" | "danger" | "warning" | "info" | "neutral";
+        };
+        AssistantViewPlotMark: {
+            /** @enum {string} */
+            kind: "average";
+            column: number;
+            value: components["schemas"]["AssistantViewValue"];
         };
         AssistantViewText: {
             key: string;

@@ -120,27 +120,138 @@ func (e AssistantProposalStatus) Valid() bool {
 	}
 }
 
-// Defines values for AssistantViewPlotChart.
+// Defines values for AssistantViewPlotOrientation.
 const (
-	Area   AssistantViewPlotChart = "area"
-	Bar    AssistantViewPlotChart = "bar"
-	Column AssistantViewPlotChart = "column"
-	Line   AssistantViewPlotChart = "line"
-	Pie    AssistantViewPlotChart = "pie"
+	Horizontal AssistantViewPlotOrientation = "horizontal"
+	Vertical   AssistantViewPlotOrientation = "vertical"
 )
 
-// Valid indicates whether the value is a known member of the AssistantViewPlotChart enum.
-func (e AssistantViewPlotChart) Valid() bool {
+// Valid indicates whether the value is a known member of the AssistantViewPlotOrientation enum.
+func (e AssistantViewPlotOrientation) Valid() bool {
+	switch e {
+	case Horizontal:
+		return true
+	case Vertical:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AssistantViewPlotStackMode.
+const (
+	Normal  AssistantViewPlotStackMode = "normal"
+	Percent AssistantViewPlotStackMode = "percent"
+)
+
+// Valid indicates whether the value is a known member of the AssistantViewPlotStackMode enum.
+func (e AssistantViewPlotStackMode) Valid() bool {
+	switch e {
+	case Normal:
+		return true
+	case Percent:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AssistantViewPlotMarkKind.
+const (
+	Average AssistantViewPlotMarkKind = "average"
+)
+
+// Valid indicates whether the value is a known member of the AssistantViewPlotMarkKind enum.
+func (e AssistantViewPlotMarkKind) Valid() bool {
+	switch e {
+	case Average:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AssistantViewPlotSeriesAxis.
+const (
+	End AssistantViewPlotSeriesAxis = "end"
+)
+
+// Valid indicates whether the value is a known member of the AssistantViewPlotSeriesAxis enum.
+func (e AssistantViewPlotSeriesAxis) Valid() bool {
+	switch e {
+	case End:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AssistantViewPlotSeriesCurve.
+const (
+	Linear   AssistantViewPlotSeriesCurve = "linear"
+	Monotone AssistantViewPlotSeriesCurve = "monotone"
+	Step     AssistantViewPlotSeriesCurve = "step"
+)
+
+// Valid indicates whether the value is a known member of the AssistantViewPlotSeriesCurve enum.
+func (e AssistantViewPlotSeriesCurve) Valid() bool {
+	switch e {
+	case Linear:
+		return true
+	case Monotone:
+		return true
+	case Step:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AssistantViewPlotSeriesKind.
+const (
+	Area AssistantViewPlotSeriesKind = "area"
+	Bar  AssistantViewPlotSeriesKind = "bar"
+	Line AssistantViewPlotSeriesKind = "line"
+	Pie  AssistantViewPlotSeriesKind = "pie"
+)
+
+// Valid indicates whether the value is a known member of the AssistantViewPlotSeriesKind enum.
+func (e AssistantViewPlotSeriesKind) Valid() bool {
 	switch e {
 	case Area:
 		return true
 	case Bar:
 		return true
-	case Column:
-		return true
 	case Line:
 		return true
 	case Pie:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AssistantViewPlotSeriesTone.
+const (
+	Danger  AssistantViewPlotSeriesTone = "danger"
+	Info    AssistantViewPlotSeriesTone = "info"
+	Neutral AssistantViewPlotSeriesTone = "neutral"
+	Success AssistantViewPlotSeriesTone = "success"
+	Warning AssistantViewPlotSeriesTone = "warning"
+)
+
+// Valid indicates whether the value is a known member of the AssistantViewPlotSeriesTone enum.
+func (e AssistantViewPlotSeriesTone) Valid() bool {
+	switch e {
+	case Danger:
+		return true
+	case Info:
+		return true
+	case Neutral:
+		return true
+	case Success:
+		return true
+	case Warning:
 		return true
 	default:
 		return false
@@ -397,7 +508,7 @@ type AssistantViewPayload struct {
 	Next []string               `json:"next"`
 	Open *AssistantViewLink     `json:"open,omitempty"`
 
-	// Plot The rows drawn as a chart in place of the form's body (answer views design, V24).
+	// Plot The rows drawn as a chart (answer views design, V35).
 	Plot    *AssistantViewPlot  `json:"plot,omitempty"`
 	Prov    *AssistantViewText  `json:"prov,omitempty"`
 	Rows    AssistantViewTable  `json:"rows"`
@@ -406,19 +517,58 @@ type AssistantViewPayload struct {
 	Window  AssistantViewWindow `json:"window"`
 }
 
-// AssistantViewPlot The rows drawn as a chart in place of the form's body (answer views design, V24).
+// AssistantViewPlot The rows drawn as a chart (answer views design, V35).
 type AssistantViewPlot struct {
-	Chart AssistantViewPlotChart `json:"chart"`
-
 	// Label index of the label column of rows.head
-	Label int `json:"label"`
-
-	// Series indexes of the value columns of rows.head
-	Series []int `json:"series"`
+	Label       int                           `json:"label"`
+	Marks       []AssistantViewPlotMark       `json:"marks"`
+	Orientation *AssistantViewPlotOrientation `json:"orientation,omitempty"`
+	Series      []AssistantViewPlotSeries     `json:"series"`
+	StackMode   *AssistantViewPlotStackMode   `json:"stack_mode,omitempty"`
 }
 
-// AssistantViewPlotChart defines model for AssistantViewPlot.Chart.
-type AssistantViewPlotChart string
+// AssistantViewPlotOrientation defines model for AssistantViewPlot.Orientation.
+type AssistantViewPlotOrientation string
+
+// AssistantViewPlotStackMode defines model for AssistantViewPlot.StackMode.
+type AssistantViewPlotStackMode string
+
+// AssistantViewPlotMark defines model for AssistantViewPlotMark.
+type AssistantViewPlotMark struct {
+	Column int                       `json:"column"`
+	Kind   AssistantViewPlotMarkKind `json:"kind"`
+
+	// Value One typed figure; exactly one property is present (V7).
+	Value AssistantViewValue `json:"value"`
+}
+
+// AssistantViewPlotMarkKind defines model for AssistantViewPlotMark.Kind.
+type AssistantViewPlotMarkKind string
+
+// AssistantViewPlotSeries defines model for AssistantViewPlotSeries.
+type AssistantViewPlotSeries struct {
+	// Axis the second value axis; absent for the first
+	Axis *AssistantViewPlotSeriesAxis `json:"axis,omitempty"`
+
+	// Column index of the column of rows.head
+	Column int                           `json:"column"`
+	Curve  *AssistantViewPlotSeriesCurve `json:"curve,omitempty"`
+	Kind   AssistantViewPlotSeriesKind   `json:"kind"`
+	Stack  *bool                         `json:"stack,omitempty"`
+	Tone   *AssistantViewPlotSeriesTone  `json:"tone,omitempty"`
+}
+
+// AssistantViewPlotSeriesAxis the second value axis; absent for the first
+type AssistantViewPlotSeriesAxis string
+
+// AssistantViewPlotSeriesCurve defines model for AssistantViewPlotSeries.Curve.
+type AssistantViewPlotSeriesCurve string
+
+// AssistantViewPlotSeriesKind defines model for AssistantViewPlotSeries.Kind.
+type AssistantViewPlotSeriesKind string
+
+// AssistantViewPlotSeriesTone defines model for AssistantViewPlotSeries.Tone.
+type AssistantViewPlotSeriesTone string
 
 // AssistantViewTable defines model for AssistantViewTable.
 type AssistantViewTable struct {

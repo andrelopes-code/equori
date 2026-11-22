@@ -1922,6 +1922,20 @@ export const catalogPtBR: Catalog = {
   "assistantView.help.verdict": "Onde isso se faz no equori, tela por tela.",
   "assistantView.help.screen": "Tela",
   "assistantView.help.task": "O que se faz",
+  "assistantView.chart.title": "{title}",
+  "assistantView.chart.verdict_total":
+    "{total} no total; o maior valor, {top}, está em {label}.",
+  "assistantView.chart.verdict_range": "Os valores vão de {low} a {high}.",
+  "assistantView.chart.verdict_empty":
+    "Nenhum valor diferente de zero no período.",
+  "assistantView.chart.prov":
+    "Calculado pelo equori de {count} registros lidos",
+  "assistantView.chart.rest": "Outros {count}",
+  "assistantView.chart.others": "Outros",
+  "assistantView.chart.none": "Sem nome",
+  "assistantView.chart.period": "Período",
+  "assistantView.chart.item": "Item",
+  "assistantView.chart.average": "Média {value}",
   "assistantPreview.views": "Visões montadas pelo servidor",
   "assistantPreview.views_description":
     "Cada número vem de uma leitura do turno; o modelo indica a leitura e a forma.",

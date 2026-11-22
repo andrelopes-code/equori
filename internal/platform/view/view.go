@@ -15,8 +15,6 @@ type Key struct {
 type Select struct {
 	Limit     int    `json:"limit,omitzero"`
 	Highlight string `json:"highlight,omitzero"`
-	// Chart draws the rows of the view in place of its form's body (V22).
-	Chart string `json:"chart,omitzero"`
 }
 
 // Builder turns the outputs of one or two reads into a view (answer views design, V4).
