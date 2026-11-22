@@ -17,6 +17,8 @@ export interface ValueFormat {
 }
 
 const LABEL = "assistantView.";
+// The label of a row grouped by day of the week; its count is the ISO day (V41).
+const WEEKDAY = "assistantView.chart.weekday";
 
 // One typed figure of a view as text (answer views design, V7).
 export function valueText(v: ViewValue, f: ValueFormat): string {
@@ -29,6 +31,8 @@ export function valueText(v: ViewValue, f: ValueFormat): string {
   if (v.decimal !== undefined) return decimal(v.decimal, f.locale);
   if (v.points !== undefined)
     return f.label("assistantView.unit.points", v.points);
+  if (v.text === WEEKDAY && v.count !== undefined)
+    return weekday(v.count, f.locale);
   if (v.text?.startsWith(LABEL) === true) return f.label(v.text, v.count);
   if (v.count !== undefined) return numberFormatter(f.locale).format(v.count);
 
@@ -74,4 +78,12 @@ function decimal(d: string, locale: string): string {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   }).format(Number(d));
+}
+
+// The name of an ISO day of the week, 1 for Monday: 2024-01-01 was a Monday.
+function weekday(day: number, locale: string): string {
+  return new Intl.DateTimeFormat(locale, {
+    weekday: "long",
+    timeZone: "UTC",
+  }).format(Date.UTC(2024, 0, day));
 }

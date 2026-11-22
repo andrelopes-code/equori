@@ -15,7 +15,7 @@ const chartSchema = `{"type":"object","additionalProperties":false,
  "value":{"type":"string","description":"a text, a date, or a number such as 0 or -10.5"}}}},
 "x":{"type":"object","additionalProperties":false,"required":["field"],"properties":{
  "field":{"type":"string","description":"field of a record that places it: a date, a month or a name"},
- "bucket":{"type":"string","enum":["day","month","year"]},
+ "bucket":{"type":"string","enum":["day","weekday","month","year"]},
  "from":{"type":"string","format":"date","description":"first date the axis holds"},
  "to":{"type":"string","format":"date","description":"last date the axis holds"},
  "label":{"type":"string","maxLength":40},
@@ -29,8 +29,11 @@ const chartSchema = `{"type":"object","additionalProperties":false,
  "field":{"type":"string","description":"field holding an amount or an integer; none for count"},
  "agg":{"type":"string","enum":["sum","count","avg","min","max","first","last"]},
  "sign":{"type":"string","enum":["as_is","negate","abs"]},
- "derive":{"type":"string","enum":["cumulative","share","change","change_percent"],
+ "derive":{"type":"string",
+  "enum":["cumulative","share","change","change_percent","moving_average"],
   "description":"over the rows: running total, percent of total, change, change in percent"},
+ "window":{"type":"integer","minimum":2,"maximum":12,
+  "description":"rows a moving_average reads; 3 when absent"},
  "kind":{"type":"string","enum":["bar","line","area","pie"]},
  "label":{"type":"string","minLength":1,"maxLength":40},
  "axis":{"type":"string","enum":["start","end"]},
@@ -44,13 +47,13 @@ const chartSchema = `{"type":"object","additionalProperties":false,
 
 // chartDescription tells the model how to describe a chart of any read.
 const chartDescription = "form chart works on the output of any read: chart names the array of " +
-	"records (items), the field that places each row (x: dates grouped by day, month or year, or " +
+	"records (items), the field that places each row (x: dates grouped by day, weekday, month or year, or " +
 	"names ranked by value), and up to 6 series that aggregate a field (sum, count, avg, min, max, " +
 	"first, last) drawn as bar, line, area or pie. where keeps records, sign negate shows outflows " +
 	"as positive, split draws one series per value of a field (stacked when stack), axis end reads a " +
 	"second unit, average marks the mean. derive turns a series into its running total " +
 	"(cumulative), its percent of the total (share) or its change from the row before (change, " +
-	"change_percent); a share or a percent beside amounts takes axis end. Use it when no form " +
+	"change_percent) or the mean of its last rows (moving_average); a share or a percent beside amounts takes axis end. Use it when no form " +
 	"draws what the member asks, or when " +
 	"the member asks for a drawing; the server computes every figure, so never write one in the spec. " +
 	"items may cross an array, such as transactions.postings: each inner object is a record that " +

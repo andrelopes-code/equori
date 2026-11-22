@@ -4,6 +4,8 @@ import (
 	"cmp"
 	"fmt"
 	"slices"
+	"strconv"
+	"time"
 )
 
 // Limits of the rows of a chart (V31) and of the series a split draws (V33).
@@ -18,7 +20,9 @@ const (
 const (
 	restKey   = "assistantView.chart.rest"
 	othersKey = "assistantView.chart.others"
-	noneKey   = "assistantView.chart.none"
+	// weekdayKey labels a row of bucket weekday; its count is the ISO day, 1 for Monday (V41).
+	weekdayKey = "assistantView.chart.weekday"
+	noneKey    = "assistantView.chart.none"
 )
 
 // chartGroups is the rows of a chart before drawing: one group per row, one column per series.
@@ -98,6 +102,11 @@ func xKey(it map[string]any, x ChartX) (string, Value, string, bool, error) {
 	c := field(it, x.Field)
 
 	switch {
+	case x.Bucket == "weekday":
+		if c.kind == cellDate {
+			n := isoWeekday(c.s)
+			return strconv.FormatInt(n, 10), Value{Text: weekdayKey, Count: &n}, c.s, false, nil
+		}
 	case c.kind == cellText:
 		return c.s, labelText(c.s), "", false, nil
 	case c.kind == cellDate && (x.Bucket == "" || x.Bucket == "day"):
@@ -109,7 +118,8 @@ func xKey(it map[string]any, x ChartX) (string, Value, string, bool, error) {
 	}
 
 	return "", Value{}, "", false, fmt.Errorf(
-		"x: %s must hold dates, months or texts (a month takes bucket month or year)",
+		"x: %s must hold dates, months or texts (a month takes bucket month or year, "+
+			"weekday takes dates)",
 		x.Field,
 	)
 }
@@ -166,7 +176,7 @@ func (g *chartGroups) fill(byKey map[string]*group, x ChartX) error {
 
 func (g *chartGroups) order(spec ChartSpec) {
 	by := spec.X.Sort
-	if by == "" && !g.dated {
+	if by == "" && !g.dated && spec.X.Bucket != "weekday" {
 		by = "desc"
 	}
 
@@ -227,4 +237,11 @@ func (g *chartGroups) fold(spec ChartSpec) {
 	count := int64(len(g.rows) - limit + 1)
 	rest.label = Value{Text: restKey, Count: &count}
 	g.rows = append(g.rows[:limit-1], rest)
+}
+
+// isoWeekday is the ISO day of the week of a date: 1 for Monday to 7 for Sunday.
+func isoWeekday(date string) int64 {
+	d, _ := time.Parse(time.DateOnly, date)
+
+	return int64((d.Weekday()+6)%7) + 1
 }

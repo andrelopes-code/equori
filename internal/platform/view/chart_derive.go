@@ -1,6 +1,7 @@
 package view
 
 import (
+	"cmp"
 	"errors"
 	"fmt"
 	"slices"
@@ -12,9 +13,21 @@ const (
 	unitRate  = "rate"
 )
 
+// The rows a moving average reads (V38).
+const (
+	minWindow     = 2
+	maxWindow     = 12
+	defaultWindow = 3
+)
+
 func (se ChartSeries) validateDerive() error {
 	if !slices.Contains(chartDerives, se.Derive) {
 		return fmt.Errorf("derive: one of %v", chartDerives[1:])
+	}
+
+	moving := se.Derive == "moving_average"
+	if (!moving && se.Window != 0) || (moving && se.Window != 0 && !validWindow(se.Window)) {
+		return fmt.Errorf("window: %d to %d rows of derive moving_average", minWindow, maxWindow)
 	}
 
 	sums := se.Agg == "sum" || se.Agg == "count"
@@ -34,7 +47,9 @@ func (g *chartGroups) derive(spec ChartSpec, base [][]Value) ([][]Value, error) 
 	}
 
 	for col := range g.heads {
-		d := spec.Series[g.series[col]].Derive
+		se := spec.Series[g.series[col]]
+
+		d := se.Derive
 		if d == "" {
 			continue
 		}
@@ -43,7 +58,7 @@ func (g *chartGroups) derive(spec ChartSpec, base [][]Value) ([][]Value, error) 
 			return nil, fmt.Errorf("derive %s: takes a date x", d)
 		}
 
-		if err := g.deriveColumn(col, d, base, out); err != nil {
+		if err := g.deriveColumn(col, d, se.Window, base, out); err != nil {
 			return nil, err
 		}
 	}
@@ -51,9 +66,14 @@ func (g *chartGroups) derive(spec ChartSpec, base [][]Value) ([][]Value, error) 
 	return out, nil
 }
 
-func (g *chartGroups) deriveColumn(col int, d string, base, out [][]Value) error {
+func (g *chartGroups) deriveColumn(col int, d string, window int, base, out [][]Value) error {
 	if d == "share" {
 		return g.shareColumn(col, base, out)
+	}
+
+	if d == "moving_average" {
+		g.movingColumn(col, cmp.Or(window, defaultWindow), base, out)
+		return nil
 	}
 
 	var run int64
@@ -89,6 +109,28 @@ func (g *chartGroups) deriveColumn(col int, d string, base, out [][]Value) error
 
 	return nil
 }
+
+// movingColumn writes the mean of the last window rows of col that hold a value, rounded half
+// to even; a window without a value is a gap.
+func (g *chartGroups) movingColumn(col, window int, base, out [][]Value) {
+	for i := range base {
+		var sum, n int64
+
+		for _, row := range base[max(0, i-window+1) : i+1] {
+			if row[col].unit() != "" {
+				sum += row[col].number()
+				n++
+			}
+		}
+
+		out[i][col] = Value{}
+		if n > 0 {
+			out[i][col] = g.typedValue(col, roundDiv(sum, n))
+		}
+	}
+}
+
+func validWindow(n int) bool { return n >= minWindow && n <= maxWindow }
 
 // shareColumn writes each value of col over the total of the column, in basis points.
 func (g *chartGroups) shareColumn(col int, base, out [][]Value) error {

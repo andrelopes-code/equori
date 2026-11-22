@@ -24,6 +24,18 @@ describe("valueText", () => {
     expect(valueText({ bp: 45 }, format)).toBe("0,5%");
   });
 
+  // Answer views design, V41: the ISO day of the week, 1 for Monday, named by the locale.
+  it("names a day of the week in the locale", () => {
+    const day = (count: number) => ({
+      text: "assistantView.chart.weekday",
+      count,
+    });
+
+    expect(valueText(day(1), format)).toBe("segunda-feira");
+    expect(valueText(day(7), format)).toBe("domingo");
+    expect(valueText(day(6), { ...format, locale: "en" })).toBe("Saturday");
+  });
+
   it("writes zero as 0%", () => {
     expect(valueText({ bp: 0 }, format)).toBe("0%");
   });

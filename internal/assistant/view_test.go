@@ -361,3 +361,59 @@ func TestShowChartFollowsPages(t *testing.T) {
 		t.Fatalf("show result = %s", shown)
 	}
 }
+
+// V38, V41: the model asks for a derived series and a weekday axis, and reads both results.
+func TestShowChartDerivesAndWeekdays(t *testing.T) {
+	t.Parallel()
+
+	series := `"series":[{"field":"inflow","agg":"sum","kind":"line","label":"Entradas"`
+	running := `{"title":"Acumulado","items":"days","x":{"field":"date","bucket":"month"},` +
+		series + `,"derive":"cumulative"}]}`
+	weekdays := `{"title":"Por dia da semana","items":"days",` +
+		`"where":[{"field":"inflow","op":"gt","value":"0"}],` +
+		`"x":{"field":"date","bucket":"weekday"},` + series + `}]}`
+	late := &lateProvider{}
+	h := apitest.New(t, apitest.LLM(late), apitest.Today("2026-10-23"))
+
+	account := h.Account("Algum dinheiro", "asset", "checking", nil)
+	salary := h.Account("Salary", "income", "", nil)
+	// 2026-08-05 is a Wednesday, 2026-10-06 a Tuesday, 2026-10-20 a Tuesday.
+	h.Record("2026-08-05", h.Posting(account, 60000), h.Posting(salary, -60000))
+	h.Record("2026-10-06", h.Posting(account, 40000), h.Posting(salary, -40000))
+	h.Record("2026-10-20", h.Posting(account, 2550), h.Posting(salary, -2550))
+	h.Dispatch()
+
+	history := `{"account_id":"` + account + `","view":"flows","from":"2026-08-01","to":"2026-10-31"}`
+	late.p = llmtest.New("aistudio",
+		callStep("get_account_history", history),
+		callStep("show", `{"source":["r1"],"form":"chart","chart":`+running+`}`),
+		callStep("show", `{"source":["r1"],"form":"chart","chart":`+weekdays+`}`),
+		textStep("Terça concentra as entradas."),
+	)
+	p := late.p
+
+	r := sendTurn(h, h.Client, map[string]any{"text": "Acumulado e dia da semana das entradas"})
+	if r.Status != http.StatusOK {
+		t.Fatalf("status = %d: %s", r.Status, r.Body)
+	}
+
+	results := toolResults(p)
+	if len(results) != 3 {
+		t.Fatalf("results = %+v", results)
+	}
+
+	wantRunning := `"rows":[` +
+		`["2026-08",{"amount":"600.00","currency":"BRL"}],` +
+		`["2026-09",{"amount":"600.00","currency":"BRL"}],` +
+		`["2026-10",{"amount":"1025.50","currency":"BRL"}]]`
+	if got := string(results[1].Content); !strings.Contains(got, wantRunning) {
+		t.Fatalf("cumulative = %s", got)
+	}
+
+	wantWeekdays := `"rows":[` +
+		`["Tuesday",{"amount":"425.50","currency":"BRL"}],` +
+		`["Wednesday",{"amount":"600.00","currency":"BRL"}]]`
+	if got := string(results[2].Content); !strings.Contains(got, wantWeekdays) {
+		t.Fatalf("weekdays = %s", got)
+	}
+}

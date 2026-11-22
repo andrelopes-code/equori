@@ -21,7 +21,7 @@ const (
 // The closed sets a chart spec chooses from (V28).
 var (
 	chartOps     = []string{"eq", "ne", "gt", "gte", "lt", "lte", "contains"}
-	chartBuckets = []string{"", "day", "month", "year"}
+	chartBuckets = []string{"", "day", "weekday", "month", "year"}
 	chartSorts   = []string{"", "x", "desc", "asc"}
 	chartAggs    = []string{"sum", "count", "avg", "min", "max", "first", "last"}
 	chartSigns   = []string{"", "as_is", "negate", "abs"}
@@ -31,7 +31,9 @@ var (
 	chartTones   = []string{"", "success", "danger", "warning", "info", "neutral"}
 	chartOrients = []string{"", "vertical", "horizontal"}
 	chartStacks  = []string{"", "normal", "percent"}
-	chartDerives = []string{"", "cumulative", "share", "change", "change_percent"}
+	chartDerives = []string{
+		"", "cumulative", "share", "change", "change_percent", "moving_average",
+	}
 )
 
 // ErrNoRecords: no item of the read passes the filters, so the chart has nothing to draw.
@@ -81,6 +83,7 @@ type ChartSeries struct {
 	Agg    string `json:"agg"`
 	Sign   string `json:"sign"`
 	Derive string `json:"derive"`
+	Window int    `json:"window"`
 	Kind   string `json:"kind"`
 	Label  string `json:"label"`
 	Axis   string `json:"axis"`
@@ -162,7 +165,7 @@ func (s ChartSpec) validate() error {
 
 func (x ChartX) validate() error {
 	if !slices.Contains(chartBuckets, x.Bucket) || !slices.Contains(chartSorts, x.Sort) {
-		return errors.New("x.bucket: day, month or year; x.sort: x, desc or asc")
+		return errors.New("x.bucket: day, weekday, month or year; x.sort: x, desc or asc")
 	}
 
 	if x.Limit < 0 || x.Limit > maxXLimit {

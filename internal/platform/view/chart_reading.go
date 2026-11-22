@@ -3,6 +3,7 @@ package view
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
@@ -67,6 +68,8 @@ func (v Value) plain() any {
 		return percent(*v.BP)
 	case v.Rate != nil:
 		return percent(*v.Rate)
+	case v.Text == weekdayKey && v.Count != nil:
+		return time.Weekday(*v.Count % 7).String()
 	case v.Text != "" && v.Count != nil:
 		return plainKey(v.Text)
 	case v.Count != nil:
