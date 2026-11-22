@@ -103,7 +103,7 @@ func (g *chartGroups) value(it map[string]any, se ChartSeries, col int) (int64, 
 		return 1, nil
 	}
 
-	c := typed(lookup(it, se.Field))
+	c := field(it, se.Field)
 	if c.kind != cellMoney && c.kind != cellCount {
 		return 0, fmt.Errorf(
 			"series: %s holds a value that is not an amount or an integer",
@@ -134,7 +134,7 @@ func (g *chartGroups) unitless(it map[string]any, se ChartSeries) (int64, error)
 		return 1, nil
 	}
 
-	c := typed(lookup(it, se.Field))
+	c := field(it, se.Field)
 	if c.kind != cellMoney && c.kind != cellCount {
 		return 0, fmt.Errorf(
 			"series: %s holds a value that is not an amount or an integer",

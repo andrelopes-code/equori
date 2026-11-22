@@ -86,8 +86,8 @@ func labelText(s string) Value {
 	return TextValue(s)
 }
 
-func splitValue(it map[string]any, field string) string {
-	c := typed(lookup(it, field))
+func splitValue(it map[string]any, path string) string {
+	c := field(it, path)
 	if c.kind == cellText || c.kind == cellDate || c.kind == cellMonth {
 		return c.s
 	}

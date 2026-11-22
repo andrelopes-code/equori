@@ -95,7 +95,7 @@ func groupItems(items []map[string]any, spec ChartSpec) (*chartGroups, error) {
 // xKey returns the row of an item: its key, its label, the raw x that orders first and last,
 // and whether x is a date.
 func xKey(it map[string]any, x ChartX) (string, Value, string, bool, error) {
-	c := typed(lookup(it, x.Field))
+	c := field(it, x.Field)
 
 	switch {
 	case c.kind == cellText:

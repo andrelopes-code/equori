@@ -122,6 +122,18 @@ func lookup(v any, path string) any {
 	return v
 }
 
+// field reads the value at path in item as a cell. A path that ends at the amount of a money
+// object reads the money object, so "inflow.amount" is "inflow" (V30).
+func field(item map[string]any, path string) cell {
+	if parent, ok := strings.CutSuffix(path, ".amount"); ok {
+		if c := typed(lookup(item, parent)); c.kind == cellMoney {
+			return c
+		}
+	}
+
+	return typed(lookup(item, path))
+}
+
 // typed reads one raw value as a cell; cellNone for a value a chart cannot use.
 func typed(raw any) cell {
 	switch v := raw.(type) {
@@ -179,7 +191,7 @@ func textCell(s string) cell {
 // keep reports whether item passes every filter; a filter on a missing field drops it (V30).
 func keep(item map[string]any, filters []ChartFilter) (bool, error) {
 	for _, f := range filters {
-		c := typed(lookup(item, f.Field))
+		c := field(item, f.Field)
 		if c.kind == cellNone {
 			return false, nil
 		}

@@ -335,3 +335,36 @@ func TestChartAvgAndStrictBound(t *testing.T) {
 		t.Fatalf("rows = %s", got)
 	}
 }
+
+// V30: a path to the amount of a money object reads the money object, so "inflow.amount" sums
+// as "inflow" in a series and compares as money in a filter.
+func TestChartAmountOfMoney(t *testing.T) {
+	out := `{"days":[
+		{"date":"2026-01-10","inflow":{"amount":"100.00","currency":"BRL"}},
+		{"date":"2026-01-20","inflow":{"amount":"0.00","currency":"BRL"}},
+		{"date":"2026-02-05","inflow":{"amount":"25.50","currency":"BRL"}}]}`
+	spec := view.ChartSpec{
+		Title: "Entradas",
+		Items: "days",
+		Where: []view.ChartFilter{
+			{Field: "inflow.amount", Op: "gt", Value: json.RawMessage(`0`)},
+		},
+		X: view.ChartX{Field: "date", Bucket: "month"},
+		Series: []view.ChartSeries{
+			{Field: "inflow.amount", Agg: "sum", Kind: "bar", Label: "Entradas"},
+		},
+	}
+
+	p, err := view.Chart(outputs(out), spec)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got := strings.Join(rowsText(p.Rows), ","); got != "2026-01 10000,2026-02 2550" {
+		t.Fatalf("rows = %s", got)
+	}
+
+	if *p.Prov.Params["count"].Count != 2 {
+		t.Fatalf("prov = %+v", p.Prov)
+	}
+}
