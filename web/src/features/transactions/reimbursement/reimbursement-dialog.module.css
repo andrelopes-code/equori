@@ -168,8 +168,10 @@
       var(--slotted-border-subtle);
   }
 
+  /* A layer over the dialog's surface: the accent surface is darker than a raised surface in the
+     dark scheme. */
   .row[data-checked] {
-    background: var(--slotted-tone-accent-surface);
+    background: var(--slotted-state-selected);
   }
 
   .check {
