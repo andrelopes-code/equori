@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   formatDate,
+  formatYear,
   formatTime,
   formatDayHeader,
   formatDayMonth,
@@ -96,6 +97,15 @@ describe("formatDate", () => {
     ["2026-10-17", "en", "10/17/2026"],
   ] as const)("formats %s in %s as %s", (iso, locale, want) => {
     expect(formatDate(iso, locale)).toBe(want);
+  });
+});
+
+describe("formatYear", () => {
+  it.each([
+    ["2025-12-31", "pt-BR", "2025"],
+    ["2025-12-31", "en", "2025"],
+  ] as const)("formats %s in %s as %s", (iso, locale, want) => {
+    expect(formatYear(iso, locale)).toBe(want);
   });
 });
 

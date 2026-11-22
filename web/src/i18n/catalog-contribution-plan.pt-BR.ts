@@ -178,6 +178,32 @@ export const contributionPlanPtBR: Record<
   "contributionPlan.questions.noYes":
     "Nenhum sim: o grupo recebe o valor sem divisão entre os ativos.",
   "contributionPlan.questions.noFacts": "Uma conta não tem informe.",
+  "contributionPlan.method.piotroski.text":
+    "Sinais de Piotroski: nove perguntas que o equori responde pelas demonstrações de cada companhia",
+  "contributionPlan.method.piotroski.use": "Usar os nove sinais",
+  "contributionPlan.method.piotroski.helpLabel": "Sobre o método",
+  "contributionPlan.method.piotroski.what":
+    "Os nove sinais medem rentabilidade, endividamento, liquidez e eficiência nas demonstrações de dois exercícios. Piotroski (2000) testou-os em ações dos Estados Unidos de alto valor patrimonial sobre o preço, de 1976 a 1996: comprar as de mais sinais e vender as de menos rendeu 23% ao ano.",
+  "contributionPlan.method.piotroski.after":
+    "Regras contábeis publicadas renderam 58% menos depois da publicação (McLean e Pontiff, 2016).",
+  "contributionPlan.method.piotroski.limit":
+    "O peso proporcional ao número de sinais não foi testado. O equori calcula os sinais; a decisão de usá-los é sua.",
+  "contributionPlan.method.piotroski.source":
+    "Fonte: Journal of Accounting Research, 2000",
+  "contributionPlan.facts.piotroski_p1": "Retorno sobre os ativos positivo",
+  "contributionPlan.facts.piotroski_p2": "Caixa das operações positivo",
+  "contributionPlan.facts.piotroski_p3": "Retorno sobre os ativos subiu",
+  "contributionPlan.facts.piotroski_p4": "Caixa das operações acima do lucro",
+  "contributionPlan.facts.piotroski_p5": "Dívida de longo prazo caiu",
+  "contributionPlan.facts.piotroski_p6": "Liquidez corrente subiu",
+  "contributionPlan.facts.piotroski_p7": "Sem emissão de ações",
+  "contributionPlan.facts.piotroski_p8": "Margem bruta subiu",
+  "contributionPlan.facts.piotroski_p9": "Giro dos ativos subiu",
+  "contributionPlan.facts.note": "respondida pelas demonstrações",
+  "contributionPlan.facts.answerSuffix": "{question}, pelas demonstrações",
+  "contributionPlan.facts.year": "sinais do exercício de {year}",
+  "contributionPlan.facts.none":
+    "sem demonstrações para os sinais: as respostas são suas",
   "contributionPlan.rule.currency": "em {code}",
   "contributionPlan.rule.years.between": "vence de {from} a {to}",
   "contributionPlan.rule.years.from": "vence a partir de {from}",

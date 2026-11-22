@@ -2,9 +2,14 @@ import { Checkbox } from "@slotted/react/checkbox";
 import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
-import { AssetFacts } from "@/features/instruments";
 import styles from "@/features/portfolio/contribution-plan/editor/edit-list.module.css";
+import { MemberFactsLine } from "@/features/portfolio/contribution-plan/editor/member-facts-line";
 import type { PlanEditor } from "@/features/portfolio/contribution-plan/editor/use-plan-editor";
+import {
+  effectiveAnswers,
+  factDecides,
+} from "@/features/portfolio/contribution-plan/model/fact-answers";
+import { factText } from "@/features/portfolio/contribution-plan/model/fact-labels";
 import { shareText } from "@/features/portfolio/contribution-plan/model/share-text";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
@@ -17,6 +22,8 @@ interface MemberQuestionRowProps {
   member: Member;
   name: string;
   questions: string[];
+  // One fact key per question, "" for the investor's own.
+  facts: string[];
   // Whether the preview derived a target for the group (at least one yes).
   ideals: boolean;
   editor: PlanEditor;
@@ -30,6 +37,7 @@ export function MemberQuestionRow({
   member,
   name,
   questions,
+  facts,
   ideals,
   editor,
 }: MemberQuestionRowProps) {
@@ -37,7 +45,9 @@ export function MemberQuestionRow({
   const [tag] = useAppLocale();
 
   const answers = member.answers ?? [];
-  const yes = answers.filter(Boolean).length;
+  const yes = effectiveAnswers(answers, member.fact_answers).filter(
+    Boolean,
+  ).length;
   const bp = member.target_bp;
   const ideal =
     ideals && bp !== undefined
@@ -56,17 +66,29 @@ export function MemberQuestionRow({
         <div className={styles.answers}>
           {questions.map((text, q) => {
             const n = String(q + 1);
+            const decided = factDecides(member.fact_answers, q);
+            const name =
+              text === ""
+                ? t("contributionPlan.questions.answerLabel", { n })
+                : factText(t, facts[q] ?? "", text);
 
             return (
               <Checkbox
                 key={n}
                 size="sm"
                 aria-label={
-                  text === ""
-                    ? t("contributionPlan.questions.answerLabel", { n })
-                    : text
+                  decided
+                    ? t("contributionPlan.facts.answerSuffix", {
+                        question: name,
+                      })
+                    : name
                 }
-                checked={answers[q] ?? false}
+                readOnly={decided}
+                checked={
+                  decided
+                    ? member.fact_answers?.[q] === "yes"
+                    : (answers[q] ?? false)
+                }
                 onCheckedChange={(checked) => {
                   editor.setAnswer(index, at, q, checked);
                 }}
@@ -90,13 +112,7 @@ export function MemberQuestionRow({
       </div>
 
       <div className={styles.questionFacts}>
-        {member.instrument === undefined ? (
-          <Text size="sm" tone="muted" truncate>
-            {t("contributionPlan.questions.noFacts")}
-          </Text>
-        ) : (
-          <AssetFacts code={member.instrument} />
-        )}
+        <MemberFactsLine member={member} facts={facts} />
       </div>
     </div>
   );

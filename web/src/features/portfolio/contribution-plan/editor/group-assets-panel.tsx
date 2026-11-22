@@ -75,6 +75,7 @@ export function GroupAssetsPanel({
             <QuestionList
               index={index}
               questions={edit.questions}
+              facts={edit.questionFacts}
               editor={editor}
             />
           )}
@@ -88,6 +89,7 @@ export function GroupAssetsPanel({
                 member={member}
                 name={memberName(member)}
                 questions={edit.questions}
+                facts={edit.questionFacts}
                 ideals={group.question_ideals}
                 editor={editor}
               />

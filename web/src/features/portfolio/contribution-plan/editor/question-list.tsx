@@ -4,31 +4,58 @@ import { TextField } from "@slotted/react/text-field";
 import { Text } from "@slotted/react/typography";
 
 import styles from "@/features/portfolio/contribution-plan/editor/edit-list.module.css";
+import { FactQuestionRow } from "@/features/portfolio/contribution-plan/editor/fact-question-row";
+import { MethodBlock } from "@/features/portfolio/contribution-plan/editor/method-block";
 import { RemoveButton } from "@/features/portfolio/contribution-plan/editor/remove-button";
 import type { PlanEditor } from "@/features/portfolio/contribution-plan/editor/use-plan-editor";
+import { canUseMethod } from "@/features/portfolio/contribution-plan/model/fact-answers";
 import { maxQuestions } from "@/features/portfolio/contribution-plan/model/question-edits";
 import { useT } from "@/i18n/i18n-provider";
 
 interface QuestionListProps {
   index: number;
   questions: string[];
+  // One fact key per question, "" for the investor's own.
+  facts: string[];
   editor: PlanEditor;
 }
 
-// The investor's questions of a group: the hint, one field per question and the add button.
-export function QuestionList({ index, questions, editor }: QuestionListProps) {
+// The questions of a group: the method row, the hint, one row per question and the add button.
+export function QuestionList({
+  index,
+  questions,
+  facts,
+  editor,
+}: QuestionListProps) {
   const t = useT();
 
   const hint = t("contributionPlan.questions.hint");
+  const methodOffered = canUseMethod(questions, facts);
 
   return (
     <div className={styles.questions}>
+      {methodOffered && <MethodBlock index={index} editor={editor} />}
+
       <Text size="sm" tone="muted" truncate title={hint}>
         {hint}
       </Text>
 
       {questions.map((text, q) => {
         const n = String(q + 1);
+        const fact = facts[q] ?? "";
+
+        if (fact !== "") {
+          return (
+            <FactQuestionRow
+              key={n}
+              index={index}
+              q={q}
+              fact={fact}
+              stored={text}
+              editor={editor}
+            />
+          );
+        }
 
         return (
           // The position is the identity of a question: it has no other key.

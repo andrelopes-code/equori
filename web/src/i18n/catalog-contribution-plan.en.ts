@@ -177,6 +177,32 @@ export const contributionPlanEn = {
   "contributionPlan.questions.noYes":
     "No yes: the group receives its amount without a split between the assets.",
   "contributionPlan.questions.noFacts": "An account has no report.",
+  "contributionPlan.method.piotroski.text":
+    "Piotroski signals: nine questions equori answers from each company's filings",
+  "contributionPlan.method.piotroski.use": "Use the nine signals",
+  "contributionPlan.method.piotroski.helpLabel": "About the method",
+  "contributionPlan.method.piotroski.what":
+    "The nine signals measure profitability, leverage, liquidity and efficiency in the filings of two fiscal years. Piotroski (2000) tested them on United States stocks of high book value over price, 1976 to 1996: buying those of most signals and selling those of fewest returned 23% a year.",
+  "contributionPlan.method.piotroski.after":
+    "Published accounting rules returned 58% less after publication (McLean and Pontiff, 2016).",
+  "contributionPlan.method.piotroski.limit":
+    "A weight proportional to the number of signals was not tested. equori computes the signals; the decision to use them is yours.",
+  "contributionPlan.method.piotroski.source":
+    "Source: Journal of Accounting Research, 2000",
+  "contributionPlan.facts.piotroski_p1": "Positive return on assets",
+  "contributionPlan.facts.piotroski_p2": "Positive operating cash flow",
+  "contributionPlan.facts.piotroski_p3": "Return on assets rose",
+  "contributionPlan.facts.piotroski_p4": "Operating cash flow above net income",
+  "contributionPlan.facts.piotroski_p5": "Long-term debt fell",
+  "contributionPlan.facts.piotroski_p6": "Current ratio rose",
+  "contributionPlan.facts.piotroski_p7": "No shares issued",
+  "contributionPlan.facts.piotroski_p8": "Gross margin rose",
+  "contributionPlan.facts.piotroski_p9": "Asset turnover rose",
+  "contributionPlan.facts.note": "answered from the filings",
+  "contributionPlan.facts.answerSuffix": "{question}, from the filings",
+  "contributionPlan.facts.year": "signals of fiscal year {year}",
+  "contributionPlan.facts.none":
+    "no filings for the signals: the answers are yours",
   "contributionPlan.rule.currency": "in {code}",
   "contributionPlan.rule.years.between": "matures {from} to {to}",
   "contributionPlan.rule.years.from": "matures from {from}",

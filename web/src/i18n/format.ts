@@ -252,6 +252,11 @@ export function formatDate(iso: string, locale: string): string {
   }).format(utcDate(iso));
 }
 
+// "2025": the year of a date, in the digits of the locale.
+export function formatYear(iso: string, locale: string): string {
+  return dateFormat(locale, { year: "numeric" }).format(utcDate(iso));
+}
+
 // "11:58" / "09:58 AM": the hour of an instant in the viewer's zone; timeZone fixes it in a test.
 export function formatTime(
   instant: string,
