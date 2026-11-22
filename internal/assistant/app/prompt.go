@@ -21,6 +21,7 @@ type guideData struct {
 	Audience, Today, Language, Region, Page string
 	Notices                                 []string
 	Book                                    []BookRead
+	Web                                     bool
 }
 
 // AccountNotice is an account whose figures an answer qualifies (P12 A152).
@@ -45,6 +46,8 @@ type PromptInput struct {
 	Notices []AccountNotice
 	// Book holds the outputs of the turn-start reads, in order (spec 2026-11-03 §8).
 	Book []BookRead
+	// Web: a target of the chat may search the web (web search design, S8).
+	Web bool
 }
 
 // BookRead is one turn-start read: the tool and its output, or the replacement text of spec §8.
@@ -65,6 +68,7 @@ func Prompt(p PromptInput) string {
 		Page:     p.Page,
 		Notices:  notices,
 		Book:     p.Book,
+		Web:      p.Web,
 	})
 }
 

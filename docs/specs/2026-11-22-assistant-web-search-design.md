@@ -54,7 +54,8 @@ Every write still waits for the member's confirmation (C7), so a page that asks 
 - B1: Does not apply: no table. The capability lives in `assistant_chain_target.capabilities`, which holds `books_id`.
 - B2: No operation. `setUseChain` (owner) already writes the capabilities of a target.
 - B3: The permission is a setting at the level of the book, on a chain target.
-- D1, D2: Do not apply: no table, no schema change; the export already carries the capabilities of a target.
+- D1: Does not apply: no table; the export already carries the capabilities of a target.
+- D2: Migration `00140_assistant_capability_web_search.sql` adds `web_search` to the CHECK of `assistant_chain_target.capabilities`; a schema test accepts it and refuses a capability outside the set.
 - D3: Does not apply: no recorded fact changes.
 - D4: A page of the web writes nothing: a write it suggests is a proposal that waits for the member (C7).
 - D5: Does not apply.

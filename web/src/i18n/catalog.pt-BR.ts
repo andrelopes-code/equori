@@ -366,6 +366,8 @@ export const catalogPtBR: Catalog = {
     "O modelo responde na estrutura exata que o equori pede.",
   "assistant.capability.image_input.hint":
     "O modelo lê imagens, como um recibo ou uma página de fatura.",
+  "assistant.capability.web_search.hint":
+    "O modelo pesquisa na web pelo provedor, que cobra cada busca. A consulta sai do livro; funciona com a API da Anthropic.",
   "assistant.use.none": "Nenhum provedor atende esta função.",
   "assistant.use.sends": "Envia dados financeiros",
   "assistant.use.local": "Não envia dados financeiros",
@@ -388,6 +390,7 @@ export const catalogPtBR: Catalog = {
   "assistant.capability.tools": "Ferramentas",
   "assistant.capability.structured_output": "Saída estruturada",
   "assistant.capability.image_input": "Imagens",
+  "assistant.capability.web_search": "Busca na web",
   "assistant.usage": "Uso e limites",
   "assistant.usage.description":
     "Chamadas e tokens por provedor e modelo, frente aos limites declarados de cada um.",
@@ -1936,6 +1939,10 @@ export const catalogPtBR: Catalog = {
   "assistantView.compare.verdict_same": "Os dois períodos gastaram o mesmo.",
   "assistantView.prov.categories":
     "{count} categorias com lançamentos no período",
+  "assistantView.sources.title": "Fontes na web",
+  "assistantView.sources.verdict": "Páginas citadas: {count}.",
+  "assistantView.sources.source": "Fonte",
+  "assistantView.sources.address": "Endereço",
   "assistantView.help.title": "Guia do equori",
   "assistantView.help.window": "guia",
   "assistantView.help.verdict": "Onde isso se faz no equori, tela por tela.",
@@ -2388,6 +2395,7 @@ export const catalogPtBR: Catalog = {
   "assistant.step.change_transaction": "Preparando uma alteração",
   "assistant.step.categorize_transactions": "Preparando categorias",
   "assistant.step.void_transaction": "Preparando uma anulação",
+  "assistant.step.web_search": "Buscando na web",
   "assistant.step.manage_accounts_and_payees":
     "Preparando uma alteração de conta",
   "assistant.step.manage_card": "Preparando uma alteração de cartão",

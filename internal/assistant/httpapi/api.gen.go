@@ -263,6 +263,7 @@ const (
 	ImageInput       Capability = "image_input"
 	StructuredOutput Capability = "structured_output"
 	Tools            Capability = "tools"
+	WebSearch        Capability = "web_search"
 )
 
 // Valid indicates whether the value is a known member of the Capability enum.
@@ -273,6 +274,8 @@ func (e Capability) Valid() bool {
 	case StructuredOutput:
 		return true
 	case Tools:
+		return true
+	case WebSearch:
 		return true
 	default:
 		return false

@@ -112,22 +112,35 @@ func (s *Service) fileParts(
 
 // chatReadsFiles reports whether a target of the chat declares image_input.
 func (s *Service) chatReadsFiles(ctx context.Context, booksID int64) (bool, error) {
+	targets, err := s.chatTargets(ctx, booksID)
+
+	return slices.ContainsFunc(targets, readsFiles), err
+}
+
+// chatHolds reports whether a target of the chat holds capability; false when the targets
+// cannot be read, since the turn then fails at its first model call.
+func (s *Service) chatHolds(ctx context.Context, booksID int64, capability string) bool {
+	targets, err := s.chatTargets(ctx, booksID)
+
+	return err == nil && slices.ContainsFunc(targets, func(t Target) bool {
+		return slices.Contains(t.Capabilities, capability)
+	})
+}
+
+// chatTargets returns the targets a turn of the chat may reach.
+func (s *Service) chatTargets(ctx context.Context, booksID int64) ([]Target, error) {
 	use, ok := s.use(chatUseID)
 	if !ok {
-		return false, nil
+		return nil, nil
 	}
 
 	targets, err := s.candidates(ctx, booksID, true, use)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
 	// A chosen target reads files only by its own capabilities (model choice MC2).
-	if targets, err = chosen(ctx, use.ID, targets); err != nil {
-		return false, err
-	}
-
-	return slices.ContainsFunc(targets, readsFiles), nil
+	return chosen(ctx, use.ID, targets)
 }
 
 // readsFiles tells that the target declares image_input.

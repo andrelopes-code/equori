@@ -360,6 +360,8 @@ export const catalogEn = {
     "The model answers in the exact structure equori asks for.",
   "assistant.capability.image_input.hint":
     "The model reads images, such as a receipt or a statement page.",
+  "assistant.capability.web_search.hint":
+    "The model searches the web through the provider, which bills each search. The query leaves the book; it works with the Anthropic API.",
   "assistant.use.none": "No provider serves this feature.",
   "assistant.use.sends": "Sends financial data",
   "assistant.use.local": "Sends no financial data",
@@ -382,6 +384,7 @@ export const catalogEn = {
   "assistant.capability.tools": "Tools",
   "assistant.capability.structured_output": "Structured output",
   "assistant.capability.image_input": "Images",
+  "assistant.capability.web_search": "Web search",
   "assistant.usage": "Usage and limits",
   "assistant.usage.description":
     "Calls and tokens per provider and model, against the limits declared for each.",
@@ -1926,6 +1929,10 @@ export const catalogEn = {
   "assistantView.compare.verdict_same": "Both periods spent the same.",
   "assistantView.prov.categories":
     "{count} categories with postings in the period",
+  "assistantView.sources.title": "Sources on the web",
+  "assistantView.sources.verdict": "Pages cited: {count}.",
+  "assistantView.sources.source": "Source",
+  "assistantView.sources.address": "Address",
   "assistantView.help.title": "equori guide",
   "assistantView.help.window": "guide",
   "assistantView.help.verdict":
@@ -2375,6 +2382,7 @@ export const catalogEn = {
   "assistant.step.change_transaction": "Preparing a change",
   "assistant.step.categorize_transactions": "Preparing categories",
   "assistant.step.void_transaction": "Preparing a void",
+  "assistant.step.web_search": "Searching the web",
   "assistant.step.manage_accounts_and_payees": "Preparing an account change",
   "assistant.step.manage_card": "Preparing a card change",
   "assistant.step.handle_card_purchase": "Preparing a purchase event",

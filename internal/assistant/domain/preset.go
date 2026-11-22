@@ -28,6 +28,9 @@ const (
 	CapTools            = "tools"
 	CapStructuredOutput = "structured_output"
 	CapImageInput       = "image_input"
+	// CapWebSearch is the owner's permission for a target to use its provider's web search,
+	// not a property a preset states (web search design, S2).
+	CapWebSearch = "web_search"
 )
 
 const PresetCustom = "custom"
@@ -111,18 +114,24 @@ func FindPreset(id string) (Preset, bool) {
 	return Presets()[i], true
 }
 
-// ModelCapabilities returns the preset's capabilities for a model it names, else asserted.
+// ModelCapabilities returns the preset's capabilities for a model it names, else asserted. The
+// owner's permission to search the web stays beside the preset's capabilities.
 func ModelCapabilities(preset, model string, asserted []string) []string {
-	if p, ok := FindPreset(preset); ok {
-		if i := slices.IndexFunc(
-			p.Models,
-			func(m PresetModel) bool { return m.ID == model },
-		); i >= 0 {
-			return p.Models[i].Capabilities
-		}
+	p, ok := FindPreset(preset)
+	if !ok {
+		return asserted
 	}
 
-	return asserted
+	i := slices.IndexFunc(p.Models, func(m PresetModel) bool { return m.ID == model })
+	if i < 0 {
+		return asserted
+	}
+
+	if !slices.Contains(asserted, CapWebSearch) {
+		return p.Models[i].Capabilities
+	}
+
+	return append(slices.Clone(p.Models[i].Capabilities), CapWebSearch)
 }
 
 // Missing returns the needs absent from have, in the order of needs.
@@ -139,7 +148,7 @@ func Missing(needs, have []string) []string {
 
 func ValidateCapabilities(caps []string) error {
 	for _, c := range caps {
-		if c != CapTools && c != CapStructuredOutput && c != CapImageInput {
+		if c != CapTools && c != CapStructuredOutput && c != CapImageInput && c != CapWebSearch {
 			return invalid("capabilities", "unknown capability "+c)
 		}
 	}

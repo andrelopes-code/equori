@@ -681,6 +681,61 @@ describe("assistant settings", () => {
     });
   });
 
+  // Web search design, S2: the owner lets a target search the web, and reads what that means.
+  it("adds a model allowed to search the web", async () => {
+    const sent: Sent[] = [];
+    await renderApp("/settings?section=assistant", { fetch: api(sent) });
+    const view = await section();
+    await userEvent.click(
+      within(await useRow(view, pt["assistant.use.assistant.chat"])).getByRole(
+        "button",
+        { name: pt["assistant.use.edit"] },
+      ),
+    );
+    const dialog = within(await screen.findByRole("dialog"));
+    await userEvent.type(
+      dialog.getByRole("combobox", { name: pt["assistant.chain.model"] }),
+      "claude-sonnet-5-5",
+    );
+
+    expect(
+      dialog.queryByText(pt["assistant.capability.web_search.hint"]),
+    ).toBeNull();
+
+    await userEvent.click(
+      dialog.getByRole("checkbox", {
+        name: pt["assistant.capability.web_search"],
+      }),
+    );
+
+    expect(
+      dialog.getByText(pt["assistant.capability.web_search.hint"]),
+    ).toBeVisible();
+
+    await userEvent.click(
+      dialog.getByRole("button", { name: pt["assistant.chain.add"] }),
+    );
+    await userEvent.click(
+      dialog.getByRole("button", { name: pt["assistant.save"] }),
+    );
+    await waitFor(() => {
+      expect(sent[0]?.body).toEqual({
+        targets: [
+          {
+            provider_id: "p1",
+            model: "openai/gpt-oss-120b",
+            capabilities: ["tools"],
+          },
+          {
+            provider_id: "p1",
+            model: "claude-sonnet-5-5",
+            capabilities: ["tools", "web_search"],
+          },
+        ],
+      });
+    });
+  });
+
   // A10: a model typed in the combobox and its capabilities marked in the checkboxes.
   it("adds a model with the capabilities marked", async () => {
     const sent: Sent[] = [];

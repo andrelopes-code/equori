@@ -11,6 +11,7 @@ import { Field, FieldLabel } from "@slotted/react/field";
 import {
   FieldGroup,
   FieldGroupContent,
+  FieldGroupDescription,
   FieldGroupLegend,
 } from "@slotted/react/field-group";
 import { useQuery } from "@tanstack/react-query";
@@ -41,6 +42,7 @@ const capabilities: readonly Capability[] = [
   "tools",
   "structured_output",
   "image_input",
+  "web_search",
 ];
 
 // Adds a target to a chain (spec A10): the provider, a model from the ones the provider's preset
@@ -129,6 +131,12 @@ export function ChainAdd({ use, providers, presets, onAdd }: ChainAddProps) {
             ))}
           </CheckboxGroup>
         </FieldGroupContent>
+
+        {marked.includes("web_search") && (
+          <FieldGroupDescription>
+            {t("assistant.capability.web_search.hint")}
+          </FieldGroupDescription>
+        )}
       </FieldGroup>
     </>
   );

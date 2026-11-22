@@ -127,7 +127,8 @@ func (a *Agent) run(
 	onStep, onText func(string),
 	onRestart func(),
 ) (app.AgentResult, error) {
-	req := llm.Request{System: in.System, Tools: a.declsFor(ctx)}
+	// The client keeps the search only for a target the owner let search (web search design, S1).
+	req := llm.Request{System: in.System, Tools: a.declsFor(ctx), WebSearch: true}
 
 	for _, m := range in.History {
 		role := llm.RoleUser
@@ -158,10 +159,17 @@ func (a *Agent) run(
 
 			onStep(c.Name)
 		},
+		OnSearch:   func(string) { onStep(searchStep) },
 		OnRestart:  onRestart,
 		OnText:     onText,
 		Concurrent: a.concurrent,
 	})
+
+	return agentResult(res, calls), err
+}
+
+// agentResult is what a run answered and what it cost.
+func agentResult(res llm.Result, calls int) app.AgentResult {
 	out := app.AgentResult{
 		Text:         res.Response.Text(),
 		StepLimit:    res.StepLimit,
@@ -172,9 +180,13 @@ func (a *Agent) run(
 		OutputTokens: res.Usage.OutputTokens,
 		ProviderName: res.Response.Target.Provider,
 		Model:        res.Response.Target.Model,
+		WebSearches:  res.Usage.WebSearches,
+	}
+	for _, s := range res.Response.Sources {
+		out.Sources = append(out.Sources, app.WebSource{URL: s.URL, Title: s.Title})
 	}
 
-	return out, err
+	return out
 }
 
 // mapError turns the model loop's failures into the errors of spec 6.2.

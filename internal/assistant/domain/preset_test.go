@@ -79,6 +79,14 @@ func TestModelCapabilities(t *testing.T) {
 			want:     []string{"tools"},
 		},
 		{name: "custom", preset: "custom", model: "x", want: nil},
+		// Web search design, S2: the search is the owner's permission, beside what the preset states.
+		{
+			name:     "preset model keeps the owner's web search",
+			preset:   "groq",
+			model:    "openai/gpt-oss-120b",
+			asserted: []string{"image_input", "web_search"},
+			want:     []string{"tools", "structured_output", "web_search"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

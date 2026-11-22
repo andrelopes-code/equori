@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/assistant/app"
@@ -131,10 +132,11 @@ func (r *Resolver) Resolve(ctx context.Context, use llm.Use) ([]llm.Binding, err
 			p = r.build(string(t.API), t.BaseURL, t.Key)
 		}
 
-		out = append(
-			out,
-			llm.Binding{Target: llm.Target{Provider: t.ProviderID, Model: t.Model}, Provider: p},
-		)
+		out = append(out, llm.Binding{
+			Target:    llm.Target{Provider: t.ProviderID, Model: t.Model},
+			Provider:  p,
+			WebSearch: slices.Contains(t.Capabilities, domain.CapWebSearch),
+		})
 	}
 
 	return out, nil

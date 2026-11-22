@@ -87,6 +87,20 @@ func (t *turnState) addView(v domain.View) error {
 	return nil
 }
 
+// addSources adds the view of the pages the answer cites, beyond the views the model shows
+// (web search design, S7); a view without a form is none.
+func (t *turnState) addSources(v domain.View) {
+	if v.Form == "" {
+		return
+	}
+
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	v.Seq = len(t.views)
+	t.views = append(t.views, v)
+}
+
 func (t *turnState) takeViews() []domain.View {
 	t.mu.Lock()
 	defer t.mu.Unlock()

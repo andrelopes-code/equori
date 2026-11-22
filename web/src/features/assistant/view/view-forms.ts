@@ -29,6 +29,7 @@ import { StatementHistoryBody } from "@/features/assistant/view/forms/more/state
 import { ExplainBody } from "@/features/assistant/view/forms/more/explain-body";
 import { CategorizationBody } from "@/features/assistant/view/forms/more/categorization-body";
 import { RedemptionBody } from "@/features/assistant/view/forms/more/redemption-body";
+import { SourcesBody } from "@/features/assistant/view/forms/more/sources-body";
 import { InstitutionBody } from "@/features/assistant/view/forms/more/institution-body";
 import { PriceBody } from "@/features/assistant/view/forms/more/price-body";
 import { ImportsBody } from "@/features/assistant/view/forms/more/imports-body";
@@ -56,6 +57,7 @@ export const FORMS: Partial<Record<string, ViewForm>> = {
   ranking: { icon: "pie", unit: true, Body: RankingBody },
   compare: { icon: "chart", Body: CompareBody },
   help: { icon: "book", Body: HelpBody },
+  sources: { icon: "link", Body: SourcesBody },
   budget: { icon: "target", Body: BudgetBody },
   changes: { icon: "chart", Body: ChangesBody },
   treemap: { icon: "pie", Body: TreemapBody },

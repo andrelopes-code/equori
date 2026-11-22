@@ -115,6 +115,7 @@ func (s *Service) answerTurn(
 	}
 
 	ids := state.take()
+	state.addSources(sourcesView(res.Sources, s.now()))
 
 	if err := s.storeViews(storeCtx, booksID, conversationID, &answer, state); err != nil {
 		return s.failAfterStream(ctx, ev, err)
@@ -172,6 +173,8 @@ func (s *Service) logTurn(
 		r.InputTokens,
 		"output_tokens",
 		r.OutputTokens,
+		"web_searches",
+		r.WebSearches,
 		"provider",
 		r.ProviderName,
 		"model",

@@ -55,6 +55,10 @@ type AgentResult struct {
 	Steps, ToolCalls          int
 	InputTokens, OutputTokens int
 	ProviderName, Model       string
+	// WebSearches counts the searches the provider ran, and Sources holds the pages the answer
+	// cites (web search design, S4).
+	WebSearches int
+	Sources     []WebSource
 }
 
 // UseNotices sets the lookup of the accounts the system prompt names (A152).
@@ -130,6 +134,7 @@ func (s *Service) Turn(
 
 	req := s.agentRequest(
 		ctx,
+		booksID,
 		in,
 		userMsg.TextForModel(),
 		parts,
@@ -225,6 +230,7 @@ func (s *Service) storeUserMessage(
 // agentRequest builds the prompt, the history and the deadline of the turn.
 func (s *Service) agentRequest(
 	ctx context.Context,
+	booksID int64,
 	in TurnInput,
 	text string,
 	files []FilePart,
@@ -240,6 +246,7 @@ func (s *Service) agentRequest(
 			Page:    in.Page,
 			Notices: notices,
 			Book:    book,
+			Web:     s.chatHolds(ctx, booksID, domain.CapWebSearch),
 		}),
 		History:  history,
 		Text:     text,

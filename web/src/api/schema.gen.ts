@@ -4828,7 +4828,7 @@ export interface components {
             message: string;
         };
         /** @enum {string} */
-        Capability: "tools" | "structured_output" | "image_input";
+        Capability: "tools" | "structured_output" | "image_input" | "web_search";
         /**
          * @description trains, the free tier uses submitted content; local, data stays on the configured host; provider_terms, read the provider's terms.
          * @enum {string}

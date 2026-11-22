@@ -8231,7 +8231,7 @@ components:
           type: string
     Capability:
       type: string
-      enum: [tools, structured_output, image_input]
+      enum: [tools, structured_output, image_input, web_search]
     Notice:
       type: string
       description: trains, the free tier uses submitted content; local, data stays on the configured host; provider_terms, read the provider's terms.

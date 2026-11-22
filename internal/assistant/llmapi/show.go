@@ -10,6 +10,9 @@ import (
 
 const showName = "show"
 
+// searchStep names the step of a search the provider ran (web search design, S6).
+const searchStep = "web_search"
+
 const showDescription = "Presents an earlier read of this turn as a view the app draws: a chart, a table or a " +
 	"list built from that read's output, so its figures are exact. Pass source, the view_source handle of the " +
 	"read (two handles of one tool for compare and changes; up to four pages of one search for txs, " +
