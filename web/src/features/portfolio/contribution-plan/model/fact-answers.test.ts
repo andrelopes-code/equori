@@ -5,6 +5,7 @@ import {
   effectiveAnswers,
   factDecides,
   piotroskiFacts,
+  withoutFacts,
 } from "@/features/portfolio/contribution-plan/model/fact-answers";
 
 describe("effectiveAnswers", () => {
@@ -49,5 +50,15 @@ describe("piotroskiFacts", () => {
     expect(piotroskiFacts).toHaveLength(9);
     expect(piotroskiFacts[0]).toBe("piotroski_p1");
     expect(piotroskiFacts[8]).toBe("piotroski_p9");
+  });
+});
+
+describe("withoutFacts", () => {
+  it("lists the members without a fiscal year when the group names a fact", () => {
+    const members = [{ facts_year: "2025-12-31" }, {}, {}];
+
+    expect(withoutFacts(members, ["piotroski_p1", ""])).toEqual([1, 2]);
+    expect(withoutFacts(members, ["", ""])).toEqual([]);
+    expect(withoutFacts(members, [])).toEqual([]);
   });
 });

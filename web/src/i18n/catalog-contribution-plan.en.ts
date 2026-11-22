@@ -203,6 +203,8 @@ export const contributionPlanEn = {
   "contributionPlan.facts.year": "signals of fiscal year {year}",
   "contributionPlan.facts.none":
     "no filings for the signals: the answers are yours",
+  "contributionPlan.facts.missing":
+    "No filings for the signals: {names}. Without a yes of yours, these assets receive nothing.",
   "contributionPlan.rule.currency": "in {code}",
   "contributionPlan.rule.years.between": "matures {from} to {to}",
   "contributionPlan.rule.years.from": "matures from {from}",

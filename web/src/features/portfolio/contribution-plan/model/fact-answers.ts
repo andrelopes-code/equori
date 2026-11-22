@@ -40,3 +40,15 @@ export function canUseMethod(
 ): boolean {
   return questions.length <= 1 && questionFacts.every((fact) => fact === "");
 }
+
+// The positions of the members the filings answer nothing for, in a group that names a fact.
+export function withoutFacts(
+  members: { facts_year?: string }[],
+  questionFacts: string[],
+): number[] {
+  if (questionFacts.every((fact) => fact === "")) return [];
+
+  return members.flatMap((member, at) =>
+    member.facts_year === undefined ? [at] : [],
+  );
+}

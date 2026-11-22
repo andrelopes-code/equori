@@ -204,6 +204,8 @@ export const contributionPlanPtBR: Record<
   "contributionPlan.facts.year": "sinais do exercício de {year}",
   "contributionPlan.facts.none":
     "sem demonstrações para os sinais: as respostas são suas",
+  "contributionPlan.facts.missing":
+    "Sem demonstrações para os sinais: {names}. Sem um sim seu, esses ativos não recebem aporte.",
   "contributionPlan.rule.currency": "em {code}",
   "contributionPlan.rule.years.between": "vence de {from} a {to}",
   "contributionPlan.rule.years.from": "vence a partir de {from}",

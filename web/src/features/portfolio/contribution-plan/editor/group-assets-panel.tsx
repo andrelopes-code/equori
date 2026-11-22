@@ -5,8 +5,10 @@ import styles from "@/features/portfolio/contribution-plan/editor/edit-list.modu
 import { GroupAssetsFooter } from "@/features/portfolio/contribution-plan/editor/group-assets-footer";
 import { MemberEditRow } from "@/features/portfolio/contribution-plan/editor/member-edit-row";
 import { MemberQuestionRow } from "@/features/portfolio/contribution-plan/editor/member-question-row";
+import { MissingFactsNotice } from "@/features/portfolio/contribution-plan/editor/missing-facts-notice";
 import { QuestionList } from "@/features/portfolio/contribution-plan/editor/question-list";
 import type { PlanEditor } from "@/features/portfolio/contribution-plan/editor/use-plan-editor";
+import { withoutFacts } from "@/features/portfolio/contribution-plan/model/fact-answers";
 import type { EditClass } from "@/features/portfolio/contribution-plan/model/plan-edits";
 import { MatchedRow } from "@/features/portfolio/contribution-plan/rules/matched-row";
 import { RuleList } from "@/features/portfolio/contribution-plan/rules/rule-list";
@@ -42,6 +44,11 @@ export function GroupAssetsPanel({
 
   const asked = edit.byQuestions && edit.split;
   const noYes = asked && edit.questions.length > 0 && !group.question_ideals;
+  const unanswered = asked
+    ? withoutFacts(group.members, edit.questionFacts).map((at) =>
+        memberName(group.members[at] ?? {}),
+      )
+    : [];
 
   function handleByQuestions(on: boolean) {
     const targets = group.question_ideals
@@ -105,6 +112,8 @@ export function GroupAssetsPanel({
               />
             ),
           )}
+
+          <MissingFactsNotice names={unanswered} />
 
           {noYes && (
             <Text size="sm" tone="muted" className={styles.noYes}>

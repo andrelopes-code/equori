@@ -121,6 +121,10 @@ A fact question row writes its catalog text by key, read-only, with the muted no
 - "{n} de {m} sim" counts the effective answers (FQ4).
 - The facts line of the asset starts with "sinais do exercício de {ano}" when the member has `facts_year`, and with "sem demonstrações para os sinais: as respostas são suas" when the group names a fact and the member has none.
 
+### Assets without filings
+
+Under the asset rows of a group that names a fact, one muted line of fixed height names the members without `facts_year`: "Sem demonstrações para os sinais: {nomes}. Sem um sim seu, esses ativos não recebem aporte." The line is absent when every member has filings. Review of 2026-11-22 on the demo book: ITUB4 and BBAS3 (chart `other`), BPAC11 and BOVA11 (no company report) showed "ideal 0% do grupo" with the reason only in their own facts line.
+
 ## Cross-cutting questions
 
 - R1: The filings, their accounts and the chart of accounts belong to the company report source of the region (`br_cvm_cia`). The catalog of FQ2 is not regional: the signals read accounts every company report holds (CR5).
