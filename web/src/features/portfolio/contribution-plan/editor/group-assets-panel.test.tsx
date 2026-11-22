@@ -20,6 +20,7 @@ const group: Group = {
   value: brl(100000),
   share_bp: 10000,
   questions: [],
+  question_facts: [],
   question_ideals: false,
   rules: [],
   matched: [],

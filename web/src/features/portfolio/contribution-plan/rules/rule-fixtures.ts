@@ -37,6 +37,7 @@ export const previewRoute = () =>
         value: brl(1800000),
         share_bp: 10000,
         questions: [],
+        question_facts: [],
         question_ideals: false,
         rules: [],
         matched: [{ instrument: "CDB1", value: brl(1800000), share_bp: 10000 }],

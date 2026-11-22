@@ -241,6 +241,7 @@ export function overlayDraft(view: Plan, draft: EditDraft): Plan {
       return {
         value: zero,
         question_ideals: false,
+        question_facts: [],
         ...row,
         name: cls.name,
         target_bp: cls.targetBp,

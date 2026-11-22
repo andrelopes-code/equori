@@ -9,6 +9,27 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// Defines values for ContributionMemberFactAnswers.
+const (
+	No   ContributionMemberFactAnswers = "no"
+	None ContributionMemberFactAnswers = "none"
+	Yes  ContributionMemberFactAnswers = "yes"
+)
+
+// Valid indicates whether the value is a known member of the ContributionMemberFactAnswers enum.
+func (e ContributionMemberFactAnswers) Valid() bool {
+	switch e {
+	case No:
+		return true
+	case None:
+		return true
+	case Yes:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ContributionMissingKind.
 const (
 	ContributionMissingKindPrice ContributionMissingKind = "price"
@@ -321,6 +342,9 @@ type ContributionClass struct {
 	Members []ContributionMember  `json:"members"`
 	Name    string                `json:"name"`
 
+	// QuestionFacts One fact key per question of the group, empty for a question the investor answers (FQ1).
+	QuestionFacts []string `json:"question_facts"`
+
 	// QuestionIdeals True when the group divides its target by the answers and one answer is yes (CQ3).
 	QuestionIdeals bool `json:"question_ideals"`
 
@@ -336,6 +360,9 @@ type ContributionClass struct {
 type ContributionClassInput struct {
 	Members []ContributionMemberInput `json:"members"`
 	Name    string                    `json:"name"`
+
+	// QuestionFacts One fact key per question of the group, empty for a question the investor answers (FQ1); absent without facts.
+	QuestionFacts *[]string `json:"question_facts,omitempty"`
 
 	// Questions The investor's yes-or-no questions of the group (CQ1); empty without them.
 	Questions *[]string `json:"questions,omitempty"`
@@ -359,15 +386,24 @@ type ContributionMember struct {
 	Amount       *Money              `json:"amount,omitempty"`
 
 	// Answers One answer per question of the group, true for yes (CQ2); absent in a group without questions.
-	Answers    *[]bool `json:"answers,omitempty"`
-	Cost       *Money  `json:"cost,omitempty"`
-	Instrument *string `json:"instrument,omitempty"`
-	Quantity   *Money  `json:"quantity,omitempty"`
-	ShareBp    *int    `json:"share_bp,omitempty"`
-	TargetBp   *int    `json:"target_bp,omitempty"`
-	UnitValue  *Money  `json:"unit_value,omitempty"`
-	Value      Money   `json:"value"`
+	Answers *[]bool `json:"answers,omitempty"`
+	Cost    *Money  `json:"cost,omitempty"`
+
+	// FactAnswers The answer of the filings to each question of the group; none when the investor's answer applies (FQ3). Absent in a group without questions.
+	FactAnswers *[]ContributionMemberFactAnswers `json:"fact_answers,omitempty"`
+
+	// FactsYear Last day of the fiscal year the fact answers read (FQ6); absent when none was computed.
+	FactsYear  *openapi_types.Date `json:"facts_year,omitempty"`
+	Instrument *string             `json:"instrument,omitempty"`
+	Quantity   *Money              `json:"quantity,omitempty"`
+	ShareBp    *int                `json:"share_bp,omitempty"`
+	TargetBp   *int                `json:"target_bp,omitempty"`
+	UnitValue  *Money              `json:"unit_value,omitempty"`
+	Value      Money               `json:"value"`
 }
+
+// ContributionMemberFactAnswers defines model for ContributionMember.FactAnswers.
+type ContributionMemberFactAnswers string
 
 // ContributionMemberInput defines model for ContributionMemberInput.
 type ContributionMemberInput struct {

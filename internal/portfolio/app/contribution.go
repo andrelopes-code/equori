@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -51,6 +52,7 @@ type ContributionClass struct {
 	Name           string
 	TargetBP       int
 	Questions      []string // the investor's yes-or-no questions (CQ1)
+	QuestionFacts  []string // one fact key per question, "" for the investor's own (FQ1)
 	QuestionIdeals bool     // the members' targets come from the answers, one at least true (CQ5)
 	Value          money.Money
 	ShareBP        *int
@@ -73,7 +75,9 @@ type ContributionMember struct {
 	AccountID    uuid.UUID
 	Instrument   money.Currency
 	TargetBP     *int
-	Answers      []bool // one per question of the class (CQ2); nil without questions
+	Answers      []bool              // one per question of the class (CQ2); nil without questions
+	FactAnswers  []domain.FactAnswer // one per question of the class (FQ3); nil without questions
+	FactsYear    *time.Time          // last day of the fiscal year the fact answers read (FQ6)
 	Value        money.Money
 	ShareBP      *int // inside its class
 	AfterShareBP *int // inside its class
@@ -112,6 +116,11 @@ func (s *Service) ContributionPlan(ctx context.Context, booksID int64) (Contribu
 		p.Amount = nil
 	}
 
+	p, err = s.withIdeals(ctx, withoutDerivedTargets(p))
+	if err != nil {
+		return ContributionView{}, err
+	}
+
 	ab, err := s.loadAccountBook(ctx, booksID)
 	if err != nil {
 		return ContributionView{}, err
@@ -127,7 +136,7 @@ func (s *Service) SaveContributionPlan(
 	booksID int64,
 	p domain.Plan,
 ) (ContributionView, error) {
-	p, err := p.WithIdeals()
+	p, err := s.withIdeals(ctx, p)
 	if err != nil {
 		return ContributionView{}, err
 	}
@@ -172,7 +181,7 @@ func (s *Service) PreviewContribution(
 	p domain.Plan,
 	amount money.Money,
 ) (ContributionView, error) {
-	p, err := p.WithIdeals()
+	p, err := s.withIdeals(ctx, p)
 	if err != nil {
 		return ContributionView{}, err
 	}
@@ -214,7 +223,7 @@ func (s *Service) PreviewDraft(
 	booksID int64,
 	p domain.Plan,
 ) (ContributionView, error) {
-	p, err := p.WithIdeals()
+	p, err := s.withIdeals(ctx, p)
 	if err != nil {
 		return ContributionView{}, err
 	}
@@ -260,17 +269,7 @@ func (s *Service) PreviewSavedContribution(
 		return s.ContributionPlan(ctx, booksID)
 	}
 
-	// The stored targets of a class with questions are derived; PreviewContribution derives them
-	// again from the answers.
-	for _, c := range p.Classes {
-		if len(c.Questions) > 0 {
-			for j := range c.Members {
-				c.Members[j].TargetBP = nil
-			}
-		}
-	}
-
-	return s.PreviewContribution(ctx, booksID, p, amount)
+	return s.PreviewContribution(ctx, booksID, withoutDerivedTargets(p), amount)
 }
 
 // accountBook is the accounts of a book indexed for the member rules of CN3 and CN6.

@@ -9032,6 +9032,8 @@ export interface components {
             target_bp: number;
             /** @description The investor's yes-or-no questions of the group (CQ1); empty without them. */
             questions: string[];
+            /** @description One fact key per question of the group, empty for a question the investor answers (FQ1). */
+            question_facts: string[];
             /** @description True when the group divides its target by the answers and one answer is yes (CQ3). */
             question_ideals: boolean;
             value: components["schemas"]["Money"];
@@ -9069,6 +9071,13 @@ export interface components {
             target_bp?: number;
             /** @description One answer per question of the group, true for yes (CQ2); absent in a group without questions. */
             answers?: boolean[];
+            /** @description The answer of the filings to each question of the group; none when the investor's answer applies (FQ3). Absent in a group without questions. */
+            fact_answers?: ("yes" | "no" | "none")[];
+            /**
+             * Format: date
+             * @description Last day of the fiscal year the fact answers read (FQ6); absent when none was computed.
+             */
+            facts_year?: string;
             value: components["schemas"]["Money"];
             share_bp?: number;
             after_share_bp?: number;
@@ -9101,6 +9110,8 @@ export interface components {
             target_bp: number;
             /** @description The investor's yes-or-no questions of the group (CQ1); empty without them. */
             questions?: string[];
+            /** @description One fact key per question of the group, empty for a question the investor answers (FQ1); absent without facts. */
+            question_facts?: string[];
             members: components["schemas"]["ContributionMemberInput"][];
             /** @description The rules of a group by rule (GR1); absent or empty for a group of members. */
             rules?: components["schemas"]["ContributionRule"][];

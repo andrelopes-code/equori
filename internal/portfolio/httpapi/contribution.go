@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
@@ -128,6 +130,10 @@ func planClasses(in []ContributionClassInput) []domain.PlanClass {
 		if c.Questions != nil {
 			out[i].Questions = *c.Questions
 		}
+
+		if c.QuestionFacts != nil {
+			out[i].QuestionFacts = *c.QuestionFacts
+		}
 	}
 
 	return out
@@ -182,6 +188,7 @@ func contributionClass(c app.ContributionClass) ContributionClass {
 		Name:           c.Name,
 		TargetBp:       c.TargetBP,
 		Questions:      append([]string{}, c.Questions...),
+		QuestionFacts:  append([]string{}, c.QuestionFacts...),
 		QuestionIdeals: c.QuestionIdeals,
 		Value:          toMoney(c.Value),
 		ShareBp:        c.ShareBP,
@@ -199,6 +206,8 @@ func contributionClass(c app.ContributionClass) ContributionClass {
 			Instrument:   optional(string(m.Instrument)),
 			TargetBp:     m.TargetBP,
 			Answers:      optionalAnswers(m.Answers),
+			FactAnswers:  optionalFactAnswers(m.FactAnswers),
+			FactsYear:    optionalDate(m.FactsYear),
 			Value:        toMoney(m.Value),
 			ShareBp:      m.ShareBP,
 			AfterShareBp: m.AfterShareBP,
@@ -218,6 +227,29 @@ func optionalAnswers(a []bool) *[]bool {
 	}
 
 	return &a
+}
+
+func optionalFactAnswers(a []domain.FactAnswer) *[]ContributionMemberFactAnswers {
+	if a == nil {
+		return nil
+	}
+
+	out := make([]ContributionMemberFactAnswers, len(a))
+	for i, v := range a {
+		out[i] = ContributionMemberFactAnswers(v)
+	}
+
+	return &out
+}
+
+func optionalDate(t *time.Time) *openapi_types.Date {
+	if t == nil {
+		return nil
+	}
+
+	d := date(*t)
+
+	return &d
 }
 
 func optionalMoney(m *money.Money) *Money {

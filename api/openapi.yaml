@@ -16022,7 +16022,7 @@ components:
           description: Name of the deposit guarantee of the book's region in the base currency; absent without one (GR8).
     ContributionClass:
       type: object
-      required: [name, target_bp, value, questions, question_ideals, members, rules, matched]
+      required: [name, target_bp, value, questions, question_facts, question_ideals, members, rules, matched]
       properties:
         name:
           type: string
@@ -16033,6 +16033,11 @@ components:
           items:
             type: string
           description: The investor's yes-or-no questions of the group (CQ1); empty without them.
+        question_facts:
+          type: array
+          items:
+            type: string
+          description: One fact key per question of the group, empty for a question the investor answers (FQ1).
         question_ideals:
           type: boolean
           description: True when the group divides its target by the answers and one answer is yes (CQ3).
@@ -16117,6 +16122,16 @@ components:
           items:
             type: boolean
           description: One answer per question of the group, true for yes (CQ2); absent in a group without questions.
+        fact_answers:
+          type: array
+          items:
+            type: string
+            enum: ["yes", "no", "none"]
+          description: The answer of the filings to each question of the group; none when the investor's answer applies (FQ3). Absent in a group without questions.
+        facts_year:
+          type: string
+          format: date
+          description: Last day of the fiscal year the fact answers read (FQ6); absent when none was computed.
         value:
           $ref: "#/components/schemas/Money"
         share_bp:
@@ -16184,6 +16199,13 @@ components:
           items:
             type: string
           description: The investor's yes-or-no questions of the group (CQ1); empty without them.
+        question_facts:
+          type: array
+          maxItems: 10
+          items:
+            type: string
+            pattern: "^([a-z0-9_]{2,40})?$"
+          description: One fact key per question of the group, empty for a question the investor answers (FQ1); absent without facts.
         members:
           type: array
           items:

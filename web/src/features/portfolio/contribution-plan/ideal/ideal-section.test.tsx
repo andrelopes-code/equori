@@ -38,6 +38,7 @@ it("draws one row per matched security of an open group by rule", async () => {
         value: brl(1000000),
         share_bp: 10000,
         questions: [],
+        question_facts: [],
         question_ideals: false,
         rules: [{ instrument_type: "fixed_income" }],
         matched: [

@@ -69,6 +69,7 @@ func (a *assembler) class(
 		Name:           c.Name,
 		TargetBP:       c.TargetBP,
 		Questions:      c.Questions,
+		QuestionFacts:  c.QuestionFacts,
 		QuestionIdeals: c.QuestionIdeals(),
 		Members:        make([]ContributionMember, len(c.Members)),
 		Rules:          c.Rules,
@@ -85,12 +86,14 @@ func (a *assembler) class(
 		value := values[j]
 		sum += value.Amount()
 		out.Members[j] = ContributionMember{
-			AccountID:  m.AccountID,
-			Instrument: m.Instrument,
-			TargetBP:   m.TargetBP,
-			Answers:    m.Answers,
-			Value:      value,
-			UnitValue:  units[j],
+			AccountID:   m.AccountID,
+			Instrument:  m.Instrument,
+			TargetBP:    m.TargetBP,
+			Answers:     m.Answers,
+			FactAnswers: m.FactAnswers,
+			FactsYear:   m.FactsYear,
+			Value:       value,
+			UnitValue:   units[j],
 		}
 	}
 
