@@ -59,7 +59,11 @@ type showArgs struct {
 
 // StampRead keeps the output of a read of the turn and returns it with its handle in view_source
 // (V1). An output that is not a JSON object, or that the turn cannot keep, returns unchanged.
-func (s *Service) StampRead(ctx context.Context, name string, out json.RawMessage) json.RawMessage {
+func (s *Service) StampRead(
+	ctx context.Context,
+	name string,
+	args, out json.RawMessage,
+) json.RawMessage {
 	t, ok := ctx.Value(turnKey{}).(*turnState)
 	if !ok {
 		return out
@@ -70,7 +74,7 @@ func (s *Service) StampRead(ctx context.Context, name string, out json.RawMessag
 		return out
 	}
 
-	handle, ok := t.addRead(name, out)
+	handle, ok := t.addRead(name, args, out)
 	if !ok {
 		return out
 	}
@@ -105,6 +109,7 @@ func (s *Service) Show(ctx context.Context, args json.RawMessage) (json.RawMessa
 	build, ok := s.views[ViewKey{Tool: toolName, Form: in.Form}]
 	if in.Form == chartForm {
 		build, ok = chartBuilder(in.Chart), true
+		outputs = s.followPages(ctx, t, in.Source, outputs)
 	}
 
 	if !ok {
@@ -121,18 +126,27 @@ func (s *Service) Show(ctx context.Context, args json.RawMessage) (json.RawMessa
 		return nil, err
 	}
 
+	return s.keepView(t, in.Form, payload)
+}
+
+// keepView stores the view in the turn and returns what the model reads of it.
+func (s *Service) keepView(
+	t *turnState,
+	form string,
+	payload ViewPayload,
+) (json.RawMessage, error) {
 	raw, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
 	}
 
-	v := domain.View{ID: uuid.New(), Form: in.Form, Payload: raw, CreatedAt: s.now()}
+	v := domain.View{ID: uuid.New(), Form: form, Payload: raw, CreatedAt: s.now()}
 	if err := t.addView(v); err != nil {
 		return nil, showFailure("form", err.Error())
 	}
 
 	out := shown{View: v.ID.String()}
-	if in.Form == chartForm {
+	if form == chartForm {
 		out.Reading = payload.Reading()
 	}
 

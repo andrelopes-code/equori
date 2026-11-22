@@ -53,5 +53,7 @@ const chartDescription = "form chart works on the output of any read: chart name
 	"change_percent); a share or a percent beside amounts takes axis end. Use it when no form " +
 	"draws what the member asks, or when " +
 	"the member asks for a drawing; the server computes every figure, so never write one in the spec. " +
-	"Pass every page of a paged read. The result holds the computed rows (head, rows, average); " +
+	"items may cross an array, such as transactions.postings: each inner object is a record that " +
+	"also holds the fields of the object above it (date, payee_name). Pass the first page of a " +
+	"paged read, read with limit 50: the server reads the pages that follow. The result holds the computed rows (head, rows, average); " +
 	"rows_omitted counts the rows past the first 100.\n"

@@ -261,6 +261,8 @@ Owner, 2026-11-22: the assistant is to analyse any data with freedom, without lo
 
 - V37. The result of `show` with form `chart` is `{view, head, rows, average?, rows_omitted?}`. `head` is `"x"` and the label of each drawn column. A cell of `rows` is a value as the read tools write it: an amount `{amount: decimal, currency}`, an integer, a date, a month, a text, a share or a rate as a text of percent with two places (`"57.14%"`), or `null` for a gap. A catalog key of the chart is written as its last word (`others`, `none`, `rest`). `average` holds the value of each average mark. At most 100 rows; `rows_omitted` counts the others. The prompt tells the model to take the conclusion of the answer from these rows.
 - V38. A series takes `derive?: cumulative | share | change | change_percent`, applied to the aggregates of its column after grouping, in the order of the rows drawn. `cumulative` is the running total and keeps the unit. `share` is the value over the total of the column in basis points (`view.Share`). `change` is the value minus the value of the row before, in the unit of the series; the first row is a gap. `change_percent` is that change over the absolute value of the row before as a rate in basis points, rounded half to even; a row before that is a gap or zero leaves a gap. Rules: `cumulative` and `share` take an aggregation that sums or counts; `share` refuses a column with a value below zero or a total of zero; `cumulative`, `change` and `change_percent` take a date `x`; a derived series takes no `average`. A split applies `derive` to each of its columns. `share` has the unit share and `change_percent` the unit rate: beside a money series each needs its own axis (V34). The verdict (V35) reads the aggregates before `derive`.
+- V39 (amends V29). A chart follows the pages of its read: after the handles the model passed, the server calls the same tool with the arguments of the last handle and the `next_cursor` of each page as `cursor`, at most 100 pages, with the book and the role of the turn. A page that fails ends the reading, and V29 refuses the incomplete records. A chart reads at most 10,000 items. Measured on 2026-11-22: `search_transactions` returns at most 50 items a page, so the 4 handles of V29 held 200 transactions.
+- V40 (amends V28). `items` may cross arrays: in `transactions.postings`, each object of the inner array is one item, which also holds the fields of the objects above it (`date`, `payee_name`); a field of the item wins over a field above. A path that does not end at an array of objects is a tool error.
 
 Cross-cutting questions of this amendment:
 
@@ -276,11 +278,11 @@ Cross-cutting questions of this amendment:
 - C4: Amounts on screen pass through `useMoneyFormat()` inside `useValueFormat`; the rows of V37 reach the model, as the read they come from did.
 - T1: Does not apply: no new date.
 - T2: Does not apply: no business-day count.
-- B1, B2, B3: Do not apply: no table, operation or setting.
+- B1, B2, B3: Do not apply: no table, operation or setting. The pages of V39 are read by the tool the member's turn already called, with the same book and arguments.
 - D1 to D5: Do not apply: no table, schema change, recorded fact, write or diagnostic field.
 - S1: No operation. `show` is chat only; its result and its `chart` schema change.
 - S2: The chart keeps the width of the view at 390 px.
 - S3: The guide article of the assistant states that a chart can show a running total, a share and the change from one period to the next.
 - S4: `show` returns the computed rows; the chart spec gains `derive`; the prompt gains the sentence of V37.
-- X1: Does not apply: no domain scenario; `internal/assistant` tests the rows of V37 through the turn API, `view` tests each derivation.
+- X1: Does not apply: no domain scenario; `internal/assistant` tests the rows of V37 through the turn API, `view` tests each derivation and a nested `items` path, and `internal/assistant` tests a chart over three pages of `search_transactions`.
 - X2: `view` tests a share and a change of a series in USD.

@@ -14,13 +14,13 @@ func TestTurnStateReads(t *testing.T) {
 	var ts turnState
 
 	for i := 1; i <= maxReads; i++ {
-		h, ok := ts.addRead("get_help", []byte(`{}`))
+		h, ok := ts.addRead("get_help", nil, []byte(`{}`))
 		if !ok || h != fmt.Sprintf("r%d", i) {
 			t.Fatalf("read %d: handle %q, ok %v", i, h, ok)
 		}
 	}
 
-	if _, ok := ts.addRead("get_help", []byte(`{}`)); ok {
+	if _, ok := ts.addRead("get_help", nil, []byte(`{}`)); ok {
 		t.Fatalf("read %d got a handle", maxReads+1)
 	}
 
@@ -37,11 +37,11 @@ func TestTurnStateReads(t *testing.T) {
 func TestTurnStateReadTooLarge(t *testing.T) {
 	var ts turnState
 
-	if _, ok := ts.addRead("get_help", make([]byte, maxReadBytes+1)); ok {
+	if _, ok := ts.addRead("get_help", nil, make([]byte, maxReadBytes+1)); ok {
 		t.Fatal("an output above the limit got a handle")
 	}
 
-	if h, ok := ts.addRead("get_help", make([]byte, maxReadBytes)); !ok || h != "r1" {
+	if h, ok := ts.addRead("get_help", nil, make([]byte, maxReadBytes)); !ok || h != "r1" {
 		t.Fatalf("an output at the limit: handle %q, ok %v", h, ok)
 	}
 }

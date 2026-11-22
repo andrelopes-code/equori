@@ -316,3 +316,48 @@ func TestShowChartOfAccountHistory(t *testing.T) {
 		t.Fatalf("show result = %s", shown)
 	}
 }
+
+// V39, V40: a chart of a paged read follows the pages itself, and reads the postings of each
+// transaction; the model passes the first page alone.
+func TestShowChartFollowsPages(t *testing.T) {
+	t.Parallel()
+
+	spec := `{"title":"Gastos por mês","items":"transactions.postings",` +
+		`"where":[{"field":"account_class","op":"eq","value":"expense"}],` +
+		`"x":{"field":"date","bucket":"month"},` +
+		`"series":[{"field":"amount","agg":"sum","kind":"bar","label":"Gasto"}]}`
+	late := &lateProvider{}
+	h := apitest.New(t, apitest.LLM(late), apitest.Today("2026-10-23"))
+
+	account := h.Account("Conta", "asset", "checking", nil)
+	food := h.Account("Mercado", "expense", "", nil)
+	h.Record("2026-08-05", h.Posting(account, -1000), h.Posting(food, 1000))
+	h.Record("2026-08-20", h.Posting(account, -2000), h.Posting(food, 2000))
+	h.Record("2026-09-06", h.Posting(account, -3000), h.Posting(food, 3000))
+	h.Record("2026-10-01", h.Posting(account, -4000), h.Posting(food, 4000))
+	h.Record("2026-10-20", h.Posting(account, -550), h.Posting(food, 550))
+	h.Dispatch()
+
+	late.p = llmtest.New("aistudio",
+		callStep("search_transactions", `{"limit":2}`),
+		callStep("show", `{"source":["r1"],"form":"chart","chart":`+spec+`}`),
+		textStep("Outubro somou mais."),
+	)
+	p := late.p
+
+	r := sendTurn(h, h.Client, map[string]any{"text": "Gráfico dos meus gastos por mês"})
+	if r.Status != http.StatusOK {
+		t.Fatalf("status = %d: %s", r.Status, r.Body)
+	}
+
+	results := toolResults(p)
+	shown := string(results[len(results)-1].Content)
+
+	want := `"rows":[` +
+		`["2026-08",{"amount":"30.00","currency":"BRL"}],` +
+		`["2026-09",{"amount":"30.00","currency":"BRL"}],` +
+		`["2026-10",{"amount":"45.50","currency":"BRL"}]]`
+	if !strings.Contains(shown, want) {
+		t.Fatalf("show result = %s", shown)
+	}
+}

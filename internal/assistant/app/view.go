@@ -41,7 +41,7 @@ func (s *Service) FormsOf(tool string) []string {
 	return forms
 }
 
-func (t *turnState) addRead(tool string, out []byte) (string, bool) {
+func (t *turnState) addRead(tool string, args, out []byte) (string, bool) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -49,24 +49,28 @@ func (t *turnState) addRead(tool string, out []byte) (string, bool) {
 		return "", false
 	}
 
-	t.reads = append(t.reads, turnRead{tool: tool, out: out})
+	t.reads = append(t.reads, turnRead{tool: tool, args: args, out: out})
 
 	return fmt.Sprintf("r%d", len(t.reads)), true
 }
 
 func (t *turnState) read(handle string) (string, []byte, bool) {
+	r, ok := t.readOf(handle)
+
+	return r.tool, r.out, ok
+}
+
+func (t *turnState) readOf(handle string) (turnRead, bool) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
 	var n int
 	if _, err := fmt.Sscanf(handle, "r%d", &n); err != nil || n < 1 || n > len(t.reads) ||
 		handle != fmt.Sprintf("r%d", n) {
-		return "", nil, false
+		return turnRead{}, false
 	}
 
-	r := t.reads[n-1]
-
-	return r.tool, r.out, true
+	return t.reads[n-1], true
 }
 
 func (t *turnState) addView(v domain.View) error {
@@ -111,5 +115,6 @@ func (t *turnState) handles() string {
 
 type turnRead struct {
 	tool string
+	args []byte
 	out  []byte
 }

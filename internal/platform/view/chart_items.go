@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"math/big"
 	"regexp"
 	"strconv"
@@ -15,7 +16,7 @@ import (
 )
 
 // The most items one chart reads across its pages (V29).
-const maxChartItems = 2000
+const maxChartItems = 10000
 
 var (
 	monthPattern = regexp.MustCompile(`^[0-9]{4}-(0[1-9]|1[0-2])$`)
@@ -66,19 +67,12 @@ func chartItems(outputs []json.RawMessage, path string) ([]map[string]any, error
 			ended = true
 		}
 
-		list, ok := lookup(doc, path).([]any)
-		if !ok {
-			return nil, fmt.Errorf("items: %q is not an array of the output", path)
+		list, err := expand(doc, strings.Split(path, "."), nil)
+		if err != nil {
+			return nil, fmt.Errorf("items: %q %w", path, err)
 		}
 
-		for _, it := range list {
-			obj, ok := it.(map[string]any)
-			if !ok {
-				return nil, fmt.Errorf("items: %q holds values that are not objects", path)
-			}
-
-			items = append(items, obj)
-		}
+		items = append(items, list...)
 	}
 
 	if !ended {
@@ -94,6 +88,57 @@ func chartItems(outputs []json.RawMessage, path string) ([]map[string]any, error
 	}
 
 	return items, nil
+}
+
+// expand returns the objects of the array that steps reach under v. An array on the way gives
+// one item per object of its inner array, and that item also holds the fields of the objects
+// above it (V40); a field of the item wins over a field above.
+func expand(v any, steps []string, above map[string]any) ([]map[string]any, error) {
+	list, isList := v.([]any)
+	obj, isObj := v.(map[string]any)
+
+	if isObj && len(steps) > 0 {
+		return expand(obj[steps[0]], steps[1:], above)
+	}
+
+	if !isList {
+		return nil, errors.New("is not an array of the output")
+	}
+
+	var items []map[string]any
+
+	for _, el := range list {
+		obj, ok := el.(map[string]any)
+		if !ok {
+			return nil, errors.New("holds values that are not objects")
+		}
+
+		if len(steps) == 0 {
+			items = append(items, under(above, obj))
+			continue
+		}
+
+		inner, err := expand(obj[steps[0]], steps[1:], under(above, obj))
+		if err != nil {
+			return nil, err
+		}
+
+		items = append(items, inner...)
+	}
+
+	return items, nil
+}
+
+// under is obj with the fields of above that it does not hold.
+func under(above, obj map[string]any) map[string]any {
+	if len(above) == 0 {
+		return obj
+	}
+
+	merged := maps.Clone(above)
+	maps.Copy(merged, obj)
+
+	return merged
 }
 
 func decodeOutput(out json.RawMessage) (map[string]any, error) {

@@ -100,7 +100,7 @@ func stamped(svc *app.Service, name string, h llm.ToolHandler) llm.ToolHandler {
 			return out, err
 		}
 
-		return svc.StampRead(ctx, name, out), nil
+		return svc.StampRead(ctx, name, args, out), nil
 	}
 }
 
