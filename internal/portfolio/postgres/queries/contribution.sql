@@ -41,7 +41,8 @@ ORDER BY
 SELECT
     q.class_id,
     q.position,
-    q.text
+    q.text,
+    q.fact
 FROM
     portfolio_contribution_question AS q
     JOIN portfolio_contribution_class AS c ON c.books_id = q.books_id
@@ -97,9 +98,9 @@ VALUES
 
 -- name: InsertContributionQuestion :exec
 INSERT INTO
-    portfolio_contribution_question (books_id, class_id, position, text)
+    portfolio_contribution_question (books_id, class_id, position, text, fact)
 VALUES
-    (@books_id, @class_id, @position, @text);
+    (@books_id, @class_id, @position, @text, sqlc.narg ('fact'));
 
 -- name: InsertContributionAnswer :exec
 INSERT INTO

@@ -88,6 +88,7 @@ func (r *Repository) attachQuestions(
 	for _, q := range questions {
 		c := &plan.Classes[index[q.ClassID]]
 		c.Questions = append(c.Questions, q.Text)
+		c.QuestionFacts = append(c.QuestionFacts, deref(q.Fact))
 	}
 
 	for _, c := range plan.Classes {
@@ -184,6 +185,7 @@ func saveContributionQuestions(
 			ClassID:  classID,
 			Position: int32(i),
 			Text:     text,
+			Fact:     factOrNil(c.QuestionFacts, i),
 		})
 		if err != nil {
 			return fmt.Errorf("insert contribution question of %q: %w", c.Name, err)
@@ -256,4 +258,13 @@ func toPlanMember(m ListContributionMembersRow) domain.PlanMember {
 	}
 
 	return member
+}
+
+// factOrNil returns the fact of question i, nil when the question names none.
+func factOrNil(facts []string, i int) *string {
+	if i >= len(facts) || facts[i] == "" {
+		return nil
+	}
+
+	return &facts[i]
 }

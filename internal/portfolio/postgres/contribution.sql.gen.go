@@ -153,9 +153,9 @@ func (q *Queries) InsertContributionPlan(ctx context.Context, arg InsertContribu
 
 const insertContributionQuestion = `-- name: InsertContributionQuestion :exec
 INSERT INTO
-    portfolio_contribution_question (books_id, class_id, position, text)
+    portfolio_contribution_question (books_id, class_id, position, text, fact)
 VALUES
-    ($1, $2, $3, $4)
+    ($1, $2, $3, $4, $5)
 `
 
 type InsertContributionQuestionParams struct {
@@ -163,6 +163,7 @@ type InsertContributionQuestionParams struct {
 	ClassID  uuid.UUID
 	Position int32
 	Text     string
+	Fact     *string
 }
 
 func (q *Queries) InsertContributionQuestion(ctx context.Context, arg InsertContributionQuestionParams) error {
@@ -171,6 +172,7 @@ func (q *Queries) InsertContributionQuestion(ctx context.Context, arg InsertCont
 		arg.ClassID,
 		arg.Position,
 		arg.Text,
+		arg.Fact,
 	)
 	return err
 }
@@ -383,7 +385,8 @@ const listContributionQuestions = `-- name: ListContributionQuestions :many
 SELECT
     q.class_id,
     q.position,
-    q.text
+    q.text,
+    q.fact
 FROM
     portfolio_contribution_question AS q
     JOIN portfolio_contribution_class AS c ON c.books_id = q.books_id
@@ -399,6 +402,7 @@ type ListContributionQuestionsRow struct {
 	ClassID  uuid.UUID
 	Position int32
 	Text     string
+	Fact     *string
 }
 
 func (q *Queries) ListContributionQuestions(ctx context.Context, booksID int64) ([]ListContributionQuestionsRow, error) {
@@ -410,7 +414,12 @@ func (q *Queries) ListContributionQuestions(ctx context.Context, booksID int64) 
 	var items []ListContributionQuestionsRow
 	for rows.Next() {
 		var i ListContributionQuestionsRow
-		if err := rows.Scan(&i.ClassID, &i.Position, &i.Text); err != nil {
+		if err := rows.Scan(
+			&i.ClassID,
+			&i.Position,
+			&i.Text,
+			&i.Fact,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

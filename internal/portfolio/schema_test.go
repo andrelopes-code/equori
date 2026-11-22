@@ -150,6 +150,15 @@ func TestSchemaRejectsInvalidContributionQuestions(t *testing.T) {
 		t.Fatalf("valid rows: %v", err)
 	}
 
+	validFacts := withMember + `INSERT INTO portfolio_contribution_question
+		(books_id, class_id, position, text, fact)
+		SELECT books_id, id, 0, 'Q', 'piotroski_p1' FROM c
+		UNION ALL SELECT books_id, id, 1, 'R', NULL FROM c
+		UNION ALL SELECT books_id, id, 2, 'S', NULL FROM c`
+	if _, err := pool.Exec(ctx, validFacts, pgtest.CreateBooks(t, pool)); err != nil {
+		t.Fatalf("valid fact rows: %v", err)
+	}
+
 	tests := map[string]string{
 		"question of 201 characters": withMember + `INSERT INTO portfolio_contribution_question
 			(books_id, class_id, position, text) SELECT books_id, id, 0, repeat('x', 201) FROM c`,
@@ -160,6 +169,12 @@ func TestSchemaRejectsInvalidContributionQuestions(t *testing.T) {
 			SELECT books_id, id, 0, 5, true FROM c WHERE EXISTS (SELECT 1 FROM q)`,
 		"question without a class": `INSERT INTO portfolio_contribution_question
 			(books_id, class_id, position, text) SELECT $1::bigint, gen_random_uuid(), 0, 'Q'`,
+		"question with a fact of the wrong form": withMember + `INSERT INTO portfolio_contribution_question
+			(books_id, class_id, position, text, fact) SELECT books_id, id, 0, 'Q', 'P1' FROM c`,
+		"two questions with one fact": withMember + `INSERT INTO portfolio_contribution_question
+			(books_id, class_id, position, text, fact)
+			SELECT books_id, id, 0, 'Q', 'piotroski_p1' FROM c
+			UNION ALL SELECT books_id, id, 1, 'R', 'piotroski_p1' FROM c`,
 	}
 	for name, sql := range tests {
 		t.Run(name, func(t *testing.T) {
