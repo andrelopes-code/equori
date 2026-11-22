@@ -50,11 +50,40 @@ describe("plotRecords", () => {
     expect(got.records).toEqual([{ label: "jan." }, { label: "fev.", c1: 5 }]);
     expect(got.series[0]?.unit).toEqual(brl(5));
   });
+  // Answer views design, V38: a derived series holds shares or rates in basis points.
+  it("draws a share and a rate as the number of their basis points", () => {
+    const got = plotRecords(
+      [
+        [{ month: "2026-01" }, { bp: 5714 }, {}],
+        [{ month: "2026-02" }, { bp: 4286 }, { rate: -5000 }],
+      ],
+      ["jan.", "fev."],
+      {
+        label: 0,
+        series: [
+          { column: 1, kind: "bar" },
+          { column: 2, kind: "line", axis: "end" },
+        ],
+        marks: [],
+      },
+    );
+
+    expect(got.records).toEqual([
+      { label: "jan.", c1: 5714 },
+      { label: "fev.", c1: 4286, c2: -5000 },
+    ]);
+    expect(got.series.map((s) => s.unit)).toEqual([
+      { bp: 5714 },
+      { rate: -5000 },
+    ]);
+  });
 });
 
 describe("withNumber", () => {
   it("keeps the unit and the currency of the template", () => {
     expect(withNumber(brl(1), 250)).toEqual(brl(250));
     expect(withNumber({ count: 1 }, 4)).toEqual({ count: 4 });
+    expect(withNumber({ bp: 1 }, 2857)).toEqual({ bp: 2857 });
+    expect(withNumber({ rate: 1 }, -5000)).toEqual({ rate: -5000 });
   });
 });

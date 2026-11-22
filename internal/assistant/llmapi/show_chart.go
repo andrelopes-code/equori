@@ -29,6 +29,8 @@ const chartSchema = `{"type":"object","additionalProperties":false,
  "field":{"type":"string","description":"field holding an amount or an integer; none for count"},
  "agg":{"type":"string","enum":["sum","count","avg","min","max","first","last"]},
  "sign":{"type":"string","enum":["as_is","negate","abs"]},
+ "derive":{"type":"string","enum":["cumulative","share","change","change_percent"],
+  "description":"over the rows: running total, percent of total, change, change in percent"},
  "kind":{"type":"string","enum":["bar","line","area","pie"]},
  "label":{"type":"string","minLength":1,"maxLength":40},
  "axis":{"type":"string","enum":["start","end"]},
@@ -46,7 +48,10 @@ const chartDescription = "form chart works on the output of any read: chart name
 	"names ranked by value), and up to 6 series that aggregate a field (sum, count, avg, min, max, " +
 	"first, last) drawn as bar, line, area or pie. where keeps records, sign negate shows outflows " +
 	"as positive, split draws one series per value of a field (stacked when stack), axis end reads a " +
-	"second unit, average marks the mean. Use it when no form draws what the member asks, or when " +
+	"second unit, average marks the mean. derive turns a series into its running total " +
+	"(cumulative), its percent of the total (share) or its change from the row before (change, " +
+	"change_percent); a share or a percent beside amounts takes axis end. Use it when no form " +
+	"draws what the member asks, or when " +
 	"the member asks for a drawing; the server computes every figure, so never write one in the spec. " +
 	"Pass every page of a paged read. The result holds the computed rows (head, rows, average); " +
 	"rows_omitted counts the rows past the first 100.\n"

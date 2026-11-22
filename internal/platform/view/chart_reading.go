@@ -1,6 +1,7 @@
 package view
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/andrelopes-code/equori/internal/platform/money"
@@ -62,6 +63,10 @@ func (v Value) plain() any {
 		m, _ := money.New(v.Money.Amount, code)
 
 		return readingMoney{Amount: m.Decimal(), Currency: v.Money.Currency}
+	case v.BP != nil:
+		return percent(*v.BP)
+	case v.Rate != nil:
+		return percent(*v.Rate)
 	case v.Text != "" && v.Count != nil:
 		return plainKey(v.Text)
 	case v.Count != nil:
@@ -75,6 +80,16 @@ func (v Value) plain() any {
 	}
 
 	return nil
+}
+
+// percent writes basis points as a percent with two places: 5714 reads "57.14%".
+func percent(bp int64) string {
+	sign := ""
+	if bp < 0 {
+		sign, bp = "-", -bp
+	}
+
+	return fmt.Sprintf("%s%d.%02d%%", sign, bp/100, bp%100)
 }
 
 // plainKey writes a catalog key of the chart as its last word ("others"); any other text stays.

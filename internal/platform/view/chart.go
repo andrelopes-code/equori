@@ -31,6 +31,7 @@ var (
 	chartTones   = []string{"", "success", "danger", "warning", "info", "neutral"}
 	chartOrients = []string{"", "vertical", "horizontal"}
 	chartStacks  = []string{"", "normal", "percent"}
+	chartDerives = []string{"", "cumulative", "share", "change", "change_percent"}
 )
 
 // ErrNoRecords: no item of the read passes the filters, so the chart has nothing to draw.
@@ -76,15 +77,16 @@ type ChartSplit struct {
 
 // ChartSeries is one aggregated field and how it is drawn.
 type ChartSeries struct {
-	Field string `json:"field"`
-	Agg   string `json:"agg"`
-	Sign  string `json:"sign"`
-	Kind  string `json:"kind"`
-	Label string `json:"label"`
-	Axis  string `json:"axis"`
-	Stack bool   `json:"stack"`
-	Curve string `json:"curve"`
-	Tone  string `json:"tone"`
+	Field  string `json:"field"`
+	Agg    string `json:"agg"`
+	Sign   string `json:"sign"`
+	Derive string `json:"derive"`
+	Kind   string `json:"kind"`
+	Label  string `json:"label"`
+	Axis   string `json:"axis"`
+	Stack  bool   `json:"stack"`
+	Curve  string `json:"curve"`
+	Tone   string `json:"tone"`
 }
 
 // Chart builds the view of a chart over the outputs of one read, one output per page
@@ -198,11 +200,19 @@ func (s ChartSpec) validateSeries() error {
 			!slices.Contains(chartCurves, se.Curve) || !slices.Contains(chartTones, se.Tone):
 			return fmt.Errorf("series[%d]: sign, axis, curve or tone outside its set", i)
 		}
+
+		if err := se.validateDerive(); err != nil {
+			return fmt.Errorf("series[%d].%w", i, err)
+		}
 	}
 
 	for _, a := range s.Average {
 		if a < 0 || a >= len(s.Series) {
 			return fmt.Errorf("average: %d is not a series index", a)
+		}
+
+		if s.Series[a].Derive != "" {
+			return errors.New("average: of a series without derive")
 		}
 	}
 

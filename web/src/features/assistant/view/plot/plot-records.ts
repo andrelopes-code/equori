@@ -49,12 +49,14 @@ export function plotRecords(
 export function withNumber(template: ViewValue, n: number): ViewValue {
   if (template.money !== undefined)
     return { money: { ...template.money, amount: n } };
+  if (template.bp !== undefined) return { bp: n };
+  if (template.rate !== undefined) return { rate: n };
 
   return { count: n };
 }
 
 function numberOf(v: ViewValue | undefined): number | undefined {
-  return v?.money?.amount ?? v?.count;
+  return v?.money?.amount ?? v?.count ?? v?.bp ?? v?.rate;
 }
 
 function unitOf(rows: ViewValue[][], column: number): ViewValue {

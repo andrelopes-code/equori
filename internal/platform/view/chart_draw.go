@@ -21,7 +21,15 @@ const (
 
 // drawChart turns the groups into the rows, the plot and the texts of the view (V34, V35).
 func drawChart(g *chartGroups, spec ChartSpec, count int) (Payload, error) {
-	values := g.values(spec)
+	base := g.values(spec)
+
+	// The verdict reads the aggregates and their units before a derivation changes them (V38).
+	verdict := g.verdict(spec, base)
+
+	values, err := g.derive(spec, base)
+	if err != nil {
+		return Payload{}, err
+	}
 
 	if err := g.check(spec, values); err != nil {
 		return Payload{}, err
@@ -44,7 +52,7 @@ func drawChart(g *chartGroups, spec ChartSpec, count int) (Payload, error) {
 	return Payload{
 		Title:   Text{Key: chartTitleKey, Params: map[string]Value{"title": TextValue(spec.Title)}},
 		Window:  g.window(spec.X),
-		Verdict: g.verdict(spec, values),
+		Verdict: verdict,
 		Prov: &Text{
 			Key:    chartProvKey,
 			Params: map[string]Value{"count": CountValue(int64(count))},
