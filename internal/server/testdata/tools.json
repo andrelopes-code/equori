@@ -5823,6 +5823,17 @@
                             "type": "boolean"
                           },
                           "description": "one answer per question of the group, true for yes"
+                        },
+                        "fact_answers": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "description": "per question: yes or no from the filings, none when the investor's answer applies"
+                        },
+                        "facts_year": {
+                          "type": "string",
+                          "description": "last day of the fiscal year the fact answers read"
                         }
                       },
                       "required": [
@@ -5923,6 +5934,13 @@
                   "question_ideals": {
                     "type": "boolean",
                     "description": "true when the member target_bp values derive from the answers and one answer is yes"
+                  },
+                  "question_facts": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "one fact key per question, empty for the investor's own; piotroski_p1 to piotroski_p9 are answered from the company's filings"
                   }
                 },
                 "required": [
@@ -12036,7 +12054,7 @@
       "properties": {
         "amount": {
           "type": "string",
-          "description": "amount contributed each month as a positive decimal in the base currency; absent stores none"
+          "description": "monthly contribution as a positive decimal in the base currency; absent stores none"
         },
         "classes": {
           "type": "array",
@@ -12049,7 +12067,7 @@
               },
               "target_bp": {
                 "type": "integer",
-                "description": "share of the portfolio the class should hold, in basis points: 4000 is 40%; the classes add up to 10000"
+                "description": "share of the portfolio in basis points: 4000 is 40%; the classes add up to 10000"
               },
               "members": {
                 "type": "array",
@@ -12058,22 +12076,22 @@
                   "properties": {
                     "account_id": {
                       "type": "string",
-                      "description": "account that counts whole in the class, such as a fixed income Investment line or a reserve, from list_accounts; instead of instrument"
+                      "description": "account from list_accounts counted whole in the class, such as a reserve; instead of instrument"
                     },
                     "instrument": {
                       "type": "string",
-                      "description": "code of a security, counted in every Brokerage that holds it, such as BOVA11; instead of account_id"
+                      "description": "security code such as BOVA11, counted in every Brokerage holding it; instead of account_id"
                     },
                     "target_bp": {
                       "type": "integer",
-                      "description": "share of the class this member should hold, in basis points; the members of a class add up to 10000, or none of them has a target"
+                      "description": "share of the class in basis points; all members add up to 10000, or none has a target"
                     },
                     "answers": {
                       "type": "array",
                       "items": {
                         "type": "boolean"
                       },
-                      "description": "one answer per question of the group, true for yes"
+                      "description": "per question of the group, true for yes"
                     }
                   },
                   "additionalProperties": false
@@ -12085,7 +12103,14 @@
                 "items": {
                   "type": "string"
                 },
-                "description": "the investor's yes-or-no questions of the group, at most 10, each 1 to 200 characters; with questions, members carry answers and no target_bp"
+                "description": "the investor's yes-or-no questions, at most 10 of 1 to 200 characters; with them, members carry answers and no target_bp"
+              },
+              "question_facts": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "fact key per question, empty for none: piotroski_p1 to piotroski_p9"
               },
               "rules": {
                 "type": "array",
@@ -12140,7 +12165,7 @@
             ],
             "additionalProperties": false
           },
-          "description": "every class of the plan, at most 20; the call replaces the whole plan, so repeat each class that stays; an empty list removes the plan"
+          "description": "every class, at most 20; the call replaces the whole plan, so repeat each class that stays; an empty list removes it"
         }
       },
       "required": [
@@ -12424,6 +12449,17 @@
                         "type": "boolean"
                       },
                       "description": "one answer per question of the group, true for yes"
+                    },
+                    "fact_answers": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "per question: yes or no from the filings, none when the investor's answer applies"
+                    },
+                    "facts_year": {
+                      "type": "string",
+                      "description": "last day of the fiscal year the fact answers read"
                     }
                   },
                   "required": [
@@ -12524,6 +12560,13 @@
               "question_ideals": {
                 "type": "boolean",
                 "description": "true when the member target_bp values derive from the answers and one answer is yes"
+              },
+              "question_facts": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "one fact key per question, empty for the investor's own; piotroski_p1 to piotroski_p9 are answered from the company's filings"
               }
             },
             "required": [

@@ -2,6 +2,7 @@ package toolapi
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -43,6 +44,7 @@ type contributionClassOut struct {
 
 	Questions      []string `json:"questions,omitzero"       jsonschema:"the investor's yes-or-no questions of the group"`
 	QuestionIdeals bool     `json:"question_ideals,omitzero" jsonschema:"true when the member target_bp values derive from the answers and one answer is yes"`
+	QuestionFacts  []string `json:"question_facts,omitzero"  jsonschema:"one fact key per question, empty for the investor's own; piotroski_p1 to piotroski_p9 are answered from the company's filings"`
 }
 
 type contributionMatchedOut struct {
@@ -63,6 +65,8 @@ type contributionMemberOut struct {
 	Quantity     tool.Money `json:"quantity,omitzero"       jsonschema:"units to buy, an estimate at the prices of today"`
 	Cost         tool.Money `json:"cost,omitzero"           jsonschema:"cost of the order in the base currency, never above amount"`
 	Answers      []bool     `json:"answers,omitzero"        jsonschema:"one answer per question of the group, true for yes"`
+	FactAnswers  []string   `json:"fact_answers,omitzero"   jsonschema:"per question: yes or no from the filings, none when the investor's answer applies"`
+	FactsYear    string     `json:"facts_year,omitzero"     jsonschema:"last day of the fiscal year the fact answers read"`
 }
 
 type contributionOutside struct {
@@ -167,6 +171,7 @@ func contributionClassOf(c app.ContributionClass) contributionClassOut {
 
 		Questions:      c.Questions,
 		QuestionIdeals: c.QuestionIdeals,
+		QuestionFacts:  c.QuestionFacts,
 	}
 
 	for _, r := range c.Rules {
@@ -194,10 +199,33 @@ func contributionClassOf(c app.ContributionClass) contributionClassOut {
 			Quantity:     optionalMoney(m.Quantity),
 			Cost:         optionalMoney(m.Cost),
 			Answers:      m.Answers,
+			FactAnswers:  factAnswersOf(m.FactAnswers),
+			FactsYear:    factsYearOf(m.FactsYear),
 		})
 	}
 
 	return out
+}
+
+func factAnswersOf(in []domain.FactAnswer) []string {
+	if len(in) == 0 {
+		return nil
+	}
+
+	out := make([]string, len(in))
+	for i, a := range in {
+		out[i] = string(a)
+	}
+
+	return out
+}
+
+func factsYearOf(t *time.Time) string {
+	if t == nil {
+		return ""
+	}
+
+	return t.Format(time.DateOnly)
 }
 
 func contributionRuleOf(r domain.PlanRule) contributionRuleIn {

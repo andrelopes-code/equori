@@ -70,6 +70,25 @@ func TestS675SaveFactQuestions(t *testing.T) {
 	expectS675(t, got)
 }
 
+// S679: the tools save and read the plan of S675 with its fact answers.
+func TestS679FactQuestionsTool(t *testing.T) {
+	t.Parallel()
+	f := newQuestionFixture(t)
+	seedFiscalYears(t, f.h, "QSTA3", listingA, factYearsA())
+	seedFiscalYears(t, f.h, "QSTB3", listingB, factYearsB())
+	enableCompanyReportFeed(t, f.h)
+
+	var saved factPlanOut
+	toolOutput(t, f.h, "save_contribution_plan", nineFactsDraft(false, false), &saved)
+	expectS675(t, saved)
+
+	var read struct {
+		Contribution factPlanOut `json:"contribution"`
+	}
+	toolOutput(t, f.h, "get_portfolio", map[string]any{"view": "contribution"}, &read)
+	expectS675(t, read.Contribution)
+}
+
 // S676: a fiscal year stored after the save changes the fact answers and the ideals of GET.
 func TestS676LaterFiscalYear(t *testing.T) {
 	t.Parallel()

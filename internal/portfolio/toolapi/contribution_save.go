@@ -13,10 +13,10 @@ import (
 )
 
 type contributionMemberIn struct {
-	AccountID  string `json:"account_id,omitzero" jsonschema:"account that counts whole in the class, such as a fixed income Investment line or a reserve, from list_accounts; instead of instrument"`
-	Instrument string `json:"instrument,omitzero" jsonschema:"code of a security, counted in every Brokerage that holds it, such as BOVA11; instead of account_id"`
-	TargetBP   int    `json:"target_bp,omitzero"  jsonschema:"share of the class this member should hold, in basis points; the members of a class add up to 10000, or none of them has a target"`
-	Answers    []bool `json:"answers,omitzero"    jsonschema:"one answer per question of the group, true for yes"`
+	AccountID  string `json:"account_id,omitzero" jsonschema:"account from list_accounts counted whole in the class, such as a reserve; instead of instrument"`
+	Instrument string `json:"instrument,omitzero" jsonschema:"security code such as BOVA11, counted in every Brokerage holding it; instead of account_id"`
+	TargetBP   int    `json:"target_bp,omitzero"  jsonschema:"share of the class in basis points; all members add up to 10000, or none has a target"`
+	Answers    []bool `json:"answers,omitzero"    jsonschema:"per question of the group, true for yes"`
 }
 
 type contributionRuleIn struct {
@@ -32,16 +32,17 @@ type contributionRuleIn struct {
 
 type contributionClassIn struct {
 	Name     string                 `json:"name"      jsonschema:"name of the class, 1 to 60 characters, unique in the plan"`
-	TargetBP int                    `json:"target_bp" jsonschema:"share of the portfolio the class should hold, in basis points: 4000 is 40%; the classes add up to 10000"`
+	TargetBP int                    `json:"target_bp" jsonschema:"share of the portfolio in basis points: 4000 is 40%; the classes add up to 10000"`
 	Members  []contributionMemberIn `json:"members"   jsonschema:"what the class holds; a holding belongs to at most one class"`
 
-	Questions []string             `json:"questions,omitzero" jsonschema:"the investor's yes-or-no questions of the group, at most 10, each 1 to 200 characters; with questions, members carry answers and no target_bp"`
-	Rules     []contributionRuleIn `json:"rules,omitzero"     jsonschema:"conditions of a group by rule, at most 5, instead of members: a security bought later that meets one joins it"`
+	Questions     []string             `json:"questions,omitzero"      jsonschema:"the investor's yes-or-no questions, at most 10 of 1 to 200 characters; with them, members carry answers and no target_bp"`
+	QuestionFacts []string             `json:"question_facts,omitzero" jsonschema:"fact key per question, empty for none: piotroski_p1 to piotroski_p9"`
+	Rules         []contributionRuleIn `json:"rules,omitzero"          jsonschema:"conditions of a group by rule, at most 5, instead of members: a security bought later that meets one joins it"`
 }
 
 type saveContributionPlanIn struct {
-	Amount  string                `json:"amount,omitzero" jsonschema:"amount contributed each month as a positive decimal in the base currency; absent stores none"`
-	Classes []contributionClassIn `json:"classes"         jsonschema:"every class of the plan, at most 20; the call replaces the whole plan, so repeat each class that stays; an empty list removes the plan"`
+	Amount  string                `json:"amount,omitzero" jsonschema:"monthly contribution as a positive decimal in the base currency; absent stores none"`
+	Classes []contributionClassIn `json:"classes"         jsonschema:"every class, at most 20; the call replaces the whole plan, so repeat each class that stays; an empty list removes it"`
 }
 
 func saveContributionPlan(svc *app.Service) tool.Tool {
@@ -151,11 +152,12 @@ func contributionClasses(in []contributionClassIn) ([]domain.PlanClass, error) {
 		}
 
 		out[i] = domain.PlanClass{
-			Name:      c.Name,
-			TargetBP:  c.TargetBP,
-			Questions: c.Questions,
-			Members:   members,
-			Rules:     contributionPlanRules(c.Rules),
+			Name:          c.Name,
+			TargetBP:      c.TargetBP,
+			Questions:     c.Questions,
+			QuestionFacts: c.QuestionFacts,
+			Members:       members,
+			Rules:         contributionPlanRules(c.Rules),
 		}
 	}
 
