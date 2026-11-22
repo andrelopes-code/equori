@@ -54,6 +54,19 @@ describe("AccountMark", () => {
     expect(placeholder()?.hasAttribute("data-loading")).toBe(false);
   });
 
+  it("holds the placeholder, not the monogram, while the logo is still being resolved", () => {
+    const { container } = render(
+      <AccountMark shape="square" name="Nubank" logoPending />,
+    );
+
+    expect(
+      container
+        .querySelector("[data-ui-skeleton]")
+        ?.hasAttribute("data-loading"),
+    ).toBe(true);
+    expect(container.textContent).toBe("");
+  });
+
   it("withdraws the placeholder when the image fails", () => {
     const { container } = render(
       <AccountMark shape="square" name="Nubank" logo="/assets/nu.png" />,

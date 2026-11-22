@@ -34,6 +34,9 @@ export function AccountAvatar({
   const institution = institutions.data?.find(
     (i) => i.id === account.institution_id,
   );
+  const logoPending =
+    account.institution_id !== undefined &&
+    (institutions.isPending || index.isPending);
   const goal = goals.data?.find((g) => g.account_ids.includes(account.id));
   return (
     <AccountMark
@@ -42,6 +45,7 @@ export function AccountAvatar({
       name={institution?.name ?? account.name}
       color={account.color}
       logo={logoOf(institution?.identifier, index.data)}
+      logoPending={logoPending}
       progress={goal?.progress_bp}
       disabled={account.closed_on !== undefined}
     />

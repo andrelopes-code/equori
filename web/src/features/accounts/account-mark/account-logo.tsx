@@ -4,7 +4,8 @@ import { useState } from "react";
 import styles from "@/features/accounts/account-mark/account-mark.module.css";
 
 interface AccountLogoProps {
-  src: string;
+  // Unset while the logo is still being resolved.
+  src: string | undefined;
 }
 
 // The white plate of an institution's logo, covered by a placeholder until the image settles:
@@ -12,22 +13,24 @@ interface AccountLogoProps {
 export function AccountLogo({ src }: AccountLogoProps) {
   const [settled, setSettled] = useState<string>();
 
-  const loading = settled !== src;
+  const loading = src === undefined || settled !== src;
 
   return (
     <span className={styles.plate}>
       <Skeleton loading={loading} shape="block" className={styles.cover}>
-        <img
-          className={styles.logo}
-          src={src}
-          alt=""
-          onLoad={() => {
-            setSettled(src);
-          }}
-          onError={() => {
-            setSettled(src);
-          }}
-        />
+        {src !== undefined && (
+          <img
+            className={styles.logo}
+            src={src}
+            alt=""
+            onLoad={() => {
+              setSettled(src);
+            }}
+            onError={() => {
+              setSettled(src);
+            }}
+          />
+        )}
       </Skeleton>
     </span>
   );

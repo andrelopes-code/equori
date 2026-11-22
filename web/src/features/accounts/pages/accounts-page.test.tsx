@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -167,8 +167,13 @@ describe("AccountsPage", () => {
       }),
     });
     await waitFor(() => {
+      // jsdom fetches no image: each logo is loaded by hand, as a browser would.
+      container.querySelectorAll("img").forEach((img) => fireEvent.load(img));
       expect(refused).toBeGreaterThan(0);
-      expect(container.querySelector('[data-ui="skeleton"]')).toBeNull();
+      // A covering placeholder stays in the tree after its content arrives, drawing nothing.
+      expect(
+        container.querySelector('[data-ui="skeleton"][data-loading]'),
+      ).toBeNull();
     });
   });
 

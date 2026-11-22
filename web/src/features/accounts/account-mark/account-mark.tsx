@@ -12,6 +12,7 @@ export function AccountMark({
   name,
   color,
   logo,
+  logoPending = false,
   progress,
   size = "md",
   disabled = false,
@@ -21,6 +22,8 @@ export function AccountMark({
   name: string;
   color?: number | undefined;
   logo?: string | undefined;
+  // The logo is still being resolved: a placeholder holds its place instead of the monogram.
+  logoPending?: boolean;
   // Basis points of a reserve's goal, 0 to 10000; drawn only on a circle.
   progress?: number | undefined;
   size?: "sm" | "md" | "lg";
@@ -37,7 +40,7 @@ export function AccountMark({
       data-disabled={disabled || undefined}
       aria-hidden="true"
     >
-      {logo === undefined ? (
+      {logo === undefined && !logoPending ? (
         <span className={styles.face}>{monogram(name)}</span>
       ) : (
         <AccountLogo src={logo} />

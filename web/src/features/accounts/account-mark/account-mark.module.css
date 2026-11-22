@@ -101,6 +101,8 @@
   /* The placeholder fills the plate, which clips it to the mark's corner. */
   .cover {
     place-self: stretch;
+    inline-size: auto;
+    block-size: auto;
   }
 
   .logo {
