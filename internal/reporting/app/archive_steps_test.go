@@ -875,3 +875,37 @@ func TestAddContributionRules(t *testing.T) {
 		t.Fatalf("ArchiveVersion = %d, want at least 31", ArchiveVersion)
 	}
 }
+
+// A version 31 archive holds no fact of a contribution question; the step writes null into the
+// column of every row of portfolio_contribution_question (migration 00141, FQ9).
+func TestAddContributionQuestionFact(t *testing.T) {
+	t.Parallel()
+
+	question := `{"books_id":1,"class_id":"c","position":0,"text":"Does it grow?"}`
+	v31 := []ArchiveTable{
+		{Name: "portfolio_contribution_question", Rows: [][]byte{[]byte(question)}},
+		{Name: "portfolio_contribution_class", Rows: [][]byte{[]byte(`{"id":"c"}`)}},
+	}
+
+	got, err := addContributionQuestionFact(v31)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := `{"books_id":1,"class_id":"c","fact":null,"position":0,"text":"Does it grow?"}`
+	if string(got[0].Rows[0]) != want {
+		t.Fatalf("portfolio_contribution_question row = %s, want %s", got[0].Rows[0], want)
+	}
+
+	if string(got[1].Rows[0]) != `{"id":"c"}` {
+		t.Fatalf("portfolio_contribution_class row = %s", got[1].Rows[0])
+	}
+
+	if string(v31[0].Rows[0]) != question {
+		t.Fatalf("the step changed its input: %s", v31[0].Rows[0])
+	}
+
+	if ArchiveVersion < 32 {
+		t.Fatalf("ArchiveVersion = %d, want at least 32", ArchiveVersion)
+	}
+}
