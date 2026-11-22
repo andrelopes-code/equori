@@ -1,5 +1,5 @@
 import { fireEvent, render } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   AccountMark,
@@ -65,6 +65,27 @@ describe("AccountMark", () => {
         ?.hasAttribute("data-loading"),
     ).toBe(true);
     expect(container.textContent).toBe("");
+  });
+
+  it("draws no placeholder over a logo the browser already holds", () => {
+    const complete = vi
+      .spyOn(HTMLImageElement.prototype, "complete", "get")
+      .mockReturnValue(true);
+    const width = vi
+      .spyOn(HTMLImageElement.prototype, "naturalWidth", "get")
+      .mockReturnValue(64);
+
+    const { container } = render(
+      <AccountMark shape="square" name="Nubank" logo="/assets/nu.png" />,
+    );
+
+    expect(
+      container
+        .querySelector("[data-ui-skeleton]")
+        ?.hasAttribute("data-loading"),
+    ).toBe(false);
+    complete.mockRestore();
+    width.mockRestore();
   });
 
   it("withdraws the placeholder when the image fails", () => {

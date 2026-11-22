@@ -23,6 +23,12 @@ export function AccountLogo({ src }: AccountLogoProps) {
             className={styles.logo}
             src={src}
             alt=""
+            // A cached image is complete before its load event, which lands after the first
+            // paint: settling here, in the commit, keeps the placeholder from flashing.
+            ref={(img) => {
+              if (img?.complete === true && img.naturalWidth > 0)
+                setSettled(src);
+            }}
             onLoad={() => {
               setSettled(src);
             }}
