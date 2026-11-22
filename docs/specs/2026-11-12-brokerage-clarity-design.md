@@ -132,6 +132,18 @@ Scenarios: S393 a buy paid from the checking account of the institution creates 
 
 Cross-cutting: C2 the shortfall compares two base-currency amounts. B2 the roles stay as in BC6. S1 the descriptions of `cash_account_id` change in `TradeInput` and `InvestmentIncomeInput`, and the `record_investment` tool. S3 the guide article `investments` changes. D3 no recorded fact changes.
 
+## Amendment: a Caixa with no entry beside an account of the institution (owner, 2026-11-22)
+
+N2 migrates no book, and BC16 asks its question only when a brokerage is created. A brokerage created before BC16 holds a Caixa (BC3) and pays its trades from the account of its institution (BC13). The Caixa has no entry, BC14 finds two candidates, every trade asks for the paying account (BC17) and `record_investment` without `cash_account_id` returns `brokerage_cash_ambiguous`.
+
+**BC19 Idle Caixa.** The page of a brokerage shows one notice when all of these hold: the brokerage has one open Caixa in the base currency; that Caixa has no transaction; the brokerage has at least one holding; and one open asset account of its institution is a candidate of BC14 outside its tree. The notice names the Caixa and that account, and its action closes the Caixa on today's date (A74). After the close BC14 finds one candidate. The close is undone by reopening the account. A brokerage with no holding shows no notice: its Caixa may be waiting for its first transfer.
+
+BC14 changes in one point: the message of `brokerage_cash_ambiguous` names its two ways out, naming the account in `cash_account_id` or closing the Caixa with no entry. Creating a Caixa is a way out of `brokerage_cash_missing` only.
+
+Scenario: S681 a brokerage with a Caixa with no entry and a same-institution account returns `brokerage_cash_ambiguous` with that message; after the Caixa is closed, a buy without `cash_account_id` is paid from the account of the institution.
+
+Cross-cutting: R1 to R4 do not apply: the rule reads the base currency of the book and no regional value. R5 the keys `brokerage.idleCash` and `brokerage.closeIdleCash`, in en and pt-BR. R6, C1 to C4 do not apply: the notice writes no number, date or amount. T1 the close is dated on today from `useToday`. T2 does not apply. B1 to B3 do not apply: no table, operation or setting; the close keeps the role of `closeAccount`. D1, D2, D4 and D5 do not apply. D3 the close is the existing A74 operation and reopening undoes it. S1 no operation and no `Problem.code` is added. S2 the notice stands on the account page at every width, a phone route of ADR 027. S3 the guide article `investments` changes. S4 the article names `close_account` for the same step; no tool changes. X1 S681. X2 does not apply.
+
 ## Open points for the plan
 
 - `sheetRows` (`accounts/balance-sheet/balance-sheet.ts`) sums a child into its parent only when both have the same currency. A brokerage row on the Accounts screen therefore totals its cash and leaves out its holdings, which are in instrument codes. The plan states what that row shows and where it points the reader (the portfolio holds the valued total, PC2), and adds the link.

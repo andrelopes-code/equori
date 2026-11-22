@@ -23,8 +23,7 @@ var (
 	)
 	ErrBrokerageCashAmbiguous = errors.New(
 		"the brokerage has several cash accounts; " +
-			"create a cash account named Cash in the brokerage, " +
-			"or name an account of its institution in cash_account_id",
+			"name one in cash_account_id, or close the cash account that has no entry",
 	)
 	ErrHoldingNotFound = errors.New("the brokerage holds no such investment")
 )

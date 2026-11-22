@@ -539,3 +539,40 @@ func namedInstitution(t *testing.T, h *apitest.Harness, name string) string {
 
 	return out.ID
 }
+
+// S681 (BC19): the message of an ambiguous paying account names the close of the cash account
+// with no entry, and after that close a trade is paid from the account of the institution.
+func TestS681ClosingTheIdleCashEndsTheAmbiguity(t *testing.T) {
+	t.Parallel()
+	s, checking := newOutsideSetup(t)
+	cash := s.child("Cash", string(s.h.Profile.Base))
+
+	r := s.h.Do(http.MethodPost, tradesPath, s.buy("2026-10-05", 10))
+	s.h.ExpectProblem(r, http.StatusUnprocessableEntity, "brokerage_cash_ambiguous", "")
+
+	var p struct {
+		Detail string `json:"detail"`
+	}
+	r.Decode(t, &p)
+
+	const want = "the brokerage has several cash accounts; " +
+		"name one in cash_account_id, or close the cash account that has no entry"
+	if p.Detail != want {
+		t.Fatalf("detail = %q, want %q", p.Detail, want)
+	}
+
+	s.h.MustDo(
+		http.MethodPost,
+		"/api/v1/accounts/"+cash+"/close",
+		map[string]any{"closed_on": "2026-10-05"},
+		http.StatusOK,
+		nil,
+	)
+
+	var tx tradeResult
+	s.h.MustDo(http.MethodPost, tradesPath, s.buy("2026-10-05", 10), http.StatusCreated, &tx)
+
+	if got := tx.amountOn(checking); got != -10000 {
+		t.Fatalf("checking posting = %d, want -10000: %+v", got, tx.Postings)
+	}
+}
