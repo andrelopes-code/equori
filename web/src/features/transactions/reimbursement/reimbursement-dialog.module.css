@@ -22,9 +22,11 @@
   }
 
   /* ---- Score: received, distributed, left as income, and the meter between them. */
+  /* The body's padding lies inside its scrollport: the offset is negative so the stuck score
+     meets the header rule and no row shows above it. */
   .score {
     position: sticky;
-    inset-block-start: 0;
+    inset-block-start: calc(-1 * var(--slotted-dialog-inset-block));
     z-index: 1;
     display: grid;
     gap: var(--slotted-space-2);
@@ -115,9 +117,7 @@
     align-items: center;
     gap: var(--slotted-space-3);
     min-block-size: var(--slotted-target-comfortable);
-    padding-inline: var(--slotted-space-3) var(--slotted-space-2);
-    border-radius: var(--slotted-radius-md);
-    background: var(--slotted-tone-accent-surface);
+    padding-inline: var(--slotted-space-2);
   }
 
   .suggestText {
