@@ -48,4 +48,5 @@ const chartDescription = "form chart works on the output of any read: chart name
 	"as positive, split draws one series per value of a field (stacked when stack), axis end reads a " +
 	"second unit, average marks the mean. Use it when no form draws what the member asks, or when " +
 	"the member asks for a drawing; the server computes every figure, so never write one in the spec. " +
-	"Pass every page of a paged read.\n"
+	"Pass every page of a paged read. The result holds the computed rows (head, rows, average); " +
+	"rows_omitted counts the rows past the first 100.\n"

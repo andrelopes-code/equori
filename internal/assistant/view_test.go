@@ -302,4 +302,17 @@ func TestShowChartOfAccountHistory(t *testing.T) {
 		len(plot.Marks) != 1 || plot.Marks[0].Value.Money.Amount != 34183 {
 		t.Fatalf("plot = %+v", plot)
 	}
+
+	// V37: the model reads the rows the server computed, amounts as decimals of their currency.
+	results := toolResults(p)
+	shown := string(results[len(results)-1].Content)
+
+	want := `"head":["x","Entradas"],"rows":[` +
+		`["2026-08",{"amount":"600.00","currency":"BRL"}],` +
+		`["2026-09",{"amount":"0.00","currency":"BRL"}],` +
+		`["2026-10",{"amount":"425.50","currency":"BRL"}]],` +
+		`"average":[{"amount":"341.83","currency":"BRL"}]`
+	if !strings.Contains(shown, want) {
+		t.Fatalf("show result = %s", shown)
+	}
 }

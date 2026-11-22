@@ -42,6 +42,13 @@ const chartForm = "chart"
 // The pages of one list a view joins.
 const maxPages = 4
 
+// shown is the result of show: the view kept and, for a chart, the rows the server computed, so
+// the model reads the figures it did not see in the read (V37).
+type shown struct {
+	View string `json:"view"`
+	*pview.Reading
+}
+
 type showArgs struct {
 	Source []string         `json:"source"`
 	Form   string           `json:"form"`
@@ -114,12 +121,22 @@ func (s *Service) Show(ctx context.Context, args json.RawMessage) (json.RawMessa
 		return nil, err
 	}
 
-	v := domain.View{ID: uuid.New(), Form: in.Form, Payload: payload, CreatedAt: s.now()}
+	raw, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	v := domain.View{ID: uuid.New(), Form: in.Form, Payload: raw, CreatedAt: s.now()}
 	if err := t.addView(v); err != nil {
 		return nil, showFailure("form", err.Error())
 	}
 
-	return json.Marshal(map[string]string{"view": v.ID.String()})
+	out := shown{View: v.ID.String()}
+	if in.Form == chartForm {
+		out.Reading = payload.Reading()
+	}
+
+	return json.Marshal(out)
 }
 
 // showSources resolves the handles of in to the outputs of one tool.
@@ -169,14 +186,17 @@ func (s *Service) buildView(
 	build ViewBuilder,
 	outputs []json.RawMessage,
 	in showArgs,
-) (json.RawMessage, error) {
+) (ViewPayload, error) {
 	if len(in.Next) > maxNext {
-		return nil, showFailure("next", fmt.Sprintf("holds at most %d questions", maxNext))
+		return ViewPayload{}, showFailure(
+			"next",
+			fmt.Sprintf("holds at most %d questions", maxNext),
+		)
 	}
 
 	for _, n := range in.Next {
 		if n == "" || utf8.RuneCountInString(n) > maxNextRunes {
-			return nil, showFailure(
+			return ViewPayload{}, showFailure(
 				"next",
 				fmt.Sprintf("questions have 1 to %d characters", maxNextRunes),
 			)
@@ -192,7 +212,7 @@ func (s *Service) buildView(
 			field = chartForm
 		}
 
-		return nil, showFailure(field, err.Error())
+		return ViewPayload{}, showFailure(field, err.Error())
 	}
 
 	p.Next = in.Next
@@ -200,7 +220,7 @@ func (s *Service) buildView(
 		p.Next = []string{}
 	}
 
-	return json.Marshal(p)
+	return p, nil
 }
 
 // chartBuilder builds the chart spec describes; a missing spec is the builder's error.
