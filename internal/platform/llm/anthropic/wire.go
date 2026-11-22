@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"slices"
 
 	"github.com/andrelopes-code/equori/internal/platform/llm"
 )
@@ -21,14 +20,6 @@ const (
 	blockRedactedThinking = "redacted_thinking"
 	blockServerToolUse    = "server_tool_use"
 	blockSearchResult     = "web_search_tool_result"
-)
-
-// The search Anthropic runs on its servers (web search design, S3): the version without code
-// execution, which every platform that offers the tool serves.
-const (
-	searchToolType = "web_search_20250305"
-	searchToolName = "web_search"
-	searchMaxUses  = 3
 )
 
 type messagesRequest struct {
@@ -90,13 +81,6 @@ type tool struct {
 	InputSchema json.RawMessage `json:"input_schema"`
 }
 
-// searchTool declares the provider's search; it carries no schema.
-type searchTool struct {
-	Type    string `json:"type"`
-	Name    string `json:"name"`
-	MaxUses int    `json:"max_uses"`
-}
-
 type toolChoice struct {
 	Type string `json:"type"`
 }
@@ -131,12 +115,6 @@ type contentBlock struct {
 	Citations []citation      `json:"citations"`
 }
 
-// citation is the page a text block cites.
-type citation struct {
-	URL   string `json:"url"`
-	Title string `json:"title"`
-}
-
 // usage splits the prompt by price: InputTokens is only the part read at full price.
 type usage struct {
 	InputTokens              int           `json:"input_tokens"`
@@ -144,10 +122,6 @@ type usage struct {
 	CacheReadInputTokens     int           `json:"cache_read_input_tokens"`
 	OutputTokens             int           `json:"output_tokens"`
 	ServerToolUse            serverToolUse `json:"server_tool_use"`
-}
-
-type serverToolUse struct {
-	WebSearchRequests int `json:"web_search_requests"`
 }
 
 type modelList struct {
@@ -321,29 +295,6 @@ func partFromWire(b contentBlock, raw json.RawMessage) (llm.Part, bool) {
 		return llm.Part{Signature: &llm.Signature{Provider: name, Data: raw}}, true
 	default:
 		return llm.Part{}, false
-	}
-}
-
-// readSearch adds to resp the query of a search block and the pages a text block cites, each
-// address once (web search design, S4).
-func readSearch(resp *llm.Response, b contentBlock) {
-	if b.Type == blockServerToolUse && b.Name == searchToolName {
-		var in struct {
-			Query string `json:"query"`
-		}
-
-		if json.Unmarshal(b.Input, &in) == nil && in.Query != "" {
-			resp.Searches = append(resp.Searches, in.Query)
-		}
-	}
-
-	for _, c := range b.Citations {
-		s := llm.Source{URL: c.URL, Title: c.Title}
-		if c.URL != "" && !slices.ContainsFunc(resp.Sources, func(o llm.Source) bool {
-			return o.URL == s.URL
-		}) {
-			resp.Sources = append(resp.Sources, s)
-		}
 	}
 }
 

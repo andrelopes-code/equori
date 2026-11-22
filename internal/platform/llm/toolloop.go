@@ -112,16 +112,9 @@ func Run(
 			return st.res, err
 		}
 
-		if len(results) == 0 && resp.FinishReason == FinishPaused {
-			st.pause(resp)
-			continue
-		}
-
-		if len(results) == 0 {
+		if st.advance(resp, results) {
 			return st.res, nil
 		}
-
-		st.history = append(st.history, Message{Role: RoleTool, Parts: results})
 	}
 
 	st.res.Response, st.res.History = Response{}, st.history
@@ -181,9 +174,19 @@ func (st *loopState) accept(resp Response, opts LoopOptions) {
 	st.res.Response, st.res.History, st.res.Steps = st.resumed(resp), st.history, st.step
 }
 
-// pause keeps a paused response for the answer the next call completes.
-func (st *loopState) pause(resp Response) {
-	st.paused = append(st.paused, resp)
+// advance prepares the next call and reports that resp is the answer: tool results join the
+// conversation, and a paused response waits for the call that completes it.
+func (st *loopState) advance(resp Response, results []Part) bool {
+	switch {
+	case len(results) > 0:
+		st.history = append(st.history, Message{Role: RoleTool, Parts: results})
+	case resp.FinishReason == FinishPaused:
+		st.paused = append(st.paused, resp)
+	default:
+		return true
+	}
+
+	return false
 }
 
 // resumed is resp after the responses it continues: their parts and sources first. The
