@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"slices"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/google/uuid"
@@ -42,7 +43,10 @@ type PlanClass struct {
 	TargetBP int
 	// Questions are the investor's yes-or-no questions (CQ1); empty for a class without them.
 	Questions []string
-	Members   []PlanMember
+	// QuestionFacts names the fact of each question, "" for a question the investor answers
+	// (FQ1); empty in a class without questions.
+	QuestionFacts []string
+	Members       []PlanMember
 	// Rules gather the securities of the class by their facts (GR1); empty for a class by members.
 	Rules []PlanRule
 }
@@ -55,6 +59,10 @@ type PlanMember struct {
 	// Answers holds one answer per question of the class, true for "sim" (CQ2); nil without
 	// questions.
 	Answers []bool
+	// FactAnswers holds the answer of the filings to each question (FQ3); nil means every answer
+	// is the investor's. FactsYear is the fiscal year they read (FQ6).
+	FactAnswers []FactAnswer
+	FactsYear   *time.Time
 }
 
 // Slot is one class or one member as the split reads it.

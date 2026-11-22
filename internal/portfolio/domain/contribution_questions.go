@@ -88,6 +88,11 @@ func (c PlanClass) withIdeals() (PlanClass, error) {
 		return PlanClass{}, err
 	}
 
+	facts, err := cleanFacts(c.QuestionFacts, len(questions))
+	if err != nil {
+		return PlanClass{}, err
+	}
+
 	yes, err := countYes(c.Members, len(questions))
 	if err != nil {
 		return PlanClass{}, err
@@ -96,6 +101,7 @@ func (c PlanClass) withIdeals() (PlanClass, error) {
 	ideals := IdealsFromAnswers(yes)
 	out := c
 	out.Questions = questions
+	out.QuestionFacts = facts
 	out.Members = make([]PlanMember, len(c.Members))
 
 	for i, m := range c.Members {
@@ -113,6 +119,10 @@ func (c PlanClass) withIdeals() (PlanClass, error) {
 }
 
 func (c PlanClass) checkNoAnswers() error {
+	if len(c.QuestionFacts) > 0 {
+		return fmt.Errorf("%w: facts in a class without questions", ErrQuestionInvalid)
+	}
+
 	for _, m := range c.Members {
 		if m.Answers != nil {
 			return fmt.Errorf("%w: answers in a class without questions", ErrAnswersInvalid)
@@ -148,6 +158,42 @@ func cleanQuestions(raw []string) ([]string, error) {
 	return out, nil
 }
 
+// cleanFacts checks FQ1 and returns one fact per question, "" where the input list is empty.
+func cleanFacts(raw []string, questions int) ([]string, error) {
+	if len(raw) == 0 {
+		return make([]string, questions), nil
+	}
+
+	if len(raw) != questions {
+		return nil, fmt.Errorf(
+			"%w: %d facts for %d questions",
+			ErrQuestionInvalid,
+			len(raw),
+			questions,
+		)
+	}
+
+	seen := make(map[string]bool, len(raw))
+
+	for i, f := range raw {
+		if f == "" {
+			continue
+		}
+
+		if !FactKnown(f) {
+			return nil, fmt.Errorf("%w: fact %d is unknown", ErrQuestionInvalid, i+1)
+		}
+
+		if seen[f] {
+			return nil, fmt.Errorf("%w: fact %d repeats another", ErrQuestionInvalid, i+1)
+		}
+
+		seen[f] = true
+	}
+
+	return slices.Clone(raw), nil
+}
+
 func countYes(members []PlanMember, questions int) ([]int, error) {
 	yes := make([]int, len(members))
 
@@ -168,12 +214,21 @@ func countYes(members []PlanMember, questions int) ([]int, error) {
 			)
 		}
 
-		for _, a := range m.Answers {
-			if a {
+		for q, a := range m.Answers {
+			if effectiveAnswer(m, q, a) {
 				yes[i]++
 			}
 		}
 	}
 
 	return yes, nil
+}
+
+// effectiveAnswer applies FQ4: the fact answer when it is yes or no, else the stored answer.
+func effectiveAnswer(m PlanMember, q int, stored bool) bool {
+	if len(m.FactAnswers) == len(m.Answers) && m.FactAnswers[q] != FactNone {
+		return m.FactAnswers[q] == FactYes
+	}
+
+	return stored
 }
