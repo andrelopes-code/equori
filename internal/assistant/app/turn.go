@@ -105,7 +105,7 @@ func (s *Service) Turn(
 	now := s.now()
 	conv := newConversation(in.ConversationID, turnTitle(text, files), now)
 
-	messages, proposals, err := s.conversationHistory(ctx, booksID, memberID, in.ConversationID)
+	history, err := s.conversationHistory(ctx, booksID, memberID, in.ConversationID, now)
 	if err != nil {
 		return err
 	}
@@ -136,9 +136,7 @@ func (s *Service) Turn(
 		prof,
 		notices,
 		s.bookReads(ctx, booksID),
-		messages,
-		proposals,
-		now,
+		history,
 	)
 
 	return s.runTurn(ctx, ev, booksID, memberID, conv.ID, req, now)
@@ -173,17 +171,28 @@ func (s *Service) runTurn(
 	return s.answerTurn(ctx, ev, booksID, memberID, conversationID, state, res, now)
 }
 
-// conversationHistory reads the messages and proposals of a conversation; a new conversation has none.
+// conversationHistory is the history of a conversation at now (spec 5.3); a new conversation has none.
 func (s *Service) conversationHistory(
 	ctx context.Context,
 	booksID, memberID int64,
 	conversationID uuid.UUID,
-) ([]domain.Message, []domain.Proposal, error) {
+	now time.Time,
+) ([]HistoryMessage, error) {
 	if conversationID == uuid.Nil {
-		return nil, nil, nil
+		return nil, nil
 	}
 
-	return s.loadConversation(ctx, booksID, memberID, conversationID)
+	messages, proposals, err := s.loadConversation(ctx, booksID, memberID, conversationID)
+	if err != nil {
+		return nil, err
+	}
+
+	views, err := s.repo.Views(ctx, booksID, conversationID)
+	if err != nil {
+		return nil, err
+	}
+
+	return History(messages, proposals, views, now), nil
 }
 
 // storeUserMessage creates the conversation when the turn starts one and appends the book's text to it.
@@ -222,9 +231,7 @@ func (s *Service) agentRequest(
 	prof locale.Locale,
 	notices []AccountNotice,
 	book []BookRead,
-	messages []domain.Message,
-	proposals []domain.Proposal,
-	now time.Time,
+	history []HistoryMessage,
 ) AgentRequest {
 	return AgentRequest{
 		System: Prompt(PromptInput{
@@ -234,7 +241,7 @@ func (s *Service) agentRequest(
 			Notices: notices,
 			Book:    book,
 		}),
-		History:  History(messages, proposals, now),
+		History:  history,
 		Text:     text,
 		Files:    files,
 		Deadline: s.now().Add(TurnTimeout),

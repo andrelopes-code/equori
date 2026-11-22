@@ -40,14 +40,14 @@ func TestHistory(t *testing.T) {
 	t.Run("at most 6 turns", func(t *testing.T) {
 		t.Parallel()
 
-		if got := len(app.History(turns(8, 250, 250), nil, now)); got != 12 {
+		if got := len(app.History(turns(8, 250, 250), nil, nil, now)); got != 12 {
 			t.Fatalf("messages = %d, want 12", got)
 		}
 	})
 	t.Run("at most 8000 bytes, a turn that does not fit is dropped", func(t *testing.T) {
 		t.Parallel()
 
-		if got := len(app.History(turns(3, 1500, 1500), nil, now)); got != 4 {
+		if got := len(app.History(turns(3, 1500, 1500), nil, nil, now)); got != 4 {
 			t.Fatalf("messages = %d, want 4", got)
 		}
 	})
@@ -72,7 +72,7 @@ func TestHistory(t *testing.T) {
 				Status:    domain.ProposalPending,
 				ExpiresAt: now.Add(-time.Minute),
 			},
-		}, now)
+		}, nil, now)
 
 		want := "aaaaa" + fmt.Sprintf(
 			"\n[proposal %s record_transaction: executed]\n[proposal %s void_transaction: expired]",
@@ -116,7 +116,7 @@ func TestHistory(t *testing.T) {
 				Result:    []byte(`{"id":"9"}`),
 				ExpiresAt: future,
 			},
-		}, now)
+		}, nil, now)
 
 		want := "aaaaa" + fmt.Sprintf(
 			"\n[proposal %s note_for_test suggested: executed; id 42]\n[proposal %s note_for_test: executed; id 7]\n[proposal %s note_for_test: rejected]",
@@ -128,6 +128,26 @@ func TestHistory(t *testing.T) {
 			t.Fatalf("history = %+v, want assistant text %q", got, want)
 		}
 	})
+	t.Run("view lines with the title and the columns", func(t *testing.T) {
+		t.Parallel()
+
+		msgs := turns(1, 5, 5)
+		chart := `{"title":{"key":"assistantView.chart.title",` +
+			`"params":{"title":{"text":"Entradas por mês"}}},` +
+			`"rows":{"head":["assistantView.chart.period","Dias com entrada"],"rows":[]}}`
+		got := app.History(msgs, nil, []domain.View{
+			{MessageID: msgs[1].ID, Seq: 1, Form: "chart", Payload: []byte(chart)},
+			{MessageID: msgs[1].ID, Seq: 2, Form: "budget", Payload: []byte(`{}`)},
+			{MessageID: uuid.New(), Seq: 1, Form: "chart", Payload: []byte(chart)},
+		}, now)
+
+		want := "aaaaa" +
+			"\n[view chart \"Entradas por mês\": Dias com entrada]" +
+			"\n[view budget]"
+		if len(got) != 2 || got[1].Text != want {
+			t.Fatalf("history = %+v, want assistant text %q", got, want)
+		}
+	})
 	t.Run("failed and canceled exchanges", func(t *testing.T) {
 		t.Parallel()
 
@@ -135,7 +155,7 @@ func TestHistory(t *testing.T) {
 		msgs[1].Content, msgs[1].Outcome = "", domain.OutcomeFailed
 		msgs[3].Content, msgs[3].Outcome = "", domain.OutcomeCanceled
 
-		got := app.History(msgs, nil, now)
+		got := app.History(msgs, nil, nil, now)
 		if len(got) != 4 || got[1].Text != app.NoAnswer || got[3].Text != app.NoAnswer {
 			t.Fatalf("history = %+v, want 4 messages with %q answers", got, app.NoAnswer)
 		}

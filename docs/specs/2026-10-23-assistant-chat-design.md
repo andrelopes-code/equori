@@ -69,6 +69,7 @@ Anti-goals:
 - Earlier turns travel as text only: each stored user message and assistant answer, oldest first.
 - Budget: the most recent turns whose text adds up to at most 8,000 bytes, and at most 6 turns. A turn that does not fit is dropped whole.
 - After an assistant answer that created proposals, the history carries one text line per proposal: `[proposal <id> <tool>: <status>]`, with the status at the time the turn starts.
+- After an assistant answer that showed views, the history carries one text line per view: `[view <form>[ "<title>"][: <column>, ...]]`, the title the model wrote and the column heads that are not catalog keys, never a figure (amendment 2026-11-22: without it a later turn denied a chart it had drawn and described refusals no result showed).
 - Text-only history keeps every earlier turn valid on any provider (audit item 5) and keeps tool results of earlier turns out of the context ("Effective context engineering": tool result clearing; just-in-time retrieval through the tools).
 
 ## 6. Turn

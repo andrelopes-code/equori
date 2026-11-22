@@ -24,13 +24,14 @@ type HistoryMessage struct {
 
 // History applies spec 5.3: the latest turns that fit HistoryBytes, at most HistoryTurns, oldest first. A turn is
 // a user message with its answer; a user message without an answer is left out. Each proposal of an answer
-// adds a line with its status at now.
+// adds a line with its status at now; each view of an answer adds a line with its form, title and columns.
 func History(
 	messages []domain.Message,
 	proposals []domain.Proposal,
+	views []domain.View,
 	now time.Time,
 ) []HistoryMessage {
-	turns := historyTurns(messages, proposals, now)
+	turns := historyTurns(messages, proposals, views, now)
 	from := historyStart(turns)
 
 	out := make([]HistoryMessage, 0, 2*(len(turns)-from))
@@ -45,6 +46,7 @@ func History(
 func historyTurns(
 	messages []domain.Message,
 	proposals []domain.Proposal,
+	views []domain.View,
 	now time.Time,
 ) [][2]HistoryMessage {
 	var turns [][2]HistoryMessage
@@ -59,7 +61,7 @@ func historyTurns(
 			text = NoAnswer
 		}
 
-		text += proposalLines(a, proposals, now)
+		text += proposalLines(a, proposals, now) + viewLines(a, views)
 
 		if strings.TrimSpace(text) == "" {
 			continue
@@ -89,6 +91,20 @@ func proposalLines(a domain.Message, proposals []domain.Proposal, now time.Time)
 		}
 
 		text += "\n" + historyLine(p, status)
+	}
+
+	return text
+}
+
+// viewLines is the line of each view of answer a, each preceded by a newline. A line names what
+// the member saw, never a figure: `[view <form>[ "<title>"][: <column>, ...]]`.
+func viewLines(a domain.Message, views []domain.View) string {
+	var text string
+
+	for _, v := range views {
+		if v.MessageID == a.ID {
+			text += "\n" + viewLine(v)
+		}
 	}
 
 	return text
@@ -149,4 +165,41 @@ func resultID(result []byte) string {
 	}
 
 	return ""
+}
+
+// viewLine reads the title the model wrote and the column heads that are not catalog keys.
+func viewLine(v domain.View) string {
+	var p struct {
+		Title struct {
+			Params struct {
+				Title struct {
+					Text string `json:"text"`
+				} `json:"title"`
+			} `json:"params"`
+		} `json:"title"`
+		Rows struct {
+			Head []string `json:"head"`
+		} `json:"rows"`
+	}
+
+	_ = json.Unmarshal(v.Payload, &p)
+
+	line := "[view " + v.Form
+	if t := p.Title.Params.Title.Text; t != "" {
+		line += fmt.Sprintf(" %q", t)
+	}
+
+	var heads []string
+
+	for _, h := range p.Rows.Head {
+		if !strings.HasPrefix(h, "assistantView.") {
+			heads = append(heads, h)
+		}
+	}
+
+	if len(heads) > 0 {
+		line += ": " + strings.Join(heads, ", ")
+	}
+
+	return line + "]"
 }
