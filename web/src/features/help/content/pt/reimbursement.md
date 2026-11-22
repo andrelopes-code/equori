@@ -12,7 +12,7 @@ Um reembolso é dinheiro que volta por uma despesa já registrada, como a parte 
    ![O painel do recebimento, com o cabeçalho marcado](reimbursement-menu)
 3. Escolha **Marcar como reembolso**.
    ![O menu de ações da transação, marcado](reimbursement-choose)
-4. Marque a despesa que o recebimento reembolsa e confira o valor.
+4. Marque a despesa que o recebimento reembolsa e confira o valor na coluna **Reembolsa**. O topo do diálogo mostra quanto foi recebido, quanto já foi distribuído e quanto fica como receita.
    ![O diálogo Marcar como reembolso, com a lista de despesas marcada](reimbursement-expenses)
 5. Escolha **Marcar como reembolso**.
    ![O diálogo, com o botão Marcar como reembolso marcado](reimbursement-submit)

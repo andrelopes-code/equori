@@ -1,0 +1,345 @@
+@layer app {
+  /* The dialog's body scrolls; the score stays in view at its top. */
+  .body {
+    display: grid;
+    align-content: start;
+    gap: var(--slotted-space-5);
+  }
+
+  .context {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .name {
+    display: block;
+    min-inline-size: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  /* ---- Score: received, distributed, left as income, and the meter between them. */
+  .score {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 1;
+    display: grid;
+    gap: var(--slotted-space-2);
+    padding-block: var(--slotted-space-4) var(--slotted-space-3);
+    border-block-end: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+    background: var(--slotted-surface-raised);
+  }
+
+  .figures {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: 0;
+  }
+
+  .figures > div {
+    display: grid;
+    gap: var(--slotted-space-1);
+  }
+
+  .figures > div:last-child {
+    text-align: end;
+  }
+
+  .figures > div:nth-child(2) {
+    text-align: center;
+  }
+
+  .figures dt,
+  .listHead {
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+    line-height: var(--slotted-line-height-xs);
+  }
+
+  .figures dd {
+    margin: 0;
+    font-size: var(--slotted-font-size-lg);
+    line-height: var(--slotted-line-height-lg);
+    font-weight: var(--slotted-font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .figures > [data-tone="danger"] > dd,
+  .figures > [data-tone="danger"] > dt,
+  .status[data-tone="danger"] {
+    color: var(--slotted-tone-danger-text);
+  }
+
+  .meter {
+    position: relative;
+    block-size: var(--slotted-space-2);
+    border-radius: var(--slotted-radius-full);
+    background: var(--slotted-border-subtle);
+    overflow: hidden;
+  }
+
+  .meterFill {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    inline-size: 0;
+    border-radius: inherit;
+    background: var(--slotted-tone-accent-solid);
+    transition: inline-size var(--slotted-duration-medium)
+      var(--slotted-easing-emphasized);
+  }
+
+  .meter[data-over] .meterFill {
+    background: var(--slotted-tone-danger-solid);
+  }
+
+  .status {
+    margin: 0;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-sm);
+    line-height: var(--slotted-line-height-sm);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ---- Suggestion: one line, the expense that matches the received amount exactly. */
+  .suggest {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--slotted-space-3);
+    min-block-size: var(--slotted-target-comfortable);
+    padding-inline: var(--slotted-space-3) var(--slotted-space-2);
+    border-radius: var(--slotted-radius-md);
+    background: var(--slotted-tone-accent-surface);
+  }
+
+  .suggestText {
+    display: flex;
+    gap: var(--slotted-space-1);
+    min-inline-size: 0;
+    margin: 0;
+    overflow: hidden;
+    font-size: var(--slotted-font-size-sm);
+    line-height: var(--slotted-line-height-sm);
+    white-space: nowrap;
+  }
+
+  .suggestLead {
+    color: var(--slotted-tone-accent-text);
+    flex: none;
+  }
+
+  /* ---- Concepts A and C: a list with a header row and value columns. */
+  .list {
+    display: grid;
+    gap: var(--slotted-space-1);
+  }
+
+  .listHead,
+  .row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 6.5rem 7.5rem; /* literal: value columns fit R$ 99.999,99 */
+    align-items: center;
+    column-gap: var(--slotted-space-4);
+  }
+
+  .listHead {
+    padding-inline: var(--slotted-space-2);
+  }
+
+  .rows {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .row {
+    block-size: calc(var(--slotted-space-12) + var(--slotted-space-1));
+    padding-inline: var(--slotted-space-2);
+    border-block-start: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+  }
+
+  .row[data-checked] {
+    background: var(--slotted-tone-accent-surface);
+  }
+
+  .check {
+    min-inline-size: 0;
+  }
+
+  /* Workaround for Slotted issue #171: the checkbox label keeps its automatic minimum size, so a
+     name that does not wrap would push the row wider. The name wraps anywhere and shows its first
+     line, which keeps the label's minimum small and ends the line with an ellipsis. */
+  .checkName {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+  }
+
+  .remaining,
+  .shareCell {
+    justify-self: end;
+    text-align: end;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .row .remaining {
+    color: var(--slotted-text-muted);
+  }
+
+  .shareCell {
+    inline-size: 100%;
+  }
+
+  .share {
+    inline-size: 100%;
+  }
+
+  .inlineRemaining {
+    display: none;
+  }
+
+  /* ---- Category: closed by default, one line. */
+  .category {
+    display: grid;
+    justify-items: start;
+    gap: var(--slotted-space-2);
+  }
+
+  .categoryField {
+    justify-self: stretch;
+  }
+
+  /* ---- Waiting: the loaded row's anatomy, each text as a skeleton of its own width. */
+  .skeletonRow {
+    pointer-events: none;
+  }
+
+  .skCheck {
+    display: grid;
+    grid-template-columns: var(--slotted-selection-size-md) minmax(0, 1fr);
+    align-items: start;
+    column-gap: var(--slotted-space-2);
+  }
+
+  /* The family sizes a block through its own tokens. */
+  .skBox {
+    --slotted-skeleton-inline-size: var(--slotted-selection-size-md);
+    --slotted-skeleton-block-size: var(--slotted-selection-size-md);
+    --slotted-skeleton-radius: var(--slotted-radius-xs);
+  }
+
+  .skText {
+    display: grid;
+    gap: var(--slotted-space-2);
+    padding-block-start: var(--slotted-space-1);
+  }
+
+  .skName35 {
+    inline-size: 35%;
+  }
+  .skName40 {
+    inline-size: 40%;
+  }
+  .skName45 {
+    inline-size: 45%;
+  }
+  .skName50 {
+    inline-size: 50%;
+  }
+  .skName55 {
+    inline-size: 55%;
+  }
+  .skName65 {
+    inline-size: 65%;
+  }
+
+  .skDate {
+    inline-size: 4.5rem; /* literal: the width of dd/mm/aaaa at the xs size */
+  }
+
+  .skAmount,
+  .skFigure {
+    inline-size: 4.5rem; /* literal: the width of R$ 000,00 */
+  }
+
+  .figures dd .skFigure {
+    vertical-align: middle;
+  }
+
+  .empty {
+    display: grid;
+    justify-items: center;
+    gap: var(--slotted-space-2);
+    padding-block: var(--slotted-space-10);
+    text-align: center;
+  }
+
+  .emptyTitle {
+    margin: 0;
+    font-size: var(--slotted-font-size-md);
+    font-weight: var(--slotted-font-weight-semibold);
+  }
+
+  .emptyText {
+    max-inline-size: 32rem; /* literal: measure of a prose line */
+    margin: 0;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-sm);
+  }
+
+  .undo {
+    margin-inline-end: auto;
+  }
+
+  @media (max-width: 599px) {
+    /* literal: the app's phone breakpoint */
+    .listHead,
+    .row {
+      grid-template-columns: minmax(0, 1fr) 7.5rem; /* literal: share column at phone width */
+    }
+
+    .row .remaining,
+    .listHead .remaining {
+      display: none;
+    }
+
+    .inlineRemaining {
+      display: inline;
+    }
+
+    .figures dd {
+      font-size: var(--slotted-font-size-md);
+      line-height: var(--slotted-line-height-md);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .meterFill {
+      transition: none;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .meter {
+      border: 1px solid CanvasText;
+    }
+
+    .meterFill {
+      background: Highlight;
+    }
+  }
+}

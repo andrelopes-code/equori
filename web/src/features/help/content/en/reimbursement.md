@@ -12,7 +12,7 @@ A reimbursement is money that comes back for an expense already recorded, such a
    ![The panel of the payment, with its header marked](reimbursement-menu)
 3. Choose **Mark as reimbursement**.
    ![The menu of the transaction actions, marked](reimbursement-choose)
-4. Check the expense the payment reimburses and the amount.
+4. Check the expense the payment reimburses and the amount in the **Repays** column. The top of the dialog shows how much was received, how much is distributed and how much stays as income.
    ![The Mark as reimbursement dialog, with the list of expenses marked](reimbursement-expenses)
 5. Choose **Mark as reimbursement**.
    ![The dialog, with the Mark as reimbursement button marked](reimbursement-submit)

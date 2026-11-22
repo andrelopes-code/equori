@@ -15,9 +15,9 @@ const reimburse = (page, words) =>
   menu(page).getByRole("menuitem", { name: words("Marcar como reembolso", "Mark as reimbursement"), exact: true });
 const dialog = (page) => page.getByRole("dialog").last();
 const dinner = (page) => dialog(page).getByRole("checkbox", { name: /Coco Bambu/ }).first();
-// The dinner in the list of expenses: its box, its name and the line of its date and amount left.
+// The dinner's row in the list of expenses: its box, its name, its amount left and its share.
 const expense = (page) =>
-  dialog(page).locator("[data-ui='checkbox']").filter({ has: page.getByRole("checkbox", { name: /Coco Bambu/ }) }).first();
+  dialog(page).getByRole("listitem").filter({ has: page.getByRole("checkbox", { name: /Coco Bambu/ }) }).first();
 const submit = (page, words) => dialog(page).getByRole("button", { name: words("Marcar como reembolso", "Mark as reimbursement") });
 
 export default {

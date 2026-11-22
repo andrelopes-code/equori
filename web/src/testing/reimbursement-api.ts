@@ -94,6 +94,8 @@ export function reimbursementApi(options: {
   transaction?: Record<string, unknown>;
   candidates?: ReturnType<typeof candidate>[];
   suggestion?: string[];
+  // Answers the candidates read in place of the list above, such as a failure.
+  candidatesResponse?: () => Response | Promise<Response>;
   sent?: Sent[];
   reimburse?: (req: Request) => Response | Promise<Response>;
 }): FakeFetch {
@@ -127,13 +129,15 @@ export function reimbursementApi(options: {
       }),
     [`GET /api/v1/transactions/${txID}/attachments`]: () =>
       json(200, { items: [] }),
-    [`GET /api/v1/transactions/${txID}/reimbursement-candidates`]: () =>
-      json(200, {
-        items: options.candidates ?? [],
-        ...(options.suggestion === undefined
-          ? {}
-          : { suggestion: options.suggestion }),
-      }),
+    [`GET /api/v1/transactions/${txID}/reimbursement-candidates`]:
+      options.candidatesResponse ??
+      (() =>
+        json(200, {
+          items: options.candidates ?? [],
+          ...(options.suggestion === undefined
+            ? {}
+            : { suggestion: options.suggestion }),
+        })),
     [`POST /api/v1/transactions/${txID}/reimbursement`]:
       options.reimburse ??
       (async (req) => {

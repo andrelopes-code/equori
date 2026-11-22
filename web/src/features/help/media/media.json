@@ -554,18 +554,18 @@
     },
     "reimbursement-expenses": {
       "pt": {
-        "spot": [20.42, 60.39, 59.16, 7]
+        "spot": [19.69, 60.95, 60.62, 13.46]
       },
       "en": {
-        "spot": [20.42, 60.39, 59.16, 7]
+        "spot": [19.69, 60.95, 60.62, 13.46]
       }
     },
     "reimbursement-submit": {
       "pt": {
-        "spot": [61.67, 88.45, 18.02, 6.33]
+        "spot": [61.67, 89.08, 18.02, 6.34]
       },
       "en": {
-        "spot": [61.98, 88.45, 17.71, 6.33]
+        "spot": [61.98, 89.08, 17.71, 6.34]
       }
     },
     "plan-month": {
@@ -2442,202 +2442,6 @@
         "accent": "oklch(0.537962 0.124573 215.224)"
       }
     },
-    "reimbursement": {
-      "pt": {
-        "parts": [
-          {
-            "start": 0,
-            "travel": 0.9,
-            "hold": 1.7,
-            "click": 0.6,
-            "number": 1,
-            "mark": {
-              "x": 279,
-              "y": 662.171875,
-              "width": 862.328125,
-              "height": 55
-            }
-          },
-          {
-            "start": 3.2,
-            "travel": 0.9,
-            "hold": 1.7,
-            "click": 0.6,
-            "number": 2,
-            "mark": {
-              "x": 1322.984375,
-              "y": 199.171875,
-              "width": 569.515625,
-              "height": 79.859375
-            },
-            "point": {
-              "x": 1794.75,
-              "y": 221.671875,
-              "width": 28,
-              "height": 28
-            }
-          },
-          {
-            "start": 6.4,
-            "travel": 0.9,
-            "hold": 1.7,
-            "click": 0.6,
-            "number": 3,
-            "mark": {
-              "x": 1333.984375,
-              "y": 210.171875,
-              "width": 547.515625,
-              "height": 201
-            },
-            "point": {
-              "x": 1648.25,
-              "y": 313.671875,
-              "width": 170,
-              "height": 28
-            }
-          },
-          {
-            "start": 9.6,
-            "travel": 0.9,
-            "hold": 1.7,
-            "click": 0.6,
-            "number": 4,
-            "mark": {
-              "x": 676,
-              "y": 795.359375,
-              "width": 568,
-              "height": 42
-            },
-            "point": {
-              "x": 680,
-              "y": 799.171875,
-              "width": 16,
-              "height": 16
-            }
-          },
-          {
-            "start": 12.8,
-            "travel": 0.9,
-            "hold": 1.7,
-            "click": 0,
-            "number": 5,
-            "mark": {
-              "x": 1072,
-              "y": 1035.6875,
-              "width": 173,
-              "height": 38
-            }
-          }
-        ],
-        "duration": 16.8,
-        "fade": 0.3,
-        "stills": [
-          "reimbursement/38f855f0afd0.png",
-          "reimbursement/09118505d450.png",
-          "reimbursement/adb402428482.png",
-          "reimbursement/830f1415f35a.png",
-          "reimbursement/d281609b1c59.png"
-        ],
-        "accent": "oklch(0.537962 0.124573 215.224)"
-      },
-      "en": {
-        "parts": [
-          {
-            "start": 0,
-            "travel": 0.9,
-            "hold": 1.7,
-            "click": 0.6,
-            "number": 1,
-            "mark": {
-              "x": 279,
-              "y": 662.171875,
-              "width": 862.328125,
-              "height": 55
-            }
-          },
-          {
-            "start": 3.2,
-            "travel": 0.9,
-            "hold": 1.7,
-            "click": 0.6,
-            "number": 2,
-            "mark": {
-              "x": 1322.984375,
-              "y": 199.171875,
-              "width": 569.515625,
-              "height": 79.859375
-            },
-            "point": {
-              "x": 1794.75,
-              "y": 221.671875,
-              "width": 28,
-              "height": 28
-            }
-          },
-          {
-            "start": 6.4,
-            "travel": 0.9,
-            "hold": 1.7,
-            "click": 0.6,
-            "number": 3,
-            "mark": {
-              "x": 1333.984375,
-              "y": 210.171875,
-              "width": 547.515625,
-              "height": 201
-            },
-            "point": {
-              "x": 1659.25,
-              "y": 313.671875,
-              "width": 159,
-              "height": 28
-            }
-          },
-          {
-            "start": 9.6,
-            "travel": 0.9,
-            "hold": 1.7,
-            "click": 0.6,
-            "number": 4,
-            "mark": {
-              "x": 676,
-              "y": 795.359375,
-              "width": 568,
-              "height": 42
-            },
-            "point": {
-              "x": 680,
-              "y": 799.171875,
-              "width": 16,
-              "height": 16
-            }
-          },
-          {
-            "start": 12.8,
-            "travel": 0.9,
-            "hold": 1.7,
-            "click": 0,
-            "number": 5,
-            "mark": {
-              "x": 1075,
-              "y": 1035.6875,
-              "width": 170,
-              "height": 38
-            }
-          }
-        ],
-        "duration": 16.8,
-        "fade": 0.3,
-        "stills": [
-          "reimbursement/36ff243281e0.png",
-          "reimbursement/a4dd207f8c30.png",
-          "reimbursement/f02c1f01d50e.png",
-          "reimbursement/d39578a840aa.png",
-          "reimbursement/718b767061c8.png"
-        ],
-        "accent": "oklch(0.537962 0.124573 215.224)"
-      }
-    },
     "schedule": {
       "pt": {
         "parts": [
@@ -3101,6 +2905,202 @@
         ],
         "accent": "oklch(0.537962 0.124573 215.224)"
       }
+    },
+    "reimbursement": {
+      "pt": {
+        "parts": [
+          {
+            "start": 0,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 1,
+            "mark": {
+              "x": 279,
+              "y": 662.171875,
+              "width": 862.328125,
+              "height": 55
+            }
+          },
+          {
+            "start": 3.2,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 2,
+            "mark": {
+              "x": 1322.984375,
+              "y": 199.171875,
+              "width": 569.515625,
+              "height": 79.859375
+            },
+            "point": {
+              "x": 1794.75,
+              "y": 221.671875,
+              "width": 28,
+              "height": 28
+            }
+          },
+          {
+            "start": 6.4,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 3,
+            "mark": {
+              "x": 1333.984375,
+              "y": 210.171875,
+              "width": 547.515625,
+              "height": 201
+            },
+            "point": {
+              "x": 1648.25,
+              "y": 313.671875,
+              "width": 170,
+              "height": 28
+            }
+          },
+          {
+            "start": 9.6,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 4,
+            "mark": {
+              "x": 669,
+              "y": 944.703125,
+              "width": 582,
+              "height": 80.75
+            },
+            "point": {
+              "x": 683.5,
+              "y": 968.390625,
+              "width": 16,
+              "height": 16
+            }
+          },
+          {
+            "start": 12.8,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 5,
+            "mark": {
+              "x": 1072,
+              "y": 1134.5,
+              "width": 173,
+              "height": 38
+            }
+          }
+        ],
+        "duration": 16.8,
+        "fade": 0.3,
+        "stills": [
+          "reimbursement/74936d908a0d.png",
+          "reimbursement/a4a601ec8649.png",
+          "reimbursement/9cb0295d21a0.png",
+          "reimbursement/8f6f2da547e8.png",
+          "reimbursement/5c94a0ccf282.png"
+        ],
+        "accent": "oklch(0.537962 0.124573 215.224)"
+      },
+      "en": {
+        "parts": [
+          {
+            "start": 0,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 1,
+            "mark": {
+              "x": 279,
+              "y": 662.171875,
+              "width": 862.328125,
+              "height": 55
+            }
+          },
+          {
+            "start": 3.2,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 2,
+            "mark": {
+              "x": 1322.984375,
+              "y": 199.171875,
+              "width": 569.515625,
+              "height": 79.859375
+            },
+            "point": {
+              "x": 1794.75,
+              "y": 221.671875,
+              "width": 28,
+              "height": 28
+            }
+          },
+          {
+            "start": 6.4,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 3,
+            "mark": {
+              "x": 1333.984375,
+              "y": 210.171875,
+              "width": 547.515625,
+              "height": 201
+            },
+            "point": {
+              "x": 1659.25,
+              "y": 313.671875,
+              "width": 159,
+              "height": 28
+            }
+          },
+          {
+            "start": 9.6,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 4,
+            "mark": {
+              "x": 669,
+              "y": 944.703125,
+              "width": 582,
+              "height": 80.75
+            },
+            "point": {
+              "x": 683.5,
+              "y": 968.390625,
+              "width": 16,
+              "height": 16
+            }
+          },
+          {
+            "start": 12.8,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 5,
+            "mark": {
+              "x": 1075,
+              "y": 1134.5,
+              "width": 170,
+              "height": 38
+            }
+          }
+        ],
+        "duration": 16.8,
+        "fade": 0.3,
+        "stills": [
+          "reimbursement/359775d135e2.png",
+          "reimbursement/5bb2bea88c0f.png",
+          "reimbursement/6b6230b22378.png",
+          "reimbursement/193669fe3a41.png",
+          "reimbursement/d417fba7c0de.png"
+        ],
+        "accent": "oklch(0.537962 0.124573 215.224)"
+      }
     }
   },
   "files": {
@@ -3318,26 +3318,26 @@
     "record-transaction/entry-save.pt.dark.png": "d8de24801d0377cee4ccf5723247e87bc975d9e5eed250324dd6fc65cfc6b3ea",
     "record-transaction/entry-sheet.en.dark.png": "81895c3c9c29baa1aef145c9685b2f8e1276580c9d41b2f519d42e7863c4058c",
     "record-transaction/entry-sheet.pt.dark.png": "c4b767c488941b6da28b9779b500ccb4cb7eb5b6a7005213ebe28c5488af1d9d",
-    "reimbursement/09118505d450.png": "09118505d4502c4460b2ea79eeb109f9a679006e759c73406fd0a6df1e86e6ae",
-    "reimbursement/36ff243281e0.png": "36ff243281e08a5e77ae2bb81fa2dd77f5e048b46bc51cb96416526808cfbf99",
-    "reimbursement/38f855f0afd0.png": "38f855f0afd095c6eb61359ef36aed4529f44df1fedb558f4ac3364eaec74994",
-    "reimbursement/718b767061c8.png": "718b767061c89cc763d6736831ce210dfc115efaaa9e88fa88b273eabdd6caa1",
-    "reimbursement/830f1415f35a.png": "830f1415f35ae4889909d9fb7724638ee106214361268b1ed3b887c76d86f3ab",
-    "reimbursement/a4dd207f8c30.png": "a4dd207f8c30e9c4397dad73d37f12e2886424993c1109b492ea3f093b3cac0e",
-    "reimbursement/adb402428482.png": "adb402428482f017716d844c8f06e3cdf975e03d31267c0becffc275cb3db009",
-    "reimbursement/d281609b1c59.png": "d281609b1c59042c3639f2f9f7382aeb8875f467c16dcb829e84e187064b8b4b",
-    "reimbursement/d39578a840aa.png": "d39578a840aa04d5abf6e6255ca62ae51396c9f994791d649666fbcac9c7a10a",
-    "reimbursement/f02c1f01d50e.png": "f02c1f01d50e6b275ddd66003388e79ca5f8154ff9c92af38f2b7e86e80c1d8c",
-    "reimbursement/reimbursement-choose.en.dark.png": "be654b11e8c4957c4f3eeaaace8f0257209f65417d066316efc128332fcf17fc",
-    "reimbursement/reimbursement-choose.pt.dark.png": "87b16c17618ab56e6a0cadb02417c2327694bb5f8981b13def1d49d1f719d68d",
-    "reimbursement/reimbursement-expenses.en.dark.png": "d8b5789152ed6262b24aaf4c9a8538a0bf9e5b52a9c05af952ed661e1377fc92",
-    "reimbursement/reimbursement-expenses.pt.dark.png": "16519b6856ea1ae52ac03d35f27405f56186f1cfbb9f5985efb6754d02d264de",
-    "reimbursement/reimbursement-menu.en.dark.png": "e385bff92d75646df1bc1d9d4a5e273e7beff9e4af0ab9f6b6d091a3e7b02860",
-    "reimbursement/reimbursement-menu.pt.dark.png": "591f70802c42ef0c79a8d870ab9c7a32740f7d60c3ff6bd078ed39d3d2c4c1bf",
+    "reimbursement/193669fe3a41.png": "193669fe3a4139cb652bdb8169eb0434d1700f0b1a461abc22a416dc599641e9",
+    "reimbursement/359775d135e2.png": "359775d135e242d16c897aa2637bec3bd016afd758f2fc357be20c924cc13264",
+    "reimbursement/5bb2bea88c0f.png": "5bb2bea88c0fd3ba036b86362446deff9972a2cf5126368310a6330f42680638",
+    "reimbursement/5c94a0ccf282.png": "5c94a0ccf28286b92c5a8e4859f2d5ac6c9a8ff07281ae7549e0c65b7aeec7c3",
+    "reimbursement/6b6230b22378.png": "6b6230b223785f48af5a2e2f7b99e85029d78e24eec34a3880b7c5353ea3944e",
+    "reimbursement/74936d908a0d.png": "74936d908a0dacb490e14cdfa85fbd68085962a6e775addb8683ccc5d523ea9b",
+    "reimbursement/8f6f2da547e8.png": "8f6f2da547e8ae05c276b08d0d69a9262213f9951946862985be85562db2f6e7",
+    "reimbursement/9cb0295d21a0.png": "9cb0295d21a01c938a9e3078ca16afb1619c9a5e489700be0a9f1bd2b136e5e8",
+    "reimbursement/a4a601ec8649.png": "a4a601ec8649a3d9b69885d3cf8b2e0873a94209bf73748a13b1b8ecca43779d",
+    "reimbursement/d417fba7c0de.png": "d417fba7c0de9cba74ef4fa426c8bfd58feef0907f5e459b1fb5e6f8c88058cd",
+    "reimbursement/reimbursement-choose.en.dark.png": "b94ce445547f3a2c8ee683dc3a81dfb955e4c674e48a1de0d0c51d03c88167ec",
+    "reimbursement/reimbursement-choose.pt.dark.png": "bd1ec59886d3036bf4ead1d4782dc7c1ff4f31a37459409b0f504ae29fd68acb",
+    "reimbursement/reimbursement-expenses.en.dark.png": "d388c25872eed105e20b5a7aa5cced66db68c8bd3253fa110c6c8831080418a8",
+    "reimbursement/reimbursement-expenses.pt.dark.png": "d06a00dd469d62752a7c832376d68a7482f842dd2f6e78582eaf138598e45e0d",
+    "reimbursement/reimbursement-menu.en.dark.png": "aabd486873d2c1f4a03ed85cf27a988289c775bb37042508f1400b35a3af1779",
+    "reimbursement/reimbursement-menu.pt.dark.png": "a18b7ab2cc5df20c82ad2a6b08dcbfc3913fa9166cf43367831ade2c691a2f31",
     "reimbursement/reimbursement-open.en.dark.png": "f0827e71f36753130ea00e091bcc4e76678b6f1c596eb6aad1fac7dab9420cde",
     "reimbursement/reimbursement-open.pt.dark.png": "3c3db18555453fa1419c662f17e64042c4c93ce8fd9ca3e86011d63f91dcced9",
-    "reimbursement/reimbursement-submit.en.dark.png": "1175eafa80c0ee269d13465bf30c2e02a2d6c789b42d76222006e9e2907a2796",
-    "reimbursement/reimbursement-submit.pt.dark.png": "344b70d22163cfb851cd18dbfe6bdd1e5c8971aebc018c908022155ff03c8b8e",
+    "reimbursement/reimbursement-submit.en.dark.png": "aa86c8d993d5d91607e2bfac93fa570af4d9444462a7bff09d660c512341b3e9",
+    "reimbursement/reimbursement-submit.pt.dark.png": "32564eb2caabefb993daa54d0ee1eb6d853924f6122ee97f78310a4f66b44555",
     "schedule/4050b4b0fffa.png": "4050b4b0fffa0aa3ea54cff576fc83138678c4c819da01e3871130a70981579a",
     "schedule/530ffe5b8add.png": "530ffe5b8add12bff2c7705dfae2c77ed460298030b2fe413cd70b28c45e9e1e",
     "schedule/57df711a2268.png": "57df711a2268807d9cdf225184c89b3241e599b0cfdbb408e7e936214a975358",
@@ -3392,7 +3392,7 @@
     "schedule": "371547771f67e1f531279a100f4f71d2377e5163789500245be9241063213463",
     "create-budget": "d7d405d14d6e33227839f27c545e487869cf8465a8427dffb2a393a3b274a58c",
     "buy-investment": "03a118d0e63331521f1c962a19db2f5b7a20ec1fb8d78801579a3793ebccf64b",
-    "reimbursement": "636610f9394f35d1353b1324dcd7d7247ce4e11e6b735ca2a203664f0f2e5ae9",
+    "reimbursement": "3bd1ffc2e3d1d48b3c92492cc4d0c3b12275cb12cdcee79637c79d460ff56a61",
     "contribution-plan": "8d27de5e39581d37fc4beed705b479996ad2f1270a36f3d32f2d68f7a8b0f898",
     "portfolio": "0c60c7a4f74efd460633f296828e051ce93b0ca91fd38d0b3dba83302b803947",
     "budget-plan": "cab528ca8374c197a4fe0760b8c2f56af8f0cf1f29750f5c7eb70c8e80685617"

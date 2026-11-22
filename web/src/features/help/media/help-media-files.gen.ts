@@ -213,16 +213,16 @@ import f210 from "./record-transaction/entry-save.en.dark.png?url";
 import f211 from "./record-transaction/entry-save.pt.dark.png?url";
 import f212 from "./record-transaction/entry-sheet.en.dark.png?url";
 import f213 from "./record-transaction/entry-sheet.pt.dark.png?url";
-import f214 from "./reimbursement/09118505d450.png?url";
-import f215 from "./reimbursement/36ff243281e0.png?url";
-import f216 from "./reimbursement/38f855f0afd0.png?url";
-import f217 from "./reimbursement/718b767061c8.png?url";
-import f218 from "./reimbursement/830f1415f35a.png?url";
-import f219 from "./reimbursement/a4dd207f8c30.png?url";
-import f220 from "./reimbursement/adb402428482.png?url";
-import f221 from "./reimbursement/d281609b1c59.png?url";
-import f222 from "./reimbursement/d39578a840aa.png?url";
-import f223 from "./reimbursement/f02c1f01d50e.png?url";
+import f214 from "./reimbursement/193669fe3a41.png?url";
+import f215 from "./reimbursement/359775d135e2.png?url";
+import f216 from "./reimbursement/5bb2bea88c0f.png?url";
+import f217 from "./reimbursement/5c94a0ccf282.png?url";
+import f218 from "./reimbursement/6b6230b22378.png?url";
+import f219 from "./reimbursement/74936d908a0d.png?url";
+import f220 from "./reimbursement/8f6f2da547e8.png?url";
+import f221 from "./reimbursement/9cb0295d21a0.png?url";
+import f222 from "./reimbursement/a4a601ec8649.png?url";
+import f223 from "./reimbursement/d417fba7c0de.png?url";
 import f224 from "./reimbursement/reimbursement-choose.en.dark.png?url";
 import f225 from "./reimbursement/reimbursement-choose.pt.dark.png?url";
 import f226 from "./reimbursement/reimbursement-expenses.en.dark.png?url";
@@ -489,16 +489,16 @@ export const helpMediaFiles: Partial<Record<string, string>> = {
   "entry-save.pt.dark.png": f211,
   "entry-sheet.en.dark.png": f212,
   "entry-sheet.pt.dark.png": f213,
-  "reimbursement/09118505d450.png": f214,
-  "reimbursement/36ff243281e0.png": f215,
-  "reimbursement/38f855f0afd0.png": f216,
-  "reimbursement/718b767061c8.png": f217,
-  "reimbursement/830f1415f35a.png": f218,
-  "reimbursement/a4dd207f8c30.png": f219,
-  "reimbursement/adb402428482.png": f220,
-  "reimbursement/d281609b1c59.png": f221,
-  "reimbursement/d39578a840aa.png": f222,
-  "reimbursement/f02c1f01d50e.png": f223,
+  "reimbursement/193669fe3a41.png": f214,
+  "reimbursement/359775d135e2.png": f215,
+  "reimbursement/5bb2bea88c0f.png": f216,
+  "reimbursement/5c94a0ccf282.png": f217,
+  "reimbursement/6b6230b22378.png": f218,
+  "reimbursement/74936d908a0d.png": f219,
+  "reimbursement/8f6f2da547e8.png": f220,
+  "reimbursement/9cb0295d21a0.png": f221,
+  "reimbursement/a4a601ec8649.png": f222,
+  "reimbursement/d417fba7c0de.png": f223,
   "reimbursement-choose.en.dark.png": f224,
   "reimbursement-choose.pt.dark.png": f225,
   "reimbursement-expenses.en.dark.png": f226,
