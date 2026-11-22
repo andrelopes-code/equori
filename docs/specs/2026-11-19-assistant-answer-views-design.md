@@ -287,3 +287,10 @@ Cross-cutting questions of this amendment:
 - S4: `show` returns the computed rows; the chart spec gains `derive`; the prompt gains the sentence of V37.
 - X1: Does not apply: no domain scenario; `internal/assistant` tests the rows of V37 through the turn API, `view` tests each derivation and a nested `items` path, and `internal/assistant` tests a chart over three pages of `search_transactions`.
 - X2: `view` tests a share and a change of a series in USD.
+
+
+Decisions of this amendment that add nothing:
+
+- A chart over two read tools is not built. Each pair asked so far lives in one read: inflow and outflow in `get_account_history`, income and expense in the postings of `search_transactions`, budget and spending in `get_budgets_and_goals`. A request that names two reads no single read holds reopens it.
+- No scatter and no range drawing. `x` is a date or a name (V28), and both drawings need a second measure as `x`. A request to relate two measures reopens it.
+- No query tool compiled to SQL. V39 and V40 give a chart every page and every posting of a read, up to 10,000 items, with the units and the one-currency rule of V30 to V32; a book whose read passes 10,000 items in one chart, or a dimension no read returns, reopens it.

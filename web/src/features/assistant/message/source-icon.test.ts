@@ -26,6 +26,7 @@ describe("sourceIcon", () => {
     ["get_tax_year", "receipt"],
     ["get_imports", "receipt"],
     ["get_help", "book"],
+    ["web_search", "search"],
     ["unknown_tool", "dot"],
   ])("%s draws %s", (tool, icon) => {
     expect(sourceIcon(tool)).toBe(icon);

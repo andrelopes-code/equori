@@ -41,6 +41,9 @@ ADR 019 declares the use `assistant.chat` and ADR 012 the tool registry, with fo
 - C10 (design 2026-10-26 E6, E7): only a quota cooldown or a daily limit makes a turn answer `assistant_exhausted`. A turn whose every target cools down from transient failures waits once for the earliest end inside its deadline and calls again; a turn that still fails ends with `assistant_failed`.
 - C3 (design 2026-10-26 E4): the stream adds `delta {text}`; a `step` ends the text of a model call that asked for tools.
 - C3, C10 (model choice design 2026-11-20, MC1 to MC4): `getAssistantChat` lists the targets of the chain, and a turn may name one `target`. That target alone serves the turn: in cooldown or over its limit it answers `assistant_exhausted` with its own `retry_at`, and a target outside the chain answers 422 `assistant_target_unknown`.
+- C3, C8, C12 (web search design 2026-11-22, S6 to S8): a search the provider runs is a `step` named `web_search`; the log line of a turn gains `web_searches`; text of a web page is data, as text of a tool result is, and the pages an answer cites are a view of form `sources`.
+- C6, C7 (undo restore design 2026-11-22, U1 to U7): `categorize_transactions` and `change_transaction` with action `correct` derive the inverse `restore_transaction`, an internal tool no model is told of.
+- C7 stands for every write (owner, 2026-11-22: more freedom without loss of safety): no write runs without the member's confirmation. A write with an inverse is not run ahead of it: "Confirm all" already confirms the proposals of one answer in one act, and the undo covers what was confirmed by mistake.
 
 ## Consequences
 

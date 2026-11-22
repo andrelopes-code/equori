@@ -27,6 +27,8 @@ const sources: Record<string, AssistantIconName> = {
   get_imports: "receipt",
   review_investment_movement: "trend",
   get_help: "book",
+  // The provider's own search, reported as a step (web search design, S6).
+  web_search: "search",
   estimate_redemption: "trend",
   find_recurring: "repeat",
   get_appearance: "info",
