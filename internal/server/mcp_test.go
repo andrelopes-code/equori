@@ -158,16 +158,22 @@ func TestMCPListsToolsByScope(t *testing.T) {
 	}
 
 	write := listNames(t, mcpSession(t, h, mcpToken(t, h, h.Client, "write")))
-	if len(write) != len(h.App.Tools.Tools()) {
-		t.Fatalf(
-			"write token lists %d tools, registry has %d",
-			len(write),
-			len(h.App.Tools.Tools()),
-		)
+	// The owner's write token lists every tool a client can call: all but the internal ones
+	// (undo restore design, U7).
+	if listed := toolsFor(h, auth.RoleOwner, false); len(write) != len(listed) {
+		t.Fatalf("write token lists %d tools, registry declares %d", len(write), len(listed))
 	}
 
 	for _, tl := range h.App.Tools.Tools() {
 		s, got := tl.Spec(), write[tl.Spec().Name]
+		if s.Internal {
+			if got != nil {
+				t.Errorf("write token lists the internal tool %s", s.Name)
+			}
+
+			continue
+		}
+
 		if got == nil || got.Annotations == nil || got.Annotations.IdempotentHint != s.Idempotent ||
 			(s.Effect == tool.Destructive) != (got.Annotations.DestructiveHint != nil && *got.Annotations.DestructiveHint) {
 			t.Errorf("write token: %s annotations = %+v", s.Name, got)
@@ -717,7 +723,9 @@ func toolsFor(h *apitest.Harness, role auth.BookRole, readOnly bool) []string {
 
 	for _, tl := range h.App.Tools.Tools() {
 		s := tl.Spec()
-		if (readOnly && s.Effect != tool.ReadOnly) || (s.Role != "" && !role.Allows(s.Role)) {
+		// An internal tool is listed to no client (undo restore design, U7).
+		if s.Internal || (readOnly && s.Effect != tool.ReadOnly) ||
+			(s.Role != "" && !role.Allows(s.Role)) {
 			continue
 		}
 

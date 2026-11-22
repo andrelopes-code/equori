@@ -2428,6 +2428,7 @@ export const catalogEn = {
   "assistant.action.record_transaction": "Record transaction",
   "assistant.action.categorize_transactions": "Categorize transactions",
   "assistant.action.void_transaction": "Void transaction",
+  "assistant.action.restore_transaction": "Restore transactions",
   "assistant.action.update_profile": "Change language or region",
   "assistant.action.change_transaction.correct": "Correct transaction",
   "assistant.action.change_transaction.make_transfer": "Turn into a transfer",

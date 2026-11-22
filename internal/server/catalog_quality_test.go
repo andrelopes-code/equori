@@ -3,6 +3,7 @@ package server_test
 import (
 	"encoding/json"
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
 
@@ -22,7 +23,12 @@ const (
 
 func chatTools(t *testing.T) []tool.Tool {
 	t.Helper()
-	return apitest.New(t).App.Tools.Tools()
+	// An internal tool is declared to no model (undo restore design, U7), so the rules of a
+	// declaration and the size of the catalog (G12) do not read it.
+	return slices.DeleteFunc(
+		apitest.New(t).App.Tools.Tools(),
+		func(tl tool.Tool) bool { return tl.Spec().Internal },
+	)
 }
 
 // properties calls f with the path and schema of every property of s, at any depth.

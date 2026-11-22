@@ -34,7 +34,9 @@ var exclusions = map[string]bool{
 
 // withoutOperation are the tools that map to no operation, with the reason.
 var withoutOperation = map[string]string{
-	"get_help":       "answers from the guide and the navigation map, not from an operation",
+	"get_help": "answers from the guide and the navigation map, not from an operation",
+	"restore_transaction": "composes listTransactionVersions and correctTransaction, which " +
+		"get_transaction and change_transaction cover (undo restore design, S1)",
 	"find_recurring": "derived view for agents over transactions; no screen lists it",
 	// putInstrumentTerms maps to manage_instrument, whose set_terms leaves its payments out.
 	"set_payment_schedule": "writes the payments of putInstrumentTerms (coverage row F-16)",
@@ -117,6 +119,7 @@ func TestToolCatalog(t *testing.T) {
 		Description  string `json:"description"`
 		Effect       string `json:"effect"`
 		Idempotent   bool   `json:"idempotent"`
+		Internal     bool   `json:"internal,omitzero"`
 		InputSchema  any    `json:"input_schema"`
 		OutputSchema any    `json:"output_schema"`
 	}
@@ -129,6 +132,7 @@ func TestToolCatalog(t *testing.T) {
 			Description:  s.Description,
 			Effect:       s.Effect.String(),
 			Idempotent:   s.Idempotent,
+			Internal:     s.Internal,
 			InputSchema:  tl.InputSchema(),
 			OutputSchema: tl.OutputSchema(),
 		})

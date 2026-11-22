@@ -44,6 +44,9 @@ type Spec struct {
 	// that the effect needs. A call from a lower role, or from a context without a role, is refused
 	// with book_role_required, as the HTTP operation with the same x-book-role is (ADR 029).
 	Role auth.BookRole
+	// Internal marks a write that only runs as the inverse of another call: it is declared to no
+	// model and to no MCP client, so it adds nothing to the catalog a model reads.
+	Internal bool
 }
 
 // Tool is a Spec with its schemas and its handler, with the argument and result types erased.

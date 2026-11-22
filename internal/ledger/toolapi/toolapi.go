@@ -29,10 +29,9 @@ func Tools(svc *app.Service, files ConversationFile) []tool.Tool {
 		getAccountDetails(svc),
 		getStatement(svc),
 		tool.WithUndo(recordTransaction(svc), undoByVoid),
-		changeTransaction(svc),
-		categorizeTransactions(
-			svc,
-		),
+		tool.WithUndo(changeTransaction(svc), undoCorrect),
+		tool.WithUndo(categorizeTransactions(svc), undoCategorize),
+		restoreTransaction(svc),
 		voidTransaction(svc),
 		tool.WithUndo(manageCard(svc), undoCard),
 		handleCardPurchase(svc),

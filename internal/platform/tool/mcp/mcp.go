@@ -126,7 +126,7 @@ func addTools(s *sdk.Server, cfg Config, v variant) []string {
 		}
 
 		spec := t.Spec()
-		if (!v.write && spec.Effect != tool.ReadOnly) ||
+		if spec.Internal || (!v.write && spec.Effect != tool.ReadOnly) ||
 			(spec.Role != "" && !v.role.Allows(spec.Role)) {
 			continue
 		}

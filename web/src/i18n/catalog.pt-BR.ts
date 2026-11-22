@@ -2445,6 +2445,7 @@ export const catalogPtBR: Catalog = {
   "assistant.action.record_transaction": "Registrar transação",
   "assistant.action.categorize_transactions": "Categorizar transações",
   "assistant.action.void_transaction": "Anular transação",
+  "assistant.action.restore_transaction": "Restaurar transações",
   "assistant.action.update_profile": "Alterar idioma ou região",
   "assistant.action.change_transaction.correct": "Corrigir transação",
   "assistant.action.change_transaction.make_transfer":

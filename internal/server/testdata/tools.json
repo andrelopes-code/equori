@@ -80,6 +80,10 @@
               "transaction_id": {
                 "type": "string"
               },
+              "version": {
+                "type": "integer",
+                "description": "version the transaction held before it was categorized"
+              },
               "status": {
                 "type": "string",
                 "description": "categorized, not_found, version_conflict, transaction_voided or not_categorizable"
@@ -11831,6 +11835,78 @@
       "required": [
         "status",
         "requested_at"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "restore_transaction",
+    "description": "Proposes returning transactions to an earlier version of their history. Use it to undo a change of a transaction; get_transaction lists the versions. Do not use it on a voided transaction. The user confirms first.",
+    "effect": "write",
+    "idempotent": false,
+    "internal": true,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "transaction_id": {
+                "type": "string",
+                "description": "from search_transactions"
+              },
+              "version": {
+                "type": "integer",
+                "description": "version to return to"
+              }
+            },
+            "required": [
+              "transaction_id",
+              "version"
+            ],
+            "additionalProperties": false
+          },
+          "description": "at most 50"
+        },
+        "reason": {
+          "type": "string",
+          "description": "kept in the history"
+        }
+      },
+      "required": [
+        "items",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "results": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "transaction_id": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "description": "restored, not_found, version_unknown, version_conflict, transaction_voided or not_restorable"
+              }
+            },
+            "required": [
+              "transaction_id",
+              "status"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "results"
       ],
       "additionalProperties": false
     }

@@ -66,6 +66,10 @@ func (s Set) LLM() ([]llm.Tool, map[string]llm.ToolHandler) {
 
 	handlers := make(map[string]llm.ToolHandler, len(s.names))
 	for _, t := range s.Tools() {
+		if t.spec.Internal {
+			continue
+		}
+
 		name := t.spec.Name
 		tools = append(tools, llm.Tool{
 			Name:        name,

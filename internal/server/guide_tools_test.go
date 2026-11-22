@@ -13,8 +13,10 @@ import (
 )
 
 type catalogTool struct {
-	Name        string `json:"name"`
-	Effect      string `json:"effect"`
+	Name   string `json:"name"`
+	Effect string `json:"effect"`
+	// Internal: no model calls the tool, so no article names it (undo restore design, U7).
+	Internal    bool `json:"internal"`
 	InputSchema struct {
 		Required   []string `json:"required"`
 		Properties map[string]struct {
@@ -47,6 +49,10 @@ func TestGuideCoversTools(t *testing.T) {
 	}
 
 	for _, tl := range tools {
+		if tl.Internal {
+			continue
+		}
+
 		var naming []string
 		for _, a := range articles {
 			if hasWord(a, tl.Name) {

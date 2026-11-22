@@ -195,7 +195,10 @@ func TestTurnRead(t *testing.T) {
 
 	var want, got []string
 	for _, tl := range h.App.Tools.Tools() {
-		want = append(want, tl.Spec().Name)
+		// An internal tool is declared to no model (undo restore design, U7).
+		if !tl.Spec().Internal {
+			want = append(want, tl.Spec().Name)
+		}
 	}
 
 	// show is the chat's own presentation tool, outside the tool set (answer views design, V2).

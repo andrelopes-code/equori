@@ -116,3 +116,36 @@ func newUndoRegistry(t *testing.T) *Registry {
 
 	return r
 }
+
+// Undo restore design, U7: an internal tool runs as an inverse and is declared to no model.
+func TestInternalToolIsNotDeclared(t *testing.T) {
+	t.Parallel()
+
+	none := func(context.Context, int64, unmakeIn) (Preview, error) { return Preview{}, nil }
+	ran := func(context.Context, int64, unmakeIn) (makeOut, error) { return makeOut{ID: "x"}, nil }
+	hidden := NewWrite(
+		Spec{Name: "hidden", Description: "Reverses one.", Effect: Write, Internal: true},
+		none,
+		ran,
+	)
+	shown := NewWrite(Spec{Name: "shown", Description: "Makes one.", Effect: Write}, none, ran)
+
+	r, err := NewRegistry(slog.New(slog.DiscardHandler), Group{Tools: []Tool{hidden, shown}})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	s, err := r.Select("hidden", "shown")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	decls, handlers := s.LLM()
+	if len(decls) != 1 || decls[0].Name != "shown" || handlers["hidden"] != nil {
+		t.Fatalf("declared = %+v", decls)
+	}
+
+	if len(s.Tools()) != 2 {
+		t.Fatalf("the set holds %d tools", len(s.Tools()))
+	}
+}

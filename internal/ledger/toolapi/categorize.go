@@ -22,7 +22,8 @@ type categorizeTransactionsIn struct {
 
 type categorizeResult struct {
 	TransactionID string `json:"transaction_id"`
-	Status        string `json:"status"         jsonschema:"categorized, not_found, version_conflict, transaction_voided or not_categorizable"`
+	Version       int    `json:"version,omitzero" jsonschema:"version the transaction held before it was categorized"`
+	Status        string `json:"status"           jsonschema:"categorized, not_found, version_conflict, transaction_voided or not_categorizable"`
 }
 
 type categorizeTransactionsOut struct {
@@ -120,6 +121,10 @@ func runCategorize(
 			TransactionID: it.ID.String(),
 			Status:        bulkStatus(errs[i]),
 		}
+		if errs[i] == nil {
+			out.Results[i].Version = it.ExpectedVersion
+		}
+
 		if errs[i] != nil || p.payeeID == uuid.Nil {
 			continue
 		}
