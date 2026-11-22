@@ -86,6 +86,9 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "brokerage.create": "Criar uma corretora",
   "brokerage.cashLeafNotice":
     "Esta conta é um caixa. Os investimentos são criados ao registrar uma compra.",
+  "brokerage.idleCash":
+    "{cash} não tem lançamentos. Encerre a conta e as operações usam {account} sem perguntar.",
+  "brokerage.closeIdleCash": "Encerrar {cash}",
   "accountSetup.step.cash": "Criando o caixa",
   "accountSetup.step.opening": "Saldo inicial",
   "accountSetup.failed": "A conta foi criada, mas “{step}” não foi registrado",

@@ -492,6 +492,19 @@ export function allAccountTransactionsQuery(
   });
 }
 
+// The first transaction of an account: an empty page tells an account with no entry (BC19).
+export function firstEntryQuery(api: Client<paths>, id: string) {
+  return queryOptions({
+    queryKey: ["transactions", "list", { account_id: id }, "first"] as const,
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/transactions", {
+          params: { query: { account_id: id, limit: 1 } },
+        }),
+      ),
+  });
+}
+
 export function transactionSummaryQuery(api: Client<paths>, id: string) {
   return queryOptions({
     queryKey: ["transactions", "detail", id] as const,

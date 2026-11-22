@@ -85,6 +85,9 @@ export const accountsEn = {
   "brokerage.create": "Create a brokerage",
   "brokerage.cashLeafNotice":
     "This account is a cash account. Investments are created by recording a buy.",
+  "brokerage.idleCash":
+    "{cash} has no entry. Close it and trades use {account} without asking.",
+  "brokerage.closeIdleCash": "Close {cash}",
   "accountSetup.step.cash": "Creating the cash account",
   "accountSetup.step.opening": "Opening balance",
   "accountSetup.failed":

@@ -9,6 +9,7 @@ import { AccountDialogs } from "@/features/accounts/account-dialogs/account-dial
 import type { AccountDialog } from "@/features/accounts/account-dialogs/account-dialogs";
 import { AccountHeader } from "@/features/accounts/account-record/account-header";
 import { CashLeafNotice } from "@/features/accounts/account-record/cash-leaf-notice";
+import { IdleCashNotice } from "@/features/accounts/account-record/idle-cash-notice";
 import { lineage } from "@/features/accounts/account-record/account-lineage";
 import { withRange } from "@/features/accounts/model/account-search";
 import type {
@@ -145,6 +146,8 @@ export function AccountRecord({ account, search, scale }: AccountRecordProps) {
           <AccountSetupMessage accountId={account.id} />
 
           <CashLeafNotice account={account} />
+
+          <IdleCashNotice account={account} />
 
           {!compact && overview}
           <div aria-busy={accountTabs.refreshing || undefined}>
