@@ -92,6 +92,7 @@ export function addClass(draft: EditDraft): EditDraft {
     targetBp: 0,
     byQuestions: false,
     questions: [],
+    questionFacts: [],
     members: [],
     rules: [],
     locked: false,
@@ -128,7 +129,14 @@ export function setSplit(
 
     return on
       ? { ...cls, split: true, members }
-      : { ...cls, split: false, byQuestions: false, questions: [], members };
+      : {
+          ...cls,
+          split: false,
+          byQuestions: false,
+          questions: [],
+          questionFacts: [],
+          members,
+        };
   });
 }
 
@@ -241,11 +249,11 @@ export function overlayDraft(view: Plan, draft: EditDraft): Plan {
       return {
         value: zero,
         question_ideals: false,
-        question_facts: [],
         ...row,
         name: cls.name,
         target_bp: cls.targetBp,
         questions: cls.questions,
+        question_facts: cls.questionFacts,
         rules: cls.rules,
         matched: row?.matched ?? [],
         members: cls.members.map((m) => {

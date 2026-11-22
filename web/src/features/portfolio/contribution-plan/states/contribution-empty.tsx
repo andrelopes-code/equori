@@ -57,6 +57,7 @@ export function ContributionEmpty({ view, onStart }: ContributionEmptyProps) {
           targetBp: 10000,
           byQuestions: false,
           questions: [],
+          questionFacts: [],
           rules: [],
           members: [],
         },

@@ -70,6 +70,7 @@ describe("plan draft", () => {
           targetBp: 6000,
           byQuestions: false,
           questions: [],
+          questionFacts: [],
           rules: [],
           members: [
             { instrument: "PETR4", targetBp: 7000 },
@@ -84,6 +85,7 @@ describe("plan draft", () => {
           targetBp: 4000,
           byQuestions: false,
           questions: [],
+          questionFacts: [],
           rules: [],
           members: [],
         },
@@ -146,6 +148,7 @@ describe("plan draft", () => {
           targetBp: 10000,
           byQuestions: false,
           questions: [],
+          questionFacts: [],
           rules: [],
           members: [{ instrument: "X" }],
         },
@@ -191,9 +194,50 @@ describe("plan draft", () => {
       targetBp: 10000,
       byQuestions: true,
       questions: ["Q1"],
+      questionFacts: [],
       rules: [],
       members: [{ instrument: "PETR4", targetBp: 10000, answers: [true] }],
     });
+  });
+
+  it("copies the facts of the questions", () => {
+    const got = toDraft({
+      ...saved,
+      classes: [
+        {
+          name: "Stocks",
+          target_bp: 10000,
+          value: brl(0),
+          share_bp: 0,
+          questions: ["Q1", "Q2"],
+          question_facts: ["piotroski_p1", ""],
+          question_ideals: true,
+          rules: [],
+          matched: [],
+          members: [],
+        },
+      ],
+    });
+
+    expect(got.classes[0]?.questionFacts).toEqual(["piotroski_p1", ""]);
+  });
+
+  it("sends question_facts when one fact is named and omits it when every entry is empty", () => {
+    const cls = {
+      name: "A",
+      targetBp: 10000,
+      byQuestions: true,
+      questions: ["Q1", "Q2"],
+      rules: [],
+      members: [],
+    };
+    const named = toInput({
+      classes: [{ ...cls, questionFacts: ["piotroski_p1", ""] }],
+    });
+    const plain = toInput({ classes: [{ ...cls, questionFacts: ["", ""] }] });
+
+    expect(named.classes[0]?.question_facts).toEqual(["piotroski_p1", ""]);
+    expect(plain.classes[0]).not.toHaveProperty("question_facts");
   });
 
   it("sends the questions and the answers, without a member target", () => {
@@ -204,6 +248,7 @@ describe("plan draft", () => {
           targetBp: 10000,
           byQuestions: true,
           questions: ["Q1", "Q2"],
+          questionFacts: [],
           rules: [],
           members: [
             { instrument: "X", targetBp: 5000, answers: [true, false] },
@@ -236,6 +281,7 @@ describe("plan draft", () => {
           targetBp: 10000,
           byQuestions: true,
           questions: [],
+          questionFacts: [],
           rules: [],
           members: [{ instrument: "X", targetBp: 5000, answers: [] }],
         },

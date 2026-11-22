@@ -17,7 +17,12 @@ import {
   setByQuestions,
 } from "@/features/portfolio/contribution-plan/model/question-edits";
 
-const plain = { byQuestions: false, questions: [], rules: [] };
+const plain = {
+  byQuestions: false,
+  questions: [],
+  questionFacts: [],
+  rules: [],
+};
 
 const plan = () =>
   startEditing({

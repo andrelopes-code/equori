@@ -94,6 +94,12 @@ export function usePlanEditor(plan: Plan | undefined) {
     addQuestion: (index: number) => {
       change((d) => questions.addQuestion(d, index));
     },
+    addFactQuestions: (
+      index: number,
+      facts: { fact: string; text: string }[],
+    ) => {
+      change((d) => questions.addFactQuestions(d, index, facts));
+    },
     setQuestionText: (index: number, q: number, text: string) => {
       change((d) => questions.setQuestionText(d, index, q, text));
     },

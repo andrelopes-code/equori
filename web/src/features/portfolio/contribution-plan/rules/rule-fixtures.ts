@@ -14,6 +14,7 @@ export const byRuleDraft = (rules: Rule[]): EditDraft => ({
       targetBp: 10000,
       byQuestions: false,
       questions: [],
+      questionFacts: [],
       members: [],
       rules,
       locked: false,

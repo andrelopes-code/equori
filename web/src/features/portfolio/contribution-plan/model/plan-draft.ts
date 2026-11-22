@@ -20,6 +20,8 @@ export interface ClassDraft {
   // The class divides its ideal by the investor's questions (CQ3).
   byQuestions: boolean;
   questions: string[];
+  // One fact key per question, "" for a question the investor answers (FQ1).
+  questionFacts: string[];
   members: MemberDraft[];
   // The conditions of a group by rule (GR1); empty for a group of members.
   rules: Rule[];
@@ -37,6 +39,7 @@ export function toDraft(view: Plan): PlanDraft {
       targetBp: cls.target_bp,
       byQuestions: cls.questions.length > 0,
       questions: cls.questions,
+      questionFacts: cls.question_facts,
       rules: cls.rules,
       members: cls.members.map((m) => ({
         ...(m.account_id === undefined ? {} : { accountId: m.account_id }),
@@ -61,6 +64,9 @@ export function toInput(draft: PlanDraft): Input {
         name: cls.name,
         target_bp: cls.targetBp,
         ...(asked ? { questions: cls.questions } : {}),
+        ...(asked && cls.questionFacts.some((fact) => fact !== "")
+          ? { question_facts: cls.questionFacts }
+          : {}),
         ...(cls.rules.length > 0 ? { rules: cls.rules } : {}),
         members:
           cls.rules.length > 0

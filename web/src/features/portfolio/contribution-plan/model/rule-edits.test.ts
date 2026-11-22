@@ -17,7 +17,12 @@ const inflation = {
 } as const;
 const liquid = { daily_liquidity: true } as const;
 
-const plain = { byQuestions: false, questions: [], rules: [] };
+const plain = {
+  byQuestions: false,
+  questions: [],
+  questionFacts: [],
+  rules: [],
+};
 
 const draft = () =>
   startEditing({
@@ -27,6 +32,7 @@ const draft = () =>
         name: "Ações",
         targetBp: 6000,
         questions: ["Cresce?"],
+        questionFacts: [],
         byQuestions: true,
         members: [
           { instrument: "PETR4", answers: [true] },

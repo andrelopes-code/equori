@@ -46,6 +46,7 @@ export function planFromPortfolio(
       targetBp: shares[i] ?? 0,
       byQuestions: false,
       questions: [],
+      questionFacts: [],
       rules: g.rules,
       members:
         g.rules.length > 0 ? [] : g.entries.map((e) => memberRefOf(e.entry)),

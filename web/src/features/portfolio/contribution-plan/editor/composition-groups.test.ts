@@ -8,7 +8,12 @@ type Plan = components["schemas"]["ContributionPlan"];
 
 const brl = (amount: number) => ({ amount, currency: "BRL" });
 
-const plain = { byQuestions: false, questions: [], rules: [] };
+const plain = {
+  byQuestions: false,
+  questions: [],
+  questionFacts: [],
+  rules: [],
+};
 
 const view = {
   status: "complete",
