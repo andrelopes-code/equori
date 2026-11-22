@@ -51,9 +51,12 @@ export function holdingsColumns({
       ? ""
       : fmt.signed({ amount: amount(value), currency: valueIn }, digits);
   const price = (h: GridHolding) =>
-    h.position?.prices?.find((p) => p.instrument === h.code);
+    units(h)?.prices?.find((p) => p.instrument === h.code);
   const oldest = (h: GridHolding) =>
     h.position?.prices?.map((p) => p.date).sort()[0];
+  // FC13: a fixed income title holds units at 1.00 at issue; its quantity repeats its cost.
+  const units = (h: GridHolding) =>
+    h.type === "fixed_income" ? undefined : h.position;
 
   return [
     {
@@ -83,34 +86,37 @@ export function holdingsColumns({
     {
       id: "quantity",
       label: t("positions.quantity"),
-      accessor: (h) => h.position?.quantity.amount ?? null,
+      accessor: (h) => units(h)?.quantity.amount ?? null,
       kind: "number",
       numeric: true,
       width: 120,
-      format: (_value, h) =>
-        h.position === undefined
+      format: (_value, h) => {
+        const p = units(h);
+
+        return p === undefined
           ? ""
-          : fmt.number(
-              h.position.quantity,
-              scale(h.position.quantity.currency),
-            ),
+          : fmt.number(p.quantity, scale(p.quantity.currency));
+      },
     },
     {
       id: "averageCost",
       label: t("positions.averageCost"),
-      accessor: (h) => Number(h.position?.average_cost ?? 0) || null,
+      accessor: (h) => Number(units(h)?.average_cost ?? 0) || null,
       kind: "number",
       numeric: true,
       width: 130,
-      format: (_value, h) =>
-        h.position === undefined
+      format: (_value, h) => {
+        const p = units(h);
+
+        return p === undefined
           ? ""
           : averageCostText(
               fmt,
-              h.position.average_cost,
-              h.position.cost_basis.currency,
-              scale(h.position.cost_basis.currency),
-            ),
+              p.average_cost,
+              p.cost_basis.currency,
+              scale(p.cost_basis.currency),
+            );
+      },
     },
     {
       id: "cost",
