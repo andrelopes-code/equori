@@ -14,8 +14,9 @@ interface SourceStepsProps {
   running: boolean;
 }
 
-// Workaround for Slotted issue #113: MessageActivityStep has no icon slot, so the steps are an
-// own element. Families read: typography.
+// Workaround for Slotted issue #113: MessageActivity always frames its steps, which breaks the rail
+// of the turn, so the steps are an own element (owner decision of 2026-11-23). Families read:
+// message, typography.
 export function SourceSteps({ entries, running }: SourceStepsProps) {
   return (
     <ol className={styles.steps}>

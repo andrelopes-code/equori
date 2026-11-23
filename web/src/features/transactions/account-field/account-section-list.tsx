@@ -22,12 +22,8 @@ interface AccountSectionListProps {
   expandOther?: boolean;
 }
 
-// Families read: listbox (groups, options with renderOption, columns), radio-group, card. The
-// listbox keeps the roles, the arrow keys across groups and the chosen state, but it cannot
-// draw a bordered row with a gap and a chosen edge through props or tokens, and its `columns`
-// is one value for every group, so rows and a two-column grid of cards cannot share one list.
-// Workaround for Slotted issue #95: the option edge, the gap between options and the chosen
-// edge have no token. Workaround for Slotted issue #94: a group has no column count of its own.
+// Build-own-element. Families read: listbox, radio-group, card. The listbox holds groups with
+// their own columns, but no group that folds, and the block of the other accounts is one.
 // The sections of cards draw AccountCardOption, two across, and the others AccountRow.
 // The section "other" is a Collapsible, closed unless a search is active or it holds the
 // chosen account; its options join the arrow navigation only while it is open.
