@@ -1,9 +1,24 @@
 /* The toolbar, the menus, the tooltips and the dialogs of Univer are its own elements, many of
-   them placed in the document body, outside the editor. They take the typeface of the
-   application; without this rule they take the default of the browser, a serif face. Univer
-   prefixes each of its classes with "univer-". */
+   them placed in the document body, outside the editor. Univer prefixes each of its classes
+   with "univer-" and marks its own rules as important, so the rules below are important too.
+   Its colours come from the theme (univer-theme.ts); this file gives its elements the
+   typeface, the corners and the shadows of the application. */
 @layer app {
   [class*="univer-"] {
     font-family: var(--slotted-font-family-sans);
+  }
+
+  /* A menu, a popover and a dialog: Univer gives each of them the class of a shadow that its
+     build leaves without a colour, so they stood flat on the page. */
+  [class*="univer-shadow-md"],
+  [class*="univer-shadow-lg"] {
+    border-radius: var(--slotted-radius-lg) !important;
+    box-shadow: var(--slotted-shadow-lg) !important;
+  }
+
+  /* A tooltip is a small label: the lighter shadow, the corner of a control. */
+  [class*="univer-"][role="tooltip"] {
+    border-radius: var(--slotted-radius-md) !important;
+    box-shadow: var(--slotted-shadow-md) !important;
   }
 }

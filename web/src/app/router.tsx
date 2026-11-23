@@ -103,7 +103,11 @@ import {
   SettingsPage,
   validateSettingsSearch,
 } from "@/features/setup";
-import { SpreadsheetPage, SpreadsheetsPage } from "@/features/spreadsheets";
+import {
+  preloadSpreadsheetEditor,
+  SpreadsheetPage,
+  SpreadsheetsPage,
+} from "@/features/spreadsheets";
 import { StartPage } from "@/features/start";
 import {
   CapturePage,
@@ -486,12 +490,16 @@ const calculatorRoute = createRoute({
 const spreadsheetsRoute = createRoute({
   getParentRoute: () => authedRoute,
   path: "spreadsheets",
+  // The editor is megabytes of script: its request starts with the list, and with the pointer
+  // over the destination, so a spreadsheet opens without waiting for it.
+  loader: preloadSpreadsheetEditor,
   component: SpreadsheetsPage,
 });
 
 const spreadsheetRoute = createRoute({
   getParentRoute: () => authedRoute,
   path: "spreadsheets/$id",
+  loader: preloadSpreadsheetEditor,
   component: SpreadsheetPage,
 });
 

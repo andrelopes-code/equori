@@ -63,7 +63,7 @@ export async function createEditor(options: EditorOptions): Promise<Editor> {
   const { univer, univerAPI } = createUniver({
     locale,
     locales: { [locale]: pack },
-    theme: univerTheme(options.container),
+    theme: univerTheme(options.container, options.dark),
     darkMode: options.dark,
     logLevel: LogLevel.ERROR,
     presets: [
@@ -125,6 +125,8 @@ export async function createEditor(options: EditorOptions): Promise<Editor> {
       };
     },
     setDark: (dark) => {
+      // The tokens the theme is mixed from follow the scheme.
+      univerAPI.setTheme(univerTheme(options.container, dark));
       univerAPI.toggleDarkMode(dark);
     },
     dispose: () => {

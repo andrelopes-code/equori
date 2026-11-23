@@ -18,7 +18,46 @@ const slottedReactDOM: Plugin = {
 
 export default defineConfig({
   plugins: [react(), tailwindcss(), slottedReactDOM],
-  optimizeDeps: { rolldownOptions: { plugins: [slottedReactDOM] } },
+  optimizeDeps: {
+    // The spreadsheet editor is imported on demand, so the dev server would find its packages
+    // on the first opening of a spreadsheet, bundle them then and reload the page. Listed here,
+    // they are bundled when the server starts.
+    include: [
+      "@univerjs/presets",
+      "@univerjs/preset-sheets-core",
+      "@univerjs/preset-sheets-conditional-formatting",
+      "@univerjs/preset-sheets-data-validation",
+      "@univerjs/preset-sheets-drawing",
+      "@univerjs/preset-sheets-filter",
+      "@univerjs/preset-sheets-find-replace",
+      "@univerjs/preset-sheets-hyper-link",
+      "@univerjs/preset-sheets-note",
+      "@univerjs/preset-sheets-sort",
+      "@univerjs/preset-sheets-table",
+      "@univerjs/preset-sheets-core/locales/en-US",
+      "@univerjs/preset-sheets-core/locales/pt-BR",
+      "@univerjs/preset-sheets-conditional-formatting/locales/en-US",
+      "@univerjs/preset-sheets-conditional-formatting/locales/pt-BR",
+      "@univerjs/preset-sheets-data-validation/locales/en-US",
+      "@univerjs/preset-sheets-data-validation/locales/pt-BR",
+      "@univerjs/preset-sheets-drawing/locales/en-US",
+      "@univerjs/preset-sheets-drawing/locales/pt-BR",
+      "@univerjs/preset-sheets-filter/locales/en-US",
+      "@univerjs/preset-sheets-filter/locales/pt-BR",
+      "@univerjs/preset-sheets-find-replace/locales/en-US",
+      "@univerjs/preset-sheets-find-replace/locales/pt-BR",
+      "@univerjs/preset-sheets-hyper-link/locales/en-US",
+      "@univerjs/preset-sheets-hyper-link/locales/pt-BR",
+      "@univerjs/preset-sheets-note/locales/en-US",
+      "@univerjs/preset-sheets-note/locales/pt-BR",
+      "@univerjs/preset-sheets-sort/locales/en-US",
+      "@univerjs/preset-sheets-sort/locales/pt-BR",
+      "@univerjs/preset-sheets-table/locales/en-US",
+      "@univerjs/preset-sheets-table/locales/pt-BR",
+      "fflate",
+    ],
+    rolldownOptions: { plugins: [slottedReactDOM] },
+  },
   // tsconfig.json paths are the single definition of the @/ alias.
   resolve: { tsconfigPaths: true },
   server: {

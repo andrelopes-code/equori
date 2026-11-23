@@ -1,12 +1,14 @@
 @layer app {
-  /* The editor is the content of its page: it runs from edge to edge under the rule
-     of the header. */
+  /* The editor is the content of its page: it runs from edge to edge of the page, on
+     the ground of the page, under one line that spans the whole width. */
   .frame {
     position: relative;
+    /* The line counts in the height: a box one pixel taller than the page would scroll it. */
+    box-sizing: border-box;
     block-size: 100%;
-    min-block-size: 24rem;
+    min-block-size: 0;
     overflow: hidden;
-    background: var(--slotted-surface-raised);
+    border-block-start: 1px solid var(--slotted-border-subtle);
   }
 
   .host {

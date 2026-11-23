@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { SpreadsheetContent } from "@/features/spreadsheets/api";
 import { useChartTexts } from "@/features/spreadsheets/charts/use-chart-texts";
 import type { Editor } from "@/features/spreadsheets/editor/create-editor";
+import { loadEditor } from "@/features/spreadsheets/editor/load-editor";
 import styles from "@/features/spreadsheets/editor/spreadsheet-editor.module.css";
 import { useAppLocaleState, useT } from "@/i18n/i18n-provider";
 import { useScheme } from "@/theme/scheme";
@@ -34,6 +35,7 @@ export function SpreadsheetEditor({
   const [scheme] = useScheme();
   const host = useRef<HTMLDivElement>(null);
   const editor = useRef<Editor | null>(null);
+  const drawnDark = useRef(false);
   const [state, setState] = useState<"loading" | "ready" | Error>("loading");
   const [attempt, setAttempt] = useState(0);
   const texts = useChartTexts();
@@ -46,6 +48,7 @@ export function SpreadsheetEditor({
     if (container === null) return;
 
     let left = false;
+    const dark = isDark();
 
     loadEditor()
       .then(({ createEditor }) =>
@@ -53,7 +56,7 @@ export function SpreadsheetEditor({
           container,
           content,
           editable,
-          dark: isDark(),
+          dark,
           language,
           localeTag: tag,
           chartTexts: texts,
@@ -67,6 +70,7 @@ export function SpreadsheetEditor({
         }
 
         editor.current = created;
+        drawnDark.current = dark;
         open(created);
         setState("ready");
       })
@@ -87,7 +91,13 @@ export function SpreadsheetEditor({
   }, [content, editable, language, tag, texts, attempt, change, open, close]);
 
   useEffect(() => {
-    editor.current?.setDark(isDark());
+    const dark = isDark();
+
+    // An editor opens in the scheme in force; only a later change of scheme is applied.
+    if (editor.current !== null && drawnDark.current !== dark) {
+      drawnDark.current = dark;
+      editor.current.setDark(dark);
+    }
   }, [scheme, state]);
 
   if (state instanceof Error)
@@ -115,22 +125,4 @@ export function SpreadsheetEditor({
 // The scheme in force on the document, after "system" is resolved.
 function isDark(): boolean {
   return document.documentElement.dataset.slottedScheme === "dark";
-}
-
-type EditorModule =
-  typeof import("@/features/spreadsheets/editor/create-editor");
-
-let editorModule: Promise<EditorModule> | undefined;
-
-// The chunk of the editor, requested once. A failed request is forgotten, so the next opening
-// asks again.
-function loadEditor(): Promise<EditorModule> {
-  editorModule ??= import("@/features/spreadsheets/editor/create-editor").catch(
-    (caught: unknown) => {
-      editorModule = undefined;
-      throw caught;
-    },
-  );
-
-  return editorModule;
 }

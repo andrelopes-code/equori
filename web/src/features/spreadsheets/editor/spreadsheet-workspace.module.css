@@ -5,7 +5,11 @@
     --slotted-page-padding-block: 0;
   }
 
+  /* The rule of the header would end at the inset, short of the editor under it; the editor
+     draws the line instead, over the whole width. */
   .header {
+    --slotted-border-subtle: transparent;
+
     padding-inline: var(--slotted-space-9);
   }
 

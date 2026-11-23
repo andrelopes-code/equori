@@ -84,7 +84,14 @@ export function SpreadsheetWorkspace({
   }
 
   return (
-    <Page className={styles.page} width="full" fill scroll="self" inset={0}>
+    <Page
+      className={styles.page}
+      // bleed: the column of "full" stops at a measure, and the editor takes every pixel.
+      width="bleed"
+      fill
+      scroll="self"
+      inset={0}
+    >
       <div className={styles.header}>
         <WorkspaceHeader
           name={name}
