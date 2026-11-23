@@ -380,13 +380,13 @@ for (const [name, selector, property] of pinnedCells) {
 // band over a header at 6% (owner review of 2026-11-21).
 test("a table caption inside a dialog or a drawer takes the header's tone", () => {
   const block =
-    /:is\([^{]*data-part="content"[^{]*data-mode="overlay"[^{]*\) \[data-ui="table"\] \[data-part="caption"\] \{([^}]*)\}/.exec(
+    /:is\([^{]*data-part="content"[^{]*data-mode="overlay"[^{]*\) \[data-ui="table"\] \{([^}]*--slotted-table-caption-surface[^}]*)\}/.exec(
       css,
     );
   assert.ok(block, "no overlay rule for the caption");
   assert.match(
     block[1] ?? "",
-    /background-color: color-mix\(in oklab, var\(--slotted-text\) 3%, transparent\)/,
+    /--slotted-table-caption-surface: color-mix\(in oklab, var\(--slotted-text\) 3%, transparent\)/,
   );
 });
 
@@ -394,13 +394,13 @@ test("a table caption inside a dialog or a drawer takes the header's tone", () =
 // table with a pinned header takes the header's own value.
 test("a table caption above a pinned header takes the header's value", () => {
   const block =
-    /:is\([^{]*data-part="content"[^{]*data-mode="overlay"[^{]*\) \[data-ui="table"\]\[data-sticky-header\] \[data-part="caption"\] \{([^}]*)\}/.exec(
+    /:is\([^{]*data-part="content"[^{]*data-mode="overlay"[^{]*\) \[data-ui="table"\]\[data-sticky-header\] \{([^}]*)\}/.exec(
       css,
     );
   assert.ok(block, "no overlay rule for the caption of a pinned header");
   assert.match(
     block[1] ?? "",
-    /background-color: color-mix\(in oklab, var\(--slotted-text\) 6%, var\(--slotted-surface-raised\)\)/,
+    /--slotted-table-caption-surface: color-mix\(in oklab, var\(--slotted-text\) 6%, var\(--slotted-surface-raised\)\)/,
   );
 });
 

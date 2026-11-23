@@ -8,13 +8,12 @@ const css = readFileSync(
 );
 
 const table = '[data-ui="table"]';
-const inset = '[data-ui="table"][data-edges="inset"]';
 
-test("a pinned body cell paints nothing and blurs only while content passes under it", () => {
+test("a pinned body cell takes no sticky fill and blurs only while content passes under it", () => {
   assert.match(
     css,
     new RegExp(
-      String.raw`@supports \(container-type: scroll-state\) \{[^@]*${escape(table)} \[data-part="body"\] \[data-sticky="end"\],[^{]*\{\s*background: transparent;`,
+      String.raw`@supports \(container-type: scroll-state\) \{[^@]*${escape(table)} \[data-part="body"\] \[data-sticky="end"\],[^{]*\{\s*--slotted-table-sticky-surface: transparent;`,
     ),
   );
   for (const side of ["end", "start"]) {
@@ -36,31 +35,10 @@ test("a pinned body cell takes the card's opaque fill without transparency", () 
   );
 });
 
-test("the scroller of an inset table with a group row is an inline-size container", () => {
+test("the scroller of a table with a group row is a scroll-state container of its inline size", () => {
   assert.match(
     css,
-    new RegExp(
-      String.raw`${escape(inset)}:has\(\[data-part="group-row"\]\) \[data-part="scroll"\] \{\s*container-type: inline-size;`,
-    ),
-  );
-  assert.match(
-    css,
-    /@supports \(container-type: scroll-state\) \{[^@]*:has\(\[data-part="group-row"\]\) \[data-part="scroll"\] \{\s*container-type: inline-size scroll-state;/,
-  );
-});
-
-test("the content of a group band stays in the scroller's view and holds the cell padding", () => {
-  assert.match(
-    css,
-    new RegExp(
-      String.raw`${escape(inset)} \[data-part="group-header"\] \{\s*padding-inline: 0;`,
-    ),
-  );
-  assert.match(
-    css,
-    new RegExp(
-      String.raw`${escape(inset)} \[data-part="group-content"\] \{\s*position: sticky;\s*inset-inline-start: 0;\s*box-sizing: border-box;\s*inline-size: 100cqi;\s*padding-inline: var\(--slotted-table-cell-padding-inline`,
-    ),
+    /@supports \(container-type: scroll-state\) \{[^@]*\[data-part="scroll"\]:has\(\[data-part="group-row"\]\) \{\s*container-type: inline-size scroll-state;/,
   );
 });
 

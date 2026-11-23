@@ -1993,12 +1993,12 @@
       --slotted-table-sticky-surface: color-mix(in oklab, var(--slotted-text) 6%, var(--slotted-surface-raised));
     }
 
-    :is([data-ui="dialog"] > [data-part="viewport"] > [data-part="content"]:not(:has(> [data-ui="command-palette"])), [data-ui="drawer"][data-mode="overlay"] > [data-part="panel"]) [data-ui="table"] [data-part="caption"] {
-      background-color: color-mix(in oklab, var(--slotted-text) 3%, transparent);
+    :is([data-ui="dialog"] > [data-part="viewport"] > [data-part="content"]:not(:has(> [data-ui="command-palette"])), [data-ui="drawer"][data-mode="overlay"] > [data-part="panel"]) [data-ui="table"] {
+      --slotted-table-caption-surface: color-mix(in oklab, var(--slotted-text) 3%, transparent);
     }
 
-    :is([data-ui="dialog"] > [data-part="viewport"] > [data-part="content"]:not(:has(> [data-ui="command-palette"])), [data-ui="drawer"][data-mode="overlay"] > [data-part="panel"]) [data-ui="table"][data-sticky-header] [data-part="caption"] {
-      background-color: color-mix(in oklab, var(--slotted-text) 6%, var(--slotted-surface-raised));
+    :is([data-ui="dialog"] > [data-part="viewport"] > [data-part="content"]:not(:has(> [data-ui="command-palette"])), [data-ui="drawer"][data-mode="overlay"] > [data-part="panel"]) [data-ui="table"][data-sticky-header] {
+      --slotted-table-caption-surface: color-mix(in oklab, var(--slotted-text) 6%, var(--slotted-surface-raised));
     }
 
     [data-ui="button"][data-tone="danger"]:is([data-variant="outline"], [data-variant="ghost"]):hover:not(:disabled):not([data-disabled]):not([data-loading]) {
@@ -2079,7 +2079,6 @@
       --glass-fill-frost: color-mix(in oklab, var(--slotted-surface) var(--glass-alpha-frost), transparent);
       --glass-fill-modal: color-mix(in oklab, var(--slotted-surface-raised) var(--glass-alpha-modal), transparent);
       --glass-ring: color-mix(in oklab, var(--glass-light) var(--glass-edge), transparent);
-      --glass-ring-lit: color-mix(in oklab, var(--glass-light) 16.3%, transparent);
       --glass-lit: inset 0 1px 0 color-mix(in oklab, var(--glass-light) var(--glass-top), transparent);
       --glass-shadow-1: 0 0 0 0.5px color-mix(in oklab, var(--glass-shade) 55%, transparent), var(--glass-lit), 0 1px 2px 0 color-mix(in oklab, var(--glass-shade) 30%, transparent), 0 6px 14px -6px color-mix(in oklab, var(--glass-shade) 50%, transparent);
       --glass-shadow-2: 0 0 0 0.5px color-mix(in oklab, var(--glass-shade) 55%, transparent), var(--glass-lit), 0 2px 4px 0 color-mix(in oklab, var(--glass-shade) 20%, transparent), 0 18px 40px -18px color-mix(in oklab, var(--glass-shade) 62%, transparent);
@@ -2135,35 +2134,20 @@
 
     &[data-slotted-scheme="dark"] [data-ui="collapsible"] {
       --slotted-collapsible-surface: var(--glass-fill-card);
-    }
-
-    &[data-slotted-scheme="dark"] [data-ui="collapsible"][data-variant="framed"] {
-      --glass-lit: 0 0 transparent;
-      border-color: var(--glass-ring);
-      border-block-start-color: var(--glass-ring-lit);
-      box-shadow: var(--glass-shadow-1);
+      --slotted-collapsible-border-color: var(--glass-ring);
+      --slotted-collapsible-shadow: var(--glass-shadow-1);
     }
 
     &[data-slotted-scheme="dark"] [data-ui="accordion"] {
       --slotted-accordion-surface: var(--glass-fill-card);
-    }
-
-    &[data-slotted-scheme="dark"] [data-ui="accordion"][data-variant="framed"] {
-      --glass-lit: 0 0 transparent;
-      border-color: var(--glass-ring);
-      border-block-start-color: var(--glass-ring-lit);
-      box-shadow: var(--glass-shadow-1);
+      --slotted-accordion-border-color: var(--glass-ring);
+      --slotted-accordion-shadow: var(--glass-shadow-1);
     }
 
     &[data-slotted-scheme="dark"] [data-ui="toolbar"] {
       --slotted-toolbar-background: var(--glass-fill-card);
-    }
-
-    &[data-slotted-scheme="dark"] [data-ui="toolbar"][data-variant="outline"] {
-      --glass-lit: 0 0 transparent;
-      border-color: var(--glass-ring);
-      border-block-start-color: var(--glass-ring-lit);
-      box-shadow: var(--glass-shadow-1);
+      --slotted-toolbar-border-color: var(--glass-ring);
+      --slotted-toolbar-shadow: var(--glass-shadow-1);
     }
 
     &[data-slotted-scheme="dark"] [data-ui="dashboard-grid"] {
@@ -2455,10 +2439,12 @@
       background-color: var(--glass-fill-sticky);
     }
 
+    &[data-slotted-scheme="dark"] [data-ui="table"][data-sticky-header] {
+      --slotted-table-header-backdrop-filter: blur(var(--glass-blur-strong)) saturate(100%);
+    }
+
     &[data-slotted-scheme="dark"] [data-ui="table"][data-sticky-header] [data-part="column-header"] {
       background-color: transparent;
-      -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(100%);
-      backdrop-filter: blur(var(--glass-blur-strong)) saturate(100%);
     }
 
     &[data-slotted-scheme="dark"] [data-ui="data-grid"] {
@@ -2498,7 +2484,7 @@
     @supports (container-type: scroll-state) {
       &[data-slotted-scheme="dark"] [data-ui="table"] [data-part="body"] [data-sticky="end"],
       &[data-slotted-scheme="dark"] [data-ui="table"] [data-part="body"] [data-sticky="start"] {
-        background: transparent;
+        --slotted-table-sticky-surface: transparent;
       }
     }
 
@@ -2525,26 +2511,10 @@
       }
     }
 
-    &[data-slotted-scheme="dark"] [data-ui="table"][data-edges="inset"]:has([data-part="group-row"]) [data-part="scroll"] {
-      container-type: inline-size;
-    }
-
     @supports (container-type: scroll-state) {
-      &[data-slotted-scheme="dark"] [data-ui="table"][data-edges="inset"]:has([data-part="group-row"]) [data-part="scroll"] {
+      &[data-slotted-scheme="dark"] [data-ui="table"] [data-part="scroll"]:has([data-part="group-row"]) {
         container-type: inline-size scroll-state;
       }
-    }
-
-    &[data-slotted-scheme="dark"] [data-ui="table"][data-edges="inset"] [data-part="group-header"] {
-      padding-inline: 0;
-    }
-
-    &[data-slotted-scheme="dark"] [data-ui="table"][data-edges="inset"] [data-part="group-content"] {
-      position: sticky;
-      inset-inline-start: 0;
-      box-sizing: border-box;
-      inline-size: 100cqi;
-      padding-inline: var(--slotted-table-cell-padding-inline, var(--slotted-control-padding-inline-md, 13px));
     }
 
     @media (max-width: 599px), (pointer: coarse) {
@@ -2621,7 +2591,6 @@
       }
 
       &[data-slotted-scheme="dark"] [data-ui="dashboard-grid"][data-editing] [data-part="widget"] > [data-ui="card"],
-      &[data-slotted-scheme="dark"] [data-ui="table"][data-sticky-header] [data-part="column-header"],
       &[data-slotted-scheme="dark"] [data-ui="section"][data-sticky] > [data-part="header"],
       &[data-slotted-scheme="dark"] [data-ui="section"][data-sticky] > [data-part="header"]::before,
       &[data-slotted-scheme="dark"] [data-ui="data-grid"] > [data-part="scroll"] > [data-part="head"],
@@ -2633,6 +2602,10 @@
 
       &[data-slotted-scheme="dark"] [data-ui="section"][data-sticky] > [data-part="header"]::before {
         background-color: var(--slotted-surface);
+      }
+
+      &[data-slotted-scheme="dark"] [data-ui="table"][data-sticky-header] {
+        --slotted-table-header-backdrop-filter: none;
       }
 
       &[data-slotted-scheme="dark"] [data-ui="table"][data-sticky-header] [data-part="column-header"] {

@@ -252,7 +252,11 @@ test("a chart's table view is glass and its header is opaque", () => {
 test("a table's sticky header has no fill and blurs what passes under it", () => {
   assert.match(
     glassOnly,
-    /\[data-ui="table"\]\[data-sticky-header\] \[data-part="column-header"\] \{\s*background-color: transparent;[^}]*backdrop-filter: blur\(var\(--glass-blur-strong\)\) saturate\(100%\)/,
+    /\[data-ui="table"\]\[data-sticky-header\] \{\s*--slotted-table-header-backdrop-filter: blur\(var\(--glass-blur-strong\)\) saturate\(100%\)/,
+  );
+  assert.match(
+    glassOnly,
+    /\[data-ui="table"\]\[data-sticky-header\] \[data-part="column-header"\] \{\s*background-color: transparent;/,
   );
 });
 
@@ -310,29 +314,20 @@ test("every raised surface of a family the application uses is glass", () => {
   assert.deepEqual(opaque, []);
 });
 
-// The card draws its hairline over the box and the lit line under it. A frame is a real border: its
-// top side carries both lines, and its shadow carries no lit line of its own.
-test("a framed region draws the top edge of a card", () => {
-  for (const selector of [
-    '[data-ui="collapsible"][data-variant="framed"]',
-    '[data-ui="accordion"][data-variant="framed"]',
-    '[data-ui="toolbar"][data-variant="outline"]',
-  ]) {
-    const body = glassOnly.split(`${selector} {`)[1]?.split("}")[0] ?? "";
-
-    assert.match(body, /--glass-lit: 0 0 transparent;/, selector);
-    assert.match(body, /border-color: var\(--glass-ring\);/, selector);
+// A framed region reads the card's edge and lift.
+test("a framed region draws the edge of a card", () => {
+  for (const name of ["collapsible", "accordion", "toolbar"]) {
     assert.match(
-      body,
-      /border-block-start-color: var\(--glass-ring-lit\);/,
-      selector,
+      glassOnly,
+      new RegExp(`--slotted-${name}-border-color: var\\(--glass-ring\\);`),
+      name,
+    );
+    assert.match(
+      glassOnly,
+      new RegExp(`--slotted-${name}-shadow: var\\(--glass-shadow-1\\);`),
+      name,
     );
   }
-
-  assert.match(
-    glassOnly,
-    /--glass-ring-lit: color-mix\(in oklab, var\(--glass-light\) 16\.3%, transparent\)/,
-  );
 });
 
 // The dialog's content is painted by a selector that leaves the command palette out.

@@ -3,7 +3,12 @@
 import type { Block, Declarations } from "./css.ts";
 import { family, media, noBlur, rule } from "./css.ts";
 import { ROLES } from "./material.ts";
-import { blurredBars, stuckFill, tableHeadCell } from "./sticky.ts";
+import {
+  blurredBars,
+  stickyTable,
+  stuckFill,
+  tableHeadCell,
+} from "./sticky.ts";
 import { blurred, blurTokens, scope } from "./surfaces.ts";
 
 const opaque: Declarations = Object.fromEntries(
@@ -17,6 +22,7 @@ export const fallbackRules: readonly Block[] = [
     // A stuck header has no fill of its own, so without its blur it takes a solid one.
     rule(stuckFill, { "background-color": "var(--slotted-surface)" }),
     // A table header has no fill of its own either; the card it sits on is opaque here.
+    rule(stickyTable, { "--slotted-table-header-backdrop-filter": "none" }),
     rule(tableHeadCell, {
       "background-color": "var(--slotted-surface-raised)",
     }),

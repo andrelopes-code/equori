@@ -1993,12 +1993,12 @@
       --slotted-table-sticky-surface: color-mix(in oklab, var(--slotted-text) 6%, var(--slotted-surface-raised));
     }
 
-    :is([data-ui="dialog"] > [data-part="viewport"] > [data-part="content"]:not(:has(> [data-ui="command-palette"])), [data-ui="drawer"][data-mode="overlay"] > [data-part="panel"]) [data-ui="table"] [data-part="caption"] {
-      background-color: color-mix(in oklab, var(--slotted-text) 3%, transparent);
+    :is([data-ui="dialog"] > [data-part="viewport"] > [data-part="content"]:not(:has(> [data-ui="command-palette"])), [data-ui="drawer"][data-mode="overlay"] > [data-part="panel"]) [data-ui="table"] {
+      --slotted-table-caption-surface: color-mix(in oklab, var(--slotted-text) 3%, transparent);
     }
 
-    :is([data-ui="dialog"] > [data-part="viewport"] > [data-part="content"]:not(:has(> [data-ui="command-palette"])), [data-ui="drawer"][data-mode="overlay"] > [data-part="panel"]) [data-ui="table"][data-sticky-header] [data-part="caption"] {
-      background-color: color-mix(in oklab, var(--slotted-text) 6%, var(--slotted-surface-raised));
+    :is([data-ui="dialog"] > [data-part="viewport"] > [data-part="content"]:not(:has(> [data-ui="command-palette"])), [data-ui="drawer"][data-mode="overlay"] > [data-part="panel"]) [data-ui="table"][data-sticky-header] {
+      --slotted-table-caption-surface: color-mix(in oklab, var(--slotted-text) 6%, var(--slotted-surface-raised));
     }
 
     [data-ui="button"][data-tone="danger"]:is([data-variant="outline"], [data-variant="ghost"]):hover:not(:disabled):not([data-disabled]):not([data-loading]) {
