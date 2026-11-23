@@ -14,9 +14,6 @@ interface InstrumentNameProps {
 // an ellipsis, the whole name in its title; the code never shrinks.
 export function InstrumentName({ code, name }: InstrumentNameProps) {
   return (
-    // Workaround for Slotted issue #117: an explicit align="center" writes data-align, which the
-    // data grid's cell rule also centers along the row; the default align keeps the items centered
-    // across the row without it.
     <Inline gap={2} wrap="nowrap">
       <Text size="sm" truncate title={name} className={styles.name}>
         <AppLink
