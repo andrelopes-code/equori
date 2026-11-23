@@ -140,13 +140,6 @@ test("a raised toast and the palette are materials over the page", () => {
   );
 });
 
-test("a group label of the palette adds no second layer over the material", () => {
-  assert.match(
-    css,
-    /\[data-ui="command-palette"\] \[data-part="group-label"\] \{\s*background: transparent;\s*position: static;/,
-  );
-});
-
 test("a tag keeps its height and stands its text 2 px further from each side", () => {
   assert.match(
     css,
@@ -206,31 +199,28 @@ test("a section inside a card keeps its bar clear of the card's edge", () => {
 
 test("a section sets its description tight under the title and the body clear of both", () => {
   assert.match(css, /--slotted-section-gap: var\(--slotted-space-6\)/);
-  assert.match(
-    css,
-    /\[data-ui="section"\] > \[data-part="header"\] > \[data-part="title"\] > \[data-part="description"\]\s*\{[^}]*margin-block-start: 0/,
-  );
-});
-
-test("section actions of a titled description do not size the rows of the title", () => {
-  const header =
-    '\\[data-ui="section"\\] > \\[data-part="header"\\]:has\\(> \\[data-part="title"\\] > \\[data-part="description"\\]\\)';
-  assert.match(
-    css,
-    new RegExp(`${header}\\s*\\{[^}]*grid-template-rows: 1fr auto auto`),
-  );
-  assert.match(
-    css,
-    new RegExp(
-      `${header} > \\[data-part="actions"\\]\\s*\\{[^}]*grid-row: 1 / span 3[^}]*align-self: center`,
-    ),
-  );
+  assert.equal(components["--slotted-section-description-gap"], "0");
 });
 
 test("a card header keeps no gap between its title and its description", () => {
   assert.equal(components["--slotted-card-header-gap"], "0");
   assert.equal(components["--slotted-list-item-body-gap"], "0");
   assert.equal(components["--slotted-stepper-description-gap"], "0");
+});
+
+test("the dark ink of a status follows its seed", () => {
+  assert.doesNotMatch(
+    css,
+    /--slotted-tone-(success|info|warning|danger)-(text|border): #/,
+  );
+});
+
+test("the help of a widget stands on the baseline of its title", () => {
+  assert.match(css, /\[data-part="title-row"\] \{\s*align-items: baseline;/);
+  assert.match(
+    css,
+    /\[data-part="title-row"\] > \[data-part="help"\] \{[^}]*round\(1cap, 1px\) \+ 4px[^}]*inset-block-start: 2px;/,
+  );
 });
 
 test("a chart header keeps no gap between its title and its description", () => {

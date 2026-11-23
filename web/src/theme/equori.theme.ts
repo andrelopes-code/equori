@@ -76,45 +76,10 @@ const sectionRule = `
 }
 `;
 
-// Workaround for Slotted issue #98: the description keeps a fixed 2 px margin under the title,
-// and with the line boxes the title and the description stood 7 px apart, close to the 11 px of
-// the body. The margin goes, and the description sits at the title's line box.
-const sectionDescriptionRule = `
-[data-ui="section"] > [data-part="header"] > [data-part="title"] > [data-part="description"] {
-  margin-block-start: 0;
-}
-`;
-
-// Workaround for Slotted issue #100: the actions of a section stand in the row of the heading, so
-// their height sets the distance to the description (15 px with none, 39 px beside 64 px). The
-// actions span the three rows and the first row, empty, is the flexible one that takes their
-// height: the title and its description keep one distance beside any actions.
-const sectionActionsRule = `
-[data-ui="section"] > [data-part="header"]:has(> [data-part="title"] > [data-part="description"]) {
-  grid-template-rows: 1fr auto auto;
-}
-
-[data-ui="section"] > [data-part="header"]:has(> [data-part="title"] > [data-part="description"]) > [data-part="actions"] {
-  grid-row: 1 / span 3;
-  align-self: center;
-}
-`;
-
 // A light palette dims the page less: the material already sets it apart.
 const paletteScrimRule = `
 &[data-slotted-scheme="light"] [data-ui="dialog"]:has([data-ui="command-palette"]) {
   --slotted-dialog-scrim: color-mix(in srgb, var(--slotted-scrim) 30%, transparent);
-}
-`;
-
-// Workaround for Slotted issue #83: the group label paints the panel's surface a second time, and
-// over the translucent material the two layers read as a lighter band. A fill that matches the
-// material cannot be set from outside (the page behind varies), and a blur lightens the band
-// again, so the label keeps no fill and scrolls with its rows instead of sticking above them.
-const paletteGroupLabelRule = `
-[data-ui="command-palette"] [data-part="group-label"] {
-  background: transparent;
-  position: static;
 }
 `;
 
@@ -130,31 +95,6 @@ const indigoKept = (token: string, offset: number, scale: number) => {
   return { ...derivation, l: { offset }, c: { scale, max: 0.25 }, h: 0 };
 };
 
-// Slotted 0.1.0-beta.36 caps the dark ink of success, info and warning at its reference. The inks
-// keep the values of 0.1.0-beta.35 until the owner compares the two in the app.
-const heldInk = (token: string, offset: number, scale: number) => {
-  const derivation = defaultDark[token];
-  if (!derivation || !("seed" in derivation))
-    throw new Error(`${token} is not a seed derivation`);
-  return { ...derivation, l: { offset }, c: { scale, max: 0.25 } };
-};
-
-const heldInks = Object.fromEntries(
-  ["text", "border"].flatMap((part) =>
-    (
-      [
-        ["success", 0.273, 1.328],
-        ["info", 0.226, 0.66],
-        ["warning", 0, 1],
-      ] as const
-    ).map(([tone, offset, scale]) => {
-      const token = `--slotted-tone-${tone}-${part}`;
-
-      return [token, heldInk(token, offset, scale)];
-    }),
-  ),
-);
-
 // The cap leaves room for a saturated tone (settings, appearance): at 0.03 a red ground read as
 // black. The graphite seed scales to under 0.008 and never reaches it.
 const darkNeutral = (l: number) => ({
@@ -163,43 +103,26 @@ const darkNeutral = (l: number) => ({
   c: { scale: 0.22, max: 0.08 },
 });
 
-// Workaround for Slotted issue #90: an outline or ghost Button in the danger tone changes only its
-// text color. The hover and active fills take the danger tone, and the outline border takes it on hover.
-const dangerButtonRule = `
-[data-ui="button"][data-tone="danger"]:is([data-variant="outline"], [data-variant="ghost"]):hover:not(:disabled):not([data-disabled]):not([data-loading]) {
-  background: color-mix(in oklch, var(--slotted-tone-danger-solid) 12%, transparent);
-}
-
-[data-ui="button"][data-tone="danger"][data-variant="outline"]:is(:hover, :active):not(:disabled):not([data-disabled]):not([data-loading]) {
-  border-color: color-mix(in oklch, var(--slotted-tone-danger-text) 45%, transparent);
-}
-
-[data-ui="button"][data-tone="danger"]:is([data-variant="outline"], [data-variant="ghost"]):active:not(:disabled):not([data-disabled]):not([data-loading]) {
-  background: color-mix(in oklch, var(--slotted-tone-danger-solid) 20%, transparent);
-}
-`;
-
-// Workaround for Slotted issue #91: the help control of a widget is a control-height button. It
-// draws as a 1.5rem muted glyph that fills on hover.
-const widgetHelpRule = `
-[data-ui="dashboard-grid"] [data-part="widget"] [data-part="title-row"] > [data-part="help"] {
-  block-size: 1.5rem;
-  min-block-size: 0;
-  inline-size: 1.5rem;
-  min-inline-size: 0;
-  padding: 0;
-  border-radius: var(--slotted-control-radius);
-  color: var(--slotted-text-muted);
-  margin-inline-start: var(--slotted-space-2);
-  margin-block: calc((1.5rem - var(--slotted-font-size-md, 0.8125rem) * var(--slotted-line-height-md, 1.5)) / -2);
-}
-`;
-
 // A table is lines on the page, so its header surface is transparent. A header pinned to the top
 // has rows passing under it, and takes the ground the table stands on.
 const stickyHeaderRule = `
 [data-ui="table"][data-sticky-header] {
   --slotted-table-header-surface: var(--slotted-ground);
+}
+`;
+
+// Workaround for Slotted issue #91: the help centres on the line box of the title, which lands on a
+// fraction of a pixel, so it stood up to 1 px off the capitals. It stands on the baseline instead,
+// at the height of the capitals and 2 px above and below them.
+const widgetHelpRule = `
+[data-ui="dashboard-grid"] [data-part="widget"] [data-part="title-row"] {
+  align-items: baseline;
+}
+
+[data-ui="dashboard-grid"] [data-part="widget"] [data-part="title-row"] > [data-part="help"] {
+  --slotted-control-icon-size-sm: calc(round(1cap, 1px) + 4px);
+
+  inset-block-start: 2px;
 }
 `;
 
@@ -255,7 +178,6 @@ export default extendTheme(
       ...defaultTheme.recipe,
       dark: {
         ...defaultDark,
-        ...heldInks,
         "--slotted-tone-accent-border": indigoKept(
           "--slotted-tone-accent-border",
           0.1,
@@ -300,11 +222,6 @@ export default extendTheme(
         "--slotted-data-6": "#68a63f",
         "--slotted-data-7": "#c46dbd",
         "--slotted-data-8": "#db703b",
-        // Workaround for Slotted issue #92: the derived danger text keeps 48% of the seed's chroma
-        // on a dark ground and reads pink, and its border is a lighter, paler step of it; both take the
-        // danger seed itself.
-        "--slotted-tone-danger-text": "#f87171",
-        "--slotted-tone-danger-border": "#f87171",
       },
       light: {
         // Set by owner review (2026-10-21): the material reads white over the light page.
@@ -359,6 +276,7 @@ export default extendTheme(
       // Owner review of 2026-11-13: a section's title and description read as one unit, and the
       // body stands clear of both, 16 px under the description against about 5 px under the title.
       "--slotted-section-gap": "var(--slotted-space-6)",
+      "--slotted-section-description-gap": "0",
       // A phone page keeps 16 px between the screen edge and the content, the margin of the
       // platforms (spec 2026-11-21-mobile-statement, MS1).
       "--slotted-page-inset-compact": "var(--slotted-space-6)",
@@ -401,9 +319,8 @@ export default extendTheme(
       "--slotted-command-palette-surface": "var(--slotted-surface-material)",
       "--slotted-command-palette-backdrop-filter":
         "var(--slotted-material-backdrop)",
-      // Workaround for Slotted issue #91: a widget's help note is a few sentences; the 16rem popover
-      // of that control wraps it into a tall column.
-      "--slotted-popover-measure-sm": "24rem",
+      // A widget's help note is a few sentences; the family's 20rem wraps it into a tall column.
+      "--slotted-dashboard-grid-help-measure": "24rem",
       // Owner review of 2026-11-15: the line boxes of the title and of the description already stand
       // apart by the leading of their fonts; the header's 0.25rem row gap on top read as a hole.
       "--slotted-card-header-gap": "0",
@@ -420,18 +337,14 @@ export default extendTheme(
       currentDestinationRule,
       questionChoicesRule,
       sectionRule,
-      sectionDescriptionRule,
-      sectionActionsRule,
       resultStateRule,
       paletteScrimRule,
-      paletteGroupLabelRule,
       sheetSlideRule,
       tagInsetRule,
       listHeightRule,
       stickyHeaderRule,
-      ...overlayItemRules,
-      dangerButtonRule,
       widgetHelpRule,
+      ...overlayItemRules,
     ],
   },
   { name: "equori" },
