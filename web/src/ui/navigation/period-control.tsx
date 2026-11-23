@@ -15,7 +15,6 @@ import {
 import { useState } from "react";
 
 import { PeriodChoices } from "@/ui/navigation/period-choices";
-import { PeriodLabel } from "@/ui/navigation/period-label";
 import {
   holdsToday,
   periodLabel,
@@ -27,6 +26,7 @@ import type { PeriodPreset } from "@/ui/navigation/period-presets";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { StepGlyph } from "@/ui/navigation/step-glyph";
+import { PeriodTrigger } from "@/ui/navigation/period-trigger";
 
 export interface Period {
   from: string;
@@ -124,16 +124,16 @@ export function PeriodControl({
         >
           <PopoverTrigger
             render={(props) => (
-              <Button
+              <PeriodTrigger
                 {...props}
+                current={current}
+                widest={widest}
                 aria-label={
                   current ? t("period.current", { label }) : undefined
                 }
               >
-                <PeriodLabel current={current} widest={widest}>
-                  {label}
-                </PeriodLabel>
-              </Button>
+                {label}
+              </PeriodTrigger>
             )}
           />
           <PopoverLayer>

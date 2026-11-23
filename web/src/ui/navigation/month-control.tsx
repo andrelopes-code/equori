@@ -16,9 +16,9 @@ import { useState } from "react";
 import { formatMonthTitle } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { PeriodLabel } from "@/ui/navigation/period-label";
 import { monthTitles } from "@/ui/navigation/period-presets";
 import { StepGlyph } from "@/ui/navigation/step-glyph";
+import { PeriodTrigger } from "@/ui/navigation/period-trigger";
 
 function shiftMonth(month: string, by: number): string {
   const [year = 0, m = 1] = month.split("-").map(Number);
@@ -74,19 +74,16 @@ export function MonthControl({
         <Popover open={open} onOpenChange={setOpen} align="center">
           <PopoverTrigger
             render={(props) => (
-              <Button
+              <PeriodTrigger
                 {...props}
+                current={current}
+                widest={monthTitles(value.slice(0, 4), locale)}
                 aria-label={
                   current ? t("period.current", { label: title }) : undefined
                 }
               >
-                <PeriodLabel
-                  current={current}
-                  widest={monthTitles(value.slice(0, 4), locale)}
-                >
-                  {title}
-                </PeriodLabel>
-              </Button>
+                {title}
+              </PeriodTrigger>
             )}
           />
           <PopoverLayer>

@@ -1,0 +1,13 @@
+@layer app {
+  .trigger {
+    --slotted-button-widest-start: 6px; /* literal: the mark's width */
+  }
+
+  .mark {
+    flex: none;
+    inline-size: 6px; /* literal: a whole-pixel circle; no token holds a dot size */
+    block-size: 6px; /* literal: a whole-pixel circle; no token holds a dot size */
+    border-radius: var(--slotted-radius-full);
+    background: var(--slotted-tone-accent-solid);
+  }
+}
