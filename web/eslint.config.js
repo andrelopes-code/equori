@@ -212,6 +212,20 @@ export default defineConfig(
     },
   },
   {
+    // test() of node:test returns a promise that the runner awaits itself.
+    files: ["src/theme/*.theme.test.ts", "src/testing/slotted-issues.test.ts"],
+    rules: {
+      "@typescript-eslint/no-floating-promises": [
+        "error",
+        {
+          allowForKnownSafeCalls: [
+            { from: "package", package: "node:test", name: "test" },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ["src/**/*.tsx"],
     ignores: ["**/*.test.tsx"],
     plugins: { react },
