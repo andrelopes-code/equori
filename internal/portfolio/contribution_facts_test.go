@@ -317,6 +317,7 @@ func seedFiscalYears(
 	t.Helper()
 
 	ctx := context.Background()
+
 	_, err := h.Pool.Exec(
 		ctx,
 		`INSERT INTO marketdata_company_listing (source, exchange, code, identifier, name)
