@@ -238,16 +238,16 @@ describe("Fixed income panel", () => {
     });
     const root = await panel("Renda fixa");
     await within(root).findByText("R$ 50.000,00 acima do FGC no Banco X");
-    const body = root.querySelector("[data-peek]");
+    const body = peekPanel(root);
 
-    expect(body).toHaveAttribute("data-peek", "open");
+    expect(body).not.toHaveAttribute("data-state", "peek");
     expect(body).not.toHaveAttribute("inert");
 
     await userEvent.click(
       within(root).getByRole("button", { name: "Minimizar Renda fixa" }),
     );
 
-    expect(body).toHaveAttribute("data-peek", "closed");
+    expect(body).toHaveAttribute("data-state", "peek");
     expect(body).toHaveAttribute("inert");
     expect(
       within(root).getByRole("heading", { name: "Renda fixa" }),
@@ -261,19 +261,13 @@ describe("Fixed income panel", () => {
     });
     const again = await panel("Renda fixa");
 
-    expect(again.querySelector("[data-peek]")).toHaveAttribute(
-      "data-peek",
-      "closed",
-    );
+    expect(peekPanel(again)).toHaveAttribute("data-state", "peek");
 
     await userEvent.click(
       within(again).getByRole("button", { name: "Ver mais" }),
     );
 
-    expect(again.querySelector("[data-peek]")).toHaveAttribute(
-      "data-peek",
-      "open",
-    );
+    expect(peekPanel(again)).not.toHaveAttribute("data-state", "peek");
     expect(localStorage.getItem(collapsedKey)).toBe("false");
   });
 
@@ -285,13 +279,13 @@ describe("Fixed income panel", () => {
     });
     const root = await panel("Renda fixa");
     await within(root).findByText("R$ 50.000,00 acima do FGC no Banco X");
-    const body = root.querySelector("[data-peek]");
+    const body = peekPanel(root);
 
     await userEvent.click(
       within(root).getByRole("heading", { name: "Renda fixa" }),
     );
 
-    expect(body).toHaveAttribute("data-peek", "closed");
+    expect(body).toHaveAttribute("data-state", "peek");
     expect(
       within(root).getByRole("button", { name: "Expandir Renda fixa" }),
     ).toHaveAttribute("aria-expanded", "false");
@@ -302,7 +296,7 @@ describe("Fixed income panel", () => {
       }),
     );
 
-    expect(body).toHaveAttribute("data-peek", "open");
+    expect(body).not.toHaveAttribute("data-state", "peek");
     expect(localStorage.getItem(collapsedKey)).toBe("false");
   });
 
@@ -422,3 +416,7 @@ describe("Fixed income panel", () => {
     expect(within(next).queryByText(/LFX/)).not.toBeInTheDocument();
   });
 });
+
+function peekPanel(root: HTMLElement): Element | null {
+  return root.querySelector('[data-ui="collapsible"] > [data-part="panel"]');
+}

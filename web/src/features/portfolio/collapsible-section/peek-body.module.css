@@ -1,26 +1,18 @@
 @layer app {
-  .root {
-    position: relative;
+  /* The body already stands in the section's inset; the fade ends above the button. */
+  .body {
+    --slotted-collapsible-padding-inline: 0;
+    --slotted-collapsible-panel-padding-block-start: 0;
+    --slotted-collapsible-peek-fade: 5rem;
   }
 
-  /* The closed height holds the verdict and the first lines of the two charts. */
-  .content[data-peek="closed"] {
-    max-block-size: 9rem;
-    overflow: hidden;
-    mask-image: linear-gradient(to bottom, #000 25%, transparent 72%);
-  }
-
+  /* Workaround for Slotted issue #143: a Button rendered as the family's more control loses the
+     attribute its place reads, so the place is restated here, clear of the last line in view. */
   .more {
-    position: absolute;
-    inset-inline: 0;
-    inset-block-end: 0;
-    display: flex;
-    justify-content: center;
-  }
-
-  @media (forced-colors: active) {
-    .content[data-peek="closed"] {
-      mask-image: none;
-    }
+    position: relative;
+    z-index: 1;
+    grid-area: 3 / 1 / auto / -1;
+    justify-self: center;
+    margin-block-start: calc(var(--slotted-space-8) * -1);
   }
 }
