@@ -215,14 +215,6 @@ test("the dark ink of a status follows its seed", () => {
   );
 });
 
-test("the help of a widget stands on the baseline of its title", () => {
-  assert.match(css, /\[data-part="title-row"\] \{\s*align-items: baseline;/);
-  assert.match(
-    css,
-    /\[data-part="title-row"\] > \[data-part="help"\] \{[^}]*round\(1cap, 1px\) \+ 4px[^}]*inset-block-start: 2px;\s*margin-block: -0\.5lh;/,
-  );
-});
-
 test("a chart header keeps no gap between its title and its description", () => {
   assert.equal(components["--slotted-chart-header-gap"], "0");
 });

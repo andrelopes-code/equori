@@ -1,16 +1,6 @@
 @layer app {
-  /* Workaround for Slotted issue #106: the inline glyph is 16 px beside any text and centres on the
-     line box, up to 0.8 px off the capitals. It takes the capital's height in whole pixels, 2 px
-     above and below it, and stands on the baseline: both are even or both odd, so one centre serves
-     the two on the pixel grid. The negative margins keep the box of one line from growing the line
-     it stands in. */
   .trigger {
-    --slotted-control-icon-size-md: calc(round(1cap, 1px) + 4px);
-
-    inset-block-start: 2px;
-    margin-block: -0.5lh;
     margin-inline-start: var(--slotted-space-2);
-    vertical-align: baseline;
     cursor: help;
   }
 

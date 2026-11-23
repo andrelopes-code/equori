@@ -111,23 +111,6 @@ const stickyHeaderRule = `
 }
 `;
 
-// Workaround for Slotted issue #91: the help centres on the line box of the title, which lands on a
-// fraction of a pixel, so it stood up to 1 px off the capitals. It stands on the baseline instead,
-// at the height of the capitals and 2 px above and below them. The negative margins keep it from
-// lowering the title beside the titles of widgets with no help.
-const widgetHelpRule = `
-[data-ui="dashboard-grid"] [data-part="widget"] [data-part="title-row"] {
-  align-items: baseline;
-}
-
-[data-ui="dashboard-grid"] [data-part="widget"] [data-part="title-row"] > [data-part="help"] {
-  --slotted-control-icon-size-sm: calc(round(1cap, 1px) + 4px);
-
-  inset-block-start: 2px;
-  margin-block: -0.5lh;
-}
-`;
-
 // A tag's text stands 2 px further from its border than the family's default at each size; the
 // height stays.
 const tagInsetRule = `
@@ -345,7 +328,6 @@ export default extendTheme(
       tagInsetRule,
       listHeightRule,
       stickyHeaderRule,
-      widgetHelpRule,
       ...overlayItemRules,
     ],
   },
