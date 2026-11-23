@@ -3,6 +3,10 @@ import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
 import { configDefaults } from "vitest/config";
 
+// The loader of this file reads no alias.
+// eslint-disable-next-line no-restricted-imports
+import { skipEqualValues } from "./src/features/spreadsheets/editor/univer-equal-values.ts";
+
 // @slotted/react 0.1.0-beta.2 bundles a CommonJS copy of react-dom that calls
 // require("react"), which throws in the browser. The chunk is replaced by the
 // application's react-dom, keeping the lazy getter it exports as `t`.
@@ -16,8 +20,17 @@ const slottedReactDOM: Plugin = {
   },
 };
 
+// The spreadsheet editor draws its toolbar again only for values that changed (ADR 038, E14).
+const univerEqualValues: Plugin = {
+  name: "equori:univer-equal-values",
+  transform: {
+    filter: { id: /@univerjs\/ui\/lib\/es\/index\.js/ },
+    handler: (code) => ({ code: skipEqualValues(code), map: null }),
+  },
+};
+
 export default defineConfig({
-  plugins: [react(), tailwindcss(), slottedReactDOM],
+  plugins: [react(), tailwindcss(), slottedReactDOM, univerEqualValues],
   optimizeDeps: {
     // The spreadsheet editor is imported on demand, so the dev server would find its packages
     // on the first opening of a spreadsheet, bundle them then and reload the page. Listed here,
@@ -56,7 +69,7 @@ export default defineConfig({
       "@univerjs/preset-sheets-table/locales/pt-BR",
       "fflate",
     ],
-    rolldownOptions: { plugins: [slottedReactDOM] },
+    rolldownOptions: { plugins: [slottedReactDOM, univerEqualValues] },
   },
   // tsconfig.json paths are the single definition of the @/ alias.
   resolve: { tsconfigPaths: true },
