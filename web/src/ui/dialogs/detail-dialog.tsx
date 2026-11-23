@@ -10,10 +10,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@slotted/react/dialog";
-import type { DialogChangeRequest } from "@slotted/react/dialog";
 import { Inline } from "@slotted/react/inline";
 import { Text } from "@slotted/react/typography";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import type { ReactNode } from "react";
 
 import { useT } from "@/i18n/i18n-provider";
@@ -42,32 +41,14 @@ export function DetailDialog({
 
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const contentRef = useRef<HTMLDivElement>(null);
 
-  function handleOpenChange(next: boolean, request: DialogChangeRequest) {
-    // Workaround for Slotted issue #96: a press on the backdrop of a dialog stacked on this one
-    // also reaches this dialog; only a press on this dialog's own backdrop closes it.
-    if (!next && request.reason === "outsidePress" && pressedAbove(request)) {
-      request.cancel();
-      return;
-    }
-
+  function handleOpenChange(next: boolean) {
     setOpen(next);
     if (next) setMounted(true);
   }
 
   function handleOpenChangeComplete(settled: boolean) {
     if (!settled) setMounted(false);
-  }
-
-  function pressedAbove(request: DialogChangeRequest): boolean {
-    const source = request.source;
-    const target = source instanceof Event ? source.target : null;
-    const own = contentRef.current?.closest('[data-ui="dialog"]');
-    const pressed =
-      target instanceof Element ? target.closest('[data-ui="dialog"]') : null;
-
-    return pressed !== null && pressed !== own;
   }
 
   return (
@@ -88,7 +69,7 @@ export function DetailDialog({
           )}
         />
 
-        <DialogContent ref={contentRef} className={styles.layer}>
+        <DialogContent className={styles.layer}>
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
             <DialogDescription>{description}</DialogDescription>
