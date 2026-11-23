@@ -2,7 +2,7 @@
 
 `PeriodControl` and `MonthControl` (`web/src/ui/navigation`) step a period with two arrows around its label. Today the label takes the width of its text, so the arrows move at each step; no part of the control states whether the period on screen holds today; and the return to the current month takes the popover and one of its choices.
 
-The approved mock is the contract of the form: `docs/superpowers/mocks/2026-11-17-period-controls-mock/` (local, owner, 2026-11-17, concept B, no change). `design.css` moves to `steady-label.module.css` and `period-label.module.css` without edits.
+The approved mock is the contract of the form: `docs/superpowers/mocks/2026-11-17-period-controls-mock/` (local, owner, 2026-11-17, concept B, no change). The trigger is `period-trigger.tsx` on the Slotted `Button` with `widest` since 2026-11-23.
 
 ## 1. Scope
 
@@ -18,7 +18,7 @@ The approved mock is the contract of the form: `docs/superpowers/mocks/2026-11-1
 | PC3 | A mark, a 6 px accent dot before the label, is visible when the period holds today (`from <= today <= to`; for `MonthControl`, the month of today). The mark and the text form one group, centred in the trigger; without the mark, the text alone is centred (owner, 2026-11-20: a mark out of the flow left the group off centre; 2026-11-17: the reserved box of a hidden mark pushed the text off centre). The label reserves the widest text plus the mark and its gap, so the trigger keeps one width with or without the mark. The trigger's accessible name then ends with the words "current period". |
 | PC4 | A button "Today" follows the group. `PeriodControl`: it sets the month of today and is disabled when the period holds today. `MonthControl`: it sets the month of today, is disabled on that month, and is not drawn when `max` is before the month of today. |
 | PC5 | A run of days with an end outside the year of today writes its years with two digits ("28/12/25 – 26/01/26"). With four digits the control measures 398 px and breaks the action row of a 390 px phone (376 px of content). Amends the label rule of `periodLabel`. |
-| PC6 | Own element: the steady label and the mark. Families read: `button` (its label takes the width of its text and holds no reserved width). |
+| PC6 | The reserved width is `widest` of the Slotted `Button`; the mark is its `start`, an element of the application's own. |
 
 ## 3. Derivation
 
