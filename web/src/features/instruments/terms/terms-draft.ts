@@ -29,6 +29,8 @@ export interface TermsDraft {
   dailyLiquidity: boolean;
   redeemableFrom: string;
   payments: PaymentsDraft;
+  // Not edited in the form: saving replaces the whole terms, so the stored steps are sent back.
+  rateSteps: Pick<TermsInput, "rate_steps" | "rate_steps_apply">;
 }
 
 export type TermsOutcome =
@@ -57,6 +59,13 @@ export function initialDraft(
       terms === null
         ? noPayments
         : paymentsDraftOf(terms.payments, terms.matures_on),
+    rateSteps:
+      terms?.rate_steps_apply === undefined
+        ? {}
+        : {
+            rate_steps: terms.rate_steps,
+            rate_steps_apply: terms.rate_steps_apply,
+          },
   };
 }
 
@@ -100,6 +109,7 @@ export function termsBody(draft: TermsDraft, t: TFunction): TermsOutcome {
         ? {}
         : { redeemable_from: draft.redeemableFrom }),
       ...payments.body,
+      ...draft.rateSteps,
     },
   };
 }
