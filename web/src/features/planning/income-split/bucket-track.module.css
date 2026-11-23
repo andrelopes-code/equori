@@ -195,14 +195,14 @@
   .legend {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--slotted-space-5);
+    gap: var(--slotted-space-3) var(--slotted-space-6);
     margin-block-start: var(--slotted-space-3);
   }
 
   .key {
     display: inline-flex;
     align-items: center;
-    gap: var(--slotted-space-2);
+    gap: var(--slotted-space-3);
   }
 
   .legendTick {

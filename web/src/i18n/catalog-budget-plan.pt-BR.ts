@@ -178,14 +178,17 @@ export const budgetPlanPtBR: Record<keyof typeof budgetPlanEn, string> = {
   "track.strip.outside": "Fora da divisão",
   "track.strip.unallocated": "Sem destino",
   "track.strip.retained": "Rendimentos retidos",
+  "track.strip.note.share": "{share} da renda",
+  "track.strip.note.noIncome": "sem renda no mês",
+  "track.strip.note.purchaseDate": "pela data da compra",
+  "track.strip.note.aboveIncome": "acima da renda",
+  "track.strip.note.retained": "nos investimentos",
   "track.realPlain": "{amount}",
   "track.realCovered": "{amount} · {covered} do saldo acumulado",
   "track.realGoalPaid": "{amount} · {paid} pagos por metas",
   "track.realBoth": "{amount} · {covered} do saldo, {paid} por metas",
   "track.deposited": "{deposited} depositados",
   "track.depositedWithdrawn": "{deposited} depositados · {withdrawn} sacados",
-  "track.retained":
-    "{amount} de rendimentos ficaram nos investimentos e estão fora da divisão.",
   "track.gauge": "{name}: {real} contra um alvo de {target}",
   "track.cell.kept": "{month}: dentro do alvo",
   "track.cell.missed": "{month}: fora do alvo",
@@ -199,10 +202,6 @@ export const budgetPlanPtBR: Record<keyof typeof budgetPlanEn, string> = {
   "track.legend.missed": "fora do alvo",
   "track.legend.none": "sem renda",
   "track.legend.target": "alvo",
-  "track.unallocated":
-    "{amount} da renda de {month} não foram para nenhum pote, pela data da compra.",
-  "track.unallocatedNegative":
-    "{amount} acima da renda de {month} foram gastos ou guardados, pela data da compra.",
   "buckets.plan.description":
     "A fatia de cada pote no valor a distribuir e quanto os orçamentos planejam para ele. A aba Acompanhar compara com o que foi gasto.",
   "buckets.plan.toPlan": "{amount} a planejar",

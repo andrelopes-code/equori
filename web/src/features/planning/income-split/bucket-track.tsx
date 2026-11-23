@@ -109,7 +109,7 @@ export function BucketTrack({ month }: BucketTrackProps) {
       </SectionHeader>
 
       <SectionBody>
-        <Stack gap={5}>
+        <Stack gap={6}>
           <Stack gap={1}>
             <Text size="md" weight="medium">
               {t(verdict.key, {
@@ -131,9 +131,8 @@ export function BucketTrack({ month }: BucketTrackProps) {
 
           <TrackStrip
             parts={trackStrip(history.data, month)}
-            received={money(track.received)}
+            received={track.received}
             retained={track.retained}
-            month={monthName}
             money={money}
             onOutside={() => {
               drawer.open("outside", month);

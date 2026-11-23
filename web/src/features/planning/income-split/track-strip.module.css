@@ -1,13 +1,13 @@
 @layer app {
   .strip {
     display: grid;
-    gap: var(--slotted-space-3);
+    gap: var(--slotted-space-5);
   }
 
   .bar {
     display: flex;
     gap: var(--slotted-space-1);
-    block-size: var(--slotted-space-3);
+    block-size: var(--slotted-space-4);
   }
 
   .segment {
@@ -17,25 +17,33 @@
   }
 
   .legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--slotted-space-2) var(--slotted-space-5);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+    gap: var(--slotted-space-5);
     margin: 0;
   }
 
   .part {
-    display: flex;
-    align-items: center;
-    gap: var(--slotted-space-2);
+    display: grid;
+    gap: var(--slotted-space-1);
+    min-inline-size: 0;
   }
 
-  .part dd {
+  .part > * {
     margin: 0;
+    white-space: nowrap;
+  }
+
+  .name {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-3);
   }
 
   .swatch {
-    inline-size: var(--slotted-space-3);
-    block-size: var(--slotted-space-3);
+    flex: none;
+    inline-size: var(--slotted-space-4);
+    block-size: var(--slotted-space-4);
     border-radius: var(--slotted-radius-xs);
     background: var(--strip-tone);
   }

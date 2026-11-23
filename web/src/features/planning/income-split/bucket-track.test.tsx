@@ -1,4 +1,4 @@
-import { act, screen, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -109,7 +109,16 @@ describe("Income split in Track", () => {
       within(strip)
         .getAllByRole("definition")
         .map((d) => d.textContent),
-    ).toEqual(["R$3,200.00", "R$1,800.00", "R$15.00", "−R$15.00"]);
+    ).toEqual([
+      "R$3,200.00",
+      "64.0% of the income",
+      "R$1,800.00",
+      "36.0% of the income",
+      "R$15.00",
+      "0.3% of the income",
+      "−R$15.00",
+      "above the income",
+    ]);
     expect(
       within(strip).getByRole("link", { name: "Set aside" }),
     ).toHaveAttribute("href", "/portfolio/contribution-plan");
@@ -140,17 +149,12 @@ describe("Income split in Track", () => {
   });
 
   it.each([
-    [
-      120000,
-      "R$1,200.00 of the income of October went to no bucket, by purchase date.",
-    ],
-    [
-      -21300,
-      "R$213.00 above the income of October was spent or set aside, by purchase date.",
-    ],
+    [120000, "by purchase date"],
+    [-21300, "above the income"],
+    [0, "by purchase date"],
   ])(
-    "explains the unallocated income of %i beside its figure",
-    async (unallocated, sentence) => {
+    "states the base of the unallocated income of %i under its figure",
+    async (unallocated, note) => {
       await renderApp(october, {
         fetch: budgetApi({
           "GET /api/v1/budget-buckets/history": () =>
@@ -159,33 +163,24 @@ describe("Income split in Track", () => {
         today,
       });
       await section();
-
-      const help = screen.getByRole("button", { name: "About “Unallocated”" });
-      act(() => {
-        help.focus();
+      const strip = screen.getByRole("group", {
+        name: "Where the R$5,000.00 of the month went",
       });
 
-      expect(await screen.findByText(sentence)).toBeVisible();
+      const notes = within(strip)
+        .getAllByRole("definition")
+        .map((d) => d.textContent);
+
+      expect(notes.at(-1)).toBe(note);
+      expect(
+        within(strip).queryByRole("button", { name: /^About/ }),
+      ).toBeNull();
+      expect(screen.queryByText(/stayed in the accounts/)).toBeNull();
+      expect(screen.queryByText(/paid from balances/)).toBeNull();
     },
   );
 
-  it("explains no unallocated income at zero", async () => {
-    await renderApp(october, {
-      fetch: budgetApi({
-        "GET /api/v1/budget-buckets/history": () => json(200, withRest(0)),
-      }),
-      today,
-    });
-    await section();
-
-    expect(
-      screen.queryByRole("button", { name: "About “Unallocated”" }),
-    ).toBeNull();
-    expect(screen.queryByText(/stayed in the accounts/)).toBeNull();
-    expect(screen.queryByText(/paid from balances/)).toBeNull();
-  });
-
-  it("writes the retained yields in the legend of the strip and explains them", async () => {
+  it("writes the retained yields as the last figure of the strip", async () => {
     await renderApp(october, {
       fetch: budgetApi({
         "GET /api/v1/budget-buckets/history": () =>
@@ -204,19 +199,15 @@ describe("Income split in Track", () => {
       name: "Where the R$5,000.00 of the month went",
     });
 
-    const help = within(strip).getByRole("button", {
-      name: "About “Retained yields”",
-    });
-    act(() => {
-      help.focus();
-    });
-
-    expect(within(strip).getByText("R$67.12")).toBeVisible();
+    expect(within(strip).getAllByRole("term").at(-1)).toHaveTextContent(
+      "Retained yields",
+    );
     expect(
-      await screen.findByText(
-        "R$67.12 of yields stayed in the investments and is outside the split.",
-      ),
-    ).toBeVisible();
+      within(strip)
+        .getAllByRole("definition")
+        .slice(-2)
+        .map((d) => d.textContent),
+    ).toEqual(["R$67.12", "in the investments"]);
   });
 
   it("states the received income and the reference of the plan in one line", async () => {

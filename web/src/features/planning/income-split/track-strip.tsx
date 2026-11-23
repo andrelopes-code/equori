@@ -5,12 +5,10 @@ import { useT } from "@/i18n/i18n-provider";
 
 interface TrackStripProps {
   parts: readonly StripPart[];
-  // The income received the parts sum to, written.
-  received: string;
+  // The income received the parts sum to.
+  received: number;
   // The yields that stayed in the investments, outside the income received (A252).
   retained: number;
-  // The name of the month on screen.
-  month: string;
   money: (amount: number) => string;
   onOutside: () => void;
 }
@@ -18,13 +16,12 @@ interface TrackStripProps {
 // The month as one strip that sums to the income received: where each part of it went
 // (planning coherence section 6). Families read: chart, progress-bar, meter. None draws a
 // part-to-whole line with a written legend; the bar is the app's own, decorative, and the
-// legend carries every figure in words. The retained yields stand last in the legend, with no
-// segment.
+// legend carries every figure in words, one column each. The retained yields stand last in the
+// legend, with no segment.
 export function TrackStrip({
   parts,
   received,
   retained,
-  month,
   money,
   onOutside,
 }: TrackStripProps) {
@@ -36,7 +33,7 @@ export function TrackStrip({
     <div
       className={styles.strip}
       role="group"
-      aria-label={t("track.strip.label", { amount: received })}
+      aria-label={t("track.strip.label", { amount: money(received) })}
     >
       <div className={styles.bar} aria-hidden="true">
         {parts
@@ -57,7 +54,7 @@ export function TrackStrip({
             key={p.key}
             part={p.key}
             amount={p.amount}
-            month={month}
+            received={received}
             money={money}
             onOutside={onOutside}
           />
@@ -67,7 +64,7 @@ export function TrackStrip({
           <TrackStripPart
             part="retained"
             amount={retained}
-            month={month}
+            received={received}
             money={money}
             onOutside={onOutside}
           />

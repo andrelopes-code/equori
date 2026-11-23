@@ -179,14 +179,17 @@ export const budgetPlanEn = {
   "track.strip.outside": "Outside the split",
   "track.strip.unallocated": "Unallocated",
   "track.strip.retained": "Retained yields",
+  "track.strip.note.share": "{share} of the income",
+  "track.strip.note.noIncome": "no income in the month",
+  "track.strip.note.purchaseDate": "by purchase date",
+  "track.strip.note.aboveIncome": "above the income",
+  "track.strip.note.retained": "in the investments",
   "track.realPlain": "{amount}",
   "track.realCovered": "{amount} · {covered} from accumulated balance",
   "track.realGoalPaid": "{amount} · {paid} paid by goals",
   "track.realBoth": "{amount} · {covered} from balance, {paid} by goals",
   "track.deposited": "{deposited} deposited",
   "track.depositedWithdrawn": "{deposited} deposited · {withdrawn} withdrawn",
-  "track.retained":
-    "{amount} of yields stayed in the investments and is outside the split.",
   "track.gauge": "{name}: {real} against a target of {target}",
   "track.cell.kept": "{month}: kept to the target",
   "track.cell.missed": "{month}: missed the target",
@@ -200,10 +203,6 @@ export const budgetPlanEn = {
   "track.legend.missed": "missed the target",
   "track.legend.none": "no income",
   "track.legend.target": "target",
-  "track.unallocated":
-    "{amount} of the income of {month} went to no bucket, by purchase date.",
-  "track.unallocatedNegative":
-    "{amount} above the income of {month} was spent or set aside, by purchase date.",
   "buckets.plan.description":
     "Each bucket's share of the amount to distribute and what the budgets plan for it. The Track view compares it with what was spent.",
   "buckets.plan.toPlan": "{amount} to plan",

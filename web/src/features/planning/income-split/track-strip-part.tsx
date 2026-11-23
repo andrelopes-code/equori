@@ -2,19 +2,19 @@ import { Button } from "@slotted/react/button";
 import { Link } from "@slotted/react/link";
 import { Text } from "@slotted/react/typography";
 
-import { stripHelp } from "@/features/planning/income-split/track-strip-parts";
+import { stripNote } from "@/features/planning/income-split/track-strip-parts";
 import type { StripKey } from "@/features/planning/income-split/track-strip-parts";
 import styles from "@/features/planning/income-split/track-strip.module.css";
+import { useShareText } from "@/features/planning/income-split/use-share-text";
 import { useT } from "@/i18n/i18n-provider";
-import { HelpTip } from "@/ui/display/help-tip";
 import { routeTo } from "@/ui/navigation/route-to";
 
 interface TrackStripPartProps {
   // A part of the strip, or the retained yields, which the bar does not draw.
   part: StripKey | "retained";
   amount: number;
-  // The name of the month on screen.
-  month: string;
+  // The income received in the month: the base of the share.
+  received: number;
   money: (amount: number) => string;
   onOutside: () => void;
 }
@@ -37,45 +37,62 @@ const links: Partial<
   goalDeposits: "/goals",
 };
 
-// One term of the strip's legend with its amount. The spending outside the split opens its
-// entries; a term whose meaning a reader may not know carries its explanation.
+// One figure of the strip: its name with the key of its segment, its amount, and the line that
+// says what it counts. The spending outside the split opens its entries.
 export function TrackStripPart({
   part,
   amount,
-  month,
+  received,
   money,
   onOutside,
 }: TrackStripPartProps) {
   const t = useT();
+  const share = useShareText();
   const name = t(names[part]);
   const to = links[part];
-  const help = stripHelp(part, amount);
+  const opens = to !== undefined || part === "outside";
+  const note = stripNote(part, amount, received);
 
   return (
     <div className={styles.part} data-part-key={part}>
-      <span className={styles.swatch} aria-hidden="true" />
-      <Text size="sm" tone="muted" render={(props) => <dt {...props} />}>
-        {to !== undefined && <Link render={routeTo({ to })}>{name}</Link>}
+      <Text
+        size="sm"
+        tone={opens ? "default" : "muted"}
+        className={styles.name}
+        render={(props) => <dt {...props} />}
+      >
+        <span className={styles.swatch} aria-hidden="true" />
+        {to !== undefined && (
+          <Link variant="neutral" render={routeTo({ to })}>
+            {name}
+          </Link>
+        )}
         {part === "outside" && (
-          <Button inline onClick={onOutside}>
+          <Button inline tone="secondary" onClick={onOutside}>
             {name}
           </Button>
         )}
-        {to === undefined && part !== "outside" && name}
-        {help !== undefined && (
-          <HelpTip
-            label={t("return.help.about", { term: name })}
-            text={t(help, { amount: money(Math.abs(amount)), month })}
-          />
-        )}
+        {!opens && name}
       </Text>
+
       <Text
-        size="sm"
-        weight="medium"
+        size="md"
+        weight="semibold"
         numeric="tabular"
         render={(props) => <dd {...props} />}
       >
         {money(amount)}
+      </Text>
+
+      <Text
+        size="xs"
+        tone="muted"
+        numeric="tabular"
+        render={(props) => <dd {...props} />}
+      >
+        {t(note.key, {
+          share: note.shareBp === undefined ? "" : share(note.shareBp),
+        })}
       </Text>
     </div>
   );

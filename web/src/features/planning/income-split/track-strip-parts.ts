@@ -14,6 +14,11 @@ export interface StripPart {
   shareBp: number;
 }
 
+export interface StripNote {
+  key: MessageKey;
+  shareBp?: number;
+}
+
 // The income received in a month split into where it went (planning coherence section 6):
 // spent in the buckets, set aside, deposited into goals, spent outside the split and left
 // unallocated. The parts sum to the income received (A235). A part that no bucket of the month
@@ -52,15 +57,26 @@ export function trackStrip(history: History, month: string): StripPart[] {
   }));
 }
 
-// The sentence that explains a term of the legend: the unallocated income is an accrual figure
-// (A235), the retained yields stand outside the income received (A252). Undefined for a term
-// that needs none and for an unallocated income of zero.
-export function stripHelp(
+// What the figure of a part counts: its share of the income received, or the base of a figure
+// that is no share of it. The unallocated income is an accrual figure (A235); the retained
+// yields stand outside the income received (A252).
+export function stripNote(
   key: StripKey | "retained",
   amount: number,
-): MessageKey | undefined {
-  if (key === "retained") return "track.retained";
-  if (key !== "unallocated" || amount === 0) return undefined;
+  received: number,
+): StripNote {
+  if (key === "retained") return { key: "track.strip.note.retained" };
+  if (key === "unallocated")
+    return {
+      key:
+        amount < 0
+          ? "track.strip.note.aboveIncome"
+          : "track.strip.note.purchaseDate",
+    };
+  if (received <= 0) return { key: "track.strip.note.noIncome" };
 
-  return amount > 0 ? "track.unallocated" : "track.unallocatedNegative";
+  return {
+    key: "track.strip.note.share",
+    shareBp: Math.round((amount * 10000) / received),
+  };
 }
