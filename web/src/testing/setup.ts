@@ -73,19 +73,6 @@ class VisibleIntersectionObserver implements IntersectionObserver {
 // Testing Library's one second, so a find waits up to four within the 15 s test timeout.
 configure({ asyncUtilTimeout: 4000 });
 
-// Workaround for Slotted issue #172: a page reads its box before any size report, and jsdom lays
-// out nothing, so every page would hold the compact size class. A page's box takes the viewport.
-function pageBox(this: Element): DOMRect {
-  if (this.matches('[data-ui="page"]')) {
-    return new DOMRect(0, 0, window.innerWidth, window.innerHeight);
-  }
-
-  return elementBox.call(this);
-}
-
-// eslint-disable-next-line @typescript-eslint/unbound-method -- called with the element as this
-const elementBox = Element.prototype.getBoundingClientRect;
-
 beforeEach(() => {
   // A test file under the node environment (request bodies Node builds itself) has no window.
   if (typeof window === "undefined") return;
@@ -93,7 +80,6 @@ beforeEach(() => {
   globalThis.IntersectionObserver = VisibleIntersectionObserver;
   // jsdom does not implement scrollTo; the router restores scroll on navigation.
   window.scrollTo = () => undefined;
-  Element.prototype.getBoundingClientRect = pageBox;
   setViewport(1280);
 });
 
