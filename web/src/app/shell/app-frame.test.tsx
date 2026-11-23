@@ -178,7 +178,7 @@ describe("desktop column", () => {
       navStyles.body ?? "missing",
     );
     expect(css).toMatch(
-      /\.body\s*\{[^}]*scrollbar-color:\s*transparent transparent/,
+      /\.body\s*\{[^}]*--slotted-app-shell-scrollbar-thumb-color:\s*transparent;/,
     );
   });
 
