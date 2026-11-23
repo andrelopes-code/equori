@@ -1,4 +1,5 @@
 import { Checkbox } from "@slotted/react/checkbox";
+import { Loader } from "@slotted/react/progress-indicator";
 import { Text } from "@slotted/react/typography";
 
 import { errorText } from "@/api/problem";
@@ -36,8 +37,8 @@ interface OperationRowProps {
   onToggle: (id: string) => void;
 }
 
-// Families read: checkbox, typography. One proposal of the sheet: its mark, its icon tile, its
-// action, the tags that qualify it and, under the row, what it does and why.
+// Families read: checkbox, progress-indicator, typography. One proposal of the sheet: its mark,
+// its icon tile, which the loader replaces while the request runs, its action, the tags that qualify it and, under the row, what it does and why.
 export function OperationRow({
   proposal,
   siblings,
@@ -84,11 +85,20 @@ export function OperationRow({
           />
         )}
 
-        <span className={destructive ? styles.tileDanger : styles.tile}>
-          <span className={styles.icon16}>
-            <AssistantIcon name={actionIcon(proposal.tool)} />
+        {running ? (
+          <Loader
+            className={styles.tileRunning}
+            size="sm"
+            tone={destructive ? "danger" : "accent"}
+            decorative
+          />
+        ) : (
+          <span className={destructive ? styles.tileDanger : styles.tile}>
+            <span className={styles.icon16}>
+              <AssistantIcon name={actionIcon(proposal.tool)} />
+            </span>
           </span>
-        </span>
+        )}
 
         <span className={styles.opTitle}>
           <Text className={styles.titleText} size="md" weight="semibold">

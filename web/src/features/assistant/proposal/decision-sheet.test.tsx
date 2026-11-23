@@ -426,6 +426,73 @@ describe("DecisionSheet", () => {
       expect(order).toEqual(["p1", "p2", "p3"]);
     });
   });
+
+  // Spec 2026-11-15 section 4 (Row states, Batch): the running row's tile is the loader, and a
+  // confirm of two or more proposals reports its share.
+  it("draws the loader on the running row and the share of the batch", async () => {
+    const gate = deferred();
+    const { container } = renderAnswer(
+      three(),
+      fakeApi({
+        [confirmPath("p1")]: () =>
+          Promise.resolve(json(200, { ...pending, status: "executed" })),
+        [confirmPath("p2")]: async () => {
+          await gate.promise;
+
+          return json(200, { ...pending, id: "p2", status: "failed" });
+        },
+      }),
+    );
+
+    expect(loaders(container)).toHaveLength(0);
+
+    await userEvent.click(screen.getByRole("button", { name: "Confirm 3" }));
+
+    const bar = await screen.findByRole("progressbar", {
+      name: catalogEn["assistant.proposal.status.executing"],
+    });
+    expect(bar).toHaveAttribute("aria-valuenow", "1");
+    expect(bar).toHaveAttribute("aria-valuemax", "3");
+    expect(loaders(container)).toHaveLength(1);
+    expect(container.querySelector("[data-open-sheet]")).toHaveAttribute(
+      "aria-busy",
+      "true",
+    );
+
+    gate.release();
+
+    await waitFor(() => {
+      expect(loaders(container)).toHaveLength(0);
+    });
+    expect(container.querySelector("[data-open-sheet]")).toHaveAttribute(
+      "aria-busy",
+      "false",
+    );
+  });
+
+  // Spec 2026-11-15 section 4 (Batch): one proposal has no share to report.
+  it("draws the loader alone while a single proposal runs", async () => {
+    const gate = deferred();
+    const { container } = renderAnswer(
+      [pending],
+      fakeApi({
+        [confirmPath("p1")]: async () => {
+          await gate.promise;
+
+          return json(200, { ...pending, status: "executed" });
+        },
+      }),
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Confirm 1" }));
+
+    await waitFor(() => {
+      expect(loaders(container)).toHaveLength(1);
+    });
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+
+    gate.release();
+  });
 });
 
 function three(): Proposal[] {
@@ -448,4 +515,25 @@ function renderAnswer(proposals: Proposal[], fetch: typeof globalThis.fetch) {
     />,
     { fetch },
   );
+}
+
+// The running row's loader; it is decorative, so no role finds it.
+function loaders(container: HTMLElement) {
+  return container.querySelectorAll(
+    '[data-ui="progress-indicator"][data-shape="morph"]',
+  );
+}
+
+function deferred() {
+  let release: () => void = () => undefined;
+  const promise = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+
+  return {
+    promise,
+    release: () => {
+      release();
+    },
+  };
 }

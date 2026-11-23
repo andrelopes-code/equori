@@ -17,12 +17,20 @@ export interface Decision {
   error?: unknown;
 }
 
+export interface SheetProgress {
+  // The proposals of the run whose request already ended.
+  done: number;
+  total: number;
+}
+
 export interface SheetDecisions {
   marks: Record<string, boolean>;
   // A confirm or a reject of the sheet is running; the rows take no other decision.
   running: boolean;
   // The proposal whose request is in flight.
   active: string | undefined;
+  // How far the current run, or the last one, went.
+  progress: SheetProgress;
   // The failure of each proposal whose request did not reach the server.
   errors: Record<string, unknown>;
   toggle: (id: string) => void;
@@ -41,6 +49,10 @@ export function useSheetDecisions(
   const [toggled, setToggled] = useState<Record<string, boolean>>({});
   const [active, setActive] = useState<string | undefined>();
   const [running, setRunning] = useState(false);
+  const [progress, setProgress] = useState<SheetProgress>({
+    done: 0,
+    total: 0,
+  });
   const [errors, setErrors] = useState<Record<string, unknown>>({});
 
   const proposals = rows.map((row) => row.proposal);
@@ -72,11 +84,12 @@ export function useSheetDecisions(
         confirming ? [r.proposal, ...r.dependents] : [r.proposal],
       );
 
-    for (const proposal of targets) {
+    for (const [done, proposal] of targets.entries()) {
       // A row the timer expired is not sent; the server would refuse it (P15).
       if (confirming && Date.parse(proposal.expires_at) <= Date.now()) continue;
 
       setActive(proposal.id);
+      setProgress({ done, total: targets.length });
 
       try {
         const result = await act(proposal.id);
@@ -96,5 +109,14 @@ export function useSheetDecisions(
     setRunning(false);
   }
 
-  return { marks, running, active, errors, toggle, confirm, reject };
+  return {
+    marks,
+    running,
+    active,
+    progress,
+    errors,
+    toggle,
+    confirm,
+    reject,
+  };
 }

@@ -16,6 +16,7 @@
   }
 
   .header {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -31,8 +32,7 @@
     white-space: nowrap;
   }
 
-  .ring,
-  .ringSpin {
+  .ring {
     flex: none;
     transform: rotate(-90deg);
   }
@@ -49,10 +49,6 @@
   .ringFill {
     stroke: var(--slotted-text-muted);
     stroke-linecap: round;
-  }
-
-  .ringSpin {
-    animation: spin 1s linear infinite;
   }
 
   .op {
@@ -97,6 +93,15 @@
     border-radius: 9px;
     background: var(--slotted-tone-danger-surface);
     color: var(--slotted-tone-danger-text);
+  }
+
+  /* The loader takes the tile's column at every density. */
+  .tileRunning {
+    --slotted-progress-indicator-size: 24px;
+
+    justify-content: center;
+    inline-size: 30px;
+    block-size: 30px;
   }
 
   .icon16 {
@@ -222,18 +227,6 @@
 
     .opBody {
       padding-inline-start: 16px;
-    }
-  }
-
-  @keyframes spin {
-    to {
-      transform: rotate(270deg);
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .ringSpin {
-      animation: none;
     }
   }
 }

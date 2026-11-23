@@ -5,8 +5,6 @@ interface DeadlineRingProps {
   share: number;
   // Side of the square, in px.
   size: number;
-  // The ring turns while a request is in flight.
-  spinning?: boolean;
 }
 
 const STROKE = 2.5;
@@ -14,16 +12,12 @@ const BOX = 16;
 const RADIUS = (BOX - STROKE) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
-// The time left of a sheet, or the wait of a running proposal. The text beside it carries the
-// meaning, so the ring is hidden from assistive technology.
-export function DeadlineRing({
-  share,
-  size,
-  spinning = false,
-}: DeadlineRingProps) {
+// The time left of a sheet. The text beside it carries the meaning, so the ring is hidden from
+// assistive technology.
+export function DeadlineRing({ share, size }: DeadlineRingProps) {
   return (
     <svg
-      className={spinning ? styles.ringSpin : styles.ring}
+      className={styles.ring}
       width={size}
       height={size}
       viewBox={`0 0 ${String(BOX)} ${String(BOX)}`}

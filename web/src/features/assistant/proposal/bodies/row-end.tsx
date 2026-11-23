@@ -2,7 +2,6 @@ import { Link } from "@slotted/react/link";
 import { Text } from "@slotted/react/typography";
 
 import { AssistantIcon } from "@/features/assistant/panel/assistant-icon";
-import { DeadlineRing } from "@/features/assistant/proposal/deadline-ring";
 import styles from "@/features/assistant/proposal/decision-sheet.module.css";
 import { ResultLabel } from "@/features/assistant/proposal/result-label";
 import type { ResultStatus } from "@/features/assistant/proposal/result-label";
@@ -18,7 +17,7 @@ interface RowEndProps {
   screen: string | undefined;
 }
 
-// Families read: link, typography. The end of an operation row: the running ring while it
+// Families read: link, typography. The end of an operation row: the state word while it
 // executes, and once it is decided its link to the record beside its state word.
 export function RowEnd({ status, running, screen }: RowEndProps) {
   const t = useT();
@@ -29,7 +28,6 @@ export function RowEnd({ status, running, screen }: RowEndProps) {
   if (running) {
     return (
       <span className={styles.opEnd}>
-        <DeadlineRing share={0.75} size={14} spinning />
         <Text size="sm" tone="muted">
           {t("assistant.proposal.status.executing")}
         </Text>

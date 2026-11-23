@@ -39,7 +39,8 @@ The proposals of one answer whose status is `pending`, `waiting` or `executing` 
 - **Footer.** A 64 px footer: "M de N marcadas" (`assistant.sheet.marked`) over a second line that is one of "Inclui 1 irreversível" (`assistant.sheet.irreversible`, danger tone), "K ficam pendentes" (`assistant.sheet.left`) or "Todas serão aplicadas" (`assistant.sheet.all`); then `Rejeitar` (ghost) and `Confirmar M` (solid, accent; danger when a marked proposal is destructive; disabled when M is 0).
 - **Confirm.** Confirms the marked pending proposals in order and stops at the first one that does not end `executed` (P17 kept). Rows lock while it runs. A row whose expiry passed is skipped (P15 kept).
 - **Reject.** Rejects the marked pending proposals in order.
-- **Row states.** While a proposal executes, its row's end shows a 14 px ring and "Executando"; when it ends, the row becomes a result row (section 5) in place, and its body folds.
+- **Row states.** While a proposal executes, the Slotted `Loader` (24 px, accent; danger when destructive) takes the place of its icon tile and its row's end shows "Executando"; when it ends, the row becomes a result row (section 5) in place, and its body folds.
+- **Batch.** While two or more proposals are decided, a Slotted `ProgressBar` on the lower edge of the header shows the share of requests that ended, after 200 ms and for at least 400 ms. One proposal draws no bar. The sheet carries `aria-busy` while it runs.
 - **Errors.** A confirm or reject that does not reach the server writes its reason under the row title in the danger tone, with `role="status"`.
 - **Reveal.** The footer of the sheet of a new answer scrolls into view (P13 kept).
 - **Privacy.** Every amount and text passes `useValueText` as today.

@@ -1,3 +1,4 @@
+import { ProgressBar } from "@slotted/react/progress-indicator";
 import { Text } from "@slotted/react/typography";
 import { Fragment } from "react";
 
@@ -31,7 +32,7 @@ interface DecisionSheetProps {
   onDecided: (id: string, decision: Decision) => void;
 }
 
-// Families read: typography. The open proposals of one answer as one decision: the deadline once,
+// Families read: progress-indicator, typography. The open proposals of one answer as one decision: the deadline once,
 // the operations with their marks, and one confirm for the marked ones (spec 2026-11-15, section 4).
 export function DecisionSheet({
   rows,
@@ -44,6 +45,7 @@ export function DecisionSheet({
   const t = useT();
   const [locale] = useAppLocale();
   const decisions = useSheetDecisions(rows, onDecided);
+  const { done, total } = decisions.progress;
 
   if (rows.length === 0) return null;
 
@@ -62,6 +64,7 @@ export function DecisionSheet({
   return (
     <section
       className={styles.sheet}
+      aria-busy={decisions.running}
       data-open-sheet={pending ? "" : undefined}
     >
       <div className={styles.header}>
@@ -79,6 +82,17 @@ export function DecisionSheet({
             </Text>
           </span>
         )}
+
+        <ProgressBar
+          aria-label={t("assistant.proposal.status.executing")}
+          placement="edge-end"
+          size="sm"
+          loading={decisions.running && total > 1}
+          delay={200}
+          minDuration={400}
+          value={done}
+          max={Math.max(total, 1)}
+        />
       </div>
 
       {rows.map(({ proposal, dependents }) => (
