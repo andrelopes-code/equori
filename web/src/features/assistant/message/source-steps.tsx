@@ -14,9 +14,9 @@ interface SourceStepsProps {
   running: boolean;
 }
 
-// Workaround for Slotted issue #113: MessageActivity always frames its steps, which breaks the rail
-// of the turn, so the steps are an own element (owner decision of 2026-11-23). Families read:
-// message, typography.
+// Workaround for Slotted issue #113: no token sets the ground, the corner and the current edge of a
+// step's tile, nor the ink of its tick, so the steps are an own element (owner decision of
+// 2026-11-23). Families read: message, typography.
 export function SourceSteps({ entries, running }: SourceStepsProps) {
   return (
     <ol className={styles.steps}>

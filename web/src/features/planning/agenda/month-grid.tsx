@@ -24,9 +24,9 @@ interface MonthGridProps {
 // The month as a grid of days, each with a mark per occurrence (filled once done, hollow while
 // pending, by direction) and the day's net (spec A5).
 // Families read: calendar, event-calendar (event chips of a schedule app, no net per day).
-// Workaround for Slotted issue #111: the calendar always draws its own month header, has no lines
-// between days and gives a day no tooltip that answers the keyboard, so the app draws its own month
-// grid (owner decision of 2026-11-23).
+// Workaround for Slotted issue #111: the calendar centres the number and the marks of a day, says
+// today with a dot and makes a button of every day, so the app draws its own month grid (owner
+// decision of 2026-11-23).
 export function MonthGrid({
   days,
   firstDay,

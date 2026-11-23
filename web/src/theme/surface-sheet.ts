@@ -9,10 +9,10 @@ import {
 import type { SurfaceRule, SurfaceScheme } from "./surface-recipe.ts";
 
 // Spec A13 and A14, docs/specs/2026-10-29-appearance-studio-design.md. Workaround for Slotted
-// issue #44: a theme variant takes a derivation and no CSS value, and the shadows are CSS values, so
-// this sheet sets the surface tokens under the data-equori-* attributes. make gen writes it to
-// surface.gen.css (surface-gen.ts), because building it in the page would carry the whole of
-// @slotted/theme into the bundle.
+// issue #44: as theme variants the same values make each compiled theme 25% larger, twice with the
+// glass theme, where this sheet is 13% once. It sets the surface tokens under the data-equori-*
+// attributes. make gen writes it to surface.gen.css (surface-gen.ts), because building it in the
+// page would carry the whole of @slotted/theme into the bundle.
 export function surfaceSheet(): string {
   const rules: string[] = [];
   for (const depth of surfaceSets.depth)
