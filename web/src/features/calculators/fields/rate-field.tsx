@@ -42,12 +42,7 @@ export function RateField({
         name={name}
         value={rateFieldValue(value, tag)}
         onChange={onChange}
-        {...(compact
-          ? {
-              valueClassName: design.unitValue,
-              periodClassName: design.unitSelect,
-            }
-          : {})}
+        {...(compact ? { valueClassName: design.unitValue } : {})}
         {...(period === undefined ? {} : { period })}
         {...(onPeriodChange === undefined ? {} : { onPeriodChange })}
       />

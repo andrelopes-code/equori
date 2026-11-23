@@ -16,16 +16,14 @@ export function RateInput({
   period,
   onPeriodChange,
   valueClassName,
-  periodClassName,
 }: {
   value: string;
   onChange: (text: string) => void;
   name: string;
   period?: RatePeriod;
   onPeriodChange?: (period: RatePeriod) => void;
-  // Classes of the number and of the period select, for a layout that sets their widths.
+  // The class of the number, for a layout that sets its width.
   valueClassName?: string;
-  periodClassName?: string;
 }) {
   const t = useT();
   const field = (
@@ -53,7 +51,6 @@ export function RateInput({
         ]}
         value={period}
         multiple={false}
-        className={periodClassName}
         onChange={(next) => {
           if (next === "month" || next === "year") onPeriodChange(next);
         }}

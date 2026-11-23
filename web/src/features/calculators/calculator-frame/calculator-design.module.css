@@ -381,15 +381,6 @@
     font-variant-numeric: tabular-nums;
   }
 
-  /* Workaround for Slotted issue #151: a select in an Inline row takes the whole row, so the
-     select keeps its content width. */
-  .unitSelect {
-    flex: none;
-    inline-size: auto;
-  }
-
-  /* Workaround for Slotted issue #151: the text field beside the select is squeezed, so it keeps
-     a fixed width. */
   .unitValue {
     flex: none;
     inline-size: 7rem; /* literal: value part of a value-and-unit pair, medium step minus the unit select */

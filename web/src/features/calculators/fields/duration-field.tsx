@@ -57,7 +57,6 @@ export function DurationField({
           choices={units.map((u) => ({ value: u, label: t(unitKeys[u]) }))}
           value={unit}
           multiple={false}
-          {...(compact ? { className: design.unitSelect } : {})}
           onChange={(next) => {
             const chosen = units.find((u) => u === next);
             if (chosen !== undefined) onUnitChange(chosen);

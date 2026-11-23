@@ -145,9 +145,6 @@ describe("Financing calculator", () => {
       const input = document.querySelector(`input[name="${name}"]`);
       expect(input?.closest('[class*="_unitValue_"]')).not.toBeNull();
     }
-    expect(document.querySelectorAll('[class*="_unitSelect_"]')).toHaveLength(
-      2,
-    );
     expect(
       screen.getByText(catalogEn["calc.financing.solve.hint"]),
     ).toBeVisible();
