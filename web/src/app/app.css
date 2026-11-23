@@ -69,8 +69,9 @@
 
 /* The distance between the blocks of a page (spec 2026-11-17-page-spacing, PS1): one step between
    two blocks, a larger one above a titled section with no surface. Both step down on a phone.
-   PageBody stacks its own children by the same steps and publishes no token of them; PageStack
-   applies them to a stack deeper in the page, such as a tab panel. */
+   Workaround for Slotted issue #140: PageBody stacks its own children by the same steps and
+   publishes no token of them; PageStack applies them to a stack deeper in the page, such as a tab
+   panel. */
 @layer app {
   :root {
     --equori-page-block-gap: var(--slotted-space-6);
