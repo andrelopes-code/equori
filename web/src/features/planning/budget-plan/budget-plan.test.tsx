@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -676,6 +676,47 @@ describe("Budget plan", () => {
 
     // The panel and the strip both write the figure.
     expect(await screen.findAllByText("R$2,160.00")).toHaveLength(2);
+    vi.unstubAllGlobals();
+  });
+
+  it("hands over between the panel and the strip as the page scrolls", async () => {
+    const reports: ((entries: { isIntersecting: boolean }[]) => void)[] = [];
+    const scroll = (isIntersecting: boolean) => {
+      act(() => {
+        for (const report of reports) report([{ isIntersecting }]);
+      });
+    };
+    vi.stubGlobal(
+      "IntersectionObserver",
+      class {
+        constructor(report: (typeof reports)[number]) {
+          reports.push(report);
+        }
+        observe() {
+          return undefined;
+        }
+        disconnect() {
+          return undefined;
+        }
+      },
+    );
+    await renderPlan();
+    const holder = (await panel()).parentElement;
+    expect(holder).not.toHaveAttribute("data-away");
+    expect(screen.getAllByText("R$2,160.00")).toHaveLength(1);
+
+    scroll(false);
+    const strip = screen
+      .getAllByText("R$2,160.00")[0]
+      ?.closest("[aria-hidden]");
+    expect(holder).toHaveAttribute("data-away");
+    expect(strip).toHaveAttribute("data-shown");
+
+    // The strip stays rendered to play its exit.
+    scroll(true);
+    expect(holder).not.toHaveAttribute("data-away");
+    expect(strip).toBeInTheDocument();
+    expect(strip).not.toHaveAttribute("data-shown");
     vi.unstubAllGlobals();
   });
 });

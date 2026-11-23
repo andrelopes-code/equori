@@ -196,7 +196,7 @@ The page is `planning-page.tsx`, with its month selector. The budgets tab gets a
   - The banner holds its text and its actions on one line, the actions at the end.
   - **Apply {n} checked** turns them into pending changes, and a toast offers **Undo**. **Discard** leaves review mode with no change.
 - **Distribution.** It turns into pending changes on the affected rows, and a toast offers **Undo**.
-- **Sticky strip.** When the reference panel leaves the viewport, a strip pins under the page header. It holds `unassigned`, a thin copy of the bar and "of {reference}". The panel is watched by an `IntersectionObserver`.
+- **Sticky strip.** When the reference panel leaves the viewport, a strip pins under the page header. It holds `unassigned`, a thin copy of the bar and "of {reference}". The panel is watched by an `IntersectionObserver`. When what is left of the panel fits behind the strip, the panel fades up and the strip slides down from under the header; scrolling back plays the reverse. The strip takes no height, so the content does not move. Under `prefers-reduced-motion`, both change at once. A panel control under keyboard focus keeps the panel in sight.
 - **Pending changes guard.** Switching the month, switching to Track or leaving the route with pending changes opens a dialog: "Discard {n} changes?", with **Keep editing** and **Discard**.
 - **Saving.**
   - **Save plan** shows its loading state. Success clears the pending state, refetches the plan and the Track queries, and shows the toast "Plan for {month} saved".

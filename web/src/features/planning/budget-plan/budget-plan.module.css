@@ -363,23 +363,54 @@
     position: relative;
   }
 
-  /* The panel's box moved up by the height of the page's chrome: it leaves the viewport when
-     the panel goes under that chrome, and the strip is shown from then. */
+  /* The panel's box moved up by the height of the page's chrome and of the strip: it leaves the
+     viewport when what is left of the panel fits behind the strip, and the two trade places. */
   .panelProbe {
+    --plan-handover: calc(
+      var(--equori-bar-extent, 0px) + var(--slotted-page-sticky-top, 0px) +
+        var(--slotted-space-11)
+    );
+
     position: absolute;
     inset-inline: 0;
-    inset-block: calc(-1 * var(--slotted-page-sticky-top, 0px))
-      var(--slotted-page-sticky-top, 0px);
+    inset-block: calc(-1 * var(--plan-handover)) var(--plan-handover);
     pointer-events: none;
   }
 
-  .strip {
-    composes: edge from "../../../ui/display/panel-edge.module.css";
+  /* The panel and the strip trade places: the one that arrives waits half of the other's exit,
+     so their texts do not cross. */
+  .card {
+    transition:
+      opacity var(--slotted-duration-medium) var(--slotted-easing-enter),
+      translate var(--slotted-duration-medium) var(--slotted-easing-enter);
+    transition-delay: calc(var(--slotted-duration-short) / 2);
+  }
+
+  /* A control of the panel the keyboard is on stays in sight. */
+  .panelHolder[data-away]:not(:has(:focus-visible)) > .card {
+    opacity: 0;
+    translate: 0 calc(-1 * var(--slotted-space-5));
+    transition-duration: var(--slotted-duration-short);
+    transition-timing-function: var(--slotted-easing-exit);
+    transition-delay: 0ms;
+  }
+
+  /* Above the panel and with no height of its own: it is at its stop before the panel has left,
+     and the content does not move when it arrives or leaves. The margin takes back the stack's
+     gap. */
+  .stripHolder {
     position: sticky;
     inset-block-start: calc(
       var(--slotted-page-sticky-top, 0px) + var(--slotted-space-3)
     );
     z-index: 1;
+    block-size: 0;
+    margin-block-end: calc(-1 * var(--slotted-space-5));
+  }
+
+  .strip {
+    composes: edge from "../../../ui/display/panel-edge.module.css";
+    position: relative;
     display: flex;
     align-items: center;
     gap: var(--slotted-space-4);
@@ -387,6 +418,30 @@
     border-radius: var(--slotted-radius-md);
     background: var(--slotted-panel-surface, var(--slotted-surface-raised));
     box-shadow: var(--slotted-panel-shadow, none);
+    opacity: 0;
+    visibility: hidden;
+    translate: 0 -100%;
+    transition:
+      opacity var(--slotted-duration-short) var(--slotted-easing-exit),
+      translate var(--slotted-duration-short) var(--slotted-easing-exit),
+      visibility var(--slotted-duration-short);
+  }
+
+  .strip[data-shown] {
+    opacity: 1;
+    visibility: visible;
+    translate: 0 0;
+    transition-duration: var(--slotted-duration-medium);
+    transition-timing-function: var(--slotted-easing-enter);
+    transition-delay: calc(var(--slotted-duration-short) / 2);
+  }
+
+  /* The first showing has no hidden state to start from. */
+  @starting-style {
+    .strip[data-shown] {
+      opacity: 0;
+      translate: 0 -100%;
+    }
   }
 
   .stripBar {

@@ -1188,6 +1188,7 @@ describe("phone bars as materials", () => {
     const main = region("main");
     expect(main.style.paddingBlockStart).toBe("56px");
     expect(main.style.paddingBlockEnd).toBe("93.796875px");
+    expect(main.style.getPropertyValue("--equori-bar-extent")).toBe("56px");
     expect(main.style.scrollPaddingBlock).toBe(
       "56px calc(93.796875px + var(--slotted-page-sticky-bottom, 0px))",
     );

@@ -6,15 +6,14 @@ import type { components } from "@/api/schema.gen";
 import type { CategoryEntry } from "@/features/categories";
 import styles from "@/features/planning/budget-plan/budget-plan.module.css";
 import { PlanAllocationBar } from "@/features/planning/budget-plan/plan-allocation-bar";
+import { PlanAnswer } from "@/features/planning/budget-plan/plan-answer";
 import { planShortcut } from "@/features/planning/budget-plan/plan-keys";
 import { PlanBuckets } from "@/features/planning/income-split/plan-buckets";
 import { PlanAnnouncer } from "@/features/planning/budget-plan/plan-announcer";
 import { PlanLeaveGuard } from "@/features/planning/plan-leave/plan-leave-guard";
 import { PlanNotices } from "@/features/planning/budget-plan/plan-notices";
-import { PlanReferencePanel } from "@/features/planning/budget-plan/plan-reference-panel";
 import { PlanSaveBar } from "@/features/planning/budget-plan/plan-save-bar";
 import { PlanSaveFailure } from "@/features/planning/budget-plan/plan-save-failure";
-import { PlanStickyStrip } from "@/features/planning/budget-plan/plan-sticky-strip";
 import { PlanWorkArea } from "@/features/planning/budget-plan/plan-work-area";
 import { showUndoToast } from "@/features/planning/budget-plan/plan-undo-toast";
 import { usePlanDraft } from "@/features/planning/budget-plan/use-plan-draft";
@@ -23,7 +22,6 @@ import { usePlanFormat } from "@/features/planning/budget-plan/use-plan-format";
 import { usePlanGroupsOpen } from "@/features/planning/budget-plan/use-plan-groups-open";
 import { usePlanReview } from "@/features/planning/budget-plan/use-plan-review";
 import { usePlanSave } from "@/features/planning/budget-plan/use-plan-save";
-import { useVisible } from "@/ui/runtime/use-visible";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { usePrivacy } from "@/privacy/privacy-provider";
@@ -56,7 +54,6 @@ export function PlanEditor({
   const privacy = usePrivacy();
   const format = usePlanFormat(plan.currency, scale);
   const draft = usePlanDraft(plan);
-  const [panelRef, panelVisible] = useVisible();
   const { collapsed, toggle, select } = usePlanGroupsOpen();
 
   const [highlighted, setHighlighted] = useState<string | null>(null);
@@ -64,7 +61,7 @@ export function PlanEditor({
   const past = month < today.slice(0, 7);
   const editable = !past && !format.hidden;
   const figures = usePlanFigures(plan, draft, entries, month, format);
-  const { reference, unassigned, over, lastMonth } = figures;
+  const { reference, over, lastMonth } = figures;
   const review = usePlanReview(draft, figures.room, format, lastMonth);
   const save = usePlanSave(draft, month, format);
 
@@ -102,36 +99,12 @@ export function PlanEditor({
           onShowAmounts={privacy.toggle}
         />
 
-        <div className={styles.panelHolder}>
-          <div ref={panelRef} className={styles.panelProbe} />
-          <PlanReferencePanel
-            plan={plan}
-            source={draft.source}
-            fixed={draft.fixed}
-            reference={reference}
-            unassigned={unassigned}
-            committed={figures.committed}
-            format={format}
-            editable={editable}
-            bar={bar}
-            target={draft.target}
-            onSource={(source, fixed) => {
-              draft.setSource(source, fixed);
-            }}
-            onTarget={(bp) => {
-              draft.setTarget(bp);
-            }}
-          />
-        </div>
-
-        <PlanStickyStrip
-          shown={!panelVisible}
-          label={over ? t("plan.over") : t("plan.unassigned")}
-          figure={figures.figure}
-          reference={
-            reference === undefined ? undefined : format.money(reference)
-          }
-          over={over}
+        <PlanAnswer
+          plan={plan}
+          draft={draft}
+          figures={figures}
+          format={format}
+          editable={editable}
           bar={bar}
         />
 

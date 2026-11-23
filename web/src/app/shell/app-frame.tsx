@@ -12,6 +12,7 @@ import { SectionDefaultsProvider } from "@slotted/react/section";
 import { ToastRegion } from "@slotted/react/toast";
 import type { CommandPaletteHandle } from "@slotted/react/command-palette";
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 
 import styles from "@/app/shell/app-frame.module.css";
 import { CalculatorWindow } from "@/app/shell/calculator/calculator-window";
@@ -155,11 +156,13 @@ export function AppFrame() {
         style={
           wide
             ? { scrollPaddingBlockEnd: stickyFooter }
-            : {
+            : ({
+                // The bar over the scroller's top edge, for what compares a box with the viewport.
+                "--equori-bar-extent": `${String(barExtent)}px`,
                 paddingBlockStart: barExtent,
                 paddingBlockEnd: dockExtent,
                 scrollPaddingBlock: `${String(barExtent)}px calc(${String(dockExtent)}px + ${stickyFooter})`,
-              }
+              } as CSSProperties)
         }
       >
         <ReadOnlyNotice />
