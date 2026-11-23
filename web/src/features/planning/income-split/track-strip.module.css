@@ -59,4 +59,10 @@
   [data-part-key="unallocated"] {
     --strip-tone: var(--slotted-tone-neutral-solid);
   }
+
+  /* Outside the income the bar sums to: a key with no fill, as it has no segment. */
+  [data-part-key="retained"] .swatch {
+    border: 1px dashed var(--slotted-border-strong);
+    background: transparent;
+  }
 }

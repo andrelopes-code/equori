@@ -1,4 +1,5 @@
 import type { components } from "@/api/schema.gen";
+import type { MessageKey } from "@/i18n/catalog.en";
 
 type History = components["schemas"]["BudgetBucketHistory"];
 
@@ -49,4 +50,17 @@ export function trackStrip(history: History, month: string): StripPart[] {
     shareBp:
       positive > 0 ? Math.round((Math.max(amount, 0) * 10000) / positive) : 0,
   }));
+}
+
+// The sentence that explains a term of the legend: the unallocated income is an accrual figure
+// (A235), the retained yields stand outside the income received (A252). Undefined for a term
+// that needs none and for an unallocated income of zero.
+export function stripHelp(
+  key: StripKey | "retained",
+  amount: number,
+): MessageKey | undefined {
+  if (key === "retained") return "track.retained";
+  if (key !== "unallocated" || amount === 0) return undefined;
+
+  return amount > 0 ? "track.unallocated" : "track.unallocatedNegative";
 }

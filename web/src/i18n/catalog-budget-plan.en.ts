@@ -164,7 +164,7 @@ export const budgetPlanEn = {
   "track.received": "{amount} came in.",
   "track.targetNoIncome": "{share} of the income",
   "track.referenceDiffers":
-    "The targets follow the {received} received; the plan of the month counted on {reference}.",
+    "{received} came in; the plan of the month counted on {reference}.",
   "track.target": "target {amount} · {share} of {received}",
   "track.targetSavings": "target {amount} · {share} of {received}",
   "track.left": "{amount} left",
@@ -178,6 +178,7 @@ export const budgetPlanEn = {
   "track.strip.goalDeposits": "Goal deposits",
   "track.strip.outside": "Outside the split",
   "track.strip.unallocated": "Unallocated",
+  "track.strip.retained": "Retained yields",
   "track.realPlain": "{amount}",
   "track.realCovered": "{amount} · {covered} from accumulated balance",
   "track.realGoalPaid": "{amount} · {paid} paid by goals",
@@ -199,7 +200,6 @@ export const budgetPlanEn = {
   "track.legend.missed": "missed the target",
   "track.legend.none": "no income",
   "track.legend.target": "target",
-  "track.outside": "{amount} spent outside the split in {month}.",
   "track.unallocated":
     "{amount} of the income of {month} went to no bucket, by purchase date.",
   "track.unallocatedNegative":
@@ -292,5 +292,4 @@ export const budgetPlanEn = {
   "track.entries.count": "{count} entries",
   "track.entries.empty": "Nothing counted in this month.",
   "track.entries.open": "See the entries of {name}",
-  "track.entries.see": "See entries",
 };

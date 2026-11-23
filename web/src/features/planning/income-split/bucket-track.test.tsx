@@ -1,10 +1,11 @@
-import { screen, within } from "@testing-library/react";
+import { act, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { money } from "@/testing/account-api";
 import { budgetApi } from "@/testing/budget-api";
+import { budgetPlan } from "@/testing/budget-plan-api";
 import { json } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
 
@@ -95,9 +96,6 @@ describe("Income split in Track", () => {
         name: "Needs: R$3,200.00 against a target of R$3,000.00",
       }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText("R$15.00 spent outside the split in October."),
-    ).toBeVisible();
     // Planning coherence A258: each target states its base.
     expect(
       screen.getByText("target R$3,000.00 · 60.0% of R$5,000.00"),
@@ -134,43 +132,44 @@ describe("Income split in Track", () => {
     ]);
   });
 
-  it("states the unallocated income of the month, positive, negative or absent at zero", async () => {
-    const withRest = (unallocated: number) => ({
-      ...history,
-      months: history.months.map((m) =>
-        m.month === "2026-10" ? { ...m, unallocated: money(unallocated) } : m,
-      ),
-    });
-    const view = await renderApp(october, {
-      fetch: budgetApi({
-        "GET /api/v1/budget-buckets/history": () => json(200, withRest(120000)),
-      }),
-      today,
-    });
-    await section();
+  const withRest = (unallocated: number) => ({
+    ...history,
+    months: history.months.map((m) =>
+      m.month === "2026-10" ? { ...m, unallocated: money(unallocated) } : m,
+    ),
+  });
 
-    expect(
-      screen.getByText(
-        "R$1,200.00 of the income of October went to no bucket, by purchase date.",
-      ),
-    ).toBeVisible();
-    view.unmount();
+  it.each([
+    [
+      120000,
+      "R$1,200.00 of the income of October went to no bucket, by purchase date.",
+    ],
+    [
+      -21300,
+      "R$213.00 above the income of October was spent or set aside, by purchase date.",
+    ],
+  ])(
+    "explains the unallocated income of %i beside its figure",
+    async (unallocated, sentence) => {
+      await renderApp(october, {
+        fetch: budgetApi({
+          "GET /api/v1/budget-buckets/history": () =>
+            json(200, withRest(unallocated)),
+        }),
+        today,
+      });
+      await section();
 
-    const negative = await renderApp(october, {
-      fetch: budgetApi({
-        "GET /api/v1/budget-buckets/history": () => json(200, withRest(-21300)),
-      }),
-      today,
-    });
-    await section();
+      const help = screen.getByRole("button", { name: "About “Unallocated”" });
+      act(() => {
+        help.focus();
+      });
 
-    expect(
-      screen.getByText(
-        "R$213.00 above the income of October was spent or set aside, by purchase date.",
-      ),
-    ).toBeVisible();
-    negative.unmount();
+      expect(await screen.findByText(sentence)).toBeVisible();
+    },
+  );
 
+  it("explains no unallocated income at zero", async () => {
     await renderApp(october, {
       fetch: budgetApi({
         "GET /api/v1/budget-buckets/history": () => json(200, withRest(0)),
@@ -179,8 +178,64 @@ describe("Income split in Track", () => {
     });
     await section();
 
+    expect(
+      screen.queryByRole("button", { name: "About “Unallocated”" }),
+    ).toBeNull();
     expect(screen.queryByText(/stayed in the accounts/)).toBeNull();
     expect(screen.queryByText(/paid from balances/)).toBeNull();
+  });
+
+  it("writes the retained yields in the legend of the strip and explains them", async () => {
+    await renderApp(october, {
+      fetch: budgetApi({
+        "GET /api/v1/budget-buckets/history": () =>
+          json(200, {
+            ...history,
+            months: history.months.map((m) => ({
+              ...m,
+              retained: money(6712),
+            })),
+          }),
+      }),
+      today,
+    });
+    await section();
+    const strip = screen.getByRole("group", {
+      name: "Where the R$5,000.00 of the month went",
+    });
+
+    const help = within(strip).getByRole("button", {
+      name: "About “Retained yields”",
+    });
+    act(() => {
+      help.focus();
+    });
+
+    expect(within(strip).getByText("R$67.12")).toBeVisible();
+    expect(
+      await screen.findByText(
+        "R$67.12 of yields stayed in the investments and is outside the split.",
+      ),
+    ).toBeVisible();
+  });
+
+  it("states the received income and the reference of the plan in one line", async () => {
+    await renderApp(october, {
+      fetch: budgetApi({
+        "GET /api/v1/budget-buckets/history": () => json(200, history),
+        "GET /api/v1/budget-plan": () =>
+          json(200, budgetPlan("2026-10", { reference: money(480000) })),
+      }),
+      today,
+    });
+    await section();
+
+    expect(
+      await screen.findByText(
+        "R$5,000.00 came in; the plan of the month counted on R$4,800.00.",
+      ),
+    ).toBeVisible();
+    expect(screen.queryByText("R$5,000.00 came in.")).toBeNull();
   });
 
   it("states the version of the month on screen", async () => {
@@ -281,7 +336,7 @@ describe("Entries of a bucket", () => {
     await section();
 
     await userEvent.click(
-      screen.getByRole("button", { name: catalogEn["track.entries.see"] }),
+      screen.getByRole("button", { name: "Outside the split" }),
     );
     await screen.findByRole("dialog");
 

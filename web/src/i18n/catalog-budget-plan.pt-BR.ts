@@ -163,7 +163,7 @@ export const budgetPlanPtBR: Record<keyof typeof budgetPlanEn, string> = {
   "track.received": "Entrou {amount}.",
   "track.targetNoIncome": "{share} da renda",
   "track.referenceDiffers":
-    "Os alvos seguem os {received} recebidos; o plano do mês contava com {reference}.",
+    "Entrou {received}; o plano do mês contava com {reference}.",
   "track.target": "alvo {amount} · {share} de {received}",
   "track.targetSavings": "alvo {amount} · {share} de {received}",
   "track.left": "{amount} livres",
@@ -177,6 +177,7 @@ export const budgetPlanPtBR: Record<keyof typeof budgetPlanEn, string> = {
   "track.strip.goalDeposits": "Depósitos em metas",
   "track.strip.outside": "Fora da divisão",
   "track.strip.unallocated": "Sem destino",
+  "track.strip.retained": "Rendimentos retidos",
   "track.realPlain": "{amount}",
   "track.realCovered": "{amount} · {covered} do saldo acumulado",
   "track.realGoalPaid": "{amount} · {paid} pagos por metas",
@@ -198,7 +199,6 @@ export const budgetPlanPtBR: Record<keyof typeof budgetPlanEn, string> = {
   "track.legend.missed": "fora do alvo",
   "track.legend.none": "sem renda",
   "track.legend.target": "alvo",
-  "track.outside": "{amount} gastos fora da divisão em {month}.",
   "track.unallocated":
     "{amount} da renda de {month} não foram para nenhum pote, pela data da compra.",
   "track.unallocatedNegative":
@@ -291,5 +291,4 @@ export const budgetPlanPtBR: Record<keyof typeof budgetPlanEn, string> = {
   "track.entries.count": "{count} lançamentos",
   "track.entries.empty": "Nada contado neste mês.",
   "track.entries.open": "Ver os lançamentos de {name}",
-  "track.entries.see": "Ver lançamentos",
 };
