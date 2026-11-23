@@ -4,7 +4,8 @@ import { useNavigate } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 
 import { useApi } from "@/api/api-context";
-import { errorText } from "@/api/problem";
+import { errorText, ProblemError } from "@/api/problem";
+import type { Problem } from "@/api/problem";
 import {
   accountQuery,
   csvProfileQuery,
@@ -40,6 +41,8 @@ export function useImportDraft(id: string) {
   const reading = useRef<File | undefined>(undefined);
   const [refusal, setRefusal] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [beforeOpening, setBeforeOpening] =
+    useState<Problem["before_opening"]>();
   const file = files.find((f) => f.status !== "rejected")?.file;
 
   // The draft the reader starts from: the saved profile, else what the file's header suggests.
@@ -101,6 +104,8 @@ export function useImportDraft(id: string) {
   const submit = async () => {
     if (file === undefined) return;
     setError(null);
+    setBeforeOpening(undefined);
+
     try {
       if (format === "csv") {
         if (profile === null) return;
@@ -114,8 +119,18 @@ export function useImportDraft(id: string) {
         params: { id, batchId: batch.id },
       });
     } catch (caught) {
+      if (caught instanceof ProblemError && caught.problem.before_opening) {
+        setBeforeOpening(caught.problem.before_opening);
+        return;
+      }
+
       setError(errorText(caught, t));
     }
+  };
+
+  const keepOpening = () => {
+    setBeforeOpening(undefined);
+    setError(t("problem.lines_before_opening"));
   };
 
   const changeFiles = (next: readonly UploadFile[]) => {
@@ -154,6 +169,8 @@ export function useImportDraft(id: string) {
     busy,
     refusal,
     error,
+    beforeOpening,
+    keepOpening,
     setEdited,
     submit,
     changeFiles,

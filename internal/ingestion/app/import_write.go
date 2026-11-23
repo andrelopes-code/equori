@@ -19,6 +19,7 @@ func (s *Service) create(
 	ctx context.Context,
 	booksID int64,
 	sync bool,
+	opensOn time.Time,
 	creates []NewLine,
 	created []*domain.ExternalRecord,
 ) error {
@@ -41,16 +42,7 @@ func (s *Service) create(
 
 			continue
 		case ok:
-			rec := created[rejected.Index]
-
-			return fileError(
-				fmt.Sprintf(
-					"line dated %s for %d: %v",
-					rec.Date.Format(time.DateOnly),
-					rec.Amount,
-					rejected.Reason,
-				),
-			)
+			return refusedFile(opensOn, creates, rejected)
 		case err != nil:
 			return err
 		}

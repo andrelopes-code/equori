@@ -17,6 +17,8 @@ A statement file is the file your bank or card offers for download. equori reads
 
 Lines that came in an earlier import are recognised and skipped. Importing the same file twice duplicates nothing.
 
+When the file has lines from before the account opens, equori shows both dates. **Move and import** moves the opening of the account to the first line and imports the file. An opening balance keeps its date, so the earlier lines change the balance of the account.
+
 ## What happens to each line
 
 The import page shows the state of each line:

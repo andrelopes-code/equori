@@ -1,9 +1,9 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
-import { accountRoutes, checkingID } from "@/testing/account-api";
+import { accountRoutes, checkingID, openingID } from "@/testing/account-api";
 import { fakeApi, json, problem } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
 
@@ -440,5 +440,98 @@ describe("Import statement", () => {
       await screen.findByText(catalogEn["problem.csv_suggestion_unavailable"]),
     ).toBeInTheDocument();
     expect(importButton()).toBeDisabled();
+  });
+});
+
+describe("Lines before the opening date", () => {
+  const dates = { opened_on: "2026-10-10", first_line_on: "2026-10-02" };
+
+  // The first import is refused with both dates; the next one is accepted.
+  function refusedOnce(log: string[], overrides: Record<string, Route> = {}) {
+    let refused = false;
+    return api(log, {
+      [`POST /api/v1/accounts/${checkingID}/imports`]: () => {
+        log.push("POST");
+        if (refused) return json(201, batch("b9"));
+        refused = true;
+        return problem(422, "lines_before_opening", { before_opening: dates });
+      },
+      [`PATCH /api/v1/accounts/${checkingID}`]: async (req) => {
+        log.push(`PATCH ${JSON.stringify(await req.json())}`);
+        return json(200, { id: checkingID });
+      },
+      ...overrides,
+    });
+  }
+
+  async function importOfx() {
+    await choose(new File(["<OFX>"], "extrato.ofx"));
+    await userEvent.click(importButton());
+    return screen.findByRole("alertdialog", {
+      name: "Move the opening to 10/02/2026",
+    });
+  }
+
+  it("moves the opening to the first line and imports on one confirmation", async () => {
+    const log: string[] = [];
+    const { router } = await renderApp(`/accounts/${checkingID}/import`, {
+      fetch: refusedOnce(log),
+    });
+    const dialog = await importOfx();
+    expect(dialog).toHaveAccessibleDescription(
+      "The file has lines from 10/02/2026, and the account opens on 10/10/2026.",
+    );
+    expect(dialog).not.toHaveTextContent("opening balance");
+    expect(log).toEqual(["POST"]);
+    const move = screen.getByRole("button", {
+      name: catalogEn["importFile.moveOpening"],
+    });
+    await waitFor(() => {
+      expect(move).toBeEnabled();
+    });
+    await userEvent.click(move);
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(
+        `/accounts/${checkingID}/imports/b9`,
+      );
+    });
+    expect(log).toEqual(["POST", 'PATCH {"opened_on":"2026-10-02"}', "POST"]);
+  });
+
+  it("states that the opening balance keeps its date", async () => {
+    const entry = {
+      id: "t1",
+      date: "2026-10-10",
+      postings: [{ account_id: checkingID }, { account_id: openingID }],
+    };
+    await renderApp(`/accounts/${checkingID}/import`, {
+      fetch: refusedOnce([], {
+        "GET /api/v1/transactions": (req) => {
+          const account = new URL(req.url).searchParams.get("account_id");
+          return json(200, { items: account === openingID ? [entry] : [] });
+        },
+      }),
+    });
+    await importOfx();
+    expect(
+      await screen.findByText(
+        "The opening balance stays on 10/10/2026. The earlier lines change the account's balance.",
+      ),
+    ).toBeVisible();
+  });
+
+  it("changes nothing on cancel and says why the file was refused", async () => {
+    const log: string[] = [];
+    await renderApp(`/accounts/${checkingID}/import`, {
+      fetch: refusedOnce(log),
+    });
+    const dialog = await importOfx();
+    await userEvent.click(
+      within(dialog).getByRole("button", { name: "Cancel" }),
+    );
+    expect(
+      await screen.findByText(catalogEn["problem.lines_before_opening"]),
+    ).toBeInTheDocument();
+    expect(log).toEqual(["POST"]);
   });
 });

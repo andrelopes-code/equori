@@ -376,6 +376,12 @@ type Problem struct {
 	// ArchiveVersion The archive_version of a refused archive (archive_too_new, ADR 021).
 	ArchiveVersion *int `json:"archive_version,omitempty"`
 
+	// BeforeOpening The dates of lines_before_opening, the account's opening and the first line refused (A263).
+	BeforeOpening *struct {
+		FirstLineOn openapi_types.Date `json:"first_line_on"`
+		OpenedOn    openapi_types.Date `json:"opened_on"`
+	} `json:"before_opening,omitempty"`
+
 	// Code Stable error identifier. Values: invalid_request, request_too_large, invalid_credentials,
 	// too_many_attempts, unauthenticated, forbidden, not_found, validation_failed, internal_error,
 	// server_busy, invalid_account, version_conflict, transaction_voided, posting_reconciled,
@@ -396,7 +402,7 @@ type Problem struct {
 	// posting_not_movable, archive_invalid, import_not_empty, import_conflict, export_pending,
 	// export_not_ready, record_not_discarded, no_decision, too_many_lines, proposal_not_found,
 	// provider_not_found, use_not_found, capability_missing, key_required, secret_key_missing,
-	// admin_required, unofficial_source, spreadsheet_limit_reached.
+	// admin_required, unofficial_source, spreadsheet_limit_reached, lines_before_opening.
 	Code   string        `json:"code"`
 	Detail *string       `json:"detail,omitempty"`
 	Errors *[]FieldError `json:"errors,omitempty"`

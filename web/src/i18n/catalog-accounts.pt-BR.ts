@@ -554,6 +554,14 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
     "Nenhum modelo de linguagem responde agora. Preencha as colunas.",
   "problem.csv_suggestion_unusable":
     "O modelo não identificou as colunas. Preencha-as.",
+  "problem.lines_before_opening":
+    "O arquivo tem linhas de antes da abertura da conta.",
+  "importFile.beforeOpeningTitle": "Mover a abertura para {date}",
+  "importFile.beforeOpening":
+    "O arquivo tem linhas desde {first}, e a conta abre em {opened}.",
+  "importFile.openingBalanceKept":
+    "O saldo inicial continua em {date}. As linhas anteriores alteram o saldo da conta.",
+  "importFile.moveOpening": "Mover e importar",
   "importFile.footerRows": "Linhas abaixo dos dados",
   "importFile.signColumn": "Coluna com a marca de débito ou crédito",
   "importFile.debitMarker": "Marca de débito",

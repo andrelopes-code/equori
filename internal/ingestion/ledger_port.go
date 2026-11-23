@@ -91,7 +91,11 @@ func (p ledgerPort) ImportTarget(
 		}
 	}
 
-	return domain.ImportTarget{Currency: t.Currency, Kind: t.Kind}, p.translate(err)
+	return domain.ImportTarget{
+		Currency: t.Currency,
+		Kind:     t.Kind,
+		OpenedOn: t.OpenedOn,
+	}, p.translate(err)
 }
 
 func (p ledgerPort) LinkedTransaction(

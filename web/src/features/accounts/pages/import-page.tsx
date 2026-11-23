@@ -7,12 +7,14 @@ import { useParams } from "@tanstack/react-router";
 import { AccountFormHeader } from "@/features/accounts/account-form/account-form-header";
 import { CsvPreviewTable } from "@/features/accounts/csv/csv-preview-table";
 import { CsvProfileSection } from "@/features/accounts/csv/csv-profile-section";
+import { BeforeOpeningDialog } from "@/features/accounts/import/before-opening-dialog";
 import { ImportActions } from "@/features/accounts/import/import-actions";
 import { ImportFileField } from "@/features/accounts/import/import-file-field";
 import { ImportFormatField } from "@/features/accounts/import/import-format-field";
 import { useImportDraft } from "@/features/accounts/import/use-import-draft";
 import { HelpLink } from "@/features/help";
 import { useT } from "@/i18n/i18n-provider";
+import { Presence } from "@/ui/dialogs/presence";
 import { FormLayout } from "@/ui/form-layout/form-layout";
 
 // A statement file into a balance account: an OFX file as it is, a CSV file through the
@@ -46,6 +48,18 @@ export function ImportPage() {
         backLabel={account.data?.name ?? t("nav.accounts")}
         actions={<HelpLink page="import-statement" />}
       />
+
+      <Presence value={state.beforeOpening}>
+        {(dates) => (
+          <BeforeOpeningDialog
+            accountId={id}
+            dates={dates}
+            onMoved={() => void state.submit()}
+            onCancel={state.keepOpening}
+          />
+        )}
+      </Presence>
+
       <PageBody>
         <Stack gap={10}>
           <FormLayout>

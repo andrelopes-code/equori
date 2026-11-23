@@ -1353,7 +1353,8 @@ export interface paths {
          * @description Each line is deduplicated (I10), matched to an existing transaction of the account with the
          *     same amount within 3 days, or created against an uncategorized account; ambiguous matches
          *     wait for review. A file balance becomes a balance assertion (chapter 3, F4). At most 10 MiB
-         *     (P4 amendment A16); a CSV file needs the account's CSV profile.
+         *     (P4 amendment A16); a CSV file needs the account's CSV profile. A file that would create a
+         *     line before the account's opening date is 422 lines_before_opening and creates nothing (A263).
          */
         post: operations["importFile"];
         delete?: never;
@@ -4878,7 +4879,7 @@ export interface components {
              *     posting_not_movable, archive_invalid, import_not_empty, import_conflict, export_pending,
              *     export_not_ready, record_not_discarded, no_decision, too_many_lines, proposal_not_found,
              *     provider_not_found, use_not_found, capability_missing, key_required, secret_key_missing,
-             *     admin_required, unofficial_source, spreadsheet_limit_reached.
+             *     admin_required, unofficial_source, spreadsheet_limit_reached, lines_before_opening.
              */
             code: string;
             request_id?: string;
@@ -4897,6 +4898,13 @@ export interface components {
                 quote_instrument: string;
                 /** Format: date */
                 date: string;
+            };
+            /** @description The dates of lines_before_opening, the account's opening and the first line refused (A263). */
+            before_opening?: {
+                /** Format: date */
+                opened_on: string;
+                /** Format: date */
+                first_line_on: string;
             };
             errors?: components["schemas"]["FieldError"][];
         };

@@ -17,6 +17,8 @@ O extrato é o arquivo que o banco ou o cartão oferece para baixar. O equori l�
 
 Linhas que já vieram numa importação anterior são reconhecidas e ignoradas. Importar o mesmo arquivo duas vezes não duplica nada.
 
+Quando o arquivo tem linhas de antes da abertura da conta, o equori mostra as duas datas. **Mover e importar** move a abertura da conta para a primeira linha e importa o arquivo. Um saldo inicial fica na data dele, e as linhas anteriores alteram o saldo da conta.
+
 ## O que acontece com cada linha
 
 A página da importação mostra a situação de cada linha:

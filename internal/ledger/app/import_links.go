@@ -16,9 +16,10 @@ import (
 type ImportTarget struct {
 	Currency money.Currency
 	Kind     string
+	OpenedOn time.Time
 }
 
-// ImportTarget returns the currency and kind of an account that can hold statement lines: a
+// ImportTarget returns the currency, kind and opening date of an account that can hold statement lines: a
 // leaf balance account, like a balance assertion's (P3 amendment A9).
 func (s *Service) ImportTarget(
 	ctx context.Context,
@@ -34,7 +35,7 @@ func (s *Service) ImportTarget(
 		return ImportTarget{}, err
 	}
 
-	return ImportTarget{Currency: a.Instrument, Kind: string(a.Kind)}, nil
+	return ImportTarget{Currency: a.Instrument, Kind: string(a.Kind), OpenedOn: a.OpenedOn}, nil
 }
 
 // LinkedTransaction returns the transaction carrying the external record and whether the

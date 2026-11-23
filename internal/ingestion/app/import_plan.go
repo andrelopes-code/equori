@@ -16,9 +16,11 @@ type importPlan struct {
 	batch    *domain.Batch
 	currency money.Currency
 	sync     bool
-	lines    []domain.NormalizedRecord
-	reserve  func(domain.NormalizedRecord) domain.ReserveOutcome
-	claimed  []Claim
+	// opensOn is the opening date of the account of a file import (A263).
+	opensOn time.Time
+	lines   []domain.NormalizedRecord
+	reserve func(domain.NormalizedRecord) domain.ReserveOutcome
+	claimed []Claim
 	// first marks the lines the source reports for the first time, before a withdrawn record
 	// is reopened (A261).
 	first []bool
@@ -47,6 +49,7 @@ func (s *Service) importRecords(
 	ctx context.Context,
 	batch *domain.Batch,
 	currency money.Currency,
+	opensOn time.Time,
 	lines []domain.NormalizedRecord,
 	reserve func(domain.NormalizedRecord) domain.ReserveOutcome,
 ) error {
@@ -54,6 +57,7 @@ func (s *Service) importRecords(
 		batch:    batch,
 		currency: currency,
 		sync:     batch.Source == domain.SourceAggregator,
+		opensOn:  opensOn,
 		lines:    lines,
 		reserve:  reserve,
 	}
@@ -105,7 +109,14 @@ func (s *Service) applyPlan(ctx context.Context, p *importPlan) error {
 		return err
 	}
 
-	if err := s.create(ctx, p.batch.BooksID, p.sync, p.creates, p.created); err != nil {
+	if err := s.create(
+		ctx,
+		p.batch.BooksID,
+		p.sync,
+		p.opensOn,
+		p.creates,
+		p.created,
+	); err != nil {
 		return err
 	}
 

@@ -203,6 +203,7 @@ type Mapping struct {
 type ImportTarget struct {
 	Currency money.Currency
 	Kind     string
+	OpenedOn time.Time
 }
 
 // Validate checks the shape of a mapping before the ledger account is read.

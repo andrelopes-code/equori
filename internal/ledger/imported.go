@@ -23,7 +23,7 @@ func (m *Module) RecordImported(
 	return m.svc.RecordImported(ctx, booksID, recordID, p)
 }
 
-// ImportTarget returns the currency and kind of an account that can hold statement lines;
+// ImportTarget returns the currency, kind and opening date of an account that can hold statement lines;
 // an account that cannot is an ErrValidation.
 func (m *Module) ImportTarget(
 	ctx context.Context,

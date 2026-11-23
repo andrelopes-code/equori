@@ -556,6 +556,14 @@ export const accountsEn = {
     "No language model can answer now. Fill in the columns.",
   "problem.csv_suggestion_unusable":
     "The model could not identify the columns. Fill them in.",
+  "problem.lines_before_opening":
+    "The file has lines from before the account opens.",
+  "importFile.beforeOpeningTitle": "Move the opening to {date}",
+  "importFile.beforeOpening":
+    "The file has lines from {first}, and the account opens on {opened}.",
+  "importFile.openingBalanceKept":
+    "The opening balance stays on {date}. The earlier lines change the account's balance.",
+  "importFile.moveOpening": "Move and import",
   "importFile.footerRows": "Rows under the data",
   "importFile.signColumn": "Column with the debit or credit mark",
   "importFile.debitMarker": "Mark of a debit",

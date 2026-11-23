@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
 	openapi_types "github.com/oapi-codegen/runtime/types"
@@ -121,6 +122,16 @@ func ToProblem(err error) (problem.Details, bool) {
 		d := problem.New(http.StatusUnprocessableEntity, lr.Code, lr.Message)
 		if lr.Field != "" {
 			d.Errors = []problem.FieldError{{Field: lr.Field, Message: lr.Message}}
+		}
+
+		return d, true
+	}
+
+	if bo, ok := errors.AsType[*app.LinesBeforeOpening](err); ok {
+		d := problem.New(http.StatusUnprocessableEntity, "lines_before_opening", bo.Error())
+		d.BeforeOpening = &problem.BeforeOpening{
+			OpenedOn:    bo.OpenedOn.Format(time.DateOnly),
+			FirstLineOn: bo.FirstLine.Format(time.DateOnly),
 		}
 
 		return d, true

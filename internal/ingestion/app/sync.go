@@ -274,6 +274,7 @@ func (s *Service) importAccountRead(
 		ctx,
 		&batch,
 		target.Currency,
+		target.OpenedOn,
 		read.Records,
 		s.reserveTransfers(c, ext),
 	); err != nil {

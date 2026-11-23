@@ -26,6 +26,13 @@ type Details struct {
 	InstanceVersion *int `json:"instance_version,omitempty"`
 	// MissingPrice names the price that price_missing lacks.
 	MissingPrice *MissingPrice `json:"missing_price,omitempty"`
+	// BeforeOpening holds the dates of lines_before_opening (A263).
+	BeforeOpening *BeforeOpening `json:"before_opening,omitempty"`
+}
+
+type BeforeOpening struct {
+	OpenedOn    string `json:"opened_on"`
+	FirstLineOn string `json:"first_line_on"`
 }
 
 type MissingPrice struct {

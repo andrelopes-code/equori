@@ -147,7 +147,8 @@ paths:
         Each line is deduplicated (I10), matched to an existing transaction of the account with the
         same amount within 3 days, or created against an uncategorized account; ambiguous matches
         wait for review. A file balance becomes a balance assertion (chapter 3, F4). At most 10 MiB
-        (P4 amendment A16); a CSV file needs the account's CSV profile.
+        (P4 amendment A16); a CSV file needs the account's CSV profile. A file that would create a
+        line before the account's opening date is 422 lines_before_opening and creates nothing (A263).
       parameters:
         - $ref: "#/components/parameters/ID"
       requestBody:
