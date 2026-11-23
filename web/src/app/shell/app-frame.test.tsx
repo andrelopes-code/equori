@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 import {
   act,
   fireEvent,
@@ -9,6 +11,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import styles from "@/app/shell/app-frame.module.css";
+import navStyles from "@/app/shell/desktop-nav/desktop-nav.module.css";
 import { askAssistant } from "@/features/assistant";
 import { catalogEn } from "@/i18n/catalog.en";
 import { catalogPtBR } from "@/i18n/catalog.pt-BR";
@@ -160,6 +163,23 @@ describe("desktop column", () => {
     expect(rows.filter((row) => row.hasAttribute("data-current"))).toEqual([
       rows[1],
     ]);
+  });
+
+  // Scrollbars are drawn by the browser, so the declaration is asserted on the stylesheet text.
+  it("scrolls the destinations with an invisible scrollbar", async () => {
+    const css = readFileSync(
+      "src/app/shell/desktop-nav/desktop-nav.module.css",
+      "utf8",
+    );
+
+    await renderApp("/", { fetch: newFetch() });
+
+    expect(column().querySelector('[data-part="nav-body"]')).toHaveClass(
+      navStyles.body ?? "missing",
+    );
+    expect(css).toMatch(
+      /\.body\s*\{[^}]*scrollbar-color:\s*transparent transparent/,
+    );
   });
 
   it("shows the uncategorized count beside Transactions", async () => {

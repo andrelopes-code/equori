@@ -84,7 +84,7 @@ export function DesktopNav({
           />
         </div>
       </AppShellNavHeader>
-      <AppShellNavBody>
+      <AppShellNavBody className={styles.body}>
         <div className={styles.commands} data-open={open || undefined}>
           <NavCommand
             open={open}

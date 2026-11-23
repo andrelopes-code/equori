@@ -68,6 +68,13 @@
     white-space: nowrap;
   }
 
+  /* Workaround for Slotted issue #174: the scrollbar's colour token has no effect on the nav alone.
+     Transparent instead of scrollbar-width: none, which drops the gutter the head and the foot
+     also reserve and takes the rows off their edge. */
+  .body {
+    scrollbar-color: transparent transparent;
+  }
+
   /* The two commands stand above the destinations, one step apart; in the rail they stack
      centred on the marks. */
   .commands {
