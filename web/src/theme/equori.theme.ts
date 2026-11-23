@@ -174,6 +174,31 @@ const indigoKept = (token: string, offset: number, scale: number) => {
   return { ...derivation, l: { offset }, c: { scale, max: 0.25 }, h: 0 };
 };
 
+// Slotted 0.1.0-beta.36 caps the dark ink of success, info and warning at its reference. The inks
+// keep the values of 0.1.0-beta.35 until the owner compares the two in the app.
+const heldInk = (token: string, offset: number, scale: number) => {
+  const derivation = defaultDark[token];
+  if (!derivation || !("seed" in derivation))
+    throw new Error(`${token} is not a seed derivation`);
+  return { ...derivation, l: { offset }, c: { scale, max: 0.25 } };
+};
+
+const heldInks = Object.fromEntries(
+  ["text", "border"].flatMap((part) =>
+    (
+      [
+        ["success", 0.273, 1.328],
+        ["info", 0.226, 0.66],
+        ["warning", 0, 1],
+      ] as const
+    ).map(([tone, offset, scale]) => {
+      const token = `--slotted-tone-${tone}-${part}`;
+
+      return [token, heldInk(token, offset, scale)];
+    }),
+  ),
+);
+
 // The cap leaves room for a saturated tone (settings, appearance): at 0.03 a red ground read as
 // black. The graphite seed scales to under 0.008 and never reaches it.
 const darkNeutral = (l: number) => ({
@@ -389,6 +414,7 @@ export default extendTheme(
       ...defaultTheme.recipe,
       dark: {
         ...defaultDark,
+        ...heldInks,
         "--slotted-tone-accent-border": indigoKept(
           "--slotted-tone-accent-border",
           0.1,

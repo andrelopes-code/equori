@@ -148,6 +148,9 @@
     --slotted-selection-size-lg: 18px;
     --slotted-selection-halo-opacity: 0.14;
     --slotted-highlight-tint-opacity: 0.075;
+    --slotted-mark-track-thickness: var(--slotted-space-2);
+    --slotted-mark-dot-size: var(--slotted-space-3);
+    --slotted-mark-ring-width: var(--slotted-border-width-thick);
     --slotted-icon-loader-circle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 12a9 9 0 1 1-6.219-8.56'/%3E%3C/svg%3E");
     --slotted-icon-ellipsis: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='1'/%3E%3Ccircle cx='19' cy='12' r='1'/%3E%3Ccircle cx='5' cy='12' r='1'/%3E%3C/svg%3E");
     --slotted-icon-maximize: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 3H5a2 2 0 0 0-2 2v3'/%3E%3Cpath d='M21 8V5a2 2 0 0 0-2-2h-3'/%3E%3Cpath d='M3 16v3a2 2 0 0 0 2 2h3'/%3E%3Cpath d='M16 21h3a2 2 0 0 0 2-2v-3'/%3E%3C/svg%3E");
@@ -342,6 +345,8 @@
       --slotted-shadow-sm: 0 1px 3px rgb(15 23 42 / 0.08), 0 1px 2px -1px rgb(15 23 42 / 0.08);
       --slotted-shadow-md: 0 4px 6px -1px rgb(15 23 42 / 0.08), 0 2px 4px -2px rgb(15 23 42 / 0.08);
       --slotted-shadow-lg: 0 10px 15px -3px rgb(15 23 42 / 0.10), 0 4px 6px -4px rgb(15 23 42 / 0.08);
+      --slotted-mark-track-color: var(--slotted-border-subtle);
+      --slotted-mark-ring-color: var(--slotted-surface-raised);
       --slotted-current-edge: transparent;
       --slotted-state-hover: color-mix(in oklab, var(--slotted-text) 5%, transparent);
       --slotted-state-pressed: color-mix(in oklab, var(--slotted-text) 10%, transparent);
@@ -481,6 +486,8 @@
       --slotted-shadow-sm: 0 1px 3px rgb(0 0 0 / 0.45), 0 1px 2px -1px rgb(0 0 0 / 0.40);
       --slotted-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.50), 0 2px 4px -2px rgb(0 0 0 / 0.45);
       --slotted-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.60), 0 4px 6px -4px rgb(0 0 0 / 0.50);
+      --slotted-mark-track-color: var(--slotted-border-subtle);
+      --slotted-mark-ring-color: var(--slotted-surface-raised);
       --slotted-current-edge: transparent;
       --slotted-state-hover: color-mix(in oklab, var(--slotted-text) 6%, transparent);
       --slotted-state-pressed: color-mix(in oklab, var(--slotted-text) 12%, transparent);
@@ -620,6 +627,8 @@
       --slotted-shadow-sm: 0 0 0 1px #000000;
       --slotted-shadow-md: 0 0 0 2px #000000;
       --slotted-shadow-lg: 0 0 0 2px #000000;
+      --slotted-mark-track-color: var(--slotted-border-subtle);
+      --slotted-mark-ring-color: var(--slotted-surface-raised);
       --slotted-current-edge: #000000;
       --slotted-state-hover: color-mix(in oklab, var(--slotted-text) 10%, transparent);
       --slotted-state-pressed: color-mix(in oklab, var(--slotted-text) 20%, transparent);
@@ -759,6 +768,8 @@
       --slotted-shadow-sm: 0 1px 3px rgb(15 23 42 / 0.08), 0 1px 2px -1px rgb(15 23 42 / 0.08);
       --slotted-shadow-md: 0 4px 6px -1px rgb(15 23 42 / 0.08), 0 2px 4px -2px rgb(15 23 42 / 0.08);
       --slotted-shadow-lg: 0 10px 15px -3px rgb(15 23 42 / 0.10), 0 4px 6px -4px rgb(15 23 42 / 0.08);
+      --slotted-mark-track-color: var(--slotted-border-subtle);
+      --slotted-mark-ring-color: var(--slotted-surface-raised);
       --slotted-current-edge: transparent;
       --slotted-state-hover: color-mix(in oklab, var(--slotted-text) 5%, transparent);
       --slotted-state-pressed: color-mix(in oklab, var(--slotted-text) 10%, transparent);
@@ -899,6 +910,8 @@
         --slotted-shadow-sm: 0 1px 3px rgb(0 0 0 / 0.45), 0 1px 2px -1px rgb(0 0 0 / 0.40);
         --slotted-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.50), 0 2px 4px -2px rgb(0 0 0 / 0.45);
         --slotted-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.60), 0 4px 6px -4px rgb(0 0 0 / 0.50);
+        --slotted-mark-track-color: var(--slotted-border-subtle);
+        --slotted-mark-ring-color: var(--slotted-surface-raised);
         --slotted-current-edge: transparent;
         --slotted-state-hover: color-mix(in oklab, var(--slotted-text) 6%, transparent);
         --slotted-state-pressed: color-mix(in oklab, var(--slotted-text) 12%, transparent);
@@ -1214,6 +1227,8 @@
       --slotted-border-strong: CanvasText;
       --slotted-control-border-color: ButtonBorder;
       --slotted-control-surface: Field;
+      --slotted-mark-track-color: GrayText;
+      --slotted-mark-ring-color: Canvas;
       --slotted-current-edge: Highlight;
       --slotted-state-hover: Canvas;
       --slotted-state-pressed: Canvas;
@@ -1351,6 +1366,8 @@
         --slotted-border-strong: CanvasText;
         --slotted-control-border-color: ButtonBorder;
         --slotted-control-surface: Field;
+        --slotted-mark-track-color: GrayText;
+        --slotted-mark-ring-color: Canvas;
         --slotted-current-edge: Highlight;
         --slotted-state-hover: Canvas;
         --slotted-state-pressed: Canvas;
@@ -1489,6 +1506,8 @@
         --slotted-border-strong: CanvasText;
         --slotted-control-border-color: ButtonBorder;
         --slotted-control-surface: Field;
+        --slotted-mark-track-color: GrayText;
+        --slotted-mark-ring-color: Canvas;
         --slotted-current-edge: Highlight;
         --slotted-state-hover: Canvas;
         --slotted-state-pressed: Canvas;
@@ -1627,6 +1646,8 @@
         --slotted-border-strong: CanvasText;
         --slotted-control-border-color: ButtonBorder;
         --slotted-control-surface: Field;
+        --slotted-mark-track-color: GrayText;
+        --slotted-mark-ring-color: Canvas;
         --slotted-current-edge: Highlight;
         --slotted-state-hover: Canvas;
         --slotted-state-pressed: Canvas;
@@ -1765,6 +1786,8 @@
         --slotted-border-strong: CanvasText;
         --slotted-control-border-color: ButtonBorder;
         --slotted-control-surface: Field;
+        --slotted-mark-track-color: GrayText;
+        --slotted-mark-ring-color: Canvas;
         --slotted-current-edge: Highlight;
         --slotted-state-hover: Canvas;
         --slotted-state-pressed: Canvas;
