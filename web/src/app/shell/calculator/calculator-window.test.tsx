@@ -173,10 +173,6 @@ describe("CalculatorWindow", () => {
     fireEvent.keyDown(grip, { key: "ArrowRight" });
     fireEvent.keyDown(grip, { key: "ArrowDown", shiftKey: true });
 
-    expect(screen.getByRole("region")).toHaveStyle({
-      "--calculator-x": "16px",
-      "--calculator-y": "64px",
-    });
     expect(localStorage.getItem("equori.calculator")).toBe('{"x":16,"y":64}');
   });
 
@@ -185,10 +181,9 @@ describe("CalculatorWindow", () => {
 
     mount();
 
-    expect(screen.getByRole("region")).toHaveStyle({
-      "--calculator-x": "40px",
-      "--calculator-y": "50px",
-    });
+    fireEvent.keyDown(key(catalogEn["calculator.move"]), { key: "ArrowRight" });
+
+    expect(localStorage.getItem("equori.calculator")).toBe('{"x":56,"y":50}');
   });
 });
 

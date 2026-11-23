@@ -37,7 +37,7 @@ Non-goals: resizing, minimizing, a history of accounts, sending a result to a fi
 ### Window
 
 - K6. The window is a `section` with the name "Calculator". It is not a dialog: it draws no scrim, traps no focus and leaves the keys `N` and `A` of the shell working.
-- K7. The first place is the bottom end corner, `--slotted-space-8` from each edge.
+- K7. The first place is the bottom end corner, 16 px from each edge (the panel of the Slotted `FloatingPanel`, 2026-11-23).
 - K8. The bar is the handle. A press on the bar that moves drags the window. The grip of the bar takes the focus; an arrow key moves the window 16 px, and 64 px with `Shift`.
 - K9. The window stays whole inside the visible area. A drag and a keyboard move hold the place in code (`clampPlace`). A stored place and a browser window that became smaller are held by the stylesheet: the place is a translation limited to the area minus the window's own size.
 
@@ -80,15 +80,15 @@ Non-goals: resizing, minimizing, a history of accounts, sending a result to a fi
 | `account-text.ts` | The two forms of the account, logical and drawn: read, normalize (K10, K12a), draw with the caret (K11), the edit of the field (K12), the result text (K17), the parenthesis choice (K22). |
 | `window-place.ts` | Clamp of a place to the visible area; read and write of the stored place (K5, K9). |
 | `use-account.ts` | State of the account and the commands of the keys (K13, K21 to K23). |
-| `use-window-drag.ts` | Pointer and keyboard moves (K8, K9). |
+| `use-panel-place.ts` | The kept place and the keyboard steps of the grip (K5, K8, K9). |
 | `use-open-focus.ts` | Focus on opening and on closing (K3). |
 | `use-calculator-open.ts` | The open state and the key `C` (K1, K4). |
 | `key-rows.ts` | The twenty keys, in reading order. |
-| `calculator-window.tsx`, `calculator-bar.tsx`, `calculator-display.tsx`, `calculator-keys.tsx`, `calculator.module.css` | The element, drawn as the approved mock. |
+| `calculator-window.tsx`, `calculator-display.tsx`, `calculator-keys.tsx`, `calculator.module.css` | The element, drawn as the approved mock. |
 
 `desktop-nav/nav-command.tsx` draws one command of the navigation column, open or narrowed; the four commands use it.
 
-The window is an element of the application's own. The families read and what each lacks: `Dialog` (`modal={false}`) centres its panel and has no handle to move it; `Popover` is anchored to its trigger and closes on an outside press; `Drawer` and `DetailPanel` are fixed to an edge.
+The window is the Slotted `FloatingPanel`, which holds the drag, the region, `Escape` and the return of the focus; the display and the keys are elements of the application's own.
 
 The approved mock is the contract of the look (`docs/superpowers/plans/assets/floating-calculator/`, local): 20rem wide, a bar of 2rem, the account on one line of md text, the result on one line of 4xl, twenty keys of 3rem in four columns, the panel fill with the strong border and `--slotted-shadow-lg`. The account is a native field, so its text has one colour: the mock of round 1 tinted the operators, and round 2 removed the tint.
 

@@ -11,8 +11,12 @@ export function useOpenFocus(
 
     const before = document.activeElement;
     field.current?.focus();
+    // Workaround for Slotted issue #132: the panel is hidden until it reads its own size, after
+    // this effect, so the first opening takes the focus on the next frame.
+    const frame = requestAnimationFrame(() => field.current?.focus());
 
     return () => {
+      cancelAnimationFrame(frame);
       if (before instanceof HTMLElement && before.isConnected) before.focus();
     };
   }, [open, field]);
