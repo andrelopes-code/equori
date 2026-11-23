@@ -2477,6 +2477,7 @@ export const catalogEn = {
   "assistant.action.record_investment.buy": "Record purchase of security",
   "assistant.action.record_investment.sell": "Record sale of security",
   "assistant.action.record_investment.income": "Record investment income",
+  "assistant.action.record_investment.write_off": "Record write-off of holding",
   "assistant.action.change_transaction": "Correct transaction",
   "assistant.action.handle_card_purchase": "Card purchase event",
   "assistant.action.manage_accounts_and_payees": "Change accounts and payees",

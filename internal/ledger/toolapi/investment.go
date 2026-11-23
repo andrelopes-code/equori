@@ -76,7 +76,7 @@ func planInvestment(
 	booksID int64,
 	in recordInvestmentIn,
 ) (tool.Preview, func() (recordInvestmentOut, error), error) {
-	pv := tool.Preview{Action: "record_investment"}
+	pv := tool.Preview{Action: "record_investment." + string(in.Kind)}
 
 	ids, err := parseInvestmentIDs(in)
 	if err != nil {

@@ -25,7 +25,8 @@ func TestRecordInvestmentBuyS21(t *testing.T) {
 	}
 
 	p := previewTool(t, f.h, "record_investment", args)
-	if p.Target != "XP MXRF11" || p.Changes[0].After.Text != "MXRF11" ||
+	if p.Action != "record_investment.buy" || p.Target != "XP MXRF11" ||
+		p.Changes[0].After.Text != "MXRF11" ||
 		p.Changes[1].After.Text != "150" ||
 		p.Changes[2].After.Text != "10.05" ||
 		p.Changes[3].After.Amount != "4.90" {
@@ -49,6 +50,11 @@ func TestRecordInvestmentBuyS21(t *testing.T) {
 		"unit_price":      "10.80",
 		"fees":            "2.10",
 	}
+
+	if p := previewTool(t, f.h, "record_investment", sell); p.Action != "record_investment.sell" {
+		t.Fatalf("sale action = %q", p.Action)
+	}
+
 	toolOutput(t, f.h, "record_investment", sell, &out)
 
 	if got := amountsByAccount(
@@ -115,7 +121,7 @@ func TestRecordInvestmentIncomeS22(t *testing.T) {
 	}
 
 	p := previewTool(t, f.h, "record_investment", args)
-	if p.Changes[1].After.Amount != "10.00" {
+	if p.Action != "record_investment.income" || p.Changes[1].After.Amount != "10.00" {
 		t.Fatalf("preview = %+v", p)
 	}
 

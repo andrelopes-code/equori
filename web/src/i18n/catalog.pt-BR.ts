@@ -2499,6 +2499,7 @@ export const catalogPtBR: Catalog = {
   "assistant.action.record_investment.buy": "Registrar compra de ativo",
   "assistant.action.record_investment.sell": "Registrar venda de ativo",
   "assistant.action.record_investment.income": "Registrar provento",
+  "assistant.action.record_investment.write_off": "Registrar baixa de posição",
   "assistant.action.change_transaction": "Corrigir transação",
   "assistant.action.handle_card_purchase": "Evento de compra no cartão",
   "assistant.action.manage_accounts_and_payees": "Alterar contas e favorecidos",
