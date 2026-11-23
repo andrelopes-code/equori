@@ -89,6 +89,25 @@ describe("Account record", () => {
     expect(bodies).toEqual([{ closed_on: "2026-10-17" }]);
   });
 
+  it("BC19: counts no voided transaction as an entry", async () => {
+    await renderApp(`/accounts/${brokerageID}`, {
+      fetch: idlePage({
+        "GET /api/v1/transactions": (req) => {
+          const query = new URL(req.url).searchParams;
+          const voided =
+            query.get("account_id") === idleCashID &&
+            query.get("exclude_voided") !== "true";
+
+          return json(200, { items: voided ? [{ id: "t1" }] : [] });
+        },
+      }),
+    });
+
+    expect(
+      await screen.findByRole("button", { name: "Close Caixa" }),
+    ).toBeInTheDocument();
+  });
+
   it("BC19: shows no notice for a cash account with an entry", async () => {
     await renderApp(`/accounts/${brokerageID}`, {
       fetch: idlePage({
