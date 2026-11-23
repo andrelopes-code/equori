@@ -16,6 +16,10 @@ import { useOpenFocus } from "@/app/shell/calculator/use-open-focus";
 import { usePanelPlace } from "@/app/shell/calculator/use-panel-place";
 import { useT } from "@/i18n/i18n-provider";
 
+// K8: one press of an arrow key on the grip, and with Shift.
+const STEP = 16;
+const LARGE_STEP = 64;
+
 interface CalculatorWindowProps {
   open: boolean;
   onClose: () => void;
@@ -50,7 +54,8 @@ export function CalculatorWindow({ open, onClose }: CalculatorWindowProps) {
       }}
       {...(panel.place === null ? {} : { place: panel.place })}
       onPlaceChange={panel.handlePlaceChange}
-      onKeyDownCapture={panel.handleKeyDownCapture}
+      step={STEP}
+      largeStep={LARGE_STEP}
       onMouseDown={handleMouseDown}
     >
       <FloatingPanelHandle>

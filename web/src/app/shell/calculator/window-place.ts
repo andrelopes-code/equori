@@ -3,21 +3,7 @@ export interface Place {
   y: number;
 }
 
-export interface Extent {
-  width: number;
-  height: number;
-}
-
 const STORAGE_KEY = "equori.calculator";
-
-// K9: the window stays whole inside the area; in an area smaller than the window its top start
-// corner stays visible.
-export function clampPlace(place: Place, size: Extent, area: Extent): Place {
-  return {
-    x: Math.max(0, Math.min(place.x, area.width - size.width)),
-    y: Math.max(0, Math.min(place.y, area.height - size.height)),
-  };
-}
 
 // K5: the last place of the window, kept per browser.
 export function readPlace(): Place | null {

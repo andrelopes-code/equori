@@ -17,6 +17,10 @@ describe("CalculatorWindow", () => {
     vi.spyOn(document.documentElement, "clientHeight", "get").mockReturnValue(
       768,
     );
+    // The window measures itself at the place its style states, as a browser lays it out.
+    vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(
+      drawnPlace,
+    );
   });
 
   afterEach(() => {
@@ -195,6 +199,14 @@ function mount(open = true) {
   });
 
   return onClose;
+}
+
+function drawnPlace(this: Element) {
+  const style = this instanceof HTMLElement ? this.style : undefined;
+  const x = parseFloat(style?.getPropertyValue("--_x") ?? "");
+  const y = parseFloat(style?.getPropertyValue("--_y") ?? "");
+
+  return new DOMRect(x || 0, y || 0, 0, 0);
 }
 
 function account() {

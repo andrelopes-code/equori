@@ -1,6 +1,8 @@
 @layer app {
   /* The floating calculator: the frame is the family's, and the glass theme sets its material. */
   .window {
+    --slotted-floating-panel-inset: 16px; /* literal: K7 states the distance in pixels */
+
     inline-size: 20rem; /* literal: four keys of 3.75rem and their gaps; no token holds a window width */
     font-variant-numeric: tabular-nums;
   }

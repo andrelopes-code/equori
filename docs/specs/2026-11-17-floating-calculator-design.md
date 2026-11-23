@@ -39,7 +39,7 @@ Non-goals: resizing, minimizing, a history of accounts, sending a result to a fi
 - K6. The window is a `section` with the name "Calculator". It is not a dialog: it draws no scrim, traps no focus and leaves the keys `N` and `A` of the shell working.
 - K7. The first place is the bottom end corner, 16 px from each edge (the panel of the Slotted `FloatingPanel`, 2026-11-23).
 - K8. The bar is the handle. A press on the bar that moves drags the window. The grip of the bar takes the focus; an arrow key moves the window 16 px, and 64 px with `Shift`.
-- K9. The window stays whole inside the visible area. A drag and a keyboard move hold the place in code (`clampPlace`). A stored place and a browser window that became smaller are held by the stylesheet: the place is a translation limited to the area minus the window's own size.
+- K9. The window stays whole inside the visible area. The Slotted `FloatingPanel` holds the place: a drag and a keyboard move in code, a stored place and a browser window that became smaller in its stylesheet.
 
 ### Account
 
