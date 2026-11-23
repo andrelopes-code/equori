@@ -3322,6 +3322,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/company-figures": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The figures of the listed company of an instrument, from its stored statements and today's price (contribution criteria AC4 to AC9). */
+        get: operations["listCompanyFigures"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/market-data/institution-indicators": {
         parameters: {
             query?: never;
@@ -7615,6 +7632,65 @@ export interface components {
              * @description The net income of the period in minor units of currency; null when not informed.
              */
             net_income: number | null;
+        };
+        CompanyFiguresList: {
+            items: components["schemas"]["CompanyFigures"][];
+        };
+        CompanyFigures: {
+            source: string;
+            source_url: string;
+            name: string;
+            currency: string;
+            /**
+             * Format: date
+             * @description The date of the price the multiples read; absent without one.
+             */
+            price_date?: string;
+            price_earnings: components["schemas"]["CompanyFigure"];
+            price_book: components["schemas"]["CompanyFigure"];
+            price_earnings_range?: components["schemas"]["CompanyRange"];
+            price_book_range?: components["schemas"]["CompanyRange"];
+            return_on_equity: components["schemas"]["CompanyFigure"];
+            net_margin: components["schemas"]["CompanyFigure"];
+            net_debt_to_equity: components["schemas"]["CompanyFigure"];
+            gross_profit_to_assets: components["schemas"]["CompanyFigure"];
+            current_ratio: components["schemas"]["CompanyFigure"];
+            revenue_growth: components["schemas"]["CompanyFigure"];
+            positive_years: components["schemas"]["CompanyPositiveYears"];
+            profit: components["schemas"]["CompanyChange"];
+            revenue: components["schemas"]["CompanyChange"];
+        };
+        /** @description A value with the end of the window or of the balance it reads, or the reason it has none. */
+        CompanyFigure: {
+            /** @description Decimal of at most six places; a rate is a fraction. */
+            value?: string;
+            reason?: string;
+            /** Format: date */
+            date?: string;
+        };
+        /** @description The least and the greatest value over the fiscal years that have one, three at least. */
+        CompanyRange: {
+            least: string;
+            greatest: string;
+            years: number;
+        };
+        CompanyPositiveYears: {
+            positive: number;
+            years: number;
+        };
+        /** @description An account against the same months of the year before. */
+        CompanyChange: {
+            /** @description rate, loss (at or below zero) or turned (above zero after a year at or below it); absent without a comparison. */
+            state?: string;
+            /** @description The change as a fraction, in the state rate. */
+            rate?: string;
+            /**
+             * Format: date
+             * @description The end of the period compared.
+             */
+            date?: string;
+            months?: number;
+            reason?: string;
         };
         CompanyReportList: {
             items: components["schemas"]["CompanyReport"][];
@@ -15190,6 +15266,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CompanyReportList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    listCompanyFigures: {
+        parameters: {
+            query: {
+                /** @description The instrument code, such as a ticker. */
+                code: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompanyFiguresList"];
                 };
             };
             401: components["responses"]["Problem"];

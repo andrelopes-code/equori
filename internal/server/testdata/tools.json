@@ -4025,7 +4025,7 @@
   },
   {
     "name": "get_market_data",
-    "description": "Returns market data of the instance: instruments with their type and scale, one instrument with its fixed income terms, prices of an instrument in a period, business-day calendars, a calendar's holidays in a year, the stored economic indexes, the rates of one index in a period, or the annual rates a market survey expects for one index (where the indexes view says expected). The catalog view searches, by code or name, the instruments the enabled price sources can quote, to define one with manage_instrument. The fund_reports view returns the monthly reports a listed fund filed, or the funds that share its code; manage_instrument links one by the symbol of the source set to its identifier. The company_reports view returns the accounts a listed company filed for its fiscal years and quarters. Use it for prices, securities, holidays and index rates. Do not use it for the book's holdings: get_portfolio does.",
+    "description": "Returns market data of the instance: instruments with their type and scale, one instrument with its fixed income terms, its prices in a period, business-day calendars, the holidays of a year, the stored economic indexes, the rates of one, or the annual rates a market survey expects for one (where the indexes view says expected). The catalog view searches, by code or name, what the price sources can quote, for manage_instrument. The fund_reports view returns the monthly reports of a listed fund, or the funds that share its code; manage_instrument links one by the symbol of the source set to its identifier. The company_reports view returns the accounts of a listed company by fiscal year and quarter; company_figures its ratios and price multiples (a rate is a fraction), each with its date or the reason it has none. Use it for prices, securities and indexes. Do not use it for the book's holdings: get_portfolio does.",
     "effect": "read_only",
     "idempotent": true,
     "input_schema": {
@@ -4046,16 +4046,17 @@
             "index_expectations",
             "curves",
             "fund_reports",
-            "company_reports"
+            "company_reports",
+            "company_figures"
           ]
         },
         "code": {
           "type": "string",
-          "description": "for instrument, prices, fund_reports and company_reports: instrument code, such as a ticker or currency code"
+          "description": "for instrument, prices, fund_reports, company_reports, company_figures: code such as a ticker or currency"
         },
         "quote": {
           "type": "string",
-          "description": "for prices: code of the currency the price is quoted in"
+          "description": "for prices: currency of the price"
         },
         "from": {
           "type": "string",
@@ -4064,7 +4065,7 @@
         },
         "to": {
           "type": "string",
-          "description": "for prices and index_rates: last date; at most 18300 days after from for prices, 7320 for index_rates",
+          "description": "for prices and index_rates: last date, at most 18300 days after from for prices, 7320 for index_rates",
           "format": "date"
         },
         "index": {
@@ -4073,7 +4074,7 @@
         },
         "calendar": {
           "type": "string",
-          "description": "for holidays: calendar identifier from the calendars view"
+          "description": "for holidays: calendar id from the calendars view"
         },
         "year": {
           "type": "integer",
@@ -4081,7 +4082,7 @@
         },
         "query": {
           "type": "string",
-          "description": "for catalog: text of a code or a name, 2 characters or more"
+          "description": "for catalog: part of a code or name, 2 characters or more"
         }
       },
       "required": [
@@ -4911,6 +4912,263 @@
               "plan",
               "currency",
               "periods"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "company_figures": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "source": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "currency": {
+                "type": "string"
+              },
+              "price_date": {
+                "type": "string",
+                "format": "date"
+              },
+              "price_earnings": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": "string"
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "price_book": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": "string"
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "price_earnings_range": {
+                "type": "object",
+                "properties": {
+                  "least": {
+                    "type": "string"
+                  },
+                  "greatest": {
+                    "type": "string"
+                  },
+                  "years": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "least",
+                  "greatest",
+                  "years"
+                ],
+                "additionalProperties": false
+              },
+              "price_book_range": {
+                "type": "object",
+                "properties": {
+                  "least": {
+                    "type": "string"
+                  },
+                  "greatest": {
+                    "type": "string"
+                  },
+                  "years": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "least",
+                  "greatest",
+                  "years"
+                ],
+                "additionalProperties": false
+              },
+              "return_on_equity": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": "string"
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "net_margin": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": "string"
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "net_debt_to_equity": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": "string"
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "gross_profit_to_assets": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": "string"
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "current_ratio": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": "string"
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "revenue_growth": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": "string"
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "positive_years": {
+                "type": "integer"
+              },
+              "fiscal_years": {
+                "type": "integer"
+              },
+              "profit": {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "type": "string"
+                  },
+                  "rate": {
+                    "type": "string"
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "months": {
+                    "type": "integer"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "revenue": {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "type": "string"
+                  },
+                  "rate": {
+                    "type": "string"
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "months": {
+                    "type": "integer"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "source",
+              "name",
+              "currency",
+              "price_earnings",
+              "price_book",
+              "return_on_equity",
+              "net_margin",
+              "net_debt_to_equity",
+              "gross_profit_to_assets",
+              "current_ratio",
+              "revenue_growth",
+              "positive_years",
+              "fiscal_years",
+              "profit",
+              "revenue"
             ],
             "additionalProperties": false
           }
@@ -12067,7 +12325,7 @@
               },
               "target_bp": {
                 "type": "integer",
-                "description": "share of the portfolio in basis points: 4000 is 40%; the classes add up to 10000"
+                "description": "basis points of the portfolio: 4000 is 40%; the classes add up to 10000"
               },
               "members": {
                 "type": "array",
@@ -12076,7 +12334,7 @@
                   "properties": {
                     "account_id": {
                       "type": "string",
-                      "description": "account from list_accounts counted whole in the class, such as a reserve; instead of instrument"
+                      "description": "account counted whole in the class, such as a reserve; instead of instrument"
                     },
                     "instrument": {
                       "type": "string",
@@ -12084,7 +12342,7 @@
                     },
                     "target_bp": {
                       "type": "integer",
-                      "description": "share of the class in basis points; all members add up to 10000, or none has a target"
+                      "description": "basis points of the class; all members add up to 10000, or none has a target"
                     },
                     "answers": {
                       "type": "array",
@@ -12155,7 +12413,7 @@
                   },
                   "additionalProperties": false
                 },
-                "description": "conditions of a group by rule, at most 5, instead of members: a security bought later that meets one joins it"
+                "description": "conditions of a group by rule, at most 5, instead of members: a security that meets one joins it"
               }
             },
             "required": [
@@ -12165,7 +12423,7 @@
             ],
             "additionalProperties": false
           },
-          "description": "every class, at most 20; the call replaces the whole plan, so repeat each class that stays; an empty list removes it"
+          "description": "every class, at most 20; an empty list removes the plan"
         }
       },
       "required": [

@@ -14,13 +14,13 @@ import (
 func getMarketData(svc Service, cals Calendars) tool.Tool {
 	return tool.New(tool.Spec{
 		Name: "get_market_data",
-		Description: "Returns market data of the instance: instruments with their type and scale, one instrument with its fixed income terms, prices of an instrument in a period, business-day calendars, a calendar's holidays in a year, " +
-			"the stored economic indexes, the rates of one index in a period, or the annual rates a market survey expects for one index (where the indexes view says expected). " +
-			"The catalog view searches, by code or name, the instruments the enabled price sources can quote, to define one with manage_instrument. " +
-			"The fund_reports view returns the monthly reports a listed fund filed, or the funds that share its code; " +
+		Description: "Returns market data of the instance: instruments with their type and scale, one instrument with its fixed income terms, its prices in a period, business-day calendars, the holidays of a year, " +
+			"the stored economic indexes, the rates of one, or the annual rates a market survey expects for one (where the indexes view says expected). " +
+			"The catalog view searches, by code or name, what the price sources can quote, for manage_instrument. " +
+			"The fund_reports view returns the monthly reports of a listed fund, or the funds that share its code; " +
 			"manage_instrument links one by the symbol of the source set to its identifier. " +
-			"The company_reports view returns the accounts a listed company filed for its fiscal years and quarters. " +
-			"Use it for prices, securities, holidays and index rates. " +
+			"The company_reports view returns the accounts of a listed company by fiscal year and quarter; company_figures its ratios and price multiples (a rate is a fraction), each with its date or the reason it has none. " +
+			"Use it for prices, securities and indexes. " +
 			"Do not use it for the book's holdings: get_portfolio does.",
 		Effect:     tool.ReadOnly,
 		Idempotent: true,
@@ -59,6 +59,8 @@ func readMarketData(
 		return marketCurves(ctx, svc)
 	case "fund_reports":
 		return marketFundReports(ctx, svc, in)
+	case "company_figures":
+		return marketCompanyFigures(ctx, svc, in)
 	case "company_reports":
 		return marketCompanyReports(ctx, svc, in)
 	case "calendars":
@@ -101,7 +103,7 @@ func checkMarketDataArgs(in getMarketDataIn) error {
 
 	var err error
 	switch in.View {
-	case "instrument", "fund_reports", "company_reports":
+	case "instrument", "fund_reports", "company_reports", "company_figures":
 		err = required(name, fields, "code")
 	case "prices":
 		err = required(name, fields, "code", "quote", "from", "to")

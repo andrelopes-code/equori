@@ -57,6 +57,7 @@ type Service interface {
 	Curves(ctx context.Context) ([]domain.Curve, error)
 	FundReports(ctx context.Context, code string) (domain.FundReportList, error)
 	CompanyReports(ctx context.Context, code string) ([]domain.CompanyReport, error)
+	CurrentCompanyFigures(ctx context.Context, code string) ([]domain.CompanyFigureSet, error)
 	InstitutionIndicators(
 		ctx context.Context, scheme, identifier string,
 	) (domain.InstitutionIndicators, error)
@@ -156,6 +157,8 @@ func (s *Server) registerRates(mux *http.ServeMux) {
 		httpserver.Handle(s.errs, http.StatusOK, s.listFundReports))
 	mux.HandleFunc("GET "+BaseURL+"/company-reports",
 		httpserver.Handle(s.errs, http.StatusOK, s.listCompanyReports))
+	mux.HandleFunc("GET "+BaseURL+"/company-figures",
+		httpserver.Handle(s.errs, http.StatusOK, s.listCompanyFigures))
 }
 
 // visible returns the instrument of code when the book of ctx may read it (A236 FC1).

@@ -35,7 +35,8 @@ const (
 		"QT_ACAO_PREF_CAP_INTEGR;QT_ACAO_TOTAL_CAP_INTEGR;QT_ACAO_ORDIN_TESOURO;" +
 		"QT_ACAO_PREF_TESOURO;QT_ACAO_TOTAL_TESOURO"
 	listingHeader = "CNPJ_Companhia;Data_Referencia;Versao;ID_Documento;Nome_Empresarial;" +
-		"Valor_Mobiliario;Codigo_Negociacao;Mercado;Data_Inicio_Negociacao;Data_Fim_Negociacao"
+		"Valor_Mobiliario;Codigo_Negociacao;Composicao_BDR_Unit;Mercado;" +
+		"Data_Inicio_Negociacao;Data_Fim_Negociacao"
 
 	modified = "Mon, 16 Nov 2026 12:00:00 GMT"
 )
@@ -240,15 +241,25 @@ func today() time.Time { return time.Date(2026, time.November, 18, 0, 0, 0, 0, t
 
 func wantWindow() []string {
 	return []string{
-		"dfp_2025", "dfp_2024", "dfp_2023", "dfp_2022", "dfp_2021", "itr_2026", "itr_2025",
+		"dfp_2026", "dfp_2025", "dfp_2024", "dfp_2023", "dfp_2022", "dfp_2021", "itr_2026",
+		"itr_2025",
 	}
 }
 
 func wantListings() []companyreport.Listing {
 	return []companyreport.Listing{
-		{Exchange: "BVMF", Code: "BNCX4", Identifier: "22222222000122", Name: "BANCO X"},
-		{Exchange: "BVMF", Code: "INDS3", Identifier: "11111111000111", Name: "IND SA"},
-		{Exchange: "BVMF", Code: "WEGE3", Identifier: "84429695000111", Name: "WEG S.A."},
+		{
+			Exchange: "BVMF", Code: "BNCX4", Identifier: "22222222000122", Name: "BANCO X",
+			SharesPerUnit: count(1),
+		},
+		{
+			Exchange: "BVMF", Code: "INDS3", Identifier: "11111111000111", Name: "IND SA",
+			SharesPerUnit: count(1),
+		},
+		{
+			Exchange: "BVMF", Code: "WEGE3", Identifier: "84429695000111", Name: "WEG S.A.",
+			SharesPerUnit: count(1),
+		},
 	}
 }
 
@@ -276,6 +287,7 @@ func wantFiles() []companyreport.File {
 				ShortInvestments: num(200000000), CurrentLiabilities: num(1500000000),
 				ShortDebt: num(100000000), LongDebt: num(300000000), Equity: num(2000000000),
 				Revenue: num(4000000000), GrossProfit: num(1300000000), NetIncome: num(600050000),
+				NetIncomeParent:   num(580000000),
 				OperatingCashFlow: num(700000000), SharesIssued: num(4197317998),
 				SharesTreasury: num(1488307),
 			},
@@ -445,22 +457,22 @@ func listingMembers(yearBefore bool) map[string]string {
 	}
 
 	rows := []string{
-		line(weg, "2026-01-01", "1", "1", "WEG S.A.", "Ações Ordinárias", "WEGE3", "Bolsa",
+		line(weg, "2026-01-01", "1", "1", "WEG S.A.", "Ações Ordinárias", "WEGE3", "", "Bolsa",
 			"2007-06-22", ""),
-		line(ind, "2026-01-01", "1", "2", "IND SA", "Ações Ordinárias", "OLDS3", "Bolsa",
+		line(ind, "2026-01-01", "1", "2", "IND SA", "Ações Ordinárias", "OLDS3", "", "Bolsa",
 			"2010-01-04", ""),
-		line(ind, "2026-01-01", "2", "5", "IND SA", "Ações Ordinárias", "INDS3", "Bolsa",
+		line(ind, "2026-01-01", "2", "5", "IND SA", "Ações Ordinárias", "INDS3", "", "Bolsa",
 			"2010-01-04", ""),
-		line(banco, "2026-01-01", "1", "3", "BANCO X", "Ações Preferenciais", "BNCX4", "Bolsa",
+		line(banco, "2026-01-01", "1", "3", "BANCO X", "Ações Preferenciais", "BNCX4", "", "Bolsa",
 			"2010-01-04", ""),
-		line(banco, "2026-01-01", "1", "3", "BANCO X", "Ações Ordinárias", "BNCX3", "Bolsa",
+		line(banco, "2026-01-01", "1", "3", "BANCO X", "Ações Ordinárias", "BNCX3", "", "Bolsa",
 			"2010-01-04", "2024-05-01"),
-		line(banco, "2026-01-01", "1", "3", "BANCO X", "Debêntures", "BNCX11",
+		line(banco, "2026-01-01", "1", "3", "BANCO X", "Debêntures", "BNCX11", "",
 			"Balcão Organizado", "2020-01-01", ""),
 		line("33.333.333/0001-33", "2026-01-01", "1", "4", "OUTRA SA", "Ações Ordinárias",
-			"DUPL3", "Bolsa", "2020-01-01", ""),
+			"DUPL3", "", "Bolsa", "2020-01-01", ""),
 		line("44.444.444/0001-44", "2026-01-01", "1", "6", "MAIS SA", "Ações Ordinárias",
-			"DUPL3", "Bolsa", "2020-01-01", ""),
+			"DUPL3", "", "Bolsa", "2020-01-01", ""),
 	}
 
 	return map[string]string{
@@ -522,6 +534,8 @@ func members(prefix, year string, rows map[string][]string) map[string]string {
 }
 
 func num(n int64) *int64 { return &n }
+
+func count(n int) *int { return &n }
 
 func date(y int, m time.Month, d int) time.Time {
 	return time.Date(y, m, d, 0, 0, 0, 0, time.UTC)

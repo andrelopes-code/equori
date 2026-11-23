@@ -13,6 +13,11 @@ type CompanyReport struct {
 	Plan         string
 	Currency     string
 	Periods      []CompanyReportPeriod
+	// SharesPerUnit is the number of shares of the security the report was asked for, 1 for a
+	// share; nil when unknown.
+	SharesPerUnit *int
+	// ShareCounts is the capital in units of shares a second filing states, by year.
+	ShareCounts map[int]int64
 }
 
 // CompanyReportPeriod is the accounts of one fiscal year or year to date. A nil account is a line
@@ -36,4 +41,9 @@ type CompanyReportPeriod struct {
 	OperatingCashFlow  *int64
 	SharesIssued       *int64
 	SharesTreasury     *int64
+
+	NetIncomeParent *int64
+	EquityMinority  *int64
+	// ClassesDiffer is true when a share of one class does not stand for a share of another.
+	ClassesDiffer bool
 }

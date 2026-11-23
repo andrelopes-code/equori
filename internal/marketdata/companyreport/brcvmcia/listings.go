@@ -14,7 +14,16 @@ import (
 
 const exchange = "BVMF"
 
-var codePattern = regexp.MustCompile(`^[A-Z0-9]{4}[0-9]{1,2}$`)
+const (
+	unitSecurity   = "Units"
+	maxUnitsShares = 100
+)
+
+var (
+	codePattern = regexp.MustCompile(`^[A-Z0-9]{4}[0-9]{1,2}$`)
+	// unitPart is a number of a composition and the class of share it counts.
+	unitPart = regexp.MustCompile(`([0-9]+)\s+(?:ON|PN|aç|[A-Z]{4}[0-9])`)
+)
 
 // listed is a candidate listing and the version of the row it came from.
 type listed struct {
@@ -31,7 +40,7 @@ func readListings(f *os.File, size int64, year int) ([]companyreport.Listing, er
 
 	required := []string{
 		"CNPJ_Companhia", "Versao", "Nome_Empresarial", "Codigo_Negociacao", "Mercado",
-		"Data_Fim_Negociacao",
+		"Data_Fim_Negociacao", "Valor_Mobiliario", "Composicao_BDR_Unit",
 	}
 	newest := map[string]int{}
 
@@ -57,10 +66,11 @@ func readListings(f *os.File, size int64, year int) ([]companyreport.Listing, er
 			}
 
 			rows = append(rows, listed{version, companyreport.Listing{
-				Exchange:   exchange,
-				Code:       code,
-				Identifier: id,
-				Name:       r.get("Nome_Empresarial"),
+				Exchange:      exchange,
+				Code:          code,
+				Identifier:    id,
+				Name:          r.get("Nome_Empresarial"),
+				SharesPerUnit: sharesPerUnit(r),
 			}})
 		},
 	)
@@ -69,6 +79,27 @@ func readListings(f *os.File, size int64, year int) ([]companyreport.Listing, er
 	}
 
 	return pick(rows, newest), nil
+}
+
+// sharesPerUnit sums the numbers of the composition of a unit; nil when it names none or the sum
+// passes the limit. A security that is not a unit is one share.
+func sharesPerUnit(r record) *int {
+	shares := 1
+
+	if r.get("Valor_Mobiliario") == unitSecurity {
+		shares = 0
+
+		for _, part := range unitPart.FindAllStringSubmatch(r.get("Composicao_BDR_Unit"), -1) {
+			n, err := strconv.Atoi(part[1])
+			if err != nil {
+				return nil
+			}
+
+			shares += n
+		}
+	}
+
+	return pointerIf(shares >= 1 && shares <= maxUnitsShares, shares)
 }
 
 // pick keeps the rows of the highest version of their company, without a code that two

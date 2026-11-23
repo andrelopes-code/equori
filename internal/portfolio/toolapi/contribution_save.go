@@ -13,9 +13,9 @@ import (
 )
 
 type contributionMemberIn struct {
-	AccountID  string `json:"account_id,omitzero" jsonschema:"account from list_accounts counted whole in the class, such as a reserve; instead of instrument"`
+	AccountID  string `json:"account_id,omitzero" jsonschema:"account counted whole in the class, such as a reserve; instead of instrument"`
 	Instrument string `json:"instrument,omitzero" jsonschema:"security code such as BOVA11, counted in every Brokerage holding it; instead of account_id"`
-	TargetBP   int    `json:"target_bp,omitzero"  jsonschema:"share of the class in basis points; all members add up to 10000, or none has a target"`
+	TargetBP   int    `json:"target_bp,omitzero"  jsonschema:"basis points of the class; all members add up to 10000, or none has a target"`
 	Answers    []bool `json:"answers,omitzero"    jsonschema:"per question of the group, true for yes"`
 }
 
@@ -32,17 +32,17 @@ type contributionRuleIn struct {
 
 type contributionClassIn struct {
 	Name     string                 `json:"name"      jsonschema:"name of the class, 1 to 60 characters, unique in the plan"`
-	TargetBP int                    `json:"target_bp" jsonschema:"share of the portfolio in basis points: 4000 is 40%; the classes add up to 10000"`
+	TargetBP int                    `json:"target_bp" jsonschema:"basis points of the portfolio: 4000 is 40%; the classes add up to 10000"`
 	Members  []contributionMemberIn `json:"members"   jsonschema:"what the class holds; a holding belongs to at most one class"`
 
 	Questions     []string             `json:"questions,omitzero"      jsonschema:"the investor's yes-or-no questions, at most 10 of 1 to 200 characters; with them, members carry answers and no target_bp"`
 	QuestionFacts []string             `json:"question_facts,omitzero" jsonschema:"fact key per question, empty for none: piotroski_p1 to piotroski_p9"`
-	Rules         []contributionRuleIn `json:"rules,omitzero"          jsonschema:"conditions of a group by rule, at most 5, instead of members: a security bought later that meets one joins it"`
+	Rules         []contributionRuleIn `json:"rules,omitzero"          jsonschema:"conditions of a group by rule, at most 5, instead of members: a security that meets one joins it"`
 }
 
 type saveContributionPlanIn struct {
 	Amount  string                `json:"amount,omitzero" jsonschema:"monthly contribution as a positive decimal in the base currency; absent stores none"`
-	Classes []contributionClassIn `json:"classes"         jsonschema:"every class, at most 20; the call replaces the whole plan, so repeat each class that stays; an empty list removes it"`
+	Classes []contributionClassIn `json:"classes"         jsonschema:"every class, at most 20; an empty list removes the plan"`
 }
 
 func saveContributionPlan(svc *app.Service) tool.Tool {

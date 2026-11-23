@@ -7,8 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/jackc/pgx/v5"
-
 	"github.com/andrelopes-code/equori/internal/marketdata/companyreport"
 	"github.com/andrelopes-code/equori/internal/marketdata/companyreport/brcvmcia"
 	"github.com/andrelopes-code/equori/internal/marketdata/domain"
@@ -157,6 +155,10 @@ func (m *Module) tickCompanyReport(ctx context.Context, src companyreport.Source
 		}
 	}
 
+	if err := storeCompanyShareCounts(ctx, q, src.ID(), snap); err != nil {
+		return err
+	}
+
 	return tx.Commit(ctx)
 }
 
@@ -238,7 +240,7 @@ func storeCompanyListings(
 	for _, l := range listings {
 		err := q.InsertCompanyListing(ctx, postgres.InsertCompanyListingParams{
 			Source: source, Exchange: l.Exchange, Code: l.Code, Identifier: l.Identifier,
-			Name: l.Name,
+			Name: l.Name, SharesPerUnit: smallint(l.SharesPerUnit),
 		})
 		if err != nil {
 			return fmt.Errorf("store the listing %s of %s: %w", l.Code, source, err)
@@ -260,7 +262,8 @@ func companyReportParams(
 		CurrentLiabilities: r.CurrentLiabilities, ShortDebt: r.ShortDebt, LongDebt: r.LongDebt,
 		Equity: r.Equity, Revenue: r.Revenue, GrossProfit: r.GrossProfit, NetIncome: r.NetIncome,
 		OperatingCashFlow: r.OperatingCashFlow, SharesIssued: r.SharesIssued,
-		SharesTreasury: r.SharesTreasury,
+		SharesTreasury: r.SharesTreasury, NetIncomeParent: r.NetIncomeParent,
+		EquityMinority: r.EquityMinority, ClassesDiffer: r.ClassesDiffer,
 	}
 }
 
@@ -274,20 +277,9 @@ func (m *Module) storedCompanyReport(
 		Source: src.ID(), SourceURL: src.URL(), Periods: []domain.CompanyReportPeriod{},
 	}
 
-	identifier, ok := in.Symbols[src.ID()]
-	if !ok {
-		var err error
-
-		identifier, err = m.q.CompanyListingIdentifier(ctx, postgres.CompanyListingIdentifierParams{
-			Source: src.ID(), Exchange: in.Exchange, Code: string(in.Code),
-		})
-		if errors.Is(err, pgx.ErrNoRows) {
-			return out, nil
-		}
-
-		if err != nil {
-			return CompanyReport{}, fmt.Errorf("find the company of %s: %w", in.Code, err)
-		}
+	identifier, err := m.companyOf(ctx, src.ID(), in, &out)
+	if err != nil || identifier == "" {
+		return out, err
 	}
 
 	rows, err := m.q.ListCompanyReports(ctx, postgres.ListCompanyReportsParams{
@@ -306,7 +298,9 @@ func (m *Module) storedCompanyReport(
 		out.Periods = append(out.Periods, companyReportPeriod(r))
 	}
 
-	return out, nil
+	out.ShareCounts, err = m.shareCounts(ctx, src.ID(), identifier)
+
+	return out, err
 }
 
 func companyReportPeriod(r postgres.ListCompanyReportsRow) domain.CompanyReportPeriod {
@@ -317,5 +311,7 @@ func companyReportPeriod(r postgres.ListCompanyReportsRow) domain.CompanyReportP
 		ShortDebt: r.ShortDebt, LongDebt: r.LongDebt, Equity: r.Equity, Revenue: r.Revenue,
 		GrossProfit: r.GrossProfit, NetIncome: r.NetIncome, OperatingCashFlow: r.OperatingCashFlow,
 		SharesIssued: r.SharesIssued, SharesTreasury: r.SharesTreasury,
+		NetIncomeParent: r.NetIncomeParent, EquityMinority: r.EquityMinority,
+		ClassesDiffer: r.ClassesDiffer,
 	}
 }

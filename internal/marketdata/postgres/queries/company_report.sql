@@ -37,7 +37,10 @@ INSERT INTO
         net_income,
         operating_cash_flow,
         shares_issued,
-        shares_treasury
+        shares_treasury,
+        net_income_parent,
+        equity_minority,
+        classes_differ
     )
 VALUES
     (
@@ -64,7 +67,10 @@ VALUES
         @net_income,
         @operating_cash_flow,
         @shares_issued,
-        @shares_treasury
+        @shares_treasury,
+        @net_income_parent,
+        @equity_minority,
+        @classes_differ
     );
 
 -- name: DeleteCompanyListings :exec
@@ -74,13 +80,14 @@ WHERE
 
 -- name: InsertCompanyListing :exec
 INSERT INTO
-    marketdata_company_listing (source, exchange, code, identifier, name)
+    marketdata_company_listing (source, exchange, code, identifier, name, shares_per_unit)
 VALUES
-    (@source, @exchange, @code, @identifier, @name);
+    (@source, @exchange, @code, @identifier, @name, @shares_per_unit);
 
--- name: CompanyListingIdentifier :one
+-- name: CompanyListing :one
 SELECT
-    identifier
+    identifier,
+    shares_per_unit
 FROM
     marketdata_company_listing
 WHERE
@@ -112,7 +119,10 @@ SELECT
     net_income,
     operating_cash_flow,
     shares_issued,
-    shares_treasury
+    shares_treasury,
+    net_income_parent,
+    equity_minority,
+    classes_differ
 FROM
     marketdata_company_report
 WHERE
@@ -131,3 +141,31 @@ FROM
     marketdata_company_report
 WHERE
     source = @source;
+
+-- name: DeleteCompanyShareCounts :exec
+-- Deletes the counts of the years read and those of a year outside the window.
+DELETE FROM marketdata_company_share_count
+WHERE
+    source = @source
+    AND (
+        YEAR = ANY (@read_years::SMALLINT[])
+        OR NOT (YEAR = ANY (@window_years::SMALLINT[]))
+    );
+
+-- name: InsertCompanyShareCount :exec
+INSERT INTO
+    marketdata_company_share_count (source, identifier, YEAR, shares)
+VALUES
+    (@source, @identifier, @year, @shares);
+
+-- name: ListCompanyShareCounts :many
+SELECT
+    YEAR,
+    shares
+FROM
+    marketdata_company_share_count
+WHERE
+    source = @source
+    AND identifier = @identifier
+ORDER BY
+    YEAR;

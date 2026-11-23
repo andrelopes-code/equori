@@ -5539,6 +5539,30 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /company-figures:
+    get:
+      tags: [marketdata]
+      operationId: listCompanyFigures
+      x-book-role: read
+      summary: The figures of the listed company of an instrument, from its stored statements and today's price (contribution criteria AC4 to AC9).
+      parameters:
+        - name: code
+          in: query
+          required: true
+          description: The instrument code, such as a ticker.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompanyFiguresList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /market-data/institution-indicators:
     get:
       tags: [marketdata]
@@ -13497,6 +13521,114 @@ components:
           format: int64
           nullable: true
           description: The net income of the period in minor units of currency; null when not informed.
+    CompanyFiguresList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CompanyFigures"
+    CompanyFigures:
+      type: object
+      additionalProperties: false
+      required: [source, source_url, name, currency, price_earnings, price_book, return_on_equity, net_margin, net_debt_to_equity, gross_profit_to_assets, current_ratio, revenue_growth, positive_years, profit, revenue]
+      properties:
+        source:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
+        source_url:
+          type: string
+        name:
+          type: string
+        currency:
+          type: string
+        price_date:
+          type: string
+          format: date
+          description: The date of the price the multiples read; absent without one.
+        price_earnings:
+          $ref: "#/components/schemas/CompanyFigure"
+        price_book:
+          $ref: "#/components/schemas/CompanyFigure"
+        price_earnings_range:
+          $ref: "#/components/schemas/CompanyRange"
+        price_book_range:
+          $ref: "#/components/schemas/CompanyRange"
+        return_on_equity:
+          $ref: "#/components/schemas/CompanyFigure"
+        net_margin:
+          $ref: "#/components/schemas/CompanyFigure"
+        net_debt_to_equity:
+          $ref: "#/components/schemas/CompanyFigure"
+        gross_profit_to_assets:
+          $ref: "#/components/schemas/CompanyFigure"
+        current_ratio:
+          $ref: "#/components/schemas/CompanyFigure"
+        revenue_growth:
+          $ref: "#/components/schemas/CompanyFigure"
+        positive_years:
+          $ref: "#/components/schemas/CompanyPositiveYears"
+        profit:
+          $ref: "#/components/schemas/CompanyChange"
+        revenue:
+          $ref: "#/components/schemas/CompanyChange"
+    CompanyFigure:
+      type: object
+      additionalProperties: false
+      description: A value with the end of the window or of the balance it reads, or the reason it has none.
+      properties:
+        value:
+          type: string
+          description: Decimal of at most six places; a rate is a fraction.
+        reason:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
+        date:
+          type: string
+          format: date
+    CompanyRange:
+      type: object
+      additionalProperties: false
+      description: The least and the greatest value over the fiscal years that have one, three at least.
+      required: [least, greatest, years]
+      properties:
+        least:
+          type: string
+        greatest:
+          type: string
+        years:
+          type: integer
+    CompanyPositiveYears:
+      type: object
+      additionalProperties: false
+      required: [positive, years]
+      properties:
+        positive:
+          type: integer
+        years:
+          type: integer
+    CompanyChange:
+      type: object
+      additionalProperties: false
+      description: An account against the same months of the year before.
+      properties:
+        state:
+          type: string
+          description: rate, loss (at or below zero) or turned (above zero after a year at or below it); absent without a comparison.
+          pattern: "^[a-z0-9_]{2,40}$"
+        rate:
+          type: string
+          description: The change as a fraction, in the state rate.
+        date:
+          type: string
+          format: date
+          description: The end of the period compared.
+        months:
+          type: integer
+        reason:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
     CompanyReportList:
       type: object
       required: [items]

@@ -25,19 +25,20 @@ func (getMarketDataView) Values() []string {
 		"curves",
 		"fund_reports",
 		"company_reports",
+		"company_figures",
 	}
 }
 
 type getMarketDataIn struct {
 	View     getMarketDataView `json:"view"              jsonschema:"what to return"`
-	Code     string            `json:"code,omitzero"     jsonschema:"for instrument, prices, fund_reports and company_reports: instrument code, such as a ticker or currency code"`
-	Quote    string            `json:"quote,omitzero"    jsonschema:"for prices: code of the currency the price is quoted in"`
+	Code     string            `json:"code,omitzero"     jsonschema:"for instrument, prices, fund_reports, company_reports, company_figures: code such as a ticker or currency"`
+	Quote    string            `json:"quote,omitzero"    jsonschema:"for prices: currency of the price"`
 	From     tool.Date         `json:"from,omitzero"     jsonschema:"for prices and index_rates: first date"`
-	To       tool.Date         `json:"to,omitzero"       jsonschema:"for prices and index_rates: last date; at most 18300 days after from for prices, 7320 for index_rates"`
+	To       tool.Date         `json:"to,omitzero"       jsonschema:"for prices and index_rates: last date, at most 18300 days after from for prices, 7320 for index_rates"`
 	Index    string            `json:"index,omitzero"    jsonschema:"for index_rates and index_expectations: index id from the indexes view"`
-	Calendar string            `json:"calendar,omitzero" jsonschema:"for holidays: calendar identifier from the calendars view"`
+	Calendar string            `json:"calendar,omitzero" jsonschema:"for holidays: calendar id from the calendars view"`
 	Year     int               `json:"year,omitzero"     jsonschema:"for holidays: calendar year"`
-	Query    string            `json:"query,omitzero"    jsonschema:"for catalog: text of a code or a name, 2 characters or more"`
+	Query    string            `json:"query,omitzero"    jsonschema:"for catalog: part of a code or name, 2 characters or more"`
 }
 
 type termsView struct {
@@ -232,6 +233,8 @@ type getMarketDataOut struct {
 	FundReportCandidates []fundReportCandidateView `json:"fund_report_candidates,omitzero"`
 	// CompanyReports holds the statements the enabled company report sources stored for the code.
 	CompanyReports []companyReportView `json:"company_reports,omitzero"`
+	// CompanyFigures holds the ratios and multiples of the companies of CompanyReports.
+	CompanyFigures []companyFiguresView `json:"company_figures,omitzero"`
 }
 
 func toInstrumentView(in domain.Instrument) instrumentView {

@@ -231,6 +231,10 @@ func TestSchemaRejectsInvalidCompanyReports(t *testing.T) {
 		`(source, identifier, period, months, file, currency, name, consolidated, plan) VALUES `
 	const listing = `INSERT INTO marketdata_company_listing ` +
 		`(source, exchange, code, identifier, name) VALUES `
+	const unit = `INSERT INTO marketdata_company_listing ` +
+		`(source, exchange, code, identifier, name, shares_per_unit) VALUES `
+	const count = `INSERT INTO marketdata_company_share_count ` +
+		`(source, identifier, year, shares) VALUES `
 
 	pool := pgtest.New(t)
 	for _, sql := range []string{
@@ -254,6 +258,11 @@ func TestSchemaRejectsInvalidCompanyReports(t *testing.T) {
 		"listing exchange in lower case":    listing + `('br_cvm_cia', 'bvmf', 'WEGE3', '1', 'WEG')`,
 		"listing code in lower case":        listing + `('br_cvm_cia', 'BVMF', 'wege3', '1', 'WEG')`,
 		"listing empty identifier":          listing + `('br_cvm_cia', 'BVMF', 'WEGE4', '', 'WEG')`,
+		"unit of no share":                  unit + `('br_cvm_cia', 'BVMF', 'WEGE11', '1', 'WEG', 0)`,
+		"unit of 101 shares":                unit + `('br_cvm_cia', 'BVMF', 'WEGE11', '1', 'WEG', 101)`,
+		"count of no share":                 count + `('br_cvm_cia', '1', 2026, 0)`,
+		"count source outside the pattern":  count + `('BR_CVM', '1', 2026, 1)`,
+		"count empty identifier":            count + `('br_cvm_cia', '', 2026, 1)`,
 		"listing duplicate":                 listing + `('br_cvm_cia', 'BVMF', 'WEGE3', '2', 'WEG')`,
 	} {
 		t.Run(name, func(t *testing.T) {

@@ -268,3 +268,19 @@ WHERE
     AND p.instrument = anchor.instrument
     AND p.quote_instrument = anchor.quote
     AND p.date > anchor.day;
+
+-- name: PriceOfPriority :many
+SELECT
+    value
+FROM
+    marketdata_price
+WHERE
+    instrument = @instrument
+    AND quote_instrument = @quote_instrument
+    AND date BETWEEN @from_date AND @to_date
+    AND priority = @priority
+ORDER BY
+    date DESC,
+    recorded_at DESC
+LIMIT
+    1;

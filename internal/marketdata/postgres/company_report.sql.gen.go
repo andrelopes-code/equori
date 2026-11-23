@@ -10,9 +10,10 @@ import (
 	"time"
 )
 
-const companyListingIdentifier = `-- name: CompanyListingIdentifier :one
+const companyListing = `-- name: CompanyListing :one
 SELECT
-    identifier
+    identifier,
+    shares_per_unit
 FROM
     marketdata_company_listing
 WHERE
@@ -21,17 +22,22 @@ WHERE
     AND code = $3
 `
 
-type CompanyListingIdentifierParams struct {
+type CompanyListingParams struct {
 	Source   string
 	Exchange string
 	Code     string
 }
 
-func (q *Queries) CompanyListingIdentifier(ctx context.Context, arg CompanyListingIdentifierParams) (string, error) {
-	row := q.db.QueryRow(ctx, companyListingIdentifier, arg.Source, arg.Exchange, arg.Code)
-	var identifier string
-	err := row.Scan(&identifier)
-	return identifier, err
+type CompanyListingRow struct {
+	Identifier    string
+	SharesPerUnit *int16
+}
+
+func (q *Queries) CompanyListing(ctx context.Context, arg CompanyListingParams) (CompanyListingRow, error) {
+	row := q.db.QueryRow(ctx, companyListing, arg.Source, arg.Exchange, arg.Code)
+	var i CompanyListingRow
+	err := row.Scan(&i.Identifier, &i.SharesPerUnit)
+	return i, err
 }
 
 const deleteCompanyListings = `-- name: DeleteCompanyListings :exec
@@ -80,19 +86,42 @@ func (q *Queries) DeleteCompanyReportsOutside(ctx context.Context, arg DeleteCom
 	return err
 }
 
+const deleteCompanyShareCounts = `-- name: DeleteCompanyShareCounts :exec
+DELETE FROM marketdata_company_share_count
+WHERE
+    source = $1
+    AND (
+        YEAR = ANY ($2::SMALLINT[])
+        OR NOT (YEAR = ANY ($3::SMALLINT[]))
+    )
+`
+
+type DeleteCompanyShareCountsParams struct {
+	Source      string
+	ReadYears   []int16
+	WindowYears []int16
+}
+
+// Deletes the counts of the years read and those of a year outside the window.
+func (q *Queries) DeleteCompanyShareCounts(ctx context.Context, arg DeleteCompanyShareCountsParams) error {
+	_, err := q.db.Exec(ctx, deleteCompanyShareCounts, arg.Source, arg.ReadYears, arg.WindowYears)
+	return err
+}
+
 const insertCompanyListing = `-- name: InsertCompanyListing :exec
 INSERT INTO
-    marketdata_company_listing (source, exchange, code, identifier, name)
+    marketdata_company_listing (source, exchange, code, identifier, name, shares_per_unit)
 VALUES
-    ($1, $2, $3, $4, $5)
+    ($1, $2, $3, $4, $5, $6)
 `
 
 type InsertCompanyListingParams struct {
-	Source     string
-	Exchange   string
-	Code       string
-	Identifier string
-	Name       string
+	Source        string
+	Exchange      string
+	Code          string
+	Identifier    string
+	Name          string
+	SharesPerUnit *int16
 }
 
 func (q *Queries) InsertCompanyListing(ctx context.Context, arg InsertCompanyListingParams) error {
@@ -102,6 +131,7 @@ func (q *Queries) InsertCompanyListing(ctx context.Context, arg InsertCompanyLis
 		arg.Code,
 		arg.Identifier,
 		arg.Name,
+		arg.SharesPerUnit,
 	)
 	return err
 }
@@ -132,7 +162,10 @@ INSERT INTO
         net_income,
         operating_cash_flow,
         shares_issued,
-        shares_treasury
+        shares_treasury,
+        net_income_parent,
+        equity_minority,
+        classes_differ
     )
 VALUES
     (
@@ -159,7 +192,10 @@ VALUES
         $21,
         $22,
         $23,
-        $24
+        $24,
+        $25,
+        $26,
+        $27
     )
 `
 
@@ -188,6 +224,9 @@ type InsertCompanyReportParams struct {
 	OperatingCashFlow  *int64
 	SharesIssued       *int64
 	SharesTreasury     *int64
+	NetIncomeParent    *int64
+	EquityMinority     *int64
+	ClassesDiffer      bool
 }
 
 func (q *Queries) InsertCompanyReport(ctx context.Context, arg InsertCompanyReportParams) error {
@@ -216,6 +255,33 @@ func (q *Queries) InsertCompanyReport(ctx context.Context, arg InsertCompanyRepo
 		arg.OperatingCashFlow,
 		arg.SharesIssued,
 		arg.SharesTreasury,
+		arg.NetIncomeParent,
+		arg.EquityMinority,
+		arg.ClassesDiffer,
+	)
+	return err
+}
+
+const insertCompanyShareCount = `-- name: InsertCompanyShareCount :exec
+INSERT INTO
+    marketdata_company_share_count (source, identifier, YEAR, shares)
+VALUES
+    ($1, $2, $3, $4)
+`
+
+type InsertCompanyShareCountParams struct {
+	Source     string
+	Identifier string
+	Year       int16
+	Shares     int64
+}
+
+func (q *Queries) InsertCompanyShareCount(ctx context.Context, arg InsertCompanyShareCountParams) error {
+	_, err := q.db.Exec(ctx, insertCompanyShareCount,
+		arg.Source,
+		arg.Identifier,
+		arg.Year,
+		arg.Shares,
 	)
 	return err
 }
@@ -266,7 +332,10 @@ SELECT
     net_income,
     operating_cash_flow,
     shares_issued,
-    shares_treasury
+    shares_treasury,
+    net_income_parent,
+    equity_minority,
+    classes_differ
 FROM
     marketdata_company_report
 WHERE
@@ -305,6 +374,9 @@ type ListCompanyReportsRow struct {
 	OperatingCashFlow  *int64
 	SharesIssued       *int64
 	SharesTreasury     *int64
+	NetIncomeParent    *int64
+	EquityMinority     *int64
+	ClassesDiffer      bool
 }
 
 // CR6: the reports of the identifier, newest period first, then most months first.
@@ -340,7 +412,53 @@ func (q *Queries) ListCompanyReports(ctx context.Context, arg ListCompanyReports
 			&i.OperatingCashFlow,
 			&i.SharesIssued,
 			&i.SharesTreasury,
+			&i.NetIncomeParent,
+			&i.EquityMinority,
+			&i.ClassesDiffer,
 		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listCompanyShareCounts = `-- name: ListCompanyShareCounts :many
+SELECT
+    YEAR,
+    shares
+FROM
+    marketdata_company_share_count
+WHERE
+    source = $1
+    AND identifier = $2
+ORDER BY
+    YEAR
+`
+
+type ListCompanyShareCountsParams struct {
+	Source     string
+	Identifier string
+}
+
+type ListCompanyShareCountsRow struct {
+	Year   int16
+	Shares int64
+}
+
+func (q *Queries) ListCompanyShareCounts(ctx context.Context, arg ListCompanyShareCountsParams) ([]ListCompanyShareCountsRow, error) {
+	rows, err := q.db.Query(ctx, listCompanyShareCounts, arg.Source, arg.Identifier)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListCompanyShareCountsRow
+	for rows.Next() {
+		var i ListCompanyShareCountsRow
+		if err := rows.Scan(&i.Year, &i.Shares); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

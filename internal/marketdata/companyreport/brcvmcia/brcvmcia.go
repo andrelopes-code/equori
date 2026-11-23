@@ -83,13 +83,27 @@ func (s Source) Fetch(ctx context.Context, today time.Time) (companyreport.Snaps
 		return companyreport.Snapshot{}, err
 	}
 
+	for y := today.Year(); y >= today.Year()-dfpYears; y-- {
+		snap.CountYears = append(snap.CountYears, y)
+
+		file, got, err := s.fetchCounts(ctx, y)
+		if err != nil {
+			return companyreport.Snapshot{}, err
+		}
+
+		if got {
+			snap.Counts = append(snap.Counts, file)
+		}
+	}
+
 	return snap, nil
 }
 
 func window(year int) []archive {
 	var out []archive
 
-	for y := year - 1; y >= year-dfpYears; y-- {
+	// A fiscal year that ends before December is filed in the DFP of its own year (AC0).
+	for y := year; y >= year-dfpYears; y-- {
 		out = append(out, archive{"dfp", y})
 	}
 
@@ -152,6 +166,25 @@ func (s Source) fetchListings(ctx context.Context, year int) ([]companyreport.Li
 	}
 
 	return nil, nil
+}
+
+// fetchCounts reads the share counts of the FRE of year; an absent or unchanged file is not read.
+func (s Source) fetchCounts(ctx context.Context, year int) (companyreport.CountFile, bool, error) {
+	var counts []companyreport.ShareCount
+
+	got, err := s.get(
+		ctx,
+		"/FRE/DADOS/fre_cia_aberta_"+strconv.Itoa(year)+".zip",
+		func(f *os.File, size int64) error {
+			var err error
+
+			counts, err = readCounts(f, size, year)
+
+			return err
+		},
+	)
+
+	return companyreport.CountFile{Year: year, Counts: counts}, got == loaded, err
 }
 
 // get downloads path under the base address. An answer without data on a file read before is a

@@ -329,7 +329,16 @@ func companyPeriod(period string, months int, delivered string, a ...int64) comp
 func companyReportHarness(t *testing.T, today string) *apitest.Harness {
 	t.Helper()
 
-	files := companyReportFiles(t)
+	return companyFilesHarness(t, today, companyReportFiles(t))
+}
+
+func companyFilesHarness(
+	t *testing.T,
+	today string,
+	files map[string][]byte,
+) *apitest.Harness {
+	t.Helper()
+
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, ok := files[r.URL.Path]
 		if !ok {
@@ -539,25 +548,26 @@ func companyITR2025() map[string]string {
 
 func companyListings() map[string]string {
 	const header = "CNPJ_Companhia;Data_Referencia;Versao;ID_Documento;Nome_Empresarial;" +
-		"Valor_Mobiliario;Codigo_Negociacao;Mercado;Data_Inicio_Negociacao;Data_Fim_Negociacao"
+		"Valor_Mobiliario;Codigo_Negociacao;Composicao_BDR_Unit;Mercado;" +
+		"Data_Inicio_Negociacao;Data_Fim_Negociacao"
 
 	rows := []string{
 		companyLine(companyWEG, "2026-01-01", "1", "1", "WEG S.A.", "Ações Ordinárias",
-			"WEGE3", "Bolsa", "2007-06-22", ""),
+			"WEGE3", "", "Bolsa", "2007-06-22", ""),
 		companyLine(companyIND, "2026-01-01", "1", "2", "IND SA", "Ações Ordinárias",
-			"OLDS3", "Bolsa", "2010-01-04", ""),
+			"OLDS3", "", "Bolsa", "2010-01-04", ""),
 		companyLine(companyIND, "2026-01-01", "2", "5", "IND SA", "Ações Ordinárias",
-			"INDS3", "Bolsa", "2010-01-04", ""),
+			"INDS3", "", "Bolsa", "2010-01-04", ""),
 		companyLine(companyBANCO, "2026-01-01", "1", "3", "BANCO X", "Ações Preferenciais",
-			"BNCX4", "Bolsa", "2010-01-04", ""),
+			"BNCX4", "", "Bolsa", "2010-01-04", ""),
 		companyLine(companyBANCO, "2026-01-01", "1", "3", "BANCO X", "Ações Ordinárias",
-			"BNCX3", "Bolsa", "2010-01-04", "2024-05-01"),
+			"BNCX3", "", "Bolsa", "2010-01-04", "2024-05-01"),
 		companyLine(companyBANCO, "2026-01-01", "1", "3", "BANCO X", "Debêntures",
-			"BNCX11", "Balcão Organizado", "2020-01-01", ""),
+			"BNCX11", "", "Balcão Organizado", "2020-01-01", ""),
 		companyLine("33.333.333/0001-33", "2026-01-01", "1", "4", "OUTRA SA",
-			"Ações Ordinárias", "DUPL3", "Bolsa", "2020-01-01", ""),
+			"Ações Ordinárias", "DUPL3", "", "Bolsa", "2020-01-01", ""),
 		companyLine("44.444.444/0001-44", "2026-01-01", "1", "6", "MAIS SA",
-			"Ações Ordinárias", "DUPL3", "Bolsa", "2020-01-01", ""),
+			"Ações Ordinárias", "DUPL3", "", "Bolsa", "2020-01-01", ""),
 	}
 
 	return map[string]string{

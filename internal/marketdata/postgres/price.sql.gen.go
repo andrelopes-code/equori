@@ -511,6 +511,57 @@ func (q *Queries) ListQuoteReferences(ctx context.Context, arg ListQuoteReferenc
 	return items, nil
 }
 
+const priceOfPriority = `-- name: PriceOfPriority :many
+SELECT
+    value
+FROM
+    marketdata_price
+WHERE
+    instrument = $1
+    AND quote_instrument = $2
+    AND date BETWEEN $3 AND $4
+    AND priority = $5
+ORDER BY
+    date DESC,
+    recorded_at DESC
+LIMIT
+    1
+`
+
+type PriceOfPriorityParams struct {
+	Instrument      string
+	QuoteInstrument string
+	FromDate        time.Time
+	ToDate          time.Time
+	Priority        int16
+}
+
+func (q *Queries) PriceOfPriority(ctx context.Context, arg PriceOfPriorityParams) ([]pgtype.Numeric, error) {
+	rows, err := q.db.Query(ctx, priceOfPriority,
+		arg.Instrument,
+		arg.QuoteInstrument,
+		arg.FromDate,
+		arg.ToDate,
+		arg.Priority,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []pgtype.Numeric
+	for rows.Next() {
+		var value pgtype.Numeric
+		if err := rows.Scan(&value); err != nil {
+			return nil, err
+		}
+		items = append(items, value)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const priceOnOrBefore = `-- name: PriceOnOrBefore :many
 SELECT
     instrument, quote_instrument, date, value, source, priority, recorded_at

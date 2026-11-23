@@ -160,6 +160,7 @@ var exposure = map[string]string{
 	"listIndexExpectations":            "get_market_data",
 	"listCurves":                       "get_market_data",
 	"listFundReports":                  "get_market_data",
+	"listCompanyFigures":               "get_market_data",
 	"listCompanyReports":               "get_market_data",
 	"getInstitutionIndicators":         "get_institution_indicators",
 	"listMarketDataFeeds":              "-instance",

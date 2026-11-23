@@ -23,11 +23,31 @@ type Report struct {
 	TotalAssets, CurrentAssets, Cash, ShortInvestments, CurrentLiabilities *int64
 	ShortDebt, LongDebt, Equity, Revenue, GrossProfit, NetIncome           *int64
 	OperatingCashFlow, SharesIssued, SharesTreasury                        *int64
+	// NetIncomeParent is the part of the net income of the parent's holders; EquityMinority the
+	// part of the equity of the other holders.
+	NetIncomeParent, EquityMinority *int64
+	// ClassesDiffer is true when the earnings per share of two classes differ by a factor above
+	// 1.5 (contribution criteria AC0).
+	ClassesDiffer bool
 }
 
 // Listing ties a trading code of an exchange to a company (CR4).
 type Listing struct {
 	Exchange, Code, Identifier, Name string
+	// SharesPerUnit is 1 for a share, the shares a unit holds for a unit, nil when unknown.
+	SharesPerUnit *int
+}
+
+// ShareCount is the capital of a company in units of shares, as a filing of one year states it.
+type ShareCount struct {
+	Identifier string
+	Shares     int64
+}
+
+// CountFile is the share counts of the file of one year.
+type CountFile struct {
+	Year   int
+	Counts []ShareCount
 }
 
 // File is the reports of one file the fetch read; Name is its key in storage, such as "dfp_2025".
@@ -45,6 +65,10 @@ type Snapshot struct {
 	Files  []File
 	// Listings is nil when the listing file was not read.
 	Listings []Listing
+	// CountYears names every year of the window of the share counts, read or not; stored counts
+	// of a year outside it are deleted.
+	CountYears []int
+	Counts     []CountFile
 }
 
 // Source reads the statements of the companies of one register.

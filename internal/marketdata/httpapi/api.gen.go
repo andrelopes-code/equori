@@ -277,6 +277,95 @@ type CatalogSearch struct {
 	Unavailable []string `json:"unavailable"`
 }
 
+// CompanyChange An account against the same months of the year before.
+type CompanyChange struct {
+	// Date The end of the period compared.
+	Date   *openapi_types.Date `json:"date,omitempty"`
+	Months *int                `json:"months,omitempty"`
+
+	// Rate The change as a fraction, in the state rate.
+	Rate   *string `json:"rate,omitempty"`
+	Reason *string `json:"reason,omitempty"`
+
+	// State rate, loss (at or below zero) or turned (above zero after a year at or below it); absent without a comparison.
+	State *string `json:"state,omitempty"`
+}
+
+// CompanyFigure A value with the end of the window or of the balance it reads, or the reason it has none.
+type CompanyFigure struct {
+	Date   *openapi_types.Date `json:"date,omitempty"`
+	Reason *string             `json:"reason,omitempty"`
+
+	// Value Decimal of at most six places; a rate is a fraction.
+	Value *string `json:"value,omitempty"`
+}
+
+// CompanyFigures defines model for CompanyFigures.
+type CompanyFigures struct {
+	Currency string `json:"currency"`
+
+	// CurrentRatio A value with the end of the window or of the balance it reads, or the reason it has none.
+	CurrentRatio CompanyFigure `json:"current_ratio"`
+
+	// GrossProfitToAssets A value with the end of the window or of the balance it reads, or the reason it has none.
+	GrossProfitToAssets CompanyFigure `json:"gross_profit_to_assets"`
+	Name                string        `json:"name"`
+
+	// NetDebtToEquity A value with the end of the window or of the balance it reads, or the reason it has none.
+	NetDebtToEquity CompanyFigure `json:"net_debt_to_equity"`
+
+	// NetMargin A value with the end of the window or of the balance it reads, or the reason it has none.
+	NetMargin     CompanyFigure        `json:"net_margin"`
+	PositiveYears CompanyPositiveYears `json:"positive_years"`
+
+	// PriceBook A value with the end of the window or of the balance it reads, or the reason it has none.
+	PriceBook CompanyFigure `json:"price_book"`
+
+	// PriceBookRange The least and the greatest value over the fiscal years that have one, three at least.
+	PriceBookRange *CompanyRange `json:"price_book_range,omitempty"`
+
+	// PriceDate The date of the price the multiples read; absent without one.
+	PriceDate *openapi_types.Date `json:"price_date,omitempty"`
+
+	// PriceEarnings A value with the end of the window or of the balance it reads, or the reason it has none.
+	PriceEarnings CompanyFigure `json:"price_earnings"`
+
+	// PriceEarningsRange The least and the greatest value over the fiscal years that have one, three at least.
+	PriceEarningsRange *CompanyRange `json:"price_earnings_range,omitempty"`
+
+	// Profit An account against the same months of the year before.
+	Profit CompanyChange `json:"profit"`
+
+	// ReturnOnEquity A value with the end of the window or of the balance it reads, or the reason it has none.
+	ReturnOnEquity CompanyFigure `json:"return_on_equity"`
+
+	// Revenue An account against the same months of the year before.
+	Revenue CompanyChange `json:"revenue"`
+
+	// RevenueGrowth A value with the end of the window or of the balance it reads, or the reason it has none.
+	RevenueGrowth CompanyFigure `json:"revenue_growth"`
+	Source        string        `json:"source"`
+	SourceUrl     string        `json:"source_url"`
+}
+
+// CompanyFiguresList defines model for CompanyFiguresList.
+type CompanyFiguresList struct {
+	Items []CompanyFigures `json:"items"`
+}
+
+// CompanyPositiveYears defines model for CompanyPositiveYears.
+type CompanyPositiveYears struct {
+	Positive int `json:"positive"`
+	Years    int `json:"years"`
+}
+
+// CompanyRange The least and the greatest value over the fiscal years that have one, three at least.
+type CompanyRange struct {
+	Greatest string `json:"greatest"`
+	Least    string `json:"least"`
+	Years    int    `json:"years"`
+}
+
 // CompanyReport defines model for CompanyReport.
 type CompanyReport struct {
 	// Consolidated True when the newest period reads the consolidated statements (CR3).
@@ -1056,6 +1145,12 @@ type TagName = string
 // ListHolidaysParams defines parameters for ListHolidays.
 type ListHolidaysParams struct {
 	Year int `form:"year" json:"year"`
+}
+
+// ListCompanyFiguresParams defines parameters for ListCompanyFigures.
+type ListCompanyFiguresParams struct {
+	// Code The instrument code, such as a ticker.
+	Code string `form:"code" json:"code"`
 }
 
 // ListCompanyReportsParams defines parameters for ListCompanyReports.
