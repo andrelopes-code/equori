@@ -12,6 +12,11 @@ const ideal = (page, words) => page.getByRole("region", { name: words("Carteira 
 // The words of the first group: where it stands against its target and what it receives.
 const verdict = (page, words) =>
   ideal(page, words).locator("p, span").filter({ hasText: words(/ do ideal \(hoje/, / target \(today/) }).first();
+const criteria = (page, words) =>
+  page.getByRole("region", { name: words("Critérios dos ativos", "Criteria of the assets") });
+// The first group the criteria are offered for: its way in.
+const useCriteria = (page, words) =>
+  criteria(page, words).getByRole("button", { name: words(/^Usar critérios em/, /^Use criteria in/) }).first();
 const edit = (page, words) => page.getByRole("button", { name: words("Editar grupos e ideais", "Edit groups and targets") });
 
 export default {
@@ -28,6 +33,10 @@ export default {
     {
       figure: "plan-list",
       target: purchase,
+    },
+    {
+      figure: "plan-criteria",
+      target: useCriteria,
     },
     {
       figure: "plan-ideal",

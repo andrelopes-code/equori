@@ -161,29 +161,134 @@ export const contributionPlanEn = {
   "contributionPlan.removeMember": "Remove asset",
   "contributionPlan.compareIndexers": "compare indexers",
   "contributionPlan.compareIndexers.title": "Compare indexers",
+  "contributionPlan.criteria.title": "Criteria of the assets",
+  "contributionPlan.criteria.description":
+    "Optional: your criteria set the target of each asset. Nothing is sold.",
+  "contributionPlan.criteria.boardTitle": "Criteria of {name}",
+  "contributionPlan.criteria.back": "Groups and targets",
+  "contributionPlan.criteria.use": "Use criteria",
+  "contributionPlan.criteria.open": "Open criteria",
+  "contributionPlan.criteria.openOf": "Open criteria of {name}",
+  "contributionPlan.criteria.useIn": "Use criteria in {name}",
+  "contributionPlan.criteria.stateTyped": "target typed per asset",
+  "contributionPlan.criteria.stateWhole": "one target for the whole group",
+  "contributionPlan.criteria.stateOne":
+    "{count} criterion, {automatic} automatic",
+  "contributionPlan.criteria.stateMany":
+    "{count} criteria, {automatic} automatic",
+  "contributionPlan.criteria.add": "Add criterion",
+  "contributionPlan.criteria.addDescription":
+    "equori answers the automatic ones. The limit of each is yours.",
+  "contributionPlan.criteria.writeOwn": "Write a criterion",
+  "contributionPlan.criteria.writeOwnMeaning":
+    "A yes-or-no question you answer for each asset.",
+  "contributionPlan.criteria.pickAutomatic": "Choose automatic criteria",
+  "contributionPlan.criteria.pickAutomaticMeaning":
+    "equori computes them from the statements and the price and answers alone.",
+  "contributionPlan.criteria.addOne": "Add",
+  "contributionPlan.criteria.addNamed": "Add {name}",
+  "contributionPlan.criteria.added": "in the group",
+  "contributionPlan.criteria.done": "Done",
+  "contributionPlan.criteria.full": "A group holds at most 20 criteria.",
+  "contributionPlan.criteria.group.price": "Price",
+  "contributionPlan.criteria.group.return": "Profitability",
+  "contributionPlan.criteria.group.debt": "Debt and liquidity",
+  "contributionPlan.criteria.group.history": "Growth and history",
+  "contributionPlan.criteria.group.signals": "Signals of Piotroski",
+  "contributionPlan.criteria.addNine": "Add the nine",
+  "contributionPlan.criteria.price_earnings_max": "P/E of at most",
+  "contributionPlan.criteria.price_earnings_max.meaning":
+    "Price divided by the profit a share of 12 months.",
+  "contributionPlan.criteria.price_book_max": "P/B of at most",
+  "contributionPlan.criteria.price_book_max.meaning":
+    "Price divided by the equity a share.",
+  "contributionPlan.criteria.roe_min": "ROE of at least",
+  "contributionPlan.criteria.roe_min.meaning":
+    "Return on equity: profit of 12 months over the equity.",
+  "contributionPlan.criteria.net_margin_min": "Net margin of at least",
+  "contributionPlan.criteria.net_margin_min.meaning":
+    "Profit over revenue, in 12 months.",
+  "contributionPlan.criteria.gross_profit_assets_min":
+    "Gross profit/assets of at least",
+  "contributionPlan.criteria.gross_profit_assets_min.meaning":
+    "Gross profit of 12 months over the assets.",
+  "contributionPlan.criteria.net_debt_equity_max": "Net debt/equity of at most",
+  "contributionPlan.criteria.net_debt_equity_max.meaning":
+    "Debt less cash, over the equity.",
+  "contributionPlan.criteria.current_ratio_min": "Current ratio of at least",
+  "contributionPlan.criteria.current_ratio_min.meaning":
+    "Current assets over current liabilities.",
+  "contributionPlan.criteria.revenue_growth_min": "Revenue grows at least",
+  "contributionPlan.criteria.revenue_growth_min.meaning":
+    "Compound growth a year over the latest fiscal years.",
+  "contributionPlan.criteria.positive_years_min": "Years with profit, at least",
+  "contributionPlan.criteria.positive_years_min.meaning":
+    "Fiscal years with profit among the latest 5.",
+  "contributionPlan.criteria.limitOf": "Limit: {name}",
+  "contributionPlan.criteria.years": "years",
+  "contributionPlan.criteria.ownLabel": "Criterion {n}",
+  "contributionPlan.criteria.ownPlaceholder": "Write the question",
+  "contributionPlan.criteria.remove": "Remove {name}",
+  "contributionPlan.criteria.unnamed": "criterion {n}",
+  "contributionPlan.criteria.noteAutomatic": "automatic",
+  "contributionPlan.criteria.noteOwn": "no data",
+  "contributionPlan.criteria.noteNoLimit": "set the limit",
+  "contributionPlan.criteria.noteBlank": "write the question",
+  "contributionPlan.criteria.noteRepeated": "repeated question",
+  "contributionPlan.criteria.yes": "yes",
+  "contributionPlan.criteria.no": "no",
+  "contributionPlan.criteria.waiting": "computing",
+  "contributionPlan.criteria.points": "{yes} of {count}",
+  "contributionPlan.criteria.boardLabel": "Criteria by asset of {name}",
+  "contributionPlan.criteria.criterionColumn": "Criterion",
+  "contributionPlan.criteria.idealOf":
+    "target of {name} in the group: {share}, {yes} of {count} criteria",
+  "contributionPlan.criteria.cellAutomatic":
+    "{asset}, {criterion}: {answer}, {figure}, data of {date}, answered by equori",
+  "contributionPlan.criteria.cellSignal":
+    "{asset}, {criterion}: {answer}, answered by equori",
+  "contributionPlan.criteria.cellReason":
+    "{asset}, {criterion}: {answer}, {reason}, answered by equori",
+  "contributionPlan.criteria.cellOwn": "{asset}, {criterion}: {answer}",
+  "contributionPlan.criteria.cellOwnReason":
+    "{asset}, {criterion}: {answer}, your answer: {reason}",
+  "contributionPlan.criteria.cellWaiting": "{asset}, {criterion}: computing",
+  "contributionPlan.criteria.statementsOf": "See the data of {name}",
+  "contributionPlan.criteria.byCriteria": "the targets come from the criteria",
+  "contributionPlan.criteria.clear": "Remove criteria",
+  "contributionPlan.criteria.clearTitle": "Remove the criteria of {name}?",
+  "contributionPlan.criteria.clearBody":
+    "The group goes back to the typed target, with the targets of now.",
+  "contributionPlan.criteria.clearKeep": "Keep the criteria",
+  "contributionPlan.criteria.emptyBody":
+    "The target of each asset is its part of the points of the group.",
+  "contributionPlan.criteria.noYes":
+    "No yes: the group receives the amount without a split among the assets.",
+  "contributionPlan.criteria.noReport":
+    "No statements: {names}. The answer is yours for these assets.",
+  "contributionPlan.criteria.rules":
+    "A yes is a point. Price of the end of last month.",
+  "contributionPlan.criteria.incompleteOne":
+    "Complete {count} criterion to save",
+  "contributionPlan.criteria.incompleteMany":
+    "Complete {count} criteria to save",
+  "contributionPlan.criteria.helpLabel": "About the criteria",
+  "contributionPlan.criteria.helpWhat":
+    "A criterion is not a recommendation: equori computes the figure, compares it with the limit you chose and adds one point.",
+  "contributionPlan.criteria.helpStudies":
+    "Studies in Brazil found a higher return in companies with a low price over earnings and equity (2007 to 2022, before costs) and in more profitable companies (2010 to 2020). None tested limits in monthly contributions.",
+  "contributionPlan.criteria.helpLimit":
+    "equori suggests no limit. A chosen limit guarantees no result.",
+  "contributionPlan.criteria.helpPrice": "Low price: UFU",
+  "contributionPlan.criteria.helpQuality": "Quality and value: USP",
+  "contributionPlan.criteria.helpMethods":
+    "Piotroski, Graham and Greenblatt: REAd",
   "contributionPlan.colProfit": "Profit of the year",
   "contributionPlan.criteriaCount": "{yes} of {count} criteria",
   "contributionPlan.companyReport": "see statements",
   "contributionPlan.companyReport.title": "Statements of {name}",
   "contributionPlan.fundReport": "see report",
   "contributionPlan.fundReport.title": "Fund report",
-  "contributionPlan.questions.mode": "Target of each asset",
-  "contributionPlan.questions.typed": "Typed",
-  "contributionPlan.questions.byQuestions": "By my questions",
-  "contributionPlan.questions.hint":
-    "Write yes-or-no questions. Each yes adds one point to the asset; the target of each asset is its part of the group's points.",
-  "contributionPlan.questions.label": "Question {n}",
-  "contributionPlan.questions.remove": "Remove question {n}",
-  "contributionPlan.questions.add": "Add question",
-  "contributionPlan.questions.answerLabel": "Answer to question {n}",
-  "contributionPlan.questions.count": "{yes} of {count} yes",
-  "contributionPlan.questions.ideal": "target {share} of the group",
-  "contributionPlan.questions.noYes":
-    "No yes: the group receives its amount without a split between the assets.",
-  "contributionPlan.questions.noFacts": "An account has no report.",
-  "contributionPlan.method.piotroski.text":
-    "Piotroski signals: nine questions equori answers from each company's filings",
-  "contributionPlan.method.piotroski.use": "Use the nine signals",
   "contributionPlan.method.piotroski.helpLabel": "About the method",
   "contributionPlan.method.piotroski.what":
     "The nine signals measure profitability, leverage, liquidity and efficiency in the filings of two fiscal years. Piotroski (2000) tested them on United States stocks of high book value over price, 1976 to 1996: buying those of most signals and selling those of fewest returned 23% a year.",
@@ -202,13 +307,6 @@ export const contributionPlanEn = {
   "contributionPlan.facts.piotroski_p7": "No shares issued",
   "contributionPlan.facts.piotroski_p8": "Gross margin rose",
   "contributionPlan.facts.piotroski_p9": "Asset turnover rose",
-  "contributionPlan.facts.note": "answered from the filings",
-  "contributionPlan.facts.answerSuffix": "{question}, from the filings",
-  "contributionPlan.facts.year": "signals of fiscal year {year}",
-  "contributionPlan.facts.none":
-    "no filings for the signals: the answers are yours",
-  "contributionPlan.facts.missing":
-    "No filings for the signals: {names}. Without a yes of yours, these assets receive nothing.",
   "contributionPlan.rule.currency": "in {code}",
   "contributionPlan.rule.years.between": "matures {from} to {to}",
   "contributionPlan.rule.years.from": "matures from {from}",

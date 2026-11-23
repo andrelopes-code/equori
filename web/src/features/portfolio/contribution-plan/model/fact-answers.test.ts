@@ -1,11 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  canUseMethod,
   effectiveAnswers,
   factDecides,
   piotroskiFacts,
-  withoutFacts,
 } from "@/features/portfolio/contribution-plan/model/fact-answers";
 
 describe("effectiveAnswers", () => {
@@ -36,29 +34,10 @@ describe("factDecides", () => {
   });
 });
 
-describe("canUseMethod", () => {
-  it("is offered while no fact is named and at most one question exists", () => {
-    expect(canUseMethod([], [])).toBe(true);
-    expect(canUseMethod(["a"], [""])).toBe(true);
-    expect(canUseMethod(["a", "b"], ["", ""])).toBe(false);
-    expect(canUseMethod(["x"], ["piotroski_p1"])).toBe(false);
-  });
-});
-
 describe("piotroskiFacts", () => {
   it("holds the nine keys from p1 to p9", () => {
     expect(piotroskiFacts).toHaveLength(9);
     expect(piotroskiFacts[0]).toBe("piotroski_p1");
     expect(piotroskiFacts[8]).toBe("piotroski_p9");
-  });
-});
-
-describe("withoutFacts", () => {
-  it("lists the members without a fiscal year when the group names a fact", () => {
-    const members = [{ facts_year: "2025-12-31" }, {}, {}];
-
-    expect(withoutFacts(members, ["piotroski_p1", ""])).toEqual([1, 2]);
-    expect(withoutFacts(members, ["", ""])).toEqual([]);
-    expect(withoutFacts(members, [])).toEqual([]);
   });
 });

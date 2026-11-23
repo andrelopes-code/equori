@@ -162,29 +162,135 @@ export const contributionPlanPtBR: Record<
   "contributionPlan.removeMember": "Remover ativo",
   "contributionPlan.compareIndexers": "comparar indexadores",
   "contributionPlan.compareIndexers.title": "Comparar indexadores",
+  "contributionPlan.criteria.title": "Critérios dos ativos",
+  "contributionPlan.criteria.description":
+    "Opcional: seus critérios definem o ideal de cada ativo. Nada é vendido.",
+  "contributionPlan.criteria.boardTitle": "Critérios de {name}",
+  "contributionPlan.criteria.back": "Grupos e ideais",
+  "contributionPlan.criteria.use": "Usar critérios",
+  "contributionPlan.criteria.open": "Abrir critérios",
+  "contributionPlan.criteria.openOf": "Abrir critérios de {name}",
+  "contributionPlan.criteria.useIn": "Usar critérios em {name}",
+  "contributionPlan.criteria.stateTyped": "ideal digitado por ativo",
+  "contributionPlan.criteria.stateWhole": "um ideal para o grupo inteiro",
+  "contributionPlan.criteria.stateOne":
+    "{count} critério, {automatic} automático",
+  "contributionPlan.criteria.stateMany":
+    "{count} critérios, {automatic} automáticos",
+  "contributionPlan.criteria.add": "Adicionar critério",
+  "contributionPlan.criteria.addDescription":
+    "O equori responde os automáticos. O limite de cada um é seu.",
+  "contributionPlan.criteria.writeOwn": "Escrever um critério",
+  "contributionPlan.criteria.writeOwnMeaning":
+    "Uma pergunta de sim ou não que você responde para cada ativo.",
+  "contributionPlan.criteria.pickAutomatic": "Escolher critérios automáticos",
+  "contributionPlan.criteria.pickAutomaticMeaning":
+    "O equori calcula das demonstrações e do preço e responde sozinho.",
+  "contributionPlan.criteria.addOne": "Adicionar",
+  "contributionPlan.criteria.addNamed": "Adicionar {name}",
+  "contributionPlan.criteria.added": "no grupo",
+  "contributionPlan.criteria.done": "Concluir",
+  "contributionPlan.criteria.full": "Um grupo tem no máximo 20 critérios.",
+  "contributionPlan.criteria.group.price": "Preço",
+  "contributionPlan.criteria.group.return": "Rentabilidade",
+  "contributionPlan.criteria.group.debt": "Dívida e liquidez",
+  "contributionPlan.criteria.group.history": "Crescimento e histórico",
+  "contributionPlan.criteria.group.signals": "Sinais de Piotroski",
+  "contributionPlan.criteria.addNine": "Adicionar os nove",
+  "contributionPlan.criteria.price_earnings_max": "P/L de até",
+  "contributionPlan.criteria.price_earnings_max.meaning":
+    "Preço dividido pelo lucro por ação de 12 meses.",
+  "contributionPlan.criteria.price_book_max": "P/VP de até",
+  "contributionPlan.criteria.price_book_max.meaning":
+    "Preço dividido pelo patrimônio por ação.",
+  "contributionPlan.criteria.roe_min": "ROE de ao menos",
+  "contributionPlan.criteria.roe_min.meaning":
+    "Retorno sobre o patrimônio: lucro de 12 meses sobre o patrimônio.",
+  "contributionPlan.criteria.net_margin_min": "Margem líquida de ao menos",
+  "contributionPlan.criteria.net_margin_min.meaning":
+    "Lucro sobre a receita, em 12 meses.",
+  "contributionPlan.criteria.gross_profit_assets_min":
+    "Lucro bruto/ativos de ao menos",
+  "contributionPlan.criteria.gross_profit_assets_min.meaning":
+    "Lucro bruto de 12 meses sobre os ativos.",
+  "contributionPlan.criteria.net_debt_equity_max": "Dívida líquida/PL de até",
+  "contributionPlan.criteria.net_debt_equity_max.meaning":
+    "Dívida menos caixa, sobre o patrimônio.",
+  "contributionPlan.criteria.current_ratio_min":
+    "Liquidez corrente de ao menos",
+  "contributionPlan.criteria.current_ratio_min.meaning":
+    "Ativo circulante sobre passivo circulante.",
+  "contributionPlan.criteria.revenue_growth_min": "Receita cresce ao menos",
+  "contributionPlan.criteria.revenue_growth_min.meaning":
+    "Crescimento composto por ano nos últimos exercícios.",
+  "contributionPlan.criteria.positive_years_min": "Anos com lucro, ao menos",
+  "contributionPlan.criteria.positive_years_min.meaning":
+    "Exercícios com lucro entre os 5 últimos.",
+  "contributionPlan.criteria.limitOf": "Limite: {name}",
+  "contributionPlan.criteria.years": "anos",
+  "contributionPlan.criteria.ownLabel": "Critério {n}",
+  "contributionPlan.criteria.ownPlaceholder": "Escreva a pergunta",
+  "contributionPlan.criteria.remove": "Remover {name}",
+  "contributionPlan.criteria.unnamed": "critério {n}",
+  "contributionPlan.criteria.noteAutomatic": "automático",
+  "contributionPlan.criteria.noteOwn": "sem dado",
+  "contributionPlan.criteria.noteNoLimit": "defina o limite",
+  "contributionPlan.criteria.noteBlank": "escreva a pergunta",
+  "contributionPlan.criteria.noteRepeated": "pergunta repetida",
+  "contributionPlan.criteria.yes": "sim",
+  "contributionPlan.criteria.no": "não",
+  "contributionPlan.criteria.waiting": "calculando",
+  "contributionPlan.criteria.points": "{yes} de {count}",
+  "contributionPlan.criteria.boardLabel": "Critérios por ativo de {name}",
+  "contributionPlan.criteria.criterionColumn": "Critério",
+  "contributionPlan.criteria.idealOf":
+    "ideal de {name} no grupo: {share}, {yes} de {count} critérios",
+  "contributionPlan.criteria.cellAutomatic":
+    "{asset}, {criterion}: {answer}, {figure}, dado de {date}, respondido pelo equori",
+  "contributionPlan.criteria.cellSignal":
+    "{asset}, {criterion}: {answer}, respondido pelo equori",
+  "contributionPlan.criteria.cellReason":
+    "{asset}, {criterion}: {answer}, {reason}, respondido pelo equori",
+  "contributionPlan.criteria.cellOwn": "{asset}, {criterion}: {answer}",
+  "contributionPlan.criteria.cellOwnReason":
+    "{asset}, {criterion}: {answer}, sua resposta: {reason}",
+  "contributionPlan.criteria.cellWaiting": "{asset}, {criterion}: calculando",
+  "contributionPlan.criteria.statementsOf": "Ver os dados de {name}",
+  "contributionPlan.criteria.byCriteria": "os ideais vêm dos critérios",
+  "contributionPlan.criteria.clear": "Remover critérios",
+  "contributionPlan.criteria.clearTitle": "Remover os critérios de {name}?",
+  "contributionPlan.criteria.clearBody":
+    "O grupo volta ao ideal digitado, com os ideais de agora.",
+  "contributionPlan.criteria.clearKeep": "Manter os critérios",
+  "contributionPlan.criteria.emptyBody":
+    "O ideal de cada ativo é a sua parte dos pontos do grupo.",
+  "contributionPlan.criteria.noYes":
+    "Nenhum sim: o grupo recebe o valor sem divisão entre os ativos.",
+  "contributionPlan.criteria.noReport":
+    "Sem demonstrações: {names}. Nesses ativos a resposta é sua.",
+  "contributionPlan.criteria.rules":
+    "Um sim, um ponto. Preço do fim do mês anterior.",
+  "contributionPlan.criteria.incompleteOne":
+    "Complete {count} critério para salvar",
+  "contributionPlan.criteria.incompleteMany":
+    "Complete {count} critérios para salvar",
+  "contributionPlan.criteria.helpLabel": "Sobre os critérios",
+  "contributionPlan.criteria.helpWhat":
+    "Um critério não é recomendação: o equori calcula o dado, compara com o limite que você escolheu e soma um ponto.",
+  "contributionPlan.criteria.helpStudies":
+    "Estudos no Brasil encontraram retorno maior em empresas com preço baixo sobre lucro e patrimônio (2007 a 2022, sem custos) e em empresas mais rentáveis (2010 a 2020). Nenhum testou limites em aportes mensais.",
+  "contributionPlan.criteria.helpLimit":
+    "O equori não sugere limites. Um limite escolhido não garante resultado.",
+  "contributionPlan.criteria.helpPrice": "Preço baixo: UFU",
+  "contributionPlan.criteria.helpQuality": "Qualidade e valor: USP",
+  "contributionPlan.criteria.helpMethods":
+    "Piotroski, Graham e Greenblatt: REAd",
   "contributionPlan.colProfit": "Lucro no ano",
   "contributionPlan.criteriaCount": "{yes} de {count} critérios",
   "contributionPlan.companyReport": "ver demonstrações",
   "contributionPlan.companyReport.title": "Demonstrações de {name}",
   "contributionPlan.fundReport": "ver informe",
   "contributionPlan.fundReport.title": "Informe do fundo",
-  "contributionPlan.questions.mode": "Ideal de cada ativo",
-  "contributionPlan.questions.typed": "Digitado",
-  "contributionPlan.questions.byQuestions": "Pelas minhas perguntas",
-  "contributionPlan.questions.hint":
-    "Escreva perguntas de sim ou não. Cada sim soma um ponto ao ativo; o ideal de cada ativo é a sua parte dos pontos do grupo.",
-  "contributionPlan.questions.label": "Pergunta {n}",
-  "contributionPlan.questions.remove": "Remover pergunta {n}",
-  "contributionPlan.questions.add": "Adicionar pergunta",
-  "contributionPlan.questions.answerLabel": "Resposta à pergunta {n}",
-  "contributionPlan.questions.count": "{yes} de {count} sim",
-  "contributionPlan.questions.ideal": "ideal {share} do grupo",
-  "contributionPlan.questions.noYes":
-    "Nenhum sim: o grupo recebe o valor sem divisão entre os ativos.",
-  "contributionPlan.questions.noFacts": "Uma conta não tem informe.",
-  "contributionPlan.method.piotroski.text":
-    "Sinais de Piotroski: nove perguntas que o equori responde pelas demonstrações de cada companhia",
-  "contributionPlan.method.piotroski.use": "Usar os nove sinais",
   "contributionPlan.method.piotroski.helpLabel": "Sobre o método",
   "contributionPlan.method.piotroski.what":
     "Os nove sinais medem rentabilidade, endividamento, liquidez e eficiência nas demonstrações de dois exercícios. Piotroski (2000) testou-os em ações dos Estados Unidos de alto valor patrimonial sobre o preço, de 1976 a 1996: comprar as de mais sinais e vender as de menos rendeu 23% ao ano.",
@@ -203,13 +309,6 @@ export const contributionPlanPtBR: Record<
   "contributionPlan.facts.piotroski_p7": "Sem emissão de ações",
   "contributionPlan.facts.piotroski_p8": "Margem bruta subiu",
   "contributionPlan.facts.piotroski_p9": "Giro dos ativos subiu",
-  "contributionPlan.facts.note": "respondida pelas demonstrações",
-  "contributionPlan.facts.answerSuffix": "{question}, pelas demonstrações",
-  "contributionPlan.facts.year": "sinais do exercício de {year}",
-  "contributionPlan.facts.none":
-    "sem demonstrações para os sinais: as respostas são suas",
-  "contributionPlan.facts.missing":
-    "Sem demonstrações para os sinais: {names}. Sem um sim seu, esses ativos não recebem aporte.",
   "contributionPlan.rule.currency": "em {code}",
   "contributionPlan.rule.years.between": "vence de {from} a {to}",
   "contributionPlan.rule.years.from": "vence a partir de {from}",

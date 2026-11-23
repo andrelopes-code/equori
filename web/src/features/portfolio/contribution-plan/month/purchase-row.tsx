@@ -56,17 +56,13 @@ export function PurchaseRow({
   const money = (m: ShoppingEntry["cost"]) =>
     fmt.money(m, scale?.(m.currency) ?? 0);
   const order = orderText(entry, { t, money, locale, hidden: fmt.hidden });
-  const groupText = [
-    groupName,
+  const points =
     entry.criteria === undefined
       ? undefined
       : t("contributionPlan.criteriaCount", {
           yes: String(entry.criteria.yes),
           count: String(entry.criteria.count),
-        }),
-  ]
-    .filter((part) => part !== undefined)
-    .join(" · ");
+        });
   const share = shareText(entry.cost.amount / base, locale);
 
   return (
@@ -89,12 +85,18 @@ export function PurchaseRow({
 
       <TableCell text="truncate">
         <Text size="sm" tone="muted">
-          {groupText}
+          {groupName}
+          {points !== undefined && (
+            <span className={styles.wide}>
+              {groupName !== undefined && " · "}
+              {points}
+            </span>
+          )}
         </Text>
       </TableCell>
 
       {withProfit && (
-        <TableCell text="nowrap">
+        <TableCell text="nowrap" className={styles.wide}>
           <Text size="sm">{profit}</Text>
         </TableCell>
       )}
@@ -158,7 +160,7 @@ export function PurchaseRow({
         <Text weight="semibold">{money(entry.cost)}</Text>
       </TableCell>
 
-      <TableCell numeric text="nowrap">
+      <TableCell numeric text="nowrap" className={styles.wide}>
         <Text size="sm" tone="muted">
           {share}
         </Text>

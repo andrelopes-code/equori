@@ -103,6 +103,9 @@ export function usePlanEditor(plan: Plan | undefined) {
     setQuestionText: (index: number, q: number, text: string) => {
       change((d) => questions.setQuestionText(d, index, q, text));
     },
+    setQuestionLimit: (index: number, q: number, limit: string) => {
+      change((d) => questions.setQuestionLimit(d, index, q, limit));
+    },
     removeQuestion: (index: number, q: number) => {
       change((d) => questions.removeQuestion(d, index, q));
     },

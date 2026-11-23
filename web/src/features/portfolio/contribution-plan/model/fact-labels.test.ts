@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import { piotroskiFacts } from "@/features/portfolio/contribution-plan/model/fact-answers";
 import {
   factLabelKey,
-  factsPrefix,
   factText,
 } from "@/features/portfolio/contribution-plan/model/fact-labels";
 
@@ -40,26 +39,5 @@ describe("factText", () => {
   it("returns the stored text for an unknown fact and for no fact", () => {
     expect(factText(t, "piotroski_p10", "stored")).toBe("stored");
     expect(factText(t, "", "stored")).toBe("stored");
-  });
-});
-
-describe("factsPrefix", () => {
-  const t = (key: string, vars?: Record<string, string | number>) =>
-    `${key}:${String(vars?.year ?? "")}`;
-
-  it("writes the fiscal year through Intl", () => {
-    expect(factsPrefix(t, "en", "2025-12-31", ["piotroski_p1"])).toBe(
-      "contributionPlan.facts.year:2025",
-    );
-  });
-
-  it("states the absence of filings when a fact is named and no year exists", () => {
-    expect(factsPrefix(t, "en", undefined, ["", "piotroski_p1"])).toBe(
-      "contributionPlan.facts.none:",
-    );
-  });
-
-  it("is empty when no fact is named and no year exists", () => {
-    expect(factsPrefix(t, "en", undefined, ["", ""])).toBe("");
   });
 });

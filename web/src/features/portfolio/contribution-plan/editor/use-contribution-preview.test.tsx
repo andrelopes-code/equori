@@ -2,7 +2,9 @@ import { waitFor } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import type { components } from "@/api/schema.gen";
+import { startEditing } from "@/features/portfolio/contribution-plan/model/plan-edits";
 import { useContributionPreview } from "@/features/portfolio/contribution-plan/editor/use-contribution-preview";
+import type { PlanDraft } from "@/features/portfolio/contribution-plan/model/plan-draft";
 import { json } from "@/testing/fake-api";
 import { renderWithProviders } from "@/testing/render-app";
 
@@ -51,14 +53,17 @@ function setup() {
   };
   let view: Plan | undefined;
 
-  function Probe({ plan: saved }: { plan: Plan }) {
-    view = useContributionPreview(saved).view;
+  function Probe({ plan: saved, draft }: { plan: Plan; draft?: PlanDraft }) {
+    view = useContributionPreview(saved, draft).view;
 
     return null;
   }
 
-  const mount = (saved: Plan) =>
-    renderWithProviders(<Probe plan={saved} />, { fetch: fetchImpl });
+  const mount = (saved: Plan, draft?: PlanDraft) =>
+    renderWithProviders(
+      <Probe plan={saved} {...(draft === undefined ? {} : { draft })} />,
+      { fetch: fetchImpl },
+    );
 
   return { bodies, mount, view: () => view };
 }
@@ -94,5 +99,42 @@ describe("useContributionPreview", () => {
 
     expect(bodies).toHaveLength(0);
     expect(view()?.classes[0]?.rules).toEqual([]);
+  });
+
+  it("sends a draft with criteria without amount, less the incomplete ones", async () => {
+    const { bodies, mount } = setup();
+    mount(
+      plan([]),
+      startEditing({
+        classes: [
+          {
+            name: "Ações",
+            targetBp: 10000,
+            byQuestions: true,
+            questions: ["Entendo?", "", "P/L de até"],
+            questionFacts: ["", "", "price_earnings_max"],
+            questionLimits: ["", "", ""],
+            members: [{ instrument: "WEGE3", answers: [true, false, false] }],
+            rules: [],
+          },
+        ],
+      }),
+    );
+
+    await waitFor(() => {
+      expect(bodies.length).toBeGreaterThan(0);
+    });
+
+    for (const body of bodies)
+      expect(body).toEqual({
+        classes: [
+          {
+            name: "Ações",
+            target_bp: 10000,
+            questions: ["Entendo?"],
+            members: [{ instrument: "WEGE3", answers: [true] }],
+          },
+        ],
+      });
   });
 });

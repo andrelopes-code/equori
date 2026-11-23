@@ -56,6 +56,7 @@ function mount(byRuleMode = false) {
       editor={editor}
       memberName={(ref) => ref.instrument ?? ""}
       onAddAsset={() => undefined}
+      onCriteria={() => undefined}
     />,
     {
       fetch: fakeApi({ "GET /api/v1/contribution-plan": () => json(200, {}) }),

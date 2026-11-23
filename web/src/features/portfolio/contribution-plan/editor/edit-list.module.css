@@ -121,7 +121,13 @@
     block-size: 2.75rem;
   }
 
-  /* The mode line under the footer of a split group: the label and the segmented choice. */
+  .footerActions {
+    display: flex;
+    flex: none;
+    gap: var(--slotted-space-3);
+  }
+
+  /* The mode line of the panel: the label and the segmented choice. */
   .mode {
     display: flex;
     grid-column: 1 / -1;
@@ -136,145 +142,11 @@
     white-space: nowrap;
   }
 
-  /* The questions of a group: the hint, one row per question and the add button, each of one
-     height. The indent is the one of the asset names. */
-  .questions {
-    display: grid;
-    grid-column: 1 / -1;
-    grid-auto-rows: 2.75rem;
-    align-items: center;
-    border-block-start: var(--slotted-border-width-thin) solid
-      var(--slotted-border-subtle);
-    padding-inline-start: calc(
-      2 * var(--slotted-space-4) + 0.5625rem + var(--slotted-space-6)
-    );
-    white-space: nowrap;
-  }
-
-  .questionRow {
-    display: grid;
-    grid-template-columns: 1.5rem minmax(12rem, 36rem) auto;
-    align-items: center;
-    column-gap: var(--slotted-space-2);
-  }
-
-  /* The method row: its text takes the width left, the button and the help keep theirs. */
-  .methodRow {
-    display: flex;
-    align-items: center;
-    gap: var(--slotted-space-3);
-    min-inline-size: 0;
-  }
-
-  .methodRow > :first-child {
-    flex: 0 1 auto;
-    min-inline-size: 0;
-  }
-
-  .methodRow > :not(:first-child) {
-    flex: none;
-  }
-
-  .factText {
-    display: flex;
-    align-items: center;
-    gap: var(--slotted-space-2);
-    min-inline-size: 0;
-  }
-
-  .factNote {
-    flex: none;
-  }
-
-  .questionNumber {
+  /* The derived ideal of an asset spans the columns of the slider, the percent and the lock. */
+  .derived {
+    grid-column: span 3;
     text-align: end;
     font-variant-numeric: tabular-nums;
-  }
-
-  .questionAdd {
-    display: flex;
-    align-items: center;
-  }
-
-  /* An asset divided by questions: line one 2.75rem, line two 1.75rem. The count and the ideal
-     have one width each, so they end on one vertical line in every row (the measures have no
-     token). */
-  .questionMember {
-    display: grid;
-    grid-column: 1 / -1;
-    grid-template-rows: 2.75rem 1.75rem;
-    block-size: 4.5rem;
-    border-block-start: var(--slotted-border-width-thin) solid
-      var(--slotted-border-subtle);
-    white-space: nowrap;
-  }
-
-  .questionLine {
-    display: flex;
-    align-items: center;
-    gap: var(--slotted-space-4);
-    min-inline-size: 0;
-  }
-
-  .questionLine > .member {
-    flex: 0 1 18rem;
-    min-inline-size: 0;
-  }
-
-  .answers {
-    display: flex;
-    flex: 1 1 auto;
-    align-items: center;
-    gap: var(--slotted-space-3);
-    min-inline-size: 0;
-    overflow: hidden;
-  }
-
-  .questionCount,
-  .questionIdeal {
-    flex: none;
-    text-align: end;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .questionCount {
-    inline-size: 7rem;
-  }
-
-  .questionIdeal {
-    inline-size: 12rem;
-  }
-
-  .questionFacts {
-    min-inline-size: 0;
-    overflow: hidden;
-    padding-inline-start: calc(
-      2 * var(--slotted-space-4) + 0.5625rem + var(--slotted-space-6)
-    );
-  }
-
-  /* The fiscal year of the signals and the figures of the reports share the one line. */
-  .factsLine {
-    display: flex;
-    align-items: center;
-    gap: var(--slotted-space-3);
-    min-inline-size: 0;
-  }
-
-  .factsLine > :first-child {
-    flex: 0 1 auto;
-  }
-
-  .noYes {
-    display: flex;
-    grid-column: 1 / -1;
-    align-items: center;
-    block-size: 2.25rem;
-    border-block-start: var(--slotted-border-width-thin) solid
-      var(--slotted-border-subtle);
-    padding-inline-start: calc(
-      2 * var(--slotted-space-4) + 0.5625rem + var(--slotted-space-6)
-    );
   }
 
   .actions {

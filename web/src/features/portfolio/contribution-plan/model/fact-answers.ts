@@ -32,23 +32,3 @@ export function factDecides(
 
   return fact === "yes" || fact === "no";
 }
-
-// The method row is offered while no fact is named and at most one question exists.
-export function canUseMethod(
-  questions: string[],
-  questionFacts: string[],
-): boolean {
-  return questions.length <= 1 && questionFacts.every((fact) => fact === "");
-}
-
-// The positions of the members the filings answer nothing for, in a group that names a fact.
-export function withoutFacts(
-  members: { facts_year?: string }[],
-  questionFacts: string[],
-): number[] {
-  if (questionFacts.every((fact) => fact === "")) return [];
-
-  return members.flatMap((member, at) =>
-    member.facts_year === undefined ? [at] : [],
-  );
-}

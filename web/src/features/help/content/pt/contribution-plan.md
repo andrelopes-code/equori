@@ -12,6 +12,18 @@ Digite o **Aporte** do mês. Ao lado, a tela mostra a carteira hoje e depois do 
 
 A **Lista de compras** traz cada compra com o grupo, a ordem aproximada em cotas e o total. **Copiar lista** copia as compras.
 
+Numa lista com ações de empresas, a coluna **Lucro no ano** diz se o lucro subiu ou caiu. **ver demonstrações** abre os números da empresa.
+
+## Critérios dos ativos
+
+![A seção Critérios dos ativos, com o botão Usar critérios marcado](plan-criteria "Cada grupo com ativos tem a sua linha, e o botão abre os critérios do grupo.")
+
+Os critérios são opcionais. Um critério é uma pergunta de sim ou não. Cada sim soma um ponto ao ativo, e o ideal de cada ativo é a sua parte dos pontos do grupo.
+
+**Usar critérios** abre o quadro do grupo, com os critérios nas linhas e os ativos nas colunas. **Adicionar critério** oferece duas formas. Em **Escrever um critério**, você responde por ativo. Nos automáticos, o equori calcula o dado e responde.
+
+Um critério automático tem um limite, e o limite é seu: o equori não sugere nenhum. Sem dado para responder, a célula mostra **sem dado** e vale a sua resposta. **Remover critérios** volta ao ideal digitado.
+
 ## Carteira frente ao ideal
 
 ![A seção Carteira frente ao ideal, com a frase do primeiro grupo marcada](plan-ideal "Cada grupo diz se está acima, abaixo ou no ideal, com as partes de hoje, depois do aporte e o ideal.")

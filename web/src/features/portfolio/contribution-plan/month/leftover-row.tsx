@@ -5,6 +5,7 @@ import { Text } from "@slotted/react/typography";
 import type { components } from "@/api/schema.gen";
 import { shareText } from "@/features/portfolio/contribution-plan/model/share-text";
 import { GroupDot } from "@/features/portfolio/contribution-plan/month/group-dot";
+import styles from "@/features/portfolio/contribution-plan/month/purchase-row.module.css";
 import { useScale } from "@/features/setup";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
@@ -59,7 +60,7 @@ export function LeftoverRow({
         </Text>
       </TableCell>
 
-      {withProfit && <TableCell />}
+      {withProfit && <TableCell className={styles.wide} />}
 
       <TableCell />
 
@@ -69,7 +70,7 @@ export function LeftoverRow({
         </Text>
       </TableCell>
 
-      <TableCell numeric text="nowrap">
+      <TableCell numeric text="nowrap" className={styles.wide}>
         <Text size="sm" tone="muted">
           {shareText(amount.amount / base, locale)}
         </Text>

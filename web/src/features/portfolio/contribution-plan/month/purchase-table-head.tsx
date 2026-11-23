@@ -2,6 +2,7 @@ import { TableColumnHeader, TableHead, TableRow } from "@slotted/react/table";
 import { Text } from "@slotted/react/typography";
 import { VisuallyHidden } from "@slotted/react/visually-hidden";
 
+import styles from "@/features/portfolio/contribution-plan/month/purchase-row.module.css";
 import { useT } from "@/i18n/i18n-provider";
 
 interface PurchaseTableHeadProps {
@@ -25,7 +26,7 @@ export function PurchaseTableHead({ withProfit }: PurchaseTableHeadProps) {
         </TableColumnHeader>
 
         {withProfit && (
-          <TableColumnHeader>
+          <TableColumnHeader className={styles.wide}>
             <Text size="xs" tone="muted" weight="medium">
               {t("contributionPlan.colProfit")}
             </Text>
@@ -44,7 +45,7 @@ export function PurchaseTableHead({ withProfit }: PurchaseTableHeadProps) {
           </Text>
         </TableColumnHeader>
 
-        <TableColumnHeader numeric>
+        <TableColumnHeader numeric className={styles.wide}>
           <Text size="xs" tone="muted" weight="medium">
             {t("contributionPlan.colShare")}
           </Text>

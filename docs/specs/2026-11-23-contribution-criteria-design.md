@@ -135,31 +135,31 @@ Files of the register read on 2026-11-23: DFP 2021 to 2026, ITR 2025 and 2026, F
 
 ## Screen
 
-Vocabulary: pt-BR "critério" replaces "pergunta" on the screen; en "criterion". An automatic criterion is one equori answers; the others are "sua resposta".
+Vocabulary: pt-BR "critério" replaces "pergunta" on the screen; en "criterion". An automatic criterion is one equori answers; the investor answers the others. A label holds one line: "P/L de até", "ROE de ao menos", "Dívida líquida/PL de até", "Anos com lucro, ao menos".
 
 ### Main screen
 
-**Criteria section**, between "Este mês" and "Carteira frente ao ideal", title "Critérios dos ativos", description "Opcional: seus critérios definem o ideal de cada ativo dentro do grupo. O aporte continua sem vender nada." One row of fixed height per group that holds an instrument as a chosen asset: the group's dot and name; the state in words ("ideal digitado", "ideal único do grupo", "{n} critérios, {m} automáticos"); for a group with criteria, the share of each asset as one segmented bar with the tickers; at the end "Usar critérios" or "Abrir critérios". The section is absent without such a group. The button enters edit mode with the board of that group.
+**Criteria section**, between "Este mês" and "Carteira frente ao ideal", title "Critérios dos ativos", description "Opcional: seus critérios definem o ideal de cada ativo. Nada é vendido.", with a help mark that holds what a criterion does, the studies and their limit. One row of fixed height per group of chosen assets that holds an instrument: the group's dot and name; the state in words ("ideal digitado por ativo", "um ideal para o grupo inteiro", "{n} critérios, {m} automáticos"); "Usar critérios" or "Abrir critérios"; for a group with criteria, the share of each asset as one segmented bar with the tickers. The section is absent without such a group. The button enters edit mode with the board of that group. On a page narrower than 56rem the bar leaves.
 
-**Purchase list**: a column "Lucro no ano" for a list that holds a company with figures: "subiu 20%", "caiu 18%", "prejuízo", "voltou ao lucro", "sem dado"; nothing for another asset. The order cell of a company offers "ver demonstrações", as "ver informe" for a fund; it opens a dialog with `CompanyReport`. The group cell of a member of a group with criteria adds "{n} de {m} critérios". No colour reads the change.
+**Purchase list**: a column "Lucro no ano" for a list that holds a company with figures: "subiu 20%", "caiu 18%", "prejuízo", "voltou ao lucro", "sem dado"; nothing for another asset. The order cell of a company offers "ver demonstrações", as "ver informe" for a fund; it opens a dialog with `CompanyReport`. The group cell of a member of a group with criteria adds "{n} de {m} critérios". No colour reads the change. On a page narrower than 56rem the change, the points and the share of the contribution leave; the statements still open from the row and the bar above draws the share.
 
 ### Criteria board (edit mode)
 
-It replaces the group list while open. Header: way back "Grupos e ideais", the dot and name of the group, "Adicionar critério" (primary of the section), and the segmented choice "Digitado | Por critérios" at the end.
+It replaces the group list while open. Header: the title "Critérios de {group}", the line "Um sim, um ponto. Preço do fim do mês anterior.", the way back "Grupos e ideais" and "Adicionar critério". Foot: the lines below that apply and "Remover critérios", which asks for confirmation and gives the group its typed ideals with the values of the moment. With 1280 px of viewport and the assistant closed, nine assets show without scrolling.
 
 The board is a grid, an own element (`role="grid"`): one row per criterion, one column per asset.
 
 - Column head: the ticker, the derived ideal in the heaviest weight, "{n} de {m}", and a bar of the ideal. It stays visible while the rows scroll; the first column stays visible while the columns scroll.
 - Row head: for an own criterion, a text field; for an automatic one, its text, the limit field in the unit of the figure (percent, number, years) and the note "automático"; at the end, remove.
-- Cell: one button that fills the cell. Two lines of fixed height: "sim" or "não"; under it, for an automatic criterion, the figure ("8,2") or, without one, "sua resposta". A cell equori answers is not a button: it names the figure and its date. A cell without a figure is the investor's button and names the reason in its tooltip and accessible name. "sim" has the text weight and a neutral wash, "não" is muted; no colour reads it.
+- Cell: one button that fills the cell. Two lines of fixed height: "sim" or "não"; under it, for an automatic criterion, the figure ("8,2") or, without one, "sem dado". A cell equori answers is not a button: it names the figure and its date. A cell without a figure is the investor's button and names the reason in its tooltip and accessible name. "sim" has the text weight and a neutral wash, "não" is muted; no colour reads it.
 - Keyboard: one tab stop for the cells; arrows move, Home and End go to the ends of the row, Space and Enter answer.
-- "Adicionar critério" opens a panel beside the button with: "Escrever o meu" (adds a row and focuses its field); the automatic criteria in four groups (Preço, Rentabilidade, Dívida e liquidez, Crescimento e histórico), each with a one-line meaning; "Sinais de Piotroski", each alone or the nine at once, with the help of the method. A criterion already in the group is marked "no grupo" and disabled.
+- "Adicionar critério" opens a dialog with: "Escrever um critério" (adds a row and focuses its field); the automatic criteria in four groups (Preço, Rentabilidade, Dívida e liquidez, Crescimento e histórico), each with a one-line meaning; "Sinais de Piotroski", each alone or the nine at once, with the help of the method. A criterion already in the group is marked "no grupo" and disabled.
 - A criterion with a blank text or a limit missing or out of range is marked in its field; the save bar writes "Complete {n} critérios" and disables Save. The preview leaves such a criterion out.
 - Empty board: two choices of equal weight, "Escrever um critério" and "Escolher critérios automáticos", and the line of what a criterion does.
 - Every answer "não": "Nenhum sim: o grupo recebe o valor sem divisão entre os ativos."
 - Assets without a company report: one line names them, as FQ.
 
-In the group list, the assets panel of a group with criteria shows its assets with their derived ideals and the button "Abrir critérios"; the choice "Digitado | Pelos meus critérios" keeps its place and opens the board.
+In the group list, the assets panel of a group with criteria shows its assets with their derived ideals and, at the foot, the button that opens the board; a group without criteria offers "Usar critérios" there. The line of figures of each asset that FQ drew under its name leaves: the board and the statements of the ticker hold them.
 
 ### Company report
 

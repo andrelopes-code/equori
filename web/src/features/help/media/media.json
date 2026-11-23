@@ -578,18 +578,18 @@
     },
     "plan-list": {
       "pt": {
-        "spot": [3.85, 45.86, 32.78, 8.17]
+        "spot": [3.33, 45.03, 39.76, 9.83]
       },
       "en": {
-        "spot": [3.85, 45.86, 31.08, 8.17]
+        "spot": [3.33, 45.03, 37.09, 9.83]
       }
     },
     "plan-ideal": {
       "pt": {
-        "spot": [48.91, 46.8, 33.12, 6.46]
+        "spot": [48.91, 47.25, 33.12, 6.47]
       },
       "en": {
-        "spot": [48.49, 46.8, 33.12, 6.46]
+        "spot": [48.49, 47.25, 33.12, 6.47]
       }
     },
     "plan-edit": {
@@ -638,6 +638,14 @@
       },
       "pt": {
         "spot": [66.98, 47.14, 29.63, 5.66]
+      }
+    },
+    "plan-criteria": {
+      "pt": {
+        "spot": [43.65, 45.83, 12.6, 8.33]
+      },
+      "en": {
+        "spot": [44.27, 45.83, 11.36, 8.33]
       }
     }
   },
@@ -3178,14 +3186,16 @@
     "connect-bank/connect-credentials.pt.dark.png": "699a3ea81f96029f04795c2640deec3ad1379cf29369bc032a11f340f86c6ca2",
     "connect-bank/connect-settings.en.dark.png": "9e50736c40eaa7ac8cef4ac778942780309fcc969e084a2c61b6a2f8afed7844",
     "connect-bank/connect-settings.pt.dark.png": "6ecaa802273dbbd6ee097d69f4defe205f40833342fba9d4262409a815f2ff39",
-    "contribution-plan/plan-edit.en.dark.png": "2c37a86e7046f5625bc630747af9921db0bd8c2cc2b538d427326911ea1a770c",
-    "contribution-plan/plan-edit.pt.dark.png": "71c18492f5b170fecaeb59197b9cd63244f13d357a93ea8a91b9971459234cee",
-    "contribution-plan/plan-ideal.en.dark.png": "052780c7710d94603fa8b17030f3209c0ca817f996f592a37d600723cf8aaa8c",
-    "contribution-plan/plan-ideal.pt.dark.png": "c8ce6f7f0eaecca5580e02d4ee26f15d8e0a3ddcdc0c45da566e4d6d8620a0b3",
-    "contribution-plan/plan-list.en.dark.png": "ab3e84c742d5b24911feb11a14d498e83575cab768d80513e402b9d020762ed6",
-    "contribution-plan/plan-list.pt.dark.png": "ca5859c237490b26a99318c0974bab97cb04c4626a46233c1f59b06bff61442f",
-    "contribution-plan/plan-month.en.dark.png": "092996a09c517d57119a3b889ecffe6e1be26e877f6d3b97859f5bea9397bf66",
-    "contribution-plan/plan-month.pt.dark.png": "3dd3c65625511f4fe7bf40532bb26372d389e8cc5826ef9219c7c484ceb67867",
+    "contribution-plan/plan-criteria.en.dark.png": "2427ae59e5ae1cbacbee0c16b779dc46f260dec7219f7500baf04140cb16fea5",
+    "contribution-plan/plan-criteria.pt.dark.png": "3f508bfe222541479701f3e4ed978dd0b038708392b1dda6c48d2f08c9df9bcb",
+    "contribution-plan/plan-edit.en.dark.png": "c94a2784bccb3983943409fc1623fde461ebdcd1c27f2a1dd8114d589e6bab12",
+    "contribution-plan/plan-edit.pt.dark.png": "0438b4077ebadbeca96bd4d22401ae9b5ba47c25d39fd9eaa9d522facf4b97fe",
+    "contribution-plan/plan-ideal.en.dark.png": "eacebeefda7eebd51b0d208f6fdbbadf40e7b5680b579457ddd9791285b75641",
+    "contribution-plan/plan-ideal.pt.dark.png": "b1efddc4adb0c055250c0a963c720095b2363eceeb0f65a25e05ab0f698a1236",
+    "contribution-plan/plan-list.en.dark.png": "d3311bb3038b3dbf58820061e841bdf7c94016c590fc8a314f6cca6c92d10bfc",
+    "contribution-plan/plan-list.pt.dark.png": "439b2e839fc01039a4f5ce9a7637ef2e6ff0e1a1b0342f62c36ef1090710ef52",
+    "contribution-plan/plan-month.en.dark.png": "8ed10044910b5ffb31613770748f235e4fe1f0518aa12dff1d06fcbb7714dd4f",
+    "contribution-plan/plan-month.pt.dark.png": "81cdba2bfe37df3c22a80bfceaa62847fd0112c35b43f35c5572b8322ff5c317",
     "correct-transaction/22129dda55be.png": "22129dda55bed994d860ce02bdb4ecb3c62232a751299e028efe36e37206d436",
     "correct-transaction/2cd9058cd61a.png": "2cd9058cd61a22c0647cc1d4d928b1ad55539da672eca677272fdd7271b55a8d",
     "correct-transaction/35d7a233d062.png": "35d7a233d06207e7171d4985a7e3f28c7823dbb80e5c4c6eb5f99ebde6d5d174",
@@ -3393,7 +3403,7 @@
     "create-budget": "d7d405d14d6e33227839f27c545e487869cf8465a8427dffb2a393a3b274a58c",
     "buy-investment": "03a118d0e63331521f1c962a19db2f5b7a20ec1fb8d78801579a3793ebccf64b",
     "reimbursement": "3bd1ffc2e3d1d48b3c92492cc4d0c3b12275cb12cdcee79637c79d460ff56a61",
-    "contribution-plan": "8d27de5e39581d37fc4beed705b479996ad2f1270a36f3d32f2d68f7a8b0f898",
+    "contribution-plan": "f638e935c512365caf3e27b9a23659688ff53ae050a6bc82fea18f76fff39b9e",
     "portfolio": "0c60c7a4f74efd460633f296828e051ce93b0ca91fd38d0b3dba83302b803947",
     "budget-plan": "cab528ca8374c197a4fe0760b8c2f56af8f0cf1f29750f5c7eb70c8e80685617"
   }

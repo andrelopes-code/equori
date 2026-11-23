@@ -12,6 +12,18 @@ Type the **Contribution** of the month. Beside it, the screen shows the portfoli
 
 The **Shopping list** holds each purchase with its group, the approximate order in units and the total. **Copy list** copies the purchases.
 
+In a list with stocks of companies, the column **Profit of the year** says whether the profit rose or fell. **see statements** opens the figures of the company.
+
+## Criteria of the assets
+
+![The section Criteria of the assets, with the button Use criteria marked](plan-criteria "Each group with assets has its row, and the button opens the criteria of the group.")
+
+The criteria are optional. A criterion is a yes-or-no question. Each yes adds one point to the asset, and the target of each asset is its part of the points of the group.
+
+**Use criteria** opens the board of the group, with the criteria in rows and the assets in columns. **Add criterion** offers two ways. In **Write a criterion**, you answer for each asset. In the automatic ones, equori computes the figure and answers.
+
+An automatic criterion has a limit, and the limit is yours: equori suggests none. Without a figure to answer, the cell shows **no data** and your answer holds. **Remove criteria** goes back to the typed target.
+
 ## Portfolio against the target
 
 ![The Portfolio against the target section, with the sentence of the first group marked](plan-ideal "Each group says whether it stands above, below or on its target, with its share today, after the contribution and the target.")

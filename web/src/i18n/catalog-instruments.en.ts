@@ -441,15 +441,4 @@ export const instrumentsEn = {
   "companyReport.method":
     "Each figure is computed from the statements filed with the regulator, as its line states. The Piotroski signals are facts of the accounts, not a grade. The decision is the investor's.",
   "companyReport.link": "Open the dataset of the source",
-  "assetFacts.fund":
-    "P/B {priceToBook} · distributed in 12 months over the price {yearYield} · report of {month}",
-  "assetFacts.company":
-    "ROE {roe} · margin {margin} · net debt/equity {netDebt} · {years} · {window}",
-  "assetFacts.years": "profit in {positive} of {count} fiscal years",
-  "assetFacts.yearsMissing": "years with profit: no data",
-  "assetFacts.window": "12 months to {date}",
-  "assetFacts.windowMissing": "12 months: no data",
-  "assetFacts.missing": "no data",
-  "assetFacts.notApplicable": "does not apply",
-  "assetFacts.none": "no report and no statements",
 } as const;

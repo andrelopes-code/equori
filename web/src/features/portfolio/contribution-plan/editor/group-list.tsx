@@ -20,6 +20,8 @@ interface GroupListProps {
   memberName: (ref: { account_id?: string; instrument?: string }) => string;
   // The group whose assets panel opens first.
   initialPanel: number | null;
+  // Opens the board of the criteria of a group.
+  onCriteria: (index: number) => void;
 }
 
 // One row per group of the draft, each followed by its assets. One asset picker serves every row.
@@ -29,6 +31,7 @@ export function GroupList({
   editor,
   memberName,
   initialPanel,
+  onCriteria,
 }: GroupListProps) {
   const t = useT();
   const [picking, setPicking] = useState<number | null>(null);
@@ -83,6 +86,9 @@ export function GroupList({
             }}
             onAddAsset={() => {
               setPicking(index);
+            }}
+            onCriteria={() => {
+              onCriteria(index);
             }}
           />
         );
