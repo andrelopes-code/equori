@@ -10,10 +10,8 @@ import {
 } from "@/features/instruments/price-chart/price-axis";
 import { usePriceFormat } from "@/features/instruments/model/use-price-format";
 import type { Period } from "@/features/instruments/model/price-period";
-import {
-  type Press,
-  usePeriodDrag,
-} from "@/features/instruments/price-chart/use-period-drag";
+import { withClearedMarks } from "@/features/instruments/price-chart/cleared-marks";
+import { useTapClear } from "@/features/instruments/price-chart/use-tap-clear";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
 type Price = components["schemas"]["Price"];
@@ -56,7 +54,7 @@ export function PriceChart({
   const [locale] = useAppLocale();
   const format = usePriceFormat(quote);
   const [zoom, setZoom] = useState<Zoom>(wholeRange);
-  const drag = usePeriodDrag(onPeriodChange ?? ignore);
+  const handlePointerDown = useTapClear(onPeriodChange ?? ignore);
   const data = useMemo(
     () =>
       [...prices]
@@ -122,11 +120,6 @@ export function PriceChart({
   function handleActivePointChange(point: { key: string } | null) {
     const date = point === null ? null : point.key;
     onActiveDateChange?.(date);
-    drag.handleActiveDate(date);
-  }
-
-  function handlePointerDown(event: Press) {
-    if (onPeriodChange !== undefined) drag.handlePointerDown(event);
   }
 
   return (
@@ -149,10 +142,14 @@ export function PriceChart({
         format: (value) => axisLabel(value, locale, span),
       }}
       y={{ format: format.tick }}
-      extendOption={(option) => withTicks(option, ticks)}
+      extendOption={(option) => withClearedMarks(withTicks(option, ticks))}
       onActivePointChange={handleActivePointChange}
       onPointerDownCapture={handlePointerDown}
-      onMouseDownCapture={handlePointerDown}
+      rangeSelectable={onPeriodChange !== undefined}
+      range={period}
+      onRangeChange={(next) => {
+        onPeriodChange?.(next);
+      }}
     />
   );
 }
