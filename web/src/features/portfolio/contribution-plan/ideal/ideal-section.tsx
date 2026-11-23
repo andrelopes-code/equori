@@ -52,7 +52,7 @@ export function IdealSection({ view, pending, memberName }: IdealSectionProps) {
   }
 
   return (
-    <Section size="lg" ground="surface" aria-busy={pending}>
+    <Section size="lg" ground="surface" heading="title" aria-busy={pending}>
       <SectionHeader>
         <SectionTitle>
           <SectionHeading>{t("contributionPlan.ideal")}</SectionHeading>

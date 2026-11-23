@@ -87,7 +87,7 @@ export function BucketTrack({ month }: BucketTrackProps) {
     history.data.months.find((m) => m.month === month)?.outside.amount ?? 0;
 
   return (
-    <Section size="lg" ground="surface">
+    <Section size="lg" ground="surface" heading="title">
       <SectionHeader>
         <SectionTitle>
           <SectionHeading>{t("buckets.title")}</SectionHeading>

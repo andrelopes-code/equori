@@ -24,9 +24,7 @@ export function FormSection({
 }: FormSectionProps) {
   return (
     <FieldGroup className={styles.section} kind="section">
-      <FieldGroupLegend className={styles.sectionLegend}>
-        {legend}
-      </FieldGroupLegend>
+      <FieldGroupLegend>{legend}</FieldGroupLegend>
       {description !== undefined && (
         <FieldGroupDescription>{description}</FieldGroupDescription>
       )}

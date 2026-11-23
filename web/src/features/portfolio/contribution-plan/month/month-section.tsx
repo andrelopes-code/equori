@@ -69,7 +69,7 @@ export function MonthSection({
   const incomplete = view.status === "incomplete";
 
   return (
-    <Section size="lg" ground="surface" aria-busy={pending}>
+    <Section size="lg" ground="surface" heading="title" aria-busy={pending}>
       <SectionHeader>
         <SectionTitle>
           <SectionHeading>{t("contributionPlan.month")}</SectionHeading>

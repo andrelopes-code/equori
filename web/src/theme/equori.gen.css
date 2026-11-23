@@ -203,6 +203,7 @@
     --slotted-form-field-gap: var(--slotted-space-8);
     --slotted-form-section-gap: var(--slotted-space-10);
     --slotted-section-gap: var(--slotted-space-6);
+    --slotted-page-inset-compact: var(--slotted-space-6);
     --slotted-top-navigation-color: var(--slotted-text-muted);
     --slotted-top-navigation-current-color: var(--slotted-text);
     --slotted-top-navigation-current-background: transparent;
@@ -224,6 +225,7 @@
     --slotted-command-palette-backdrop-filter: var(--slotted-material-backdrop);
     --slotted-popover-measure-sm: 24rem;
     --slotted-card-header-gap: 0;
+    --slotted-chart-header-gap: 0;
     --slotted-list-item-body-gap: 0;
     --slotted-stepper-description-gap: 0;
     --slotted-toast-surface: var(--slotted-surface-material);
@@ -1864,10 +1866,6 @@
       color: var(--slotted-text);
     }
 
-    [data-ui="field-group"] > [data-part="legend"] {
-      font-size: var(--slotted-control-font-size-md);
-    }
-
     [data-ui="field-group"] > [data-ui="inline-message"] + [data-part="content"] {
       margin-block-start: var(--slotted-space-6);
     }
@@ -1901,25 +1899,6 @@
       align-self: center;
     }
 
-    [data-ui="section"][data-ground="surface"][data-size="lg"] > [data-part="header"] > [data-part="title"] > [data-part="heading"] {
-      font-size: var(--slotted-font-size-xl);
-      line-height: var(--slotted-line-height-xl);
-      letter-spacing: normal;
-      text-transform: none;
-    }
-
-    [data-ui="card"] > [data-part="header"]:has(> :nth-child(2 of :not([data-part="actions"]))) > [data-part="actions"] {
-      grid-row: 1 / span 2;
-    }
-
-    [data-ui="card"] > [data-part="header"]:has(> :nth-child(3 of :not([data-part="actions"]))) > [data-part="actions"] {
-      grid-row: 1 / span 3;
-    }
-
-    [data-ui="chart"] > [data-part="header"] [data-part="description"] {
-      margin-block-start: calc(var(--slotted-space-1) * -1);
-    }
-
     [data-ui="result-state"] {
       --slotted-result-state-title-font-size: var(--slotted-font-size-md);
     }
@@ -1946,46 +1925,6 @@
       --slotted-drawer-slide-exit-duration: 260ms;
     }
 
-    [data-ui="tooltip"] > [data-part="arrow"] {
-      --equori-tooltip-arrow-overlap: 0.5px;
-    }
-
-    [data-ui="tooltip"][data-variant="surface"] > [data-part="arrow"] {
-      --equori-tooltip-arrow-overlap: 1.5px;
-    }
-
-    [data-ui="tooltip"][data-side="bottom"] > [data-part="arrow"] {
-      clip-path: polygon(
-        0 0,
-        calc(100% + var(--equori-tooltip-arrow-overlap)) 0,
-        0 calc(100% + var(--equori-tooltip-arrow-overlap))
-      );
-    }
-
-    [data-ui="tooltip"][data-side="top"] > [data-part="arrow"] {
-      clip-path: polygon(
-        100% 100%,
-        100% calc(0% - var(--equori-tooltip-arrow-overlap)),
-        calc(0% - var(--equori-tooltip-arrow-overlap)) 100%
-      );
-    }
-
-    [data-ui="tooltip"][data-side="left"] > [data-part="arrow"] {
-      clip-path: polygon(
-        100% 0,
-        100% calc(100% + var(--equori-tooltip-arrow-overlap)),
-        calc(0% - var(--equori-tooltip-arrow-overlap)) 0
-      );
-    }
-
-    [data-ui="tooltip"][data-side="right"] > [data-part="arrow"] {
-      clip-path: polygon(
-        0 100%,
-        0 calc(0% - var(--equori-tooltip-arrow-overlap)),
-        calc(100% + var(--equori-tooltip-arrow-overlap)) 100%
-      );
-    }
-
     [data-ui="tag"] {
       --slotted-tag-inset-inline: calc(var(--slotted-space-4) + var(--slotted-space-1));
     }
@@ -2004,26 +1943,8 @@
       --slotted-overlay-max-block-size: 20rem;
     }
 
-    [data-part="empty"] + [data-part="status"] {
-      position: absolute;
-      inline-size: 1px;
-      block-size: 1px;
-      padding: 0;
-      overflow: hidden;
-      white-space: nowrap;
-      clip-path: inset(50%);
-    }
-
     [data-ui="table"][data-sticky-header] {
-      --slotted-table-header-surface: var(--slotted-ground, var(--slotted-surface-sunken));
-    }
-
-    @container slotted-page (width < 600px) {
-      [data-ui="page"] [data-ui="container"] {
-        grid-template-columns:
-          [full-start] var(--slotted-space-6) [content-start] minmax(0, 1fr)
-          [content-end] var(--slotted-space-6) [full-end];
-      }
+      --slotted-table-header-surface: var(--slotted-ground);
     }
 
     :is([data-ui="dialog"] > [data-part="viewport"] > [data-part="content"]:not(:has(> [data-ui="command-palette"])), [data-ui="drawer"][data-mode="overlay"] > [data-part="panel"]) [data-ui="card"] {
@@ -2080,14 +2001,6 @@
       background-color: color-mix(in oklab, var(--slotted-text) 6%, var(--slotted-surface-raised));
     }
 
-    [data-ui="table"] {
-      --slotted-table-sticky-surface: var(--slotted-ground, var(--slotted-surface-sunken));
-    }
-
-    [data-ui="collapsible"] > [data-part="header"] > [data-part="trigger"] {
-      border-radius: var(--slotted-control-radius);
-    }
-
     [data-ui="button"][data-tone="danger"]:is([data-variant="outline"], [data-variant="ghost"]):hover:not(:disabled):not([data-disabled]):not([data-loading]) {
       background: color-mix(in oklch, var(--slotted-tone-danger-solid) 12%, transparent);
     }
@@ -2110,23 +2023,6 @@
       color: var(--slotted-text-muted);
       margin-inline-start: var(--slotted-space-2);
       margin-block: calc((1.5rem - var(--slotted-font-size-md, 0.8125rem) * var(--slotted-line-height-md, 1.5)) / -2);
-    }
-
-    [data-ui="switch"][data-invalid] > [data-part="track"] {
-      box-shadow: none;
-    }
-
-    [data-ui="switch"][data-invalid] > [data-part="track"] > [data-part="thumb"] {
-      border-color: var(--slotted-switch-thumb-border-color, var(--slotted-control-border-color));
-      box-shadow: var(--slotted-switch-thumb-shadow, var(--slotted-control-shadow, none));
-    }
-
-    [data-ui="switch"][data-invalid][data-checked] > [data-part="track"] > [data-part="thumb"] {
-      border-color: var(--slotted-switch-checked-thumb-border-color, var(--slotted-tone-accent-solid));
-    }
-
-    [data-ui="switch"][data-invalid][data-readonly] > [data-part="track"] > [data-part="thumb"] {
-      border-color: var(--slotted-switch-readonly-border-color, var(--slotted-control-border-color));
     }
   }
 }

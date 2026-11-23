@@ -119,7 +119,7 @@ test("the sticky header of a table is opaque and an unpinned header stays transp
   assert.match(css, /--slotted-table-header-surface: transparent;/);
   assert.match(
     css,
-    /\[data-ui="table"\]\[data-sticky-header\] \{\s*--slotted-table-header-surface: var\(--slotted-ground, var\(--slotted-surface-sunken\)\);/,
+    /\[data-ui="table"\]\[data-sticky-header\] \{\s*--slotted-table-header-surface: var\(--slotted-ground\);/,
   );
 });
 
@@ -138,24 +138,10 @@ test("a raised toast and the palette are materials over the page", () => {
   );
 });
 
-test("a sticky column takes the ground the table stands on, not the raised surface", () => {
-  assert.match(
-    css,
-    /\[data-ui="table"\] \{\s*--slotted-table-sticky-surface: var\(--slotted-ground, var\(--slotted-surface-sunken\)\);/,
-  );
-});
-
 test("a group label of the palette adds no second layer over the material", () => {
   assert.match(
     css,
     /\[data-ui="command-palette"\] \[data-part="group-label"\] \{\s*background: transparent;\s*position: static;/,
-  );
-});
-
-test("a question's legend is a field label's size", () => {
-  assert.match(
-    css,
-    /\[data-ui="field-group"\] > \[data-part="legend"\] \{\s*font-size: var\(--slotted-control-font-size-md\);/,
   );
 });
 
@@ -176,15 +162,6 @@ test("the list of a select or a picker stops at 20 rem and scrolls", () => {
       family,
     );
   }
-});
-
-test("the status of a list that shows its empty message is kept for screen readers only", () => {
-  const rule =
-    /\[data-part="empty"\] \+ \[data-part="status"\]\s*\{([^}]*)\}/.exec(css);
-  assert.notEqual(rule, null);
-  assert.match(rule?.[1] ?? "", /clip-path: inset\(50%\);/);
-  assert.match(rule?.[1] ?? "", /position: absolute;/);
-  assert.doesNotMatch(rule?.[1] ?? "", /display: none/);
 });
 
 test("a menu keeps the height its items need", () => {
@@ -233,13 +210,6 @@ test("a section sets its description tight under the title and the body clear of
   );
 });
 
-test("a large section on a surface titles its panel in mixed case, a step above its body", () => {
-  assert.match(
-    css,
-    /\[data-ui="section"\]\[data-ground="surface"\]\[data-size="lg"\] > \[data-part="header"\] > \[data-part="title"\] > \[data-part="heading"\]\s*\{[^}]*font-size: var\(--slotted-font-size-xl\);[^}]*letter-spacing: normal;[^}]*text-transform: none/,
-  );
-});
-
 test("section actions of a titled description do not size the rows of the title", () => {
   const header =
     '\\[data-ui="section"\\] > \\[data-part="header"\\]:has\\(> \\[data-part="title"\\] > \\[data-part="description"\\]\\)';
@@ -255,28 +225,14 @@ test("section actions of a titled description do not size the rows of the title"
   );
 });
 
-test("card actions span the header's text rows, so a tall control does not push the description down", () => {
-  assert.match(
-    css,
-    /\[data-ui="card"\] > \[data-part="header"\]:has\(> :nth-child\(2 of :not\(\[data-part="actions"\]\)\)\) > \[data-part="actions"\]\s*\{[^}]*grid-row: 1 \/ span 2/,
-  );
-  assert.match(
-    css,
-    /\[data-ui="card"\] > \[data-part="header"\]:has\(> :nth-child\(3 of :not\(\[data-part="actions"\]\)\)\) > \[data-part="actions"\]\s*\{[^}]*grid-row: 1 \/ span 3/,
-  );
-});
-
 test("a card header keeps no gap between its title and its description", () => {
-  assert.equal(theme.components?.["--slotted-card-header-gap"], "0");
-  assert.equal(theme.components?.["--slotted-list-item-body-gap"], "0");
-  assert.equal(theme.components?.["--slotted-stepper-description-gap"], "0");
+  assert.equal(theme.components["--slotted-card-header-gap"], "0");
+  assert.equal(theme.components["--slotted-list-item-body-gap"], "0");
+  assert.equal(theme.components["--slotted-stepper-description-gap"], "0");
 });
 
-test("a chart header takes the gap between its title and its description back", () => {
-  assert.match(
-    css,
-    /\[data-ui="chart"\] > \[data-part="header"\] \[data-part="description"\]\s*\{[^}]*margin-block-start: calc\(var\(--slotted-space-1\) \* -1\)/,
-  );
+test("a chart header keeps no gap between its title and its description", () => {
+  assert.equal(theme.components["--slotted-chart-header-gap"], "0");
 });
 
 test("a section under the pointer or holding the focus shows its bar and keeps the colour of its title", () => {
@@ -474,10 +430,10 @@ for (const [name, selector, token] of frames) {
 }
 
 // Spec 2026-11-21-mobile-statement, MS1: a phone page keeps 16 px between the screen edge and
-// its content (Slotted issue #163).
+// its content.
 test("a page container keeps a 16 px inset below 600 px", () => {
-  assert.match(
-    css,
-    /@container slotted-page \(width < 600px\) \{\s*\[data-ui="page"\] \[data-ui="container"\] \{\s*grid-template-columns:\s*\[full-start\] var\(--slotted-space-6\) \[content-start\] minmax\(0, 1fr\)\s*\[content-end\] var\(--slotted-space-6\) \[full-end\];/,
+  assert.equal(
+    theme.components["--slotted-page-inset-compact"],
+    "var(--slotted-space-6)",
   );
 });

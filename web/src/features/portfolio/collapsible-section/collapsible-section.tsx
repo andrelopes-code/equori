@@ -44,7 +44,7 @@ export function CollapsibleSection({
   const bodyId = useId();
 
   return (
-    <Section size="lg" ground="surface" aria-label={title}>
+    <Section size="lg" ground="surface" heading="title" aria-label={title}>
       <SectionHeader
         className={styles.header}
         onClick={() => {

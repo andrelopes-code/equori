@@ -25,14 +25,6 @@ const currentDestinationRule = `
 }
 `;
 
-// Workaround for Slotted issue #57: a question's legend was drawn at 14 px, a section title's
-// size; it takes a field label's 13 px. FormSection restores 14 px.
-const questionLegendRule = `
-[data-ui="field-group"] > [data-part="legend"] {
-  font-size: var(--slotted-control-font-size-md);
-}
-`;
-
 // Owner review of 2026-11-02: the choices of a question stood against its description (0.375rem,
 // the family's gap between a legend and its choices). A group's description and error are inline
 // messages; the choices stand 1rem below them.
@@ -108,42 +100,6 @@ const sectionActionsRule = `
 }
 `;
 
-// Workaround for Slotted issue #116: a top-level section always titles itself as a 13 px uppercase
-// label. A large section on a surface is a panel of the page, and a conclusion inside it (15 px,
-// semibold) outweighed its label, so the panels read as one block. The panel's title reads in mixed
-// case, one step above that conclusion.
-const panelTitleRule = `
-[data-ui="section"][data-ground="surface"][data-size="lg"] > [data-part="header"] > [data-part="title"] > [data-part="heading"] {
-  font-size: var(--slotted-font-size-xl);
-  line-height: var(--slotted-line-height-xl);
-  letter-spacing: normal;
-  text-transform: none;
-}
-`;
-
-// Workaround for Slotted issue #99: the actions of a card header occupy its first row, and a
-// control taller than the title stretches that row, which pushes the description away. The
-// actions span the rows of the header's text, so its height is shared and adds nothing.
-const cardActionsRule = `
-[data-ui="card"] > [data-part="header"]:has(> :nth-child(2 of :not([data-part="actions"]))) > [data-part="actions"] {
-  grid-row: 1 / span 2;
-}
-
-[data-ui="card"] > [data-part="header"]:has(> :nth-child(3 of :not([data-part="actions"]))) > [data-part="actions"] {
-  grid-row: 1 / span 3;
-}
-`;
-
-// Workaround for Slotted issue #120: the header of a chart holds its description 0.125rem under its
-// title by a literal gap with no token, and the theme cannot select the unnamed element that
-// carries it. The description takes the gap back as a negative margin. The card variant keeps the
-// gap in its minimum height, so the header ends 0.125rem below the description.
-const chartHeaderRule = `
-[data-ui="chart"] > [data-part="header"] [data-part="description"] {
-  margin-block-start: calc(var(--slotted-space-1) * -1);
-}
-`;
-
 // A light palette dims the page less: the material already sets it apart.
 const paletteScrimRule = `
 &[data-slotted-scheme="light"] [data-ui="dialog"]:has([data-ui="command-palette"]) {
@@ -207,18 +163,6 @@ const darkNeutral = (l: number) => ({
   c: { scale: 0.22, max: 0.08 },
 });
 
-// A tag's text stands 2 px further from its border than the family's default at each size; the
-// height stays.
-// A table is lines on the page, so its header surface is transparent. A header pinned to the top
-// has rows passing under it, and takes the ground the table stands on.
-// Workaround for Slotted issue #89: the plain trigger paints its hover and active fill with no
-// corner, a square box under any corner style.
-const collapsibleCornerRule = `
-[data-ui="collapsible"] > [data-part="header"] > [data-part="trigger"] {
-  border-radius: var(--slotted-control-radius);
-}
-`;
-
 // Workaround for Slotted issue #90: an outline or ghost Button in the danger tone changes only its
 // text color. The hover and active fills take the danger tone, and the outline border takes it on hover.
 const dangerButtonRule = `
@@ -251,58 +195,16 @@ const widgetHelpRule = `
 }
 `;
 
-// Workaround for Slotted issue #85: the page does not publish its ground, so the sunken one stands
-// in where no section sets it.
+// A table is lines on the page, so its header surface is transparent. A header pinned to the top
+// has rows passing under it, and takes the ground the table stands on.
 const stickyHeaderRule = `
 [data-ui="table"][data-sticky-header] {
-  --slotted-table-header-surface: var(--slotted-ground, var(--slotted-surface-sunken));
+  --slotted-table-header-surface: var(--slotted-ground);
 }
 `;
 
-// Workaround for Slotted issue #163: below 600 px every page container keeps 7 px between the
-// screen edge and the content, and no token sets it. A phone page keeps 16 px, the margin of the
-// platforms (spec 2026-11-21-mobile-statement, MS1). The tracks are restated with that margin:
-// below 600 px the content is narrower than every container size, so no maximum applies.
-const compactInsetRule = `
-@container slotted-page (width < 600px) {
-  [data-ui="page"] [data-ui="container"] {
-    grid-template-columns:
-      [full-start] var(--slotted-space-6) [content-start] minmax(0, 1fr)
-      [content-end] var(--slotted-space-6) [full-end];
-  }
-}
-`;
-
-// Workaround for Slotted issue #86: a column pinned to a side paints the raised surface, a shade off
-// the ground the table stands on. It takes that ground: the section's, or the page's sunken one
-// where no section sets it, because the page does not publish its ground (issue #85).
-const stickyColumnRule = `
-[data-ui="table"] {
-  --slotted-table-sticky-surface: var(--slotted-ground, var(--slotted-surface-sunken));
-}
-`;
-
-// Workaround for Slotted issue #145: an invalid switch paints the thumb and the inside of the track
-// in the danger tone. Only the outer border of the track keeps it; the thumb keeps its own border.
-const invalidSwitchRule = `
-[data-ui="switch"][data-invalid] > [data-part="track"] {
-  box-shadow: none;
-}
-
-[data-ui="switch"][data-invalid] > [data-part="track"] > [data-part="thumb"] {
-  border-color: var(--slotted-switch-thumb-border-color, var(--slotted-control-border-color));
-  box-shadow: var(--slotted-switch-thumb-shadow, var(--slotted-control-shadow, none));
-}
-
-[data-ui="switch"][data-invalid][data-checked] > [data-part="track"] > [data-part="thumb"] {
-  border-color: var(--slotted-switch-checked-thumb-border-color, var(--slotted-tone-accent-solid));
-}
-
-[data-ui="switch"][data-invalid][data-readonly] > [data-part="track"] > [data-part="thumb"] {
-  border-color: var(--slotted-switch-readonly-border-color, var(--slotted-control-border-color));
-}
-`;
-
+// A tag's text stands 2 px further from its border than the family's default at each size; the
+// height stays.
 const tagInsetRule = `
 [data-ui="tag"] {
   --slotted-tag-inset-inline: calc(var(--slotted-space-4) + var(--slotted-space-1));
@@ -317,51 +219,6 @@ const tagInsetRule = `
 }
 `;
 
-// Workaround for Slotted issue #39: half of the arrow's square lies over the content, so while both
-// fade that half composites twice and the whole diamond shows through. The clip keeps the half
-// outside the content, plus an overlap that covers the content's border under the arrow's base.
-const tooltipArrowClipRule = `
-[data-ui="tooltip"] > [data-part="arrow"] {
-  --equori-tooltip-arrow-overlap: 0.5px;
-}
-
-[data-ui="tooltip"][data-variant="surface"] > [data-part="arrow"] {
-  --equori-tooltip-arrow-overlap: 1.5px;
-}
-
-[data-ui="tooltip"][data-side="bottom"] > [data-part="arrow"] {
-  clip-path: polygon(
-    0 0,
-    calc(100% + var(--equori-tooltip-arrow-overlap)) 0,
-    0 calc(100% + var(--equori-tooltip-arrow-overlap))
-  );
-}
-
-[data-ui="tooltip"][data-side="top"] > [data-part="arrow"] {
-  clip-path: polygon(
-    100% 100%,
-    100% calc(0% - var(--equori-tooltip-arrow-overlap)),
-    calc(0% - var(--equori-tooltip-arrow-overlap)) 100%
-  );
-}
-
-[data-ui="tooltip"][data-side="left"] > [data-part="arrow"] {
-  clip-path: polygon(
-    100% 0,
-    100% calc(100% + var(--equori-tooltip-arrow-overlap)),
-    calc(0% - var(--equori-tooltip-arrow-overlap)) 0
-  );
-}
-
-[data-ui="tooltip"][data-side="right"] > [data-part="arrow"] {
-  clip-path: polygon(
-    0 100%,
-    0 calc(0% - var(--equori-tooltip-arrow-overlap)),
-    calc(100% + var(--equori-tooltip-arrow-overlap)) 100%
-  );
-}
-`;
-
 // A long list (150 currencies) in a select or a picker stops at 20 rem, 8 to 9 rows, and scrolls
 // inside. The overlay token is not set on the root or on a menu: a popover, such as the calendar of
 // a date field, and a menu of actions, such as the account menu, would read it too and clip
@@ -371,22 +228,6 @@ const listHeightRule = `
 [data-ui="multi-select"],
 [data-ui="entity-picker"] {
   --slotted-overlay-max-block-size: 20rem;
-}
-`;
-
-// Workaround for Slotted issue #125: a list with no match draws its empty message and, under it,
-// the count message, which reads the same for a total of 0. The count stays in the accessibility
-// tree as the live announcement and is not drawn. A leaf with no descendants, so the clip-path
-// does not end a backdrop-filter (O11).
-const emptyStatusRule = `
-[data-part="empty"] + [data-part="status"] {
-  position: absolute;
-  inline-size: 1px;
-  block-size: 1px;
-  padding: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  clip-path: inset(50%);
 }
 `;
 
@@ -518,6 +359,9 @@ export default extendTheme(
       // Owner review of 2026-11-13: a section's title and description read as one unit, and the
       // body stands clear of both, 16 px under the description against about 5 px under the title.
       "--slotted-section-gap": "var(--slotted-space-6)",
+      // A phone page keeps 16 px between the screen edge and the content, the margin of the
+      // platforms (spec 2026-11-21-mobile-statement, MS1).
+      "--slotted-page-inset-compact": "var(--slotted-space-6)",
       "--slotted-top-navigation-color": "var(--slotted-text-muted)",
       "--slotted-top-navigation-current-color": "var(--slotted-text)",
       "--slotted-top-navigation-current-background": "transparent",
@@ -563,6 +407,7 @@ export default extendTheme(
       // Owner review of 2026-11-15: the line boxes of the title and of the description already stand
       // apart by the leading of their fonts; the header's 0.25rem row gap on top read as a hole.
       "--slotted-card-header-gap": "0",
+      "--slotted-chart-header-gap": "0",
       "--slotted-list-item-body-gap": "0",
       "--slotted-stepper-description-gap": "0",
       "--slotted-toast-surface": "var(--slotted-surface-material)",
@@ -573,30 +418,20 @@ export default extendTheme(
     rules: [
       summaryRule,
       currentDestinationRule,
-      questionLegendRule,
       questionChoicesRule,
       sectionRule,
       sectionDescriptionRule,
       sectionActionsRule,
-      panelTitleRule,
-      cardActionsRule,
-      chartHeaderRule,
       resultStateRule,
       paletteScrimRule,
       paletteGroupLabelRule,
       sheetSlideRule,
-      tooltipArrowClipRule,
       tagInsetRule,
       listHeightRule,
-      emptyStatusRule,
       stickyHeaderRule,
-      compactInsetRule,
       ...overlayItemRules,
-      stickyColumnRule,
-      collapsibleCornerRule,
       dangerButtonRule,
       widgetHelpRule,
-      invalidSwitchRule,
     ],
   },
   { name: "equori" },

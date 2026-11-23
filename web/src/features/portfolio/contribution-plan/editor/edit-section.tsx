@@ -49,7 +49,7 @@ export function EditSection({
   const state = barState(draft, amount);
 
   return (
-    <Section size="lg" ground="surface" aria-busy={pending}>
+    <Section size="lg" ground="surface" heading="title" aria-busy={pending}>
       <SectionHeader>
         <SectionTitle>
           <SectionHeading>{t("contributionPlan.ideal")}</SectionHeading>
