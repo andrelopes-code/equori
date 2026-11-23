@@ -3,9 +3,6 @@ export const overviewLayoutKey = "equori.overview.layout";
 
 const listeners = new Set<() => void>();
 
-// Counts the layouts written from outside the grid, so the grid reads storage again.
-let restores = 0;
-
 // The store handed to usePersistedDashboardLayout: localStorage that tells the appearance sync
 // of each write the grid makes.
 export const overviewLayoutStorage = {
@@ -37,13 +34,8 @@ export function overviewLayoutSnapshot(): string | null {
   }
 }
 
-export function overviewLayoutRestores(): number {
-  return restores;
-}
-
 // Called after the member's appearance rewrote storage.
 export function restoredOverviewLayout(): void {
-  restores += 1;
   notify();
 }
 

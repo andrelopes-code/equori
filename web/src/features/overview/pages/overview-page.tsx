@@ -9,7 +9,7 @@ import {
   PageHeaderTitleArea,
   PageHeaderTitleRow,
 } from "@slotted/react/page-header";
-import { useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 
 import { ReleaseNotice } from "@/features/instance";
 import { AttentionBlock } from "@/features/overview/attention/attention-block";
@@ -40,10 +40,6 @@ import { UpcomingBlock } from "@/features/overview/upcoming/upcoming-block";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import {
-  overviewLayoutRestores,
-  subscribeOverviewLayout,
-} from "@/theme/overview-layout";
 import { PageStack } from "@/ui/page-layout/page-stack";
 import {
   compactQuery,
@@ -79,10 +75,6 @@ export function OverviewPage() {
   const wide = useMediaQuery(wideQuery);
   const compact = useMediaQuery(compactQuery);
   const [editing, setEditing] = useState(false);
-  const restores = useSyncExternalStore(
-    subscribeOverviewLayout,
-    overviewLayoutRestores,
-  );
   // The blocks both layouts draw, under one key each, so a block hidden at the desk is hidden on
   // the phone.
   const at = {
@@ -140,10 +132,7 @@ export function OverviewPage() {
 
           <FirstStepsBlock />
 
-          {/* Workaround for Slotted issue #149: the grid reads storage once, so a layout
-              restored from the member's appearance after mount reaches it by a new key. */}
           <OverviewGrid
-            key={restores}
             aria-label={t("overview.block.label")}
             editing={editing}
             onEditingChange={setEditing}
