@@ -83,6 +83,16 @@ func (s *Service) LastBalanceReconciledOn(
 	return s.repo.LastBalanceReconciledOn(ctx, booksID, accountID)
 }
 
+// YieldsSince returns the yields the account's assertions dated from from on booked (A264).
+func (s *Service) YieldsSince(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	from time.Time,
+) ([]YieldPeriod, error) {
+	return s.repo.YieldsSince(ctx, booksID, accountID, from)
+}
+
 // Unlock is the explicit step chapter 2 requires before reconciled postings change (A8).
 func (s *Service) Unlock(
 	ctx context.Context,

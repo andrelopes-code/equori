@@ -282,6 +282,49 @@ func TestNormalizeReserveTransfer(t *testing.T) {
 	}
 }
 
+// A264: the category states a yield line, with or without an operation type.
+func TestNormalizeYield(t *testing.T) {
+	t.Parallel()
+
+	checking := client.Account{Subtype: client.SubtypeChecking, CurrencyCode: "BRL"}
+	card := client.Account{Subtype: client.SubtypeCard, CurrencyCode: "BRL"}
+
+	for _, tt := range []struct {
+		name     string
+		account  client.Account
+		category *string
+		amount   client.Decimal
+		want     bool
+	}{
+		{"yield", checking, ptr("03060000"), "0.55", true},
+		{"another category", checking, ptr("05060000"), "0.55", false},
+		{"no category", checking, nil, "0.55", false},
+		{"debit", checking, ptr("03060000"), "-0.55", false},
+		{"card line", card, ptr("03060000"), "-0.55", false},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			r, ok, err := Normalize(client.Transaction{
+				ID:           "t1",
+				Description:  "Rendimentos",
+				CurrencyCode: "BRL",
+				Amount:       tt.amount,
+				Date:         "2026-11-23T06:36:34.487Z",
+				Status:       "POSTED",
+				CategoryID:   tt.category,
+			}, tt.account, nil, 2, saoPaulo(t))
+			if err != nil || !ok {
+				t.Fatal(ok, err)
+			}
+
+			if r.Yield != tt.want {
+				t.Fatalf("Yield = %v, want %v", r.Yield, tt.want)
+			}
+		})
+	}
+}
+
 func TestNormalizeCounterparty(t *testing.T) {
 	t.Parallel()
 

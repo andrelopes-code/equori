@@ -89,7 +89,7 @@ func (s *Service) Import(ctx context.Context, f ImportFile) (domain.Batch, error
 		return domain.Batch{}, err
 	}
 
-	err = s.importRecords(ctx, &batch, currency, target.OpenedOn, st.Records, nil)
+	err = s.importRecords(ctx, &batch, currency, target.OpenedOn, st.Records, nil, nil)
 	if err != nil {
 		return domain.Batch{}, err
 	}

@@ -91,6 +91,12 @@ type Reconciliation struct {
 	ResolutionTransactionID uuid.UUID
 }
 
+// YieldPeriod is a yield an assertion booked over the days From to To.
+type YieldPeriod struct {
+	From, To time.Time
+	Amount   int64
+}
+
 type Settings struct {
 	BooksID      int64
 	BaseCurrency money.Currency

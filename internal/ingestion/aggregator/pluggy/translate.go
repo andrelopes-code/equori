@@ -16,6 +16,10 @@ const statusPending = "PENDING"
 // bank account and one of its reserved balances (A76).
 const operationReservedTransfer = "TRANSFERENCIA_SALDO_RESERVADO"
 
+// categoryYield is the category of interest and dividends; a yield line can lack an operation
+// type (A264).
+const categoryYield = "03060000"
+
 const (
 	reservedPrefix  = "Dinheiro reservado "
 	withdrawnPrefix = "Dinheiro retirado "
@@ -181,10 +185,11 @@ func readAmount(t client.Transaction, a client.Account, scale int) (int64, error
 	return minor, nil
 }
 
-// applyBankFields sets the reserve and balance fields of a bank line; r.Amount is final.
+// applyBankFields sets the reserve, yield and balance fields of a bank line; r.Amount is final.
 func applyBankFields(r *domain.NormalizedRecord, t client.Transaction, scale int) {
 	r.ReserveMove = t.OperationType != nil && *t.OperationType == operationReservedTransfer
 	r.ReserveName = reserveName(t, r.Amount)
+	r.Yield = t.CategoryID != nil && *t.CategoryID == categoryYield && r.Amount > 0
 
 	if t.Balance != "" {
 		if b, err := client.Minor(t.Balance, scale); err == nil {

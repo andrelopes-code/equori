@@ -484,3 +484,64 @@ func (q *Queries) UnreconcileAccountPostings(ctx context.Context, arg Unreconcil
 	_, err := q.db.Exec(ctx, unreconcileAccountPostings, arg.BooksID, arg.AccountID, arg.FromDate)
 	return err
 }
+
+const yieldsSince = `-- name: YieldsSince :many
+SELECT
+    r.date,
+    r.difference AS amount,
+    coalesce(
+        (
+            SELECT
+                max(b.date)
+            FROM
+                ledger_balance_assertion b
+            WHERE
+                b.books_id = r.books_id
+                AND b.account_id = r.account_id
+                AND b.date < r.date
+        ),
+        r.date - 1
+    )::date AS previous
+FROM
+    ledger_reconciliation r
+WHERE
+    r.books_id = $1
+    AND r.account_id = $2
+    AND r.resolution = 'yield'
+    AND r.date >= $3::date
+ORDER BY
+    r.date
+`
+
+type YieldsSinceParams struct {
+	BooksID   int64
+	AccountID uuid.UUID
+	FromDate  time.Time
+}
+
+type YieldsSinceRow struct {
+	Date     time.Time
+	Amount   int64
+	Previous time.Time
+}
+
+// A264: the yields a balance assertion booked, each with the date of the assertion before it.
+func (q *Queries) YieldsSince(ctx context.Context, arg YieldsSinceParams) ([]YieldsSinceRow, error) {
+	rows, err := q.db.Query(ctx, yieldsSince, arg.BooksID, arg.AccountID, arg.FromDate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []YieldsSinceRow
+	for rows.Next() {
+		var i YieldsSinceRow
+		if err := rows.Scan(&i.Date, &i.Amount, &i.Previous); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

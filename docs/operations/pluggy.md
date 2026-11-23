@@ -131,6 +131,12 @@ reserve and Opening balances, as in section 5, step 3).
   the bound, a negative difference, or a first assertion stays open for the owner.
 - Known limit: a movement under the bound that the transfer rule below does not recognize is
   booked as yield. Voiding the yield transaction reverses it.
+- Yield lines: the item can report a reserve's yield a second time, as a checking line of
+  category `03060000`. Such a line is created on the checking account only when the balance the
+  item reports holds it. A line that equals a yield of a mapped reserve is discarded; another
+  one waits for review with reason `yield` (A264,
+  `docs/specs/2026-11-23-reserve-yield-line-design.md`). A reserve that is not mapped leaves its
+  lines in review.
 - Transfers: a checking line is booked as a transfer between the checking account and the
   reserve account only when all conditions hold: the checking account is mapped; the line has
   `operationType` `TRANSFERENCIA_SALDO_RESERVADO`; the description is "Dinheiro reservado

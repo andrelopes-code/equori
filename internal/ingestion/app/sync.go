@@ -277,6 +277,7 @@ func (s *Service) importAccountRead(
 		target.OpenedOn,
 		read.Records,
 		s.reserveTransfers(c, ext),
+		ar.yields,
 	); err != nil {
 		return domain.Batch{}, err
 	}

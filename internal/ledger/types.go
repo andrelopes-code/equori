@@ -104,6 +104,7 @@ type (
 	AccountFact      = app.AccountFact
 	RecordedItem     = app.RecordedItem
 	RecordedYield    = app.RecordedYield
+	YieldPeriod      = app.YieldPeriod
 	AccountCheck     = app.AccountCheck
 	PayeeClass       = app.PayeeClass
 )

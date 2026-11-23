@@ -20,6 +20,8 @@ type importPlan struct {
 	opensOn time.Time
 	lines   []domain.NormalizedRecord
 	reserve func(domain.NormalizedRecord) domain.ReserveOutcome
+	// source is what decides the yield lines; nil for an account without reserves (A264).
+	source  *yieldSource
 	claimed []Claim
 	// first marks the lines the source reports for the first time, before a withdrawn record
 	// is reopened (A261).
@@ -37,6 +39,7 @@ type importPlan struct {
 	parts   []InstallmentLine
 	retried []*domain.ExternalRecord
 	again   []InstallmentLine
+	yields  []yieldLine
 }
 
 // importRecords deduplicates, matches and creates the lines of one batch with a constant
@@ -44,7 +47,8 @@ type importPlan struct {
 // previous import left received is processed again (P4 amendment A12). In a sync, a stored
 // line the aggregator changed is updated (P6 A36), a withdrawn line returned again is
 // processed again (A38), and a line the ledger refuses waits for review instead of failing
-// the batch. reserve, when set, resolves the reserved balance a new line moves money to (A212).
+// the batch. reserve, when set, resolves the reserved balance a new line moves money to (A212),
+// and source decides the yield lines (A264).
 func (s *Service) importRecords(
 	ctx context.Context,
 	batch *domain.Batch,
@@ -52,6 +56,7 @@ func (s *Service) importRecords(
 	opensOn time.Time,
 	lines []domain.NormalizedRecord,
 	reserve func(domain.NormalizedRecord) domain.ReserveOutcome,
+	source *yieldSource,
 ) error {
 	p := &importPlan{
 		batch:    batch,
@@ -60,6 +65,7 @@ func (s *Service) importRecords(
 		opensOn:  opensOn,
 		lines:    lines,
 		reserve:  reserve,
+		source:   source,
 	}
 
 	if err := s.claimLines(ctx, p); err != nil {
@@ -124,6 +130,10 @@ func (s *Service) applyPlan(ctx context.Context, p *importPlan) error {
 		return err
 	}
 
+	if err := s.settleYields(ctx, p); err != nil {
+		return err
+	}
+
 	return s.saveOutcomes(ctx, p)
 }
 
@@ -182,6 +192,8 @@ func (p *importPlan) routeZone(i int, a domain.Assignment) {
 	case a.Zone == domain.ZoneNew && p.scoring[i].reserveReview:
 		// A213: a line no reserve resolves books nothing a balance could turn into yield.
 		rec.State, rec.ReviewReason = domain.StateNeedsReview, domain.ReviewReserve
+	case a.Zone == domain.ZoneNew && p.scoring[i].yield:
+		p.yields = append(p.yields, yieldLine{rec: rec, line: line, closed: p.scoring[i].closed})
 	case a.Zone == domain.ZoneNew && p.scoring[i].closed:
 		// A261: a reconciled balance the bank reported after the line's date left it out.
 		rec.State, rec.ReviewReason = domain.StateNeedsReview, domain.ReviewReconciled
@@ -227,6 +239,18 @@ func (p *importPlan) lineOf(rec *domain.ExternalRecord, r domain.NormalizedRecor
 		DueDate:     r.DueDate,
 		Category:    r.Category,
 		Kind:        r.Kind,
+	}
+}
+
+func (p *importPlan) scored(i int, line Line, reserveReview bool) scoredLine {
+	r := p.lines[i]
+
+	return scoredLine{
+		rec:           &p.claimed[i].Record,
+		line:          line,
+		reserveReview: reserveReview,
+		closed:        p.closed(i, r),
+		yield:         p.source != nil && r.Yield,
 	}
 }
 

@@ -163,6 +163,32 @@ func (r *Repository) LastBalanceReconciledOn(
 	)
 }
 
+func (r *Repository) YieldsSince(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	from time.Time,
+) ([]app.YieldPeriod, error) {
+	rows, err := r.q.YieldsSince(
+		ctx,
+		YieldsSinceParams{BooksID: booksID, AccountID: accountID, FromDate: from},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	yields := make([]app.YieldPeriod, len(rows))
+	for i, row := range rows {
+		yields[i] = app.YieldPeriod{
+			From:   row.Previous.AddDate(0, 0, 1),
+			To:     row.Date,
+			Amount: row.Amount,
+		}
+	}
+
+	return yields, nil
+}
+
 func (r *Repository) FirstSettledOn(
 	ctx context.Context,
 	booksID int64,

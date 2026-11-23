@@ -642,6 +642,8 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
     "Esta linha parece uma transferência entre contas suas. Escolha a transação da outra conta; sem ela, crie e transforme em transferência para a conta certa, ou descarte.",
   "batch.reason.reconciled":
     "O banco chegou a esta linha depois de um saldo conferido de data posterior, e esse saldo não a incluía. Descarte se ela não mexeu nesta conta; crie se mexeu.",
+  "batch.reason.yield":
+    "Esta conta tem reservas, e nem o rendimento delas nem o saldo informado pelo banco explica esta linha. Descarte se o rendimento é de uma reserva; crie se é desta conta.",
   "batch.group.confirm": "Confirmar o grupo",
   "batch.group.lines": "Grupo de {count} linhas do banco.",
   "batch.unapplied": "Alteração não aplicada: {change}",

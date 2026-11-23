@@ -74,7 +74,7 @@ type ExternalRecord struct {
 	GroupIDs []uuid.UUID
 }
 
-// Why a record waits for review (A100, A102, A142, A261); the first two are the zones of
+// Why a record waits for review (A100, A102, A142, A261, A264); the first two are the zones of
 // Assign.
 const (
 	ReviewAmbiguous  = string(ZoneAmbiguous)
@@ -86,6 +86,7 @@ const (
 	ReviewDuplicate  = "duplicate"
 	ReviewTransfer   = "transfer"
 	ReviewReconciled = "reconciled"
+	ReviewYield      = "yield"
 )
 
 // ExternalStatusOf is the aggregator status of a normalized line.

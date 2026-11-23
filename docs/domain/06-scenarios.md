@@ -1328,3 +1328,11 @@ The scenarios of `docs/specs/2026-11-23-spreadsheets-design.md`, rules SS3 to SS
 ### S686 A file with lines before the opening date
 
 Amendment A263, through the HTTP API. Nubank checking opens on 2026-10-10. An OFX file with lines of 2026-10-12, 2026-10-05 and 2026-10-02 is 422 `lines_before_opening` with `before_opening` `opened_on` 2026-10-10 and `first_line_on` 2026-10-02, and creates nothing. After `PATCH /accounts/{id}` with `opened_on` 2026-10-02, the same file creates the three lines. Test `TestS686LinesBeforeOpening` in `internal/ingestion`.
+
+### S687 A yield line of a reserved balance
+
+Amendment A264, RY3, RY4 and RY6 (`docs/specs/2026-11-23-reserve-yield-line-design.md`), through the HTTP API. A checking account of 500.05 and two reserves of 1,000.00 and 8,000.00 are reconciled on 2026-11-10. The item then reports 500.14, 1,000.55 and 8,004.34 with yield lines of 0.09, 0.55 and 4.34 on the checking account: the first is created, the others are discarded, each reserve books its yield once, and no account has an open difference. The outcome is the same when the two lines arrive after the reserves' yields and when one reserve difference holds the yield of two days. A line of 0.55 that the checking balance holds is created. Test `TestS687ReserveYieldLine` in `internal/ingestion`.
+
+### S688 A yield line that no reserve explains
+
+Amendment A264, RY5 and RY7, through the HTTP API. A third reserve is not mapped and its yield line of 0.02 is left out of the checking balance: the line waits for review with reason `yield` and the owner discards it. A balance that explains no line holds the line until a later sync brings the missing purchase. A line whose reserve has not reported its yield waits, and is discarded by the sync that books it. Test `TestS688UnexplainedYieldLine` in `internal/ingestion`.

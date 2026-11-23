@@ -96,6 +96,34 @@ ORDER BY
 LIMIT
     1;
 
+-- name: YieldsSince :many
+-- A264: the yields a balance assertion booked, each with the date of the assertion before it.
+SELECT
+    r.date,
+    r.difference AS amount,
+    coalesce(
+        (
+            SELECT
+                max(b.date)
+            FROM
+                ledger_balance_assertion b
+            WHERE
+                b.books_id = r.books_id
+                AND b.account_id = r.account_id
+                AND b.date < r.date
+        ),
+        r.date - 1
+    )::date AS previous
+FROM
+    ledger_reconciliation r
+WHERE
+    r.books_id = @books_id
+    AND r.account_id = @account_id
+    AND r.resolution = 'yield'
+    AND r.date >= @from_date::date
+ORDER BY
+    r.date;
+
 -- name: InsertReconciliation :exec
 INSERT INTO
     ledger_reconciliation (

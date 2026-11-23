@@ -185,6 +185,20 @@ type Ledger interface {
 		booksID int64,
 		accountID uuid.UUID,
 	) (*time.Time, error)
+	// SettledBalance returns the balance a balance assertion of the date is compared with.
+	SettledBalance(
+		ctx context.Context,
+		booksID int64,
+		accountID uuid.UUID,
+		date time.Time,
+	) (int64, error)
+	// YieldsSince returns the yields the account's assertions dated from from on booked (A264).
+	YieldsSince(
+		ctx context.Context,
+		booksID int64,
+		accountID uuid.UUID,
+		from time.Time,
+	) ([]domain.YieldSpan, error)
 	// AssertSyncedReserve is AssertSyncedBalance for a reserved balance, which books bounded
 	// yield on a positive difference (A75).
 	AssertSyncedReserve(

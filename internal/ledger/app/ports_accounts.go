@@ -127,6 +127,13 @@ type reconciliationStore interface {
 		booksID int64,
 		accountID uuid.UUID,
 	) (*time.Time, error)
+	// YieldsSince returns the yields the account's assertions dated from from on booked.
+	YieldsSince(
+		ctx context.Context,
+		booksID int64,
+		accountID uuid.UUID,
+		from time.Time,
+	) ([]YieldPeriod, error)
 	FirstSettledOn(ctx context.Context, booksID int64, accountID uuid.UUID) (*time.Time, error)
 	// InsertReconciliation returns domain.ErrAlreadyReconciled for an assertion or statement reconciled before.
 	InsertReconciliation(ctx context.Context, rec Reconciliation) error

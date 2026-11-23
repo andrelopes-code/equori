@@ -16,6 +16,7 @@ type accountRead struct {
 	opening   *domain.Bill
 	firstDue  time.Time
 	readStart time.Time
+	yields    *yieldSource
 }
 
 func (s *Service) readAccount(
@@ -75,5 +76,6 @@ func (s *Service) readAccount(
 
 	return accountRead{
 		read: read, from: from, opening: opening, firstDue: firstDue, readStart: readStart,
+		yields: yieldSourceOf(agg, c, ext, creds, read.Balance),
 	}, nil
 }

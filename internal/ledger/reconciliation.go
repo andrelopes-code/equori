@@ -63,6 +63,17 @@ func (m *Module) LastBalanceReconciledOn(
 	return m.svc.LastBalanceReconciledOn(ctx, booksID, accountID)
 }
 
+// YieldsSince returns the yields the account's assertions dated from from on booked, each over
+// the days since the assertion before it (A264).
+func (m *Module) YieldsSince(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	from time.Time,
+) ([]YieldPeriod, error) {
+	return m.svc.YieldsSince(ctx, booksID, accountID, from)
+}
+
 // AccountChecks lists the open balance accounts with their open differences (P12 A152).
 func (m *Module) AccountChecks(ctx context.Context, booksID int64) ([]AccountCheck, error) {
 	return m.svc.AccountChecks(ctx, booksID)

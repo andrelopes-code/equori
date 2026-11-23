@@ -24,6 +24,17 @@ func (m *Module) Balance(
 	return b.Amount, err
 }
 
+// SettledBalance is Balance on the settled basis, which a balance assertion is compared with.
+func (m *Module) SettledBalance(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	date time.Time,
+) (money.Money, error) {
+	b, err := m.svc.BalanceAt(ctx, booksID, accountID, date, app.BasisSettled)
+	return b.Amount, err
+}
+
 // ValuedBalance is the booked balance of an account and its sub-accounts at the end of date,
 // each instrument valued in currency in with stored prices (P8 amendment A65).
 func (m *Module) ValuedBalance(

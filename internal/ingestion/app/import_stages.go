@@ -141,8 +141,7 @@ func (s *Service) classifyLine(ctx context.Context, p *importPlan, i int) error 
 		}
 	}
 
-	sl := scoredLine{rec: rec, line: line, reserveReview: reserve.Review, closed: p.closed(i, r)}
-	p.scoring = append(p.scoring, sl)
+	p.scoring = append(p.scoring, p.scored(i, line, reserve.Review))
 
 	return nil
 }
@@ -153,6 +152,10 @@ func (s *Service) applyStoredChange(
 	rec *domain.ExternalRecord,
 	r domain.NormalizedRecord,
 ) error {
+	if p.yieldAgain(rec, r) {
+		return nil
+	}
+
 	reported, changed, err := s.update(ctx, p.sync, p.batch.ID, rec, r)
 	if err != nil {
 		return err

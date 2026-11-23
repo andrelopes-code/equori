@@ -25,6 +25,8 @@ type NormalizedRecord struct {
 	ReserveMove       bool
 	ReserveExternalID string
 	ReserveName       string
+	// Yield says the source states the line as yield credited to a bank account (A264).
+	Yield bool
 	// Counterparty is the party on the other side of the line as the source reports it; nil
 	// without one (A217). It never enters Raw (A221).
 	Counterparty *PartyID

@@ -54,6 +54,33 @@ func (p ledgerPort) LastBalanceReconciledOn(
 	return on, p.translate(err)
 }
 
+func (p ledgerPort) SettledBalance(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	date time.Time,
+) (int64, error) {
+	b, err := p.l.SettledBalance(ctx, booksID, accountID, date)
+
+	return b.Amount(), p.translate(err)
+}
+
+func (p ledgerPort) YieldsSince(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	from time.Time,
+) ([]domain.YieldSpan, error) {
+	yields, err := p.l.YieldsSince(ctx, booksID, accountID, from)
+
+	spans := make([]domain.YieldSpan, len(yields))
+	for i, y := range yields {
+		spans[i] = domain.YieldSpan{From: y.From, To: y.To, Amount: y.Amount}
+	}
+
+	return spans, p.translate(err)
+}
+
 type assertFunc func(ctx context.Context, booksID int64, accountID uuid.UUID, date time.Time, amount money.Money) error
 
 func (p ledgerPort) assert(
