@@ -1,4 +1,4 @@
-// A ResizeObserver that reports the shell's page region at the given width and nothing else:
+// A ResizeObserver that reports the shell's page region and the page in it at the given width:
 // jsdom lays nothing out. A test stubs the global with it and restores the global afterwards.
 export function regionObserver(width: number): typeof ResizeObserver {
   return class extends ResizeObserver {
@@ -12,7 +12,7 @@ export function regionObserver(width: number): typeof ResizeObserver {
     }
 
     override observe(element: Element) {
-      if (!element.matches("main[data-part='main']")) return;
+      if (!element.matches("main[data-part='main'], [data-ui='page']")) return;
 
       element.getBoundingClientRect = () => new DOMRect(0, 0, width, 600);
       this.notify();
