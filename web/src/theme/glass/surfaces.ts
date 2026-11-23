@@ -93,6 +93,7 @@ export const surfaces: readonly Surface[] = [
     "edit-bar-background": fill("overlay"),
     "edit-bar-border": ring,
   }),
+  byToken("loading-overlay", { surface: fill("overlay") }),
   byToken("media-viewer", {
     "step-surface": fill("overlay"),
     "zoom-surface": fill("overlay"),
@@ -148,6 +149,14 @@ export const surfaces: readonly Surface[] = [
       "--slotted-toast-border-color": ring,
       "--slotted-toast-shadow": elevation(2),
     },
+  },
+  {
+    ...byToken("floating-panel", {
+      surface: fill("overlay"),
+      "border-color": ring,
+      shadow: elevation(2),
+    }),
+    blurToken: "--slotted-floating-panel-backdrop-filter",
   },
   {
     family: "dialog",

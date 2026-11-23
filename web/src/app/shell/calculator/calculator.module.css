@@ -1,13 +1,6 @@
 @layer app {
-  /* The floating calculator: the panel's frame is the family's; a translucent panel (the glass
-     theme) blurs the page under it, as the shell's materials do. */
+  /* The floating calculator: the frame is the family's, and the glass theme sets its material. */
   .window {
-    --slotted-floating-panel-surface: var(
-      --slotted-panel-surface,
-      var(--slotted-surface-raised)
-    );
-    --slotted-floating-panel-backdrop-filter: var(--slotted-material-backdrop);
-
     inline-size: 20rem; /* literal: four keys of 3.75rem and their gaps; no token holds a window width */
     font-variant-numeric: tabular-nums;
   }

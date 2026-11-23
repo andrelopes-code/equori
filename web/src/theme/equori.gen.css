@@ -1938,6 +1938,7 @@
       --slotted-control-icon-size-sm: calc(round(1cap, 1px) + 4px);
 
       inset-block-start: 2px;
+      margin-block: -0.5lh;
     }
 
     :is([data-ui="dialog"] > [data-part="viewport"] > [data-part="content"]:not(:has(> [data-ui="command-palette"])), [data-ui="drawer"][data-mode="overlay"] > [data-part="panel"]) [data-ui="card"] {

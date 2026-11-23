@@ -33,7 +33,7 @@
     padding-block: var(--slotted-space-4) var(--slotted-space-3);
     border-block-end: var(--slotted-border-width-thin) solid
       var(--slotted-border-subtle);
-    background: var(--slotted-surface-raised);
+    background: var(--slotted-panel-surface, var(--slotted-surface-raised));
   }
 
   .figures {

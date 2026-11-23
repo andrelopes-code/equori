@@ -1938,6 +1938,7 @@
       --slotted-control-icon-size-sm: calc(round(1cap, 1px) + 4px);
 
       inset-block-start: 2px;
+      margin-block: -0.5lh;
     }
 
     :is([data-ui="dialog"] > [data-part="viewport"] > [data-part="content"]:not(:has(> [data-ui="command-palette"])), [data-ui="drawer"][data-mode="overlay"] > [data-part="panel"]) [data-ui="card"] {
@@ -2001,6 +2002,7 @@
     &[data-slotted-scheme="dark"] [data-ui="accordion"],
     &[data-slotted-scheme="dark"] [data-ui="toolbar"],
     &[data-slotted-scheme="dark"] [data-ui="dashboard-grid"],
+    &[data-slotted-scheme="dark"] [data-ui="loading-overlay"],
     &[data-slotted-scheme="dark"] [data-ui="media-viewer"],
     &[data-slotted-scheme="dark"] [data-ui="menu"],
     &[data-slotted-scheme="dark"] [data-ui="popover"],
@@ -2011,6 +2013,7 @@
     &[data-slotted-scheme="dark"] [data-ui="entity-picker"],
     &[data-slotted-scheme="dark"] [data-ui="date-picker"],
     &[data-slotted-scheme="dark"] [data-ui="toast"],
+    &[data-slotted-scheme="dark"] [data-ui="floating-panel"],
     &[data-slotted-scheme="dark"] [data-ui="dialog"],
     &[data-slotted-scheme="dark"] [data-ui="drawer"],
     &[data-slotted-scheme="dark"] [data-ui="action-sheet"],
@@ -2124,6 +2127,10 @@
       --slotted-dashboard-grid-edit-bar-border: var(--glass-ring);
     }
 
+    &[data-slotted-scheme="dark"] [data-ui="loading-overlay"] {
+      --slotted-loading-overlay-surface: var(--glass-fill-overlay);
+    }
+
     &[data-slotted-scheme="dark"] [data-ui="media-viewer"] {
       --slotted-media-viewer-step-surface: var(--glass-fill-overlay);
       --slotted-media-viewer-zoom-surface: var(--glass-fill-overlay);
@@ -2181,6 +2188,12 @@
       --slotted-toast-surface: var(--glass-fill-overlay);
       --slotted-toast-border-color: var(--glass-ring);
       --slotted-toast-shadow: var(--glass-shadow-2);
+    }
+
+    &[data-slotted-scheme="dark"] [data-ui="floating-panel"] {
+      --slotted-floating-panel-surface: var(--glass-fill-overlay);
+      --slotted-floating-panel-border-color: var(--glass-ring);
+      --slotted-floating-panel-shadow: var(--glass-shadow-2);
     }
 
     &[data-slotted-scheme="dark"] [data-ui="dialog"] {
@@ -2293,6 +2306,10 @@
       --slotted-date-picker-content-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
     }
 
+    &[data-slotted-scheme="dark"] [data-ui="floating-panel"] {
+      --slotted-floating-panel-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    }
+
     &[data-slotted-scheme="dark"] [data-ui="dialog"] {
       --slotted-dialog-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
     }
@@ -2320,6 +2337,7 @@
     &[data-slotted-scheme="dark"] [data-ui="accordion"],
     &[data-slotted-scheme="dark"] [data-ui="toolbar"],
     &[data-slotted-scheme="dark"] [data-ui="dashboard-grid"],
+    &[data-slotted-scheme="dark"] [data-ui="loading-overlay"],
     &[data-slotted-scheme="dark"] [data-ui="media-viewer"],
     &[data-slotted-scheme="dark"] [data-ui="menu"],
     &[data-slotted-scheme="dark"] [data-ui="popover"],
@@ -2330,6 +2348,7 @@
     &[data-slotted-scheme="dark"] [data-ui="entity-picker"],
     &[data-slotted-scheme="dark"] [data-ui="date-picker"],
     &[data-slotted-scheme="dark"] [data-ui="toast"],
+    &[data-slotted-scheme="dark"] [data-ui="floating-panel"],
     &[data-slotted-scheme="dark"] [data-ui="dialog"],
     &[data-slotted-scheme="dark"] [data-ui="drawer"],
     &[data-slotted-scheme="dark"] [data-ui="action-sheet"],
@@ -2494,6 +2513,7 @@
       &[data-slotted-scheme="dark"] [data-ui="accordion"],
       &[data-slotted-scheme="dark"] [data-ui="toolbar"],
       &[data-slotted-scheme="dark"] [data-ui="dashboard-grid"],
+      &[data-slotted-scheme="dark"] [data-ui="loading-overlay"],
       &[data-slotted-scheme="dark"] [data-ui="media-viewer"],
       &[data-slotted-scheme="dark"] [data-ui="menu"],
       &[data-slotted-scheme="dark"] [data-ui="popover"],
@@ -2504,6 +2524,7 @@
       &[data-slotted-scheme="dark"] [data-ui="entity-picker"],
       &[data-slotted-scheme="dark"] [data-ui="date-picker"],
       &[data-slotted-scheme="dark"] [data-ui="toast"],
+      &[data-slotted-scheme="dark"] [data-ui="floating-panel"],
       &[data-slotted-scheme="dark"] [data-ui="dialog"],
       &[data-slotted-scheme="dark"] [data-ui="drawer"],
       &[data-slotted-scheme="dark"] [data-ui="action-sheet"],
@@ -2531,6 +2552,7 @@
       &[data-slotted-scheme="dark"] [data-ui="accordion"],
       &[data-slotted-scheme="dark"] [data-ui="toolbar"],
       &[data-slotted-scheme="dark"] [data-ui="dashboard-grid"],
+      &[data-slotted-scheme="dark"] [data-ui="loading-overlay"],
       &[data-slotted-scheme="dark"] [data-ui="media-viewer"],
       &[data-slotted-scheme="dark"] [data-ui="menu"],
       &[data-slotted-scheme="dark"] [data-ui="popover"],
@@ -2541,6 +2563,7 @@
       &[data-slotted-scheme="dark"] [data-ui="entity-picker"],
       &[data-slotted-scheme="dark"] [data-ui="date-picker"],
       &[data-slotted-scheme="dark"] [data-ui="toast"],
+      &[data-slotted-scheme="dark"] [data-ui="floating-panel"],
       &[data-slotted-scheme="dark"] [data-ui="dialog"],
       &[data-slotted-scheme="dark"] [data-ui="drawer"],
       &[data-slotted-scheme="dark"] [data-ui="action-sheet"],
@@ -2607,6 +2630,10 @@
 
       &[data-slotted-scheme="dark"] [data-ui="date-picker"] {
         --slotted-date-picker-content-backdrop-filter: none;
+      }
+
+      &[data-slotted-scheme="dark"] [data-ui="floating-panel"] {
+        --slotted-floating-panel-backdrop-filter: none;
       }
 
       &[data-slotted-scheme="dark"] [data-ui="dialog"] {
