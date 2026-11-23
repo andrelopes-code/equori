@@ -765,7 +765,7 @@ describe("Portfolio page", () => {
         json(200, {
           items: [
             { code: "BRL", type: "currency", scale: 2, name: "Real" },
-            { code: "CDB", type: "fixed_income", scale: 2, name: "CDB XP" },
+            { code: "CDB", type: "fund", scale: 2, name: "CDB XP" },
           ],
         }),
       "GET /api/v1/positions": () =>
