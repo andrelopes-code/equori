@@ -23,8 +23,8 @@ export interface AnswerSheet extends SheetModel {
 }
 
 // The sheet of one answer after the decisions already taken: a proposal decided in this session
-// stays a row with the server's answer, and a pending one stays a row past its expiry instant,
-// labelled expired, without a click (P15).
+// stays a row with the server's answer while another is open, and a pending one stays a row past
+// its expiry instant, labelled expired, without a click (P15).
 export function useAnswerSheet(
   proposals: readonly Proposal[],
   decisions: Record<string, Decision>,

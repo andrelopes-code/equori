@@ -42,15 +42,32 @@ describe("sheetModel", () => {
     expect(model.deadline).toBe(p1);
   });
 
-  it("keeps a proposal decided in the session as a row, out of the deadline", () => {
+  it("keeps a proposal decided in the session as a row while another is open", () => {
+    const p1 = p("p1", "executed");
+    const p3 = p("p3", "executed", { waiting_for: ["p1"] });
+    const p4 = p("p4", "failed");
+    const p5 = p("p5", "pending");
+
+    const model = sheetModel([p1, p3, p4, p5], new Set(["p1", "p3"]));
+
+    expect(model.rows).toEqual([
+      { proposal: p1, dependents: [p3] },
+      { proposal: p5, dependents: [] },
+    ]);
+    expect(model.results).toEqual([p4]);
+    expect(model.deadline).toBe(p5);
+  });
+
+  // Spec 2026-11-15 section 5 (All decided).
+  it("draws only results once the session decided the last open proposal", () => {
     const p1 = p("p1", "executed");
     const p3 = p("p3", "executed", { waiting_for: ["p1"] });
     const p4 = p("p4", "failed");
 
     const model = sheetModel([p1, p3, p4], new Set(["p1", "p3"]));
 
-    expect(model.rows).toEqual([{ proposal: p1, dependents: [p3] }]);
-    expect(model.results).toEqual([p4]);
+    expect(model.rows).toEqual([]);
+    expect(model.results).toEqual([p1, p3, p4]);
     expect(model.deadline).toBeUndefined();
   });
 

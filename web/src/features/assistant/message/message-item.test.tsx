@@ -77,6 +77,22 @@ describe("MessageItem proposals", () => {
     });
   });
 
+  // Spec 2026-11-15 section 5 (All decided).
+  it("replaces the sheet with the receipt once its only proposal is confirmed", async () => {
+    renderItem(
+      [base],
+      fakeApi({
+        "POST /api/v1/assistant/proposals/p1/confirm": () =>
+          json(200, { ...base, status: "executed" }),
+      }),
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Confirm 1" }));
+
+    expect(await screen.findByText("Transaction recorded")).toBeInTheDocument();
+    expect(screen.queryByText("1 change to review")).not.toBeInTheDocument();
+  });
+
   it("invalidates the conversation after a confirm", async () => {
     const invalidate = renderItem(
       [base],

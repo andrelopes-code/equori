@@ -11,7 +11,8 @@ export interface SheetRow {
 export interface SheetModel {
   // Pending, executing and waiting proposals without a parent in the answer, in the answer's order.
   rows: SheetRow[];
-  // Every other proposal, in the answer's order: the ones that arrived already decided.
+  // Every other proposal, in the answer's order: the ones that arrived already decided, or all of
+  // them once none is open.
   results: Proposal[];
   // The open proposal that expires first; undefined when rows is empty.
   deadline: Proposal | undefined;
@@ -44,13 +45,14 @@ export function sessionProposals(
 }
 
 // `session` holds the proposals decided since the answer arrived: they stay rows, with their
-// outcome, instead of becoming results.
+// outcome, while another proposal of the answer is open (spec 2026-11-15, section 5).
 export function sheetModel(
   proposals: readonly Proposal[],
   session: ReadonlySet<string> = new Set(),
 ): SheetModel {
+  const open = proposals.some(isOpen);
   const kept = (proposal: Proposal) =>
-    isOpen(proposal) || session.has(proposal.id);
+    isOpen(proposal) || (open && session.has(proposal.id));
   const shown = proposals.filter(kept);
   const keptIDs = new Set(shown.map((proposal) => proposal.id));
   const rows: SheetRow[] = shown
