@@ -2,7 +2,9 @@ import { IconButton } from "@slotted/react/button";
 import { Glyph, Icon } from "@slotted/react/icon";
 import { Menu, MenuContent, MenuItem, MenuTrigger } from "@slotted/react/menu";
 
+import { CommandItems } from "@/features/spreadsheets/document-list/command-items";
 import type { DocumentCommand } from "@/features/spreadsheets/document-list/document-command";
+import { DownloadItems } from "@/features/spreadsheets/document-list/download-items";
 import { useT } from "@/i18n/i18n-provider";
 
 interface DocumentMenuProps {
@@ -10,7 +12,10 @@ interface DocumentMenuProps {
   size?: "sm" | "md";
   // Opens the spreadsheet; absent on the page that already shows it.
   onOpen?: () => void;
-  onCommand: (kind: DocumentCommand["kind"]) => void;
+  // The commands that write; absent for a member who only reads.
+  onCommand?: ((kind: DocumentCommand["kind"]) => void) | undefined;
+  // Hands the open spreadsheet as a file; present on its page.
+  onDownload?: ((format: "xlsx" | "csv") => void) | undefined;
 }
 
 // The commands of one spreadsheet, in its row and in the header of its page.
@@ -19,6 +24,7 @@ export function DocumentMenu({
   size = "sm",
   onOpen,
   onCommand,
+  onDownload,
 }: DocumentMenuProps) {
   const t = useT();
 
@@ -44,28 +50,8 @@ export function DocumentMenu({
         {onOpen !== undefined && (
           <MenuItem onSelect={onOpen}>{t("spreadsheets.open")}</MenuItem>
         )}
-        <MenuItem
-          onSelect={() => {
-            onCommand("rename");
-          }}
-        >
-          {t("spreadsheets.rename")}
-        </MenuItem>
-        <MenuItem
-          onSelect={() => {
-            onCommand("copy");
-          }}
-        >
-          {t("spreadsheets.copy")}
-        </MenuItem>
-        <MenuItem
-          tone="danger"
-          onSelect={() => {
-            onCommand("delete");
-          }}
-        >
-          {t("spreadsheets.delete")}
-        </MenuItem>
+        {onDownload !== undefined && <DownloadItems onDownload={onDownload} />}
+        {onCommand !== undefined && <CommandItems onCommand={onCommand} />}
       </MenuContent>
     </Menu>
   );

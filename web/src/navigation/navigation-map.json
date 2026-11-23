@@ -398,6 +398,7 @@
     "screen": "Spreadsheets",
     "tasks": [
       "create a spreadsheet",
+      "import an XLSX or CSV file as a spreadsheet",
       "open, rename, copy or delete a spreadsheet",
       "search the spreadsheets by name"
     ]
@@ -409,6 +410,7 @@
     "tasks": [
       "edit cells, formulas and formats",
       "see whether the spreadsheet is saved",
+      "download the spreadsheet as XLSX or a sheet as CSV",
       "choose between the saved version and the screen after a save from another window"
     ]
   },

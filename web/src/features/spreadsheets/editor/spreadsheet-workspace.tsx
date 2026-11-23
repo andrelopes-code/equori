@@ -14,6 +14,7 @@ import { DocumentDialogs } from "@/features/spreadsheets/document-list/document-
 import { SaveNotice } from "@/features/spreadsheets/editor/save-notice";
 import { SpreadsheetEditor } from "@/features/spreadsheets/editor/spreadsheet-editor";
 import styles from "@/features/spreadsheets/editor/spreadsheet-workspace.module.css";
+import { downloadDocument } from "@/features/spreadsheets/files/download-document";
 import { useDocumentSave } from "@/features/spreadsheets/editor/use-document-save";
 import { WorkspaceHeader } from "@/features/spreadsheets/editor/workspace-header";
 import { useT } from "@/i18n/i18n-provider";
@@ -60,6 +61,15 @@ export function SpreadsheetWorkspace({
       });
   }
 
+  function handleDownload(format: "xlsx" | "csv") {
+    const editor = save.editor();
+    if (editor === null) return;
+
+    downloadDocument(editor, name, format).catch((caught: unknown) => {
+      toast.show({ tone: "danger", title: errorText(caught, t) });
+    });
+  }
+
   function handleDone(done: DocumentCommand, result?: SpreadsheetSummary) {
     setCommand(null);
 
@@ -84,6 +94,7 @@ export function SpreadsheetWorkspace({
           save.saveNow();
           setCommand({ kind, document: { id: document.id, name } });
         }}
+        onDownload={handleDownload}
       />
 
       <PageBody flow="none">

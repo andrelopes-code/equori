@@ -3236,6 +3236,13 @@ export const catalogEn = {
     "The last changes on this screen were not saved. Open the saved version, or keep this screen as a new spreadsheet.",
   "spreadsheets.conflict.reload": "Open the saved version",
   "spreadsheets.conflict.keep": "Keep this screen as a copy",
+  "spreadsheets.import": "Import file",
+  "spreadsheets.import.choose": "Choose an XLSX or CSV file",
+  "spreadsheets.import.unsupported": "The file is not an XLSX or CSV file.",
+  "spreadsheets.import.unreadable":
+    "The file could not be read as a spreadsheet.",
+  "spreadsheets.downloadXlsx": "Download as XLSX",
+  "spreadsheets.downloadCsv": "Download this sheet as CSV",
   "problem.spreadsheet_limit_reached":
     "This book already holds 40 spreadsheets. Delete one to create another.",
 } as const;

@@ -21,6 +21,7 @@ interface WorkspaceHeaderProps {
   status: Status;
   editable: boolean;
   onCommand: (kind: DocumentCommand["kind"]) => void;
+  onDownload: (format: "xlsx" | "csv") => void;
 }
 
 // The name of the spreadsheet, whether it is saved, and its commands.
@@ -29,6 +30,7 @@ export function WorkspaceHeader({
   status,
   editable,
   onCommand,
+  onDownload,
 }: WorkspaceHeaderProps) {
   const t = useT();
 
@@ -47,15 +49,14 @@ export function WorkspaceHeader({
             </PageHeaderSubheading>
           </PageHeaderTitle>
 
-          {editable && (
-            <PageHeaderActions>
-              <DocumentMenu
-                size="md"
-                label={t("spreadsheets.more")}
-                onCommand={onCommand}
-              />
-            </PageHeaderActions>
-          )}
+          <PageHeaderActions>
+            <DocumentMenu
+              size="md"
+              label={t("spreadsheets.more")}
+              onCommand={editable ? onCommand : undefined}
+              onDownload={onDownload}
+            />
+          </PageHeaderActions>
         </PageHeaderTitleRow>
       </PageHeaderTitleArea>
     </PageHeader>

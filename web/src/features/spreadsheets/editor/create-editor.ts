@@ -26,6 +26,7 @@ import type { SpreadsheetContent } from "@/features/spreadsheets/api";
 import { adoptRefusedStyles } from "@/features/spreadsheets/editor/adopt-styles";
 import { changesWorkbook } from "@/features/spreadsheets/editor/changes-workbook";
 import { numfmtLocale } from "@/features/spreadsheets/editor/numfmt-locale";
+import { sheetRows } from "@/features/spreadsheets/files/sheet-rows";
 import { loadUniverLocale } from "@/features/spreadsheets/editor/univer-locale";
 import { univerTheme } from "@/features/spreadsheets/editor/univer-theme";
 
@@ -33,6 +34,8 @@ import { univerTheme } from "@/features/spreadsheets/editor/univer-theme";
 export interface Editor {
   // The content on screen, as the server stores it.
   snapshot: () => SpreadsheetContent;
+  // The name of the sheet on screen and the values of its cells, row by row.
+  activeSheet: () => { name: string; rows: unknown[][] };
   setDark: (dark: boolean) => void;
   dispose: () => void;
 }
@@ -92,6 +95,19 @@ export async function createEditor(options: EditorOptions): Promise<Editor> {
 
   return {
     snapshot: () => workbook.save() as unknown as SpreadsheetContent,
+    activeSheet: () => {
+      const sheet = workbook.getActiveSheet();
+      const range = sheet.getDataRange();
+
+      return {
+        name: sheet.getSheetName(),
+        rows: sheetRows(
+          range.getRawValues(),
+          range.getDisplayValues(),
+          range.getNumberFormats(),
+        ),
+      };
+    },
     setDark: (dark) => {
       univerAPI.toggleDarkMode(dark);
     },

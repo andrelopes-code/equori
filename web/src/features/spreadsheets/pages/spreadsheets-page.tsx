@@ -23,6 +23,7 @@ import type { SpreadsheetSummary } from "@/features/spreadsheets/api";
 import type { DocumentCommand } from "@/features/spreadsheets/document-list/document-command";
 import { DocumentDialogs } from "@/features/spreadsheets/document-list/document-dialogs";
 import { DocumentGrid } from "@/features/spreadsheets/document-list/document-grid";
+import { useImportFile } from "@/features/spreadsheets/files/use-import-file";
 import { firstContent } from "@/features/spreadsheets/model/first-content";
 import { SpreadsheetsHeader } from "@/features/spreadsheets/pages/spreadsheets-header";
 import { useT } from "@/i18n/i18n-provider";
@@ -36,6 +37,7 @@ export function SpreadsheetsPage() {
   const documents = useQuery(spreadsheetsQuery(api));
   const { data: me } = useQuery({ ...meQuery(api), staleTime: Infinity });
   const create = useCreateSpreadsheet();
+  const { importing, importFile } = useImportFile();
   const [command, setCommand] = useState<DocumentCommand | null>(null);
 
   const canWrite = me !== undefined && me.book_role !== "read";
@@ -70,7 +72,9 @@ export function SpreadsheetsPage() {
       <SpreadsheetsHeader
         canCreate={canWrite}
         creating={create.isPending}
+        importing={importing}
         onCreate={handleCreate}
+        onImport={importFile}
       />
 
       <PageBody>

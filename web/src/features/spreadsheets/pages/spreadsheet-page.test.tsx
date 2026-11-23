@@ -25,11 +25,26 @@ vi.mock("@/features/spreadsheets/editor/create-editor", () => ({
     editor.opened.push(options);
     return Promise.resolve({
       snapshot: () => editor.snapshot,
+      activeSheet: () => ({
+        name: "Sheet1",
+        rows: [
+          ["a", 1.5],
+          [null, "x,y"],
+        ],
+      }),
       setDark: () => undefined,
       dispose: () => {
         editor.disposed += 1;
       },
     });
+  },
+}));
+
+const downloads = vi.hoisted(() => [] as unknown[][]);
+
+vi.mock("@/features/spreadsheets/files/download-file", () => ({
+  downloadFile: (...args: unknown[]) => {
+    downloads.push(args);
   },
 }));
 
@@ -105,6 +120,7 @@ beforeEach(() => {
   localStorage.clear();
   editor.opened = [];
   editor.disposed = 0;
+  downloads.length = 0;
 });
 
 describe("SpreadsheetPage", () => {
@@ -227,7 +243,7 @@ describe("SpreadsheetPage", () => {
     });
   });
 
-  it("opens a reader's spreadsheet without edits, saves or commands", async () => {
+  it("opens a reader's spreadsheet without edits and offers only the downloads", async () => {
     const sent: Sent[] = [];
     await renderApp(`/spreadsheets/${id}`, {
       fetch: api(sent, { role: "read" }),
@@ -239,11 +255,65 @@ describe("SpreadsheetPage", () => {
     expect(
       screen.getByText(catalogEn["spreadsheets.status.readOnly"]),
     ).toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["spreadsheets.more"] }),
+    );
+
     expect(
-      screen.queryByRole("button", {
-        name: catalogEn["spreadsheets.more"],
+      screen.getAllByRole("menuitem").map((item) => item.textContent),
+    ).toEqual([
+      catalogEn["spreadsheets.downloadXlsx"],
+      catalogEn["spreadsheets.downloadCsv"],
+    ]);
+  });
+
+  it("hands the sheet on screen as a CSV file named after the spreadsheet", async () => {
+    await renderApp(`/spreadsheets/${id}`, { fetch: api([]) });
+    await opened();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["spreadsheets.more"] }),
+    );
+    await userEvent.click(
+      screen.getByRole("menuitem", {
+        name: catalogEn["spreadsheets.downloadCsv"],
       }),
-    ).toBeNull();
+    );
+
+    await waitFor(() => {
+      expect(downloads).toEqual([
+        [
+          "Budget - Sheet1",
+          "csv",
+          '\uFEFFa,1.5\r\n,"x,y"',
+          "text/csv;charset=utf-8",
+        ],
+      ]);
+    });
+  });
+
+  it("hands every sheet as an XLSX file", async () => {
+    await renderApp(`/spreadsheets/${id}`, { fetch: api([]) });
+    await opened();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["spreadsheets.more"] }),
+    );
+    await userEvent.click(
+      screen.getByRole("menuitem", {
+        name: catalogEn["spreadsheets.downloadXlsx"],
+      }),
+    );
+
+    await waitFor(() => {
+      expect(downloads).toHaveLength(1);
+    });
+    const [name, extension, bytes] = downloads[0] ?? [];
+
+    expect([name, extension]).toEqual(["Budget", "xlsx"]);
+    // A ZIP archive starts with "PK".
+    expect([...(bytes as Uint8Array).slice(0, 2)]).toEqual([0x50, 0x4b]);
   });
 
   it("states that a spreadsheet of another book does not exist", async () => {

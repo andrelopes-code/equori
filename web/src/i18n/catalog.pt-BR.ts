@@ -3263,6 +3263,13 @@ export const catalogPtBR: Catalog = {
     "As últimas alterações desta tela não foram salvas. Abra a versão salva, ou guarde esta tela como uma nova planilha.",
   "spreadsheets.conflict.reload": "Abrir a versão salva",
   "spreadsheets.conflict.keep": "Guardar esta tela como cópia",
+  "spreadsheets.import": "Importar arquivo",
+  "spreadsheets.import.choose": "Escolher um arquivo XLSX ou CSV",
+  "spreadsheets.import.unsupported": "O arquivo não é XLSX nem CSV.",
+  "spreadsheets.import.unreadable":
+    "O arquivo não pôde ser lido como planilha.",
+  "spreadsheets.downloadXlsx": "Baixar como XLSX",
+  "spreadsheets.downloadCsv": "Baixar esta página como CSV",
   "problem.spreadsheet_limit_reached":
     "Este livro já tem 40 planilhas. Exclua uma para criar outra.",
 };

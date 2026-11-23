@@ -23,6 +23,10 @@ A document is one spreadsheet as the server stores it: a name and a content. A c
 | SS13 | The spreadsheet operations have no assistant tool (ADR 038, E7). |
 | SS14 | The archive of an export carries the documents; `archive_version` 33 adds the table. |
 | SS15 | The editor reads a typed number or date, and writes a formatted one, by the locale of the member: the tag of the application when Univer knows it, else its language, else `en`. |
+| SS16 | "Import file" on the list creates a document from an XLSX or CSV file and opens it. The name of the file without its extension is the name of the document, cut at 120 characters. A file of another kind, a file that does not read and a refusal of the server (SS4) are each told in their own words; none creates a document. |
+| SS17 | An XLSX file gives its sheets in order with their names and hidden state, and per cell the value, the formula, the number format, bold, italic, underline, strikethrough, size, colour, fill, the four borders, the alignment and the wrap; merged cells, sized and hidden rows and columns and frozen panes. A shared formula is written at each of its cells. A font outside Arial, Courier New, Georgia, Tahoma, Times New Roman, Trebuchet MS and Verdana is left to the editor. A colour of the file's theme, charts, images, comments, validation and conditional formats are not read. |
+| SS18 | A CSV file gives one sheet. The delimiter is the one of `,`, `;` and tab that occurs most in the first line outside quotes. A field that is a number becomes one; with the delimiter `;` the decimal sign is a comma and the thousands sign a dot. A number that starts with zero stays a text. |
+| SS19 | The menu of an open document holds "Download as XLSX", with every sheet and the reach of SS17, and "Download this sheet as CSV", with the sheet on screen: fields separated by commas, a number as the cell holds it and a date or a time as the cell shows it. The file takes the name of the document. A member who only reads has both. The files are made in the browser. |
 
 ## Client derivations
 
@@ -32,6 +36,9 @@ A document is one spreadsheet as the server stores it: a name and a content. A c
 | Whether a command of the editor changed the content | SS7 | `editor/changes-workbook.test.ts` |
 | Rows of the list under a search | SS1 | `model/filter-documents.test.ts` |
 | Locale of the number formats | SS15 | `editor/numfmt-locale.test.ts` |
+| Content of an XLSX file and file of a content | SS17, SS19 | `files/xlsx.test.ts`, `files/xlsx-refs.test.ts` |
+| Content of a CSV file | SS18 | `files/csv.test.ts`, `files/content-from-file.test.ts` |
+| Rows of a CSV download | SS19 | `files/sheet-rows.test.ts` |
 
 ## Cross-cutting questions
 
@@ -53,7 +60,7 @@ A document is one spreadsheet as the server stores it: a name and a content. A c
 - D1: `spreadsheet_document` is a fact table (it holds `books_id`). `archive_version` rises to 33 with the step `addSpreadsheets`; the fixtures `archive-v33.zip` and `archive-v33.txt` pin the import and the fingerprint.
 - D2: Migration `00142_spreadsheet_document.sql`.
 - D3: Does not apply: a document is no recorded fact of the ledger. A save replaces the content; the editor keeps the undo of the session.
-- D4: Does not apply: no bank, file or model writes a document.
+- D4: A file the member chooses creates a new document (SS16) and changes no other; importing the same file twice creates two documents, as creating two by hand does. No fact of the ledger is written.
 - D5: Does not apply: the diagnostic file gains no field.
 - S1: The seven operations of the tag `spreadsheet`, each with the exclusion `-editor` in `tool_exposure_test.go` (ADR 038, E7). `spreadsheet_limit_reached` is covered by `TestS684DocumentLimit`; `version_conflict`, `validation_failed`, `not_found` and `request_too_large` by `TestS682DocumentLifecycle` and `TestS683DocumentProblems`.
 - S2: Desktop only: `/spreadsheets` and `/spreadsheets/$id` are not phone routes (ADR 027, S3). A grid of cells with a toolbar does not fit 390 px.

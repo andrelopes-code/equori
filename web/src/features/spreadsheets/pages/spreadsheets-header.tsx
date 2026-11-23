@@ -8,19 +8,24 @@ import {
   PageHeaderTitleRow,
 } from "@slotted/react/page-header";
 
+import { ImportButton } from "@/features/spreadsheets/files/import-button";
 import { useT } from "@/i18n/i18n-provider";
 import { HeaderAction } from "@/ui/navigation/header-action";
 
 interface SpreadsheetsHeaderProps {
   canCreate: boolean;
   creating: boolean;
+  importing: boolean;
   onCreate: () => void;
+  onImport: (file: File) => void;
 }
 
 export function SpreadsheetsHeader({
   canCreate,
   creating,
+  importing,
   onCreate,
+  onImport,
 }: SpreadsheetsHeaderProps) {
   const t = useT();
 
@@ -37,6 +42,7 @@ export function SpreadsheetsHeader({
 
           {canCreate && (
             <PageHeaderActions>
+              <ImportButton loading={importing} onFile={onImport} />
               <HeaderAction
                 primary
                 label={t("spreadsheets.new")}

@@ -12,6 +12,13 @@ vi.mock("@/features/spreadsheets/editor/create-editor", () => ({
   createEditor: () =>
     Promise.resolve({
       snapshot: () => ({}),
+      activeSheet: () => ({
+        name: "Sheet1",
+        rows: [
+          ["a", 1.5],
+          [null, "x,y"],
+        ],
+      }),
       setDark: () => undefined,
       dispose: () => undefined,
     }),
@@ -232,6 +239,58 @@ describe("SpreadsheetsPage", () => {
     await waitFor(() => {
       expect(sent).toEqual([{ route: "delete", body: null }]);
     });
+  });
+
+  it("creates a spreadsheet from a CSV file and opens it", async () => {
+    const sent: Sent[] = [];
+    const { router } = await renderApp("/spreadsheets", { fetch: api(sent) });
+    await screen.findByRole("rowheader", { name: "Orçamento" });
+
+    await userEvent.upload(
+      screen.getByLabelText(catalogEn["spreadsheets.import.choose"]),
+      new File(["Item;Valor\nAluguel;1.500,00\n"], "Extrato.csv"),
+    );
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(`/spreadsheets/${tripID}`);
+    });
+    expect(sent).toHaveLength(1);
+    expect(sent[0]).toMatchObject({
+      route: "create",
+      body: {
+        name: "Extrato",
+        content: {
+          sheetOrder: ["sheet-1"],
+          sheets: {
+            "sheet-1": {
+              name: catalogEn["spreadsheets.firstSheet"],
+              cellData: {
+                "0": { "0": { v: "Item", t: 1 }, "1": { v: "Valor", t: 1 } },
+                "1": { "0": { v: "Aluguel", t: 1 }, "1": { v: 1500, t: 2 } },
+              },
+            },
+          },
+        },
+      },
+    });
+  });
+
+  it("says that a file of another kind is not a spreadsheet", async () => {
+    const sent: Sent[] = [];
+    await renderApp("/spreadsheets", { fetch: api(sent) });
+    await screen.findByRole("rowheader", { name: "Orçamento" });
+
+    await userEvent.upload(
+      screen.getByLabelText(catalogEn["spreadsheets.import.choose"]),
+      new File(["%PDF"], "statement.pdf"),
+      { applyAccept: false },
+    );
+
+    // A toast writes its words once on screen and once for a screen reader.
+    expect(
+      await screen.findAllByText(catalogEn["spreadsheets.import.unsupported"]),
+    ).not.toHaveLength(0);
+    expect(sent).toEqual([]);
   });
 
   it("gives a reader the list without the writes", async () => {

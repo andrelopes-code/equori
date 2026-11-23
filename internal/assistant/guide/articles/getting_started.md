@@ -12,9 +12,9 @@ The Help screen opens with a search: it reads the titles, the sections, the glos
 
 Spreadsheets. A spreadsheet is a table of the member's own, kept in the book beside the accounts: a comparison of two offers, the plan of a trip, a list kept by hand. It has sheets, cells with values and formulas, number formats, conditional formatting, data validation, filters, sorting, notes, links and images. A spreadsheet reads no figure of the accounts and changes none: what a cell holds is what was typed or pasted into it.
 
-The Spreadsheets screen lists the spreadsheets of the book, the last saved first, and searches them by name. "New spreadsheet" creates one and opens it. The menu of a row holds "Open", "Rename", "Make a copy" and "Delete". A deletion is not undone. A book holds 40 spreadsheets.
+The Spreadsheets screen lists the spreadsheets of the book, the last saved first, and searches them by name. "New spreadsheet" creates one and opens it. "Import file" creates one from an XLSX or CSV file. The menu of a row holds "Open", "Rename", "Make a copy" and "Delete". A deletion is not undone. A book holds 40 spreadsheets.
 
-An open spreadsheet saves by itself after each pause in the changes and on Ctrl+S. The header states "Saved", "Unsaved changes", "Saving" or "Not saved". When the same spreadsheet was saved from another window, the screen stops saving and offers two ways out: "Open the saved version" replaces the screen with what is stored, and "Keep this screen as a copy" stores the screen as a new spreadsheet. A member who can only read opens a spreadsheet as "View only".
+An open spreadsheet saves by itself after each pause in the changes and on Ctrl+S. The header states "Saved", "Unsaved changes", "Saving" or "Not saved". When the same spreadsheet was saved from another window, the screen stops saving and offers two ways out: "Open the saved version" replaces the screen with what is stored, and "Keep this screen as a copy" stores the screen as a new spreadsheet. A member who can only read opens a spreadsheet as "View only". The menu of an open spreadsheet holds "Download as XLSX" and "Download this sheet as CSV".
 
 The spreadsheets are part of the export of the book and of the backups.
 
