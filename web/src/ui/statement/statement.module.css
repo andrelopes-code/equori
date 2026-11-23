@@ -1,11 +1,10 @@
 @layer app {
   /* The rows' fills sit inside an 8 px band of the page margin: the content keeps the margin
      and a pressed row reads as a rounded tile, not as a stripe to the screen edge.
-     Workaround for Slotted issue #162: List has no inset, rounded row fill.
-     Workaround for Slotted issue #161: a sticky day label paints the list surface; the list
-     takes the page ground, which Page draws sunken. */
+     Workaround for Slotted issue #162: List has no inset, rounded row fill. A sticky day label
+     paints the ground of the page, so it reads as a caption and not as a band. */
   .statement {
-    --slotted-list-background: var(--slotted-surface-sunken);
+    --slotted-list-section-background: var(--slotted-ground);
     --slotted-list-padding-inline: var(--slotted-space-4);
     --slotted-list-item-padding-inline: var(--slotted-space-4);
     --slotted-list-item-radius: var(--slotted-radius-lg);
