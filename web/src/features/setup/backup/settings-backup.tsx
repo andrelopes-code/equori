@@ -3,6 +3,7 @@ import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { SkeletonText } from "@slotted/react/skeleton";
 import { Text } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 
 import { useApi } from "@/api/api-context";
 import { errorText } from "@/api/problem";
@@ -10,8 +11,8 @@ import { backupQuery, useRunBackup } from "@/features/instance";
 import type { BackupStatus } from "@/features/instance";
 import { meQuery } from "@/features/session";
 import { booksQuery } from "@/features/setup/api";
+import { CopyPasswordDialog } from "@/features/setup/backup/copy-password-dialog";
 import { formatMoment } from "@/features/setup/backup/format-moment";
-import { SettingsCopyPassword } from "@/features/setup/backup/settings-copy-password";
 import { SettingsGroup } from "@/features/setup/settings-layout/settings-group";
 import { SettingsSection } from "@/features/setup/settings-layout/settings-section";
 import type { MessageKey } from "@/i18n/catalog.en";
@@ -27,6 +28,7 @@ export function SettingsBackup() {
   const status = useQuery({ ...backupQuery(api), enabled: admin });
   const books = useQuery(booksQuery(api)).data;
   const run = useRunBackup();
+  const [settingPassword, setSettingPassword] = useState(false);
 
   if (!admin) return null;
 
@@ -36,6 +38,14 @@ export function SettingsBackup() {
 
   const handleRun = () => {
     run.mutate();
+  };
+
+  const handleOpenPassword = () => {
+    setSettingPassword(true);
+  };
+
+  const handleClosePassword = () => {
+    setSettingPassword(false);
   };
 
   return (
@@ -96,11 +106,25 @@ export function SettingsBackup() {
             )}
           </SettingsGroup>
 
-          <SettingsGroup title={t("backup.copy.title")}>
+          <SettingsGroup
+            title={t("backup.copy.title")}
+            actions={
+              <Button
+                size="sm"
+                variant="outline"
+                tone="secondary"
+                onClick={handleOpenPassword}
+              >
+                {t("backup.password.set")}
+              </Button>
+            }
+          >
             <Text size="sm">{copyText(status.data, t, moment)}</Text>
           </SettingsGroup>
 
-          <SettingsCopyPassword />
+          {settingPassword && (
+            <CopyPasswordDialog onClose={handleClosePassword} />
+          )}
         </>
       )}
     </SettingsSection>

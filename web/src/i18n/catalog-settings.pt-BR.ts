@@ -298,7 +298,7 @@ export const settingsPtBR: Record<keyof typeof settingsEn, string> = {
   "backup.copy.title": "Cópia criptografada",
   "backup.copy.folder_unset":
     "Sem pasta de cópia. Defina EQUORI_COPY_DIR com uma pasta montada.",
-  "backup.copy.password_unset": "Sem senha de cópia. Defina uma abaixo.",
+  "backup.copy.password_unset": "Sem senha de cópia definida.",
   "backup.copy.ok": "Última cópia: {date}, {file}",
   "backup.copy.none": "Nenhuma cópia ainda; o próximo backup grava uma.",
   "backup.copy.folder_not_writable":
@@ -306,8 +306,10 @@ export const settingsPtBR: Record<keyof typeof settingsEn, string> = {
   "backup.copy.failed": "A última cópia falhou.",
   "backup.copy.late": "A cópia criptografada está atrasada.",
   "backup.password.title": "Senha da cópia",
+  "backup.password.set": "Definir senha",
+  "backup.password.kept": "Cópias já gravadas mantêm a própria senha.",
   "backup.password.help":
-    "No mínimo 12 caracteres, diferente da senha de acesso. Cópias já gravadas mantêm a senha com que foram gravadas.",
+    "No mínimo 12 caracteres, diferente da senha de acesso.",
   "backup.password.field": "Nova senha da cópia",
   "backup.password.repeat": "Repita a senha",
   "backup.password.mismatch": "As senhas são diferentes.",

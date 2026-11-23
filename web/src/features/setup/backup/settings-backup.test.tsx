@@ -132,28 +132,44 @@ describe("Backup section (P13 A154, A155, A157)", () => {
     });
   });
 
+  it("keeps the copy password form out of the pane until it is asked for", async () => {
+    const a = api(status());
+    await open(a.fetch);
+    await within(section()).findByText(catalogEn["backup.copy.none"]);
+
+    expect(
+      screen.queryByLabelText(catalogEn["backup.password.field"]),
+    ).not.toBeInTheDocument();
+
+    const dialog = await openPassword();
+
+    expect(
+      within(dialog).getByLabelText(catalogEn["backup.password.field"]),
+    ).toBeInTheDocument();
+  });
+
   it("rejects two different copy passwords without a request", async () => {
     const a = api(status());
     await open(a.fetch);
+    const dialog = await openPassword();
+
     await userEvent.type(
-      await within(section()).findByLabelText(
-        catalogEn["backup.password.field"],
-      ),
+      within(dialog).getByLabelText(catalogEn["backup.password.field"]),
       "first password 1",
     );
     await userEvent.type(
-      within(section()).getByLabelText(catalogEn["backup.password.repeat"]),
+      within(dialog).getByLabelText(catalogEn["backup.password.repeat"]),
       "other password 2",
     );
 
     await userEvent.click(
-      within(section()).getByRole("button", {
+      within(dialog).getByRole("button", {
         name: catalogEn["backup.password.save"],
       }),
     );
 
     expect(
-      await within(section()).findByText(catalogEn["backup.password.mismatch"]),
+      await within(dialog).findByText(catalogEn["backup.password.mismatch"]),
     ).toBeInTheDocument();
     expect(a.sent).toEqual([]);
   });
@@ -161,25 +177,28 @@ describe("Backup section (P13 A154, A155, A157)", () => {
   it("sends equal copy passwords of 12 characters", async () => {
     const a = api(status());
     await open(a.fetch);
+    const dialog = await openPassword();
+
     await userEvent.type(
-      await within(section()).findByLabelText(
-        catalogEn["backup.password.field"],
-      ),
+      within(dialog).getByLabelText(catalogEn["backup.password.field"]),
       "twelve chars",
     );
     await userEvent.type(
-      within(section()).getByLabelText(catalogEn["backup.password.repeat"]),
+      within(dialog).getByLabelText(catalogEn["backup.password.repeat"]),
       "twelve chars",
     );
 
     await userEvent.click(
-      within(section()).getByRole("button", {
+      within(dialog).getByRole("button", {
         name: catalogEn["backup.password.save"],
       }),
     );
 
     await waitFor(() => {
       expect(a.sent).toEqual(["PUT twelve chars"]);
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
   });
 
@@ -198,3 +217,15 @@ describe("Backup section (P13 A154, A155, A157)", () => {
     expect(a.fetch.calls).not.toContain("GET /api/v1/instance/backup");
   });
 });
+
+async function openPassword() {
+  await userEvent.click(
+    await within(section()).findByRole("button", {
+      name: catalogEn["backup.password.set"],
+    }),
+  );
+
+  return screen.findByRole("dialog", {
+    name: catalogEn["backup.password.title"],
+  });
+}
