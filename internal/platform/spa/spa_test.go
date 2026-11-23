@@ -1,9 +1,12 @@
 package spa
 
 import (
+	"compress/gzip"
+	"io"
 	"io/fs"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"testing/fstest"
 )
@@ -219,6 +222,94 @@ func TestDevRedirect(t *testing.T) {
 					tt.status,
 					tt.location,
 				)
+			}
+		})
+	}
+}
+
+// A text file of the build is sent compressed to a browser that accepts gzip: the bundles are
+// megabytes of JavaScript. A small file, an image and a browser that does not ask stay as is.
+func TestHandlerCompresses(t *testing.T) {
+	t.Parallel()
+
+	script := strings.Repeat("console.log('equori');\n", 400)
+	fsys := fstest.MapFS{
+		"index.html":           {Data: []byte(index)},
+		"assets/app-1a2b.js":   {Data: []byte(script)},
+		"assets/small-3c4d.js": {Data: []byte("console.log(1)")},
+		"assets/logo-5e6f.png": {Data: []byte(strings.Repeat("\x89PNG", 400))},
+	}
+	h := Handler(fsys)
+
+	tests := []struct {
+		name     string
+		path     string
+		accept   string
+		encoding string
+		want     string
+	}{
+		{"script", "/assets/app-1a2b.js", "gzip, deflate, br", "gzip", script},
+		{"script again, from the cache", "/assets/app-1a2b.js", "gzip", "gzip", script},
+		{"no gzip asked", "/assets/app-1a2b.js", "", "", script},
+		{"gzip refused", "/assets/app-1a2b.js", "gzip;q=0, br", "", script},
+		{"small file", "/assets/small-3c4d.js", "gzip", "", "console.log(1)"},
+		{"image", "/assets/logo-5e6f.png", "gzip", "", strings.Repeat("\x89PNG", 400)},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, tt.path, nil)
+			if tt.accept != "" {
+				req.Header.Set("Accept-Encoding", tt.accept)
+			}
+
+			rec := httptest.NewRecorder()
+			h.ServeHTTP(rec, req)
+
+			res := rec.Result()
+			defer res.Body.Close()
+
+			if res.StatusCode != http.StatusOK ||
+				res.Header.Get("Content-Encoding") != tt.encoding {
+				t.Fatalf(
+					"status %d, Content-Encoding %q, want 200 and %q",
+					res.StatusCode, res.Header.Get("Content-Encoding"), tt.encoding,
+				)
+			}
+
+			var body io.Reader = res.Body
+
+			if tt.encoding == "gzip" {
+				if rec.Body.Len() >= len(tt.want) {
+					t.Fatalf("sent %d bytes for a file of %d", rec.Body.Len(), len(tt.want))
+				}
+
+				zr, err := gzip.NewReader(res.Body)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				body = zr
+			}
+
+			got, err := io.ReadAll(body)
+			if err != nil || string(got) != tt.want {
+				t.Fatalf(
+					"body of %d bytes, %v; want the %d bytes of the file",
+					len(got),
+					err,
+					len(tt.want),
+				)
+			}
+
+			if strings.HasSuffix(tt.path, ".js") && len(tt.want) > 1024 &&
+				res.Header.Get("Vary") != "Accept-Encoding" {
+				t.Errorf("Vary = %q, want Accept-Encoding", res.Header.Get("Vary"))
+			}
+
+			if got := res.Header.Get(
+				"Cache-Control",
+			); got != "public, max-age=31536000, immutable" {
+				t.Errorf("Cache-Control = %q", got)
 			}
 		})
 	}
