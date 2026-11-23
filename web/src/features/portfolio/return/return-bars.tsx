@@ -1,5 +1,4 @@
 import { Glyph, Icon } from "@slotted/react/icon";
-import { Inline } from "@slotted/react/inline";
 import { Stack } from "@slotted/react/stack";
 import { Tag } from "@slotted/react/tag";
 import { Text } from "@slotted/react/typography";
@@ -57,13 +56,13 @@ export function ReturnBars({ comparisons, axis }: ReturnBarsProps) {
         <div key={comparison.key} className={styles.block}>
           <div className={styles.head}>
             <Stack gap={0} className={styles.headText}>
-              <Inline gap={0} align="center" wrap="nowrap">
-                <Text weight="semibold">{comparison.heading}</Text>
+              <Text weight="semibold" wrap="nowrap">
+                {comparison.heading}
                 <HelpTip
                   label={t("return.help.about", { term: comparison.heading })}
                   text={comparison.help}
                 />
-              </Inline>
+              </Text>
               <Text size="sm" tone="muted">
                 {comparison.window}
               </Text>

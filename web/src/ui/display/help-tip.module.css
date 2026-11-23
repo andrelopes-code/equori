@@ -1,41 +1,17 @@
 @layer app {
-  /* A mark inside a line of text: no ground, no edge, the line's height; the hit area reaches
-     the target minimum outside the layout box, so the line keeps its height. */
+  /* Workaround for Slotted issue #106: the inline glyph is 16 px beside any text and centres on the
+     line box, up to 0.8 px off the capitals. It takes the capital's height in whole pixels, 2 px
+     above and below it, and stands on the baseline: both are even or both odd, so one centre serves
+     the two on the pixel grid. The negative margins keep the box of one line from growing the line
+     it stands in. */
   .trigger {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
+    --slotted-control-icon-size-md: calc(round(1cap, 1px) + 4px);
+
+    inset-block-start: 2px;
+    margin-block: -0.5lh;
     margin-inline-start: var(--slotted-space-2);
-    border: 0;
-    background: none;
-    color: var(--slotted-text-muted);
-
-    /* The box is one line of the neighbouring text, so the icon centres on that line. `middle`
-       aligns to the x-height, which sits below the centre of the line. */
-    font: inherit;
-    block-size: 1lh;
-    vertical-align: top;
+    vertical-align: baseline;
     cursor: help;
-  }
-
-  .trigger::after {
-    position: absolute;
-    inset: calc((100% - var(--slotted-target-min)) / 2);
-    content: "";
-  }
-
-  .trigger:hover,
-  .trigger[data-open] {
-    color: var(--slotted-text);
-  }
-
-  .trigger:focus-visible {
-    border-radius: var(--slotted-radius-sm);
-    outline: var(--slotted-focus-ring-width) solid
-      var(--slotted-focus-ring-color);
-    outline-offset: var(--slotted-focus-ring-offset);
   }
 
   /* A sentence of explanation reads at about 40 characters a line, not across the screen. */

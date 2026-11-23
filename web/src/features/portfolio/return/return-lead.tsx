@@ -1,4 +1,3 @@
-import { Inline } from "@slotted/react/inline";
 import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
@@ -55,10 +54,8 @@ export function ReturnLead({ report, sentence, help }: ReturnLeadProps) {
 
       {sentence !== undefined && (
         <div className={styles.verdict}>
-          <Inline gap={0} align="center" wrap="nowrap">
-            <Text size="lg" weight="semibold">
-              {sentence}
-            </Text>
+          <Text size="lg" weight="semibold">
+            {sentence}
             {help !== undefined && (
               <HelpTip
                 label={t("return.help.about", {
@@ -67,7 +64,7 @@ export function ReturnLead({ report, sentence, help }: ReturnLeadProps) {
                 text={help}
               />
             )}
-          </Inline>
+          </Text>
         </div>
       )}
     </div>
