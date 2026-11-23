@@ -1,0 +1,18 @@
+@layer app {
+  /* The editor stands as one card of the page (O18). */
+  .frame {
+    position: relative;
+    block-size: 100%;
+    min-block-size: 24rem;
+    overflow: hidden;
+    border: 1px solid
+      var(--slotted-panel-border-color, var(--slotted-border-subtle));
+    border-radius: var(--slotted-radius-lg);
+    background: var(--slotted-panel-surface, var(--slotted-surface-raised));
+    box-shadow: var(--slotted-panel-shadow, none);
+  }
+
+  .host {
+    block-size: 100%;
+  }
+}

@@ -393,6 +393,26 @@
     ]
   },
   {
+    "path": "/spreadsheets",
+    "topics": ["getting_started"],
+    "screen": "Spreadsheets",
+    "tasks": [
+      "create a spreadsheet",
+      "open, rename, copy or delete a spreadsheet",
+      "search the spreadsheets by name"
+    ]
+  },
+  {
+    "path": "/spreadsheets/$id",
+    "topics": ["getting_started"],
+    "screen": "Spreadsheet",
+    "tasks": [
+      "edit cells, formulas and formats",
+      "see whether the spreadsheet is saved",
+      "choose between the saved version and the screen after a save from another window"
+    ]
+  },
+  {
     "path": "/settings",
     "topics": ["settings_language_and_region", "privacy_and_the_assistant"],
     "screen": "Settings",

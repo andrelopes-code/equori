@@ -22,6 +22,7 @@ A document is one spreadsheet as the server stores it: a name and a content. A c
 | SS12 | The editor follows the scheme and the language of the application: dark or light, Portuguese for `pt`, English for any other language. Its accent is the accent token of the theme. |
 | SS13 | The spreadsheet operations have no assistant tool (ADR 038, E7). |
 | SS14 | The archive of an export carries the documents; `archive_version` 33 adds the table. |
+| SS15 | The editor reads a typed number or date, and writes a formatted one, by the locale of the member: the tag of the application when Univer knows it, else its language, else `en`. |
 
 ## Client derivations
 
@@ -30,6 +31,7 @@ A document is one spreadsheet as the server stores it: a name and a content. A c
 | Save status | SS7 to SS10 | `model/autosaver.test.ts` |
 | Whether a command of the editor changed the content | SS7 | `editor/changes-workbook.test.ts` |
 | Rows of the list under a search | SS1 | `model/filter-documents.test.ts` |
+| Locale of the number formats | SS15 | `editor/numfmt-locale.test.ts` |
 
 ## Cross-cutting questions
 
@@ -38,7 +40,7 @@ A document is one spreadsheet as the server stores it: a name and a content. A c
 - R3: Does not apply: the feature adds no value set.
 - R4: Does not apply: the feature adds no extension point.
 - R5: The keys `nav.spreadsheets`, `spreadsheets.*` and `problem.spreadsheet_limit_reached` of `catalog-spreadsheets.en.ts` and `catalog-spreadsheets.pt-BR.ts`. The texts inside the editor come from the pt-BR and en-US files of Univer (SS12).
-- R6: The instant of the last save, through `formatDate` and `formatTime` of `i18n/format.ts` with the active tag. Numbers and dates inside a sheet follow the format the member sets on the cell.
+- R6: The instant of the last save, through `formatDate` and `formatTime` of `i18n/format.ts` with the active tag. Numbers and dates inside a sheet are read and written by the active tag (SS15).
 - C1: Does not apply: the feature stores and computes no amount of the ledger. A number in a cell is a value of the member's sheet, computed by the formula engine as a spreadsheet computes it.
 - C2: Does not apply: the application adds or compares no amount of a sheet.
 - C3: Does not apply: a sheet reads no account, instrument or index.

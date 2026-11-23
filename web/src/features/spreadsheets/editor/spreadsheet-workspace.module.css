@@ -1,0 +1,14 @@
+@layer app {
+  .workspace {
+    display: flex;
+    flex-direction: column;
+    gap: var(--equori-page-block-gap);
+    block-size: 100%;
+    min-block-size: 0;
+  }
+
+  .editor {
+    flex: 1;
+    min-block-size: 0;
+  }
+}

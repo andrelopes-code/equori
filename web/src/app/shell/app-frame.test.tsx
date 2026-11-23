@@ -155,6 +155,7 @@ describe("desktop column", () => {
       catalogEn["nav.portfolio"],
       catalogEn["nav.reports"],
       catalogEn["nav.calculators"],
+      catalogEn["nav.spreadsheets"],
     ]);
     expect(rows.filter((row) => row.hasAttribute("data-current"))).toEqual([
       rows[1],

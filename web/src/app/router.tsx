@@ -103,6 +103,7 @@ import {
   SettingsPage,
   validateSettingsSearch,
 } from "@/features/setup";
+import { SpreadsheetPage, SpreadsheetsPage } from "@/features/spreadsheets";
 import { StartPage } from "@/features/start";
 import {
   CapturePage,
@@ -482,6 +483,18 @@ const calculatorRoute = createRoute({
   component: CalculatorPage,
 });
 
+const spreadsheetsRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "spreadsheets",
+  component: SpreadsheetsPage,
+});
+
+const spreadsheetRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "spreadsheets/$id",
+  component: SpreadsheetPage,
+});
+
 const helpRoute = createRoute({
   staticData: { phone: true },
   getParentRoute: () => authedRoute,
@@ -642,6 +655,8 @@ export const routeTree = rootRoute.addChildren([
     reportsRoute,
     calculatorsRoute,
     calculatorRoute,
+    spreadsheetsRoute,
+    spreadsheetRoute,
     helpRoute,
     helpPageRoute,
     instrumentRoute,

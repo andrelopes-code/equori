@@ -1,0 +1,14 @@
+@layer app {
+  .region {
+    display: flex;
+    flex-direction: column;
+    gap: var(--equori-page-block-gap);
+    min-block-size: 0;
+    block-size: 100%;
+  }
+
+  .listing {
+    flex: 1;
+    min-block-size: 16rem;
+  }
+}

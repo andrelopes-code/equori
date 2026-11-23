@@ -13,6 +13,7 @@ export type DestinationKey =
   | "portfolio"
   | "reports"
   | "calculators"
+  | "spreadsheets"
   | "settings";
 
 export interface Destination {
@@ -29,6 +30,7 @@ export interface Destination {
     | "/portfolio"
     | "/reports"
     | "/calculators"
+    | "/spreadsheets"
     | "/settings";
   label: MessageKey;
   icon: ShellIconName;
@@ -113,6 +115,13 @@ export const destinations: readonly Destination[] = [
     to: "/calculators",
     label: "nav.calculators",
     icon: "calculator",
+    phone: "none",
+  },
+  {
+    key: "spreadsheets",
+    to: "/spreadsheets",
+    label: "nav.spreadsheets",
+    icon: "sheet",
     phone: "none",
   },
   {

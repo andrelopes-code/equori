@@ -9,6 +9,7 @@ export type ShellIconName =
   | "instruments"
   | "reports"
   | "calculator"
+  | "sheet"
   | "settings"
   | "help"
   | "plus"
@@ -28,7 +29,7 @@ export type ShellIconName =
   | "erase";
 
 // Lucide geometry (ISC licence) on its 24-unit grid: house, arrow-left-right, tags, credit-card,
-// wallet, target, calendar, shield, calculator, settings, circle-help, plus, square-pen, text, search, layout-grid, arrow-left,
+// wallet, target, calendar, shield, calculator, sheet, settings, circle-help, plus, square-pen, text, search, layout-grid, arrow-left,
 // moon, globe, log-out, chevrons-up-down, rows-3, eye, eye-off and delete.
 const PATHS: Record<ShellIconName, readonly string[]> = {
   erase: [
@@ -60,6 +61,13 @@ const PATHS: Record<ShellIconName, readonly string[]> = {
   accounts: [
     "M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1",
     "M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4",
+  ],
+  sheet: [
+    "M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z",
+    "M3 9h18",
+    "M3 15h18",
+    "M9 9v12",
+    "M15 9v12",
   ],
   calculator: [
     "M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z",

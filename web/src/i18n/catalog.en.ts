@@ -3191,6 +3191,53 @@ export const catalogEn = {
     "A later sale of this security depends on this transaction. A day with a purchase after a sale is recorded as a brokerage note.",
   "problem.odd_lot_code":
     "This code is the odd-lot market of another instrument. Register the round-lot code.",
+  "nav.spreadsheets": "Spreadsheets",
+  "spreadsheets.title": "Spreadsheets",
+  "spreadsheets.subtitle":
+    "Tables of your own, with formulas, formatting and filters, kept in this book.",
+  "spreadsheets.new": "New spreadsheet",
+  "spreadsheets.untitled": "Untitled spreadsheet",
+  "spreadsheets.firstSheet": "Sheet1",
+  "spreadsheets.name": "Name",
+  "spreadsheets.modified": "Last saved",
+  "spreadsheets.search": "Search spreadsheets",
+  "spreadsheets.actionsColumn": "Actions",
+  "spreadsheets.actions": "Actions of {name}",
+  "spreadsheets.open": "Open",
+  "spreadsheets.rename": "Rename",
+  "spreadsheets.renameTitle": "Rename spreadsheet",
+  "spreadsheets.copy": "Make a copy",
+  "spreadsheets.copyTitle": "Copy spreadsheet",
+  "spreadsheets.copyName": "Copy of {name}",
+  "spreadsheets.create": "Create",
+  "spreadsheets.save": "Save",
+  "spreadsheets.delete": "Delete",
+  "spreadsheets.deleteTitle": "Delete {name}?",
+  "spreadsheets.deleteDescription":
+    "The spreadsheet and everything in it are deleted. A deletion is not undone.",
+  "spreadsheets.deleted": "Spreadsheet deleted",
+  "spreadsheets.empty": "No spreadsheet yet",
+  "spreadsheets.emptyHint":
+    "Create one to plan, compare or keep any table beside your accounts.",
+  "spreadsheets.more": "More actions",
+  "spreadsheets.loading": "Loading the spreadsheet",
+  "spreadsheets.status.saved": "Saved",
+  "spreadsheets.status.pending": "Unsaved changes",
+  "spreadsheets.status.saving": "Saving",
+  "spreadsheets.status.failed": "Not saved",
+  "spreadsheets.status.conflict": "Not saved",
+  "spreadsheets.status.readOnly": "View only",
+  "spreadsheets.failed":
+    "The last changes were not saved and exist only on this screen.",
+  "spreadsheets.saveAgain": "Save again",
+  "spreadsheets.conflict.title":
+    "This spreadsheet was saved from another window",
+  "spreadsheets.conflict.description":
+    "The last changes on this screen were not saved. Open the saved version, or keep this screen as a new spreadsheet.",
+  "spreadsheets.conflict.reload": "Open the saved version",
+  "spreadsheets.conflict.keep": "Keep this screen as a copy",
+  "problem.spreadsheet_limit_reached":
+    "This book already holds 40 spreadsheets. Delete one to create another.",
 } as const;
 
 export type Catalog = { [K in keyof typeof catalogEn]: string };

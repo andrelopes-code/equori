@@ -3,3 +3,5 @@ minimumReleaseAgeExclude:
 peerDependencyRules:
   allowedVersions:
     eslint-plugin-react>eslint: "10"
+allowBuilds:
+  protobufjs: false
