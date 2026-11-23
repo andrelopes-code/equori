@@ -53,6 +53,10 @@ func TestReconcileAccountS26(t *testing.T) {
 	}
 
 	p := previewTool(t, f.h, "reconcile_account", resolve)
+	if p.Action != "reconcile_account.resolve_difference" {
+		t.Fatalf("action = %q", p.Action)
+	}
+
 	if p.Basis == "" || p.Changes[0].After.Amount != "-2.10" {
 		t.Fatalf("preview = %+v", p)
 	}

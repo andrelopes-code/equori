@@ -71,7 +71,7 @@ func planSettle(
 	booksID int64,
 	in settleStatementIn,
 ) (tool.Preview, func() (settleStatementOut, error), error) {
-	pv := tool.Preview{Action: "settle_statement"}
+	pv := tool.Preview{Action: "settle_statement." + string(in.Action)}
 
 	id, fromID, err := settleIDs(in)
 	if err != nil {

@@ -27,6 +27,10 @@ func TestSettleStatementPayS10(t *testing.T) {
 	}
 
 	p := previewTool(t, c.h, "settle_statement", args)
+	if p.Action != "settle_statement.pay" {
+		t.Fatalf("action = %q", p.Action)
+	}
+
 	if p.Target != "Itaú Visa" || p.Basis != "1500.00:1500.00" ||
 		p.Changes[0].Field != "statement" || p.Changes[0].After.Text != "2026-11" ||
 		p.Changes[1].After.Amount != "1500.00" ||

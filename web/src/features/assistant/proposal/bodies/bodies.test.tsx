@@ -198,6 +198,25 @@ describe("OperationBody", () => {
     expect(screen.getByText("Paid from XP")).toBeVisible();
   });
 
+  it("draws a sale with the account it pays into and its fees", () => {
+    drawBody({
+      action: "record_investment.sell",
+      changes: [
+        { field: "instrument", after: { text: "WRLD11" } },
+        { field: "quantity", after: { text: "1" } },
+        { field: "price", after: { text: "157.71" } },
+        { field: "fees", after: usd("2.10") },
+        { field: "amount", after: usd("157.71") },
+        { field: "account", after: { text: "Inter" } },
+      ],
+    });
+
+    expect(screen.getByText("Received in Inter")).toBeVisible();
+    expect(screen.queryByText("Paid from Inter")).toBeNull();
+    expect(screen.getByText(catalogEn["assistant.field.fees"])).toBeVisible();
+    expect(screen.getByText("$2.10")).toBeVisible();
+  });
+
   it("draws a credit limit as a gauge named by both amounts", () => {
     drawBody({
       action: "manage_card.set_credit_limit",

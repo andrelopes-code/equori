@@ -96,7 +96,7 @@ func planCard(
 	booksID int64,
 	in manageCardIn,
 ) (tool.Preview, func() (manageCardOut, error), error) {
-	pv := tool.Preview{Action: "manage_card"}
+	pv := tool.Preview{Action: "manage_card." + string(in.Action)}
 
 	id, err := requiredID(in.AccountID, "account_id")
 	if err != nil {

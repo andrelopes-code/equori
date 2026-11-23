@@ -4,6 +4,9 @@ package tool
 var ChangeFields = []string{
 	"account",
 	"amount",
+	"fees",
+	"taxes",
+	"withheld",
 	"category",
 	"date",
 	"description",

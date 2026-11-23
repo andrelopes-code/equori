@@ -134,7 +134,7 @@ func planOrganize(
 	booksID int64,
 	in manageAccountsAndPayeesIn,
 ) (tool.Preview, organizeRun, error) {
-	pv := tool.Preview{Action: "manage_accounts_and_payees"}
+	pv := tool.Preview{Action: "manage_accounts_and_payees." + string(in.Action)}
 
 	c, err := newOrganizeCall(svc, booksID, in)
 	if err != nil {

@@ -79,6 +79,10 @@ func TestManageCardLimitPreviewCurrentLimit(t *testing.T) {
 	}
 
 	first := previewTool(t, c.h, "manage_card", limit("5000.00", "2026-10-01"))
+	if first.Action != "manage_card.set_credit_limit" {
+		t.Fatalf("action = %q", first.Action)
+	}
+
 	if first.Changes[0].Before != (tool.Value{}) {
 		t.Errorf("limit before without a limit = %+v", first.Changes[0].Before)
 	}

@@ -62,7 +62,7 @@ func planReconcile(
 	in reconcileAccountIn,
 ) (tool.Preview, func() (reconcileAccountOut, error), error) {
 	action := string(in.Action)
-	pv := tool.Preview{Action: "reconcile_account"}
+	pv := tool.Preview{Action: "reconcile_account." + action}
 
 	id, err := requiredID(in.AccountID, "account_id")
 	if err != nil {

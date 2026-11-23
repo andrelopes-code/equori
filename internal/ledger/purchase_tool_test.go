@@ -24,6 +24,10 @@ func TestHandleCardPurchaseRefundS08(t *testing.T) {
 	}
 
 	p := previewTool(t, c.h, "handle_card_purchase", args)
+	if p.Action != "handle_card_purchase.refund" {
+		t.Fatalf("action = %q", p.Action)
+	}
+
 	if p.Target != "test" || len(p.Items) != 1 || p.Items[0].Description != "test" ||
 		p.Basis != "v1" ||
 		changeAfter(p, "amount").Amount != "230.00" ||

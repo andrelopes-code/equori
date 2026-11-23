@@ -43,6 +43,10 @@ func TestManageAccountsCreateCategory(t *testing.T) {
 	}
 
 	p := previewTool(t, f.h, "manage_accounts_and_payees", args)
+	if p.Action != "manage_accounts_and_payees.create_account" {
+		t.Fatalf("action = %q", p.Action)
+	}
+
 	if p.Destructive || p.Target != "Pets" || len(p.Changes) != 4 ||
 		p.Changes[0].After.Text != "Pets" ||
 		p.Changes[3].Field != "parent" ||

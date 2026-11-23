@@ -20,7 +20,7 @@ interface InvestmentBodyProps {
 const TIMES = "×";
 const EQUALS = "=";
 
-// Families read: typography. Quantity times price equals total, then the paying account.
+// Families read: typography. Quantity times price equals total, then the account that pays or receives.
 export function InvestmentBody({ preview }: InvestmentBodyProps) {
   const t = useT();
   const valueText = useValueText();
@@ -29,6 +29,10 @@ export function InvestmentBody({ preview }: InvestmentBodyProps) {
   const price = valueText(changeOf(preview, "price")?.after);
   const total = valueText(changeOf(preview, "amount")?.after);
   const account = valueText(changeOf(preview, "account")?.after);
+  const accountKey =
+    preview.action === "record_investment.sell"
+      ? "assistant.body.received_in"
+      : "assistant.body.paid_from";
   const rest = changesWithout(preview, [
     "instrument",
     "quantity",
@@ -82,7 +86,7 @@ export function InvestmentBody({ preview }: InvestmentBodyProps) {
 
       {account !== undefined && (
         <Text size="sm" tone="muted">
-          {t("assistant.body.paid_from", { account })}
+          {t(accountKey, { account })}
         </Text>
       )}
 

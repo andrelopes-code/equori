@@ -111,7 +111,7 @@ func planPurchase(
 	booksID int64,
 	in handleCardPurchaseIn,
 ) (tool.Preview, func() (handleCardPurchaseOut, error), error) {
-	pv := tool.Preview{Action: "handle_card_purchase"}
+	pv := tool.Preview{Action: "handle_card_purchase." + string(in.Action)}
 
 	id, err := requiredID(in.TransactionID, "transaction_id")
 	if err != nil {

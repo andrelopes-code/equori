@@ -33,6 +33,12 @@ func TestRecordInvestmentBuyS21(t *testing.T) {
 		t.Fatalf("preview = %+v", p)
 	}
 
+	// Section 7 of the assistant conversation design: amount is quantity × price.
+	if p.Changes[3].Field != "fees" || p.Changes[4].Field != "amount" ||
+		p.Changes[4].After.Amount != "1507.50" {
+		t.Fatalf("fees and gross = %+v, %+v", p.Changes[3], p.Changes[4])
+	}
+
 	var out investmentOut
 	toolOutput(t, f.h, "record_investment", args, &out)
 

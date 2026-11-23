@@ -184,15 +184,25 @@ func (s *Service) preview(ctx context.Context, booksID int64, p *domain.Proposal
 	return nil
 }
 
+// kindNamesAction lists the tools whose preview action carries the kind argument, as
+// their toolapi builds it; in other tools kind is a field of the record.
+var kindNamesAction = map[string]bool{"record_investment": true, "record_corporate_action": true}
+
 // previewWaiting gives a waiting proposal the preview without changes; the real preview runs at promotion.
 func (s *Service) previewWaiting(p *domain.Proposal) error {
 	action := p.Tool
 
 	var in struct {
 		Action string `json:"action"`
+		Kind   string `json:"kind"`
 	}
-	if json.Unmarshal(p.Arguments, &in) == nil && in.Action != "" {
-		action += "." + in.Action
+	if json.Unmarshal(p.Arguments, &in) == nil {
+		switch {
+		case in.Action != "":
+			action += "." + in.Action
+		case kindNamesAction[p.Tool] && in.Kind != "":
+			action += "." + in.Kind
+		}
 	}
 
 	var err error

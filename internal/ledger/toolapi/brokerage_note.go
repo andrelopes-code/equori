@@ -96,8 +96,8 @@ func planBrokerageNote(
 		return pv, n, err
 	}
 
-	appendAmountChange(&pv, n.Fees)
-	appendAmountChange(&pv, n.Taxes)
+	appendMoneyChange(&pv, "fees", n.Fees)
+	appendMoneyChange(&pv, "taxes", n.Taxes)
 
 	if target.cashName != "" {
 		pv.Changes = append(

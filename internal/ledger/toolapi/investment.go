@@ -2,6 +2,7 @@ package toolapi
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 
@@ -220,8 +221,8 @@ func (s investmentStep) income(
 		WithheldCategoryID: s.ids.withheldCategory,
 		Description:        in.Description,
 	}
-	appendAmountChange(&pv, &gross)
-	appendAmountChange(&pv, withheld)
+	appendMoneyChange(&pv, "amount", &gross)
+	appendMoneyChange(&pv, "withheld", withheld)
 
 	s.appendCashAndDate(&pv)
 
@@ -251,8 +252,12 @@ func (s investmentStep) trade(
 		)
 	}
 
-	appendAmountChange(&pv, o.Fees)
-	appendAmountChange(&pv, o.Taxes)
+	appendMoneyChange(&pv, "fees", o.Fees)
+	appendMoneyChange(&pv, "taxes", o.Taxes)
+
+	if err = appendGross(&pv, o, s.target.cashUnit.Currency()); err != nil {
+		return pv, nil, err
+	}
 
 	s.appendCashAndDate(&pv)
 
@@ -336,8 +341,25 @@ func (s investmentStep) optional(field, text string) (*money.Money, error) {
 	return &m, err
 }
 
-func appendAmountChange(pv *tool.Preview, m *money.Money) {
+// appendGross adds quantity × price as amount: the card draws that equation (assistant
+// conversation design, section 7). A write-off has no price.
+func appendGross(pv *tool.Preview, o domain.TradeOrder, cash money.Currency) error {
+	if o.Side == domain.SideWriteOff {
+		return nil
+	}
+
+	gross, err := money.Convert(o.Quantity, cash, money.Leg{Rate: o.UnitPrice})
+	if err != nil {
+		return fmt.Errorf("convert gross amount: %w", err)
+	}
+
+	appendMoneyChange(pv, "amount", &gross)
+
+	return nil
+}
+
+func appendMoneyChange(pv *tool.Preview, field string, m *money.Money) {
 	if m != nil {
-		pv.Changes = append(pv.Changes, tool.Change{Field: "amount", After: tool.MoneyValue(*m)})
+		pv.Changes = append(pv.Changes, tool.Change{Field: field, After: tool.MoneyValue(*m)})
 	}
 }

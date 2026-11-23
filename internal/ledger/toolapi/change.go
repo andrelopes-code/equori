@@ -79,7 +79,7 @@ func previewChange(
 	}
 
 	pv := tool.Preview{
-		Action: "change_transaction",
+		Action: "change_transaction." + string(in.Action),
 		Target: p.current.Description,
 		Basis:  basisOf(p.current),
 	}
