@@ -151,10 +151,11 @@ func TestSchemaRejectsInvalidContributionQuestions(t *testing.T) {
 	}
 
 	validFacts := withMember + `INSERT INTO portfolio_contribution_question
-		(books_id, class_id, position, text, fact)
-		SELECT books_id, id, 0, 'Q', 'piotroski_p1' FROM c
-		UNION ALL SELECT books_id, id, 1, 'R', NULL FROM c
-		UNION ALL SELECT books_id, id, 2, 'S', NULL FROM c`
+		(books_id, class_id, position, text, fact, limit_value)
+		SELECT books_id, id, 0, 'Q', 'piotroski_p1', NULL::numeric FROM c
+		UNION ALL SELECT books_id, id, 1, 'R', NULL, NULL FROM c
+		UNION ALL SELECT books_id, id, 2, 'S', NULL, NULL FROM c
+		UNION ALL SELECT books_id, id, 19, 'T', 'roe_min', 0.12 FROM c`
 	if _, err := pool.Exec(ctx, validFacts, pgtest.CreateBooks(t, pool)); err != nil {
 		t.Fatalf("valid fact rows: %v", err)
 	}
@@ -162,8 +163,11 @@ func TestSchemaRejectsInvalidContributionQuestions(t *testing.T) {
 	tests := map[string]string{
 		"question of 201 characters": withMember + `INSERT INTO portfolio_contribution_question
 			(books_id, class_id, position, text) SELECT books_id, id, 0, repeat('x', 201) FROM c`,
-		"question at position 10": withMember + `INSERT INTO portfolio_contribution_question
-			(books_id, class_id, position, text) SELECT books_id, id, 10, 'Q' FROM c`,
+		"question at position 20": withMember + `INSERT INTO portfolio_contribution_question
+			(books_id, class_id, position, text) SELECT books_id, id, 20, 'Q' FROM c`,
+		"limit without a fact": withMember + `INSERT INTO portfolio_contribution_question
+			(books_id, class_id, position, text, limit_value)
+			SELECT books_id, id, 0, 'Q', 1 FROM c`,
 		"answer of a member position that does not exist": withQuestion + `INSERT INTO portfolio_contribution_answer
 			(books_id, class_id, question_position, member_position, yes)
 			SELECT books_id, id, 0, 5, true FROM c WHERE EXISTS (SELECT 1 FROM q)`,

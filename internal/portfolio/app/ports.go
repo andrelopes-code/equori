@@ -134,8 +134,13 @@ type MarketData interface {
 	Maturity(ctx context.Context, code money.Currency) (time.Time, bool, error)
 	// ContractFacts returns the facts of a fixed income security (GR3); false when it has none.
 	ContractFacts(ctx context.Context, code money.Currency) (ContractFacts, bool, error)
-	// CompanyFacts returns the fiscal years of the company of an instrument; false without a report.
-	CompanyFacts(ctx context.Context, code money.Currency) (domain.CompanyFacts, bool, error)
+	// CompanyFacts returns the fiscal years and the figures of the company of an instrument, with
+	// the price of the latest date on or before priceDate; false without a report.
+	CompanyFacts(
+		ctx context.Context,
+		code money.Currency,
+		priceDate time.Time,
+	) (domain.CompanyFacts, bool, error)
 	// Adjust moves d to a business day of the calendar: the preceding one, else the following.
 	Adjust(ctx context.Context, calendar string, d time.Time, preceding bool) (time.Time, error)
 }

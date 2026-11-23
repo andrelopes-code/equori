@@ -21,6 +21,7 @@ const plain = {
   byQuestions: false,
   questions: [],
   questionFacts: [],
+  questionLimits: [],
   rules: [],
 };
 
@@ -185,6 +186,7 @@ describe("overlayDraft", () => {
         share_bp: 6000,
         questions: [],
         question_facts: [],
+        question_limits: [],
         question_ideals: false,
         rules: [],
         matched: [],
@@ -227,6 +229,7 @@ describe("overlayDraft", () => {
         share_bp: 6000,
         questions: [],
         question_facts: [],
+        question_limits: [],
         question_ideals: false,
         rules: [],
         matched: [],
@@ -246,6 +249,7 @@ describe("overlayDraft", () => {
         value: money(0),
         questions: [],
         question_facts: [],
+        question_limits: [],
         question_ideals: false,
         rules: [],
         matched: [],

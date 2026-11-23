@@ -54,7 +54,7 @@ func accountOf(kind, code, description string) (account, bool) {
 	case 1:
 		return levelTwo(kind, description)
 	case 2:
-		return levelThree(kind, code, description)
+		return levelThree(kind, description)
 	}
 
 	return 0, false
@@ -72,10 +72,9 @@ func levelTwo(kind, description string) (account, bool) {
 	return 0, false
 }
 
-func levelThree(kind, code, description string) (account, bool) {
+func levelThree(kind, description string) (account, bool) {
 	switch {
-	case kind == "DRE" && !strings.HasPrefix(code, perSharePrefix) &&
-		strings.Contains(description, "Empresa Controladora"):
+	case kind == "DRE" && strings.Contains(description, "Empresa Controladora"):
 		return netIncomeParent, true
 	case kind == "BPP" && strings.Contains(strings.ToLower(description), "não controladores"):
 		return equityMinority, true

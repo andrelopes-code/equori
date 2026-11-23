@@ -93,6 +93,7 @@ export function addClass(draft: EditDraft): EditDraft {
     byQuestions: false,
     questions: [],
     questionFacts: [],
+    questionLimits: [],
     members: [],
     rules: [],
     locked: false,
@@ -135,6 +136,7 @@ export function setSplit(
           byQuestions: false,
           questions: [],
           questionFacts: [],
+          questionLimits: [],
           members,
         };
   });
@@ -254,6 +256,7 @@ export function overlayDraft(view: Plan, draft: EditDraft): Plan {
         target_bp: cls.targetBp,
         questions: cls.questions,
         question_facts: cls.questionFacts,
+        question_limits: cls.questionLimits,
         rules: cls.rules,
         matched: row?.matched ?? [],
         members: cls.members.map((m) => {

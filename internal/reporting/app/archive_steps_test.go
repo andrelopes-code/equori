@@ -910,6 +910,40 @@ func TestAddContributionQuestionFact(t *testing.T) {
 	}
 }
 
+// A version 33 archive names no limit; the step adds the column as null to every row (AC15).
+func TestAddContributionQuestionLimit(t *testing.T) {
+	t.Parallel()
+
+	question := `{"books_id":1,"class_id":"c","fact":"roe_min","position":0,"text":"Does it grow?"}`
+	v33 := []ArchiveTable{
+		{Name: "portfolio_contribution_question", Rows: [][]byte{[]byte(question)}},
+		{Name: "portfolio_contribution_class", Rows: [][]byte{[]byte(`{"id":"c"}`)}},
+	}
+
+	got, err := addContributionQuestionLimit(v33)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := `{"books_id":1,"class_id":"c","fact":"roe_min","limit_value":null,"position":0,` +
+		`"text":"Does it grow?"}`
+	if string(got[0].Rows[0]) != want {
+		t.Fatalf("portfolio_contribution_question row = %s, want %s", got[0].Rows[0], want)
+	}
+
+	if string(got[1].Rows[0]) != `{"id":"c"}` {
+		t.Fatalf("portfolio_contribution_class row = %s", got[1].Rows[0])
+	}
+
+	if string(v33[0].Rows[0]) != question {
+		t.Fatalf("the step changed its input: %s", v33[0].Rows[0])
+	}
+
+	if ArchiveVersion != 34 {
+		t.Fatalf("ArchiveVersion = %d, want 34", ArchiveVersion)
+	}
+}
+
 // A version 32 archive holds no spreadsheet; the step leaves its rows as they are
 // (migration 00142).
 func TestAddSpreadsheets(t *testing.T) {

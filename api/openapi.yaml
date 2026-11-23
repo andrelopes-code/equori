@@ -16352,7 +16352,7 @@ components:
           description: Name of the deposit guarantee of the book's region in the base currency; absent without one (GR8).
     ContributionClass:
       type: object
-      required: [name, target_bp, value, questions, question_facts, question_ideals, members, rules, matched]
+      required: [name, target_bp, value, questions, question_facts, question_limits, question_ideals, members, rules, matched]
       properties:
         name:
           type: string
@@ -16368,6 +16368,11 @@ components:
           items:
             type: string
           description: One fact key per question of the group, empty for a question the investor answers (FQ1).
+        question_limits:
+          type: array
+          items:
+            type: string
+          description: One limit per question of the group, empty without one (AC11).
         question_ideals:
           type: boolean
           description: True when the group divides its target by the answers and one answer is yes (CQ3).
@@ -16458,6 +16463,11 @@ components:
             type: string
             enum: ["yes", "no", "none"]
           description: The answer of the filings to each question of the group; none when the investor's answer applies (FQ3). Absent in a group without questions.
+        fact_details:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContributionFactDetail"
+          description: What each answer of fact_answers read (AC14). Absent in a group without questions.
         facts_year:
           type: string
           format: date
@@ -16531,11 +16541,18 @@ components:
           description: The investor's yes-or-no questions of the group (CQ1); empty without them.
         question_facts:
           type: array
-          maxItems: 10
+          maxItems: 20
           items:
             type: string
             pattern: "^([a-z0-9_]{2,40})?$"
           description: One fact key per question of the group, empty for a question the investor answers (FQ1); absent without facts.
+        question_limits:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+            pattern: "^(-?[0-9]{1,4}(\\.[0-9]{1,4})?)?$"
+          description: One limit per question of the group, empty for a question without one; a rate is a fraction (AC11). Absent without limits.
         members:
           type: array
           items:
@@ -16546,6 +16563,19 @@ components:
           items:
             $ref: "#/components/schemas/ContributionRule"
           description: The rules of a group by rule (GR1); absent or empty for a group of members.
+    ContributionFactDetail:
+      type: object
+      additionalProperties: false
+      description: The figure an answer read and the end of what it reads, or the reason it has none; empty for a question the investor answers.
+      properties:
+        value:
+          type: string
+        reason:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
+        date:
+          type: string
+          format: date
     ContributionMemberInput:
       type: object
       properties:

@@ -47,6 +47,7 @@ export function planFromPortfolio(
       byQuestions: false,
       questions: [],
       questionFacts: [],
+      questionLimits: [],
       rules: g.rules,
       members:
         g.rules.length > 0 ? [] : g.entries.map((e) => memberRefOf(e.entry)),

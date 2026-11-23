@@ -46,7 +46,10 @@ type PlanClass struct {
 	// QuestionFacts names the fact of each question, "" for a question the investor answers
 	// (FQ1); empty in a class without questions.
 	QuestionFacts []string
-	Members       []PlanMember
+	// QuestionLimits holds the limit of each question, "" without one (AC11); empty in a class
+	// without questions.
+	QuestionLimits []string
+	Members        []PlanMember
 	// Rules gather the securities of the class by their facts (GR1); empty for a class by members.
 	Rules []PlanRule
 }
@@ -62,6 +65,8 @@ type PlanMember struct {
 	// FactAnswers holds the answer of the filings to each question (FQ3); nil means every answer
 	// is the investor's. FactsYear is the fiscal year they read (FQ6).
 	FactAnswers []FactAnswer
+	// FactDetails holds what each answer of FactAnswers read (AC14).
+	FactDetails []FactDetail
 	FactsYear   *time.Time
 }
 

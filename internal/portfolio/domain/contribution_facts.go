@@ -34,7 +34,12 @@ type FiscalYear struct {
 type CompanyFacts struct {
 	Standard bool
 	Years    []FiscalYear
+	// Criteria are the figures a criterion with a limit reads.
+	Criteria CompanyCriteria
 }
+
+// minSignalYears is the number of fiscal years the signals need.
+const minSignalYears = 2
 
 // signal evaluates one condition of CR11 on the fiscal years t, t-1 and t-2; t2 holds no account
 // when the company has two fiscal years.
@@ -76,6 +81,11 @@ var factCatalog = map[string]signal{
 
 // FactKnown reports whether key belongs to the catalog of FQ2.
 func FactKnown(key string) bool {
+	return IsSignal(key) || HasLimit(key)
+}
+
+// IsSignal reports whether key is a signal of Piotroski.
+func IsSignal(key string) bool {
 	_, ok := factCatalog[key]
 
 	return ok
@@ -90,7 +100,7 @@ func (f CompanyFacts) Answers(facts []string) (answers []FactAnswer, year time.T
 		answers[i] = FactNone
 	}
 
-	if !f.Standard || len(f.Years) < 2 {
+	if !f.Standard || len(f.Years) < minSignalYears {
 		return answers, time.Time{}, false
 	}
 

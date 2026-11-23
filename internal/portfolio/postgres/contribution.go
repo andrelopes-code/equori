@@ -89,6 +89,7 @@ func (r *Repository) attachQuestions(
 		c := &plan.Classes[index[q.ClassID]]
 		c.Questions = append(c.Questions, q.Text)
 		c.QuestionFacts = append(c.QuestionFacts, deref(q.Fact))
+		c.QuestionLimits = append(c.QuestionLimits, q.LimitValue)
 	}
 
 	for _, c := range plan.Classes {
@@ -179,13 +180,14 @@ func saveContributionQuestions(
 	c domain.PlanClass,
 ) error {
 	for i, text := range c.Questions {
-		//nolint:gosec // G115: WithIdeals bounds a class to 10 questions
+		//nolint:gosec // G115: WithIdeals bounds a class to 20 questions
 		err := q.InsertContributionQuestion(ctx, InsertContributionQuestionParams{
-			BooksID:  booksID,
-			ClassID:  classID,
-			Position: int32(i),
-			Text:     text,
-			Fact:     factOrNil(c.QuestionFacts, i),
+			BooksID:    booksID,
+			ClassID:    classID,
+			Position:   int32(i),
+			Text:       text,
+			Fact:       factOrNil(c.QuestionFacts, i),
+			LimitValue: limitOf(c.QuestionLimits, i),
 		})
 		if err != nil {
 			return fmt.Errorf("insert contribution question of %q: %w", c.Name, err)
@@ -194,7 +196,7 @@ func saveContributionQuestions(
 
 	for j, m := range c.Members {
 		for i, yes := range m.Answers {
-			//nolint:gosec // G115: a class holds at most 10 questions and 20 members
+			//nolint:gosec // G115: a class holds at most 20 questions and 20 members
 			err := q.InsertContributionAnswer(ctx, InsertContributionAnswerParams{
 				BooksID:          booksID,
 				ClassID:          classID,
@@ -267,4 +269,13 @@ func factOrNil(facts []string, i int) *string {
 	}
 
 	return &facts[i]
+}
+
+// limitOf returns the limit of question i, "" when the question has none.
+func limitOf(limits []string, i int) string {
+	if i >= len(limits) {
+		return ""
+	}
+
+	return limits[i]
 }

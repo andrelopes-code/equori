@@ -53,6 +53,7 @@ type ContributionClass struct {
 	TargetBP       int
 	Questions      []string // the investor's yes-or-no questions (CQ1)
 	QuestionFacts  []string // one fact key per question, "" for the investor's own (FQ1)
+	QuestionLimits []string // one limit per question, "" without one (AC11)
 	QuestionIdeals bool     // the members' targets come from the answers, one at least true (CQ5)
 	Value          money.Money
 	ShareBP        *int
@@ -77,6 +78,7 @@ type ContributionMember struct {
 	TargetBP     *int
 	Answers      []bool              // one per question of the class (CQ2); nil without questions
 	FactAnswers  []domain.FactAnswer // one per question of the class (FQ3); nil without questions
+	FactDetails  []domain.FactDetail // one per question of the class (AC14); nil without questions
 	FactsYear    *time.Time          // last day of the fiscal year the fact answers read (FQ6)
 	Value        money.Money
 	ShareBP      *int // inside its class

@@ -4,7 +4,7 @@ import {
   updateClass,
 } from "@/features/portfolio/contribution-plan/model/plan-edits";
 
-export const maxQuestions = 10;
+export const maxQuestions = 20;
 
 // On: the class divides its ideal by questions, with none yet and no member target. Off: the
 // members take the targets the last preview returned, or equal shares without them.
@@ -47,6 +47,7 @@ export function addQuestion(draft: EditDraft, index: number): EditDraft {
     ...cls,
     questions: [...cls.questions, ""],
     questionFacts: [...cls.questionFacts, ""],
+    questionLimits: [...cls.questionLimits, ""],
     members: cls.members.map((m) => ({
       ...m,
       answers: [...(m.answers ?? []), false],
@@ -54,8 +55,8 @@ export function addQuestion(draft: EditDraft, index: number): EditDraft {
   }));
 }
 
-// Appends one question per entry, each with its fact. Nothing changes once the class names a fact
-// or the entries would pass maxQuestions.
+// Appends one question per entry whose fact the class does not name yet, without a limit. Nothing
+// changes when none is left or the entries would pass maxQuestions.
 export function addFactQuestions(
   draft: EditDraft,
   index: number,
@@ -64,16 +65,20 @@ export function addFactQuestions(
   const cls = draft.classes[index];
 
   if (cls === undefined) return draft;
-  if (cls.questionFacts.some((fact) => fact !== "")) return draft;
-  if (cls.questions.length + facts.length > maxQuestions) return draft;
+
+  const added = facts.filter((f) => !cls.questionFacts.includes(f.fact));
+
+  if (added.length === 0) return draft;
+  if (cls.questions.length + added.length > maxQuestions) return draft;
 
   return updateClass(draft, index, (c) => ({
     ...c,
-    questions: [...c.questions, ...facts.map((f) => f.text)],
-    questionFacts: [...c.questionFacts, ...facts.map((f) => f.fact)],
+    questions: [...c.questions, ...added.map((f) => f.text)],
+    questionFacts: [...c.questionFacts, ...added.map((f) => f.fact)],
+    questionLimits: [...c.questionLimits, ...added.map(() => "")],
     members: c.members.map((m) => ({
       ...m,
-      answers: [...(m.answers ?? []), ...facts.map(() => false)],
+      answers: [...(m.answers ?? []), ...added.map(() => false)],
     })),
   }));
 }
@@ -90,6 +95,18 @@ export function setQuestionText(
   }));
 }
 
+export function setQuestionLimit(
+  draft: EditDraft,
+  index: number,
+  q: number,
+  limit: string,
+): EditDraft {
+  return updateClass(draft, index, (cls) => ({
+    ...cls,
+    questionLimits: cls.questionLimits.map((old, i) => (i === q ? limit : old)),
+  }));
+}
+
 export function removeQuestion(
   draft: EditDraft,
   index: number,
@@ -99,6 +116,7 @@ export function removeQuestion(
     ...cls,
     questions: cls.questions.filter((_, i) => i !== q),
     questionFacts: cls.questionFacts.filter((_, i) => i !== q),
+    questionLimits: cls.questionLimits.filter((_, i) => i !== q),
     members: cls.members.map((m) => ({
       ...m,
       answers: (m.answers ?? []).filter((_, i) => i !== q),

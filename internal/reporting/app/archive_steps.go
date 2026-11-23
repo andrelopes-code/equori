@@ -9,7 +9,7 @@ import (
 
 // ArchiveVersion is the archive_version this instance writes and the highest it reads
 // (ADR 021). It is the number of steps in archiveSteps plus 1.
-const ArchiveVersion = 33
+const ArchiveVersion = 34
 
 // ArchiveStep migrates the tables of an archive from one version to the next; it is pure and
 // leaves its input unchanged (ADR 021, V3).
@@ -50,6 +50,7 @@ var archiveSteps = []ArchiveStep{
 	addContributionRules,
 	addContributionQuestionFact,
 	addSpreadsheets,
+	addContributionQuestionLimit,
 }
 
 // migrateArchive applies the steps from version from to the last one, in order.

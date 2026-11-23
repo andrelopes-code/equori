@@ -78,9 +78,9 @@ func TestWithIdeals(t *testing.T) {
 func TestWithIdealsRejects(t *testing.T) {
 	t.Parallel()
 
-	eleven := make([]string, 11)
-	for i := range eleven {
-		eleven[i] = "Q" + string(rune('a'+i))
+	many := make([]string, 21)
+	for i := range many {
+		many[i] = "Q" + string(rune('a'+i))
 	}
 
 	for name, tc := range map[string]struct {
@@ -102,8 +102,8 @@ func TestWithIdealsRejects(t *testing.T) {
 			),
 			want: ErrQuestionInvalid,
 		},
-		"CQ7.5 eleven questions": {
-			class: questionClass(eleven, make([]bool, 11)),
+		"CQ7.5 twenty-one questions": {
+			class: questionClass(many, make([]bool, 21)),
 			want:  ErrQuestionInvalid,
 		},
 		"CQ7.6 answers of another length": {

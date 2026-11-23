@@ -348,6 +348,9 @@ type ContributionClass struct {
 	// QuestionIdeals True when the group divides its target by the answers and one answer is yes (CQ3).
 	QuestionIdeals bool `json:"question_ideals"`
 
+	// QuestionLimits One limit per question of the group, empty without one (AC11).
+	QuestionLimits []string `json:"question_limits"`
+
 	// Questions The investor's yes-or-no questions of the group (CQ1); empty without them.
 	Questions []string           `json:"questions"`
 	Rules     []ContributionRule `json:"rules"`
@@ -364,12 +367,22 @@ type ContributionClassInput struct {
 	// QuestionFacts One fact key per question of the group, empty for a question the investor answers (FQ1); absent without facts.
 	QuestionFacts *[]string `json:"question_facts,omitempty"`
 
+	// QuestionLimits One limit per question of the group, empty for a question without one; a rate is a fraction (AC11). Absent without limits.
+	QuestionLimits *[]string `json:"question_limits,omitempty"`
+
 	// Questions The investor's yes-or-no questions of the group (CQ1); empty without them.
 	Questions *[]string `json:"questions,omitempty"`
 
 	// Rules The rules of a group by rule (GR1); absent or empty for a group of members.
 	Rules    *[]ContributionRule `json:"rules,omitempty"`
 	TargetBp int                 `json:"target_bp"`
+}
+
+// ContributionFactDetail The figure an answer read and the end of what it reads, or the reason it has none; empty for a question the investor answers.
+type ContributionFactDetail struct {
+	Date   *openapi_types.Date `json:"date,omitempty"`
+	Reason *string             `json:"reason,omitempty"`
+	Value  *string             `json:"value,omitempty"`
 }
 
 // ContributionMatched defines model for ContributionMatched.
@@ -391,6 +404,9 @@ type ContributionMember struct {
 
 	// FactAnswers The answer of the filings to each question of the group; none when the investor's answer applies (FQ3). Absent in a group without questions.
 	FactAnswers *[]ContributionMemberFactAnswers `json:"fact_answers,omitempty"`
+
+	// FactDetails What each answer of fact_answers read (AC14). Absent in a group without questions.
+	FactDetails *[]ContributionFactDetail `json:"fact_details,omitempty"`
 
 	// FactsYear Last day of the fiscal year the fact answers read (FQ6); absent when none was computed.
 	FactsYear  *openapi_types.Date `json:"facts_year,omitempty"`

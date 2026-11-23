@@ -6089,6 +6089,26 @@
                           },
                           "description": "per question: yes or no from the filings, none when the investor's answer applies"
                         },
+                        "fact_details": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "type": "string"
+                              },
+                              "reason": {
+                                "type": "string"
+                              },
+                              "date": {
+                                "type": "string",
+                                "format": "date"
+                              }
+                            },
+                            "additionalProperties": false
+                          },
+                          "description": "per question: the figure the answer read and its date, or the reason it has none"
+                        },
                         "facts_year": {
                           "type": "string",
                           "description": "last day of the fiscal year the fact answers read"
@@ -6198,7 +6218,14 @@
                     "items": {
                       "type": "string"
                     },
-                    "description": "one fact key per question, empty for the investor's own; piotroski_p1 to piotroski_p9 are answered from the company's filings"
+                    "description": "one fact key per question, empty for the investor's own; a question with one is answered from the company's filings and price"
+                  },
+                  "question_limits": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "one limit per question, empty without one; a rate is a fraction"
                   }
                 },
                 "required": [
@@ -12354,21 +12381,28 @@
                   },
                   "additionalProperties": false
                 },
-                "description": "what the class holds; a holding belongs to at most one class"
+                "description": "a holding belongs to at most one class"
               },
               "questions": {
                 "type": "array",
                 "items": {
                   "type": "string"
                 },
-                "description": "the investor's yes-or-no questions, at most 10 of 1 to 200 characters; with them, members carry answers and no target_bp"
+                "description": "the investor's yes-or-no questions, at most 20 of 1 to 200 characters; with them, members carry answers and no target_bp"
               },
               "question_facts": {
                 "type": "array",
                 "items": {
                   "type": "string"
                 },
-                "description": "fact key per question, empty for none: piotroski_p1 to piotroski_p9"
+                "description": "fact key per question, empty for none: piotroski_p1 to piotroski_p9 or a limit key (guide contribution_plan)"
+              },
+              "question_limits": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "limit per question, empty for none; 0.12 is 12%"
               },
               "rules": {
                 "type": "array",
@@ -12715,6 +12749,26 @@
                       },
                       "description": "per question: yes or no from the filings, none when the investor's answer applies"
                     },
+                    "fact_details": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": "string"
+                          },
+                          "reason": {
+                            "type": "string"
+                          },
+                          "date": {
+                            "type": "string",
+                            "format": "date"
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      "description": "per question: the figure the answer read and its date, or the reason it has none"
+                    },
                     "facts_year": {
                       "type": "string",
                       "description": "last day of the fiscal year the fact answers read"
@@ -12824,7 +12878,14 @@
                 "items": {
                   "type": "string"
                 },
-                "description": "one fact key per question, empty for the investor's own; piotroski_p1 to piotroski_p9 are answered from the company's filings"
+                "description": "one fact key per question, empty for the investor's own; a question with one is answered from the company's filings and price"
+              },
+              "question_limits": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "one limit per question, empty without one; a rate is a fraction"
               }
             },
             "required": [

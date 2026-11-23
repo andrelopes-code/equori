@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -11,7 +12,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/portfolio/domain"
 )
 
-// factsCache holds the fiscal years read for each instrument of one call; a nil entry has none.
+// factsCache holds the facts read for each instrument of one call; a nil entry has none.
 type factsCache map[money.Currency]*domain.CompanyFacts
 
 // withIdeals sets the fact answers of p, then derives the member ideals from the effective answers
@@ -25,8 +26,8 @@ func (s *Service) withIdeals(ctx context.Context, p domain.Plan) (domain.Plan, e
 	return p.WithIdeals()
 }
 
-// withFacts sets FactAnswers and FactsYear on each instrument member of a class that names a fact
-// (FQ3, FQ6). A class without a fact is returned unchanged.
+// withFacts sets FactAnswers, FactDetails and FactsYear on each member of a class that names a fact
+// (FQ3, FQ6, AC12). A class without a fact is returned unchanged.
 func (s *Service) withFacts(ctx context.Context, p domain.Plan) (domain.Plan, error) {
 	out := p
 	out.Classes = slices.Clone(p.Classes)
@@ -82,27 +83,54 @@ func (s *Service) memberFacts(
 	members := slices.Clone(c.Members)
 
 	for j, m := range members {
-		members[j].FactAnswers, members[j].FactsYear = noFactAnswers(len(c.Questions)), nil
-		if m.AccountID != uuid.Nil {
-			continue
+		var facts *domain.CompanyFacts
+
+		if m.AccountID == uuid.Nil {
+			var err error
+
+			if facts, err = s.companyFacts(ctx, m.Instrument, cache); err != nil {
+				return nil, err
+			}
 		}
 
-		facts, err := s.companyFacts(ctx, m.Instrument, cache)
-		if err != nil {
-			return nil, err
-		}
-
-		if facts == nil {
-			continue
-		}
-
-		answers, year, ok := facts.Answers(c.QuestionFacts)
-		if ok {
-			members[j].FactAnswers, members[j].FactsYear = answers, &year
-		}
+		setFacts(&members[j], c, facts)
 	}
 
 	return members, nil
+}
+
+// setFacts sets the answer, the detail and the fiscal year of each fact of c on m; facts is nil
+// when no company report exists.
+func setFacts(m *domain.PlanMember, c domain.PlanClass, facts *domain.CompanyFacts) {
+	m.FactAnswers = make([]domain.FactAnswer, len(c.Questions))
+	m.FactDetails = make([]domain.FactDetail, len(c.Questions))
+	m.FactsYear = nil
+
+	var signals []domain.FactAnswer
+
+	if facts != nil {
+		answers, year, ok := facts.Answers(c.QuestionFacts)
+		signals = answers
+
+		if ok && slices.ContainsFunc(c.QuestionFacts, domain.IsSignal) {
+			m.FactsYear = &year
+		}
+	}
+
+	for q, key := range c.QuestionFacts {
+		m.FactAnswers[q] = domain.FactNone
+
+		switch {
+		case key == "":
+		case facts == nil:
+			m.FactDetails[q] = domain.FactDetail{Reason: domain.NoReport}
+		case domain.IsSignal(key):
+			m.FactAnswers[q] = signals[q]
+			m.FactDetails[q] = facts.SignalDetail(signals[q])
+		case q < len(c.QuestionLimits):
+			m.FactAnswers[q], m.FactDetails[q] = facts.Limit(key, c.QuestionLimits[q])
+		}
+	}
 }
 
 func (s *Service) companyFacts(
@@ -114,7 +142,7 @@ func (s *Service) companyFacts(
 		return facts, nil
 	}
 
-	facts, found, err := s.md.CompanyFacts(ctx, code)
+	facts, found, err := s.md.CompanyFacts(ctx, code, criterionPriceDate(s.ledger.Today(ctx)))
 	if err != nil {
 		return nil, fmt.Errorf("read the company facts of %s: %w", code, err)
 	}
@@ -127,11 +155,8 @@ func (s *Service) companyFacts(
 	return cache[code], nil
 }
 
-func noFactAnswers(n int) []domain.FactAnswer {
-	out := make([]domain.FactAnswer, n)
-	for i := range out {
-		out[i] = domain.FactNone
-	}
-
-	return out
+// criterionPriceDate is the last day of the month before today: a price moves an answer at most
+// once a month (AC13).
+func criterionPriceDate(today time.Time) time.Time {
+	return time.Date(today.Year(), today.Month(), 0, 0, 0, 0, 0, time.UTC)
 }

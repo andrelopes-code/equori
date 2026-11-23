@@ -44,7 +44,8 @@ type contributionClassOut struct {
 
 	Questions      []string `json:"questions,omitzero"       jsonschema:"the investor's yes-or-no questions of the group"`
 	QuestionIdeals bool     `json:"question_ideals,omitzero" jsonschema:"true when the member target_bp values derive from the answers and one answer is yes"`
-	QuestionFacts  []string `json:"question_facts,omitzero"  jsonschema:"one fact key per question, empty for the investor's own; piotroski_p1 to piotroski_p9 are answered from the company's filings"`
+	QuestionFacts  []string `json:"question_facts,omitzero"  jsonschema:"one fact key per question, empty for the investor's own; a question with one is answered from the company's filings and price"`
+	QuestionLimits []string `json:"question_limits,omitzero" jsonschema:"one limit per question, empty without one; a rate is a fraction"`
 }
 
 type contributionMatchedOut struct {
@@ -54,19 +55,26 @@ type contributionMatchedOut struct {
 }
 
 type contributionMemberOut struct {
-	AccountID    string     `json:"account_id,omitzero"`
-	Instrument   string     `json:"instrument,omitzero"`
-	TargetBP     int        `json:"target_bp,omitzero"`
-	Value        tool.Money `json:"value"`
-	ShareBP      int        `json:"share_bp,omitzero"`
-	AfterShareBP int        `json:"after_share_bp,omitzero"`
-	UnitValue    tool.Money `json:"unit_value,omitzero"`
-	Amount       tool.Money `json:"amount,omitzero"`
-	Quantity     tool.Money `json:"quantity,omitzero"       jsonschema:"units to buy, an estimate at the prices of today"`
-	Cost         tool.Money `json:"cost,omitzero"           jsonschema:"cost of the order in the base currency, never above amount"`
-	Answers      []bool     `json:"answers,omitzero"        jsonschema:"one answer per question of the group, true for yes"`
-	FactAnswers  []string   `json:"fact_answers,omitzero"   jsonschema:"per question: yes or no from the filings, none when the investor's answer applies"`
-	FactsYear    string     `json:"facts_year,omitzero"     jsonschema:"last day of the fiscal year the fact answers read"`
+	AccountID    string                   `json:"account_id,omitzero"`
+	Instrument   string                   `json:"instrument,omitzero"`
+	TargetBP     int                      `json:"target_bp,omitzero"`
+	Value        tool.Money               `json:"value"`
+	ShareBP      int                      `json:"share_bp,omitzero"`
+	AfterShareBP int                      `json:"after_share_bp,omitzero"`
+	UnitValue    tool.Money               `json:"unit_value,omitzero"`
+	Amount       tool.Money               `json:"amount,omitzero"`
+	Quantity     tool.Money               `json:"quantity,omitzero"       jsonschema:"units to buy, an estimate at the prices of today"`
+	Cost         tool.Money               `json:"cost,omitzero"           jsonschema:"cost of the order in the base currency, never above amount"`
+	Answers      []bool                   `json:"answers,omitzero"        jsonschema:"one answer per question of the group, true for yes"`
+	FactAnswers  []string                 `json:"fact_answers,omitzero"   jsonschema:"per question: yes or no from the filings, none when the investor's answer applies"`
+	FactDetails  []contributionFactDetail `json:"fact_details,omitzero"   jsonschema:"per question: the figure the answer read and its date, or the reason it has none"`
+	FactsYear    string                   `json:"facts_year,omitzero"     jsonschema:"last day of the fiscal year the fact answers read"`
+}
+
+type contributionFactDetail struct {
+	Value  string    `json:"value,omitzero"`
+	Reason string    `json:"reason,omitzero"`
+	Date   tool.Date `json:"date,omitzero"`
 }
 
 type contributionOutside struct {
@@ -172,6 +180,7 @@ func contributionClassOf(c app.ContributionClass) contributionClassOut {
 		Questions:      c.Questions,
 		QuestionIdeals: c.QuestionIdeals,
 		QuestionFacts:  c.QuestionFacts,
+		QuestionLimits: c.QuestionLimits,
 	}
 
 	for _, r := range c.Rules {
@@ -200,6 +209,7 @@ func contributionClassOf(c app.ContributionClass) contributionClassOut {
 			Cost:         optionalMoney(m.Cost),
 			Answers:      m.Answers,
 			FactAnswers:  factAnswersOf(m.FactAnswers),
+			FactDetails:  factDetailsOf(m.FactDetails),
 			FactsYear:    factsYearOf(m.FactsYear),
 		})
 	}
@@ -215,6 +225,22 @@ func factAnswersOf(in []domain.FactAnswer) []string {
 	out := make([]string, len(in))
 	for i, a := range in {
 		out[i] = string(a)
+	}
+
+	return out
+}
+
+func factDetailsOf(in []domain.FactDetail) []contributionFactDetail {
+	if len(in) == 0 {
+		return nil
+	}
+
+	out := make([]contributionFactDetail, len(in))
+	for i, d := range in {
+		out[i] = contributionFactDetail{Value: d.Value, Reason: d.Reason}
+		if d.Date != nil {
+			out[i].Date = tool.DateOf(*d.Date)
+		}
 	}
 
 	return out

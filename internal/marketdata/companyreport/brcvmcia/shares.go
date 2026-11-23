@@ -15,10 +15,9 @@ import (
 )
 
 const (
-	perSharePrefix = "3.99"
-	basicPerShare  = "3.99.01."
-	paidIn         = "Capital Integralizado"
-	issued         = "Capital Emitido"
+	basicPerShare = "3.99.01."
+	paidIn        = "Capital Integralizado"
+	issued        = "Capital Emitido"
 )
 
 // maxClassRatio is the ratio of the earnings per share of two classes above which a share of one

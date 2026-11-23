@@ -12,6 +12,7 @@ const plain = {
   byQuestions: false,
   questions: [],
   questionFacts: [],
+  questionLimits: [],
   rules: [],
 };
 
@@ -28,6 +29,7 @@ const view = {
       amount: brl(5000),
       questions: [],
       question_facts: [],
+      question_limits: [],
       question_ideals: false,
       rules: [],
       matched: [],
@@ -41,6 +43,7 @@ const view = {
       amount: brl(0),
       questions: [],
       question_facts: [],
+      question_limits: [],
       question_ideals: false,
       rules: [],
       matched: [],

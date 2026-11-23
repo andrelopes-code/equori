@@ -33,11 +33,12 @@ type contributionRuleIn struct {
 type contributionClassIn struct {
 	Name     string                 `json:"name"      jsonschema:"name of the class, 1 to 60 characters, unique in the plan"`
 	TargetBP int                    `json:"target_bp" jsonschema:"basis points of the portfolio: 4000 is 40%; the classes add up to 10000"`
-	Members  []contributionMemberIn `json:"members"   jsonschema:"what the class holds; a holding belongs to at most one class"`
+	Members  []contributionMemberIn `json:"members"   jsonschema:"a holding belongs to at most one class"`
 
-	Questions     []string             `json:"questions,omitzero"      jsonschema:"the investor's yes-or-no questions, at most 10 of 1 to 200 characters; with them, members carry answers and no target_bp"`
-	QuestionFacts []string             `json:"question_facts,omitzero" jsonschema:"fact key per question, empty for none: piotroski_p1 to piotroski_p9"`
-	Rules         []contributionRuleIn `json:"rules,omitzero"          jsonschema:"conditions of a group by rule, at most 5, instead of members: a security that meets one joins it"`
+	Questions      []string             `json:"questions,omitzero"       jsonschema:"the investor's yes-or-no questions, at most 20 of 1 to 200 characters; with them, members carry answers and no target_bp"`
+	QuestionFacts  []string             `json:"question_facts,omitzero"  jsonschema:"fact key per question, empty for none: piotroski_p1 to piotroski_p9 or a limit key (guide contribution_plan)"`
+	QuestionLimits []string             `json:"question_limits,omitzero" jsonschema:"limit per question, empty for none; 0.12 is 12%"`
+	Rules          []contributionRuleIn `json:"rules,omitzero"           jsonschema:"conditions of a group by rule, at most 5, instead of members: a security that meets one joins it"`
 }
 
 type saveContributionPlanIn struct {
@@ -152,12 +153,13 @@ func contributionClasses(in []contributionClassIn) ([]domain.PlanClass, error) {
 		}
 
 		out[i] = domain.PlanClass{
-			Name:          c.Name,
-			TargetBP:      c.TargetBP,
-			Questions:     c.Questions,
-			QuestionFacts: c.QuestionFacts,
-			Members:       members,
-			Rules:         contributionPlanRules(c.Rules),
+			Name:           c.Name,
+			TargetBP:       c.TargetBP,
+			Questions:      c.Questions,
+			QuestionFacts:  c.QuestionFacts,
+			QuestionLimits: c.QuestionLimits,
+			Members:        members,
+			Rules:          contributionPlanRules(c.Rules),
 		}
 	}
 

@@ -134,6 +134,10 @@ func planClasses(in []ContributionClassInput) []domain.PlanClass {
 		if c.QuestionFacts != nil {
 			out[i].QuestionFacts = *c.QuestionFacts
 		}
+
+		if c.QuestionLimits != nil {
+			out[i].QuestionLimits = *c.QuestionLimits
+		}
 	}
 
 	return out
@@ -189,6 +193,7 @@ func contributionClass(c app.ContributionClass) ContributionClass {
 		TargetBp:       c.TargetBP,
 		Questions:      append([]string{}, c.Questions...),
 		QuestionFacts:  append([]string{}, c.QuestionFacts...),
+		QuestionLimits: append([]string{}, c.QuestionLimits...),
 		QuestionIdeals: c.QuestionIdeals,
 		Value:          toMoney(c.Value),
 		ShareBp:        c.ShareBP,
@@ -207,6 +212,7 @@ func contributionClass(c app.ContributionClass) ContributionClass {
 			TargetBp:     m.TargetBP,
 			Answers:      optionalAnswers(m.Answers),
 			FactAnswers:  optionalFactAnswers(m.FactAnswers),
+			FactDetails:  optionalFactDetails(m.FactDetails),
 			FactsYear:    optionalDate(m.FactsYear),
 			Value:        toMoney(m.Value),
 			ShareBp:      m.ShareBP,
@@ -237,6 +243,23 @@ func optionalFactAnswers(a []domain.FactAnswer) *[]ContributionMemberFactAnswers
 	out := make([]ContributionMemberFactAnswers, len(a))
 	for i, v := range a {
 		out[i] = ContributionMemberFactAnswers(v)
+	}
+
+	return &out
+}
+
+func optionalFactDetails(details []domain.FactDetail) *[]ContributionFactDetail {
+	if details == nil {
+		return nil
+	}
+
+	out := make([]ContributionFactDetail, len(details))
+	for i, d := range details {
+		out[i] = ContributionFactDetail{
+			Value:  optional(d.Value),
+			Reason: optional(d.Reason),
+			Date:   optionalDate(d.Date),
+		}
 	}
 
 	return &out

@@ -22,6 +22,7 @@ const plan: Plan = {
       share_bp: 10000,
       questions: [],
       question_facts: [],
+      question_limits: [],
       question_ideals: false,
       rules: [],
       matched: [],

@@ -21,6 +21,7 @@ const plain = {
   byQuestions: false,
   questions: [],
   questionFacts: [],
+  questionLimits: [],
   rules: [],
 };
 
@@ -33,6 +34,7 @@ const draft = () =>
         targetBp: 6000,
         questions: ["Cresce?"],
         questionFacts: [],
+        questionLimits: [],
         byQuestions: true,
         members: [
           { instrument: "PETR4", answers: [true] },

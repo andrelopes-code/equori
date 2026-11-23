@@ -23,6 +23,7 @@ const saved: Plan = {
       share_bp: 6000,
       questions: [],
       question_facts: [],
+      question_limits: [],
       question_ideals: false,
       rules: [],
       matched: [],
@@ -49,6 +50,7 @@ const saved: Plan = {
       share_bp: 4000,
       questions: [],
       question_facts: [],
+      question_limits: [],
       question_ideals: false,
       rules: [],
       matched: [],
@@ -71,6 +73,7 @@ describe("plan draft", () => {
           byQuestions: false,
           questions: [],
           questionFacts: [],
+          questionLimits: [],
           rules: [],
           members: [
             { instrument: "PETR4", targetBp: 7000 },
@@ -86,6 +89,7 @@ describe("plan draft", () => {
           byQuestions: false,
           questions: [],
           questionFacts: [],
+          questionLimits: [],
           rules: [],
           members: [],
         },
@@ -149,6 +153,7 @@ describe("plan draft", () => {
           byQuestions: false,
           questions: [],
           questionFacts: [],
+          questionLimits: [],
           rules: [],
           members: [{ instrument: "X" }],
         },
@@ -173,6 +178,7 @@ describe("plan draft", () => {
           share_bp: 0,
           questions: ["Q1"],
           question_facts: [],
+          question_limits: [],
           question_ideals: true,
           rules: [],
           matched: [],
@@ -195,6 +201,7 @@ describe("plan draft", () => {
       byQuestions: true,
       questions: ["Q1"],
       questionFacts: [],
+      questionLimits: [],
       rules: [],
       members: [{ instrument: "PETR4", targetBp: 10000, answers: [true] }],
     });
@@ -211,6 +218,7 @@ describe("plan draft", () => {
           share_bp: 0,
           questions: ["Q1", "Q2"],
           question_facts: ["piotroski_p1", ""],
+          question_limits: ["", ""],
           question_ideals: true,
           rules: [],
           matched: [],
@@ -232,12 +240,39 @@ describe("plan draft", () => {
       members: [],
     };
     const named = toInput({
-      classes: [{ ...cls, questionFacts: ["piotroski_p1", ""] }],
+      classes: [
+        {
+          ...cls,
+          questionFacts: ["piotroski_p1", ""],
+          questionLimits: ["", ""],
+        },
+      ],
     });
-    const plain = toInput({ classes: [{ ...cls, questionFacts: ["", ""] }] });
+    const plain = toInput({
+      classes: [{ ...cls, questionFacts: ["", ""], questionLimits: ["", ""] }],
+    });
 
     expect(named.classes[0]?.question_facts).toEqual(["piotroski_p1", ""]);
+    expect(named.classes[0]).not.toHaveProperty("question_limits");
     expect(plain.classes[0]).not.toHaveProperty("question_facts");
+  });
+
+  it("reads and sends the limits", () => {
+    const cls = {
+      name: "A",
+      targetBp: 10000,
+      byQuestions: true,
+      questions: ["P/L", "Q2"],
+      questionFacts: ["price_earnings_max", ""],
+      questionLimits: ["15", ""],
+      rules: [],
+      members: [],
+    };
+
+    expect(toInput({ classes: [cls] }).classes[0]?.question_limits).toEqual([
+      "15",
+      "",
+    ]);
   });
 
   it("sends the questions and the answers, without a member target", () => {
@@ -249,6 +284,7 @@ describe("plan draft", () => {
           byQuestions: true,
           questions: ["Q1", "Q2"],
           questionFacts: [],
+          questionLimits: [],
           rules: [],
           members: [
             { instrument: "X", targetBp: 5000, answers: [true, false] },
@@ -282,6 +318,7 @@ describe("plan draft", () => {
           byQuestions: true,
           questions: [],
           questionFacts: [],
+          questionLimits: [],
           rules: [],
           members: [{ instrument: "X", targetBp: 5000, answers: [] }],
         },

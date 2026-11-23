@@ -186,9 +186,9 @@ func TestS607InvalidQuestions(t *testing.T) {
 	t.Parallel()
 	f := newQuestionFixture(t)
 
-	eleven := make([]string, 11)
-	for i := range eleven {
-		eleven[i] = strings.Repeat("q", i+1)
+	many := make([]string, 21)
+	for i := range many {
+		many[i] = strings.Repeat("q", i+1)
 	}
 
 	tests := []struct {
@@ -215,8 +215,8 @@ func TestS607InvalidQuestions(t *testing.T) {
 			code: "contribution_question_invalid",
 		},
 		{
-			name:  "eleven questions",
-			class: questionClass(eleven, answerMember("QSTA3", make([]bool, 11)...)),
+			name:  "twenty-one questions",
+			class: questionClass(many, answerMember("QSTA3", make([]bool, 21)...)),
 			code:  "contribution_question_invalid",
 		},
 		{

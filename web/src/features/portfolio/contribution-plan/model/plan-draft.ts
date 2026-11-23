@@ -22,6 +22,8 @@ export interface ClassDraft {
   questions: string[];
   // One fact key per question, "" for a question the investor answers (FQ1).
   questionFacts: string[];
+  // One limit per question as the API writes it, "" without one (AC11).
+  questionLimits: string[];
   members: MemberDraft[];
   // The conditions of a group by rule (GR1); empty for a group of members.
   rules: Rule[];
@@ -40,6 +42,7 @@ export function toDraft(view: Plan): PlanDraft {
       byQuestions: cls.questions.length > 0,
       questions: cls.questions,
       questionFacts: cls.question_facts,
+      questionLimits: cls.question_limits,
       rules: cls.rules,
       members: cls.members.map((m) => ({
         ...(m.account_id === undefined ? {} : { accountId: m.account_id }),
@@ -66,6 +69,9 @@ export function toInput(draft: PlanDraft): Input {
         ...(asked ? { questions: cls.questions } : {}),
         ...(asked && cls.questionFacts.some((fact) => fact !== "")
           ? { question_facts: cls.questionFacts }
+          : {}),
+        ...(asked && cls.questionLimits.some((limit) => limit !== "")
+          ? { question_limits: cls.questionLimits }
           : {}),
         ...(cls.rules.length > 0 ? { rules: cls.rules } : {}),
         members:

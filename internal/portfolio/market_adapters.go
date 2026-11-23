@@ -11,7 +11,6 @@ import (
 	"github.com/andrelopes-code/equori/internal/marketdata"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/portfolio/app"
-	"github.com/andrelopes-code/equori/internal/portfolio/domain"
 )
 
 // fiscalYearMonths is the span of the periods the facts of a contribution question read.
@@ -249,39 +248,6 @@ func (p marketPort) ContractFacts(
 	}
 
 	return app.ContractFacts(f), true, nil
-}
-
-func (p marketPort) CompanyFacts(
-	ctx context.Context,
-	code money.Currency,
-) (domain.CompanyFacts, bool, error) {
-	sets, err := p.md.CompanyReports(ctx, string(code))
-	if err != nil || len(sets) == 0 {
-		return domain.CompanyFacts{}, false, err
-	}
-
-	facts := domain.CompanyFacts{Standard: sets[0].Plan == "standard"}
-
-	for _, r := range sets[0].Periods {
-		if r.Months != fiscalYearMonths {
-			continue
-		}
-
-		facts.Years = append(facts.Years, domain.FiscalYear{
-			End:                r.Period,
-			TotalAssets:        r.TotalAssets,
-			CurrentAssets:      r.CurrentAssets,
-			CurrentLiabilities: r.CurrentLiabilities,
-			LongDebt:           r.LongDebt,
-			Revenue:            r.Revenue,
-			GrossProfit:        r.GrossProfit,
-			NetIncome:          r.NetIncome,
-			OperatingCashFlow:  r.OperatingCashFlow,
-			SharesIssued:       r.SharesIssued,
-		})
-	}
-
-	return facts, true, nil
 }
 
 func (p marketPort) Adjust(

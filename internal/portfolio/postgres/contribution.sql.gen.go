@@ -153,17 +153,25 @@ func (q *Queries) InsertContributionPlan(ctx context.Context, arg InsertContribu
 
 const insertContributionQuestion = `-- name: InsertContributionQuestion :exec
 INSERT INTO
-    portfolio_contribution_question (books_id, class_id, position, text, fact)
+    portfolio_contribution_question (books_id, class_id, position, text, fact, limit_value)
 VALUES
-    ($1, $2, $3, $4, $5)
+    (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        nullif($6::text, '')::numeric
+    )
 `
 
 type InsertContributionQuestionParams struct {
-	BooksID  int64
-	ClassID  uuid.UUID
-	Position int32
-	Text     string
-	Fact     *string
+	BooksID    int64
+	ClassID    uuid.UUID
+	Position   int32
+	Text       string
+	Fact       *string
+	LimitValue string
 }
 
 func (q *Queries) InsertContributionQuestion(ctx context.Context, arg InsertContributionQuestionParams) error {
@@ -173,6 +181,7 @@ func (q *Queries) InsertContributionQuestion(ctx context.Context, arg InsertCont
 		arg.Position,
 		arg.Text,
 		arg.Fact,
+		arg.LimitValue,
 	)
 	return err
 }
@@ -386,7 +395,8 @@ SELECT
     q.class_id,
     q.position,
     q.text,
-    q.fact
+    q.fact,
+    coalesce(q.limit_value::text, '')::text AS limit_value
 FROM
     portfolio_contribution_question AS q
     JOIN portfolio_contribution_class AS c ON c.books_id = q.books_id
@@ -399,10 +409,11 @@ ORDER BY
 `
 
 type ListContributionQuestionsRow struct {
-	ClassID  uuid.UUID
-	Position int32
-	Text     string
-	Fact     *string
+	ClassID    uuid.UUID
+	Position   int32
+	Text       string
+	Fact       *string
+	LimitValue string
 }
 
 func (q *Queries) ListContributionQuestions(ctx context.Context, booksID int64) ([]ListContributionQuestionsRow, error) {
@@ -419,6 +430,7 @@ func (q *Queries) ListContributionQuestions(ctx context.Context, booksID int64) 
 			&i.Position,
 			&i.Text,
 			&i.Fact,
+			&i.LimitValue,
 		); err != nil {
 			return nil, err
 		}

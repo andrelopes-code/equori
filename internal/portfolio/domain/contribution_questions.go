@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	maxQuestions   = 10
+	maxQuestions   = 20
 	maxQuestionLen = 200
 )
 
@@ -93,6 +93,11 @@ func (c PlanClass) withIdeals() (PlanClass, error) {
 		return PlanClass{}, err
 	}
 
+	limits, err := cleanLimits(c.QuestionLimits, facts)
+	if err != nil {
+		return PlanClass{}, err
+	}
+
 	yes, err := countYes(c.Members, len(questions))
 	if err != nil {
 		return PlanClass{}, err
@@ -102,6 +107,7 @@ func (c PlanClass) withIdeals() (PlanClass, error) {
 	out := c
 	out.Questions = questions
 	out.QuestionFacts = facts
+	out.QuestionLimits = limits
 	out.Members = make([]PlanMember, len(c.Members))
 
 	for i, m := range c.Members {
@@ -119,8 +125,8 @@ func (c PlanClass) withIdeals() (PlanClass, error) {
 }
 
 func (c PlanClass) checkNoAnswers() error {
-	if len(c.QuestionFacts) > 0 {
-		return fmt.Errorf("%w: facts in a class without questions", ErrQuestionInvalid)
+	if len(c.QuestionFacts) > 0 || len(c.QuestionLimits) > 0 {
+		return fmt.Errorf("%w: facts or limits in a class without questions", ErrQuestionInvalid)
 	}
 
 	for _, m := range c.Members {

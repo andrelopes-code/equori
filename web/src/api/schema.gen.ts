@@ -9195,6 +9195,8 @@ export interface components {
             questions: string[];
             /** @description One fact key per question of the group, empty for a question the investor answers (FQ1). */
             question_facts: string[];
+            /** @description One limit per question of the group, empty without one (AC11). */
+            question_limits: string[];
             /** @description True when the group divides its target by the answers and one answer is yes (CQ3). */
             question_ideals: boolean;
             value: components["schemas"]["Money"];
@@ -9234,6 +9236,8 @@ export interface components {
             answers?: boolean[];
             /** @description The answer of the filings to each question of the group; none when the investor's answer applies (FQ3). Absent in a group without questions. */
             fact_answers?: ("yes" | "no" | "none")[];
+            /** @description What each answer of fact_answers read (AC14). Absent in a group without questions. */
+            fact_details?: components["schemas"]["ContributionFactDetail"][];
             /**
              * Format: date
              * @description Last day of the fiscal year the fact answers read (FQ6); absent when none was computed.
@@ -9273,9 +9277,18 @@ export interface components {
             questions?: string[];
             /** @description One fact key per question of the group, empty for a question the investor answers (FQ1); absent without facts. */
             question_facts?: string[];
+            /** @description One limit per question of the group, empty for a question without one; a rate is a fraction (AC11). Absent without limits. */
+            question_limits?: string[];
             members: components["schemas"]["ContributionMemberInput"][];
             /** @description The rules of a group by rule (GR1); absent or empty for a group of members. */
             rules?: components["schemas"]["ContributionRule"][];
+        };
+        /** @description The figure an answer read and the end of what it reads, or the reason it has none; empty for a question the investor answers. */
+        ContributionFactDetail: {
+            value?: string;
+            reason?: string;
+            /** Format: date */
+            date?: string;
         };
         ContributionMemberInput: {
             /** Format: uuid */

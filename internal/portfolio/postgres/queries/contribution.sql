@@ -42,7 +42,8 @@ SELECT
     q.class_id,
     q.position,
     q.text,
-    q.fact
+    q.fact,
+    coalesce(q.limit_value::text, '')::text AS limit_value
 FROM
     portfolio_contribution_question AS q
     JOIN portfolio_contribution_class AS c ON c.books_id = q.books_id
@@ -98,9 +99,16 @@ VALUES
 
 -- name: InsertContributionQuestion :exec
 INSERT INTO
-    portfolio_contribution_question (books_id, class_id, position, text, fact)
+    portfolio_contribution_question (books_id, class_id, position, text, fact, limit_value)
 VALUES
-    (@books_id, @class_id, @position, @text, sqlc.narg ('fact'));
+    (
+        @books_id,
+        @class_id,
+        @position,
+        @text,
+        sqlc.narg ('fact'),
+        nullif(@limit_value::text, '')::numeric
+    );
 
 -- name: InsertContributionAnswer :exec
 INSERT INTO

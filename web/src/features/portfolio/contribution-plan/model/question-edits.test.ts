@@ -7,6 +7,7 @@ import {
   removeQuestion,
   setAnswer,
   setByQuestions,
+  setQuestionLimit,
 } from "@/features/portfolio/contribution-plan/model/question-edits";
 
 const draft = () =>
@@ -18,6 +19,7 @@ const draft = () =>
         byQuestions: false,
         questions: [],
         questionFacts: [],
+        questionLimits: [],
         rules: [],
         members: [
           { instrument: "PETR4", targetBp: 5000 },
@@ -59,12 +61,12 @@ describe("question edits", () => {
     ]);
   });
 
-  it("adds no question at ten", () => {
+  it("adds no question at twenty", () => {
     let next = setByQuestions(draft(), 0, true);
-    for (let i = 0; i < 10; i++) next = addQuestion(next, 0);
+    for (let i = 0; i < 20; i++) next = addQuestion(next, 0);
 
     expect(addQuestion(next, 0)).toBe(next);
-    expect(next.classes[0]?.questions).toHaveLength(10);
+    expect(next.classes[0]?.questions).toHaveLength(20);
   });
 
   it("keeps the derived targets when it goes back to typed", () => {
@@ -87,6 +89,7 @@ describe("question edits", () => {
   it("appends an empty fact with a question and removes the fact of a removed question", () => {
     const added = answered().classes[0];
     expect(added?.questionFacts).toEqual(["", ""]);
+    expect(added?.questionLimits).toEqual(["", ""]);
 
     const three = addQuestion(answered(), 0);
     const withFacts = {
@@ -94,13 +97,19 @@ describe("question edits", () => {
       classes: three.classes.map((cls) => ({
         ...cls,
         questionFacts: ["f1", "f2", "f3"],
+        questionLimits: ["1", "2", "3"],
       })),
     };
+    const removed = removeQuestion(withFacts, 0, 1).classes[0];
 
-    expect(removeQuestion(withFacts, 0, 1).classes[0]?.questionFacts).toEqual([
-      "f1",
-      "f3",
-    ]);
+    expect(removed?.questionFacts).toEqual(["f1", "f3"]);
+    expect(removed?.questionLimits).toEqual(["1", "3"]);
+  });
+
+  it("sets the limit of one question", () => {
+    const set = setQuestionLimit(answered(), 0, 1, "0.12").classes[0];
+
+    expect(set?.questionLimits).toEqual(["", "0.12"]);
   });
 });
 
@@ -115,6 +124,7 @@ describe("addFactQuestions", () => {
 
     expect(cls?.questions).toEqual(nine.map((f) => f.text));
     expect(cls?.questionFacts).toEqual(nine.map((f) => f.fact));
+    expect(cls?.questionLimits).toEqual(Array<string>(9).fill(""));
     expect(cls?.members.map((m) => m.answers)).toEqual([
       Array<boolean>(9).fill(false),
       Array<boolean>(9).fill(false),
@@ -129,15 +139,18 @@ describe("addFactQuestions", () => {
     expect(cls?.questionFacts[0]).toBe("");
   });
 
-  it("returns the draft unchanged with two questions", () => {
-    const two = addQuestion(addQuestion(draft(), 0), 0);
+  it("returns the draft unchanged past twenty questions", () => {
+    let twelve = draft();
+    for (let i = 0; i < 12; i++) twelve = addQuestion(twelve, 0);
 
-    expect(addFactQuestions(two, 0, nine)).toBe(two);
+    expect(addFactQuestions(twelve, 0, nine)).toBe(twelve);
   });
 
-  it("returns the draft unchanged when the class names a fact", () => {
+  it("skips a fact the class names", () => {
     const named = addFactQuestions(draft(), 0, nine.slice(0, 1));
+    const all = addFactQuestions(named, 0, nine).classes[0];
 
-    expect(addFactQuestions(named, 0, nine)).toBe(named);
+    expect(all?.questionFacts).toEqual(nine.map((f) => f.fact));
+    expect(addFactQuestions(named, 0, nine.slice(0, 1))).toBe(named);
   });
 });
