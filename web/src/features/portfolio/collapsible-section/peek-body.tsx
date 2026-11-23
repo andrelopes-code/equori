@@ -35,13 +35,7 @@ export function PeekBody({ id, collapsed, onExpand, children }: PeekBodyProps) {
 
       <CollapsibleMore
         render={(props) => (
-          <Button
-            {...props}
-            className={styles.more}
-            size="sm"
-            variant="outline"
-            tone="secondary"
-          >
+          <Button {...props} size="sm" variant="outline" tone="secondary">
             {t("fixedIncome.panel.more")}
           </Button>
         )}
