@@ -1,4 +1,4 @@
-import { Icon } from "@slotted/react/icon";
+import { Glyph, Icon } from "@slotted/react/icon";
 import { Kbd } from "@slotted/react/kbd";
 import { Link as TextLink } from "@slotted/react/link";
 import { TextField } from "@slotted/react/text-field";
@@ -6,7 +6,6 @@ import { Text } from "@slotted/react/typography";
 import { useCallback, useEffect, useRef } from "react";
 import type { KeyboardEvent } from "react";
 
-import { HelpIcon } from "@/features/help/icon/help-icon";
 import { useSlashKey } from "@/features/help/search/use-slash-key";
 import styles from "@/features/help/styles/help.module.css";
 import { useT } from "@/i18n/i18n-provider";
@@ -68,7 +67,7 @@ export function HelpSearch({
         messages={{ clear: t("help.search.clear") }}
         start={
           <Icon>
-            <HelpIcon name="search" />
+            <Glyph name="search" />
           </Icon>
         }
         end={

@@ -37,53 +37,11 @@
   }
 
   .range {
-    appearance: none;
-    inline-size: 100%;
-    block-size: 24px;
-    margin: 0;
-    background: none;
-    cursor: pointer;
-  }
-
-  .range::-webkit-slider-runnable-track {
-    block-size: 12px;
-    border-radius: 999px;
-    background: var(--track);
-    box-shadow: inset 0 0 0 1px rgb(128 128 128 / 30%);
-  }
-
-  .range::-moz-range-track {
-    block-size: 12px;
-    border-radius: 999px;
-    background: var(--track);
-  }
-
-  .range::-webkit-slider-thumb {
-    appearance: none;
-    inline-size: 22px;
-    block-size: 22px;
-    margin-block-start: -5px;
-    border: 3px solid #fff;
-    border-radius: 50%;
-    background: var(--now);
-    box-shadow:
-      0 1px 4px rgb(0 0 0 / 45%),
-      0 0 0 1px rgb(0 0 0 / 18%);
-  }
-
-  .range::-moz-range-thumb {
-    inline-size: 16px;
-    block-size: 16px;
-    border: 3px solid #fff;
-    border-radius: 50%;
-    background: var(--now);
-  }
-
-  .range:focus-visible {
-    outline: var(--slotted-focus-ring-width) solid
-      var(--slotted-focus-ring-color);
-    outline-offset: 4px;
-    border-radius: 999px;
+    --slotted-slider-track-background: var(--track);
+    --slotted-slider-track-size: 12px;
+    --slotted-slider-thumb-size: 22px;
+    --slotted-slider-thumb-color: var(--now);
+    --slotted-slider-thumb-border-color: #fff;
   }
 
   .hexRow {

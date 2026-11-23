@@ -92,12 +92,8 @@
     color: var(--slotted-tone-accent-text);
   }
 
-  .fact {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    block-size: 32px;
-    border-block-start: var(--slotted-border-width) solid
-      var(--slotted-border-subtle);
+  /* The panel holds the term and its value on one row. */
+  .facts {
+    --slotted-description-list-value-min: 6rem;
   }
 }

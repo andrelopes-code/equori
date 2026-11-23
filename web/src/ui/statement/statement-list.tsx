@@ -21,6 +21,7 @@ export function StatementList({
       aria-label={label}
       aria-busy={busy}
       variant="plain"
+      fill="inset"
       className={styles.statement}
     >
       {children}

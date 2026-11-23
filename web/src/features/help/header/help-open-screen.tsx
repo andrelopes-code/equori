@@ -1,9 +1,8 @@
 import { ButtonLink } from "@slotted/react/button";
-import { Icon } from "@slotted/react/icon";
+import { Glyph, Icon } from "@slotted/react/icon";
 import { Link } from "@tanstack/react-router";
 import type { NavigateOptions } from "@tanstack/react-router";
 
-import { HelpIcon } from "@/features/help/icon/help-icon";
 import { helpGuides } from "@/features/help/model/help-guides";
 import { useT } from "@/i18n/i18n-provider";
 import { useServed } from "@/ui/navigation/use-served";
@@ -36,7 +35,7 @@ export function HelpOpenScreen({
       tone={variant === "solid" ? "accent" : "secondary"}
       end={
         <Icon size="sm">
-          <HelpIcon name="open" />
+          <Glyph name="external" />
         </Icon>
       }
       render={(props) => <Link {...props} to={to} />}

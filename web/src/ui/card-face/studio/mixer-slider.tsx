@@ -1,3 +1,4 @@
+import { Slider } from "@slotted/react/slider";
 import { useId } from "react";
 import type { CSSProperties } from "react";
 
@@ -14,10 +15,7 @@ interface MixerSliderProps {
   onMove: (axis: Axis, value: number) => void;
 }
 
-// Workaround for Slotted issue #133: the slider family has no track that shows a gradient scale.
-// Families read: slider, color-picker. The slider family styles its track from the theme and has
-// no token or documented part that takes a gradient, so the track of each axis, painted with the
-// colours it produces, is a native range input with the app's own track and thumb.
+// One axis of the mixer; its track is painted with the colours the axis produces.
 export function MixerSlider({ spec, mix, onMove }: MixerSliderProps) {
   const t = useT();
   const [locale] = useAppLocale();
@@ -34,18 +32,19 @@ export function MixerSlider({ spec, mix, onMove }: MixerSliderProps) {
         {t(spec.label)}
       </span>
 
-      <input
+      <Slider
         className={styles.range}
-        type="range"
+        style={style}
+        indicator={false}
+        valueLabel="none"
         min={spec.min}
         max={spec.max}
         step={spec.step}
         value={value}
-        style={style}
         aria-labelledby={labelId}
         aria-valuetext={readout}
-        onChange={(event) => {
-          onMove(spec.axis, Number(event.target.value));
+        onValueChange={(moved) => {
+          if (typeof moved === "number") onMove(spec.axis, moved);
         }}
       />
 

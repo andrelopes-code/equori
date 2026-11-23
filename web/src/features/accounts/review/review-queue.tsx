@@ -2,12 +2,12 @@ import { Checkbox } from "@slotted/react/checkbox";
 import { List } from "@slotted/react/list";
 import {
   ListItem,
-  ListItemActions,
   ListItemBody,
   ListItemDescription,
   ListItemEnd,
   ListItemLabel,
   ListItemLink,
+  ListItemSelect,
 } from "@slotted/react/list-item";
 
 import type { components } from "@/api/schema.gen";
@@ -63,6 +63,23 @@ export function ReviewQueue({
             current={record.id === current}
             selected={selection.selected.includes(record.id)}
           >
+            {isSelectable(record) && (
+              <ListItemSelect>
+                <Checkbox
+                  aria-label={t("reviewSelection.select", {
+                    line:
+                      record.description === ""
+                        ? t("ledger.untitled")
+                        : record.description,
+                  })}
+                  checked={selection.selected.includes(record.id)}
+                  onCheckedChange={() => {
+                    selection.toggle(record.id);
+                  }}
+                />
+              </ListItemSelect>
+            )}
+
             <ListItemLink
               render={routeTo({
                 to: "/accounts/$id/imports/$batchId",
@@ -87,23 +104,6 @@ export function ReviewQueue({
                 {fmt.signed(record.amount, scale(record.amount.currency))}
               </ListItemEnd>
             </ListItemLink>
-            {isSelectable(record) && (
-              <ListItemActions>
-                {/* Workaround for Slotted issue #79: a link row has no leading place for its checkbox. */}
-                <Checkbox
-                  aria-label={t("reviewSelection.select", {
-                    line:
-                      record.description === ""
-                        ? t("ledger.untitled")
-                        : record.description,
-                  })}
-                  checked={selection.selected.includes(record.id)}
-                  onCheckedChange={() => {
-                    selection.toggle(record.id);
-                  }}
-                />
-              </ListItemActions>
-            )}
           </ListItem>
         ))}
       </List>

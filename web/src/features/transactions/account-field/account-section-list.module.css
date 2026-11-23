@@ -83,11 +83,4 @@
   .other {
     border-color: color-mix(in oklab, var(--slotted-text) 22%, transparent);
   }
-
-  /* Workaround for Slotted issue #166: the indicator centres on one line of text, so the label
-     keeps one line's height and the taller count tag overflows it evenly. */
-  .otherLabel {
-    align-content: center;
-    block-size: 1lh;
-  }
 }

@@ -1,9 +1,8 @@
 import { Button } from "@slotted/react/button";
-import { Icon } from "@slotted/react/icon";
+import { Glyph, Icon } from "@slotted/react/icon";
 import { MediaViewer } from "@slotted/react/media-viewer";
 import { useState } from "react";
 
-import { HelpIcon } from "@/features/help/icon/help-icon";
 import { useT } from "@/i18n/i18n-provider";
 
 interface HelpEnlargeProps {
@@ -33,7 +32,7 @@ export function HelpEnlarge({ dark, light, name, type }: HelpEnlargeProps) {
         size="sm"
         start={
           <Icon size="sm">
-            <HelpIcon name="expand" />
+            <Glyph name="maximize" />
           </Icon>
         }
         onClick={handleOpen}

@@ -1,14 +1,5 @@
 @layer app {
-  /* A button inside the link's text style: only what a button adds is reset. */
-  .action,
-  .compare {
-    padding: 0;
-    border: 0;
-    background: none;
-    cursor: pointer;
-  }
-
-  /* The button that follows the order text. */
+  /* The action that follows the order text. */
   .compare {
     margin-inline-start: var(--slotted-space-4);
   }

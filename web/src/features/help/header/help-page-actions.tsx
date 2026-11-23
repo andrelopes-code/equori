@@ -1,11 +1,10 @@
 import { ButtonLink } from "@slotted/react/button";
-import { Icon } from "@slotted/react/icon";
+import { Glyph, Icon } from "@slotted/react/icon";
 import { Kbd } from "@slotted/react/kbd";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useCallback } from "react";
 
 import { HelpOpenScreen } from "@/features/help/header/help-open-screen";
-import { HelpIcon } from "@/features/help/icon/help-icon";
 import { useSlashKey } from "@/features/help/search/use-slash-key";
 import { useT } from "@/i18n/i18n-provider";
 
@@ -34,7 +33,7 @@ export function HelpPageActions({ page }: HelpPageActionsProps) {
         tone="secondary"
         start={
           <Icon size="sm">
-            <HelpIcon name="search" />
+            <Glyph name="search" />
           </Icon>
         }
         end={

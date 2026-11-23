@@ -1,4 +1,10 @@
 import {
+  DescriptionList,
+  DescriptionListDescription,
+  DescriptionListItem,
+  DescriptionListTerm,
+} from "@slotted/react/description-list";
+import {
   Section,
   SectionBody,
   SectionHeader,
@@ -19,8 +25,6 @@ interface KindPanelFactsProps {
 }
 
 // Section 4 and KC6: where the account opens, whether it counts toward liquidity, how many exist.
-// Workaround for Slotted issue #102: DescriptionList starts each value after the term column and
-// has no way to end-align it, so the rows are drawn by kind-panel.module.css.
 export function KindPanelFacts({ kind, count }: KindPanelFactsProps) {
   const t = useT();
   const [tag] = useAppLocale();
@@ -46,22 +50,29 @@ export function KindPanelFacts({ kind, count }: KindPanelFactsProps) {
       </SectionHeader>
 
       <SectionBody>
-        {rows.map((row) => (
-          <div key={row.label} className={styles.fact} data-fact="">
-            <Text size="sm" weight="medium" wrap="nowrap">
-              {row.label}
-            </Text>
-            <Text
-              size="sm"
-              numeric="tabular"
-              wrap="nowrap"
-              tone={row.muted ? "muted" : "inherit"}
-              data-fact-value=""
-            >
-              {row.value}
-            </Text>
-          </div>
-        ))}
+        <DescriptionList
+          variant="ruled"
+          valueAlign="end"
+          termWidth="10rem"
+          className={styles.facts}
+        >
+          {rows.map((row) => (
+            <DescriptionListItem key={row.label} data-fact="">
+              <DescriptionListTerm>{row.label}</DescriptionListTerm>
+              <DescriptionListDescription>
+                <Text
+                  size="sm"
+                  numeric="tabular"
+                  wrap="nowrap"
+                  tone={row.muted ? "muted" : "inherit"}
+                  data-fact-value=""
+                >
+                  {row.value}
+                </Text>
+              </DescriptionListDescription>
+            </DescriptionListItem>
+          ))}
+        </DescriptionList>
       </SectionBody>
     </Section>
   );

@@ -1,13 +1,11 @@
 @layer app {
-  /* The rows' fills sit inside an 8 px band of the page margin: the content keeps the margin
-     and a pressed row reads as a rounded tile, not as a stripe to the screen edge.
-     Workaround for Slotted issue #162: List has no inset, rounded row fill. A sticky day label
-     paints the ground of the page, so it reads as a caption and not as a band. */
+  /* A pressed row reads as a rounded tile that reaches 8 px into the page margin; the content
+     keeps the margin. A sticky day label paints the ground of the page, so it reads as a caption
+     and not as a band. */
   .statement {
-    --slotted-list-section-background: var(--slotted-ground);
-    --slotted-list-padding-inline: var(--slotted-space-4);
-    --slotted-list-item-padding-inline: var(--slotted-space-4);
+    --slotted-list-fill-inset: var(--slotted-space-4);
     --slotted-list-item-radius: var(--slotted-radius-lg);
+    --slotted-list-section-background: var(--slotted-ground);
 
     /* A day reads as a caption on the ground: the day in the text colour, more room above it
        than below it. List resolves these on its root. */
@@ -16,8 +14,6 @@
     --slotted-list-section-font-weight: var(--slotted-font-weight-semibold);
     --slotted-list-section-padding-block: var(--slotted-space-6)
       var(--slotted-space-3);
-
-    margin-inline: calc(var(--slotted-space-4) * -1);
   }
 
   .row {

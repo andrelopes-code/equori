@@ -27,6 +27,7 @@ export function StatementPlaceholder({ label }: StatementPlaceholderProps) {
     <List
       aria-label={label}
       variant="plain"
+      fill="inset"
       loading
       className={styles.statement}
     >

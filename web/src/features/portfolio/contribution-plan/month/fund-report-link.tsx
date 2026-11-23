@@ -1,6 +1,5 @@
-import { Link } from "@slotted/react/link";
+import { Button } from "@slotted/react/button";
 import { useQuery } from "@tanstack/react-query";
-import type { ComponentPropsWithRef } from "react";
 
 import { useApi } from "@/api/api-context";
 import { fundReportsQuery } from "@/features/instruments";
@@ -21,31 +20,8 @@ export function FundReportLink({ code, onOpen }: FundReportLinkProps) {
   if (reports === undefined || reports.length === 0) return null;
 
   return (
-    // Workaround for Slotted issue #97: Button has no text-sized variant, so a button makes the
-    // row taller than its siblings; the link takes the row's text size.
-    <Link
-      size="sm"
-      render={(props) => (
-        <button
-          {...buttonProps(props)}
-          type="button"
-          className={styles.compare}
-          onClick={onOpen}
-        />
-      )}
-    >
+    <Button inline size="sm" className={styles.compare} onClick={onOpen}>
       {t("contributionPlan.fundReport")}
-    </Link>
+    </Button>
   );
-}
-
-// The anchor props of the link, less its href, for a button: the handlers and the ref differ
-// only in the element type.
-function buttonProps(
-  props: ComponentPropsWithRef<"a">,
-): ComponentPropsWithRef<"button"> {
-  const rest = { ...props };
-  delete rest.href;
-
-  return rest as ComponentPropsWithRef<"button">;
 }

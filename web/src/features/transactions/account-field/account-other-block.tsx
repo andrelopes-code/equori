@@ -40,7 +40,7 @@ export function AccountOtherBlock({
     >
       <CollapsibleHeader>
         <CollapsibleTrigger>
-          <Inline gap={3} className={styles.otherLabel}>
+          <Inline gap={3}>
             <span id={labelId}>{label}</span> <Tag size="sm">{count}</Tag>
           </Inline>
         </CollapsibleTrigger>
