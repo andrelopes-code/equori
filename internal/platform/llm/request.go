@@ -6,9 +6,10 @@ type Request struct {
 	System   string
 	Messages []Message
 	Tools    []Tool
-	// Schema is a JSON Schema the answer must follow; nil asks for free text.
+	// Schema is a JSON Schema the answer must follow; nil asks for free text. Every object in it
+	// sets additionalProperties to false: the Anthropic API refuses the request otherwise.
 	Schema json.RawMessage
-	// MaxOutputTokens of 0 leaves the provider default.
+	// MaxOutputTokens of 0 leaves the provider default. Reasoning counts toward the limit.
 	MaxOutputTokens int
 	Temperature     *float64
 	// ToolChoice of ToolChoiceNone forbids tool calls while Tools stay declared.

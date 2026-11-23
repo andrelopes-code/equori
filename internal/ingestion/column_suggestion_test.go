@@ -53,8 +53,14 @@ func TestSuggestColumnsS298(t *testing.T) {
 		}
 	}
 
-	if req.Temperature == nil || *req.Temperature != 0 || req.MaxOutputTokens != 128 {
+	// Reasoning counts toward an output limit, so the call sets none (D12).
+	if req.Temperature == nil || *req.Temperature != 0 || req.MaxOutputTokens != 0 {
 		t.Errorf("temperature = %v, max output tokens = %d", req.Temperature, req.MaxOutputTokens)
+	}
+
+	// The Anthropic API refuses a schema with an open object.
+	if schema := string(req.Schema); !strings.Contains(schema, `"additionalProperties":false`) {
+		t.Errorf("schema leaves an object open: %s", schema)
 	}
 
 	h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/accounts/"+checking+"/csv-profile", nil),

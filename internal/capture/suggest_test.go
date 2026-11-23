@@ -86,6 +86,17 @@ func TestSuggestCategories(t *testing.T) {
 		t.Error("request carries no response schema")
 	}
 
+	// The Anthropic API refuses a schema with an open object; this one nests one in another.
+	schema := string(calls[0].Request.Schema)
+	if n := strings.Count(schema, `"additionalProperties":false`); n != 2 {
+		t.Errorf("closed objects = %d, want 2: %s", n, schema)
+	}
+
+	// Reasoning counts toward an output limit, so the call sets none.
+	if n := calls[0].Request.MaxOutputTokens; n != 0 {
+		t.Errorf("max output tokens = %d, want 0", n)
+	}
+
 	// Kept answers, a category and two "none", are served without a call; the provider has no
 	// step left, so a call would fail the request.
 	again := b.suggest(
