@@ -37,9 +37,9 @@ interface ReturnMoneyPanelProps {
 // honesty HR6), and its swatches are the legend of the bar. The bar is aria-hidden because the
 // list states every amount as text.
 //
-// Workaround for Slotted issue #82: no family draws a whole split in parts as lengths. Families
-// read: progress-indicator, whose role and end mark state a task under way, and chart, which
-// draws series against an axis.
+// Build-own-element: no family draws a whole split in parts as lengths (OE-11 of the Slotted
+// guidelines). Families read: progress-indicator, whose role and end mark state a task under way,
+// and chart, which draws series against an axis.
 export function ReturnMoneyPanel({ report }: ReturnMoneyPanelProps) {
   const t = useT();
   const fmt = useMoneyFormat();

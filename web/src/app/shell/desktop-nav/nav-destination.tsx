@@ -66,13 +66,12 @@ export function NavDestination({
   );
 
   return (
-    <SideNavigationItem
-      value={destination.key}
-      // Workaround for Slotted issue #144: an item whose row is a trigger is never marked.
-      data-current={button && current ? "" : undefined}
-    >
+    <SideNavigationItem value={destination.key}>
       {button && (
-        <SideNavigationTrigger onClick={onPressGroup(destination, expanded)}>
+        <SideNavigationTrigger
+          current={current}
+          onClick={onPressGroup(destination, expanded)}
+        >
           {content}
         </SideNavigationTrigger>
       )}

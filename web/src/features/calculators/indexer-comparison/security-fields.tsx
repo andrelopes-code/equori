@@ -12,7 +12,6 @@ import {
   securityChoice,
   type DraftSecurity,
 } from "@/features/calculators/indexer-comparison/security-draft";
-import styles from "@/features/calculators/indexer-comparison/security-fields.module.css";
 import { indexName } from "@/features/calculators/rate-source/index-catalog";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/form-fields/choice-select";
@@ -85,32 +84,29 @@ export function SecurityFields({
           onChange({ rate });
         }}
       />
-      <div className={styles.control}>
-        <Switch
-          size="sm"
-          aria-label={t("calc.indexerComparison.exempt.of", { n: position })}
-          checked={!draft.taxed}
-          onCheckedChange={(exempt) => {
-            onChange({ taxed: !exempt });
-          }}
-        >
-          {t("calc.indexerComparison.exempt")}
-        </Switch>
-      </div>
+      <Switch
+        size="sm"
+        variant="control"
+        aria-label={t("calc.indexerComparison.exempt.of", { n: position })}
+        checked={!draft.taxed}
+        onCheckedChange={(exempt) => {
+          onChange({ taxed: !exempt });
+        }}
+      >
+        {t("calc.indexerComparison.exempt")}
+      </Switch>
       {removable && (
-        <div className={styles.control}>
-          <IconButton
-            size="sm"
-            variant="ghost"
-            tone="secondary"
-            aria-label={t("calc.indexerComparison.remove", { n: position })}
-            onClick={onRemove}
-          >
-            <Icon>
-              <Glyph name="trash" />
-            </Icon>
-          </IconButton>
-        </div>
+        <IconButton
+          size="sm"
+          variant="ghost"
+          tone="secondary"
+          aria-label={t("calc.indexerComparison.remove", { n: position })}
+          onClick={onRemove}
+        >
+          <Icon>
+            <Glyph name="trash" />
+          </Icon>
+        </IconButton>
       )}
     </Inline>
   );

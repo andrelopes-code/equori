@@ -71,7 +71,7 @@ export function BucketTrackRow({
           size="sm"
           variant="ghost"
           tone="secondary"
-          className={styles.name}
+          flush="start"
           onClick={() => {
             onOpen(row.id);
           }}

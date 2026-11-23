@@ -8,6 +8,8 @@ import theme from "./equori.theme.ts";
 
 const css = readFileSync(new URL("./equori.gen.css", import.meta.url), "utf8");
 
+const components = theme.components ?? {};
+
 themeConformance({ contract, theme: flattenTheme(theme), css });
 
 test("seeds are indigo, violet graphite, yellow and red", () => {
@@ -226,13 +228,13 @@ test("section actions of a titled description do not size the rows of the title"
 });
 
 test("a card header keeps no gap between its title and its description", () => {
-  assert.equal(theme.components["--slotted-card-header-gap"], "0");
-  assert.equal(theme.components["--slotted-list-item-body-gap"], "0");
-  assert.equal(theme.components["--slotted-stepper-description-gap"], "0");
+  assert.equal(components["--slotted-card-header-gap"], "0");
+  assert.equal(components["--slotted-list-item-body-gap"], "0");
+  assert.equal(components["--slotted-stepper-description-gap"], "0");
 });
 
 test("a chart header keeps no gap between its title and its description", () => {
-  assert.equal(theme.components["--slotted-chart-header-gap"], "0");
+  assert.equal(components["--slotted-chart-header-gap"], "0");
 });
 
 test("a section under the pointer or holding the focus shows its bar and keeps the colour of its title", () => {
@@ -433,7 +435,7 @@ for (const [name, selector, token] of frames) {
 // its content.
 test("a page container keeps a 16 px inset below 600 px", () => {
   assert.equal(
-    theme.components["--slotted-page-inset-compact"],
+    components["--slotted-page-inset-compact"],
     "var(--slotted-space-6)",
   );
 });

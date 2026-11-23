@@ -1,7 +1,0 @@
-@layer app {
-  /* Workaround for Slotted issue #112: a caption whose text is visually hidden keeps its block
-     padding, about 12px of empty space above the header row. */
-  .caption {
-    padding: 0;
-  }
-}

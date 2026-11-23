@@ -72,7 +72,7 @@ export function WhereMoneySection({
           </SegmentedControl>
         </SectionActions>
       </SectionHeader>
-      <SectionBody>
+      <SectionBody bleed>
         <AllocationTable
           caption={t("holdings.where")}
           shareHeader={t("portfolio.share")}

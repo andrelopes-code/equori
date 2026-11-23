@@ -29,7 +29,6 @@ const paletteSize = 8;
 
 // Build-own-element (spec, Purchase list as one bar): ProgressIndicator draws one value, Chart
 // draws axes and a legend of its own, and neither marks the segment of a row the pointer is on.
-// Workaround for Slotted issue #119: no family draws one bar split into parts linked to rows.
 export function PurchaseBar({ segments, total, active }: PurchaseBarProps) {
   const t = useT();
   const [locale] = useAppLocale();

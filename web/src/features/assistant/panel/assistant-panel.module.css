@@ -94,9 +94,6 @@
 
   /* A model ID is not shortened by the design: past 12rem it ends in an ellipsis (MC6). */
   .model {
-    /* Workaround for Slotted issue #157: an action with an aria-label is drawn as icon-only,
-       with no inline padding, so the text action takes the padding Slotted gives a text one. */
-    padding-inline: var(--slotted-space-3, 0.375rem);
     max-inline-size: 12rem;
     overflow: hidden;
     text-overflow: ellipsis;

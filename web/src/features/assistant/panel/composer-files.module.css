@@ -2,27 +2,19 @@
   /* FU2: the chips stand one to a row inside the frame of the composer, at the inset of the
      input's text; a long name shortens inside its chip. */
   .files {
-    /* Workaround for Slotted issue #146: no public token names the inset of the input's text. */
-    --equori-composer-inset: var(
-      --_padding-inline,
-      var(--slotted-control-padding-inline-md)
-    );
     --slotted-attachment-grid-min: 15rem; /* literal: one chip to a row up to 480 px of composer */
     --slotted-attachment-padding-sm: var(--slotted-space-4);
 
     box-sizing: border-box;
     inline-size: 100%;
-    padding-block-start: var(--equori-composer-inset);
-    padding-inline: var(--equori-composer-inset);
+    padding-block-start: var(--slotted-prompt-composer-content-inset);
+    padding-inline: var(--slotted-prompt-composer-content-inset);
   }
 
-  /* FU4: one line under the input names what leaves the instance. */
+  /* FU4: one line under the input names what leaves the instance. It starts at the input's
+     text. */
   .line {
-    /* Workaround for Slotted issue #146: the line starts at the input's text. */
-    padding-inline: var(
-      --_padding-inline,
-      var(--slotted-control-padding-inline-md)
-    );
+    padding-inline: var(--slotted-prompt-composer-content-inset);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

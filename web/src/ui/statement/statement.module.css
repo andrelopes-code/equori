@@ -21,14 +21,6 @@
     margin-inline: calc(var(--slotted-space-4) * -1);
   }
 
-  /* Workaround for Slotted issue #160: a touch screen keeps :hover after a tap, so the hover
-     fill would stay on the opened row; the pressed fill remains the touch feedback. */
-  @media (hover: none) {
-    .statement {
-      --slotted-list-item-background-hover: transparent;
-    }
-  }
-
   .row {
     block-size: 64px; /* one fixed row height: 15 px above and below two lines (spec MS4) */
   }

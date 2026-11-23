@@ -17,7 +17,6 @@ import { useScale } from "@/features/setup";
 import { formatBasisPoints } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import bleed from "@/ui/display/section-bleed.module.css";
 
 type Money = components["schemas"]["Money"];
 
@@ -65,11 +64,7 @@ export function AllocationTable({
     row.value.amount < 0 ? noShare : percent(row.share);
 
   return (
-    <Table
-      columns={columns}
-      variant={flush ? "ruled" : "framed"}
-      {...(flush ? { className: bleed.bleed } : {})}
-    >
+    <Table columns={columns} variant={flush ? "ruled" : "framed"}>
       <TableContent aria-label={caption}>
         <TableHead>
           <TableRow>

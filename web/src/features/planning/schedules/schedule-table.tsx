@@ -12,7 +12,6 @@ import {
 import { Fragment } from "react";
 
 import type { components } from "@/api/schema.gen";
-import { HiddenCaption } from "@/features/planning/hidden-caption/hidden-caption";
 import { ScheduleRow } from "@/features/planning/schedules/schedule-row";
 import { useT } from "@/i18n/i18n-provider";
 
@@ -57,11 +56,7 @@ export function ScheduleTable({
       edges={ended ? "flush" : "inset"}
     >
       <TableContent>
-        {ended ? (
-          <HiddenCaption text={caption} />
-        ) : (
-          <TableCaption>{caption}</TableCaption>
-        )}
+        <TableCaption visuallyHidden={ended}>{caption}</TableCaption>
         <TableHead>
           <TableRow>
             <TableColumnHeader>{t("agenda.description")}</TableColumnHeader>

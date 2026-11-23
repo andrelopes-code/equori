@@ -34,12 +34,6 @@
     white-space: nowrap;
   }
 
-  /* Workaround for Slotted issue #134: a ghost button has no flush alignment, so the name
-     steps back by its own padding to share the start edge of the line under it. */
-  .name {
-    margin-inline-start: calc(-1 * var(--slotted-control-padding-inline-sm));
-  }
-
   .endStack {
     display: grid;
     min-inline-size: 0;

@@ -172,16 +172,12 @@
     min-inline-size: 0;
   }
 
-  /* Workaround for Slotted issue #171: the checkbox label keeps its automatic minimum size, so a
-     name that does not wrap would push the row wider. The name wraps anywhere and shows its first
-     line, which keeps the label's minimum small and ends the line with an ellipsis. */
+  /* A long name ends its one line in an ellipsis. */
   .checkName {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 1;
-    line-clamp: 1;
+    display: block;
     overflow: hidden;
-    overflow-wrap: anywhere;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .remaining,

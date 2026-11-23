@@ -18,8 +18,8 @@ export interface RangeStripProps {
 // other months as a band, the asked month as the large dot. Built under CP-04. Families read: chart
 // (a scatter needs two numeric axes inside a card of its own, and its axes cannot line up across
 // rows) and sparkline (draws the shape of the series, not the rank of one value among its months).
-// Neither draws a position on one axis. Workaround for Slotted issue #93: the app draws the strip
-// itself until a family does. Not interactive: the root is named, the drawing is hidden.
+// Neither draws a position on one axis (OE-11 of the Slotted guidelines). Not interactive: the root
+// is named, the drawing is hidden.
 export function RangeStrip({ title, value, state, format }: RangeStripProps) {
   const t = useT();
   const name = t(nameKey(state), {

@@ -17,9 +17,9 @@ interface KindChooserProps {
   onContinue: () => void;
 }
 
-// Workaround for Slotted issue #101: RadioGroup variant="tile" draws a mark and a label with a
-// description and has no slot for an illustration and no way to hide the mark, so the gallery of
-// KC1 to KC4 is a radiogroup of the app's own. Families read: RadioGroup, Card, Section.
+// Build-own-element: RadioGroup draws a choice in words, so the illustrated gallery of KC1 to KC4
+// is a radiogroup of the app's own (OE-12 of the Slotted guidelines). Families read: RadioGroup,
+// Card, Section.
 export function KindChooser({
   value,
   counts,

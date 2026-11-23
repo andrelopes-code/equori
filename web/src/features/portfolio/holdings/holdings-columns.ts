@@ -69,8 +69,8 @@ export function holdingsColumns({
       id: "name",
       label: t("positions.instrument"),
       accessor: "name",
-      // Workaround for Slotted issue #80: an aggregate on this column doubles the height of a group
-      // row, so the summary row holds its figures with no label; the summary states their name.
+      // An aggregate on this column would also be written in every group row, so the summary row
+      // holds its figures with no label; the summary states their name.
       rowHeader: true,
       hideable: false,
       flex: 1,

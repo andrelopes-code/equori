@@ -37,10 +37,10 @@ interface ReturnBarsProps {
   axis: ReturnAxis;
 }
 
-// Workaround for Slotted issue #88: no family draws two values compared as bars on one signed
-// axis. Families read: chart, which draws one fill per series and no domain shared across two
-// blocks, and progress-indicator, whose role and end mark state a task under way. The pair of
-// bars is one image named by its two values, so the rows hold no role of their own.
+// Build-own-element: no family draws two values compared as bars on one signed axis (OE-11 of the
+// Slotted guidelines). Families read: chart, which draws one fill per series and no domain shared
+// across two blocks, and progress-indicator, whose role and end mark state a task under way. The
+// pair of bars is one image named by its two values, so the rows hold no role of their own.
 export function ReturnBars({ comparisons, axis }: ReturnBarsProps) {
   const t = useT();
   const [tag] = useAppLocale();

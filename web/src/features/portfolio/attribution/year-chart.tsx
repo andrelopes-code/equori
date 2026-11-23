@@ -3,7 +3,6 @@ import type { ChartPoint, ChartSeries } from "@slotted/core/chart";
 
 import type { components } from "@/api/schema.gen";
 import { indexName } from "@/features/calculators";
-import { dimUnchosen } from "@/features/portfolio/attribution/dim-unchosen";
 import {
   yearChartData,
   yearZoom,
@@ -29,7 +28,6 @@ export function YearChart({ years, chosen, onChoose }: YearChartProps) {
 
   const data = yearChartData(years);
   const zoom = yearZoom(years.length);
-  const chosenIndex = years.findIndex((y) => y.year === chosen);
   const rateIndex = years.find((y) => y.rate !== undefined)?.rate?.index;
   const percent = (bp: number) => formatBasisPoints(bp, tag);
   const series: ChartSeries<keyof YearChartRecord>[] = [
@@ -72,7 +70,6 @@ export function YearChart({ years, chosen, onChoose }: YearChartProps) {
       selectable
       selection={{ series: "portfolio", key: String(chosen) }}
       onSelectionChange={handleSelection}
-      extendOption={(option) => dimUnchosen(option, chosenIndex)}
       {...(zoom === undefined ? {} : { zoomable: true, defaultZoom: zoom })}
     />
   );
