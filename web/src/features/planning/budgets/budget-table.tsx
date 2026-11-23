@@ -14,7 +14,6 @@ import { BudgetTableRow } from "@/features/planning/budgets/budget-table-row";
 import type { BudgetGroup } from "@/features/planning/model/budget-month";
 import { useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import bleed from "@/ui/display/section-bleed.module.css";
 
 type Budget = components["schemas"]["Budget"];
 
@@ -39,7 +38,7 @@ export function BudgetTable({
   const fmt = useMoneyFormat();
 
   return (
-    <Table columns={5} variant="ruled" className={bleed.bleed}>
+    <Table columns={5} variant="ruled">
       <TableContent aria-label={t("budget.title")}>
         <TableHead>
           <TableRow>

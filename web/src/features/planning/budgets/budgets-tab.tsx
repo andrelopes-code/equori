@@ -9,6 +9,7 @@ import {
 import { Skeleton } from "@slotted/react/skeleton";
 import {
   Section,
+  SectionBleed,
   SectionBody,
   SectionHeader,
   SectionHeading,
@@ -144,15 +145,17 @@ export function BudgetsTab({
               <Text tone="muted">{t("budget.empty")}</Text>
             )}
             {groups.length > 0 && (
-              <BudgetTable
-                groups={groups}
-                month={month}
-                scale={scale}
-                onChangeAmount={setEditing}
-                onDelete={(budget, name) => {
-                  setDeleting({ budget, name });
-                }}
-              />
+              <SectionBleed>
+                <BudgetTable
+                  groups={groups}
+                  month={month}
+                  scale={scale}
+                  onChangeAmount={setEditing}
+                  onDelete={(budget, name) => {
+                    setDeleting({ budget, name });
+                  }}
+                />
+              </SectionBleed>
             )}
           </SectionBody>
         </Section>

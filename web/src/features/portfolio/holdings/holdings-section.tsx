@@ -8,6 +8,7 @@ import { Inline } from "@slotted/react/inline";
 import {
   Section,
   SectionActions,
+  SectionBleed,
   SectionBody,
   SectionDescription,
   SectionHeader,
@@ -162,17 +163,19 @@ export function HoldingsSection({
             </Inline>
           )}
 
-          <HoldingsGrid
-            label={t("holdings.list")}
-            columns={columns}
-            rows={rows}
-            columnState={columnState}
-            date={date}
-            valueIn={valueIn ?? ""}
-            accounts={byID}
-            loading={pending}
-            onColumnState={setColumnState}
-          />
+          <SectionBleed>
+            <HoldingsGrid
+              label={t("holdings.list")}
+              columns={columns}
+              rows={rows}
+              columnState={columnState}
+              date={date}
+              valueIn={valueIn ?? ""}
+              accounts={byID}
+              loading={pending}
+              onColumnState={setColumnState}
+            />
+          </SectionBleed>
         </Stack>
       </SectionBody>
     </Section>

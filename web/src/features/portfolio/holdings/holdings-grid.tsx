@@ -15,7 +15,6 @@ import { HoldingTotalCell } from "@/features/portfolio/holdings/holding-total-ce
 import { HoldingTrendCell } from "@/features/portfolio/holdings/holding-trend-cell";
 import { HoldingValueCell } from "@/features/portfolio/holdings/holding-value-cell";
 import type { GridHolding } from "@/features/portfolio/holdings/holdings-columns";
-import bleed from "@/ui/display/section-bleed.module.css";
 
 type Account = components["schemas"]["Account"];
 
@@ -85,7 +84,6 @@ export function HoldingsGrid({
     <DataGrid
       aria-label={label}
       variant="ruled"
-      className={bleed.bleed}
       columns={columns}
       rows={rows}
       rowKey="key"
