@@ -10,8 +10,6 @@ import {
 } from "@/features/instruments/price-chart/price-axis";
 import { usePriceFormat } from "@/features/instruments/model/use-price-format";
 import type { Period } from "@/features/instruments/model/price-period";
-import { withClearedMarks } from "@/features/instruments/price-chart/cleared-marks";
-import { useTapClear } from "@/features/instruments/price-chart/use-tap-clear";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
 type Price = components["schemas"]["Price"];
@@ -35,8 +33,6 @@ interface Zoom {
 
 const wholeRange: Zoom = { start: 0, end: 1 };
 
-const ignore = () => undefined;
-
 type Field = "date" | "price" | "manual";
 
 // A price is an exact decimal that the chart plots as a number; nothing is computed from it. A
@@ -54,7 +50,6 @@ export function PriceChart({
   const [locale] = useAppLocale();
   const format = usePriceFormat(quote);
   const [zoom, setZoom] = useState<Zoom>(wholeRange);
-  const handlePointerDown = useTapClear(onPeriodChange ?? ignore);
   const data = useMemo(
     () =>
       [...prices]
@@ -142,9 +137,8 @@ export function PriceChart({
         format: (value) => axisLabel(value, locale, span),
       }}
       y={{ format: format.tick }}
-      extendOption={(option) => withClearedMarks(withTicks(option, ticks))}
+      extendOption={(option) => withTicks(option, ticks)}
       onActivePointChange={handleActivePointChange}
-      onPointerDownCapture={handlePointerDown}
       rangeSelectable={onPeriodChange !== undefined}
       range={period}
       onRangeChange={(next) => {
