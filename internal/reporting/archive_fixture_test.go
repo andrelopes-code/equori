@@ -52,6 +52,7 @@ func TestImportArchiveFixtures(t *testing.T) {
 
 			expectFixture(t, h)
 			expectProviders(t, h, v)
+			expectSpreadsheets(t, h, v)
 		})
 	}
 }
@@ -122,5 +123,44 @@ func expectProviders(t *testing.T, h *apitest.Harness, version int) {
 
 	if !slices.Equal(own, want) {
 		t.Fatalf("v%d providers = %v, want %v", version, own, want)
+	}
+}
+
+// expectSpreadsheets checks the spreadsheets of the book: the fixtures before version 33 carry
+// none (migration 00142) and later ones carry the one populate adds, with its content.
+func expectSpreadsheets(t *testing.T, h *apitest.Harness, version int) {
+	t.Helper()
+
+	var list struct {
+		Items []struct {
+			ID   string `json:"id"`
+			Name string `json:"name"`
+		} `json:"items"`
+	}
+	h.MustDo(http.MethodGet, "/api/v1/spreadsheets", nil, http.StatusOK, &list)
+
+	if version < 33 {
+		if len(list.Items) != 0 {
+			t.Fatalf("v%d spreadsheets = %v, want none", version, list.Items)
+		}
+
+		return
+	}
+
+	if len(list.Items) != 1 || list.Items[0].Name != "Plan" {
+		t.Fatalf("v%d spreadsheets = %v, want Plan", version, list.Items)
+	}
+
+	var doc struct {
+		Version int `json:"version"`
+		Content struct {
+			ID     string                    `json:"id"`
+			Sheets map[string]map[string]any `json:"sheets"`
+		} `json:"content"`
+	}
+	h.MustDo(http.MethodGet, "/api/v1/spreadsheets/"+list.Items[0].ID, nil, http.StatusOK, &doc)
+
+	if _, ok := doc.Content.Sheets["s1"]; doc.Version != 1 || doc.Content.ID != "plan" || !ok {
+		t.Fatalf("v%d spreadsheet = %+v", version, doc)
 	}
 }

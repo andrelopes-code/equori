@@ -396,7 +396,7 @@ type Problem struct {
 	// posting_not_movable, archive_invalid, import_not_empty, import_conflict, export_pending,
 	// export_not_ready, record_not_discarded, no_decision, too_many_lines, proposal_not_found,
 	// provider_not_found, use_not_found, capability_missing, key_required, secret_key_missing,
-	// admin_required, unofficial_source.
+	// admin_required, unofficial_source, spreadsheet_limit_reached.
 	Code   string        `json:"code"`
 	Detail *string       `json:"detail,omitempty"`
 	Errors *[]FieldError `json:"errors,omitempty"`

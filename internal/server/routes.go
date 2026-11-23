@@ -49,6 +49,7 @@ func newHandler(
 			m.reporting.BodyLimits(),
 			m.marketdata.BodyLimits(),
 			m.assistant.BodyLimits(),
+			m.spreadsheet.BodyLimits(),
 		)...)
 }
 
@@ -72,6 +73,7 @@ func registerRoutes(
 	m.ingestion.RegisterRoutes(mux)
 	m.instance.RegisterRoutes(mux)
 	m.classification.RegisterRoutes(mux)
+	m.spreadsheet.RegisterRoutes(mux)
 	m.capture.RegisterRoutes(mux)
 	m.planning.RegisterRoutes(mux)
 	m.portfolio.RegisterRoutes(mux)

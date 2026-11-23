@@ -1,0 +1,255 @@
+paths:
+  /spreadsheets:
+    get:
+      tags: [spreadsheet]
+      operationId: listSpreadsheets
+      x-book-role: read
+      summary: Spreadsheets of the book, the last saved first, without their content.
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpreadsheetList"
+        "401":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [spreadsheet]
+      operationId: createSpreadsheet
+      x-book-role: write
+      summary: |
+        Create a spreadsheet. A book holds at most 40 (409 spreadsheet_limit_reached); a body
+        above 4 MiB is 413 request_too_large.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SpreadsheetInput"
+      responses:
+        "201":
+          description: Created.
+          headers:
+            Location:
+              description: Path of the created record.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Spreadsheet"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "413":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /spreadsheets/{id}:
+    get:
+      tags: [spreadsheet]
+      operationId: getSpreadsheet
+      x-book-role: read
+      summary: One spreadsheet with its content.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Spreadsheet"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+    put:
+      tags: [spreadsheet]
+      operationId: saveSpreadsheet
+      x-book-role: write
+      summary: |
+        Replace the content. version is the one the editor read; a later save by another
+        session is 409 version_conflict and stores nothing.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SpreadsheetContentInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpreadsheetSummary"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "413":
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [spreadsheet]
+      operationId: deleteSpreadsheet
+      x-book-role: write
+      summary: Delete a spreadsheet; the deletion is not undone.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "204":
+          description: Deleted.
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /spreadsheets/{id}/name:
+    put:
+      tags: [spreadsheet]
+      operationId: renameSpreadsheet
+      x-book-role: write
+      summary: Rename a spreadsheet; its content and version stay.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SpreadsheetNameInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpreadsheetSummary"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /spreadsheets/{id}/copies:
+    post:
+      tags: [spreadsheet]
+      operationId: copySpreadsheet
+      x-book-role: write
+      summary: Create a spreadsheet with the content of this one (409 spreadsheet_limit_reached).
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SpreadsheetNameInput"
+      responses:
+        "201":
+          description: Created.
+          headers:
+            Location:
+              description: Path of the created record.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpreadsheetSummary"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+schemas:
+  SpreadsheetName:
+    type: string
+    description: Trimmed; 1 to 120 characters, no control characters (422 validation_failed on name).
+    maxLength: 400
+  SpreadsheetContent:
+    type: object
+    description: The workbook snapshot the editor writes; the server stores it without reading it.
+    additionalProperties: true
+  SpreadsheetNameInput:
+    type: object
+    additionalProperties: false
+    required: [name]
+    properties:
+      name:
+        $ref: "#/components/schemas/SpreadsheetName"
+  SpreadsheetInput:
+    type: object
+    additionalProperties: false
+    required: [name, content]
+    properties:
+      name:
+        $ref: "#/components/schemas/SpreadsheetName"
+      content:
+        $ref: "#/components/schemas/SpreadsheetContent"
+  SpreadsheetContentInput:
+    type: object
+    additionalProperties: false
+    required: [content, version]
+    properties:
+      content:
+        $ref: "#/components/schemas/SpreadsheetContent"
+      version:
+        type: integer
+        minimum: 1
+  SpreadsheetSummary:
+    type: object
+    required: [id, name, version, created_at, updated_at]
+    properties:
+      id:
+        type: string
+        format: uuid
+      name:
+        type: string
+      version:
+        type: integer
+        description: Number of the last write of the content.
+      created_at:
+        type: string
+        format: date-time
+      updated_at:
+        type: string
+        format: date-time
+        description: Instant of the last write of the content.
+  Spreadsheet:
+    allOf:
+      - $ref: "#/components/schemas/SpreadsheetSummary"
+      - type: object
+        required: [content]
+        properties:
+          content:
+            $ref: "#/components/schemas/SpreadsheetContent"
+  SpreadsheetList:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/SpreadsheetSummary"

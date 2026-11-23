@@ -4725,6 +4725,83 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/spreadsheets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Spreadsheets of the book, the last saved first, without their content. */
+        get: operations["listSpreadsheets"];
+        put?: never;
+        /**
+         * Create a spreadsheet. A book holds at most 40 (409 spreadsheet_limit_reached); a body
+         *     above 4 MiB is 413 request_too_large.
+         */
+        post: operations["createSpreadsheet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/spreadsheets/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One spreadsheet with its content. */
+        get: operations["getSpreadsheet"];
+        /**
+         * Replace the content. version is the one the editor read; a later save by another
+         *     session is 409 version_conflict and stores nothing.
+         */
+        put: operations["saveSpreadsheet"];
+        post?: never;
+        /** Delete a spreadsheet; the deletion is not undone. */
+        delete: operations["deleteSpreadsheet"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/spreadsheets/{id}/name": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Rename a spreadsheet; its content and version stay. */
+        put: operations["renameSpreadsheet"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/spreadsheets/{id}/copies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a spreadsheet with the content of this one (409 spreadsheet_limit_reached). */
+        post: operations["copySpreadsheet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -4801,7 +4878,7 @@ export interface components {
              *     posting_not_movable, archive_invalid, import_not_empty, import_conflict, export_pending,
              *     export_not_ready, record_not_discarded, no_decision, too_many_lines, proposal_not_found,
              *     provider_not_found, use_not_found, capability_missing, key_required, secret_key_missing,
-             *     admin_required, unofficial_source.
+             *     admin_required, unofficial_source, spreadsheet_limit_reached.
              */
             code: string;
             request_id?: string;
@@ -9265,6 +9342,43 @@ export interface components {
         };
         CardStatementAnalytics: {
             items: components["schemas"]["StatementAnalyticsItem"][];
+        };
+        /** @description Trimmed; 1 to 120 characters, no control characters (422 validation_failed on name). */
+        SpreadsheetName: string;
+        /** @description The workbook snapshot the editor writes; the server stores it without reading it. */
+        SpreadsheetContent: {
+            [key: string]: unknown;
+        };
+        SpreadsheetNameInput: {
+            name: components["schemas"]["SpreadsheetName"];
+        };
+        SpreadsheetInput: {
+            name: components["schemas"]["SpreadsheetName"];
+            content: components["schemas"]["SpreadsheetContent"];
+        };
+        SpreadsheetContentInput: {
+            content: components["schemas"]["SpreadsheetContent"];
+            version: number;
+        };
+        SpreadsheetSummary: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** @description Number of the last write of the content. */
+            version: number;
+            /** Format: date-time */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description Instant of the last write of the content.
+             */
+            updated_at: string;
+        };
+        Spreadsheet: components["schemas"]["SpreadsheetSummary"] & {
+            content: components["schemas"]["SpreadsheetContent"];
+        };
+        SpreadsheetList: {
+            items: components["schemas"]["SpreadsheetSummary"][];
         };
     };
     responses: {
@@ -17410,6 +17524,200 @@ export interface operations {
             };
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    listSpreadsheets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpreadsheetList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+        };
+    };
+    createSpreadsheet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SpreadsheetInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    /** @description Path of the created record. */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Spreadsheet"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            413: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    getSpreadsheet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Spreadsheet"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    saveSpreadsheet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SpreadsheetContentInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpreadsheetSummary"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            413: components["responses"]["Problem"];
+        };
+    };
+    deleteSpreadsheet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    renameSpreadsheet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SpreadsheetNameInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpreadsheetSummary"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    copySpreadsheet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SpreadsheetNameInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    /** @description Path of the created record. */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpreadsheetSummary"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
         };
     };

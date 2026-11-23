@@ -22,6 +22,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 	"github.com/andrelopes-code/equori/internal/portfolio"
 	"github.com/andrelopes-code/equori/internal/reporting"
+	"github.com/andrelopes-code/equori/internal/spreadsheet"
 	"github.com/andrelopes-code/equori/web"
 )
 
@@ -35,6 +36,7 @@ type modules struct {
 	ledger         *ledger.Module
 	reporting      *reporting.Module
 	classification *classification.Module
+	spreadsheet    *spreadsheet.Module
 	assistant      *assistant.Module
 	router         *llm.Router
 	capture        *capture.Module
@@ -130,6 +132,7 @@ func (m *modules) addCore(pool *pgxpool.Pool, _ Config, log *slog.Logger) error 
 	)
 	m.reporting = reporting.New(pool, m.dispatcher, m.clock, log, m.version)
 	m.classification = classification.New(pool, m.dispatcher, m.ledger, log)
+	m.spreadsheet = spreadsheet.New(pool, log)
 
 	return nil
 }

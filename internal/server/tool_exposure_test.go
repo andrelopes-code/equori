@@ -308,4 +308,11 @@ var exposure = map[string]string{
 	"getCommitted":                     "list_schedules",
 	"unrealizeOccurrence":              "manage_occurrence",
 	"reopenOccurrence":                 "manage_occurrence",
+	"listSpreadsheets":                 "-editor",
+	"createSpreadsheet":                "-editor",
+	"getSpreadsheet":                   "-editor",
+	"saveSpreadsheet":                  "-editor",
+	"deleteSpreadsheet":                "-editor",
+	"renameSpreadsheet":                "-editor",
+	"copySpreadsheet":                  "-editor",
 }

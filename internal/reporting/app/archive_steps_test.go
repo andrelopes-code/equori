@@ -909,3 +909,24 @@ func TestAddContributionQuestionFact(t *testing.T) {
 		t.Fatalf("ArchiveVersion = %d, want at least 32", ArchiveVersion)
 	}
 }
+
+// A version 32 archive holds no spreadsheet; the step leaves its rows as they are
+// (migration 00142).
+func TestAddSpreadsheets(t *testing.T) {
+	t.Parallel()
+
+	v32 := []ArchiveTable{
+		{Name: "planning_goal", Rows: [][]byte{[]byte(`{"id":"a"}`)}},
+	}
+
+	got, err := addSpreadsheets(v32)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assertTables(t, got, v32)
+
+	if ArchiveVersion < 33 {
+		t.Fatalf("ArchiveVersion = %d, want at least 33", ArchiveVersion)
+	}
+}

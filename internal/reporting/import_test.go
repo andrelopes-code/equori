@@ -134,6 +134,11 @@ func populate(t *testing.T, h *apitest.Harness) books {
 	addAssistantConfiguration(t, h)
 	h.Dispatch()
 
+	h.MustDo(http.MethodPost, "/api/v1/spreadsheets", map[string]any{
+		"name":    "Plan",
+		"content": map[string]any{"id": "plan", "sheets": map[string]any{"s1": map[string]any{}}},
+	}, http.StatusCreated, nil)
+
 	return b
 }
 

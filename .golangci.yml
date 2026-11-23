@@ -94,6 +94,10 @@ linters:
               desc: inverted dependency; toolapi imports app, never the reverse
             - pkg: github.com/andrelopes-code/equori/internal/instance/llmapi
               desc: inverted dependency; llmapi imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/spreadsheet/httpapi
+              desc: inverted dependency; httpapi imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/spreadsheet/postgres
+              desc: inverted dependency; postgres imports app, never the reverse
             - pkg: github.com/andrelopes-code/equori/internal/ledger/httpapi
               desc: inverted dependency; httpapi imports app, never the reverse
             - pkg: github.com/andrelopes-code/equori/internal/ledger/postgres
@@ -161,6 +165,8 @@ linters:
               desc: platform must not depend on business modules (ADR 002)
             - pkg: github.com/andrelopes-code/equori/internal/instance
               desc: platform must not depend on business modules (ADR 002)
+            - pkg: github.com/andrelopes-code/equori/internal/spreadsheet
+              desc: platform must not depend on business modules (ADR 002)
         module-assistant:
           list-mode: lax
           files:
@@ -208,6 +214,14 @@ linters:
             - "!**/internal/instance/**"
           deny:
             - pkg: github.com/andrelopes-code/equori/internal/instance/*
+              desc: a module is reached only through its root package (ADR 033)
+        module-spreadsheet:
+          list-mode: lax
+          files:
+            - "$all"
+            - "!**/internal/spreadsheet/**"
+          deny:
+            - pkg: github.com/andrelopes-code/equori/internal/spreadsheet/*
               desc: a module is reached only through its root package (ADR 033)
         module-ledger:
           list-mode: lax

@@ -22,5 +22,6 @@ What the assistant does not do. Every other action a member takes on a screen ha
 - llm: the language model providers, their keys, the chain of models of each use, the daily limits and the list of conversations. The assistant does not change its own model, keys or limits. Settings holds them; a conversation is deleted in the panel.
 - erase: deleting the book and restoring an archive over it. Both erase records and ask the owner to type the name of the book. Settings, Data holds them.
 - instance: the backup of the instance, the diagnostic file, the version and the update check, the market data sources, the sync schedule and the invitation of a new account. They belong to the administrator of the instance, not to a book. Settings holds them, for the administrator.
+- editor: spreadsheets. A spreadsheet is read and written by its editor alone; the assistant does not open, create or change one. The Spreadsheets screen holds them.
 - binary: the content of an attachment and of an export archive. The assistant names the file or gives the path that downloads it.
 - capture: the reading of typed lines on the Capture screen. The assistant reads the same text in the conversation and proposes the transactions with record_transaction.

@@ -74,6 +74,7 @@ Modules whose layout differs from this table are listed in "Modules" below.
 | `planning` | Schedules, occurrences, budgets, goals | `planning` | None |
 | `portfolio` | Positions, realized results and income events derived from the ledger | `portfolio` | None |
 | `reporting` | Read models derived from the ledger, export and import of archives | `reporting` | No `domain/`. The queries live in `postgres/`. |
+| `spreadsheet` | Spreadsheets of a book, stored as the snapshot of their editor (ADR 038) | `spreadsheet` | No `toolapi/`: the operations have no assistant tool. |
 | `server` | Composition of the modules: HTTP handler and outbox dispatcher | none | Not a business module |
 | `platform` | Infrastructure without business rules (ADR 002) | none | Not a business module |
 | `apitest` | HTTP test harness over `internal/server` | none | Test support only |

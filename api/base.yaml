@@ -32,5 +32,7 @@ tags:
     description: Transaction drafts read from text the owner writes.
   - name: assistant
     description: Language model providers of each book and the chain of each use (ADR 019).
+  - name: spreadsheet
+    description: Spreadsheets of a book, edited in the web interface (ADR 038).
 security:
   - sessionCookie: []
