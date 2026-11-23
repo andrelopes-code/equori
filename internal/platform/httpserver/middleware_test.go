@@ -232,7 +232,7 @@ func TestMiddlewareSetsSecurityHeaders(t *testing.T) {
 			"Cache-Control":           "no-store",
 		},
 		false: {
-			"Content-Security-Policy": "default-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
+			"Content-Security-Policy": "default-src 'self'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
 			"Cache-Control":           "",
 		},
 	}

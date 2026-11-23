@@ -27,7 +27,7 @@ func TestWebIsServedOutsideAPI(t *testing.T) {
 
 	if got, want := r.Header.Get(
 		"Content-Security-Policy",
-	), "default-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"; got != want {
+	), "default-src 'self'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"; got != want {
 		t.Errorf("Content-Security-Policy = %q, want %q", got, want)
 	}
 

@@ -52,7 +52,8 @@ func securityHeaders(next http.Handler) http.Handler {
 		} else {
 			h.Set(
 				"Content-Security-Policy",
-				"default-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
+				"default-src 'self'; img-src 'self' data:; "+
+					"frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
 			)
 		}
 
