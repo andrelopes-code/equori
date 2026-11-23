@@ -44,7 +44,7 @@ Listed options. A call or a put bought on B3 is an instrument of type option (su
 
 Fund report. The report of a listed FII on the instrument page comes from the CVM (Informe Mensal de FII, feed br_cvm_fii); the break-even is read against the Tesouro IPCA+ curve (feed br_tesouro).
 
-Company statements. The statements of a listed company on the instrument page come from the CVM files DFP, ITR and FCA (feed br_cvm_cia).
+Company statements. The statements of a listed company on the instrument page come from the CVM files DFP, ITR and FCA (feed br_cvm_cia). The count of shares of the DFP and the ITR carries no unit, so the price multiples use it only when the capital of the FRE, in units, confirms it.
 
 Futures. A future (mini-índice WIN, mini-dólar WDO and others) is an instrument of type future with the contract's code, scale 0 and quote currency BRL. A day trade is record_investment buy and sell on the same day, with unit_price the value of one contract in reais (the points times the multiplier the contract states, R$ 0.20 a point for WIN, R$ 10.00 for WDO), and the 1% withheld at source as taxes of the sale; get_tax_year view gain_tax puts its result in the day_trade pool at 20%. A position held across days is a purchase and the sale that closes it, and its result is realized then; its daily settlements are not recorded, so the cash account shows the value of the contract while it is open. A sold future that is bought back later (a short position) is not supported.
 

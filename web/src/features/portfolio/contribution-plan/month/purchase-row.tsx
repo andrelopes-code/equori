@@ -19,12 +19,17 @@ interface PurchaseRowProps {
   groupName?: string | undefined;
   // The contribution in minor units: the base of the row's share.
   base: number;
+  // Whether the list draws the column of the profit, and the change of this company's.
+  withProfit: boolean;
+  profit?: string | undefined;
   // Enters edit mode with the assets of the entry's group open.
   onSplit: (group: number) => void;
   // Opens the indexer comparison for a row bought by value; undefined when none is offered.
   onCompare?: ((entry: ShoppingEntry) => void) | undefined;
   // Opens the fund report of a row that names an instrument; undefined when none is offered.
   onReport?: ((entry: ShoppingEntry) => void) | undefined;
+  // Opens the statements of the row's company; offered when the row has a change of profit.
+  onStatements: (entry: ShoppingEntry) => void;
   // The key of the row under the pointer, or undefined when it leaves.
   onPointer: (key: string | undefined) => void;
 }
@@ -35,9 +40,12 @@ export function PurchaseRow({
   entry,
   groupName,
   base,
+  withProfit,
+  profit,
   onSplit,
   onCompare,
   onReport,
+  onStatements,
   onPointer,
 }: PurchaseRowProps) {
   const t = useT();
@@ -48,6 +56,17 @@ export function PurchaseRow({
   const money = (m: ShoppingEntry["cost"]) =>
     fmt.money(m, scale?.(m.currency) ?? 0);
   const order = orderText(entry, { t, money, locale, hidden: fmt.hidden });
+  const groupText = [
+    groupName,
+    entry.criteria === undefined
+      ? undefined
+      : t("contributionPlan.criteriaCount", {
+          yes: String(entry.criteria.yes),
+          count: String(entry.criteria.count),
+        }),
+  ]
+    .filter((part) => part !== undefined)
+    .join(" · ");
   const share = shareText(entry.cost.amount / base, locale);
 
   return (
@@ -70,9 +89,15 @@ export function PurchaseRow({
 
       <TableCell text="truncate">
         <Text size="sm" tone="muted">
-          {groupName}
+          {groupText}
         </Text>
       </TableCell>
+
+      {withProfit && (
+        <TableCell text="nowrap">
+          <Text size="sm">{profit}</Text>
+        </TableCell>
+      )}
 
       <TableCell align="end" text="nowrap">
         {entry.splitToSee === true && (
@@ -103,6 +128,19 @@ export function PurchaseRow({
             }}
           >
             {t("contributionPlan.compareIndexers")}
+          </Button>
+        )}
+
+        {profit !== undefined && (
+          <Button
+            inline
+            size="sm"
+            className={styles.compare}
+            onClick={() => {
+              onStatements(entry);
+            }}
+          >
+            {t("contributionPlan.companyReport")}
           </Button>
         )}
 

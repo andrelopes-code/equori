@@ -1,8 +1,8 @@
 import type { CompanyFigures } from "@/features/instruments/company-report/company-figures";
+import { CompanyFigureGrid } from "@/features/instruments/company-report/company-figure-grid";
 import { formatDate, numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { FigureCard } from "@/ui/display/figure-card";
-import { FigureGrid } from "@/ui/display/figure-grid";
 
 interface CompanyReportFiguresProps {
   figures: CompanyFigures;
@@ -44,7 +44,7 @@ export function CompanyReportFigures({ figures }: CompanyReportFiguresProps) {
   const years = figures.positiveYears;
 
   return (
-    <FigureGrid label={t("companyReport.title")}>
+    <CompanyFigureGrid label={t("companyReport.title")}>
       <FigureCard
         label={t("companyReport.returnOnEquity")}
         value={text(figures.returnOnEquity, percent)}
@@ -83,6 +83,6 @@ export function CompanyReportFigures({ figures }: CompanyReportFiguresProps) {
         }
         goodWhen="none"
       />
-    </FigureGrid>
+    </CompanyFigureGrid>
   );
 }

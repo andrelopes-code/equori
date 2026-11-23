@@ -21,6 +21,7 @@ import { Text } from "@slotted/react/typography";
 import { useApi } from "@/api/api-context";
 import { companyReportsQuery } from "@/features/instruments/api";
 import { companyFigures } from "@/features/instruments/company-report/company-figures";
+import { CompanyMultiples } from "@/features/instruments/company-report/company-multiples";
 import { CompanyReportFigures } from "@/features/instruments/company-report/company-report-figures";
 import { piotroskiSignals } from "@/features/instruments/company-report/piotroski";
 import { PiotroskiList } from "@/features/instruments/company-report/piotroski-list";
@@ -78,6 +79,8 @@ export function CompanyReport({ code }: CompanyReportProps) {
           <Text size="sm" truncate title={report.name}>
             {report.name}
           </Text>
+
+          <CompanyMultiples code={code} />
 
           <CompanyReportFigures figures={figures} />
 

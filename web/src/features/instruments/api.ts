@@ -154,6 +154,20 @@ export function companyReportsQuery(api: Client<paths>, code: string) {
   });
 }
 
+// The figures of the company an instrument stands for, one set per report set of companyReportsQuery
+// (AC14).
+export function companyFiguresQuery(api: Client<paths>, code: string) {
+  return queryOptions({
+    queryKey: [...instrumentKeys.all, "company-figures", code] as const,
+    queryFn: async () =>
+      (
+        await unwrap(
+          await api.GET("/company-figures", { params: { query: { code } } }),
+        )
+      ).items,
+  });
+}
+
 export function catalogQuery(api: Client<paths>, q: string) {
   return queryOptions({
     queryKey: [...instrumentKeys.all, "catalog", q] as const,

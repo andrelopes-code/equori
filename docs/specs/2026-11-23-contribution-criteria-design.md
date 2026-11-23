@@ -163,7 +163,7 @@ In the group list, the assets panel of a group with criteria shows its assets wi
 
 ### Company report
 
-`CompanyReport` gains, above the existing figures, "Preço e resultado": "P/L", "P/VP" (each with "faixa de {n} exercícios: {a} a {b}" or the reason in words), "Lucro no ano" and "Receita no ano" (with the months compared). Under them: "Um P/L baixo também pode indicar que se espera queda do lucro." The date of the price and of the balance are written. Reasons in words: "número de ações não conferido", "classes com direitos diferentes", "composição da unit não informada", "prejuízo em 12 meses", "patrimônio não positivo", "sem cotação em {currency}", "cotação com salto: possível desdobramento", "lucro da controladora não informado", "balanço com mais de 200 dias", "não se aplica ao plano de contas".
+`CompanyReport` gains, above the existing figures, "Preço e resultado": "P/L", "P/VP" (each with "faixa de {n} exercícios: {a} a {b}" or the reason in words), "Lucro contra o ano anterior" and "Receita contra o ano anterior" (with the months compared). Under them: "Um P/L baixo também pode indicar que se espera queda do lucro." The date of the price and of the balance are written. Reasons in words: "número de ações não conferido", "classes com direitos diferentes", "composição da unit não informada", "prejuízo em 12 meses", "patrimônio não positivo", "sem cotação em {currency}", "cotação com salto: possível desdobramento", "lucro da controladora não informado", "balanço com mais de 200 dias", "não se aplica ao plano de contas".
 
 ## Cross-cutting questions
 

@@ -1,19 +1,12 @@
 import { Inline } from "@slotted/react/inline";
 import { Stack } from "@slotted/react/stack";
-import {
-  Table,
-  TableBody,
-  TableColumnHeader,
-  TableContent,
-  TableHead,
-  TableRow,
-} from "@slotted/react/table";
+import { Table, TableBody, TableContent } from "@slotted/react/table";
 import { Text } from "@slotted/react/typography";
-import { VisuallyHidden } from "@slotted/react/visually-hidden";
 import { useState } from "react";
 
 import type { components } from "@/api/schema.gen";
-import { quantityText } from "@/features/portfolio/contribution-plan/model/quantity-text";
+import { changeText } from "@/features/instruments";
+import { copyText } from "@/features/portfolio/contribution-plan/model/copy-text";
 import { shareText } from "@/features/portfolio/contribution-plan/model/share-text";
 import {
   contributionOf,
@@ -22,13 +15,16 @@ import {
 } from "@/features/portfolio/contribution-plan/model/shopping-list";
 import { CompareIndexersDialog } from "@/features/portfolio/contribution-plan/month/compare-indexers-dialog";
 import { CopyListButton } from "@/features/portfolio/contribution-plan/month/copy-list-button";
+import { CompanyReportDialog } from "@/features/portfolio/contribution-plan/month/company-report-dialog";
 import { FundReportDialog } from "@/features/portfolio/contribution-plan/month/fund-report-dialog";
 import { LeftoverRow } from "@/features/portfolio/contribution-plan/month/leftover-row";
 import { PurchaseBar } from "@/features/portfolio/contribution-plan/month/purchase-bar";
 import type { PurchaseSegment } from "@/features/portfolio/contribution-plan/month/purchase-bar";
 import { PurchaseRow } from "@/features/portfolio/contribution-plan/month/purchase-row";
+import { PurchaseTableHead } from "@/features/portfolio/contribution-plan/month/purchase-table-head";
+import { useCompanyFigures } from "@/features/portfolio/contribution-plan/month/use-company-figures";
 import { useCompareIndexers } from "@/features/portfolio/contribution-plan/month/use-compare-indexers";
-import { useFundReportDialog } from "@/features/portfolio/contribution-plan/month/use-fund-report-dialog";
+import { useReportDialog } from "@/features/portfolio/contribution-plan/month/use-report-dialog";
 import { useScale } from "@/features/setup";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
@@ -59,9 +55,20 @@ export function PurchaseList({ view, memberName, onSplit }: PurchaseListProps) {
   const leftover = positive(view.leftover) ? view.leftover : undefined;
   const base = contributionOf(entries, leftover);
   const compare = useCompareIndexers(base.currency);
-  const report = useFundReportDialog();
+  const report = useReportDialog();
+  const statements = useReportDialog();
+  const figures = useCompanyFigures(
+    entries.flatMap((entry) => (entry.code === undefined ? [] : [entry.code])),
+  );
   const money = (m: Money) => fmt.money(m, scale?.(m.currency) ?? 0);
   const shareOf = (m: Money) => shareText(m.amount / base.amount, locale);
+  const profitOf = (code: string | undefined) => {
+    const company = code === undefined ? undefined : figures.get(code);
+
+    return company === undefined
+      ? undefined
+      : changeText(t, locale, company.profit);
+  };
   const groupOf = (name: string, group: number) => {
     const groupName = view.classes[group]?.name;
 
@@ -79,21 +86,8 @@ export function PurchaseList({ view, memberName, onSplit }: PurchaseListProps) {
       amount: leftover.amount,
       label: `${t("contributionPlan.leftoverName")} ${shareOf(leftover)}`,
     });
-  const text = entries
-    .map((entry) =>
-      entry.quantity === undefined
-        ? `${entry.name}  ${money(entry.cost)}`
-        : `${entry.name}  ${t("contributionPlan.orderUnits", {
-            count: quantityText(entry.quantity, locale),
-            cost: money(entry.cost),
-          })}`,
-    )
-    .concat(
-      leftover === undefined
-        ? []
-        : [t("contributionPlan.leftover", { amount: money(leftover) })],
-    )
-    .join("\n");
+  const text = copyText(entries, leftover, { t, locale, money });
+  const withProfit = figures.size > 0;
 
   if (entries.length === 0) return null;
 
@@ -114,41 +108,9 @@ export function PurchaseList({ view, memberName, onSplit }: PurchaseListProps) {
       />
 
       <div data-slotted-density="comfortable">
-        <Table columns={5} variant="ruled" edges="flush">
+        <Table columns={withProfit ? 6 : 5} variant="ruled" edges="flush">
           <TableContent aria-label={t("contributionPlan.shopping")}>
-            <TableHead>
-              <TableRow>
-                <TableColumnHeader>
-                  <VisuallyHidden>
-                    {t("contributionPlan.colAsset")}
-                  </VisuallyHidden>
-                </TableColumnHeader>
-
-                <TableColumnHeader>
-                  <VisuallyHidden>
-                    {t("contributionPlan.colGroup")}
-                  </VisuallyHidden>
-                </TableColumnHeader>
-
-                <TableColumnHeader align="end">
-                  <Text size="xs" tone="muted" weight="medium">
-                    {t("contributionPlan.colOrder")}
-                  </Text>
-                </TableColumnHeader>
-
-                <TableColumnHeader numeric>
-                  <Text size="xs" tone="muted" weight="medium">
-                    {t("contributionPlan.colTotal")}
-                  </Text>
-                </TableColumnHeader>
-
-                <TableColumnHeader numeric>
-                  <Text size="xs" tone="muted" weight="medium">
-                    {t("contributionPlan.colShare")}
-                  </Text>
-                </TableColumnHeader>
-              </TableRow>
-            </TableHead>
+            <PurchaseTableHead withProfit={withProfit} />
 
             <TableBody>
               {entries.map((entry) => (
@@ -157,9 +119,12 @@ export function PurchaseList({ view, memberName, onSplit }: PurchaseListProps) {
                   entry={entry}
                   groupName={groupOf(entry.name, entry.group)}
                   base={base.amount}
+                  withProfit={withProfit}
+                  profit={profitOf(entry.code)}
                   onSplit={onSplit}
                   onCompare={compare.onCompare}
                   onReport={report.onReport}
+                  onStatements={statements.onReport}
                   onPointer={setActive}
                 />
               ))}
@@ -169,6 +134,7 @@ export function PurchaseList({ view, memberName, onSplit }: PurchaseListProps) {
                   rowKey={leftoverKey}
                   amount={leftover}
                   base={base.amount}
+                  withProfit={withProfit}
                   onPointer={setActive}
                 />
               )}
@@ -191,6 +157,14 @@ export function PurchaseList({ view, memberName, onSplit }: PurchaseListProps) {
           quote={report.opened.cost.currency}
           open
           onClose={report.close}
+        />
+      )}
+
+      {statements.opened?.code !== undefined && (
+        <CompanyReportDialog
+          code={statements.opened.code}
+          open
+          onClose={statements.close}
         />
       )}
     </Stack>

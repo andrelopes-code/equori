@@ -1,4 +1,5 @@
 import type { components } from "@/api/schema.gen";
+import { effectiveAnswers } from "@/features/portfolio/contribution-plan/model/fact-answers";
 
 type Plan = components["schemas"]["ContributionPlan"];
 type Money = components["schemas"]["Money"];
@@ -26,6 +27,8 @@ export interface ShoppingEntry {
   splitToSee?: boolean;
   // The instrument of a member row: the key of its fund report.
   code?: string;
+  // The points of a member of a class with criteria.
+  criteria?: { yes: number; count: number };
   // The position of the entry's class in the plan: it picks the class colour.
   group: number;
 }
@@ -71,6 +74,7 @@ export function receivingEntries(
           orderOf(member.quantity, member.unit_value, scaleOf),
         );
       if (member.instrument !== undefined) entry.code = member.instrument;
+      if (cls.questions.length > 0) entry.criteria = pointsOf(member);
       if (member.instrument === undefined) entry.byValue = true;
       else if (member.unit_value === undefined) entry.unpriced = true;
       entries.push(entry);
@@ -116,6 +120,16 @@ export function groupCost(group: Plan["classes"][number]): Money | undefined {
     amount: costs.reduce((sum, c) => sum + (c?.amount ?? 0), 0),
     currency,
   };
+}
+
+// The answers "yes" of a member: the ones equori gives, else the investor's (FQ4).
+function pointsOf(member: Plan["classes"][number]["members"][number]): {
+  yes: number;
+  count: number;
+} {
+  const answers = effectiveAnswers(member.answers ?? [], member.fact_answers);
+
+  return { yes: answers.filter(Boolean).length, count: answers.length };
 }
 
 // The units of an order, its unit price, and the instrument when the units carry decimals.

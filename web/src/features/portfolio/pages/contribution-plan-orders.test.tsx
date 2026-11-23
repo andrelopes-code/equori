@@ -483,3 +483,141 @@ describe("Contribution plan, fund report", () => {
     ).not.toBeInTheDocument();
   });
 });
+
+const stockPlan = {
+  ...plan,
+  classes: [
+    {
+      name: "Ações",
+      target_bp: 10000,
+      questions: ["P/L", "Entendo o negócio?"],
+      question_facts: ["price_earnings_max", ""],
+      question_limits: ["15", ""],
+      question_ideals: true,
+      rules: [],
+      matched: [],
+      value: brl(300000),
+      share_bp: 10000,
+      amount: brl(100000),
+      members: [
+        {
+          instrument: "WEGE3",
+          target_bp: 5000,
+          answers: [false, true],
+          fact_answers: ["no", "none"],
+          fact_details: [{ value: "33.4", date: "2026-09-30" }, {}],
+          value: brl(300000),
+          amount: brl(60000),
+        },
+        {
+          instrument: "BOVA11",
+          target_bp: 5000,
+          answers: [false, false],
+          fact_answers: ["none", "none"],
+          fact_details: [{ reason: "no_report" }, {}],
+          value: brl(0),
+          amount: brl(40000),
+        },
+      ],
+    },
+  ],
+};
+
+const companyFigures = {
+  source: "br_cvm_cia",
+  source_url: "https://dados.cvm.gov.br/dataset/cia_aberta-doc-dfp",
+  name: "WEG S.A.",
+  currency: "BRL",
+  price_date: "2026-11-20",
+  price_earnings: { value: "33.4", date: "2026-09-30" },
+  price_book: { reason: "shares" },
+  return_on_equity: { value: "0.31", date: "2026-09-30" },
+  net_margin: { value: "0.16", date: "2026-09-30" },
+  net_debt_to_equity: { value: "-0.12", date: "2026-09-30" },
+  gross_profit_to_assets: { value: "0.29", date: "2026-09-30" },
+  current_ratio: { value: "1.5", date: "2026-09-30" },
+  revenue_growth: { reason: "short_history" },
+  positive_years: { positive: 5, years: 5 },
+  profit: { state: "rate", rate: "-0.18", date: "2026-09-30", months: 9 },
+  revenue: { state: "rate", rate: "0.03", date: "2026-09-30", months: 9 },
+};
+
+async function openStocks(stored = true) {
+  localStorage.setItem(
+    "equori.locale",
+    JSON.stringify({ language: "pt", region: "BR" }),
+  );
+  await renderApp("/portfolio/contribution-plan", {
+    fetch: portfolioApi({
+      "GET /api/v1/contribution-plan": () => json(200, stockPlan),
+      "POST /api/v1/contribution-plan/preview": () => json(200, stockPlan),
+      "GET /api/v1/company-figures": (req) =>
+        json(200, {
+          items:
+            stored && new URL(req.url).searchParams.get("code") === "WEGE3"
+              ? [companyFigures]
+              : [],
+        }),
+    }),
+  });
+
+  return screen.findByRole("table", { name: "Lista de compras" });
+}
+
+describe("Contribution plan, company of a purchase", () => {
+  afterEach(() => {
+    localStorage.removeItem("equori.locale");
+  });
+
+  it("states the change of the profit on the row of a company, without a tone", async () => {
+    const list = await openStocks();
+
+    expect(
+      await within(list).findByRole("columnheader", { name: "Lucro no ano" }),
+    ).toBeInTheDocument();
+
+    const rows = within(list).getAllByRole("row");
+    expect(text(rows[1] ?? list)).toContain("WEGE3");
+    expect(text(rows[1] ?? list)).toContain("caiu 18%");
+    expect(text(rows[2] ?? list)).not.toContain("caiu");
+    expect(
+      within(list).getAllByRole("button", { name: "ver demonstrações" }),
+    ).toHaveLength(1);
+  });
+
+  it("states the points of a member of a group with criteria", async () => {
+    const list = await openStocks();
+    const rows = within(list).getAllByRole("row");
+
+    expect(text(rows[1] ?? list)).toContain("Ações · 1 de 2 critérios");
+    expect(text(rows[2] ?? list)).toContain("Ações · 0 de 2 critérios");
+  });
+
+  it("opens the statements in a dialog", async () => {
+    const list = await openStocks();
+    const user = userEvent.setup();
+
+    await user.click(
+      await within(list).findByRole("button", { name: "ver demonstrações" }),
+    );
+
+    expect(
+      await screen.findByRole("dialog", { name: "Demonstrações de WEGE3" }),
+    ).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+  });
+
+  it("draws no column when no row is of a company with figures", async () => {
+    const list = await openStocks(false);
+
+    await waitFor(() => {
+      expect(within(list).getAllByRole("row").length).toBeGreaterThan(1);
+    });
+    expect(
+      within(list).queryByRole("columnheader", { name: "Lucro no ano" }),
+    ).not.toBeInTheDocument();
+  });
+});

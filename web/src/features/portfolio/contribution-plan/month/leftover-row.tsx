@@ -17,6 +17,8 @@ interface LeftoverRowProps {
   amount: Money;
   // The contribution in minor units: the base of the share.
   base: number;
+  // Whether the list draws the column of the profit.
+  withProfit: boolean;
   onPointer: (key: string | undefined) => void;
 }
 
@@ -25,6 +27,7 @@ export function LeftoverRow({
   rowKey,
   amount,
   base,
+  withProfit,
   onPointer,
 }: LeftoverRowProps) {
   const t = useT();
@@ -55,6 +58,8 @@ export function LeftoverRow({
           {t("contributionPlan.leftoverStays")}
         </Text>
       </TableCell>
+
+      {withProfit && <TableCell />}
 
       <TableCell />
 

@@ -63,6 +63,31 @@ const plan: Plan = {
 };
 
 describe("shoppingList", () => {
+  it("counts the points of a member of a class with criteria (FQ4)", () => {
+    const view: Plan = {
+      ...plan,
+      classes: plan.classes.map((cls) =>
+        cls.name === "Domestic stocks"
+          ? {
+              ...cls,
+              questions: ["P/L", "Entendo?", "ROE"],
+              members: cls.members.map((m) => ({
+                ...m,
+                answers: [false, true, true],
+                fact_answers: ["yes", "none", "no"],
+              })),
+            }
+          : cls,
+      ),
+    };
+
+    expect(shoppingList(view, names)[0]?.criteria).toEqual({
+      yes: 2,
+      count: 3,
+    });
+    expect(shoppingList(plan, names)[0]?.criteria).toBeUndefined();
+  });
+
   it("lists the order of the member: its quantity and its cost (S408, CN17)", () => {
     const view = withPetr4({
       quantity: { amount: 25, currency: "PETR4" },

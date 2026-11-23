@@ -11,6 +11,7 @@ import { renderWithProviders } from "@/testing/render-app";
 
 type Period = components["schemas"]["CompanyReportPeriod"];
 type Report = components["schemas"]["CompanyReport"];
+type Figures = components["schemas"]["CompanyFigures"];
 
 const sourceUrl = "https://dados.cvm.gov.br/dataset/cia_aberta-doc-dfp";
 const signalsHeading = "Sinais de Piotroski, exercício de 2025 contra 2024";
@@ -18,6 +19,52 @@ const signalsHeading = "Sinais de Piotroski, exercício de 2025 contra 2024";
 describe("Company report on the instrument page", () => {
   afterEach(() => {
     localStorage.clear();
+  });
+
+  it("draws the multiples, the changes and the caution, and writes a reason in words", async () => {
+    show(
+      api(report(), [
+        {
+          source: "br_cvm_cia",
+          source_url: sourceUrl,
+          name: "Petrobras S.A.",
+          currency: "BRL",
+          price_date: "2026-11-17",
+          price_earnings: { value: "3.916524", date: "2026-09-30" },
+          price_earnings_range: { least: "1.7", greatest: "12.6", years: 5 },
+          price_book: { reason: "shares" },
+          return_on_equity: { reason: "missing" },
+          net_margin: { reason: "missing" },
+          net_debt_to_equity: { reason: "missing" },
+          gross_profit_to_assets: { reason: "missing" },
+          current_ratio: { reason: "missing" },
+          revenue_growth: { reason: "missing" },
+          positive_years: { positive: 5, years: 5 },
+          profit: {
+            state: "rate",
+            rate: "0.316865",
+            date: "2026-09-30",
+            months: 9,
+          },
+          revenue: { reason: "short_history" },
+        },
+      ]),
+    );
+
+    expect(await screen.findByText("3,9")).toBeInTheDocument();
+    expect(card("P/L")).toHaveTextContent("faixa de 5 exercícios: 1,7 a 12,6");
+    expect(card("P/VP")).toHaveTextContent("número de ações não conferido");
+    const profit = card("Lucro contra o ano anterior");
+    expect(profit).toHaveTextContent("subiu 32%");
+    expect(profit).toHaveTextContent("9 meses até 30/09/2026");
+    expect(card("Receita contra o ano anterior")).toHaveTextContent(
+      "histórico curto",
+    );
+    expect(
+      screen.getByText(
+        "Preço de 17/11/2026. Um P/L baixo também pode indicar que se espera queda do lucro.",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("draws the statements, the four figures and the nine signals", async () => {
@@ -100,7 +147,7 @@ function show(fetch: typeof globalThis.fetch) {
   });
 }
 
-function api(item: Report | null) {
+function api(item: Report | null, figures: Figures[] = []) {
   localStorage.setItem(
     "equori.locale",
     JSON.stringify({ language: "pt", region: "BR" }),
@@ -118,6 +165,7 @@ function api(item: Report | null) {
       }),
     "GET /api/v1/company-reports": () =>
       json(200, { items: item === null ? [] : [item] }),
+    "GET /api/v1/company-figures": () => json(200, { items: figures }),
   });
 }
 
