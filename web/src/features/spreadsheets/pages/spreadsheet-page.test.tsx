@@ -10,6 +10,7 @@ import { sharedRoutes } from "@/testing/transaction-api";
 interface Opened {
   content: unknown;
   editable: boolean;
+  signal: AbortSignal;
   onChange: () => void;
 }
 
@@ -187,6 +188,21 @@ describe("SpreadsheetPage", () => {
       expect(sent).toEqual([
         { route: "save", body: { content: { id: "on-screen" }, version: 3 } },
       ]);
+    });
+  });
+
+  it("gives up the editor in progress when the reader leaves the page", async () => {
+    const { router } = await renderApp(`/spreadsheets/${id}`, {
+      fetch: api([]),
+    });
+    const { signal } = await opened();
+    const before = signal.aborted;
+
+    await router.navigate({ to: "/spreadsheets" });
+
+    expect(before).toBe(false);
+    await waitFor(() => {
+      expect(signal.aborted).toBe(true);
     });
   });
 

@@ -45,6 +45,8 @@ export interface Editor {
 
 interface EditorOptions {
   container: HTMLElement;
+  // Aborted when the page gives up this editor before it is created.
+  signal: AbortSignal;
   content: SpreadsheetContent;
   editable: boolean;
   dark: boolean;
@@ -59,6 +61,11 @@ interface EditorOptions {
 
 export async function createEditor(options: EditorOptions): Promise<Editor> {
   const { locale, pack } = await loadUniverLocale(options.language);
+
+  // Univer unmounts by container: an abandoned editor, once created, would on its disposal erase
+  // the editor that took its place.
+  options.signal.throwIfAborted();
+
   const releaseStyles = adoptRefusedStyles();
   const { univer, univerAPI } = createUniver({
     locale,

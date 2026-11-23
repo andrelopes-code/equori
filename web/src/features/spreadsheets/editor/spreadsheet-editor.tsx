@@ -47,13 +47,15 @@ export function SpreadsheetEditor({
     const container = host.current;
     if (container === null) return;
 
-    let left = false;
+    const leaving = new AbortController();
+    const { signal } = leaving;
     const dark = isDark();
 
     loadEditor()
       .then(({ createEditor }) =>
         createEditor({
           container,
+          signal,
           content,
           editable,
           dark,
@@ -64,7 +66,7 @@ export function SpreadsheetEditor({
         }),
       )
       .then((created) => {
-        if (left) {
+        if (signal.aborted) {
           created.dispose();
           return;
         }
@@ -75,11 +77,12 @@ export function SpreadsheetEditor({
         setState("ready");
       })
       .catch((caught: unknown) => {
-        if (!left) setState(caught instanceof Error ? caught : new Error());
+        if (!signal.aborted)
+          setState(caught instanceof Error ? caught : new Error());
       });
 
     return () => {
-      left = true;
+      leaving.abort();
 
       const mounted = editor.current;
       if (mounted === null) return;
