@@ -15,7 +15,8 @@ interface MixerSliderProps {
   onMove: (axis: Axis, value: number) => void;
 }
 
-// One axis of the mixer; its track is painted with the colours the axis produces.
+// One axis of the mixer; its track is painted with the colours the axis produces. The slider holds
+// the value as it is written, so a screen reader hears the readout.
 export function MixerSlider({ spec, mix, onMove }: MixerSliderProps) {
   const t = useT();
   const [locale] = useAppLocale();
@@ -37,14 +38,14 @@ export function MixerSlider({ spec, mix, onMove }: MixerSliderProps) {
         style={style}
         indicator={false}
         valueLabel="none"
-        min={spec.min}
-        max={spec.max}
-        step={spec.step}
-        value={value}
+        format={spec.format}
+        min={spec.min / spec.scale}
+        max={spec.max / spec.scale}
+        step={spec.step / spec.scale}
+        value={value / spec.scale}
         aria-labelledby={labelId}
-        aria-valuetext={readout}
         onValueChange={(moved) => {
-          if (typeof moved === "number") onMove(spec.axis, moved);
+          if (typeof moved === "number") onMove(spec.axis, moved * spec.scale);
         }}
       />
 

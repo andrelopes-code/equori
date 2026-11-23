@@ -81,6 +81,10 @@
      text colour at 22% (account-row.module.css), and the block takes the same edge so the two
      read as one family of boxes. */
   .other {
-    border-color: color-mix(in oklab, var(--slotted-text) 22%, transparent);
+    --slotted-collapsible-border-color: color-mix(
+      in oklab,
+      var(--slotted-text) 22%,
+      transparent
+    );
   }
 }
