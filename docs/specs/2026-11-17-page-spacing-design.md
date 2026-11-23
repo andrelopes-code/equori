@@ -6,16 +6,16 @@ Owner request of 2026-11-17: the distance between the blocks of a page differs f
 
 A block is a direct child of the page's column: a card, a row of figures, a bar of controls, a notice, a table, a section.
 
-| Role                                   | Token                       | From 600 px                  | Below 600 px                  |
-| -------------------------------------- | --------------------------- | ---------------------------- | ----------------------------- |
-| Between two blocks                     | `--equori-page-block-gap`   | `--slotted-space-6` (1rem)   | `--slotted-space-5` (0.75rem) |
-| Above a titled section with no surface | `--equori-page-section-gap` | `--slotted-space-8` (1.5rem) | `--slotted-space-6` (1rem)    |
+| Role                                   | Token                          | From 600 px                  | Below 600 px                  |
+| -------------------------------------- | ------------------------------ | ---------------------------- | ----------------------------- |
+| Between two blocks                     | `--slotted-page-gap`           | `--slotted-space-6` (1rem)   | `--slotted-space-5` (0.75rem) |
+| Above a titled section with no surface | `--slotted-page-section-space` | `--slotted-space-8` (1.5rem) | `--slotted-space-6` (1rem)    |
 
 A section with `ground="surface"` is drawn as a panel with an edge, like a card, so it takes the block gap. A section with no surface is separated by space and its label alone, so it takes the section gap.
 
 ## Rules
 
-- PS1. `web/src/app/app.css` declares the two tokens. No other file sets their values.
+- PS1. The Slotted `PageBody` publishes the two tokens, resolved at the page's own width. No file of the app sets their values.
 - PS2. `PageStack` (`web/src/ui/page-layout/page-stack.tsx`) is the column of a page's blocks. It spaces its children by the block gap and puts the section gap above a section with no surface that follows another block.
 - PS3. The blocks of a `PageBody` stand in a `PageStack`. A `Stack` as a direct child of `PageBody` is an ESLint error (`no-restricted-syntax`), rule O19 of `docs/contributing/web.md`.
 - PS4. A grid of peer blocks (`FigureGrid`, a `Grid` of cards on a page) takes the block gap.
@@ -25,7 +25,6 @@ A section with `ground="surface"` is drawn as a panel with an edge, like a card,
 
 - The space inside a block (web.md, "Inner space").
 - The space inside a form (`--slotted-form-field-gap`, `--slotted-form-section-gap`).
-- A token in Slotted: the `page` family publishes no gap between blocks; the finding is reported in `andrelopes-code/slotted` and the tokens stay in the app until the library holds them.
 
 ## Cross-cutting questions
 

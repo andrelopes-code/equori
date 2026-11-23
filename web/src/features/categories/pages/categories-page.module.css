@@ -2,13 +2,13 @@
   .region {
     display: flex;
     flex-direction: column;
-    gap: var(--equori-page-block-gap);
+    gap: var(--slotted-page-gap);
   }
 
   .summary {
     display: flex;
     flex-direction: column;
-    gap: var(--equori-page-block-gap);
+    gap: var(--slotted-page-gap);
   }
 
   /* The figures and charts push the tree down, so the page scrolls and the tree keeps a height

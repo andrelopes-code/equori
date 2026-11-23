@@ -2,7 +2,7 @@
   .region {
     display: flex;
     flex-direction: column;
-    gap: var(--equori-page-block-gap);
+    gap: var(--slotted-page-gap);
     min-block-size: 0;
     block-size: 100%;
   }

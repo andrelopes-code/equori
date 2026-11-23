@@ -82,7 +82,7 @@
     display: flex;
     min-inline-size: 0;
     flex-direction: column;
-    gap: var(--equori-page-section-gap);
+    gap: var(--slotted-page-section-space);
   }
 
   /* The search opens the page: the field at the reading measure, the common searches under it. */

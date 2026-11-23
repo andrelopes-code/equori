@@ -6,7 +6,7 @@
   .grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    gap: var(--equori-page-block-gap);
+    gap: var(--slotted-page-gap);
   }
 
   /* The least measure of a card, 13rem: two fit from 27rem, four from 56rem. No token holds it. */
