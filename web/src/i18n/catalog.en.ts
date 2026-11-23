@@ -3243,6 +3243,18 @@ export const catalogEn = {
     "The file could not be read as a spreadsheet.",
   "spreadsheets.downloadXlsx": "Download as XLSX",
   "spreadsheets.downloadCsv": "Download this sheet as CSV",
+  "spreadsheets.chart.insert": "Chart",
+  "spreadsheets.chart.insertTooltip": "Insert a chart of the selected cells",
+  "spreadsheets.chart.menu": "Chart options",
+  "spreadsheets.chart.kind.column": "Columns",
+  "spreadsheets.chart.kind.bar": "Bars",
+  "spreadsheets.chart.kind.line": "Line",
+  "spreadsheets.chart.kind.area": "Area",
+  "spreadsheets.chart.kind.pie": "Pie",
+  "spreadsheets.chart.useSelection": "Use the selected cells",
+  "spreadsheets.chart.remove": "Remove chart",
+  "spreadsheets.chart.label": "Chart of {range}",
+  "spreadsheets.chart.series": "Series {n}",
   "problem.spreadsheet_limit_reached":
     "This book already holds 40 spreadsheets. Delete one to create another.",
 } as const;

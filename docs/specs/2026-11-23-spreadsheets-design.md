@@ -27,6 +27,11 @@ A document is one spreadsheet as the server stores it: a name and a content. A c
 | SS17 | An XLSX file gives its sheets in order with their names and hidden state, and per cell the value, the formula, the number format, bold, italic, underline, strikethrough, size, colour, fill, the four borders, the alignment and the wrap; merged cells, sized and hidden rows and columns and frozen panes. A shared formula is written at each of its cells. A font outside Arial, Courier New, Georgia, Tahoma, Times New Roman, Trebuchet MS and Verdana is left to the editor. A colour of the file's theme, charts, images, comments, validation and conditional formats are not read. |
 | SS18 | A CSV file gives one sheet. The delimiter is the one of `,`, `;` and tab that occurs most in the first line outside quotes. A field that is a number becomes one; with the delimiter `;` the decimal sign is a comma and the thousands sign a dot. A number that starts with zero stays a text. |
 | SS19 | The menu of an open document holds "Download as XLSX", with every sheet and the reach of SS17, and "Download this sheet as CSV", with the sheet on screen: fields separated by commas, a number as the cell holds it and a date or a time as the cell shows it. The file takes the name of the document. A member who only reads has both. The files are made in the browser. |
+| SS20 | An open document fills the content area of its page: the editor runs from edge to edge under the header, with no card around it. The header and a notice keep the inset of a page. The editor draws one toolbar; the tools that do not fit open from its last button. The list of an empty book is a notice at the top of the page, not stretched over its height. |
+| SS21 | "Chart", in the group "Media" of the toolbar, places a chart of the selected cells beside them. A selection of one cell is widened to the block of data around it; a selection is cut at the last filled cell of the sheet. The chart starts as columns, 520 by 360 px, and is moved and resized as an image is. A member who only reads sees the charts and no entry. |
+| SS22 | A chart reads its cells as a spreadsheet does: the first row names the series when it holds no number and another row follows; the first column names the categories when it holds no number and another column follows; every other column is a series, and a cell that is not a number is a gap. A series without a name is "Series" and its position; a category without one is its position. |
+| SS23 | The menu of a chart changes its kind (columns, bars, line, area, pie), reads the selected cells in place of its own, and removes it. A pie draws the first series. A chart follows the scheme and the number format of the application's locale. |
+| SS24 | A chart is stored with the document, with its kind, its sheet and its cells, and reads its cells again 150 ms after a change. An XLSX download does not carry it. |
 
 ## Client derivations
 
@@ -39,6 +44,7 @@ A document is one spreadsheet as the server stores it: a name and a content. A c
 | Content of an XLSX file and file of a content | SS17, SS19 | `files/xlsx.test.ts`, `files/xlsx-refs.test.ts` |
 | Content of a CSV file | SS18 | `files/csv.test.ts`, `files/content-from-file.test.ts` |
 | Rows of a CSV download | SS19 | `files/sheet-rows.test.ts` |
+| Categories and series of a chart, and its stored settings | SS22, SS24 | `charts/chart-table.test.ts` |
 
 ## Cross-cutting questions
 

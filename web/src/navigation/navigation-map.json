@@ -409,6 +409,7 @@
     "screen": "Spreadsheet",
     "tasks": [
       "edit cells, formulas and formats",
+      "place a chart of the selected cells on the sheet",
       "see whether the spreadsheet is saved",
       "download the spreadsheet as XLSX or a sheet as CSV",
       "choose between the saved version and the screen after a save from another window"

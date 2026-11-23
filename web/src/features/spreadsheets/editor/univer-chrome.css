@@ -1,0 +1,9 @@
+/* The toolbar, the menus, the tooltips and the dialogs of Univer are its own elements, many of
+   them placed in the document body, outside the editor. They take the typeface of the
+   application; without this rule they take the default of the browser, a serif face. Univer
+   prefixes each of its classes with "univer-". */
+@layer app {
+  [class*="univer-"] {
+    font-family: var(--slotted-font-family-sans);
+  }
+}

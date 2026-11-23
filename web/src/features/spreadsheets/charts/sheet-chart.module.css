@@ -1,0 +1,9 @@
+@layer app {
+  /* The chart fills the box the reader drags on the sheet. */
+  .frame {
+    inline-size: 100%;
+    block-size: 100%;
+    overflow: hidden;
+    border-radius: var(--slotted-radius-lg);
+  }
+}

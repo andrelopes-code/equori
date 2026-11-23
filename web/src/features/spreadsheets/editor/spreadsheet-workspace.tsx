@@ -84,28 +84,32 @@ export function SpreadsheetWorkspace({
   }
 
   return (
-    <Page width="full" fill scroll="self">
-      <WorkspaceHeader
-        name={name}
-        status={save.status}
-        editable={editable}
-        onCommand={(kind) => {
-          // A copy holds what the server stores, so the screen is saved first.
-          save.saveNow();
-          setCommand({ kind, document: { id: document.id, name } });
-        }}
-        onDownload={handleDownload}
-      />
+    <Page className={styles.page} width="full" fill scroll="self" inset={0}>
+      <div className={styles.header}>
+        <WorkspaceHeader
+          name={name}
+          status={save.status}
+          editable={editable}
+          onCommand={(kind) => {
+            // A copy holds what the server stores, so the screen is saved first.
+            save.saveNow();
+            setCommand({ kind, document: { id: document.id, name } });
+          }}
+          onDownload={handleDownload}
+        />
+      </div>
 
       <PageBody flow="none">
         <div className={styles.workspace}>
-          <SaveNotice
-            status={save.status}
-            keeping={create.isPending}
-            onSaveAgain={save.saveNow}
-            onReload={onReload}
-            onKeepCopy={handleKeepCopy}
-          />
+          <div className={styles.notice}>
+            <SaveNotice
+              status={save.status}
+              keeping={create.isPending}
+              onSaveAgain={save.saveNow}
+              onReload={onReload}
+              onKeepCopy={handleKeepCopy}
+            />
+          </div>
 
           <div className={styles.editor}>
             <SpreadsheetEditor

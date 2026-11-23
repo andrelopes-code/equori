@@ -1,10 +1,27 @@
 @layer app {
+  /* The editor is the content of this page and reaches its edges: the page takes no inset
+     and its body no padding. The header and a notice take the inset of a page back. */
+  .page {
+    --slotted-page-padding-block: 0;
+  }
+
+  .header {
+    padding-inline: var(--slotted-space-9);
+  }
+
   .workspace {
     display: flex;
     flex-direction: column;
-    gap: var(--equori-page-block-gap);
     block-size: 100%;
     min-block-size: 0;
+  }
+
+  .notice {
+    padding: var(--slotted-space-6) var(--slotted-space-9);
+  }
+
+  .notice:empty {
+    display: none;
   }
 
   .editor {

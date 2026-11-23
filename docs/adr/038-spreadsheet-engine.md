@@ -32,12 +32,14 @@ A spreadsheet needs a formula engine, a grid that draws 10,000 cells, a cell edi
 | E7 | Amendment to ADR 012, T14. The spreadsheet operations take the exclusion `-editor`: a spreadsheet is a snapshot of its editor, read and written by the editor alone. The assistant has no tool for them and says so (`privacy_and_the_assistant`). |
 | E8 | pnpm does not run the install script of `protobufjs`, a dependency of Univer (`allowBuilds` in `web/pnpm-workspace.yaml`). The script only prints a version notice. |
 | E9 | The exchange of XLSX files is the application's own (`features/spreadsheets/files/`), over `fflate` 0.8.3 (MIT) for the ZIP container. ExcelJS (MIT) was rejected: its last release is of 2023 and it brings nine dependencies written for Node.js. SheetJS (Apache-2.0) was rejected: the version on the npm registry carries two published vulnerabilities, and the corrected versions are distributed outside the registry. The reader and the writer are chunks of their own, 27 kB together before compression. |
+| E10 | A chart on a sheet is the application's own: the Slotted `Chart` family inside a floating element of Univer (`features/spreadsheets/charts/`). Univer stores the element with the document, with the kind of the chart and the cells it reads; the element reads the cells again after each change. |
+| E11 | The editor draws one toolbar with every tool (`ribbonType: "simple"`); the tools that do not fit open from its last button. The ribbon with tabs moved its icons after each change of tab. The elements of Univer take the typeface of the application through one rule on its class prefix (`editor/univer-chrome.css`): the document body sets none, and Univer places its menus and tooltips there. |
 
 ## Consequences
 
 - The editor chunk holds about 7.1 MB of JavaScript before compression and 139 kB of CSS. The entry chunk of the application does not grow.
 - The browser reports three refused style elements in its console each time the editor opens (E6). They are the elements `adopt-styles.ts` applies.
 - A Univer upgrade is checked by opening a stored spreadsheet on the production build, under the policy of E5: a new style element or a new kind of resource appears there first.
-- Charts and the exchange of XLSX files are not part of Univer as installed (E2). The application reads and writes XLSX files itself (E9), with the reach the spec states.
+- Charts and the exchange of XLSX files are not part of Univer as installed (E2). The application draws its own charts (E10) and reads and writes XLSX files itself (E9), with the reach the spec states. A chart is not written to an XLSX file.
 - The toolbar, the menus and the dialogs inside the editor are drawn by Univer, not by Slotted. Their accent comes from the application's accent token (`editor/univer-theme.ts`).
 - A typed number or date is read by the locale of the member (`editor/numfmt-locale.ts`): "1,5" is a number under pt-BR. Function names are the English ones and arguments are separated by a comma in every language; a cell in the General format writes its decimal point as a dot. These are limits of Univer 1.6.0.

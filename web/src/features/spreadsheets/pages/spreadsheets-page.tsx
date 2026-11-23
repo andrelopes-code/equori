@@ -68,7 +68,9 @@ export function SpreadsheetsPage() {
   }
 
   return (
-    <Page width="full" fill>
+    // The grid fills the page and scrolls by itself; an empty or failed list is a short notice
+    // that a filled page would stretch over its whole height.
+    <Page width="full" fill={!empty && !documents.isError}>
       <SpreadsheetsHeader
         canCreate={canWrite}
         creating={create.isPending}

@@ -2,6 +2,7 @@ import { LoadingOverlay } from "@slotted/react/loading-overlay";
 import { useEffect, useRef, useState } from "react";
 
 import type { SpreadsheetContent } from "@/features/spreadsheets/api";
+import { useChartTexts } from "@/features/spreadsheets/charts/use-chart-texts";
 import type { Editor } from "@/features/spreadsheets/editor/create-editor";
 import styles from "@/features/spreadsheets/editor/spreadsheet-editor.module.css";
 import { useAppLocaleState, useT } from "@/i18n/i18n-provider";
@@ -35,6 +36,7 @@ export function SpreadsheetEditor({
   const editor = useRef<Editor | null>(null);
   const [state, setState] = useState<"loading" | "ready" | Error>("loading");
   const [attempt, setAttempt] = useState(0);
+  const texts = useChartTexts();
   const change = useStableCallback(onChange);
   const open = useStableCallback(onOpen);
   const close = useStableCallback(onClose);
@@ -54,6 +56,7 @@ export function SpreadsheetEditor({
           dark: isDark(),
           language,
           localeTag: tag,
+          chartTexts: texts,
           onChange: change,
         }),
       )
@@ -81,7 +84,7 @@ export function SpreadsheetEditor({
       close(mounted);
       mounted.dispose();
     };
-  }, [content, editable, language, tag, attempt, change, open, close]);
+  }, [content, editable, language, tag, texts, attempt, change, open, close]);
 
   useEffect(() => {
     editor.current?.setDark(isDark());

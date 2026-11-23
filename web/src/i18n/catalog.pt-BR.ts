@@ -3270,6 +3270,19 @@ export const catalogPtBR: Catalog = {
     "O arquivo não pôde ser lido como planilha.",
   "spreadsheets.downloadXlsx": "Baixar como XLSX",
   "spreadsheets.downloadCsv": "Baixar esta página como CSV",
+  "spreadsheets.chart.insert": "Gráfico",
+  "spreadsheets.chart.insertTooltip":
+    "Inserir um gráfico das células selecionadas",
+  "spreadsheets.chart.menu": "Opções do gráfico",
+  "spreadsheets.chart.kind.column": "Colunas",
+  "spreadsheets.chart.kind.bar": "Barras",
+  "spreadsheets.chart.kind.line": "Linha",
+  "spreadsheets.chart.kind.area": "Área",
+  "spreadsheets.chart.kind.pie": "Pizza",
+  "spreadsheets.chart.useSelection": "Usar as células selecionadas",
+  "spreadsheets.chart.remove": "Remover gráfico",
+  "spreadsheets.chart.label": "Gráfico de {range}",
+  "spreadsheets.chart.series": "Série {n}",
   "problem.spreadsheet_limit_reached":
     "Este livro já tem 40 planilhas. Exclua uma para criar outra.",
 };

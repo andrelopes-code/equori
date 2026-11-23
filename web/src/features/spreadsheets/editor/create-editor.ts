@@ -21,8 +21,11 @@ import "@univerjs/preset-sheets-hyper-link/lib/index.css";
 import "@univerjs/preset-sheets-note/lib/index.css";
 import "@univerjs/preset-sheets-sort/lib/index.css";
 import "@univerjs/preset-sheets-table/lib/index.css";
+import "@/features/spreadsheets/editor/univer-chrome.css";
 
 import type { SpreadsheetContent } from "@/features/spreadsheets/api";
+import type { ChartTexts } from "@/features/spreadsheets/charts/chart-texts";
+import { registerCharts } from "@/features/spreadsheets/charts/register-charts";
 import { adoptRefusedStyles } from "@/features/spreadsheets/editor/adopt-styles";
 import { changesWorkbook } from "@/features/spreadsheets/editor/changes-workbook";
 import { numfmtLocale } from "@/features/spreadsheets/editor/numfmt-locale";
@@ -49,6 +52,7 @@ interface EditorOptions {
   language: string;
   // The tag of the application's locale, by which numbers and dates are read and written.
   localeTag: string;
+  chartTexts: ChartTexts;
   // A command changed the content.
   onChange: () => void;
 }
@@ -63,7 +67,12 @@ export async function createEditor(options: EditorOptions): Promise<Editor> {
     darkMode: options.dark,
     logLevel: LogLevel.ERROR,
     presets: [
-      UniverSheetsCorePreset({ container: options.container }),
+      UniverSheetsCorePreset({
+        container: options.container,
+        // One toolbar with every tool, as a web spreadsheet draws it: the ribbon with tabs
+        // moves its icons after each change of tab.
+        ribbonType: "simple",
+      }),
       UniverSheetsConditionalFormattingPreset(),
       UniverSheetsDataValidationPreset(),
       UniverSheetsDrawingPreset(),
@@ -74,6 +83,13 @@ export async function createEditor(options: EditorOptions): Promise<Editor> {
       UniverSheetsSortPreset(),
       UniverSheetsTablePreset(),
     ],
+  });
+
+  registerCharts({
+    api: univerAPI,
+    texts: options.chartTexts,
+    editable: options.editable,
+    localeTag: options.localeTag,
   });
 
   const workbook = univerAPI.createWorkbook(options.content);
