@@ -1839,6 +1839,28 @@ export const catalogPtBR: Catalog = {
   "assistant.value.voided": "Anulada",
   "assistant.value.yield_none": "Sem rendimento",
   "assistant.value.yield_auto": "Rendimento automático",
+  "assistant.value.class.asset": "Ativo",
+  "assistant.value.class.liability": "Passivo",
+  "assistant.value.class.equity": "Patrimônio",
+  "assistant.value.class.income": "Receita",
+  "assistant.value.class.expense": "Despesa",
+  "assistant.value.kind.other": "Outro",
+  "assistant.value.color.none": "Sem cor",
+  "assistant.value.icon.none": "Letra inicial",
+  "assistant.value.identifier.none": "Nenhum",
+  "assistant.value.motion.system": "Sistema",
+  "assistant.value.motion.reduced": "Reduzido",
+  "assistant.value.visual.standard": "Padrão",
+  "assistant.value.archived": "Arquivada",
+  "assistant.value.shown": "Visível",
+  "assistant.value.hidden": "Oculto",
+  "assistant.value.excluded_from_liquidity": "Fora da liquidez",
+  "assistant.value.counts_in_liquidity": "Entra na liquidez",
+  "assistant.value.enabled_stops_later_rules": "Ativada, encerra as seguintes",
+  "assistant.value.disabled_stops_later_rules":
+    "Desativada, encerra as seguintes",
+  "assistant.value.the_bucket_that_takes_savings": "Pote da poupança",
+  "assistant.value.the_bucket_that_takes_goals": "Pote das metas",
   "assistant.back": "Voltar",
   "assistant.history": "Histórico de conversas",
   "assistant.welcome.title": "Como posso ajudar?",
@@ -2460,6 +2482,41 @@ export const catalogPtBR: Catalog = {
     "Transformar em transferência",
   "assistant.action.change_transaction.reimburse": "Registrar reembolso",
   "assistant.action.manage_accounts_and_payees.create_account": "Criar conta",
+  "assistant.action.manage_accounts_and_payees.create_category":
+    "Criar categoria",
+  "assistant.action.manage_accounts_and_payees.update_category":
+    "Alterar categoria",
+  "assistant.action.manage_accounts_and_payees.close_category":
+    "Arquivar categoria",
+  "assistant.action.manage_accounts_and_payees.reopen_category":
+    "Reabrir categoria",
+  "assistant.action.manage_budget_or_goal.delete_budget": "Apagar orçamento",
+  "assistant.action.manage_budget_or_goal.save_plan": "Salvar plano do mês",
+  "assistant.action.manage_budget_or_goal.save_buckets":
+    "Salvar divisão da renda",
+  "assistant.action.manage_budget_or_goal.move_category":
+    "Mudar categoria de pote",
+  "assistant.action.manage_budget_or_goal.link_expense":
+    "Vincular despesa à meta",
+  "assistant.action.manage_budget_or_goal.unlink_expense":
+    "Remover despesa da meta",
+  "assistant.action.manage_budget_or_goal.allocate": "Guardar para a meta",
+  "assistant.action.manage_budget_or_goal.delete_bucket_version":
+    "Apagar versão da divisão",
+  "assistant.action.manage_imports.reopen_record": "Reabrir registro importado",
+  "assistant.action.manage_imports.undo_decision":
+    "Desfazer decisão da importação",
+  "assistant.action.manage_instrument.rename": "Renomear ativo",
+  "assistant.action.manage_instrument.edit": "Editar ativo",
+  "assistant.action.manage_instrument.delete": "Apagar ativo",
+  "assistant.action.manage_instrument.hide": "Ocultar ativo",
+  "assistant.action.manage_instrument.show": "Mostrar ativo",
+  "assistant.action.record_corporate_action.right_issue":
+    "Registrar direito de subscrição",
+  "assistant.action.record_corporate_action.right_exercise":
+    "Registrar exercício de direito",
+  "assistant.action.record_corporate_action.capital_return":
+    "Registrar amortização",
   "assistant.action.manage_accounts_and_payees.update_account": "Alterar conta",
   "assistant.action.manage_accounts_and_payees.close_account": "Encerrar conta",
   "assistant.action.manage_accounts_and_payees.reopen_account": "Reabrir conta",
@@ -2602,9 +2659,12 @@ export const catalogPtBR: Catalog = {
   "assistant.field.tags": "Tags",
   "assistant.field.status": "Situação",
   "assistant.field.class": "Classe",
+  "assistant.field.category_class": "Tipo de categoria",
+  "assistant.field.counts_in": "Conta em",
+  "assistant.field.decision": "Decisão",
   "assistant.field.kind": "Tipo",
   "assistant.field.currency": "Moeda",
-  "assistant.field.parent": "Conta pai",
+  "assistant.field.parent": "Dentro de",
   "assistant.field.institution": "Instituição",
   "assistant.field.limit": "Limite",
   "assistant.field.closing_day": "Dia de fechamento",

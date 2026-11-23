@@ -497,6 +497,11 @@ function bodyOf(name: CategoryIconName): string[] {
 
 export const categoryIconNames = Object.keys(PATHS) as CategoryIconName[];
 
+// Whether a stored icon key is one the app draws.
+export function isCategoryIcon(name: string): name is CategoryIconName {
+  return Object.hasOwn(PATHS, name);
+}
+
 // Families read: icon. The glyph set holds no category artwork, so the app draws Lucide's
 // geometry inside the family's box. A bodyClassName adds the two-tone body behind the strokes;
 // the class paints its fill.

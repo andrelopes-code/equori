@@ -2,9 +2,11 @@ package ledger_test
 
 import (
 	"net/http"
+	"reflect"
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
+	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
 type manageOut struct {
@@ -43,14 +45,16 @@ func TestManageAccountsCreateCategory(t *testing.T) {
 	}
 
 	p := previewTool(t, f.h, "manage_accounts_and_payees", args)
-	if p.Action != "manage_accounts_and_payees.create_account" {
+	if p.Action != "manage_accounts_and_payees.create_category" {
 		t.Fatalf("action = %q", p.Action)
 	}
 
-	if p.Destructive || p.Target != "Pets" || len(p.Changes) != 4 ||
-		p.Changes[0].After.Text != "Pets" ||
-		p.Changes[3].Field != "parent" ||
-		p.Changes[3].After.Text != "Food" {
+	want := []tool.Change{
+		{Field: "name", After: tool.TextValue("Pets")},
+		{Field: "category_class", After: tool.TextValue("expense")},
+		{Field: "parent", After: tool.TextValue("Food")},
+	}
+	if p.Destructive || p.Target != "Pets" || !reflect.DeepEqual(p.Changes, want) {
 		t.Fatalf("preview = %+v", p)
 	}
 

@@ -2,6 +2,7 @@ import type { components } from "@/api/schema.gen";
 import { catalogKey } from "@/features/assistant/model/catalog-key";
 import { AssistantIcon } from "@/features/assistant/panel/assistant-icon";
 import styles from "@/features/assistant/proposal/bodies/bodies.module.css";
+import { ChangeValue } from "@/features/assistant/proposal/bodies/change-value";
 import { useChangeText } from "@/features/assistant/proposal/use-change-text";
 import { useT } from "@/i18n/i18n-provider";
 
@@ -31,14 +32,20 @@ export function DiffRows({ changes }: DiffRowsProps) {
               {key === undefined ? c.field : t(key)}
             </dt>
             <dd className={styles.diffValues}>
-              {before !== undefined && <s className={styles.was}>{before}</s>}
+              {before !== undefined && (
+                <s className={styles.was}>
+                  <ChangeValue field={c.field} text={before} />
+                </s>
+              )}
               {before !== undefined && after !== undefined && (
                 <span className={styles.diffArrow} aria-hidden="true">
                   <AssistantIcon name="link" />
                 </span>
               )}
               {after !== undefined && (
-                <span className={styles.is}>{after}</span>
+                <span className={styles.is}>
+                  <ChangeValue field={c.field} text={after} />
+                </span>
               )}
             </dd>
           </div>

@@ -2,6 +2,7 @@ package toolapi
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -32,6 +33,7 @@ func (c organizeCall) planUpdateAccount(
 	}
 
 	pv.Target = a.Name
+	nameSubject(pv, a)
 
 	var patch app.AccountPatch
 	if c.in.Name != "" {
@@ -235,6 +237,12 @@ func (c organizeCall) planCloseOrReopenAccount(
 	}
 
 	pv.Target = a.Name
+	nameSubject(pv, a)
+
+	closed := "closed"
+	if a.IsCategory() {
+		closed = "archived"
+	}
 
 	date := c.svc.Today(ctx)
 	if !c.in.Date.IsZero() {
@@ -243,14 +251,21 @@ func (c organizeCall) planCloseOrReopenAccount(
 
 	if closing {
 		pv.Changes = []tool.Change{
-			{Field: "status", Before: text("active"), After: text("closed")},
+			{Field: "status", Before: text("active"), After: text(closed)},
 			{Field: "date", After: tool.DateValue(date)},
 		}
 	} else {
-		pv.Changes = []tool.Change{{Field: "status", Before: text("closed"), After: text("active")}}
+		pv.Changes = []tool.Change{{Field: "status", Before: text(closed), After: text("active")}}
 	}
 
 	return c.closeOrReopenRun(ctx, a, closing, date), nil
+}
+
+// nameSubject names a category in the action of the preview, which the tool calls an account.
+func nameSubject(pv *tool.Preview, a domain.Account) {
+	if a.IsCategory() {
+		pv.Action = strings.TrimSuffix(pv.Action, "_account") + "_category"
+	}
 }
 
 func (c organizeCall) closeOrReopenRun(

@@ -46,8 +46,9 @@ func (c organizeCall) planCreateAccount(
 	setAppearance(&a, color, icon)
 
 	pv.Target = c.in.Name
+	nameSubject(pv, a)
 
-	if err := c.describeNewAccount(ctx, pv, currency); err != nil {
+	if err := c.describeNewAccount(ctx, pv, a, settings.BaseCurrency); err != nil {
 		return nil, err
 	}
 
@@ -86,19 +87,56 @@ func (c organizeCall) checkCreateFields() error {
 func (c organizeCall) describeNewAccount(
 	ctx context.Context,
 	pv *tool.Preview,
-	currency money.Currency,
+	a domain.Account,
+	base money.Currency,
 ) error {
 	text := tool.TextValue
 
+	classField := "class"
+	if a.IsCategory() {
+		classField = "category_class"
+	}
+
 	pv.Changes = []tool.Change{
-		{Field: "name", After: text(c.in.Name)},
-		{Field: "class", After: text(string(c.in.Class))},
+		{Field: "name", After: text(a.Name)},
+		{Field: classField, After: text(string(a.Class))},
 	}
 	if c.in.Kind != "" {
 		pv.Changes = append(pv.Changes, tool.Change{Field: "kind", After: text(string(c.in.Kind))})
 	}
 
-	pv.Changes = append(pv.Changes, tool.Change{Field: "currency", After: text(string(currency))})
+	if !a.IsCategory() || a.Instrument != base {
+		pv.Changes = append(
+			pv.Changes,
+			tool.Change{Field: "currency", After: text(string(a.Instrument))},
+		)
+	}
+
+	if err := c.describePlacement(ctx, pv); err != nil {
+		return err
+	}
+
+	if !c.in.OpenedOn.IsZero() {
+		pv.Changes = append(
+			pv.Changes,
+			tool.Change{Field: "date", After: tool.DateValue(c.in.OpenedOn.Time)},
+		)
+	}
+
+	if c.in.YieldMode != "" {
+		pv.Changes = append(
+			pv.Changes,
+			tool.Change{Field: "status", After: text("yield " + string(c.in.YieldMode))},
+		)
+	}
+
+	return nil
+}
+
+// describePlacement appends the parent and the institution the call gave.
+func (c organizeCall) describePlacement(ctx context.Context, pv *tool.Preview) error {
+	text := tool.TextValue
+
 	if c.parentID != uuid.Nil {
 		parent, err := accountName(ctx, c.svc, c.booksID, c.parentID)
 		if err != nil {
@@ -115,20 +153,6 @@ func (c organizeCall) describeNewAccount(
 		}
 
 		pv.Changes = append(pv.Changes, tool.Change{Field: "institution", After: text(name)})
-	}
-
-	if !c.in.OpenedOn.IsZero() {
-		pv.Changes = append(
-			pv.Changes,
-			tool.Change{Field: "date", After: tool.DateValue(c.in.OpenedOn.Time)},
-		)
-	}
-
-	if c.in.YieldMode != "" {
-		pv.Changes = append(
-			pv.Changes,
-			tool.Change{Field: "status", After: text("yield " + string(c.in.YieldMode))},
-		)
 	}
 
 	return nil

@@ -646,3 +646,29 @@ func TestSavePlanToolSetsSavingsTarget(t *testing.T) {
 		"savings_target_bp",
 	)
 }
+
+// A239 through the assistant: a goal that counts as savings names the bucket its deposits draw.
+func TestManageGoalCountsAsSavingsPreview(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-12")
+
+	p, r := preview(t, f.h, "manage_budget_or_goal", map[string]any{
+		"action":            "create_goal",
+		"name":              "Freedom",
+		"amount":            "30000.00",
+		"due_on":            "2027-06-30",
+		"account_ids":       []string{f.savings},
+		"counts_as_savings": true,
+	})
+	if r.IsError {
+		t.Fatalf("preview = error %s", r.Content)
+	}
+
+	want := tool.Change{
+		Field: "counts_in",
+		After: tool.TextValue("the bucket that takes savings"),
+	}
+	if got := p.Changes[len(p.Changes)-1]; !reflect.DeepEqual(got, want) {
+		t.Errorf("last change = %+v, want %+v", got, want)
+	}
+}

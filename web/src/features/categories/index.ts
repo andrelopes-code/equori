@@ -1,3 +1,7 @@
+export {
+  CategoryIcon,
+  isCategoryIcon,
+} from "@/features/categories/category-mark/category-icon";
 export { CategoryMark } from "@/features/categories/category-mark/category-mark";
 export { CategoryPicker } from "@/features/categories/category-picker/category-picker";
 export type { CategoryPickerProps } from "@/features/categories/category-picker/category-picker";

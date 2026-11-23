@@ -81,6 +81,13 @@ Plan 2 contract, decided 2026-11-15:
 - `settle_statement` carries the statement's month as a `statement` change (`YYYY-MM`); the client writes it as a month name.
 - `manage_schedule.create` and `change_terms` carry `recurrence`; the month tiles show six nominal dates of a monthly rule (the start date's month onward, the rule's day, the month's last day when shorter); other frequencies show the `terms` text only.
 
+Amendment 2026-11-23:
+
+- `manage_accounts_and_payees` names the subject in the preview's action. For an income or expense account, `create_account`, `update_account`, `close_account` and `reopen_account` preview as `create_category`, `update_category`, `close_category` and `reopen_category`; the tool's input keeps its actions.
+- A new category carries `category_class` in place of `class`, and `currency` only when it differs from the base currency. A closed category's status is `archived`.
+- A field whose value is a code (class, kind, role, decision, source, appearance choices and `status`) reads from the catalogue; an unknown code stays as written. Every action of the tool catalogue has a title in each language.
+- An `icon` change draws the glyph.
+
 ## 8. Answer blocks (plan 3)
 
 A GFM table of the answer whose last column holds amounts of one currency is drawn as: two rows, paired bars with the difference as a percentage in words; three or more rows, bars in the table's order, numbered when the order is descending; a first column of dates, a step line with the lowest point marked. Any other table, and every table while privacy is on, stays the Markdown table. Plan 3 states the parsing rules.
