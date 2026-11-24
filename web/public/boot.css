@@ -1,3 +1,7 @@
+/* The order of the cascade layers (ADR 032), declared before any stylesheet of the application:
+   the stylesheets of a split build link in no fixed order. */
+@layer slotted, app, utilities;
+
 /* Paints the stored scheme's surface and the brand mark before the application loads. #0c0c0f and
    #f9fafe are --slotted-surface in the dark and light schemes (equori.gen.css). The CSP of
    ADR 028 forbids inline styles, so this is a file. React replaces the contents of #root. */

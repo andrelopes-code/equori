@@ -39,6 +39,21 @@ describe("tailwind.css", () => {
   });
 });
 
+describe("layer order", () => {
+  // The stylesheet of a split part links before the one of the entry; a layer declared there first
+  // would stand below "slotted".
+  it("is declared by the first stylesheet of the page, before the application's", () => {
+    const page = readFileSync("index.html", "utf8");
+    const boot = readFileSync("public/boot.css", "utf8");
+    const layers = /@layer [^;{]+[;{]/.exec(boot)?.[0];
+
+    expect(/<link rel="stylesheet" href="([^"]+)"/.exec(page)?.[1]).toBe(
+      "/boot.css",
+    );
+    expect(layers).toBe("@layer slotted, app, utilities;");
+  });
+});
+
 async function build(candidates: string[]): Promise<string> {
   const compiler = await compile(readFileSync("src/app/tailwind.css", "utf8"), {
     base: "src/app",

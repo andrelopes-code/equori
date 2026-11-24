@@ -16,12 +16,12 @@ import { useEffect } from "react";
 
 import { useApi } from "@/api/api-context";
 import type { paths } from "@/api/schema.gen";
-import { ProblemError } from "@/api/problem";
-import { useSessionExpiry } from "@/app/providers";
+import { ProblemError } from "@/api/problem-error";
 import { RouteError } from "@/app/route-error";
 import { RouteNotFound } from "@/app/route-not-found";
+import { useSessionExpiry } from "@/app/session-expiry";
 import { AppFrame } from "@/app/shell/app-frame";
-import { AnswersPreview } from "@/features/assistant";
+import { AnswersPreview } from "@/features/assistant/routes";
 import {
   AccountPage,
   AccountsLayout,
@@ -39,24 +39,24 @@ import {
   validateAccountsSearch,
   AccountCardPreview,
   phoneAccountTabs,
-} from "@/features/accounts";
-import { InstrumentPage, InstrumentsPage } from "@/features/instruments";
+} from "@/features/accounts/routes";
+import { InstrumentPage, InstrumentsPage } from "@/features/instruments/routes";
 import {
   ContributionPlanPage,
   PortfolioPage,
   PortfolioYearPage,
   validatePortfolioSearch,
   validateYearSearch,
-} from "@/features/portfolio";
-import { ReportsPage, validateReportsSearch } from "@/features/reports";
+} from "@/features/portfolio/routes";
+import { ReportsPage, validateReportsSearch } from "@/features/reports/routes";
 import {
   CalculatorPage,
   CalculatorsPage,
   isCalculatorId,
   validateCalculatorSearch,
-} from "@/features/calculators";
-import { HelpIndexPage, HelpPage, isHelpPage } from "@/features/help";
-import { OverviewPage } from "@/features/overview";
+} from "@/features/calculators/routes";
+import { HelpIndexPage, HelpPage, isHelpPage } from "@/features/help/routes";
+import { OverviewPage } from "@/features/overview/routes";
 import {
   CardFacePreview,
   CardPage,
@@ -65,7 +65,7 @@ import {
   phoneCardTabs,
   validateCardSearch,
   validateStatementSearch,
-} from "@/features/cards";
+} from "@/features/cards/routes";
 import {
   CategoriesPage,
   PayeesPage,
@@ -74,8 +74,8 @@ import {
   RulesPage,
   validateCategoriesSearch,
   validateRulePrefill,
-} from "@/features/categories";
-import { GoalsPage } from "@/features/goals";
+} from "@/features/categories/routes";
+import { GoalsPage } from "@/features/goals/routes";
 import {
   BudgetFormPage,
   BudgetPage,
@@ -86,7 +86,7 @@ import {
   validateBudgetSearch,
   validatePlanningSearch,
   validateScheduleFormSearch,
-} from "@/features/planning";
+} from "@/features/planning/routes";
 import {
   InvitePage,
   LoginPage,
@@ -97,18 +97,18 @@ import {
   myBooksQuery,
   rememberDeviceUser,
   setupQuery,
-} from "@/features/session";
+} from "@/features/session/routes";
 import {
   AppearanceStudio,
   SettingsPage,
   validateSettingsSearch,
-} from "@/features/setup";
+} from "@/features/setup/routes";
 import {
   preloadSpreadsheetEditor,
   SpreadsheetPage,
   SpreadsheetsPage,
-} from "@/features/spreadsheets";
-import { StartPage } from "@/features/start";
+} from "@/features/spreadsheets/routes";
+import { StartPage } from "@/features/start/routes";
 import {
   CapturePage,
   CaptureQueuePage,
@@ -121,8 +121,8 @@ import {
   validateCaptureSearch,
   validateNewTransactionSearch,
   validateTransactionsPageSearch,
-} from "@/features/transactions";
-import type { BuiltKind } from "@/features/transactions";
+} from "@/features/transactions/routes";
+import type { BuiltKind } from "@/features/transactions/routes";
 
 export interface RouterContext {
   queryClient: QueryClient;

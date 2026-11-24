@@ -54,6 +54,24 @@ const rows = [
     rule: "no-restricted-imports",
   },
   {
+    name: "O21 index import of a feature from the router",
+    filePath: "src/app/router.tsx",
+    code: importFromAccounts("@/features/accounts"),
+    rule: "no-restricted-imports",
+  },
+  {
+    name: "O21 page import from the router",
+    filePath: "src/app/router.tsx",
+    code: importFromAccounts("@/features/accounts/pages/account-page"),
+    rule: "no-restricted-imports",
+  },
+  {
+    name: "O21 routes import from the router",
+    filePath: "src/app/router.tsx",
+    code: importFromAccounts("@/features/accounts/routes"),
+    rule: undefined,
+  },
+  {
     name: "O2 index import of another feature",
     filePath: "src/features/accounts/x.ts",
     code: importFromAccounts("@/features/transactions"),

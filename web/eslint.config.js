@@ -15,6 +15,11 @@ const featureInternals = {
   regex: "^@/features/[^/]+/.+",
   message: "Import a feature through its index.ts.",
 };
+// O21: the router reads a feature's routes.ts, which loads each page on demand.
+const featureInternalsFromRouter = {
+  regex: "^@/features/[^/]+(?!/routes$)(/.*)?$",
+  message: "The router imports a feature through its routes.ts (O21).",
+};
 const appFromFeature = {
   regex: "^@/app/",
   message: "A feature never imports from @/app.",
@@ -151,6 +156,15 @@ export default defineConfig(
     rules: {
       "no-restricted-imports": restrict({
         patterns: [relativeImport, featureInternals],
+        paths: [apiClient],
+      }),
+    },
+  },
+  {
+    files: ["src/app/router.tsx"],
+    rules: {
+      "no-restricted-imports": restrict({
+        patterns: [relativeImport, featureInternalsFromRouter],
         paths: [apiClient],
       }),
     },

@@ -36,4 +36,4 @@ Defined in `web/src/app/router.tsx`.
 - `logout/`: `useLogout` hook.
 - `model/`: book storage keys, remembered device user and `reloadHome`, used by several folders.
 
-`index.ts` holds the public exports. `api.ts` holds the queries and mutations.
+`index.ts` holds the public exports; `routes.ts` holds what the router imports. `model/session-queries.ts` holds the queries the router runs. `api.ts` holds the queries and mutations.

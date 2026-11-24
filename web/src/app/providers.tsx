@@ -1,46 +1,16 @@
 import { QueryClientProvider } from "@tanstack/react-query";
-import { createContext, useContext, useState } from "react";
+import { useState } from "react";
 import type { ReactNode } from "react";
 
 import { ApiProvider } from "@/api/api-context";
 import { newClient } from "@/api/client";
 import { newQueryClient } from "@/api/query-client";
+import { SessionExpiryContext, newSessionExpiry } from "@/app/session-expiry";
 import { SlottedLocale } from "@/app/slotted-locale";
 import { I18nProvider } from "@/i18n/i18n-provider";
 import { readLocale } from "@/i18n/locale";
 import { TodayProvider } from "@/i18n/today";
 import { PrivacyProvider } from "@/privacy/privacy-provider";
-
-interface SessionExpiry {
-  trigger: () => void;
-  install: (handler: () => void) => () => void;
-}
-
-// The router is built outside AppProviders, so AppRouterProvider installs the 401 handler here.
-const SessionExpiryContext = createContext<SessionExpiry | null>(null);
-
-export function useSessionExpiry(): SessionExpiry {
-  const expiry = useContext(SessionExpiryContext);
-  if (expiry === null) {
-    throw new Error("useSessionExpiry requires AppProviders");
-  }
-  return expiry;
-}
-
-function newSessionExpiry(): SessionExpiry {
-  let handler: (() => void) | null = null;
-  return {
-    trigger: () => {
-      handler?.();
-    },
-    install: (next) => {
-      handler = next;
-      return () => {
-        handler = null;
-      };
-    },
-  };
-}
 
 export function AppProviders({
   fetchImpl,

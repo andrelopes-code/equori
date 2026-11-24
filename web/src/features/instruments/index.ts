@@ -1,5 +1,3 @@
-export { InstrumentsPage } from "@/features/instruments/pages/instruments-page";
-export { InstrumentPage } from "@/features/instruments/pages/instrument-page";
 export { RecordPriceDialog } from "@/features/instruments/record-price/record-price-dialog";
 export { DefineInstrumentDialog } from "@/features/instruments/define-instrument/define-instrument-dialog";
 export { CompanyReport } from "@/features/instruments/company-report/company-report";

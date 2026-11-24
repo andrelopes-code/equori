@@ -4,7 +4,7 @@ Routes: `/spreadsheets` renders `SpreadsheetsPage`; `/spreadsheets/$id` renders 
 
 Guide topic: `getting_started` (`web/src/navigation/navigation-map.json`).
 
-Public exports (`index.ts`): `SpreadsheetsPage`, `SpreadsheetPage`.
+Public exports (`routes.ts`): `SpreadsheetsPage`, `SpreadsheetPage`.
 
 Design: `docs/specs/2026-11-23-spreadsheets-design.md`. Engine: Univer (ADR 038).
 

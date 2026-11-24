@@ -1,4 +1,3 @@
-export { OverviewPage } from "@/features/overview/pages/overview-page";
 export { eventLines } from "@/features/overview/balance-chart/balance-annotations";
 export { indicatorsQuery, netWorthQuery } from "@/features/overview/api";
 export type {

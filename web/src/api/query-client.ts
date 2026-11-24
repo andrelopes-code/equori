@@ -1,6 +1,6 @@
 import { MutationCache, QueryCache, QueryClient } from "@tanstack/react-query";
 
-import { ProblemError } from "@/api/problem";
+import { ProblemError } from "@/api/problem-error";
 
 const maxRetries = 2;
 

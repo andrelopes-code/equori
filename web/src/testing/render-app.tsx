@@ -12,6 +12,15 @@ import type { AppRouter } from "@/app/router";
 import { ProfileLocale } from "@/i18n/profile-locale";
 import { setViewport } from "@/testing/viewport";
 
+// Every page is loaded before the first test: a test that navigates would otherwise wait for the
+// transform of the page's modules, longer than the timeout of a query.
+const { routesById, loadRouteChunk } = newRouter();
+await Promise.all(
+  Object.values(routesById).map(async (route) => {
+    await loadRouteChunk(route);
+  }),
+);
+
 export async function renderApp(
   path: string,
   opts: { width?: number; today?: string; fetch: typeof fetch },

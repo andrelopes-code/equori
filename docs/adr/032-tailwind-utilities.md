@@ -10,7 +10,7 @@
 ## Decision
 
 - `tailwindcss` and `@tailwindcss/vite` 4.3.3 enter `devDependencies` of `web/`. Both run at build time; no Tailwind code ships to the browser.
-- `src/app/tailwind.css` imports only `tailwindcss/utilities.css`, into the cascade layer `utilities`. `src/app/app.css` declares the order `@layer slotted, app, utilities;`, so a utility overrides app CSS and the library.
+- `src/app/tailwind.css` imports only `tailwindcss/utilities.css`, into the cascade layer `utilities`. `public/boot.css`, the first stylesheet of the page, declares the order `@layer slotted, app, utilities;`, so a utility overrides app CSS and the library.
 - The stylesheet imports neither the preflight nor the default theme. The library's reset stands, and the Tailwind palette, type scale, radius scale and spacing multiple do not exist.
 - `@theme inline` maps the spacing keys `0` and `1` to `12` to `0` and `--slotted-space-1` to `--slotted-space-12`. The number of a spacing utility is the Slotted token: `ms-2` is `--slotted-space-2`, where Tailwind's `ms-2` is 0.5rem. A step outside the scale emits no rule.
 - A utility goes on an element the app draws or on the root of a family, through `className`. It never targets a part of a family.

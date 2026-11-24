@@ -10,7 +10,8 @@ The month-at-a-glance screen: balance, spending, budgets, goals, cards, upcoming
 ## Entry components
 
 - `pages/overview-page.tsx`: composes every block of the screen.
-- `index.ts`: exports `OverviewPage` and the helpers other features import.
+- `routes.ts`: loads `OverviewPage` for the router.
+- `index.ts`: exports the helpers other features import.
 
 ## Endpoints (`api.ts`)
 

@@ -11,7 +11,7 @@ Declared in `web/src/app/router.tsx`.
 
 ## Entry components
 
-`index.ts` exports `HelpIndexPage`, `HelpPage`, `HelpLink` and `isHelpPage`.
+`routes.ts` exports `HelpIndexPage`, `HelpPage` and `isHelpPage` to the router; `index.ts` exports `HelpLink`.
 
 ## Endpoints
 

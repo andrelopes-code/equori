@@ -107,7 +107,7 @@ A comment or a commit may cite an identifier such as `S364`, `MQ27` or `HA9`. Th
 |---|---|
 | Where a feature keeps its files | `web/src/features/<feature>/README.md`; the shape is rule O16 of `docs/contributing/web.md` |
 | Route of a screen | `web/src/app/router.tsx` |
-| Screen of a route | The page component that `web/src/app/router.tsx` imports from `web/src/features/<feature>/index.ts` |
+| Screen of a route | The page component that `web/src/app/router.tsx` imports from `web/src/features/<feature>/routes.ts` |
 | Queries and mutations of a feature | `web/src/features/<feature>/api.ts` |
 | Types of the API | `web/src/api/schema.gen.ts` (generated from `api/openapi.yaml`) |
 | Shared components | `web/src/ui/<concept>/`; `web/src/ui/README.md` lists the folders |

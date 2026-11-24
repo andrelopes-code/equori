@@ -4,7 +4,7 @@ Route: `/goals` renders `GoalsPage` (`web/src/app/router.tsx`).
 
 Guide topic: `goals` (`web/src/navigation/navigation-map.json`).
 
-Public exports (`index.ts`): `GoalsPage`, `GoalMeter`, `goalState`, `monthsLeft`, `GoalPaymentSection`.
+Public exports (`index.ts`): `GoalMeter`, `goalState`, `monthsLeft`, `GoalPaymentSection`. `routes.ts` loads `GoalsPage` for the router.
 
 Folders:
 
