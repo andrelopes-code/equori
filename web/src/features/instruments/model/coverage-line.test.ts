@@ -28,6 +28,7 @@ const coverage = (
   last: "2026-10-16",
   count: 2,
   stale: false,
+  missing: 0,
   sources,
   ...over,
 });

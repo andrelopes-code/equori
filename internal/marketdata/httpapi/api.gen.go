@@ -824,6 +824,9 @@ type InstrumentCoverage struct {
 	First *openapi_types.Date `json:"first"`
 	Last  *openapi_types.Date `json:"last"`
 
+	// Missing The sessions between the first and the last price that no enabled source holds a price of (A265 PH6).
+	Missing int `json:"missing"`
+
 	// Sources Every registered source that quotes the instrument, enabled or not.
 	Sources []InstrumentSourceCoverage `json:"sources"`
 

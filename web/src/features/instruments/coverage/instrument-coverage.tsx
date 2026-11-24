@@ -79,6 +79,16 @@ export function InstrumentCoverage({
           })}
         </Text>
       )}
+      {coverage.missing > 0 && (
+        <Text tone="muted">
+          {t(
+            coverage.missing === 1
+              ? "instruments.coverage.missing.one"
+              : "instruments.coverage.missing.other",
+            { count: numberFormatter(locale).format(coverage.missing) },
+          )}
+        </Text>
+      )}
       <HistoryNotice
         history={history}
         retrying={retry.isPending}

@@ -198,11 +198,22 @@ func (m *Module) storeRates(ctx context.Context, src index.Source, rates []index
 		return nil
 	}
 
+	return m.revisedRates(ctx, src.Index(), revised, since)
+}
+
+// revisedRates states in the log that rates of an index before its latest one were written, from
+// since on, and deletes the accrued prices over them.
+func (m *Module) revisedRates(
+	ctx context.Context,
+	id string,
+	rates int,
+	since time.Time,
+) error {
 	m.feeds.Log.InfoContext(ctx, "index revised",
-		"index", src.Index(), "rates", revised, "from", since.Format(time.DateOnly))
+		"index", id, "rates", rates, "from", since.Format(time.DateOnly))
 
 	return m.q.DeleteAccruedOfIndex(ctx, postgres.DeleteAccruedOfIndexParams{
-		IndexID:  optional(src.Index()),
+		IndexID:  optional(id),
 		Source:   sourceAccrual,
 		FromDate: since,
 	})

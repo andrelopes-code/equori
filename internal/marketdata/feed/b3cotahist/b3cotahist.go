@@ -30,6 +30,8 @@ const (
 	marketTo     = 27
 	closeFrom    = 108
 	closeTo      = 121
+	factorFrom   = 210
+	factorTo     = 217
 	spotMarket   = "010"
 )
 
@@ -300,7 +302,12 @@ func closingQuote(rec, ticker string, date time.Time, strict bool) (feed.Quote, 
 		return feed.Quote{}, err
 	}
 
-	value, err := money.NewRate(cents, 2)
+	scale, err := unitScale(rec[factorFrom:factorTo])
+	if err != nil {
+		return feed.Quote{}, err
+	}
+
+	value, err := money.NewRate(cents, scale)
 	if err != nil {
 		return feed.Quote{}, err
 	}
@@ -311,6 +318,27 @@ func closingQuote(rec, ticker string, date time.Time, strict bool) (feed.Quote, 
 	}
 
 	return q, nil
+}
+
+// unitScale is the number of decimals of the price of one unit: the 2 of PREULT and those of the
+// quotation factor FATCOT, the units of one quote, a power of ten (1,000 for a share quoted per lot
+// up to 2007). A blank factor is 1.
+func unitScale(text string) (int, error) {
+	factor, err := strconv.Atoi(text)
+	if err != nil {
+		return 0, fmt.Errorf("quotation factor %q: %w", text, err)
+	}
+
+	scale := 2
+	for ; factor >= 10 && factor%10 == 0; factor /= 10 {
+		scale++
+	}
+
+	if factor > 1 {
+		return 0, fmt.Errorf("quotation factor %q is not a power of ten", text)
+	}
+
+	return scale, nil
 }
 
 func safeSlice(s string, from, to int) string {

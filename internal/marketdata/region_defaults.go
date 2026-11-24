@@ -4,6 +4,9 @@ import (
 	"regexp"
 	"slices"
 	"time"
+
+	"github.com/andrelopes-code/equori/internal/marketdata/feed"
+	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
 // euroArea lists the members of the euro area on 2026-01-01.
@@ -97,6 +100,27 @@ func RoundLotCode(mic, code string) (string, bool) {
 	}
 
 	return match[1], true
+}
+
+// sessionIndex returns the index whose dates are the sessions of in and the currency its prices are
+// in (A265 PH3); empty for an instrument without one.
+func sessionIndex(in feed.Instrument) (string, money.Currency) {
+	if in.Type == "currency" {
+		if in.Code == "BRL" {
+			return "", ""
+		}
+
+		return "usd_brl", "BRL"
+	}
+
+	switch in.Exchange {
+	case "BVMF":
+		return "ibovespa", in.QuoteCurrency
+	case "XNYS", "XNAS", "ARCX", "BATS", "XASE":
+		return "sp500", in.QuoteCurrency
+	}
+
+	return "", ""
 }
 
 // SettlementCycle returns the business days after the trade date on which a trade of exchange

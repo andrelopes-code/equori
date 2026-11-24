@@ -104,10 +104,15 @@ func (m *Module) TickFeeds(ctx context.Context) {
 	m.TickAccrual(ctx)
 }
 
-// tickReports runs the fund report and the company report sources.
+// tickReports runs the fund report and the company report sources, then the check of the price holes,
+// which needs the prices and the indexes of the tick.
 func (m *Module) tickReports(ctx context.Context, on map[string]bool) {
 	m.tickFundReports(ctx, on)
 	m.tickCompanyReports(ctx, on)
+
+	if err := m.tickHoles(ctx); err != nil {
+		m.logFeed(ctx, err)
+	}
 }
 
 func (m *Module) tick(ctx context.Context, src feed.Source) error {

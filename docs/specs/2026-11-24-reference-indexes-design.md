@@ -16,7 +16,7 @@ Amendment A265. Owner, 2026-11-24: the fundamental indexes and quotes that the c
 | BVMF instruments | No session without a price where COTAHIST was loaded, BPAC11 of 2017 excepted (no trade). Every other hole lies in years only Yahoo covered |
 | COTAHIST 2006 | 20,433 spot records quoted per lot of 1,000 (`FATCOT`), SBSP3 among them |
 | COTAHIST sizes, 2006 to 2026 | 9.3 to 108.3 MB a year, 685 MB in all |
-| `TradeInformationConsolidatedFile` | Empty body before mid-2025; about 6.5 MB a day after it, the fixed income ETFs included |
+| `TradeInformationConsolidatedFile` | Empty body on 2025-06-05 and before, about 6.5 MB a day from 2025-06-10 on, the fixed income ETFs included |
 
 Causes of holes, read in the code: `tickIndex` resumes from the latest rate, so a fill back that fails midway is never completed; a rate the source revises is never read again; a finished `marketdata_history` row is never rechecked; a stop longer than 30 days leaves a hole behind the window of `tick`; a file published late is skipped once a later day is stored.
 
@@ -52,12 +52,11 @@ Causes of holes, read in the code: `tickIndex` resumes from the latest rate, so 
 | ID | Rule |
 |---|---|
 | PH1 | COTAHIST divides `PREULT` by `FATCOT`. |
-| PH2 | Once a day, each enabled price source requests, for each code it quotes, the history of 20 years (`cvm_funds`: 5). Enabling a source or defining an instrument still requests the years of its entry at once; the B3 ones stay 5. A request that lowers no date changes nothing (MQ5). |
+| PH2 | Once a day, each enabled price source requests, for each code it quotes whose sessions are stored (PH3), the history of 20 years; a currency only from a source that stored it in the currency of its sessions. Enabling a source or defining an instrument still requests the years of its entry at once; the B3 ones stay 5. A request that lowers no date changes nothing (MQ5). |
 | PH3 | A hole is a session of the exchange between the first and the last price of an instrument, at least 7 days old, with no price of any source. The sessions are the dates of `ibovespa` for `BVMF`, of `sp500` for `XNYS`, `XNAS`, `ARCX`, `BATS` and `XASE`, and of `usd_brl` for a currency quoted in `BRL` (`sessionIndex` in `internal/marketdata/region_defaults.go`). Without a session index, or with it not stored, nothing is checked. |
-| PH4 | Once a day, after PH2 left no pending history, each enabled source that quotes a code with a hole is asked for the years of its holes. A source that keeps daily files (`feed.DayArchive`: `b3_consolidated`, 540 days) is then asked for the remaining days, the latest 31 a day. Only the prices of the holes are stored. |
+| PH4 | Once a day, after PH2 left no pending history, each enabled source that quotes a code with a hole is asked for the years of its holes. A source that keeps daily files (`feed.DayArchive`: `b3_consolidated`, 500 days) is then asked for the remaining days, the latest 31 a day. Only the prices of the holes are stored. |
 | PH5 | A hole that every source answered without a price is recorded in `marketdata_price_hole` and is not asked again. Enabling a price source empties the table. A source that failed records nothing. |
 | PH6 | `coverage.missing` of an instrument is the number of recorded holes still without a price; the coverage panel states it. A session without a trade is such a hole: the source cannot tell the two apart. |
-| PH7 | An empty body of `TradeInformationConsolidatedFile` is a day without a file. |
 
 ## 3. Approaches
 

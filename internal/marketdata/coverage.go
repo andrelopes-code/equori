@@ -24,6 +24,11 @@ func (m *Module) Coverage(ctx context.Context, in Instrument) (domain.Coverage, 
 		return domain.Coverage{}, fmt.Errorf("read the coverage of %s: %w", in.Code, err)
 	}
 
+	missing, err := m.missingPrices(ctx, in)
+	if err != nil {
+		return domain.Coverage{}, err
+	}
+
 	stored, err := m.storedSources(ctx, string(in.Code))
 	if err != nil {
 		return domain.Coverage{}, err
@@ -34,11 +39,29 @@ func (m *Module) Coverage(ctx context.Context, in Instrument) (domain.Coverage, 
 		return domain.Coverage{}, err
 	}
 
-	cov := domain.Coverage{Count: int(all.Days), Sources: []domain.SourceCoverage{}}
+	cov := domain.Coverage{
+		Count:   int(all.Days),
+		Missing: missing,
+		Sources: []domain.SourceCoverage{},
+	}
 	if all.Days > 0 {
 		cov.First, cov.Last = &all.First, &all.Last
 	}
 
+	m.sourcesOf(ctx, &cov, in, stored, on)
+
+	return cov, nil
+}
+
+// sourcesOf sets on cov each registered source that quotes in, and whether the next price of the
+// enabled ones is overdue.
+func (m *Module) sourcesOf(
+	ctx context.Context,
+	cov *domain.Coverage,
+	in Instrument,
+	stored map[string]domain.SourceCoverage,
+	on map[string]bool,
+) {
 	lags, official := sourceTraits()
 
 	lag := -1
@@ -58,8 +81,6 @@ func (m *Module) Coverage(ctx context.Context, in Instrument) (domain.Coverage, 
 	}
 
 	cov.Stale = cov.Last != nil && lag >= 0 && overdue(*cov.Last, lag, m.feeds.Clock.Today(ctx))
-
-	return cov, nil
 }
 
 // sourceTraits maps each source id to its lag in days and to whether it is official.

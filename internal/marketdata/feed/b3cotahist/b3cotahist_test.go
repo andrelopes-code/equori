@@ -244,3 +244,52 @@ func TestFetchYears(t *testing.T) {
 		}
 	}
 }
+
+// A265 PH1: a share quoted per lot of 1,000 is stored per share; a factor that is not a power of ten
+// fails the file.
+func TestQuotationFactor(t *testing.T) {
+	t.Parallel()
+
+	record := func(factor string) string {
+		r := cotahistRecord("20061229", "SBSP3", "010", 28700)
+
+		return r[:210] + factor + r[217:]
+	}
+
+	for name, tt := range map[string]struct {
+		factor, want string
+		fails        bool
+	}{
+		"one":                 {"0000001", "287.00", false},
+		"blank":               {"0000000", "287.00", false},
+		"a lot of 1,000":      {"0001000", "0.28700", false},
+		"not a power of ten":  {"0000250", "", true},
+		"not a number at all": {"XXXXXXX", "", true},
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			body := cotahistZIP(t, "20061229", record(tt.factor))
+			srv := httptest.NewServer(
+				http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+					_, _ = w.Write(body)
+				}),
+			)
+			t.Cleanup(srv.Close)
+
+			got, err := b3cotahist.New(srv.Client(), srv.URL).
+				FetchDay(t.Context(), day("2006-12-29"), []string{"SBSP3"})
+			if tt.fails {
+				if err == nil {
+					t.Fatalf("quotes = %v, want a failure", got)
+				}
+
+				return
+			}
+
+			if err != nil || len(got) != 1 || got[0].Value.String() != tt.want {
+				t.Fatalf("quotes = %v, %v, want %s", got, err, tt.want)
+			}
+		})
+	}
+}

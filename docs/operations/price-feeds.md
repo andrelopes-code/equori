@@ -48,7 +48,7 @@ for the enabled feeds (`arquivos.b3.com.br` for `b3_consolidated`; `www.ecb.euro
 | Source | Instruments | Request | Price |
 |---|---|---|---|
 | `bcb_ptax` | Every currency instrument except `BRL` | `ExchangeRatePeriod` per currency for the whole window | `cotacaoVenda` of the `Fechamento` bulletin, quoted in `BRL` |
-| `b3_cotahist` | Instruments with exchange `BVMF` and quote currency `BRL` | `COTAHIST_D{DDMMYYYY}.ZIP` per weekday | `PREULT` of the spot market (`TPMERC` 010), quoted in `BRL` |
+| `b3_cotahist` | Instruments with exchange `BVMF` and quote currency `BRL` | `COTAHIST_D{DDMMYYYY}.ZIP` per weekday | `PREULT` of the spot market (`TPMERC` 010) over its quotation factor (`FATCOT`), quoted in `BRL` |
 | `b3_consolidated` | Instruments with exchange `BVMF` and quote currency `BRL` | `TradeInformationConsolidatedFile` per weekday: a request by name returns a token, the token returns the file | `LastPric` of the ticker in any segment, quoted in `BRL`; covers the fixed income ETFs (`AUPO11`, `LFTS11`) that COTAHIST omits |
 | `ecb` | Every currency instrument except `EUR` | One XML file with the last 90 days | Units of the currency per euro, stored as the price of `EUR` quoted in that currency |
 | `tesouro_direto` | Instruments of type `fixed_income`, no exchange, quote currency `BRL`, code `{LFT,LTN,NTNF,NTNB,NTNBP,NTNC,EDUCA,RENDA}.{YYYYMMDD}` | One CSV file with every title and date | `PU Venda Manha` at `Data Base`, quoted in `BRL`; a zero price is skipped |
@@ -70,6 +70,10 @@ again.
 
 An instrument defined after its feed has run receives prices from the next new day on.
 Earlier prices enter through `POST /prices/import`.
+
+### Holes
+
+Once a day, each enabled source is asked for 20 years of each instrument whose exchange has stored sessions (`ibovespa` for `BVMF`, `sp500` for the exchanges of the United States, `usd_brl` for a currency quoted in `BRL`). A session between the first and the last price of an instrument, at least 7 days old and without a price of any source, is then asked to every enabled source that quotes it: the year files, and up to 31 daily files of `b3_consolidated` a day. A session no source holds is recorded and not asked again until a price source is enabled; the page of the instrument states how many there are (A265 PH2 to PH6). The first check on the B3 downloads up to 685 MB per source, the year files of 2006 to 2026.
 
 ## 4. Priority
 

@@ -77,6 +77,7 @@ describe("Sources of an instrument", () => {
             last: "2026-10-16",
             count: 4965,
             stale: false,
+            missing: 0,
             sources: [],
           },
         }),
@@ -101,6 +102,7 @@ function twoSources() {
           last: "2026-10-16",
           count: 2,
           stale: false,
+          missing: 0,
           sources: [
             {
               id: "b3_cotahist",

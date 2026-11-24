@@ -63,6 +63,12 @@ type Source interface {
 	Fetch(ctx context.Context, codes []money.Currency, from, to time.Time) ([]Quote, error)
 }
 
+// DayArchive is a Source that keeps one file per day for a number of days, which Fetch reads for a
+// range of one day (A265 PH4).
+type DayArchive interface {
+	DayArchiveDays() int
+}
+
 // ScopeError names the part of a fetch (a code or a day) that failed.
 type ScopeError struct {
 	Key, Value string

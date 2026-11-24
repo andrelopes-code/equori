@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -38,6 +39,10 @@ type Module struct {
 
 	// unofficial are the price sources ranked last (A222 MQ2), computed once in New.
 	unofficial domain.UnofficialSources
+
+	// holesChecked is the day of the last check of the price holes in this process (A265 PH4); only
+	// a tick touches it, and ticks never overlap.
+	holesChecked time.Time
 
 	// running is set while a tick runs, scheduled or requested (ADR 025 F7); a requested tick
 	// joins refreshes and stops with life.

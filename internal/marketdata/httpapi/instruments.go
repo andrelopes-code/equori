@@ -291,7 +291,13 @@ func issuerAPI(i domain.Issuer) *InstrumentIssuer {
 
 func coverageOf(c domain.Coverage) *InstrumentCoverage {
 	out := &InstrumentCoverage{
-		First: optionalDate(c.First), Last: optionalDate(c.Last), Count: c.Count, Stale: c.Stale,
+		First: optionalDate(
+			c.First,
+		),
+		Last:    optionalDate(c.Last),
+		Count:   c.Count,
+		Stale:   c.Stale,
+		Missing: c.Missing,
 		Sources: make([]InstrumentSourceCoverage, len(c.Sources)),
 	}
 

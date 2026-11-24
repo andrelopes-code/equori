@@ -8051,6 +8051,8 @@ export interface components {
             count: number;
             /** @description An enabled source quotes the instrument and its next price is overdue (A222 MQ24). */
             stale: boolean;
+            /** @description The sessions between the first and the last price that no enabled source holds a price of (A265 PH6). */
+            missing: number;
             /** @description Every registered source that quotes the instrument, enabled or not. */
             sources: components["schemas"]["InstrumentSourceCoverage"][];
         };

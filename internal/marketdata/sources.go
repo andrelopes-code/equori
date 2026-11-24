@@ -28,6 +28,9 @@ type sourceEntry struct {
 	// historyYears is how far back enabling the source, or defining an instrument it quotes,
 	// requests prices (A222 MQ6).
 	historyYears int
+	// baseYears is how far back the daily check requests prices when that is more: the year files
+	// of the B3 are read for every instrument at once (A265 PH2).
+	baseYears int
 	// build receives the URL of every source, the override or the default.
 	build func(hc *http.Client, urls map[string]string, now func() time.Time) feed.Source
 }
@@ -40,6 +43,7 @@ func sourceEntries() []sourceEntry {
 			lag:          5,
 			official:     true,
 			historyYears: 5,
+			baseYears:    indexHistoryYears,
 			build: func(hc *http.Client, urls map[string]string, _ func() time.Time) feed.Source {
 				return b3cotahist.New(hc, urls["b3_cotahist"])
 			},
@@ -50,6 +54,7 @@ func sourceEntries() []sourceEntry {
 			lag:          5,
 			official:     true,
 			historyYears: 5,
+			baseYears:    indexHistoryYears,
 			build: func(hc *http.Client, urls map[string]string, _ func() time.Time) feed.Source {
 				return b3consolidated.New(
 					hc,

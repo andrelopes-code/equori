@@ -7,7 +7,9 @@ type Coverage struct {
 	First, Last *time.Time // nil when Count is 0
 	Count       int
 	Stale       bool
-	Sources     []SourceCoverage
+	// Missing is the number of sessions that no enabled source holds a price of (A265 PH6).
+	Missing int
+	Sources []SourceCoverage
 }
 
 // SourceCoverage is one registered price source that quotes the instrument.

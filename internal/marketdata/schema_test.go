@@ -139,6 +139,24 @@ func TestSchemaRejectsInvalidIndexChecks(t *testing.T) {
 	}
 }
 
+// A265 PH5.
+func TestSchemaRejectsInvalidPriceHoles(t *testing.T) {
+	t.Parallel()
+
+	pool := pgtest.New(t)
+	for name, sql := range map[string]string{
+		"unknown instrument": `INSERT INTO marketdata_price_hole VALUES ('ZZZ', 'BRL', '2026-01-02')`,
+		"unknown quote":      `INSERT INTO marketdata_price_hole VALUES ('USD', 'ZZZ', '2026-01-02')`,
+		"no date":            `INSERT INTO marketdata_price_hole (instrument, quote_instrument) VALUES ('USD', 'BRL')`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			if _, err := pool.Exec(t.Context(), sql); err == nil {
+				t.Fatal("accepted")
+			}
+		})
+	}
+}
+
 // ADR 025 F1.
 func TestSchemaRejectsInvalidFeeds(t *testing.T) {
 	t.Parallel()

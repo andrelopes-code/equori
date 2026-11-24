@@ -213,6 +213,15 @@ describe("Instrument page", () => {
     expect(screen.queryByRole("heading", { name: "Details" })).toBeNull();
   });
 
+  it("states the market days without a quote in the data layer", async () => {
+    await renderApp("/instruments/PETR4", { fetch: api(petrWithCoverage(2)) });
+    await openData();
+
+    expect(
+      screen.getByText("2 market days without a quote in the enabled sources"),
+    ).toBeVisible();
+  });
+
   // MQ31
   it("asks five years and then from the first quote", async () => {
     const queries: URLSearchParams[] = [];
@@ -230,6 +239,7 @@ describe("Instrument page", () => {
             last: "2026-10-16",
             count: 2,
             stale: false,
+            missing: 0,
             sources: [],
           },
         }),
@@ -328,6 +338,7 @@ describe("Instrument page", () => {
           last: null,
           count: 0,
           stale: false,
+          missing: 0,
           sources: [source({})],
         },
         sent,
@@ -430,6 +441,7 @@ describe("Instrument page", () => {
         ...base,
         last: "2026-10-12",
         stale: true,
+        missing: 0,
         sources: [source({ last: "2026-10-12" })],
       });
       await renderApp("/instruments/PETR4", { fetch });
@@ -526,6 +538,7 @@ describe("Instrument page", () => {
             last: "2026-10-16",
             count: 2,
             stale: false,
+            missing: 0,
             sources: [],
           },
         }),
@@ -973,7 +986,7 @@ async function openData() {
   );
 }
 
-function petrWithCoverage() {
+function petrWithCoverage(missing = 0) {
   return {
     "GET /api/v1/instruments/PETR4": () =>
       json(200, {
@@ -988,6 +1001,7 @@ function petrWithCoverage() {
           last: "2026-10-16",
           count: 2,
           stale: false,
+          missing,
           sources: [],
         },
       }),

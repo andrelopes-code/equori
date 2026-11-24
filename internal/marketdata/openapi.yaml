@@ -1498,7 +1498,7 @@ schemas:
   InstrumentCoverage:
     type: object
     additionalProperties: false
-    required: [first, last, count, stale, sources]
+    required: [first, last, count, stale, missing, sources]
     properties:
       first:
         type: string
@@ -1515,6 +1515,9 @@ schemas:
       stale:
         type: boolean
         description: An enabled source quotes the instrument and its next price is overdue (A222 MQ24).
+      missing:
+        type: integer
+        description: The sessions between the first and the last price that no enabled source holds a price of (A265 PH6).
       sources:
         type: array
         description: Every registered source that quotes the instrument, enabled or not.

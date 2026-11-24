@@ -319,26 +319,14 @@ func (m *Module) SetFeed(
 
 	on[id] = enabled
 
-	tx, err := m.pool.Begin(ctx)
-	if err != nil {
-		return Feed{}, err
-	}
-
-	defer func() { _ = tx.Rollback(ctx) }()
-
-	q := m.q.WithTx(tx)
-	for fid, en := range on {
-		if err := q.SetFeed(ctx, postgres.SetFeedParams{ID: fid, Enabled: en}); err != nil {
-			return Feed{}, fmt.Errorf("store the setting of %s: %w", fid, err)
-		}
-	}
-
-	if err := tx.Commit(ctx); err != nil {
+	if err := m.storeFeeds(ctx, on); err != nil {
 		return Feed{}, err
 	}
 
 	if enabled {
-		m.requestFeedHistory(ctx, id)
+		if err := m.feedEnabled(ctx, id); err != nil {
+			return Feed{}, err
+		}
 	}
 
 	fs, err := m.Feeds(ctx)
@@ -349,4 +337,35 @@ func (m *Module) SetFeed(
 	i := slices.IndexFunc(fs, func(f Feed) bool { return f.ID == id })
 
 	return fs[i], nil
+}
+
+// storeFeeds stores the state of every feed of on in one transaction.
+func (m *Module) storeFeeds(ctx context.Context, on map[string]bool) error {
+	tx, err := m.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	q := m.q.WithTx(tx)
+	for fid, en := range on {
+		if err := q.SetFeed(ctx, postgres.SetFeedParams{ID: fid, Enabled: en}); err != nil {
+			return fmt.Errorf("store the setting of %s: %w", fid, err)
+		}
+	}
+
+	return tx.Commit(ctx)
+}
+
+// feedEnabled requests the history of a price source that was enabled and forgets the sessions no
+// source held a price of: this one can hold it (A265 PH5).
+func (m *Module) feedEnabled(ctx context.Context, id string) error {
+	m.requestFeedHistory(ctx, id)
+
+	if err := m.q.DeletePriceHoles(ctx); err != nil {
+		return fmt.Errorf("empty the price holes: %w", err)
+	}
+
+	return nil
 }
