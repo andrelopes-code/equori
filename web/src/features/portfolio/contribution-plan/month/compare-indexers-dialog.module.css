@@ -1,0 +1,7 @@
+@layer app {
+  /* The calculator puts its evidence beside the inputs from 1024 px, above the xl step of the
+     dialog (56rem); no token holds a measure between xl and the full width. */
+  .layer {
+    max-inline-size: 1280px;
+  }
+}

@@ -10,6 +10,7 @@ import {
 
 import type { components } from "@/api/schema.gen";
 import { IndexerComparison } from "@/features/calculators";
+import styles from "@/features/portfolio/contribution-plan/month/compare-indexers-dialog.module.css";
 import { useT } from "@/i18n/i18n-provider";
 
 type Money = components["schemas"]["Money"];
@@ -39,7 +40,7 @@ export function CompareIndexersDialog({
         if (!next) onClose();
       }}
     >
-      <DialogContent>
+      <DialogContent className={styles.layer}>
         <DialogHeader>
           <DialogTitle>
             {t("contributionPlan.compareIndexers.title")}

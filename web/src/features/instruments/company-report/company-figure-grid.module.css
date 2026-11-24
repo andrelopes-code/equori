@@ -6,7 +6,8 @@
   .grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    gap: var(--slotted-page-gap);
+    /* An overlay publishes no page gap. */
+    gap: var(--slotted-page-gap, var(--slotted-space-6));
   }
 
   /* The least measure of a card, 13rem: two fit from 27rem, four from 56rem. No token holds it. */

@@ -3,6 +3,7 @@
     display: grid;
     /* A card's least measure: no token holds it. Four fit at 1280, one stacks on a phone. */
     grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
-    gap: var(--slotted-page-gap);
+    /* An overlay publishes no page gap. */
+    gap: var(--slotted-page-gap, var(--slotted-space-6));
   }
 }

@@ -49,10 +49,10 @@ export function PiotroskiList({ signals, plan }: PiotroskiListProps) {
   });
 
   return (
-    <Stack gap={3}>
-      <Text size="sm">{heading}</Text>
+    <Stack gap={5}>
+      <Text weight="semibold">{heading}</Text>
 
-      <List aria-label={heading} variant="framed">
+      <List aria-label={heading} variant="framed" size="lg">
         {signals.signals.map((signal) => {
           const current =
             signal.current === null

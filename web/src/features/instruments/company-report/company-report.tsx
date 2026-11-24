@@ -75,12 +75,14 @@ export function CompanyReport({ code }: CompanyReportProps) {
       </SectionHeader>
 
       <SectionBody>
-        <Stack gap={6}>
-          <Text size="sm" truncate title={report.name}>
-            {report.name}
-          </Text>
+        <Stack gap={8}>
+          <Stack gap={6}>
+            <Text size="sm" truncate title={report.name}>
+              {report.name}
+            </Text>
 
-          <CompanyMultiples code={code} />
+            <CompanyMultiples code={code} />
+          </Stack>
 
           <CompanyReportFigures figures={figures} />
 
