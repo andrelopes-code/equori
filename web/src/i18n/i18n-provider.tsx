@@ -1,13 +1,9 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-} from "react";
+import { useCallback, useContext, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
 import type { MessageKey } from "@/i18n/catalog.en";
+import { I18nContext } from "@/i18n/i18n-context";
+import type { I18n } from "@/i18n/i18n-context";
 import { languages } from "@/i18n/languages";
 import type { Language } from "@/i18n/languages";
 import { tagOf, writeLocale } from "@/i18n/locale";
@@ -16,24 +12,6 @@ import type { Locale } from "@/i18n/locale";
 type Vars = Record<string, string | number>;
 
 export type TFunction = (key: MessageKey, vars?: Vars) => string;
-
-interface I18n {
-  locale: Locale;
-  tag: string;
-  language: Language;
-  setLocale: (locale: Locale) => void;
-  setLanguage: (language: Language) => void;
-}
-
-const fallback: Locale = { language: "en", region: "US" };
-
-const I18nContext = createContext<I18n>({
-  locale: fallback,
-  tag: tagOf(fallback),
-  language: fallback.language,
-  setLocale: () => undefined,
-  setLanguage: () => undefined,
-});
 
 export function I18nProvider({
   locale: initial,

@@ -35,6 +35,28 @@ describe("I18nProvider", () => {
     expect(screen.getByTestId("count")).toHaveTextContent("3 selecionados");
   });
 
+  // The dev server evaluates the module again when a catalog changes; a save during the update leaves
+  // the provider of one evaluation above the consumers of another.
+  it("gives its language to the consumers of another evaluation of its module", async () => {
+    const again = "./i18n-provider.tsx?again";
+    const other = (await import(again)) as { useT: typeof useT };
+    expect(other.useT).not.toBe(useT);
+    function OtherProbe() {
+      const t = other.useT();
+      return <p data-testid="home">{t("nav.home")}</p>;
+    }
+
+    render(
+      <I18nProvider locale={{ language: "pt", region: "BR" }}>
+        <OtherProbe />
+      </I18nProvider>,
+    );
+
+    expect(screen.getByTestId("home")).toHaveTextContent(
+      catalogPtBR["nav.home"],
+    );
+  });
+
   it("renders English text", () => {
     render(
       <I18nProvider locale={{ language: "en", region: "US" }}>
