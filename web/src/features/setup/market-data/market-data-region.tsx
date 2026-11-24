@@ -52,6 +52,7 @@ export function MarketDataRegion({
       }
       line={region === "global" ? `${line} · ${t("region.globalHint")}` : line}
       verdict={regionVerdict(summary, t)}
+      busy={folded && summary.loading > 0}
       folded={folded}
       sub={folded}
     />

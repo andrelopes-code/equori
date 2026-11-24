@@ -58,6 +58,13 @@ describe("feedRowText", () => {
     expect(feedRowText(feed({ covers }), t, "en-US").coverage).toBe(text);
   });
 
+  it("adds no line to an index that loads: its word says it", () => {
+    expect(
+      feedRowText(feed({ kind: "index", history_pending: 1 }), t, "en-US")
+        .issue,
+    ).toBeNull();
+  });
+
   it.each([
     [1, "1 value missing in the history"],
     [12, "12 values missing in the history"],

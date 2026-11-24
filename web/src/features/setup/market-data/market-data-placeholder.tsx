@@ -69,6 +69,8 @@ export function MarketDataPlaceholder() {
                   </Text>
                 </div>
 
+                <span className={styles.mark} />
+
                 <Skeleton
                   className={styles.toggle}
                   shape="block"

@@ -46,7 +46,8 @@ export function SettingsMarketData() {
     items.some(
       (f) => runsBefore.has(f.id) && runsBefore.get(f.id) === f.last_run,
     );
-  const working = polling || enabled.some(isActive);
+  const running = enabled.some((f) => f.activity === "running");
+  const working = !running && (polling || enabled.some(isActive));
   const failure = set.error ?? refresh.error;
 
   function handleSet(id: string, on: boolean, acceptUnofficial: boolean) {

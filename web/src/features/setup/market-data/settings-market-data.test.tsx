@@ -298,6 +298,28 @@ describe("Market data section (ADR 025 F10)", () => {
     ).toBeNull();
   }, 15_000);
 
+  it("leaves the wait to the row that runs", async () => {
+    const a = api(
+      feeds({
+        br_cdi: { enabled: true, activity: "running", last: "2026-10-16" },
+        yahoo_chart: { enabled: true, history_pending: 3 },
+      }),
+    );
+    await open(a.fetch);
+
+    const word = await within(section()).findByText(
+      catalogEn["marketData.status.updating"],
+    );
+    const row = word.closest('[aria-busy="true"]');
+
+    expect(row?.querySelector('[data-ui="progress-indicator"]')).not.toBeNull();
+    expect(
+      within(section()).queryByRole("progressbar", {
+        name: catalogEn["marketData.working"],
+      }),
+    ).toBeNull();
+  });
+
   it("shows no loader when nothing is pending", async () => {
     const a = api(feeds({ yahoo_chart: { enabled: true } }));
     await open(a.fetch);

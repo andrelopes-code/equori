@@ -1,4 +1,3 @@
-import { Loader } from "@slotted/react/progress-indicator";
 import { Switch } from "@slotted/react/switch";
 import { Tag } from "@slotted/react/tag";
 import { Text } from "@slotted/react/typography";
@@ -6,6 +5,7 @@ import { useId, useState } from "react";
 
 import type { components } from "@/api/schema.gen";
 import type { FeedControls } from "@/features/setup/market-data/feed-controls";
+import { FeedMark } from "@/features/setup/market-data/feed-mark";
 import {
   feedFullName,
   feedName,
@@ -109,18 +109,11 @@ export function MarketDataFeedRow({ feed, controls }: MarketDataFeedRowProps) {
         </Text>
 
         <Text size="sm" tone={statusTone[status.tone]} className={styles.word}>
-          {running ? (
-            <Loader size="sm" decorative className={styles.loader} />
-          ) : (
-            <span
-              className={styles.dot}
-              data-tone={status.tone}
-              aria-hidden="true"
-            />
-          )}
           {t(`marketData.status.${status.word}`)}
         </Text>
       </div>
+
+      <FeedMark tone={status.tone} running={running} />
 
       <Switch
         className={styles.toggle}

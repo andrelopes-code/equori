@@ -12,8 +12,9 @@
   }
 
   /* A band names a region. It shares its columns with the rows below it, so the verdict ends on
-     the line where the status words end. The three measures, 3rem, 2.5rem and 7rem, are the band's
-     minimum height, the switch column and the status column; no token holds them. */
+     the line where the status words end and its mark stands on the axis of their marks. The four
+     measures, 3rem, 7rem, 1.25rem and 2.5rem, are the band's minimum height and the columns of the
+     status, the mark and the switch; no token holds them. */
   .band {
     display: grid;
     min-block-size: 3rem;
@@ -23,7 +24,7 @@
       var(--slotted-border-subtle);
     background: color-mix(in srgb, var(--slotted-text) 4%, transparent);
     column-gap: var(--slotted-space-6);
-    grid-template-columns: minmax(0, 1fr) 7rem 2.5rem;
+    grid-template-columns: minmax(0, 1fr) 7rem 1.25rem 2.5rem;
   }
 
   .band:first-child {
@@ -71,26 +72,11 @@
   .verdict {
     display: inline-flex;
     grid-column: 2;
-    align-items: center;
     justify-self: end;
-    gap: var(--slotted-space-3);
     color: var(--slotted-text-muted);
     font-size: var(--slotted-font-size-sm);
     font-weight: var(--slotted-font-weight-medium);
     white-space: nowrap;
-  }
-
-  .verdict::before {
-    flex: none;
-    border-radius: var(--slotted-radius-full);
-    background: currentcolor;
-    block-size: var(--slotted-space-3);
-    content: "";
-    inline-size: var(--slotted-space-3);
-  }
-
-  .verdict[data-tone="ok"]::before {
-    background: var(--slotted-tone-success-solid);
   }
 
   .verdict[data-tone="warning"],
@@ -101,7 +87,7 @@
   /* The chevron of a folded band stands in the switch column, so it ends where the switches do. */
   .chevron {
     display: inline-flex;
-    grid-column: 3;
+    grid-column: 4;
     justify-self: end;
     color: var(--slotted-text-muted);
     transition: none;
@@ -143,8 +129,8 @@
   }
 
   /* A row has one height per state, so the status words of every row stand on the same lines. The
-     heights, 3.75, 5.125 and 4.875 rem, fit two text lines, three, and the phone's two; none has
-     a token. */
+     heights, 3.75 and 5.125 rem, and 5.25 and 6.5 rem on a phone, fit two text lines and three;
+     none has a token. */
   .row {
     display: grid;
     min-inline-size: 0;
@@ -154,7 +140,7 @@
       var(--slotted-border-subtle);
     block-size: 3.75rem;
     column-gap: var(--slotted-space-6);
-    grid-template-columns: minmax(0, 1fr) 7rem 2.5rem;
+    grid-template-columns: minmax(0, 1fr) 7rem 1.25rem 2.5rem;
   }
 
   .row[data-issue] {
@@ -167,11 +153,14 @@
     flex-direction: column;
   }
 
+  /* The line of the name holds a tag, 1.5rem with no token, whether the row has one or not: the names
+     and the lines under them stand alike in every row. */
   .name {
     display: flex;
     min-inline-size: 0;
     align-items: center;
     gap: var(--slotted-space-4);
+    block-size: 1.5rem;
   }
 
   .nameText {
@@ -199,29 +188,41 @@
   }
 
   .word {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--slotted-space-3);
     white-space: nowrap;
   }
 
+  /* The mark stands closer to the word it belongs to than to the switch. */
+  .mark {
+    display: grid;
+    block-size: 1.25rem;
+    inline-size: 1.25rem;
+    margin-inline-start: calc(var(--slotted-space-4) * -1);
+    place-items: center;
+  }
+
+  /* The band's mark takes the tone of its verdict, the row's the one of its word. */
   .dot {
-    flex: none;
     border-radius: var(--slotted-radius-full);
-    background: currentcolor;
+    background: var(--slotted-text-muted);
     block-size: var(--slotted-space-3);
     inline-size: var(--slotted-space-3);
   }
 
-  /* The loader takes the place of the dot, inside the line of the word. */
-  .loader {
-    --slotted-progress-indicator-size: var(--slotted-space-6);
-
-    flex: none;
-  }
-
   .dot[data-tone="ok"] {
     background: var(--slotted-tone-success-solid);
+  }
+
+  .dot[data-tone="warning"] {
+    background: var(--slotted-tone-warning-text);
+  }
+
+  .dot[data-tone="danger"] {
+    background: var(--slotted-tone-danger-text);
+  }
+
+  .loader,
+  .toolbarLoader {
+    --slotted-progress-indicator-size: 1.25rem;
   }
 
   .toggle {
@@ -238,19 +239,24 @@
     .band,
     .row {
       padding-inline: var(--slotted-space-6);
-      grid-template-columns: minmax(0, 1fr) 2.5rem;
+      grid-template-columns: 1.25rem minmax(0, 1fr) 2.5rem;
     }
 
     .row {
-      block-size: 4.875rem;
+      block-size: 5.25rem;
     }
 
     .row[data-issue] {
-      block-size: 6.125rem;
+      block-size: 6.5rem;
     }
 
-    .verdict {
+    .verdict,
+    .band .mark {
       display: none;
+    }
+
+    .bandTitle {
+      grid-column: 1 / 3;
     }
 
     .inlineVerdict {
@@ -258,17 +264,27 @@
     }
 
     .chevron {
-      grid-column: 2;
+      grid-column: 3;
     }
 
     .main {
+      grid-column: 1 / 3;
+    }
+
+    /* The mark starts the line of the status; the word of every row starts at one place. */
+    .mark {
       grid-column: 1;
+      grid-row: 2;
+      margin-inline-start: 0;
     }
 
     .status {
       flex-direction: row-reverse;
-      grid-column: 1;
+      grid-column: 2;
       grid-row: 2;
+      margin-inline-start: calc(
+        var(--slotted-space-3) - var(--slotted-space-6)
+      );
       align-items: center;
       gap: var(--slotted-space-4);
       justify-content: flex-end;
@@ -293,7 +309,7 @@
     }
 
     .toggle {
-      grid-column: 2;
+      grid-column: 3;
       grid-row: 1 / span 2;
     }
   }

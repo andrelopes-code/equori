@@ -13,8 +13,8 @@ export interface FeedRowText {
   issue: { tone: "danger" | "warning" | "muted"; text: string } | null;
 }
 
-// The words under a feed's name: its kind and coverage, and the failure, the pending history or
-// the missing values when there is one (ADR 025 F10; plan 2 D26).
+// The words under a feed's name: its kind and coverage, and the failure, the pending history of a
+// price feed or the missing values when there is one. The word of an index that loads says it already (ADR 025 F10; plan 2 D26).
 export function feedRowText(f: Feed, t: TFunction, tag: string): FeedRowText {
   const count = (n: number) => numberFormatter(tag).format(n);
   const detail = [feedSource(t, f.id), t(`marketData.kind.${f.kind}`)].filter(
@@ -53,9 +53,9 @@ function issue(
       tone: "danger",
       text: t("settings.feeds.currentFailed", { error: f.current_error }),
     };
-  if (f.history_pending === 1)
+  if (f.history_pending === 1 && f.kind === "price")
     return { tone: "muted", text: t("settings.feeds.historyPending.one") };
-  if (f.history_pending > 1)
+  if (f.history_pending > 1 && f.kind === "price")
     return {
       tone: "muted",
       text: t("settings.feeds.historyPending.other", {

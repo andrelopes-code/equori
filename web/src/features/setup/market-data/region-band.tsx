@@ -1,6 +1,7 @@
 import { Glyph, Icon } from "@slotted/react/icon";
 import type { ReactNode } from "react";
 
+import { FeedMark } from "@/features/setup/market-data/feed-mark";
 import styles from "@/features/setup/market-data/market-data.module.css";
 import type { RegionVerdict } from "@/features/setup/market-data/region-verdict";
 import { RegionFlag } from "@/ui/region/region-flag";
@@ -15,6 +16,8 @@ interface RegionBandProps {
   line: string;
   // The verdict, at the end on a wide band and inside the line on a narrow one.
   verdict?: RegionVerdict;
+  // Rows out of sight load: the band draws the loader they would.
+  busy?: boolean;
   // A folded band draws the chevron.
   folded?: boolean;
   sub?: boolean;
@@ -29,6 +32,7 @@ export function RegionBand({
   tag,
   line,
   verdict,
+  busy = false,
   folded = false,
   sub = false,
 }: RegionBandProps) {
@@ -57,9 +61,13 @@ export function RegionBand({
       </span>
 
       {verdict !== undefined && (
-        <span className={styles.verdict} data-tone={verdict.tone}>
-          {verdict.text}
-        </span>
+        <>
+          <span className={styles.verdict} data-tone={verdict.tone}>
+            {verdict.text}
+          </span>
+
+          <FeedMark tone={verdict.tone} running={busy} />
+        </>
       )}
 
       {folded && (
