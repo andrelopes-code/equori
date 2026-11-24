@@ -84,6 +84,54 @@ const paletteScrimRule = `
 }
 `;
 
+// Workaround for Slotted issue #181: no token sets the backdrop filter of a scrim. The page blurs
+// under a modal dialog or drawer; a layer that leaves the page usable keeps it sharp. The filter
+// enters and leaves with the family's fade of the veil. A filter lifts its element over siblings
+// with no stacking context: the negative z-index keeps the veil under the panel, and the layer's
+// root keeps it over the page.
+const veils = ["dialog", "drawer"].map(
+  (family) => `[data-ui="${family}"][data-modal]`,
+);
+
+const veilRule = (layer: string, declarations: string) => `
+${veils.map((veil) => `${veil}${layer} > [data-part="backdrop"]`).join(",\n")} {
+  ${declarations}
+}
+`;
+
+const veilFilter = (filter: string) =>
+  `-webkit-backdrop-filter: ${filter};
+  backdrop-filter: ${filter};`;
+
+const veilRules = [
+  veilRule(
+    "",
+    `z-index: -1;
+  transition-property: opacity, -webkit-backdrop-filter, backdrop-filter;`,
+  ),
+  veilRule("[data-open]", veilFilter("blur(6px)")),
+  // A sheet under a finger dims by its own travel, on the timeline the family declares; the blur
+  // follows it, so none is left when the sheet reaches the edge.
+  `@keyframes equori-veil-blur {
+  from {
+    -webkit-backdrop-filter: blur(0);
+    backdrop-filter: blur(0);
+  }
+}
+`,
+  `[data-ui="drawer"][data-modal][data-open][data-drag]:not([data-sheet-content], [data-sheet-travel]) > [data-part="backdrop"] {
+  animation: linear both equori-veil-blur;
+  animation-timeline: --slotted-drawer-sheet;
+  animation-range: 0px var(--slotted-drawer-sheet-floor, 100%);
+}
+`,
+  `&[data-slotted-scheme="high-contrast"] :is(${veils.join(", ")}) > [data-part="backdrop"] {
+  ${veilFilter("none")}
+}
+`,
+  `@media (prefers-reduced-transparency: reduce), (forced-colors: active) {${veilRule("[data-open]", veilFilter("none"))}}`,
+];
+
 const defaultDark = defaultTheme.recipe.dark;
 
 // The default turns the dark accent edge and text 10 to 13 degrees toward blue and lifts them to
@@ -326,6 +374,7 @@ export default extendTheme(
       sectionRule,
       resultStateRule,
       paletteScrimRule,
+      ...veilRules,
       sheetSlideRule,
       tagInsetRule,
       listHeightRule,
