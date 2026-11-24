@@ -73,7 +73,7 @@ func (s *Service) ReturnSeries(
 		return ReturnSeries{}, err
 	}
 
-	p, _, _, err := s.periodOf(ctx, booksID, ids, from, to, "", &report)
+	p, index, rates, err := s.periodOf(ctx, booksID, ids, from, to, "", &report)
 	if err != nil {
 		return ReturnSeries{}, err
 	}
@@ -85,13 +85,18 @@ func (s *Service) ReturnSeries(
 		return ReturnSeries{}, err
 	}
 
+	indexes, err := s.seriesIndexes(ctx, p, index, rates, steps)
+	if err != nil {
+		return ReturnSeries{}, err
+	}
+
 	return ReturnSeries{
 		From:     from,
 		To:       to,
 		Currency: report.Opening.Currency(),
 		Opening:  start,
 		Points:   seriesPoints(p, steps, start, subs, dates),
-		Indexes:  []IndexSeries{},
+		Indexes:  indexes,
 	}, nil
 }
 

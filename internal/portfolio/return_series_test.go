@@ -20,7 +20,16 @@ type seriesOut struct {
 		Flows    int64  `json:"flows"`
 		ReturnBP *int   `json:"return_bp"`
 	} `json:"points"`
-	Indexes []map[string]any `json:"indexes"`
+	Indexes []indexOut `json:"indexes"`
+}
+
+type indexOut struct {
+	Index  string `json:"index"`
+	Period string `json:"period"`
+	Points []struct {
+		Date     string `json:"date"`
+		ReturnBP int    `json:"return_bp"`
+	} `json:"points"`
 }
 
 // S393: the return of a brokerage as a series of step dates (portfolio results PS1 to PS6).
@@ -94,6 +103,89 @@ func TestS393ReturnSeriesByMonth(t *testing.T) {
 	}
 }
 
+// S394: the indexes of the region beside the series: the CDI as one point per step date, the IPCA
+// as one point per whole month, and none for another currency or a region without an index
+// (portfolio results PS5, PS6).
+func TestS394ReturnSeriesIndexes(t *testing.T) {
+	t.Parallel()
+
+	t.Run("daily index", func(t *testing.T) {
+		t.Parallel()
+		b := newBenchmarkBook(t)
+		b.stockBrokerage(t, "27")
+
+		got := b.series(t, "2026-01-02", "2026-01-09", "step=day")
+		last := got.Points[len(got.Points)-1]
+
+		if len(got.Points) != 8 || last.ReturnBP == nil || *last.ReturnBP != -1000 ||
+			len(got.Indexes) != 1 {
+			t.Fatalf("series = %+v", got)
+		}
+
+		dates, returns := got.Indexes[0].shape()
+		wantDates := []string{
+			"2026-01-02", "2026-01-03", "2026-01-04", "2026-01-05",
+			"2026-01-06", "2026-01-07", "2026-01-08", "2026-01-09",
+		}
+
+		if got.Indexes[0].Index != "cdi" || got.Indexes[0].Period != "day" ||
+			!reflect.DeepEqual(dates, wantDates) ||
+			!reflect.DeepEqual(returns, []int{6, 6, 6, 11, 17, 22, 28, 33}) {
+			t.Fatalf("indexes = %+v", got.Indexes)
+		}
+	})
+
+	t.Run("monthly index", func(t *testing.T) {
+		t.Parallel()
+		b := newBenchmarkBookOn(t, "2025-10-01")
+
+		got := b.series(t, "2025-11-01", "2026-01-09", "step=month")
+
+		var monthly []indexOut
+		for _, ix := range got.Indexes {
+			if ix.Index == "ipca" {
+				monthly = append(monthly, ix)
+			}
+		}
+
+		if len(monthly) != 1 || monthly[0].Period != "month" {
+			t.Fatalf("indexes = %+v", got.Indexes)
+		}
+
+		dates, returns := monthly[0].shape()
+		if !reflect.DeepEqual(dates, []string{"2025-11-30", "2025-12-31"}) ||
+			!reflect.DeepEqual(returns, []int{50, 90}) {
+			t.Fatalf("ipca = %+v", monthly[0])
+		}
+	})
+
+	t.Run("another currency", func(t *testing.T) {
+		t.Parallel()
+		b := newBenchmarkBookOn(t, "2025-11-01")
+		b.addUSD(t)
+
+		got := b.series(t, "2025-11-01", "2026-01-09", "step=month&value_in=USD")
+		if len(got.Indexes) != 0 {
+			t.Fatalf("indexes in USD = %+v", got.Indexes)
+		}
+	})
+
+	t.Run("region without an index", func(t *testing.T) {
+		t.Parallel()
+		b := newBenchmarkBookOn(t, "2025-11-01")
+
+		_, err := b.h.Pool.Exec(t.Context(), `UPDATE identity_books SET region = 'US'`)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		got := b.series(t, "2025-11-01", "2026-01-09", "step=month")
+		if len(got.Indexes) != 0 {
+			t.Fatalf("indexes in region US = %+v", got.Indexes)
+		}
+	})
+}
+
 func TestReturnSeriesRequestErrors(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
@@ -130,6 +222,51 @@ func TestReturnSeriesRequestErrors(t *testing.T) {
 		nil,
 	)
 	f.h.ExpectProblem(r, http.StatusNotFound, "not_found", "")
+}
+
+func (b benchmarkBook) series(t *testing.T, from, to, query string) seriesOut {
+	t.Helper()
+	b.h.Dispatch()
+
+	path := fmt.Sprintf(
+		"/api/v1/reports/return/series?account_id=%s&from=%s&to=%s&%s",
+		b.savings,
+		from,
+		to,
+		query,
+	)
+	r := b.h.Do(http.MethodGet, path, nil)
+
+	if r.Status != http.StatusOK {
+		t.Fatalf("status %d: %s", r.Status, r.Body)
+	}
+
+	var out seriesOut
+	r.Decode(t, &out)
+
+	return out
+}
+
+// addUSD records the dollar and its price, as TestS309NoIndexForTheRegionOrCurrency does.
+func (b benchmarkBook) addUSD(t *testing.T) {
+	t.Helper()
+	b.h.Do(
+		http.MethodPost,
+		"/api/v1/instruments",
+		map[string]any{"code": "USD", "type": "currency", "scale": 2, "name": "Dollar"},
+	)
+	b.h.MustDo(
+		http.MethodPost,
+		"/api/v1/prices",
+		map[string]any{
+			"instrument":       "USD",
+			"quote_instrument": "BRL",
+			"date":             "2025-10-01",
+			"value":            "5",
+		},
+		http.StatusCreated,
+		nil,
+	)
 }
 
 func (f fixture) seedSeries(t *testing.T) {
@@ -181,6 +318,17 @@ type pointShape struct {
 	value int64
 	flows int64
 	bp    int
+}
+
+func (ix indexOut) shape() ([]string, []int) {
+	dates := make([]string, len(ix.Points))
+	returns := make([]int, len(ix.Points))
+
+	for i, p := range ix.Points {
+		dates[i], returns[i] = p.Date, p.ReturnBP
+	}
+
+	return dates, returns
 }
 
 func (s seriesOut) shape() []pointShape {
