@@ -21,6 +21,7 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "instruments.type.crypto": "Criptoativos",
   "instruments.type.option": "Opções",
   "instruments.type.future": "Futuros",
+  "instruments.columns": "Colunas",
   "instruments.col.code": "Código",
   "instruments.col.name": "Nome",
   "instruments.col.type": "Tipo",
@@ -146,6 +147,10 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
     "Cotações de {first} a {last} · {count} cotações · {source}",
   "instruments.coverage.none": "Nenhuma cotação",
   "instruments.coverage.age": "Última cotação {age}",
+  "instruments.coverage.missing.one":
+    "1 dia de mercado sem cotação nas fontes ativas",
+  "instruments.coverage.missing.other":
+    "{count} dias de mercado sem cotação nas fontes ativas",
   "instruments.history.load": "Carregar histórico desde…",
   "instruments.history.title": "Carregar histórico de cotações",
   "instruments.history.from": "Desde",

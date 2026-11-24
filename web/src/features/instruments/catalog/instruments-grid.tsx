@@ -7,6 +7,7 @@ import { VisuallyHidden } from "@slotted/react/visually-hidden";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useMemo, useState } from "react";
 
+import { CatalogColumnManager } from "@/features/instruments/catalog/catalog-column-manager";
 import { useCatalogCells } from "@/features/instruments/catalog/use-catalog-cells";
 import { useCatalogColumns } from "@/features/instruments/catalog/use-catalog-columns";
 import type { HideSelection } from "@/features/instruments/hide-instrument/use-hide-selection";
@@ -15,6 +16,7 @@ import { typeLabel } from "@/features/instruments/model/instrument-labels";
 import styles from "@/features/instruments/pages/instruments-page.module.css";
 import { useT } from "@/i18n/i18n-provider";
 import { BulkOutcomeNotice } from "@/ui/feedback/bulk-outcome-notice";
+import { useColumnState } from "@/ui/runtime/use-column-state";
 
 interface InstrumentsGridProps {
   rows: readonly CatalogRow[];
@@ -27,6 +29,10 @@ interface InstrumentsGridProps {
 const initialQuery: GridQuery = {
   ...emptyQuery(),
   group: ["type"],
+};
+
+const defaultColumnState = {
+  pinned: { start: ["actions", "code"], end: [] },
 };
 
 // The instruments grouped by type, searched by code or name and filtered by type, subtype or
@@ -42,6 +48,15 @@ export function InstrumentsGrid({
   const { columns, fields, types } = useCatalogColumns(rows);
   const [query, setQuery] = useState<GridQuery>(initialQuery);
   const [opened, setOpened] = useState<readonly string[] | undefined>();
+  const [columnState, setColumnState] = useColumnState(
+    "equori.instruments.columns",
+    defaultColumnState,
+  );
+  // The group rows carry the type, so its own column stays out of sight.
+  const shown = useMemo(
+    () => ({ ...columnState, hidden: [...columnState.hidden, "type"] }),
+    [columnState],
+  );
   const cellRenderers = useCatalogCells(quotesFailed);
   // A currency has no hidden state, so it takes no mark (HD2).
   const disabledKeys = useMemo(
@@ -99,7 +114,14 @@ export function InstrumentsGrid({
         count={rows.length}
         total={rows.length}
         messages={{ search: t("instruments.search") }}
-      />
+      >
+        <CatalogColumnManager
+          columns={columns}
+          columnState={columnState}
+          defaultColumnState={defaultColumnState}
+          onColumnState={setColumnState}
+        />
+      </FilterBar>
 
       <div className={styles.listing}>
         <DataGrid
@@ -109,11 +131,8 @@ export function InstrumentsGrid({
           rows={rows}
           rowKey="code"
           rowHeight={44}
-          // The group rows carry the type, so its own column stays out of sight.
-          defaultColumnState={{
-            hidden: ["type"],
-            pinned: { start: ["actions", "code"], end: [] },
-          }}
+          columnState={shown}
+          onColumnStateChange={setColumnState}
           loading={loading}
           query={query}
           onQueryChange={setQuery}

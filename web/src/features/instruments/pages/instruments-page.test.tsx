@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import { formatPrice } from "@/features/instruments/model/rate";
 import { catalogEn } from "@/i18n/catalog.en";
@@ -33,6 +33,21 @@ const codesOf = (grid: HTMLElement, codes: readonly string[]) =>
     .map((row) => row.split("|")[1] ?? "")
     .filter((code) => codes.includes(code));
 
+const headers = () =>
+  gridRows(
+    screen.getByRole("grid", { name: catalogEn["instruments.caption"] }),
+  )[0];
+
+const columnBox = (key: keyof typeof catalogEn) =>
+  screen.getByRole("checkbox", { name: new RegExp(`^${catalogEn[key]}`) });
+
+async function openColumns(user: ReturnType<typeof userEvent.setup>) {
+  await screen.findByText("38.45");
+  await user.click(
+    screen.getByRole("button", { name: catalogEn["instruments.columns"] }),
+  );
+}
+
 const withoutPrice = (code: string) =>
   quoteFixtures.map((q) =>
     q.instrument === code
@@ -52,6 +67,10 @@ const withoutPrice = (code: string) =>
   );
 
 describe("Instrument catalog", () => {
+  beforeEach(() => {
+    localStorage.removeItem("equori.instruments.columns");
+  });
+
   it("lists the instruments by type with the latest price, its date and the changes", async () => {
     await renderApp("/instruments", { fetch: api() });
     const grid = await screen.findByRole("grid", {
@@ -217,6 +236,60 @@ describe("Instrument catalog", () => {
       ).length,
     ).toBeGreaterThan(0);
     expect(within(grid).getByText("Petrobras PN")).toBeInTheDocument();
+  });
+
+  it("IQ14: hides a column from the column manager and keeps it hidden on the next visit", async () => {
+    const user = userEvent.setup();
+    const first = await renderApp("/instruments", { fetch: api() });
+    await openColumns(user);
+
+    await user.click(columnBox("instruments.col.exchange"));
+
+    await waitFor(() => {
+      expect(headers()).toEqual(
+        "Actions|Code|Name|Latest price|Last 3 months|Price date|1W|1M|3M|12M|YTD|Quote currency|Subtype",
+      );
+    });
+
+    first.unmount();
+    await renderApp("/instruments", { fetch: api() });
+
+    await screen.findByText("38.45");
+    expect(headers()).toEqual(
+      "Actions|Code|Name|Latest price|Last 3 months|Price date|1W|1M|3M|12M|YTD|Quote currency|Subtype",
+    );
+  });
+
+  it("IQ14: keeps the code and the actions, and leaves the type out of the manager", async () => {
+    const user = userEvent.setup();
+    await renderApp("/instruments", { fetch: api() });
+    await openColumns(user);
+
+    expect(columnBox("instruments.col.code")).toBeDisabled();
+    expect(columnBox("instruments.col.actions")).toBeDisabled();
+    expect(
+      screen.queryByRole("checkbox", {
+        name: new RegExp(`^${catalogEn["instruments.col.type"]}`),
+      }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("IQ14: restores the default columns", async () => {
+    localStorage.setItem(
+      "equori.instruments.columns",
+      JSON.stringify({ hidden: ["name", "exchange"] }),
+    );
+    const user = userEvent.setup();
+    await renderApp("/instruments", { fetch: api() });
+    await openColumns(user);
+
+    await user.click(screen.getByRole("button", { name: /restore defaults/i }));
+
+    await waitFor(() => {
+      expect(headers()).toEqual(
+        "Actions|Code|Name|Latest price|Last 3 months|Price date|1W|1M|3M|12M|YTD|Quote currency|Subtype|Exchange",
+      );
+    });
   });
 
   it("opens the instrument from its row", async () => {

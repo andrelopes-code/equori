@@ -21,6 +21,7 @@ export const instrumentsEn = {
   "instruments.type.crypto": "Crypto assets",
   "instruments.type.option": "Options",
   "instruments.type.future": "Futures",
+  "instruments.columns": "Columns",
   "instruments.col.code": "Code",
   "instruments.col.name": "Name",
   "instruments.col.type": "Type",
@@ -145,6 +146,10 @@ export const instrumentsEn = {
     "Quotes from {first} to {last} · {count} quotes · {source}",
   "instruments.coverage.none": "No quote",
   "instruments.coverage.age": "Last quote {age}",
+  "instruments.coverage.missing.one":
+    "1 market day without a quote in the enabled sources",
+  "instruments.coverage.missing.other":
+    "{count} market days without a quote in the enabled sources",
   "instruments.history.load": "Load history since…",
   "instruments.history.title": "Load price history",
   "instruments.history.from": "Since",

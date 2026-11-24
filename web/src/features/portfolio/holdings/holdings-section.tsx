@@ -35,11 +35,11 @@ import {
 } from "@/features/portfolio/model/portfolio-holdings";
 import type { Holding } from "@/features/portfolio/model/portfolio-holdings";
 import type { AllocationBy } from "@/features/portfolio/model/portfolio-search";
-import { useColumnState } from "@/features/portfolio/holdings/use-column-state";
 import { useScale } from "@/features/setup";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { AppLink } from "@/ui/navigation/app-link";
+import { useColumnState } from "@/ui/runtime/use-column-state";
 
 type Account = components["schemas"]["Account"];
 

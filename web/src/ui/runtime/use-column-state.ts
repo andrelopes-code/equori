@@ -1,7 +1,7 @@
 import type { GridColumnState } from "@slotted/core/grid";
 import { useState } from "react";
 
-// PC7: the columns a reader adds stay for the next visit, on this device only.
+// PC7, IQ14: the columns a reader chooses stay for the next visit, on this device only.
 export function useColumnState(
   key: string,
   initial: Partial<GridColumnState>,

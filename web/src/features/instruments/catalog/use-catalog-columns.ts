@@ -51,6 +51,7 @@ export function useCatalogColumns(rows: readonly CatalogRow[]) {
         accessor: () => "",
         width: 56,
         sortable: false,
+        hideable: false,
       },
       {
         id: "code",
@@ -58,6 +59,7 @@ export function useCatalogColumns(rows: readonly CatalogRow[]) {
         accessor: "code",
         rowHeader: true,
         searchable: true,
+        hideable: false,
         width: 100,
       },
       {
