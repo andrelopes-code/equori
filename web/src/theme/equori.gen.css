@@ -224,6 +224,8 @@
     --slotted-detail-panel-footer-backdrop-filter: var(--slotted-material-backdrop);
     --slotted-command-palette-surface: var(--slotted-surface-material);
     --slotted-command-palette-backdrop-filter: var(--slotted-material-backdrop);
+    --slotted-dialog-scrim-backdrop-filter: blur(6px);
+    --slotted-drawer-scrim-backdrop-filter: blur(6px);
     --slotted-dashboard-grid-help-measure: 24rem;
     --slotted-card-header-gap: 0;
     --slotted-chart-header-gap: 0;
@@ -2157,13 +2159,6 @@
   }
 }
 
-@keyframes slotted-equori-equori-veil-blur {
-  from {
-    -webkit-backdrop-filter: blur(0);
-    backdrop-filter: blur(0);
-  }
-}
-
 @layer slotted.theme-rules {
   @scope ([data-slotted-theme="equori"]) to ([data-slotted-theme]:not([data-slotted-theme="equori"])) {
     [data-ui="table"] [data-part="summary"] [data-part="row"]:first-child [data-part="cell"],
@@ -2217,35 +2212,9 @@
       --slotted-dialog-scrim: color-mix(in srgb, var(--slotted-scrim) 30%, transparent);
     }
 
-    [data-ui="dialog"][data-modal] > [data-part="backdrop"],
-    [data-ui="drawer"][data-modal] > [data-part="backdrop"] {
-      z-index: -1;
-      transition-property: opacity, -webkit-backdrop-filter, backdrop-filter;
-    }
-
-    [data-ui="dialog"][data-modal][data-open] > [data-part="backdrop"],
-    [data-ui="drawer"][data-modal][data-open] > [data-part="backdrop"] {
-      -webkit-backdrop-filter: blur(6px);
-      backdrop-filter: blur(6px);
-    }
-
-    [data-ui="drawer"][data-modal][data-open][data-drag]:not([data-sheet-content], [data-sheet-travel]) > [data-part="backdrop"] {
-      animation: linear both slotted-equori-equori-veil-blur;
-      animation-timeline: --slotted-drawer-sheet;
-      animation-range: 0px var(--slotted-drawer-sheet-floor, 100%);
-    }
-
-    &[data-slotted-scheme="high-contrast"] :is([data-ui="dialog"][data-modal], [data-ui="drawer"][data-modal]) > [data-part="backdrop"] {
-      -webkit-backdrop-filter: none;
-      backdrop-filter: none;
-    }
-
-    @media (prefers-reduced-transparency: reduce), (forced-colors: active) {
-    [data-ui="dialog"][data-modal][data-open] > [data-part="backdrop"],
-    [data-ui="drawer"][data-modal][data-open] > [data-part="backdrop"] {
-      -webkit-backdrop-filter: none;
-      backdrop-filter: none;
-    }
+    &[data-slotted-scheme="high-contrast"] :is([data-ui="dialog"], [data-ui="drawer"]) {
+      --slotted-dialog-scrim-backdrop-filter: none;
+      --slotted-drawer-scrim-backdrop-filter: none;
     }
 
     [data-ui="drawer"][data-mode="overlay"][data-side="bottom"][data-drag] {

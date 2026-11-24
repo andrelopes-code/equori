@@ -140,63 +140,22 @@ test("a raised toast and the palette are materials over the page", () => {
   );
 });
 
-const veil = (layer: string) =>
-  ["dialog", "drawer"]
-    .map((family) => `[data-ui="${family}"][data-modal]${layer}`)
-    .map((root) => `${root} > [data-part="backdrop"]`)
-    .join(",\n    ");
+const scrimFilters = [
+  "--slotted-dialog-scrim-backdrop-filter",
+  "--slotted-drawer-scrim-backdrop-filter",
+] as const;
 
-const bodyOf = (source: string, selector: string) =>
-  source.split(`${selector} {`)[1]?.split("}")[0] ?? "";
-
-test("the page blurs under an open modal dialog or drawer, and under no other layer", () => {
-  assert.match(
-    bodyOf(css, veil("[data-open]")),
-    /-webkit-backdrop-filter: blur\(6px\);\s*backdrop-filter: blur\(6px\);/,
-  );
-  assert.equal(css.split("backdrop-filter: blur(6px);").length - 1, 2);
+test("the page blurs under a modal dialog or drawer", () => {
+  for (const token of scrimFilters)
+    assert.equal(components[token], "blur(6px)");
 });
 
-// A filter lifts its element over siblings with no stacking context: the panel read blurred.
-test("the veil stays under the panel and its blur fades with it", () => {
-  const body = bodyOf(css, veil(""));
-  assert.match(body, /z-index: -1;/);
-  assert.match(
-    body,
-    /transition-property: opacity, -webkit-backdrop-filter, backdrop-filter;/,
-  );
-});
+test("the page stays sharp under high contrast", () => {
+  const root =
+    '&[data-slotted-scheme="high-contrast"] :is([data-ui="dialog"], [data-ui="drawer"])';
+  const body = css.split(`${root} {`)[1]?.split("}")[0] ?? "";
 
-test("the blur follows a sheet under a finger", () => {
-  const body = bodyOf(
-    css,
-    '[data-ui="drawer"][data-modal][data-open][data-drag]:not([data-sheet-content], [data-sheet-travel]) > [data-part="backdrop"]',
-  );
-  assert.match(body, /animation-timeline: --slotted-drawer-sheet;/);
-  assert.match(
-    body,
-    /animation-range: 0px var\(--slotted-drawer-sheet-floor, 100%\);/,
-  );
-});
-
-test("the page stays sharp under reduced transparency, forced colors and high contrast", () => {
-  const media =
-    "@media (prefers-reduced-transparency: reduce), (forced-colors: active) {";
-  const reduced = css
-    .split(media)
-    .slice(1)
-    .map((block) => bodyOf(block, veil("[data-open]")));
-  assert.ok(
-    reduced.some((body) => /[^-]backdrop-filter: none;/.test(body)),
-    "the media rule is missing from equori.gen.css",
-  );
-  assert.match(
-    bodyOf(
-      css,
-      '&[data-slotted-scheme="high-contrast"] :is([data-ui="dialog"][data-modal], [data-ui="drawer"][data-modal]) > [data-part="backdrop"]',
-    ),
-    /[^-]backdrop-filter: none;/,
-  );
+  for (const token of scrimFilters) assert.ok(body.includes(`${token}: none;`));
 });
 
 test("a tag keeps its height and stands its text 2 px further from each side", () => {
