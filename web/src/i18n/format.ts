@@ -378,16 +378,6 @@ export function firstDayOfWeek(locale: string): number {
   return (info?.firstDay ?? 1) % 7;
 }
 
-// The short names of the seven weekdays from the given first day: "dom" … "sáb".
-export function weekdayLabels(locale: string, firstDay: number): string[] {
-  // 2023-01-01 is a Sunday.
-  return Array.from({ length: 7 }, (_, i) =>
-    dateFormat(locale, { weekday: "short" })
-      .format(utcDate(`2023-01-0${String(1 + ((firstDay + i) % 7))}`))
-      .replace(/\.$/, ""),
-  );
-}
-
 // "qua, 14 out" / "Wed, Oct 14", also for today and yesterday.
 export function formatWeekdayDayMonth(iso: string, locale: string): string {
   const weekday = dateParts(iso, locale, { weekday: "short" }).weekday ?? "";

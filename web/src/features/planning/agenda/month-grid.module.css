@@ -16,140 +16,26 @@
     overflow: hidden;
   }
 
-  .weekdays {
-    display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
-    border-block-end: var(--slotted-border-width-thin) solid
-      var(--slotted-border-subtle);
-  }
-
-  /* Aligned with the day numbers below it. */
-  .weekday {
-    padding: var(--slotted-space-4) var(--slotted-space-4);
-    font-size: var(--slotted-font-size-xs);
-    font-weight: var(--slotted-font-weight-medium);
-    color: var(--slotted-text-muted);
-    text-transform: uppercase;
-  }
-
-  /* Hairlines between the days are the cells' own end and bottom borders, so the cells stay
-     clear and the frame's fill shows through them. The grid is one border wider at the end and
-     at the bottom: the frame clips the last column's and row's border. */
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
-    grid-auto-rows: calc(var(--slotted-space-12) + var(--slotted-space-4));
-    margin-inline-end: calc(-1 * var(--slotted-border-width-thin));
-    margin-block-end: calc(-1 * var(--slotted-border-width-thin));
-  }
-
-  /* Number on top, the day's net in the middle at the end, the marks at the foot. */
-  .day {
-    all: unset;
-    box-sizing: border-box;
-    container-type: inline-size;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    min-inline-size: 0;
-    padding: var(--slotted-space-3) var(--slotted-space-4);
-    border-inline-end: var(--slotted-border-width-thin) solid
-      var(--slotted-border-subtle);
-    border-block-end: var(--slotted-border-width-thin) solid
-      var(--slotted-border-subtle);
-    color: var(--slotted-text);
-  }
-
-  .day[data-busy] {
-    cursor: pointer;
-  }
-
-  .day[data-busy]:hover {
-    background: color-mix(in oklab, var(--slotted-text) 5%, transparent);
-  }
-
-  .day[data-outside] .number {
-    color: var(--slotted-text-muted);
-    font-weight: var(--slotted-font-weight-regular);
-  }
-
-  .day[data-selected] {
-    background: color-mix(
+  /* A week is 3.5 times the row step. The chosen day keeps the disc of today over its tint. */
+  .calendar {
+    --slotted-calendar-day-height: calc(
+      var(--slotted-space-12) + var(--slotted-space-4)
+    );
+    --slotted-calendar-day-mark-size: var(--slotted-space-4);
+    --slotted-calendar-day-radius: 0;
+    --slotted-calendar-hover-background: color-mix(
+      in oklab,
+      var(--slotted-text) 5%,
+      transparent
+    );
+    --slotted-calendar-selected-background: color-mix(
       in oklab,
       var(--slotted-tone-accent-solid) 14%,
       transparent
     );
-  }
-
-  .day:focus-visible {
-    outline: var(--slotted-focus-ring-width) solid
-      var(--slotted-focus-ring-color);
-    outline-offset: calc(-1 * var(--slotted-focus-ring-width));
-  }
-
-  .number {
-    align-self: start;
-    min-inline-size: var(--slotted-space-8);
-    block-size: var(--slotted-space-8);
-    margin: calc(-1 * var(--slotted-space-2)) 0 0
-      calc(-1 * var(--slotted-space-3));
-    display: grid;
-    place-items: center;
-    border-radius: var(--slotted-radius-full);
-    font-size: var(--slotted-font-size-xs);
-    font-weight: var(--slotted-font-weight-medium);
-    font-variant-numeric: tabular-nums;
-  }
-
-  /* Today: the number in a disc of the accent. */
-  .day[data-today] .number {
-    background: var(--slotted-tone-accent-solid);
-    color: var(--slotted-tone-accent-on-solid);
-    font-weight: var(--slotted-font-weight-semibold);
-  }
-
-  .marks {
-    display: flex;
-    gap: var(--slotted-space-2);
-    min-inline-size: 0;
-    overflow: hidden;
-  }
-
-  /* A mark is a disc in the series of its direction; hollow while the occurrence is pending. */
-  .mark {
-    flex: none;
-    inline-size: var(--slotted-space-4);
-    block-size: var(--slotted-space-4);
-    border-radius: var(--slotted-radius-full);
-    background: var(--direction);
-    box-shadow: inset 0 0 0 var(--slotted-border-width-medium) var(--direction);
-  }
-
-  .mark[data-direction="in"] {
-    --direction: var(--slotted-data-1);
-  }
-
-  .mark[data-direction="out"] {
-    --direction: var(--slotted-data-2);
-  }
-
-  .mark[data-pending] {
-    background: transparent;
-  }
-
-  .net {
-    align-self: end;
-    font-size: var(--slotted-font-size-xs);
-    font-variant-numeric: tabular-nums;
-    color: var(--slotted-text);
-    white-space: nowrap;
-  }
-
-  /* A narrow day keeps its marks and leaves the net to the tooltip and the list. */
-  @container (max-width: 3rem) {
-    .net {
-      display: none;
-    }
+    --slotted-calendar-selected-color: var(--slotted-text);
+    --slotted-calendar-today-background: var(--slotted-tone-accent-solid);
+    --slotted-calendar-today-color: var(--slotted-tone-accent-on-solid);
   }
 
   .legend {
@@ -167,31 +53,42 @@
     align-items: center;
   }
 
+  /* The marks of the calendar, whose rules reach its days alone. */
+  .mark {
+    flex: none;
+    inline-size: var(--slotted-space-4);
+    block-size: var(--slotted-space-4);
+    border: var(--slotted-border-width-thin) solid var(--direction);
+    border-radius: var(--slotted-radius-full);
+    background: var(--direction);
+  }
+
+  .mark[data-direction="in"] {
+    --direction: var(--slotted-data-1);
+  }
+
+  .mark[data-direction="out"] {
+    --direction: var(--slotted-data-2);
+  }
+
+  .mark[data-pending] {
+    background: transparent;
+  }
+
   .tipRow {
     display: flex;
     justify-content: space-between;
     gap: var(--slotted-space-4);
   }
 
-  /* Forced colors drop the fills: an outline keeps a done mark apart from a pending one. */
   @media (forced-colors: active) {
-    .grid {
-      background: CanvasText;
-    }
-
     .mark {
+      border-color: CanvasText;
       background: CanvasText;
-      box-shadow: none;
     }
 
     .mark[data-pending] {
-      background: Canvas;
-      outline: var(--slotted-border-width-thin) solid CanvasText;
-    }
-
-    .day[data-today] .number,
-    .day[data-selected] {
-      outline: var(--slotted-border-width-medium) solid Highlight;
+      background: transparent;
     }
   }
 }

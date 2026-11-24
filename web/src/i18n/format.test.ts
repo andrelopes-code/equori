@@ -10,7 +10,6 @@ import {
   formatWeekdayDayMonth,
   formatWeekdayShort,
   firstDayOfWeek,
-  weekdayLabels,
   formatDayMonthLong,
   formatDayMonthNumeric,
   formatMoney,
@@ -445,13 +444,6 @@ describe("week of the locale", () => {
     ["de-DE", 1],
   ] as const)("the week of %s starts on day %i", (locale, want) => {
     expect(firstDayOfWeek(locale)).toBe(want);
-  });
-
-  it.each([
-    ["pt-BR", 0, ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"]],
-    ["en-US", 1, ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]],
-  ] as const)("weekday labels of %s from day %i", (locale, first, want) => {
-    expect(weekdayLabels(locale, first)).toEqual(want);
   });
 });
 

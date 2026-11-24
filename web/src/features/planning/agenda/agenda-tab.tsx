@@ -7,7 +7,7 @@ import { agendaSections } from "@/features/planning/agenda/agenda-sections";
 import { AgendaSummary } from "@/features/planning/agenda/agenda-summary";
 import { AgendaTable } from "@/features/planning/agenda/agenda-table";
 import styles from "@/features/planning/agenda/agenda.module.css";
-import { DaysSection } from "@/features/planning/agenda/days-section";
+import { MonthGrid } from "@/features/planning/agenda/month-grid";
 import { RunningBalance } from "@/features/planning/agenda/running-balance";
 import { useAgendaMonth } from "@/features/planning/agenda/use-agenda-month";
 import type { AgendaFilter } from "@/features/planning/model/agenda";
@@ -83,7 +83,8 @@ export function AgendaTab({ month }: AgendaTabProps) {
           />
         </div>
 
-        <DaysSection
+        <MonthGrid
+          month={month}
           days={data.days}
           firstDay={data.firstDay}
           selected={day}
