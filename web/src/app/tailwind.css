@@ -4,8 +4,13 @@
 
    The number of a spacing utility is the Slotted token: ms-2 is --slotted-space-2, where Tailwind's
    ms-2 is 0.5rem. `inline` writes the token into the rule, so the value follows the density and
-   scheme set on any ancestor. The layer order is declared in app.css. */
-@import "tailwindcss/utilities.css" layer(utilities);
+   scheme set on any ancestor. The layer order is declared in public/boot.css. */
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
+
+/* The modules alone are scanned: the plugin reloads the page when a scanned file outside the
+   module graph, such as a README, changes. */
+@source "../**/*.{ts,tsx}";
+@source not "../**/*.test.{ts,tsx}";
 
 @theme inline {
   --spacing-0: 0;

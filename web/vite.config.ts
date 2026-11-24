@@ -79,6 +79,11 @@ export default defineConfig({
     // mDNS names of a development server on the LAN, such as devserver.local, and MagicDNS
     // names of a tailnet, such as dev-server-0.taild3dcad.ts.net.
     allowedHosts: [".local", ".ts.net"],
+    // Vite ignores its output directory only when it empties it; with emptyOutDir off, a build
+    // beside the dev server would reload the page once per file it writes.
+    watch: { ignored: ["**/web/dist/**"] },
+    // The shell and what it imports are transformed at start, before the first request asks.
+    warmup: { clientFiles: ["./src/main.tsx"] },
     // make dev serves the API; one origin lets the session cookie through without CORS.
     // Over plain HTTP on a LAN address the browser sends no Sec-Fetch-Site, so the
     // backend's cross-origin protection compares Origin with Host; both name the target.
