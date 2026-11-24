@@ -1,0 +1,35 @@
+@layer app {
+  /* A result reads in its tone; the sign and the word stay in the text */
+  .gain {
+    color: var(--slotted-tone-success-text);
+  }
+
+  .loss {
+    color: var(--slotted-tone-danger-text);
+  }
+
+  /* Facts: label at the start, value at the end, one line each */
+  .factList {
+    display: grid;
+    margin: 0;
+  }
+
+  .fact {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--slotted-space-4);
+    block-size: 2rem; /* literal: fixed row or column size in rem, scales with the root */
+    font-size: var(--slotted-font-size-sm);
+    white-space: nowrap;
+  }
+
+  .fact dt {
+    color: var(--slotted-text-muted);
+  }
+
+  .fact dd {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+}

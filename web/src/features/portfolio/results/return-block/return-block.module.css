@@ -1,0 +1,164 @@
+@layer app {
+  /* Two columns: figures beside their plot */
+  .hero {
+    display: grid;
+    grid-template-columns: 21rem minmax(0, 1fr); /* literal: the column of figures, wide enough for the longest fact */
+    gap: var(--slotted-space-8);
+    align-items: start;
+  }
+
+  .heroSide {
+    display: grid;
+    gap: var(--slotted-space-6);
+    min-inline-size: 0;
+  }
+
+  .heroPlot {
+    min-inline-size: 0;
+  }
+
+  .plotBox {
+    margin-block-start: var(--slotted-space-6);
+  }
+
+  /* Verdict */
+  .verdict {
+    display: grid;
+    gap: var(--slotted-space-2);
+  }
+
+  .verdictLabel,
+  .verdictText {
+    margin: 0;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-sm);
+    line-height: var(--slotted-line-height-sm);
+  }
+
+  .verdictValue {
+    margin: 0;
+    color: var(--slotted-text);
+    font-size: var(--slotted-font-size-4xl);
+    font-weight: var(--slotted-font-weight-semibold);
+    line-height: var(--slotted-line-height-4xl);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em; /* literal: display figure, tightened as the page heading is */
+  }
+
+  .verdictText {
+    color: var(--slotted-text);
+  }
+
+  /* Series: one row per series, a switch for each index */
+  .seriesList {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-block-start: 1px solid var(--slotted-border-subtle);
+  }
+
+  .seriesRow {
+    display: grid;
+    grid-template-columns: 1.5rem minmax(0, 1fr) auto; /* literal: the width of the line mark */
+    align-items: center;
+    gap: var(--slotted-space-3);
+    inline-size: 100%;
+    block-size: 2.5rem; /* literal: fixed row or column size in rem, scales with the root */
+    padding: 0;
+    border: 0;
+    border-block-end: 1px solid var(--slotted-border-subtle);
+    background: none;
+    color: var(--slotted-text-muted);
+    font: inherit;
+    font-size: var(--slotted-font-size-sm);
+    text-align: start;
+    cursor: pointer;
+  }
+
+  li.seriesRow {
+    cursor: default;
+  }
+
+  .seriesRow[data-on] {
+    color: var(--slotted-text);
+  }
+
+  .seriesRow:focus-visible {
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: var(--slotted-focus-ring-offset);
+  }
+
+  .seriesRow:disabled {
+    cursor: default;
+  }
+
+  .seriesName {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .seriesRow[data-on] .seriesName {
+    font-weight: var(--slotted-font-weight-medium);
+  }
+
+  .seriesValue {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .seriesReason {
+    font-size: var(--slotted-font-size-xs);
+  }
+
+  /* The mark repeats the stroke of its line: colour and dash */
+  .seriesMark {
+    display: block;
+    inline-size: 1.5rem; /* literal: fixed row or column size in rem, scales with the root */
+    block-size: 0;
+    border-block-start: 2px solid currentColor; /* literal: the stroke width of the plot's lines */
+    opacity: 0.45;
+  }
+
+  [data-on] > .seriesMark,
+  .keyList .seriesMark {
+    opacity: 1;
+  }
+
+  .mark-portfolio {
+    border-block-start-width: 3px; /* literal: the subject's line is one step thicker */
+    color: var(--slotted-data-1);
+  }
+
+  .mark-cdi {
+    color: var(--slotted-data-2);
+  }
+
+  .mark-ibov {
+    color: var(--slotted-data-3);
+    border-block-start-style: dashed;
+  }
+
+  .mark-ipca {
+    color: var(--slotted-data-4);
+    border-block-start-style: dotted;
+  }
+
+  .mark-sp500 {
+    color: var(--slotted-data-5);
+    border-block-start-style: dashed;
+  }
+
+  .mark-ftse {
+    color: var(--slotted-data-6);
+    border-block-start-style: dotted;
+  }
+
+  @container slotted-page (max-width: 1000px) {
+    /* literal: the page width the assistant pane leaves */
+    .hero {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+}

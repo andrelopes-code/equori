@@ -1,0 +1,8 @@
+@layer app {
+  /* Period */
+  .periodBar {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-3);
+  }
+}

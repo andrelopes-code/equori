@@ -131,6 +131,29 @@ export const marketReturn = {
   },
 };
 
+// The history of the results tab: November +1% and December +2% of 2025, with the CDI at 0.50%
+// and 1.00% on the same dates (return_bp are cumulative).
+export const historySeries = {
+  from: "2025-11-01",
+  to: "2025-12-31",
+  currency: "BRL",
+  opening: 100000,
+  points: [
+    { date: "2025-11-30", value: 101000, flows: 0, return_bp: 100 },
+    { date: "2025-12-31", value: 103020, flows: 0, return_bp: 302 },
+  ],
+  indexes: [
+    {
+      index: "cdi",
+      period: "day",
+      points: [
+        { date: "2025-11-30", return_bp: 50 },
+        { date: "2025-12-31", return_bp: 100 },
+      ],
+    },
+  ],
+};
+
 type Route = Parameters<typeof fakeApi>[0][string];
 
 export function portfolioApi(routes: Record<string, Route> = {}) {
@@ -150,6 +173,7 @@ export function portfolioApi(routes: Record<string, Route> = {}) {
         ],
       ),
     "GET /api/v1/reports/return": () => json(200, plainReturn),
+    "GET /api/v1/reports/return/series": () => json(200, historySeries),
     "GET /api/v1/reports/attribution": () => json(200, { years: [] }),
     [`GET /api/v1/accounts/${cashID}/balance`]: () =>
       json(200, { balance: brl(40000), value: brl(40000) }),

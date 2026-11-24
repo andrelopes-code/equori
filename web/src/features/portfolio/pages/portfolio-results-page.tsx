@@ -2,35 +2,33 @@ import { ButtonLink } from "@slotted/react/button";
 import { Glyph } from "@slotted/react/icon";
 import { Page, PageBody } from "@slotted/react/page";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate, useSearch } from "@tanstack/react-router";
 
 import { useApi } from "@/api/api-context";
 import { PortfolioAreaHeader } from "@/features/portfolio/area-header/portfolio-area-header";
 import { ValueInSelect } from "@/features/portfolio/area-header/value-in-select";
 import { AttributionSection } from "@/features/portfolio/attribution/attribution-section";
+import { ResultsAccountSelect } from "@/features/portfolio/results/results-account-select";
+import { ResultsPeriodBar } from "@/features/portfolio/results/period-bar/results-period-bar";
+import { ReturnBlock } from "@/features/portfolio/results/return-block/return-block";
+import { useResults } from "@/features/portfolio/results/use-results";
+import { useResultsSearch } from "@/features/portfolio/results/use-results-search";
 import { settingsQuery } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { PageStack } from "@/ui/page-layout/page-stack";
 import { routeTo } from "@/ui/navigation/route-to";
 
-// PT2: the results of the portfolio; this plan holds "Rendimento por ativo" only.
+// PT2, PR1 to PR4: the period bar, the return block and "Rendimento por ativo".
 export function PortfolioResultsPage() {
   const t = useT();
   const api = useApi();
-  const search = useSearch({ from: "/_authed/portfolio/results" });
-  const navigate = useNavigate();
+  const [search, patch] = useResultsSearch();
+  const results = useResults();
   const base = useQuery(settingsQuery(api)).data?.base_currency;
 
   const valueIn = search.value_in ?? base;
 
   function handleValueIn(next: string | undefined) {
-    const kept = Object.fromEntries(
-      Object.entries({ ...search, value_in: next }).filter(
-        ([, value]) => value !== undefined,
-      ),
-    );
-
-    void navigate({ to: "/portfolio/results", search: kept, replace: true });
+    patch({ value_in: next });
   }
 
   return (
@@ -39,11 +37,15 @@ export function PortfolioResultsPage() {
         tab="results"
         subheading={t("portfolio.results.subtitle")}
         controls={
-          <ValueInSelect
-            valueIn={valueIn}
-            base={base}
-            onChange={handleValueIn}
-          />
+          <>
+            <ResultsAccountSelect />
+
+            <ValueInSelect
+              valueIn={valueIn}
+              base={base}
+              onChange={handleValueIn}
+            />
+          </>
         }
         actions={
           <ButtonLink
@@ -61,6 +63,14 @@ export function PortfolioResultsPage() {
       />
       <PageBody>
         <PageStack>
+          <ResultsPeriodBar />
+
+          <ReturnBlock
+            series={results.period.data}
+            report={results.report.data}
+            whole={results.whole}
+          />
+
           <AttributionSection />
         </PageStack>
       </PageBody>
