@@ -18,7 +18,12 @@ func RequestID(ctx context.Context) string {
 	return id
 }
 
-const maxBodyBytes = 1 << 20
+const (
+	maxBodyBytes = 1 << 20
+
+	pagePolicy = "default-src 'self'; img-src 'self' data:; " +
+		"frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
+)
 
 // BodyLimit replaces the 1 MiB body limit for the requests an http.ServeMux pattern matches.
 type BodyLimit struct {
@@ -50,14 +55,24 @@ func securityHeaders(next http.Handler) http.Handler {
 			h.Set("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'")
 			h.Set("Cache-Control", "no-store")
 		} else {
-			h.Set(
-				"Content-Security-Policy",
-				"default-src 'self'; img-src 'self' data:; "+
-					"frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
-			)
+			h.Set("Content-Security-Policy", pagePolicy)
 		}
 
 		next.ServeHTTP(w, r)
+	})
+}
+
+// AllowFrames lets the pages of h embed the origins, and nothing else of them (ADR 039).
+func AllowFrames(h http.Handler, origins []string) http.Handler {
+	if len(origins) == 0 {
+		return h
+	}
+
+	policy := pagePolicy + "; frame-src " + strings.Join(origins, " ")
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Security-Policy", policy)
+		h.ServeHTTP(w, r)
 	})
 }
 

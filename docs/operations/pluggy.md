@@ -37,8 +37,10 @@ old one in `EQUORI_SECRET_KEY_PREVIOUS`, run `equori secrets rotate`, then remov
    holds up to 5 active connections and updates each one every 24 hours.
 2. In the Pluggy Dashboard (<https://dashboard.pluggy.ai>), create an application and copy
    its client id and client secret.
-3. In the application, create one connection per bank with the `MeuPluggy` connector and log
-   in with the Meu Pluggy account. Each connection shows an item id.
+3. In equori, add the credentials in Settings > Integrations, then press Connect bank in
+   Links once per bank (ADR 039). The dialog of Pluggy opens with the `MeuPluggy` connector and
+   equori registers the item. The Demo page of the application and its item id, used by the
+   calls of section 3, stay an alternative.
 
 Each person of the household uses their own Meu Pluggy account and Dashboard application:
 the free plan connects the accounts of its own holder only (A45). More than five banks need a

@@ -226,6 +226,39 @@ func (s *Service) UpdateCredentials(
 	return s.repo.UpdateCredentials(ctx, booksID, id, sealed)
 }
 
+// ConnectToken returns the token that opens the aggregator's connect dialog (ADR 039).
+func (s *Service) ConnectToken(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+) (string, error) {
+	if err := s.available(); err != nil {
+		return "", err
+	}
+
+	i, err := s.repo.Integration(ctx, booksID, id)
+	if err != nil {
+		return "", err
+	}
+
+	agg, err := s.aggregator(i.Aggregator)
+	if err != nil {
+		return "", err
+	}
+
+	c, err := s.credentials(i)
+	if err != nil {
+		return "", err
+	}
+
+	token, err := agg.ConnectToken(ctx, id, c)
+	if errors.Is(err, ErrAggregatorUnauthorized) {
+		return "", &UnauthorizedError{Field: "integration_id"}
+	}
+
+	return token, err
+}
+
 func (s *Service) DeleteIntegration(ctx context.Context, booksID int64, id uuid.UUID) error {
 	if err := s.available(); err != nil {
 		return err

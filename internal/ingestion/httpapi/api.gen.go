@@ -497,6 +497,11 @@ type BulkResolveResult struct {
 	Results []BulkResolveItemResult `json:"results"`
 }
 
+// ConnectToken defines model for ConnectToken.
+type ConnectToken struct {
+	Token string `json:"token"`
+}
+
 // Connection defines model for Connection.
 type Connection struct {
 	Accounts []ExternalAccount `json:"accounts"`

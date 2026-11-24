@@ -754,6 +754,23 @@ export function useUndoDecision() {
   );
 }
 
+export function useCreateConnectToken() {
+  return useApiMutation(async (api, id: string) =>
+    unwrap(
+      await api.POST("/integrations/{id}/connect-token", {
+        params: { path: { id } },
+      }),
+    ),
+  );
+}
+
+export function useCreateConnection() {
+  return useApiMutation(
+    async (api, body: components["schemas"]["ConnectionInput"]) =>
+      unwrap(await api.POST("/connections", { body })),
+  );
+}
+
 export function useMapExternalAccount() {
   return useApiMutation(
     async (

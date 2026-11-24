@@ -96,6 +96,21 @@ func (s *Server) updateIntegrationCredentials(
 	return toIntegrationAPI(i), nil
 }
 
+func (s *Server) createConnectToken(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (ConnectToken, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return ConnectToken{}, err
+	}
+
+	token, err := s.svc.ConnectToken(ctx, auth.MustBooksID(ctx), id)
+
+	return ConnectToken{Token: token}, err
+}
+
 func (s *Server) deleteIntegration(
 	ctx context.Context, r *http.Request, _ httpserver.None,
 ) (httpserver.None, error) {

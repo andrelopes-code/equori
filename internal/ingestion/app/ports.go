@@ -43,6 +43,11 @@ type Aggregator interface {
 	Portal() string
 	// Verify creates an API key from the credentials, replacing any cached one.
 	Verify(ctx context.Context, integrationID uuid.UUID, c domain.Credentials) error
+	// ConnectToken returns the short-lived token that opens the aggregator's own connect
+	// dialog, which answers the reference of the new item (ADR 039).
+	ConnectToken(ctx context.Context, integrationID uuid.UUID, c domain.Credentials) (string, error)
+	// ConnectOrigin is the origin of that dialog, which the pages embed.
+	ConnectOrigin() string
 	// Item returns the item as an unsaved connection with its accounts.
 	Item(
 		ctx context.Context,

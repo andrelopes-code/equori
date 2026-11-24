@@ -3,6 +3,8 @@ export interface LinksSearch {
   external?: string;
   connection?: string;
   account?: string;
+  // The connect dialog: the integration to connect through, or "new" for the first one.
+  connect?: string;
 }
 
 const uuid = /^[0-9a-f-]{36}$/u;
@@ -15,9 +17,11 @@ export function validateLinksSearch(raw: Record<string, unknown>): LinksSearch {
   const external = id(raw.external);
   const connection = id(raw.connection);
   const account = id(raw.account);
+  const connect = raw.connect === "new" ? "new" : id(raw.connect);
   return {
     ...(external === undefined ? {} : { external }),
     ...(connection === undefined ? {} : { connection }),
     ...(account === undefined ? {} : { account }),
+    ...(connect === undefined ? {} : { connect }),
   };
 }

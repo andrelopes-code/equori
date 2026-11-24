@@ -765,9 +765,35 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "links.deleteConfirm": "Excluir conexão",
   "links.syncOf": "Sincronizar {name} agora",
   "links.synced": "{count} contas sincronizadas.",
+  "links.connect": "Conectar banco",
+  "links.connect.first": "Conectar o primeiro banco",
+  "links.connect.hint":
+    "Um banco por vez. As contas dele aparecem em seguida, para vincular.",
+  "links.connect.integration": "Integração",
+  "links.connect.bank": "Nome do banco",
+  "links.connect.bankHint": "O nome desta conexão no equori.",
+  "links.connect.start": "Continuar",
+  "links.connect.retry": "Tentar de novo",
+  "links.connect.guide": "Guia completo",
+  "links.connect.setup":
+    "As credenciais do agregador vêm primeiro. Elas são cadastradas uma vez, nas configurações.",
+  "links.connect.setupAction": "Cadastrar credenciais",
+  "links.connect.unsupported": "Este agregador não oferece conexão por aqui.",
+  "links.connect.done": "{name} conectado",
+  "links.connect.doneHint":
+    "Vincule cada conta à que recebe as transações dela.",
+  "links.connect.link": "Vincular contas",
+  "links.connect.another": "Conectar outro banco",
+  "links.connect.pluggy.open": "Abrir o Meu Pluggy",
+  "links.connect.pluggy.authorize":
+    "Conecte o banco no Meu Pluggy, se ele ainda não estiver lá.",
+  "links.connect.pluggy.login":
+    "Escolha Continuar e entre com a mesma conta do Meu Pluggy.",
+  "links.connect.pluggy.choose":
+    "Escolha este banco e autorize. Nenhum código é copiado.",
   "links.empty": "Nenhuma conexão bancária",
   "links.emptyHint":
-    "Conexões são criadas nas configurações; as contas delas aparecem aqui para vincular.",
+    "Conecte um banco e as contas dele aparecem aqui para vincular.",
   "statement.status.open": "Aberta",
   "statement.status.closed": "Fechada",
   "statement.status.paid": "Paga",

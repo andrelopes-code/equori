@@ -232,11 +232,7 @@
     "path": "/accounts/links",
     "topics": ["imports_and_bank_connections"],
     "screen": "Links",
-    "tasks": [
-      "add aggregator credentials",
-      "connect a bank and map its accounts",
-      "sync a connection"
-    ]
+    "tasks": ["connect a bank and map its accounts", "sync a connection"]
   },
   {
     "path": "/goals",
@@ -423,6 +419,7 @@
       "change language and region",
       "turn privacy mode on or off",
       "set language model providers, chains and daily limits",
+      "add aggregator credentials",
       "see language model usage"
     ]
   },

@@ -17,9 +17,20 @@ The administrator of the installation does this once.
 
 equori stores the credentials sealed and never shows them again. To change them, choose **Replace credentials**.
 
+## Connect each bank
+
+Repeat for each bank. A bank added later at the aggregator's site also needs these steps.
+
+1. In [Links](/accounts/links), choose **Connect bank**.
+2. Write the **Bank name** and choose **Continue**.
+3. Log in to the aggregator, choose that bank and authorize. No code is copied.
+4. Choose **Link accounts**, or **Connect another bank** to repeat.
+
+If the connection is not saved, choose **Try again** before closing the window. There is no need to log in to the aggregator again.
+
 ## Link each account
 
-The connections are created in the settings, and their accounts appear in [Links](/accounts/links). Each account waits for a link: your account in equori that receives its transactions.
+The accounts of a connected bank appear in [Links](/accounts/links). Each account waits for a link: your account in equori that receives its transactions.
 
 1. In [Links](/accounts/links), find the account that **Waiting for a link** marks.
 2. Choose **Link**.

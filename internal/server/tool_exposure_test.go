@@ -263,6 +263,7 @@ var exposure = map[string]string{
 	"getIntegration":                   "get_imports",
 	"deleteIntegration":                "manage_imports",
 	"updateIntegrationCredentials":     "-secret",
+	"createConnectToken":               "-secret",
 	"listConnections":                  "get_imports",
 	"createConnection":                 "-secret",
 	"getConnection":                    "get_imports",

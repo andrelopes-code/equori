@@ -30,7 +30,7 @@ Defined in `web/src/app/router.tsx`, under the layout `accounts-header/accounts-
 - `account-dialogs/`: close, reopen and unlock dialogs
 - `account-ledger/`, `balance-chart/`: ledger and balance chart
 - `reconciliation/`, `positions/`, `scheduled/`, `imports-tab/`: account page tabs
-- `sync/`, `connections/`, `links/`: bank connection sync, cards and links
+- `sync/`, `connections/`, `connect/`, `links/`: bank connection sync, cards, the connect dialog and links
 - `batch/`, `review/`, `candidates/`, `transfer-candidates/`: import batch and review
 - `institutions/`: institution field, catalogue and dialogs
 - `account-form/`, `card-setup/`: create and edit form

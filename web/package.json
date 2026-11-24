@@ -38,6 +38,7 @@
     "fflate": "0.8.3",
     "logos-bancos-br": "0.8.2",
     "openapi-fetch": "0.17.0",
+    "pluggy-connect-sdk": "2.15.0",
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "uqr": "0.1.3"

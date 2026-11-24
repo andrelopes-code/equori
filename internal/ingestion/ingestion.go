@@ -115,6 +115,18 @@ func (m *Module) Tools() tool.Group {
 
 func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
 
+// FrameOrigins are the origins of the connect dialogs of the aggregators.
+func (m *Module) FrameOrigins() []string {
+	all := m.svc.Aggregators()
+
+	out := make([]string, len(all))
+	for i, a := range all {
+		out[i] = a.ConnectOrigin()
+	}
+
+	return out
+}
+
 // BodyLimits raises the request body limit of file imports: 10 MiB of content plus the
 // multipart framing (P4 amendment A16).
 func (m *Module) BodyLimits() []httpserver.BodyLimit {

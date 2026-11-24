@@ -71,6 +71,8 @@ func (s *Server) Register(mux *http.ServeMux) {
 		httpserver.Handle(s.errs, http.StatusOK, s.deleteIntegration))
 	mux.HandleFunc("PUT "+BaseURL+"/integrations/{id}/credentials",
 		httpserver.Handle(s.errs, http.StatusOK, s.updateIntegrationCredentials))
+	mux.HandleFunc("POST "+BaseURL+"/integrations/{id}/connect-token",
+		httpserver.Handle(s.errs, http.StatusOK, s.createConnectToken))
 	mux.HandleFunc("GET "+BaseURL+"/connections",
 		httpserver.Handle(s.errs, http.StatusOK, s.listConnections))
 	mux.HandleFunc(

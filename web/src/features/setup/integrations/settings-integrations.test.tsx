@@ -120,6 +120,27 @@ describe("integrations settings", () => {
     expect(within(row).getByText(/credenciais.*10\/10\/2026/i)).toBeVisible();
   });
 
+  it("leads from an integration to the connection of a bank through it", async () => {
+    const id = "c0000000-0000-4000-8000-000000000001";
+    const base = api([]);
+    const { router } = await renderApp("/settings?section=integrations", {
+      fetch: (input, init) =>
+        new URL(new Request(input, init).url).pathname.endsWith("/integrations")
+          ? Promise.resolve(json(200, { items: [{ ...pluggy, id }] }))
+          : base(input, init),
+    });
+    const view = await section(pt["settings.integrations.title"]);
+
+    await userEvent.click(
+      await view.findByRole("button", { name: pt["links.connect"] }),
+    );
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/accounts/links");
+    });
+    expect(router.state.location.search).toEqual({ connect: id });
+  });
+
   it("builds the credential fields from the aggregator and sends them without showing them again", async () => {
     const sent: Sent[] = [];
     await renderApp("/settings?section=integrations", { fetch: api(sent) });

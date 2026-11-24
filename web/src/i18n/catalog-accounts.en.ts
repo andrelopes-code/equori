@@ -766,9 +766,36 @@ export const accountsEn = {
   "links.deleteConfirm": "Delete connection",
   "links.syncOf": "Sync {name} now",
   "links.synced": "{count} accounts synced.",
+  "links.connect": "Connect bank",
+  "links.connect.first": "Connect the first bank",
+  "links.connect.hint":
+    "One bank at a time. Its accounts appear next, to be linked.",
+  "links.connect.integration": "Integration",
+  "links.connect.bank": "Bank name",
+  "links.connect.bankHint": "The name this connection has in equori.",
+  "links.connect.start": "Continue",
+  "links.connect.retry": "Try again",
+  "links.connect.guide": "Full guide",
+  "links.connect.setup":
+    "The credentials of the aggregator come first. They are added once, in the settings.",
+  "links.connect.setupAction": "Add credentials",
+  "links.connect.unsupported":
+    "This aggregator does not offer a connection from here.",
+  "links.connect.done": "{name} connected",
+  "links.connect.doneHint":
+    "Link each account to the one that receives its transactions.",
+  "links.connect.link": "Link accounts",
+  "links.connect.another": "Connect another bank",
+  "links.connect.pluggy.open": "Open Meu Pluggy",
+  "links.connect.pluggy.authorize":
+    "Connect the bank in Meu Pluggy, if it is not there yet.",
+  "links.connect.pluggy.login":
+    "Choose Continue and log in with the same Meu Pluggy account.",
+  "links.connect.pluggy.choose":
+    "Choose this bank and authorize. No code is copied.",
   "links.empty": "No bank connection",
   "links.emptyHint":
-    "Connections are created in the settings; their accounts appear here to be linked.",
+    "Connect a bank and its accounts appear here to be linked.",
   "statement.status.open": "Open",
   "statement.status.closed": "Closed",
   "statement.status.paid": "Paid",

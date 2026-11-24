@@ -84,7 +84,7 @@ func registerRoutes(
 	if cfg.WebDevPort != 0 {
 		mux.Handle("/", spa.DevRedirect(cfg.WebDevPort))
 	} else {
-		mux.Handle("/", spa.Handler(cfg.Web))
+		mux.Handle("/", httpserver.AllowFrames(spa.Handler(cfg.Web), m.ingestion.FrameOrigins()))
 	}
 }
 

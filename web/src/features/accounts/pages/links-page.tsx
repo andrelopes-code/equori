@@ -1,6 +1,8 @@
+import { Button } from "@slotted/react/button";
 import { PageBody } from "@slotted/react/page";
 import {
   ResultState,
+  ResultStateActions,
   ResultStateContent,
   ResultStateDescription,
   ResultStateTitle,
@@ -16,6 +18,7 @@ import { HeaderSlot } from "@/features/accounts/accounts-header/header-slot";
 import { HelpLink } from "@/features/help";
 import { accountsQuery, connectionsListQuery } from "@/features/accounts/api";
 import { ConnectionLinks } from "@/features/accounts/connections/connection-links";
+import { ConnectBankDialog } from "@/features/accounts/connect/connect-bank-dialog";
 import { linkCandidates } from "@/features/accounts/links/link-candidates";
 import { LinkDrawer } from "@/features/accounts/links/link-drawer";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -46,11 +49,20 @@ export function LinksPage() {
     ),
   );
 
+  function handleConnect() {
+    void navigate({ to: "/accounts/links", search: { connect: "new" } });
+  }
+
+  function handleClose() {
+    void navigate({ to: "/accounts/links", search: {} });
+  }
+
   return (
     <>
       <HeaderSlot slot="subheading">{t("links.subtitle")}</HeaderSlot>
       <HeaderSlot slot="actions">
         <HelpLink page="connect-bank" />
+        <Button onClick={handleConnect}>{t("links.connect")}</Button>
       </HeaderSlot>
       <PageBody>
         {connections.isError ? (
@@ -71,6 +83,11 @@ export function LinksPage() {
                 {t("links.emptyHint")}
               </ResultStateDescription>
             </ResultStateContent>
+            <ResultStateActions>
+              <Button variant="outline" onClick={handleConnect}>
+                {t("links.connect.first")}
+              </Button>
+            </ResultStateActions>
           </ResultState>
         ) : (
           <Stack gap={8}>
@@ -107,9 +124,7 @@ export function LinksPage() {
                 locale,
               )}
               preselected={search.account}
-              onClose={() => {
-                void navigate({ to: "/accounts/links", search: {} });
-              }}
+              onClose={handleClose}
               onCreate={() => {
                 const kind = compatibleKinds(entry.external.subtype)[0];
                 void navigate({
@@ -126,6 +141,12 @@ export function LinksPage() {
             />
           );
         }}
+      </Presence>
+
+      <Presence value={search.connect}>
+        {(initial) => (
+          <ConnectBankDialog initial={initial} onClose={handleClose} />
+        )}
       </Presence>
     </>
   );

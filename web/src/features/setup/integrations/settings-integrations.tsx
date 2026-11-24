@@ -11,6 +11,7 @@ import {
 import { SkeletonText } from "@slotted/react/skeleton";
 import { Stack } from "@slotted/react/stack";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { useApi } from "@/api/api-context";
@@ -29,6 +30,7 @@ import { SettingsSyncSchedule } from "@/features/setup/integrations/settings-syn
 import { formatDate, numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { FormNotice } from "@/ui/form-layout/form-notice";
+import { useServed } from "@/ui/navigation/use-served";
 
 type Open =
   | { kind: "create" }
@@ -44,6 +46,8 @@ export function SettingsIntegrations() {
   const aggregators = useQuery(aggregatorsQuery(api));
   const integrations = useQuery(integrationsQuery(api));
   const connections = useQuery(integrationConnectionsQuery(api));
+  const navigate = useNavigate();
+  const served = useServed();
   const [open, setOpen] = useState<Open | null>(null);
   const close = () => {
     setOpen(null);
@@ -95,6 +99,21 @@ export function SettingsIntegrations() {
                     </ListItemBody>
                   </ListItemContent>
                   <ListItemActions>
+                    {served({ to: "/accounts/links" }) && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        tone="secondary"
+                        onClick={() => {
+                          void navigate({
+                            to: "/accounts/links",
+                            search: { connect: integration.id },
+                          });
+                        }}
+                      >
+                        {t("links.connect")}
+                      </Button>
+                    )}
                     <Button
                       size="sm"
                       variant="ghost"

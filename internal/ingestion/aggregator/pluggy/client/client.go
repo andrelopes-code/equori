@@ -197,6 +197,30 @@ func (s *Session) get(ctx context.Context, label, path string, q url.Values, out
 	return s.c.do(ctx, http.MethodGet, label, target, s.key, nil, out)
 }
 
+// ConnectToken creates the token of the Pluggy Connect dialog, valid for 30 minutes.
+func (s *Session) ConnectToken(ctx context.Context) (string, error) {
+	var out struct {
+		AccessToken string `json:"accessToken"`
+	}
+	if err := s.c.do(
+		ctx,
+		http.MethodPost,
+		"POST /connect_token",
+		s.c.base.String()+"/connect_token",
+		s.key,
+		[]byte("{}"),
+		&out,
+	); err != nil {
+		return "", err
+	}
+
+	if out.AccessToken == "" {
+		return "", errors.New("pluggy POST /connect_token returned no token")
+	}
+
+	return out.AccessToken, nil
+}
+
 func (s *Session) Item(ctx context.Context, id string) (Item, error) {
 	var it Item
 	err := s.get(ctx, "GET /items/{id}", "/items/"+url.PathEscape(id), nil, &it)

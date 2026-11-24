@@ -157,6 +157,8 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request, app string) {
 		}
 
 		write(w, it)
+	case r.URL.Path == "/connect_token" && r.Method == http.MethodPost:
+		write(w, map[string]string{"accessToken": "connect-" + app})
 	case r.URL.Path == "/accounts":
 		write(
 			w,

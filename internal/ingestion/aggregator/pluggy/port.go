@@ -71,6 +71,25 @@ func (p Port) Verify(ctx context.Context, id uuid.UUID, c domain.Credentials) er
 	return p.session(ctx, id, c, func(*client.Session) error { return nil })
 }
 
+func (p Port) ConnectOrigin() string { return "https://connect.pluggy.ai" }
+
+func (p Port) ConnectToken(
+	ctx context.Context,
+	id uuid.UUID,
+	c domain.Credentials,
+) (string, error) {
+	var out string
+
+	err := p.session(ctx, id, c, func(s *client.Session) error {
+		token, err := s.ConnectToken(ctx)
+		out = token
+
+		return err
+	})
+
+	return out, err
+}
+
 func (p Port) Forget(id uuid.UUID) { p.sessions.Forget(id.String()) }
 
 func (p Port) Item(

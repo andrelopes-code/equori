@@ -2525,6 +2525,34 @@ paths:
           $ref: "#/components/responses/Problem"
         "502":
           $ref: "#/components/responses/Problem"
+  /integrations/{id}/connect-token:
+    post:
+      tags: [ingestion]
+      operationId: createConnectToken
+      x-book-role: write
+      summary: Create the token that opens the aggregator's connect dialog (ADR 039).
+      description: |
+        The token expires within minutes and reads only the items connected with it. The dialog
+        answers the item reference that createConnection takes.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectToken"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "502":
+          $ref: "#/components/responses/Problem"
   /connections:
     get:
       tags: [ingestion]
@@ -10219,6 +10247,12 @@ components:
         next_cursor:
           type: string
           description: Absent on the last page.
+    ConnectToken:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
     ConnectionInput:
       type: object
       additionalProperties: false

@@ -17,9 +17,20 @@ A pessoa que administra a instalação faz isso uma vez.
 
 O equori guarda as credenciais cifradas e nunca as mostra de novo. Para trocá-las, escolha **Trocar credenciais**.
 
+## Conectar cada banco
+
+Repita para cada banco. Um banco adicionado depois no site do agregador também precisa destes passos.
+
+1. Em [Vínculos](/accounts/links), escolha **Conectar banco**.
+2. Escreva o **Nome do banco** e escolha **Continuar**.
+3. Entre no agregador, escolha esse banco e autorize. Nenhum código é copiado.
+4. Escolha **Vincular contas**, ou **Conectar outro banco** para repetir.
+
+Se a gravação falhar, escolha **Tentar de novo** antes de fechar a janela. Não é preciso entrar no agregador outra vez.
+
 ## Vincular cada conta
 
-As conexões são criadas nas configurações, e as contas delas aparecem em [Vínculos](/accounts/links). Cada conta aguarda um vínculo: a sua conta no equori que recebe as transações dela.
+As contas de um banco conectado aparecem em [Vínculos](/accounts/links). Cada conta aguarda um vínculo: a sua conta no equori que recebe as transações dela.
 
 1. Em [Vínculos](/accounts/links), encontre a conta marcada com **Aguarda vínculo**.
 2. Escolha **Vincular**.

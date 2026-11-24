@@ -1586,6 +1586,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/integrations/{id}/connect-token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create the token that opens the aggregator's connect dialog (ADR 039).
+         * @description The token expires within minutes and reads only the items connected with it. The dialog
+         *     answers the item reference that createConnection takes.
+         */
+        post: operations["createConnectToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/connections": {
         parameters: {
             query?: never;
@@ -5920,6 +5941,9 @@ export interface components {
             items: components["schemas"]["Integration"][];
             /** @description Absent on the last page. */
             next_cursor?: string;
+        };
+        ConnectToken: {
+            token: string;
         };
         ConnectionInput: {
             /** Format: uuid */
@@ -12165,6 +12189,33 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Integration"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            502: components["responses"]["Problem"];
+        };
+    };
+    createConnectToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectToken"];
                 };
             };
             401: components["responses"]["Problem"];
