@@ -292,7 +292,7 @@ export const contributionPlanPtBR: Record<
   "contributionPlan.criteria.helpPrice": "Preço baixo: UFU",
   "contributionPlan.criteria.helpQuality": "Qualidade e valor: USP",
   "contributionPlan.criteria.helpMethods":
-    "Piotroski, Graham e Greenblatt: REAd",
+    "Piotroski, Graham e Greenblatt: Brazilian Business Review",
   "contributionPlan.colProfit": "Lucro no ano",
   "contributionPlan.criteriaCount": "{yes} de {count} critérios",
   "contributionPlan.companyReport": "ver demonstrações",
@@ -303,11 +303,19 @@ export const contributionPlanPtBR: Record<
   "contributionPlan.method.piotroski.what":
     "Os nove sinais medem rentabilidade, endividamento, liquidez e eficiência nas demonstrações de dois exercícios. Piotroski (2000) testou-os em ações dos Estados Unidos de alto valor patrimonial sobre o preço, de 1976 a 1996: comprar as de mais sinais e vender as de menos rendeu 23% ao ano.",
   "contributionPlan.method.piotroski.after":
-    "Regras contábeis publicadas renderam 58% menos depois da publicação (McLean e Pontiff, 2016).",
+    "Em 35 países, de 2000 a 2018, as de sete ou mais sinais renderam mais que as de três ou menos, em todos os tamanhos. No Brasil, um estudo achou ganho acima do risco; outro não o achou a partir de 2011. Nos Estados Unidos, 97 regras renderam 58% menos depois de publicadas.",
   "contributionPlan.method.piotroski.limit":
-    "O peso proporcional ao número de sinais não foi testado. O equori calcula os sinais; a decisão de usá-los é sua.",
+    "Os estudos deixam de fora as companhias financeiras. O peso proporcional aos sinais e a parte igual de quem não os tem não foram testados. A decisão de usá-los é sua.",
   "contributionPlan.method.piotroski.source":
-    "Fonte: Journal of Accounting Research, 2000",
+    "Piotroski: Journal of Accounting Research, 2000",
+  "contributionPlan.method.piotroski.sourceWorld":
+    "35 países: Journal of Asset Management, 2020",
+  "contributionPlan.method.piotroski.sourceFor":
+    "Brasil, achou: Brazilian Business Review, 2022",
+  "contributionPlan.method.piotroski.sourceAgainst":
+    "Brasil, não achou: REPeC, 2020",
+  "contributionPlan.method.piotroski.sourceAfter":
+    "Depois da publicação: Journal of Finance, 2016",
   "contributionPlan.facts.piotroski_p1": "Retorno sobre os ativos positivo",
   "contributionPlan.facts.piotroski_p2": "Caixa das operações positivo",
   "contributionPlan.facts.piotroski_p3": "Retorno sobre os ativos subiu",

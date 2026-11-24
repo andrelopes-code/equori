@@ -290,7 +290,7 @@ export const contributionPlanEn = {
   "contributionPlan.criteria.helpPrice": "Low price: UFU",
   "contributionPlan.criteria.helpQuality": "Quality and value: USP",
   "contributionPlan.criteria.helpMethods":
-    "Piotroski, Graham and Greenblatt: REAd",
+    "Piotroski, Graham and Greenblatt: Brazilian Business Review",
   "contributionPlan.colProfit": "Profit of the year",
   "contributionPlan.criteriaCount": "{yes} of {count} criteria",
   "contributionPlan.companyReport": "see statements",
@@ -301,11 +301,19 @@ export const contributionPlanEn = {
   "contributionPlan.method.piotroski.what":
     "The nine signals measure profitability, leverage, liquidity and efficiency in the filings of two fiscal years. Piotroski (2000) tested them on United States stocks of high book value over price, 1976 to 1996: buying those of most signals and selling those of fewest returned 23% a year.",
   "contributionPlan.method.piotroski.after":
-    "Published accounting rules returned 58% less after publication (McLean and Pontiff, 2016).",
+    "In 35 countries, 2000 to 2018, those of seven or more signals returned more than those of three or fewer, in every size. In Brazil, one study found a return above the risk; another did not from 2011 on. In the United States, 97 rules returned 58% less once published.",
   "contributionPlan.method.piotroski.limit":
-    "A weight proportional to the number of signals was not tested. equori computes the signals; the decision to use them is yours.",
+    "The studies leave out financial companies. The weight proportional to the signals and the equal share of those without them were not tested. The decision to use them is yours.",
   "contributionPlan.method.piotroski.source":
-    "Source: Journal of Accounting Research, 2000",
+    "Piotroski: Journal of Accounting Research, 2000",
+  "contributionPlan.method.piotroski.sourceWorld":
+    "35 countries: Journal of Asset Management, 2020",
+  "contributionPlan.method.piotroski.sourceFor":
+    "Brazil, found: Brazilian Business Review, 2022",
+  "contributionPlan.method.piotroski.sourceAgainst":
+    "Brazil, not found: REPeC, 2020",
+  "contributionPlan.method.piotroski.sourceAfter":
+    "After publication: Journal of Finance, 2016",
   "contributionPlan.facts.piotroski_p1": "Positive return on assets",
   "contributionPlan.facts.piotroski_p2": "Positive operating cash flow",
   "contributionPlan.facts.piotroski_p3": "Return on assets rose",
