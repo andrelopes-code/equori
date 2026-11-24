@@ -10,6 +10,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/marketdata/feed"
 	"github.com/andrelopes-code/equori/internal/marketdata/feed/b3consolidated"
 	"github.com/andrelopes-code/equori/internal/marketdata/feed/b3cotahist"
+	"github.com/andrelopes-code/equori/internal/marketdata/feed/b3pricereport"
 	"github.com/andrelopes-code/equori/internal/marketdata/feed/bcbptax"
 	"github.com/andrelopes-code/equori/internal/marketdata/feed/coinbase"
 	"github.com/andrelopes-code/equori/internal/marketdata/feed/cvmfunds"
@@ -26,11 +27,13 @@ type sourceEntry struct {
 	// official is false for a source that publishes no terms for this use (A222 MQ1).
 	official bool
 	// historyYears is how far back enabling the source, or defining an instrument it quotes,
-	// requests prices (A222 MQ6).
+	// requests prices (A222 MQ6); 0 for a source that fills holes alone.
 	historyYears int
 	// baseYears is how far back the daily check requests prices when that is more: the year files
 	// of the B3 are read for every instrument at once (A265 PH2).
 	baseYears int
+	// yearsOf is the source whose year files this one reads, empty for none.
+	yearsOf string
 	// build receives the URL of every source, the override or the default.
 	build func(hc *http.Client, urls map[string]string, now func() time.Time) feed.Source
 }
@@ -55,12 +58,22 @@ func sourceEntries() []sourceEntry {
 			official:     true,
 			historyYears: 5,
 			baseYears:    indexHistoryYears,
+			yearsOf:      "b3_cotahist",
 			build: func(hc *http.Client, urls map[string]string, _ func() time.Time) feed.Source {
 				return b3consolidated.New(
 					hc,
 					urls["b3_consolidated"],
 					b3cotahist.New(hc, urls["b3_cotahist"]),
 				)
+			},
+		},
+		{
+			id:         "b3_price_report",
+			defaultURL: "https://www.b3.com.br",
+			lag:        5,
+			official:   true,
+			build: func(hc *http.Client, urls map[string]string, _ func() time.Time) feed.Source {
+				return b3pricereport.New(hc, urls["b3_price_report"])
 			},
 		},
 		{

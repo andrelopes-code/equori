@@ -1,9 +1,13 @@
 package marketdata_test
 
 import (
+	"archive/zip"
+	"bytes"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -165,7 +169,8 @@ func TestHolesNeedTheSessionsOfTheExchange(t *testing.T) {
 	}
 }
 
-// PH2: the base history of 20 years of an enabled source is requested and fetched by the next tick.
+// PH2: the base history of an enabled source is requested and fetched by the next tick: 20 years, and
+// from the B3 no earlier than the year before the first price of any source.
 func TestBaseHistoryIsRequested(t *testing.T) {
 	t.Parallel()
 
@@ -173,10 +178,10 @@ func TestBaseHistoryIsRequested(t *testing.T) {
 	execSQL(t, h, `UPDATE marketdata_history SET from_date = '2025-03-01'`)
 
 	h.App.Marketdata.TickFeeds(t.Context())
-	assertRows(t, historyRow(h, "b3_cotahist", "PETR4"), "2005-11-10 false ")
+	assertRows(t, historyRow(h, "b3_cotahist", "PETR4"), "2024-03-03 false ")
 
 	h.App.Marketdata.TickFeeds(t.Context())
-	assertRows(t, historyRow(h, "b3_cotahist", "PETR4"), "2005-11-10 true ")
+	assertRows(t, historyRow(h, "b3_cotahist", "PETR4"), "2024-03-03 true ")
 }
 
 // PH3: the sessions of a currency quoted in reais are the days of the dollar index: a closing quote
@@ -242,32 +247,214 @@ func TestHolesOfAPastYearAskNoDailyFile(t *testing.T) {
 	assertRows(t, petr4Dates(h), "2025-03-03 36.00", "2025-03-05 36.50", "2025-03-07 37.00")
 }
 
-// PH4: the daily files over 31 wait for the next check; a hole before the days the source keeps is
-// recorded at once.
-func TestHolesOverTheDailyFilesWait(t *testing.T) {
+// S709: a session with a trade of PETR4 and none of VALE3 in the file of the exchange had no trade of
+// VALE3: it is recorded as such and is no missing price (PH5, PH6).
+func TestS709SessionWithoutATrade(t *testing.T) {
 	t.Parallel()
 
-	b := &b3Fake{years: map[string][]byte{}}
-	srv := httptest.NewServer(b)
-	t.Cleanup(srv.Close)
+	h, b, _ := holeHarness(t)
+	b.years["2025"] = yearFile(
+		"2025",
+		cotahistRecord("20250303", "PETR4", "010", 3600),
+		cotahistRecord("20250303", "VALE3", "010", 6000),
+		cotahistRecord("20250304", "PETR4", "010", 3610),
+		cotahistRecord("20250307", "PETR4", "010", 3700),
+		cotahistRecord("20250307", "VALE3", "010", 6100),
+	)
 
-	h := apitest.New(t, apitest.Today("2026-11-10"), apitest.PriceFeeds(
-		[]string{"b3_consolidated"},
-		map[string]string{"b3_consolidated": srv.URL + "/b3c", "b3_cotahist": srv.URL + "/b3"},
-	))
-	seedHoles(t, h, "b3_consolidated")
-	execSQL(t, h, `INSERT INTO marketdata_index_rate (index_id, date, rate, source)
-		SELECT 'ibovespa', d, 0, 'br_ibovespa'
-		FROM generate_series('2026-08-01'::date, '2026-09-09', '1 day') d`)
+	execSQL(t, h, `INSERT INTO marketdata_instrument
+		(code, instrument_type, scale, name, quote_currency, exchange)
+		VALUES ('VALE3', 'stock', 0, 'Vale ON', 'BRL', 'BVMF')`)
 	execSQL(t, h, `INSERT INTO marketdata_price
 		(instrument, quote_instrument, date, value, source, priority) VALUES
-		('PETR4', 'BRL', '2026-11-09', 37, 'b3_consolidated', 3)`)
+		('VALE3', 'BRL', '2025-03-03', 60, 'b3_cotahist', 3),
+		('VALE3', 'BRL', '2025-03-07', 61, 'b3_cotahist', 3)`)
+	execSQL(
+		t,
+		h,
+		`INSERT INTO marketdata_history (source, instrument, from_date, requested_at, done_at)
+		VALUES ('b3_cotahist', 'VALE3', '2000-01-01', now(), now())`,
+	)
 
 	h.App.Marketdata.TickFeeds(t.Context())
 
-	// The 3 sessions of March 2025 are older than 500 days; of the 40 of 2026, the latest 31 are asked.
-	assertRows(t, h.Rows(`SELECT count(*), min(date)::text FROM marketdata_price_hole
-		WHERE date < '2026-01-01'`), "3 2025-03-04")
-	assertRows(t, h.Rows(`SELECT count(*), min(date)::text FROM marketdata_price_hole
-		WHERE date > '2026-01-01'`), "31 2026-08-10")
+	assertRows(t, h.Rows(`SELECT date::text, no_trade FROM marketdata_price_hole
+		WHERE instrument = 'VALE3' ORDER BY date`),
+		"2025-03-04 true", "2025-03-05 false", "2025-03-06 false")
+
+	var got struct {
+		Coverage struct {
+			Missing int `json:"missing"`
+		} `json:"coverage"`
+	}
+	h.MustDo(http.MethodGet, "/api/v1/instruments/VALE3", nil, http.StatusOK, &got)
+
+	if got.Coverage.Missing != 2 {
+		t.Errorf("missing = %d, want the 2 sessions the file does not hold", got.Coverage.Missing)
+	}
+
+	// The quote of the witness is not stored for a pair that did not ask for it.
+	assertRows(t, h.Rows(`SELECT date::text FROM marketdata_price WHERE instrument = 'PETR4'
+		AND date = '2025-03-04'`), "2025-03-04")
+}
+
+// reportServer answers the simplified price report of the sessions of files, by "SPRE" and date.
+func reportServer(t *testing.T, files map[string]string) (*httptest.Server, func() []string) {
+	t.Helper()
+
+	var (
+		mu    sync.Mutex
+		asked []string
+	)
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		name := strings.TrimSuffix(r.URL.Query().Get("filelist"), ".zip,")
+
+		mu.Lock()
+
+		asked = append(asked, name)
+
+		mu.Unlock()
+
+		var outer, inner bytes.Buffer
+
+		zw := zip.NewWriter(&outer)
+
+		if body, ok := files[name]; ok {
+			in := zip.NewWriter(&inner)
+			f, _ := in.Create("report.xml")
+			_, _ = f.Write([]byte(body))
+			_ = in.Close()
+
+			g, _ := zw.Create(name + ".zip")
+			_, _ = g.Write(inner.Bytes())
+		}
+
+		_ = zw.Close()
+		_, _ = w.Write(outer.Bytes())
+	}))
+	t.Cleanup(srv.Close)
+
+	return srv, func() []string {
+		mu.Lock()
+		defer mu.Unlock()
+
+		return slices.Clone(asked)
+	}
+}
+
+// priceReport is a report with the last price of each code, given as "CODE value" pairs.
+func priceReport(date string, rows ...string) string {
+	var b strings.Builder
+
+	for _, row := range rows {
+		code, value, _ := strings.Cut(row, " ")
+		b.WriteString(`<PricRpt><TradDt><Dt>` + date + `</Dt></TradDt><TckrSymb>` + code +
+			`</TckrSymb><LastPric Ccy="BRL">` + value + `</LastPric></PricRpt>`)
+	}
+
+	return "<Document>" + b.String() + "</Document>"
+}
+
+// S710: the holes of a security the year files omit are asked day by day of the price report: the
+// prices it holds are stored, a session without a trade is recorded as one, and each day is asked once
+// (PH4, PH5).
+func TestS710HolesFilledByThePriceReport(t *testing.T) {
+	t.Parallel()
+
+	srv, asked := reportServer(t, map[string]string{
+		"SPRE250304": priceReport("2025-03-04", "PETR4 36.1", "IMAB11 98"),
+		"SPRE250305": priceReport("2025-03-05", "PETR4 36.5"),
+		"SPRE250306": priceReport("2025-03-06", "PETR4 36.6", "IMAB11 98.2"),
+	})
+	h := apitest.New(t, apitest.Today("2026-11-10"), apitest.PriceFeeds(
+		[]string{"b3_price_report"},
+		map[string]string{"b3_price_report": srv.URL},
+	))
+	execSQL(t, h, `INSERT INTO marketdata_instrument
+		(code, instrument_type, scale, name, quote_currency, exchange)
+		VALUES ('IMAB11', 'etf', 0, 'IMA-B', 'BRL', 'BVMF')`)
+	execSQL(t, h, `INSERT INTO marketdata_index_rate (index_id, date, rate, source)
+		SELECT 'ibovespa', d, 0, 'br_ibovespa'
+		FROM generate_series('2025-03-03'::date, '2025-03-06', '1 day') d`)
+	execSQL(t, h, `INSERT INTO marketdata_price
+		(instrument, quote_instrument, date, value, source, priority) VALUES
+		('IMAB11', 'BRL', '2025-03-03', 97, 'yahoo_chart', 5),
+		('IMAB11', 'BRL', '2026-11-09', 110, 'b3_price_report', 3)`)
+
+	h.App.Marketdata.TickFeeds(t.Context())
+
+	assertRows(
+		t,
+		h.Rows(`SELECT date::text, value::numeric(10, 2)::text, source FROM marketdata_price
+		WHERE instrument = 'IMAB11' AND date BETWEEN '2025-03-04' AND '2025-03-06' ORDER BY date`),
+		"2025-03-04 98.00 b3_price_report",
+		"2025-03-06 98.20 b3_price_report",
+	)
+	assertRows(
+		t,
+		h.Rows(`SELECT date::text, no_trade FROM marketdata_price_hole`),
+		"2025-03-05 true",
+	)
+
+	counts := make(map[string]int)
+	for _, name := range asked() {
+		counts[name]++
+	}
+
+	for _, name := range []string{"SPRE250304", "SPRE250305", "SPRE250306"} {
+		if counts[name] != 1 {
+			t.Errorf("%s asked %d times, want 1", name, counts[name])
+		}
+	}
+
+	if counts["SPRE250303"]+counts["SPRE250307"] != 0 {
+		t.Errorf("asked days without a hole: %v", counts)
+	}
+}
+
+// PH4: the first failing day ends the questions of a check, and nothing of its pair is recorded.
+func TestHolesOfAFailingPriceReportWait(t *testing.T) {
+	t.Parallel()
+
+	requests := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		requests++
+
+		http.Error(w, "busy", http.StatusGatewayTimeout)
+	}))
+	t.Cleanup(srv.Close)
+
+	h := apitest.New(t, apitest.Today("2026-11-10"), apitest.PriceFeeds(
+		[]string{"b3_price_report"},
+		map[string]string{"b3_price_report": srv.URL},
+	))
+	seedHoles(t, h, "b3_price_report")
+
+	h.App.Marketdata.TickFeeds(t.Context())
+
+	// One request of the tick and one of the check.
+	if requests != 2 {
+		t.Errorf("requests = %d, want 2", requests)
+	}
+
+	assertRows(t, h.Rows(`SELECT date::text FROM marketdata_price_hole`))
+}
+
+// PH2, PH4: while b3_cotahist is enabled, b3_consolidated does not read its year files again.
+func TestYearFilesAreReadOnce(t *testing.T) {
+	t.Parallel()
+
+	h, b, _ := holeHarness(t)
+	execSQL(t, h, `INSERT INTO marketdata_feed (id, enabled) VALUES
+		('b3_cotahist', true), ('b3_consolidated', true)`)
+	execSQL(t, h, `INSERT INTO marketdata_price
+		(instrument, quote_instrument, date, value, source, priority)
+		VALUES ('PETR4', 'BRL', '2025-11-03', 38, 'b3_consolidated', 3)`)
+
+	h.App.Marketdata.TickFeeds(t.Context())
+
+	if n := yearRequests(b); n != 1 {
+		t.Errorf("the year file was read %d times, want 1", n)
+	}
 }

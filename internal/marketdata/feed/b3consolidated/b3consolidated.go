@@ -41,10 +41,6 @@ func New(c *http.Client, baseURL string, years b3cotahist.Source) Source {
 
 func (Source) ID() string { return "b3_consolidated" }
 
-// DayArchiveDays is how long the B3 keeps the daily files, with a margin: on 2026-11-24 the file of
-// 532 days before had a body and the one of 537 days before was empty.
-func (Source) DayArchiveDays() int { return 500 }
-
 // Codes returns the instruments listed on the B3 and quoted in BRL.
 func (Source) Codes(ins []feed.Instrument) []money.Currency {
 	var out []money.Currency

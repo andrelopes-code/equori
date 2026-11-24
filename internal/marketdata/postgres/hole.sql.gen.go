@@ -37,6 +37,7 @@ FROM
 WHERE
     h.instrument = $1
     AND h.quote_instrument = $2
+    AND NOT h.no_trade
     AND NOT EXISTS (
         SELECT
             1
@@ -54,7 +55,7 @@ type CountPriceHolesParams struct {
 	QuoteInstrument string
 }
 
-// The recorded holes of the pair that still have no price.
+// The recorded holes of the pair that still have no price, the sessions without a trade left out.
 func (q *Queries) CountPriceHoles(ctx context.Context, arg CountPriceHolesParams) (int32, error) {
 	row := q.db.QueryRow(ctx, countPriceHoles, arg.Instrument, arg.QuoteInstrument)
 	var column_1 int32
@@ -69,6 +70,24 @@ DELETE FROM marketdata_price_hole
 func (q *Queries) DeletePriceHoles(ctx context.Context) error {
 	_, err := q.db.Exec(ctx, deletePriceHoles)
 	return err
+}
+
+const firstQuotedDate = `-- name: FirstQuotedDate :one
+SELECT
+    coalesce(min(date), DATE '1970-01-01')::date AS first
+FROM
+    marketdata_price
+WHERE
+    instrument = $1
+    AND source NOT IN ('manual', 'csv', 'accrual')
+`
+
+// The date of the first price a source quoted of the instrument, 1970-01-01 without one.
+func (q *Queries) FirstQuotedDate(ctx context.Context, instrument string) (time.Time, error) {
+	row := q.db.QueryRow(ctx, firstQuotedDate, instrument)
+	var first time.Time
+	err := row.Scan(&first)
+	return first, err
 }
 
 const listPairSources = `-- name: ListPairSources :many
@@ -192,9 +211,9 @@ func (q *Queries) ListPriceHoles(ctx context.Context, arg ListPriceHolesParams) 
 
 const recordPriceHole = `-- name: RecordPriceHole :exec
 INSERT INTO
-    marketdata_price_hole (instrument, quote_instrument, date)
+    marketdata_price_hole (instrument, quote_instrument, date, no_trade)
 VALUES
-    ($1, $2, $3)
+    ($1, $2, $3, $4)
 ON CONFLICT DO NOTHING
 `
 
@@ -202,9 +221,15 @@ type RecordPriceHoleParams struct {
 	Instrument      string
 	QuoteInstrument string
 	Date            time.Time
+	NoTrade         bool
 }
 
 func (q *Queries) RecordPriceHole(ctx context.Context, arg RecordPriceHoleParams) error {
-	_, err := q.db.Exec(ctx, recordPriceHole, arg.Instrument, arg.QuoteInstrument, arg.Date)
+	_, err := q.db.Exec(ctx, recordPriceHole,
+		arg.Instrument,
+		arg.QuoteInstrument,
+		arg.Date,
+		arg.NoTrade,
+	)
 	return err
 }

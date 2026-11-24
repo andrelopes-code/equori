@@ -123,7 +123,9 @@ func TestCoverageOfSecurity(t *testing.T) {
 		t.Fatalf("coverage = %+v", c)
 	}
 
-	want := []coverageSource{{ID: "b3_cotahist"}, {ID: "b3_consolidated"}, {ID: "yahoo_chart"}}
+	want := []coverageSource{
+		{ID: "b3_cotahist"}, {ID: "b3_consolidated"}, {ID: "b3_price_report"}, {ID: "yahoo_chart"},
+	}
 	if got := c.sources(t); !reflect.DeepEqual(got, want) {
 		t.Fatalf("sources = %+v, want %+v", got, want)
 	}

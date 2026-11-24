@@ -62,6 +62,7 @@ export const instrumentsEn = {
   "instruments.source.accrual": "Accrual",
   "instruments.source.b3_cotahist": "B3, daily quotes",
   "instruments.source.b3_consolidated": "B3, consolidated trades",
+  "instruments.source.b3_price_report": "B3, price report by session",
   "instruments.source.bcb_ptax": "Central Bank of Brazil, PTAX",
   "instruments.source.ecb": "European Central Bank",
   "instruments.source.tesouro_direto": "Tesouro Direto",

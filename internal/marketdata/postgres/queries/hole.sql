@@ -60,13 +60,13 @@ ORDER BY
 
 -- name: RecordPriceHole :exec
 INSERT INTO
-    marketdata_price_hole (instrument, quote_instrument, date)
+    marketdata_price_hole (instrument, quote_instrument, date, no_trade)
 VALUES
-    (@instrument, @quote_instrument, @date)
+    (@instrument, @quote_instrument, @date, @no_trade)
 ON CONFLICT DO NOTHING;
 
 -- name: CountPriceHoles :one
--- The recorded holes of the pair that still have no price.
+-- The recorded holes of the pair that still have no price, the sessions without a trade left out.
 SELECT
     count(*)::int
 FROM
@@ -74,6 +74,7 @@ FROM
 WHERE
     h.instrument = @instrument
     AND h.quote_instrument = @quote_instrument
+    AND NOT h.no_trade
     AND NOT EXISTS (
         SELECT
             1
@@ -98,3 +99,13 @@ WHERE
     source = ANY (@sources::TEXT[])
     AND done_at IS NULL
     AND error IS NULL;
+
+-- name: FirstQuotedDate :one
+-- The date of the first price a source quoted of the instrument, 1970-01-01 without one.
+SELECT
+    coalesce(min(date), DATE '1970-01-01')::date AS first
+FROM
+    marketdata_price
+WHERE
+    instrument = @instrument
+    AND source NOT IN ('manual', 'csv', 'accrual');

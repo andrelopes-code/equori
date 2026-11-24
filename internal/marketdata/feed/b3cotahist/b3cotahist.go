@@ -47,6 +47,10 @@ func New(c *http.Client, baseURL string) Source {
 
 func (Source) ID() string { return "b3_cotahist" }
 
+// Witness is a code that traded at every session since 2006-11-24 (feed.Witnessed): the files list
+// every security of the spot market, so a share without a record had no trade.
+func (Source) Witness() money.Currency { return "PETR4" }
+
 // Codes returns the instruments listed on the B3 and quoted in BRL.
 func (Source) Codes(ins []feed.Instrument) []money.Currency {
 	var out []money.Currency

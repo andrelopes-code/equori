@@ -283,12 +283,29 @@ func readBLS(ctx context.Context, s Source, from, to time.Time) ([]level, error)
 				return nil, fmt.Errorf("%s: period %s %s: %w", s.id, d.Year, d.Period, err)
 			}
 
-			out = append(out, level{month: month, value: d.Value})
+			if value, ok := blsLevel(month, d.Value); ok {
+				out = append(out, level{month: month, value: value})
+			}
 		}
 	}
 
 	return out, nil
 }
+
+// blsLevel is the number of month, false for a month the BLS answers without one ("-").
+func blsLevel(month time.Time, value string) (string, bool) {
+	if value != "-" {
+		return value, true
+	}
+
+	value, ok := unpublished[month.Format(monthLayout)]
+
+	return value, ok
+}
+
+// unpublished holds the CPI-U the United States Treasury set for a month the BLS never published
+// (TreasuryDirect, SPL_20251126_1, read 2026-11-24): the funding lapse of 2025 left October out.
+var unpublished = map[string]string{"2025-10": "325.604"}
 
 func blsRequest(ctx context.Context, s Source, from, to time.Time) (*http.Request, error) {
 	payload := fmt.Sprintf(

@@ -63,10 +63,17 @@ type Source interface {
 	Fetch(ctx context.Context, codes []money.Currency, from, to time.Time) ([]Quote, error)
 }
 
-// DayArchive is a Source that keeps one file per day for a number of days, which Fetch reads for a
-// range of one day (A265 PH4).
+// DayArchive is a Source that publishes one file per day and keeps them since a day: a hole is asked
+// day by day, never by year (A265 PH4).
 type DayArchive interface {
-	DayArchiveDays() int
+	DayArchiveSince() time.Time
+}
+
+// Witnessed is a Source whose files list every security that traded. Witness traded at every session:
+// a session with its quote and without the one of another code it quotes had no trade of that code
+// (A265 PH5).
+type Witnessed interface {
+	Witness() money.Currency
 }
 
 // ScopeError names the part of a fetch (a code or a day) that failed.

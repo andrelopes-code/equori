@@ -61,7 +61,7 @@ func TestSourceIDs(t *testing.T) {
 	if got := strings.Join(
 		marketdata.SourceIDs(),
 		",",
-	); got != "b3_cotahist,b3_consolidated,bcb_ptax,ecb,tesouro_direto,cvm_funds,coinbase,yahoo_chart" {
+	); got != "b3_cotahist,b3_consolidated,b3_price_report,bcb_ptax,ecb,tesouro_direto,cvm_funds,coinbase,yahoo_chart" {
 		t.Fatalf("ids = %s", got)
 	}
 }

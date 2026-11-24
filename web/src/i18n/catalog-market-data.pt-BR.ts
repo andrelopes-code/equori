@@ -27,6 +27,7 @@ export const marketDataPtBR: Record<keyof typeof marketDataEn, string> = {
     "Esta fonte não é oficial; confirme para ativá-la.",
   "marketData.feed.b3_cotahist": "Cotações diárias da B3",
   "marketData.feed.b3_consolidated": "Negócios consolidados da B3",
+  "marketData.feed.b3_price_report": "Boletim de preços da B3 por pregão",
   "marketData.feed.bcb_ptax": "Câmbio PTAX (Banco Central do Brasil)",
   "marketData.feed.ecb": "Taxas de referência do euro (BCE)",
   "marketData.feed.tesouro_direto":
@@ -106,6 +107,8 @@ export const marketDataPtBR: Record<keyof typeof marketDataEn, string> = {
   "marketData.feedSource.b3_cotahist": "B3",
   "marketData.feedName.b3_consolidated": "Negócios consolidados",
   "marketData.feedSource.b3_consolidated": "B3",
+  "marketData.feedName.b3_price_report": "Boletim por pregão",
+  "marketData.feedSource.b3_price_report": "B3",
   "marketData.feedName.bcb_ptax": "Câmbio PTAX",
   "marketData.feedSource.bcb_ptax": "Banco Central do Brasil",
   "marketData.feedName.ecb": "Taxas de referência do euro",

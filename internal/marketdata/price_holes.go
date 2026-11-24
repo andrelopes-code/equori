@@ -24,10 +24,10 @@ type pairHoles struct {
 	dates      []time.Time
 	// sources are the enabled sources that ever quoted the pair.
 	sources []string
-	// failed is set when one of them failed: nothing is recorded.
+	// failed is set when one of them failed: no date is recorded but those of noTrade.
 	failed bool
-	// waiting are the dates left for the next check: they are not recorded.
-	waiting []time.Time
+	// noTrade are the sessions a witnessed source states to be without a trade.
+	noTrade []time.Time
 }
 
 // tickHoles looks, once a day, for the sessions without a price of each instrument and asks every
@@ -64,12 +64,12 @@ func (m *Module) tickHoles(ctx context.Context) error {
 		return err
 	}
 
+	for _, src := range withoutShared(sources) {
+		err = errors.Join(err, m.askYears(ctx, src, holes))
+	}
+
 	for _, src := range sources {
-		err = errors.Join(
-			err,
-			m.askYears(ctx, src, holes),
-			m.askDays(ctx, src, holes, today),
-		)
+		err = errors.Join(err, m.askDays(ctx, src, holes))
 	}
 
 	m.holesChecked = today
@@ -116,31 +116,20 @@ func (m *Module) requestBaseHistory(
 	sources []feed.Source,
 	ins []feed.Instrument,
 ) (bool, error) {
-	years := make(map[string]int)
-	for _, e := range sourceEntries() {
-		years[e.id] = max(e.historyYears, e.baseYears)
-	}
-
 	ids := make([]string, len(sources))
-	now := m.feeds.Clock.Now()
-	today := m.feeds.Clock.Today(ctx)
-
 	for i, src := range sources {
 		ids[i] = src.ID()
+	}
 
+	for _, src := range withoutShared(sources) {
 		codes, err := m.baseCodes(ctx, src, ins)
 		if err != nil {
 			return false, err
 		}
 
 		for _, code := range codes {
-			if err := m.q.RequestHistory(ctx, postgres.RequestHistoryParams{
-				Source:      src.ID(),
-				Instrument:  string(code),
-				FromDate:    today.AddDate(-years[src.ID()], 0, 0),
-				RequestedAt: now,
-			}); err != nil {
-				return false, fmt.Errorf("request the history of %s: %w", code, err)
+			if err := m.requestBase(ctx, src.ID(), code); err != nil {
+				return false, err
 			}
 		}
 	}
@@ -153,6 +142,60 @@ func (m *Module) requestBaseHistory(
 	m.requestTick()
 
 	return true, nil
+}
+
+// requestBase requests the base history of code from source: 20 years, and from a source with year
+// files no earlier than the year before the first price of any source, the year it was listed in.
+func (m *Module) requestBase(ctx context.Context, source string, code money.Currency) error {
+	entries := sourceEntries()
+	e := entries[slices.IndexFunc(entries, func(e sourceEntry) bool { return e.id == source })]
+
+	years := max(e.historyYears, e.baseYears)
+	if years == 0 {
+		return nil
+	}
+
+	from := m.feeds.Clock.Today(ctx).AddDate(-years, 0, 0)
+
+	if e.baseYears > 0 {
+		first, err := m.q.FirstQuotedDate(ctx, string(code))
+		if err != nil {
+			return fmt.Errorf("read the first price of %s: %w", code, err)
+		}
+
+		if listed := first.AddDate(-1, 0, 0); listed.After(from) {
+			from = listed
+		}
+	}
+
+	err := m.q.RequestHistory(ctx, postgres.RequestHistoryParams{
+		Source:      source,
+		Instrument:  string(code),
+		FromDate:    from,
+		RequestedAt: m.feeds.Clock.Now(),
+	})
+	if err != nil {
+		return fmt.Errorf("request the history of %s: %w", code, err)
+	}
+
+	return nil
+}
+
+// withoutShared drops the sources that read the year files of another enabled one: they are read once.
+func withoutShared(sources []feed.Source) []feed.Source {
+	enabled := make(map[string]bool, len(sources))
+	for _, src := range sources {
+		enabled[src.ID()] = true
+	}
+
+	shared := make(map[string]string)
+	for _, e := range sourceEntries() {
+		shared[e.id] = e.yearsOf
+	}
+
+	return slices.DeleteFunc(slices.Clone(sources), func(src feed.Source) bool {
+		return enabled[shared[src.ID()]]
+	})
 }
 
 // baseCodes are the codes of ins that src quotes; a currency only when src stored it in the currency
@@ -253,32 +296,48 @@ func (m *Module) quotingSources(
 	return out, nil
 }
 
-// recordHoles records the sessions that every source answered without a price (A265 PH5).
+// recordHoles records the sessions without a trade, and those that every source answered without a
+// price (A265 PH5).
 func (m *Module) recordHoles(ctx context.Context, holes []*pairHoles) error {
 	for _, h := range holes {
+		if err := m.recordHole(ctx, h, h.noTrade, true); err != nil {
+			return err
+		}
+
 		if h.failed {
 			continue
 		}
 
-		for _, d := range h.dates {
-			if slices.ContainsFunc(h.waiting, d.Equal) {
-				continue
-			}
-
-			if err := m.q.RecordPriceHole(ctx, postgres.RecordPriceHoleParams{
-				Instrument:      string(h.instrument.Code),
-				QuoteInstrument: string(h.quote),
-				Date:            d,
-			}); err != nil {
-				return fmt.Errorf("record the hole of %s: %w", h.instrument.Code, err)
-			}
+		if err := m.recordHole(ctx, h, h.dates, false); err != nil {
+			return err
 		}
 	}
 
 	return nil
 }
 
-// missingPrices is the number of recorded holes of in that still have no price (A265 PH6).
+func (m *Module) recordHole(
+	ctx context.Context,
+	h *pairHoles,
+	dates []time.Time,
+	noTrade bool,
+) error {
+	for _, d := range dates {
+		if err := m.q.RecordPriceHole(ctx, postgres.RecordPriceHoleParams{
+			Instrument:      string(h.instrument.Code),
+			QuoteInstrument: string(h.quote),
+			Date:            d,
+			NoTrade:         noTrade,
+		}); err != nil {
+			return fmt.Errorf("record the hole of %s: %w", h.instrument.Code, err)
+		}
+	}
+
+	return nil
+}
+
+// missingPrices is the number of recorded holes of in that still have no price, the sessions without
+// a trade left out (A265 PH6).
 func (m *Module) missingPrices(ctx context.Context, in domain.Instrument) (int, error) {
 	index, quote := sessionIndex(feedInstruments([]Instrument{in})[0])
 	if index == "" {

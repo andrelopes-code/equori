@@ -44,6 +44,7 @@ func feedsOf(t *testing.T, h *apitest.Harness) map[string]feedAPI {
 	want := []string{
 		"b3_cotahist",
 		"b3_consolidated",
+		"b3_price_report",
 		"bcb_ptax",
 		"ecb",
 		"tesouro_direto",

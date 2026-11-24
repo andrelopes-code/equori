@@ -8,7 +8,7 @@ need no key. Phase P8 (issue #18) describes the rules (amendments A60–A62 of
 
 An admin enables and disables each feed under Settings, "Market data" (ADR 025). The screen suggests the feeds of the admin's region, shows the latest stored date of each feed, warns when a publication is overdue or the last run failed, and runs every enabled feed on request. Every 6 hours the enabled feeds run without a request.
 
-Price feeds: `bcb_ptax`, `b3_cotahist`, `b3_consolidated`, `ecb`, `tesouro_direto`, `cvm_funds`, `coinbase`, `yahoo_chart`. With no feed enabled, equori sends no feed request (N17).
+Price feeds: `bcb_ptax`, `b3_cotahist`, `b3_consolidated`, `b3_price_report`, `ecb`, `tesouro_direto`, `cvm_funds`, `coinbase`, `yahoo_chart`. With no feed enabled, equori sends no feed request (N17).
 
 Index feeds: `br_cdi`, `br_ipca`, `br_selic`, `br_igpm`, `br_ptax_usd`, `eu_estr`, `ea_hicp`, `us_sofr`, `us_cpi`: the index series that accrue the price of a fixed income security that has terms (`PUT /instruments/{code}/terms`). Empty: no index request. An enabled index is fetched from 20 years before today, or from the earliest issue date of a security that follows it when that is earlier. The calculators read the stored rates (`GET /indexes`). The whole history is read again every 7 days and, once a day, while an expected day has no rate; a rate that differs from the stored one replaces it and the log line `index revised` states it (A265 RI1 to RI4).
 
@@ -36,9 +36,10 @@ Market index feeds: `br_ibovespa`, `br_ifix`, `us_sp500`, `global_ftse`: total r
 | `EQUORI_FEED_BR_CVM_CIA_URL` | `https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC` | Base URL of the CVM files of listed companies: DFP, ITR and FCA under `DFP/DADOS`, `ITR/DADOS` and `FCA/DADOS`, stored as company reports (company report CR3). Licence ODbL; attribution: CVM, Portal de Dados Abertos. `br_cvm_cia` is enabled only on the settings screen. |
 | `EQUORI_FEED_B3_COTAHIST_URL` | `https://bvmf.bmfbovespa.com.br/InstDados/SerHist` | Base URL of the B3 daily historical quotes files. |
 | `EQUORI_FEED_B3_CONSOLIDATED_URL` | `https://arquivos.b3.com.br` | Base URL of the B3 file download service that serves the consolidated trades file. |
+| `EQUORI_FEED_B3_PRICE_REPORT_URL` | `https://www.b3.com.br` | Base URL of the B3 session search, which serves the price report of each session. |
 
 A network allowlist for the container adds `olinda.bcb.gov.br` and `bvmf.bmfbovespa.com.br`
-for the enabled feeds (`arquivos.b3.com.br` for `b3_consolidated`; `www.ecb.europa.eu` for `ecb`; `www.tesourotransparente.gov.br` for `tesouro_direto`; `dados.cvm.gov.br` for `cvm_funds`; `api.coinbase.com` for `coinbase`; `query1.finance.yahoo.com` for `yahoo_chart`; `api.bcb.gov.br` for `br_cdi` and
+for the enabled feeds (`arquivos.b3.com.br` for `b3_consolidated`; `www.b3.com.br` for `b3_price_report`; `www.ecb.europa.eu` for `ecb`; `www.tesourotransparente.gov.br` for `tesouro_direto`; `dados.cvm.gov.br` for `cvm_funds`; `api.coinbase.com` for `coinbase`; `query1.finance.yahoo.com` for `yahoo_chart`; `api.bcb.gov.br` for `br_cdi` and
 `br_ipca`; `data-api.ecb.europa.eu` for `eu_estr`; `ec.europa.eu` for `ea_hicp`;
 `sistemaswebb3-listados.b3.com.br` for `br_ibovespa` and `br_ifix`; `query1.finance.yahoo.com` for `us_sp500` and `global_ftse`;
 `markets.newyorkfed.org` for `us_sofr`; `api.bls.gov` for `us_cpi`; `olinda.bcb.gov.br` for `br_focus`).
@@ -50,6 +51,7 @@ for the enabled feeds (`arquivos.b3.com.br` for `b3_consolidated`; `www.ecb.euro
 | `bcb_ptax` | Every currency instrument except `BRL` | `ExchangeRatePeriod` per currency for the whole window | `cotacaoVenda` of the `Fechamento` bulletin, quoted in `BRL` |
 | `b3_cotahist` | Instruments with exchange `BVMF` and quote currency `BRL` | `COTAHIST_D{DDMMYYYY}.ZIP` per weekday | `PREULT` of the spot market (`TPMERC` 010) over its quotation factor (`FATCOT`), quoted in `BRL` |
 | `b3_consolidated` | Instruments with exchange `BVMF` and quote currency `BRL` | `TradeInformationConsolidatedFile` per weekday: a request by name returns a token, the token returns the file | `LastPric` of the ticker in any segment, quoted in `BRL`; covers the fixed income ETFs (`AUPO11`, `LFTS11`) that COTAHIST omits |
+| `b3_price_report` | Instruments with exchange `BVMF` and quote currency `BRL` | `pesquisapregao/download?filelist=SPRE{YYMMDD}.zip,` per weekday, `PR{YYMMDD}.zip,` for a day before 2022-02-01; an empty archive is a day without a session | `LastPric` of the last revision, quoted in `BRL`; covers the fixed income ETFs that COTAHIST omits, since 2018-06-12 |
 | `ecb` | Every currency instrument except `EUR` | One XML file with the last 90 days | Units of the currency per euro, stored as the price of `EUR` quoted in that currency |
 | `tesouro_direto` | Instruments of type `fixed_income`, no exchange, quote currency `BRL`, code `{LFT,LTN,NTNF,NTNB,NTNBP,NTNC,EDUCA,RENDA}.{YYYYMMDD}` | One CSV file with every title and date | `PU Venda Manha` at `Data Base`, quoted in `BRL`; a zero price is skipped |
 | `cvm_funds` | Instruments of type `fund`, no exchange, quote currency `BRL`, code a 14-character CNPJ without punctuation | One ZIP file per year up to 2020 and per month from 2021 | `VL_QUOTA` at `DT_COMPTC`, quoted in `BRL`; a subclass line and a zero value are skipped |
@@ -73,7 +75,7 @@ Earlier prices enter through `POST /prices/import`.
 
 ### Holes
 
-Once a day, each enabled source is asked for 20 years of each instrument whose exchange has stored sessions (`ibovespa` for `BVMF`, `sp500` for the exchanges of the United States, `usd_brl` for a currency quoted in `BRL`). A session between the first and the last price of an instrument, at least 7 days old and without a price of any source, is then asked to every enabled source that quotes it: the year files, and up to 31 daily files of `b3_consolidated` a day. A session no source holds is recorded and not asked again until a price source is enabled; the page of the instrument states how many there are (A265 PH2 to PH6). The first check on the B3 downloads up to 685 MB per source, the year files of 2006 to 2026.
+Once a day, each enabled source is asked for 20 years of each instrument whose exchange has stored sessions (`ibovespa` for `BVMF`, `sp500` for the exchanges of the United States, `usd_brl` for a currency quoted in `BRL`); the B3 no earlier than the year the instrument was listed in. A session between the first and the last price of an instrument, at least 7 days old and without a price of any source, is then asked to every enabled source that quotes it: the year files, then the daily files of `b3_price_report`. A session of which the file of the exchange lists the other securities and not this one had no trade. A session no source holds is recorded and not asked again until a price source is enabled; the page of the instrument states how many there are (A265 PH2 to PH7). The first check downloads the year files of the B3 that the instruments need, at most 685 MB for 2006 to 2026, once: `b3_consolidated` does not read them while `b3_cotahist` is enabled.
 
 ## 4. Priority
 

@@ -62,6 +62,7 @@ func SuggestedFeeds(region string) []string {
 	case region == "BR":
 		return []string{
 			"b3_consolidated",
+			"b3_price_report",
 			"bcb_ptax",
 			"tesouro_direto",
 			"cvm_funds",

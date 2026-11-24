@@ -62,6 +62,7 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "instruments.source.accrual": "Apropriação",
   "instruments.source.b3_cotahist": "B3, cotações diárias",
   "instruments.source.b3_consolidated": "B3, negócios consolidados",
+  "instruments.source.b3_price_report": "B3, boletim por pregão",
   "instruments.source.bcb_ptax": "Banco Central, PTAX",
   "instruments.source.ecb": "Banco Central Europeu",
   "instruments.source.tesouro_direto": "Tesouro Direto",

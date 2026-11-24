@@ -16,6 +16,7 @@ Amendment A265. Owner, 2026-11-24: the fundamental indexes and quotes that the c
 | BVMF instruments | No session without a price where COTAHIST was loaded, BPAC11 of 2017 excepted (no trade). Every other hole lies in years only Yahoo covered |
 | COTAHIST 2006 | 20,433 spot records quoted per lot of 1,000 (`FATCOT`), SBSP3 among them |
 | COTAHIST sizes, 2006 to 2026 | 9.3 to 108.3 MB a year, 685 MB in all |
+| Price report of the session search of the B3 | `SPRE` from 2022-01 and `PR` from 2018-06 hold IMAB11 and B5P211 of the days no other source has |
 | `TradeInformationConsolidatedFile` | Empty body on 2025-06-05 and before, about 6.5 MB a day from 2025-06-10 on, the fixed income ETFs included |
 
 Causes of holes, read in the code: `tickIndex` resumes from the latest rate, so a fill back that fails midway is never completed; a rate the source revises is never read again; a finished `marketdata_history` row is never rechecked; a stop longer than 30 days leaves a hole behind the window of `tick`; a file published late is skipped once a later day is stored.
@@ -52,11 +53,12 @@ Causes of holes, read in the code: `tickIndex` resumes from the latest rate, so 
 | ID | Rule |
 |---|---|
 | PH1 | COTAHIST divides `PREULT` by `FATCOT`. |
-| PH2 | Once a day, each enabled price source requests, for each code it quotes whose sessions are stored (PH3), the history of 20 years; a currency only from a source that stored it in the currency of its sessions. Enabling a source or defining an instrument still requests the years of its entry at once; the B3 ones stay 5. A request that lowers no date changes nothing (MQ5). |
+| PH2 | Once a day, each enabled price source requests, for each code it quotes whose sessions are stored (PH3), the history of 20 years; a currency only from a source that stored it in the currency of its sessions; the B3 no earlier than the year before the first price any source quoted, the year the security was listed in; a source with one file per day none. `b3_consolidated` is not asked while `b3_cotahist`, whose year files it reads, is enabled. Enabling a source or defining an instrument still requests the years of its entry at once; the B3 ones stay 5. A request that lowers no date changes nothing (MQ5). |
 | PH3 | A hole is a session of the exchange between the first and the last price of an instrument, at least 7 days old, with no price of any source. The sessions are the dates of `ibovespa` for `BVMF`, of `sp500` for `XNYS`, `XNAS`, `ARCX`, `BATS` and `XASE`, and of `usd_brl` for a currency quoted in `BRL` (`sessionIndex` in `internal/marketdata/region_defaults.go`). Without a session index, or with it not stored, nothing is checked. |
-| PH4 | Once a day, after PH2 left no pending history, each enabled source that quotes a code with a hole is asked for the years of its holes, each up to its last hole. A source that keeps daily files (`feed.DayArchive`: `b3_consolidated`, 500 days) is then asked for the remaining days, the latest 31 a day. Only the prices of the holes are stored. |
-| PH5 | A hole that every source answered without a price is recorded in `marketdata_price_hole` and is not asked again. Enabling a price source empties the table. A source that failed records nothing. |
-| PH6 | `coverage.missing` of an instrument is the number of recorded holes still without a price; the coverage panel states it. A session without a trade is such a hole: the source cannot tell the two apart. |
+| PH4 | Once a day, after PH2 left no pending history, each enabled source that quotes a code with a hole is asked for the years of its holes, each up to its last hole. A source with one file per day (`feed.DayArchive`: `b3_price_report`, since 2018-06-12) is then asked for each day left, the latest first; its first failure ends the questions of the day. Only the prices of the holes are stored. |
+| PH5 | A source whose files list every security that traded names a witness, a code that trades at every session (`feed.Witnessed`: `b3_cotahist` and `b3_price_report`, `PETR4`). A session with the quote of the witness and without the one of a code the source quotes had no trade of it: it is recorded in `marketdata_price_hole` with `no_trade`. A hole that every source answered without a price and no witness explains is recorded without it. Neither is asked again; enabling a price source empties the table. A source that failed records nothing but the sessions without a trade of another. |
+| PH6 | `coverage.missing` of an instrument is the number of recorded holes without `no_trade` and without a price; the coverage panel states it. |
+| PH7 | Price source `b3_price_report` (official, lag 5): the price report of the B3 session search, `www.b3.com.br/pesquisapregao/download?filelist=SPRE{YYMMDD}.zip,`, and the full report `PR{YYMMDD}` for a day before 2022-02-01 without it. The quote is `LastPric` of the last revision, in `BRL`. A range over 31 days reads its last 31. It covers the fixed income ETFs that COTAHIST omits. 96 of 96 closes of 2022-06-13, 2023-06-13, 2024-05-13 and 2025-06-02 equal COTAHIST; one file has 0.5 to 1 MB (7 MB for the full one) and takes 0.4 s. |
 
 ## 3. Approaches
 
@@ -89,7 +91,7 @@ Causes of holes, read in the code: `tickIndex` resumes from the latest rate, so 
 | B2 | No operation. |
 | B3 | No setting. |
 | D1 | Both tables are left out of the export: a tick writes them again. |
-| D2 | Migrations 148 and 149. |
+| D2 | Migrations 148, 149 and 150. |
 | D3 | Does not apply: market data holds no recorded fact. |
 | D4 | Does not apply: no bank, file or model. |
 | D5 | Does not apply. |
@@ -97,5 +99,5 @@ Causes of holes, read in the code: `tickIndex` resumes from the latest rate, so 
 | S2 | The settings screen and the instrument page keep their phone forms. |
 | S3 | The article `settings_language_and_region.md`. |
 | S4 | `get_market` lists indexes and rates; the new ids appear without a change of schema. |
-| X1 | S701 whole read repairs a hole and a revision. S702 accrued prices follow a revised rate. S703 Ibovespa and IFIX. S704 S&P 500 with a wrong total return close. S705 unofficial index needs acceptance. S706 return against the S&P 500 in BRL. S707 a hole of prices is filled from a year file. S708 a session without a trade is recorded once. |
+| X1 | S701 whole read repairs a hole and a revision. S702 accrued prices follow a revised rate. S703 Ibovespa and IFIX. S704 S&P 500 with a wrong total return close. S705 unofficial index needs acceptance. S706 return against the S&P 500 in BRL. S707 a hole of prices is filled from a year file. S708 a session no source holds is recorded once. S709 a session without a trade is told from a missing price. S710 the holes of a fixed income ETF are filled from the price report. |
 | X2 | S706 (report currency other than the index's); a region without an exchange index keeps `currency_mismatch`. |

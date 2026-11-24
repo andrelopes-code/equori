@@ -204,3 +204,29 @@ func TestPriceIndexFeeds(t *testing.T) {
 		t.Fatalf("CPI-U = %+v", got)
 	}
 }
+
+// The BLS never published the CPI-U of October 2025 and answers "-": the month takes the number the
+// Treasury set for it, and another month without a number is left out, not a failure.
+func TestPriceIndexMonthWithoutANumber(t *testing.T) {
+	t.Parallel()
+
+	s := &foreignIndexServer{cpiu: [][3]string{
+		{"2025", "M08", "323.976"},
+		{"2025", "M09", "324.800"},
+		{"2025", "M10", "-"},
+		{"2025", "M11", "324.122"},
+		{"2026", "M01", "-"},
+	}}
+	h := foreignIndexHarness(t, s, "2026-02-15")
+	h.App.Marketdata.TickFeeds(t.Context())
+
+	// 324.800 / 323.976, 325.604 / 324.800 and 324.122 / 325.604, less 1.
+	want := []indexRateRow{
+		{"2025-09-01", "0.002543398276", "us_cpi"},
+		{"2025-10-01", "0.002475369458", "us_cpi"},
+		{"2025-11-01", "-0.004551541136", "us_cpi"},
+	}
+	if got := indexRates(t, h, "cpi_u"); !slices.Equal(got, want) {
+		t.Errorf("cpi_u = %v, want %v", got, want)
+	}
+}

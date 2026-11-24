@@ -4,6 +4,7 @@ export function feedRegion(id: string): string {
   switch (id) {
     case "b3_cotahist":
     case "b3_consolidated":
+    case "b3_price_report":
     case "bcb_ptax":
     case "tesouro_direto":
     case "cvm_funds":

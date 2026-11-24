@@ -6,6 +6,7 @@ describe("feedRegion", () => {
   it.each([
     ["b3_cotahist", "BR"],
     ["b3_consolidated", "BR"],
+    ["b3_price_report", "BR"],
     ["bcb_ptax", "BR"],
     ["tesouro_direto", "BR"],
     ["cvm_funds", "BR"],
