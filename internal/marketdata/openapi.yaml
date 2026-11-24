@@ -814,7 +814,7 @@ schemas:
   Index:
     type: object
     additionalProperties: false
-    required: [id, period, first, last, expected]
+    required: [id, period, kind, first, last, expected]
     properties:
       id:
         type: string
@@ -825,6 +825,10 @@ schemas:
         type: string
         enum: [day, month]
         description: The span one rate covers.
+      kind:
+        type: string
+        enum: [rate, market]
+        description: A rate a contract pays, or the growth of a market that no contract pays (A265 MI6).
       first:
         type: string
         format: date
@@ -1344,7 +1348,7 @@ schemas:
   MarketDataFeed:
     type: object
     additionalProperties: false
-    required: [id, kind, enabled, suggested, last, stale, last_run, error, official, covers, history_pending, symbol_override, current, current_at, current_error]
+    required: [id, kind, enabled, suggested, last, stale, missing, last_run, error, official, covers, history_pending, symbol_override, current, current_at, current_error]
     properties:
       id:
         type: string
@@ -1365,6 +1369,9 @@ schemas:
       stale:
         type: boolean
         description: Enabled, and its next publication is overdue (ADR 025 F9).
+      missing:
+        type: integer
+        description: The expected days of an index without a rate; 0 for any other feed (A265 RI4).
       last_run:
         type: string
         format: date-time

@@ -23,6 +23,8 @@ type Feed struct {
 	// Last is the latest date the feed stored; nil when it stored none.
 	Last  *time.Time
 	Stale bool
+	// Missing is the number of expected days of an index without a rate (A265 RI4).
+	Missing int
 	// LastRun and Error describe the last tick that ran the feed since the process started.
 	LastRun *time.Time
 	Error   *string

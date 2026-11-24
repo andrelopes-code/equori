@@ -66,6 +66,10 @@ The price source `b3_consolidated` reads the B3 consolidated trades file, which 
 
 `docs/specs/2026-11-18-company-report-design.md` (CR2) adds a seventh kind of feed, `company_report`: the statements a listed company files. F1 to F10 apply to it. `br_cvm_cia` is the only source; `SuggestedFeeds("BR")` names it. Its period is a quarter, its lag 90 days, and its `last` is the latest stored period.
 
+## Amendment of 2026-11-24 (A265)
+
+`docs/specs/2026-11-24-reference-indexes-design.md` amends F9 for daily indexes: a daily index is stale when more than 2 business days of its calendar, or 3 weekdays without a calendar, lie between its last rate and today. F5 gains `missing`, the expected days of an index without a rate. The market indexes `br_ibovespa` and `br_ifix` join the suggestions of `BR`; `us_sp500` and `global_ftse` are unofficial. A tick in which a feed failed is repeated after 30 minutes.
+
 ## Revisit criterion
 
 An instance whose users need different feed sets, or a feed whose publication delay varies beyond its `Lag`.

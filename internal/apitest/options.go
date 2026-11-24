@@ -141,6 +141,11 @@ func CurrentBound(d time.Duration) Option {
 	return func(o *options) { o.cfg.CurrentBound = d }
 }
 
+// RetryAfter is the wait after a tick in which a feed failed.
+func RetryAfter(d time.Duration) Option {
+	return func(o *options) { o.cfg.RetryAfter = d }
+}
+
 // IndexFeeds enables the index feeds ids against the base URLs of a test server.
 func IndexFeeds(ids []string, urls map[string]string) Option {
 	return func(o *options) {

@@ -24,6 +24,7 @@ func (s *Server) listIndexes(
 		items[i] = Index{
 			Id:       x.ID,
 			Period:   IndexPeriod(x.Period),
+			Kind:     IndexKind(x.Kind),
 			First:    openapi_types.Date{Time: x.First},
 			Last:     openapi_types.Date{Time: x.Last},
 			Expected: x.Expected,

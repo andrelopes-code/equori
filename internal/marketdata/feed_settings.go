@@ -163,37 +163,6 @@ func (m *Module) priceFeeds(
 	return out, nil
 }
 
-// indexFeeds appends the index sources to out.
-func (m *Module) indexFeeds(ctx context.Context, out []Feed, fs feedState) ([]Feed, error) {
-	for _, src := range m.feeds.Indexes {
-		latest, err := m.q.LatestIndexRate(ctx, src.Index())
-		if err != nil {
-			return nil, fmt.Errorf("read the latest rate of %s: %w", src.ID(), err)
-		}
-
-		var last *time.Time
-		if latest.Found {
-			last = &latest.Latest
-		}
-
-		out = append(
-			out,
-			m.feed(
-				ctx,
-				src.ID(),
-				domain.FeedIndex,
-				src.Period(),
-				last,
-				fs.on,
-				fs.suggested,
-				fs.lags,
-			),
-		)
-	}
-
-	return out, nil
-}
-
 // expectationFeeds appends the expectation sources to out.
 func (m *Module) expectationFeeds(ctx context.Context, out []Feed, fs feedState) ([]Feed, error) {
 	for _, src := range m.feeds.Expectations {
@@ -235,7 +204,7 @@ func (m *Module) feed(
 ) Feed {
 	f := Feed{
 		ID: id, Kind: kind, Enabled: on[id], Suggested: slices.Contains(suggested, id), Last: last,
-		Official: !slices.Contains(unofficialSources(), id),
+		Official: !unofficialFeed(id),
 	}
 	if f.Enabled && last != nil {
 		// The period of last is published; the one due is the next, ending two periods after last.
@@ -339,7 +308,7 @@ func (m *Module) SetFeed(
 		return Feed{}, ErrUnknownFeed
 	}
 
-	if enabled && !acceptUnofficial && slices.Contains(unofficialSources(), id) {
+	if enabled && !acceptUnofficial && unofficialFeed(id) {
 		return Feed{}, ErrUnofficialSource
 	}
 

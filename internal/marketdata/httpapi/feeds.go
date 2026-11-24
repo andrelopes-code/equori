@@ -57,6 +57,7 @@ func feedOf(f domain.Feed) MarketDataFeed {
 		Enabled:        f.Enabled,
 		Suggested:      f.Suggested,
 		Stale:          f.Stale,
+		Missing:        f.Missing,
 		LastRun:        f.LastRun,
 		Error:          f.Error,
 		Official:       f.Official,

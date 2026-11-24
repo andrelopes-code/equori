@@ -10,7 +10,10 @@ import {
   feedName,
 } from "@/features/setup/market-data/feed-names";
 import { feedRowText } from "@/features/setup/market-data/feed-row-text";
-import { feedStatus } from "@/features/setup/market-data/feed-status";
+import {
+  feedHasProblem,
+  feedStatus,
+} from "@/features/setup/market-data/feed-status";
 import styles from "@/features/setup/market-data/market-data.module.css";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -116,14 +119,18 @@ export function MarketDataFeedRow({ feed, controls }: MarketDataFeedRowProps) {
         checked={feed.enabled}
         readOnly={!controls.admin}
         loading={controls.loadingId === feed.id}
-        invalid={feed.enabled && (feed.stale || feed.error !== null)}
+        invalid={feedHasProblem(feed)}
         onCheckedChange={handleCheckedChange}
       />
 
       {confirming && (
         <ConfirmDialog
           title={t("settings.feeds.unofficial.title")}
-          description={t("settings.feeds.unofficial.description")}
+          description={t(
+            feed.kind === "index"
+              ? "settings.feeds.unofficial.indexDescription"
+              : "settings.feeds.unofficial.description",
+          )}
           confirmLabel={t("settings.feeds.unofficial.confirm")}
           tone="warning"
           onConfirm={handleConfirm}

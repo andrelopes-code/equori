@@ -49,8 +49,22 @@ func defaultInflation(region string) string {
 // R15).
 func indexCurrency(index string) money.Currency {
 	switch index {
-	case "cdi", "ipca":
+	case "cdi", "ipca", "selic", "igpm", "usd_brl", "ibovespa", "ifix":
 		return "BRL"
+	case "sp500", "ftse_global", "sofr":
+		return "USD"
+	case "estr":
+		return "EUR"
+	}
+
+	return ""
+}
+
+// exchangeIndex returns the daily index whose rates are the changes of one unit of from in to, or
+// "" without one (A265 MI8).
+func exchangeIndex(from, to money.Currency) string {
+	if from == "USD" && to == "BRL" {
+		return "usd_brl"
 	}
 
 	return ""

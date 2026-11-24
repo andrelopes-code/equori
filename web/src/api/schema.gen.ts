@@ -7637,6 +7637,11 @@ export interface components {
              * @enum {string}
              */
             period: "day" | "month";
+            /**
+             * @description A rate a contract pays, or the growth of a market that no contract pays (A265 MI6).
+             * @enum {string}
+             */
+            kind: "rate" | "market";
             /** Format: date */
             first: string;
             /** Format: date */
@@ -7961,6 +7966,8 @@ export interface components {
             last: string | null;
             /** @description Enabled, and its next publication is overdue (ADR 025 F9). */
             stale: boolean;
+            /** @description The expected days of an index without a rate; 0 for any other feed (A265 RI4). */
+            missing: number;
             /**
              * Format: date-time
              * @description The last tick that ran the feed since the process started.

@@ -6,11 +6,14 @@ import type { paths } from "@/api/schema.gen";
 import type { CurvePoint } from "@/features/calculators/indexer-comparison/market-rate";
 import type { IndexRate } from "@/features/calculators/rate-source/index-rates";
 
-// The indexes the instance stores; an index's rates never change once published.
+// The indexes a contract can pay: the growth of a market is not one (A265 MI6).
 export function indexesQuery(api: Client<paths>) {
   return queryOptions({
     queryKey: ["calculators", "indexes"] as const,
-    queryFn: async () => (await unwrap(await api.GET("/indexes"))).items,
+    queryFn: async () =>
+      (await unwrap(await api.GET("/indexes"))).items.filter(
+        (x) => x.kind !== "market",
+      ),
   });
 }
 

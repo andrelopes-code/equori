@@ -147,6 +147,27 @@ func (p marketPort) IndexCurrency(index string) money.Currency {
 	return indexCurrency(index)
 }
 
+func (p marketPort) ExchangeIndex(from, to money.Currency) string {
+	return exchangeIndex(from, to)
+}
+
+func (p marketPort) MarketIndexes(ctx context.Context) ([]string, error) {
+	indexes, err := p.md.Indexes(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var out []string
+
+	for _, x := range indexes {
+		if x.Kind == marketdata.IndexKindMarket && x.Period == dailyPeriod {
+			out = append(out, x.ID)
+		}
+	}
+
+	return out, nil
+}
+
 func (p marketPort) InflationIndex(ctx context.Context, booksID int64) (string, error) {
 	l, err := p.profiles.Profile(ctx, booksID)
 	if err != nil {

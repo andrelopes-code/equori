@@ -8,8 +8,9 @@ import (
 	"github.com/andrelopes-code/equori/internal/portfolio/domain"
 )
 
-// seriesIndexes draws the indexes of the region beside the series: the daily index of the
-// comparison, then the inflation index (portfolio results PS5, PS6).
+// seriesIndexes draws the indexes beside the series: the daily index of the comparison, the
+// inflation index, both of the region, then the enabled market indexes (portfolio results PS5, PS6,
+// PS8).
 func (s *Service) seriesIndexes(
 	ctx context.Context,
 	p period,
@@ -32,7 +33,9 @@ func (s *Service) seriesIndexes(
 		out = append(out, monthly)
 	}
 
-	return out, nil
+	markets, err := s.marketSeries(ctx, p, index, steps)
+
+	return append(out, markets...), err
 }
 
 // dailySeries has one point per step date: the growth of the rates dated in [from, date]. The
@@ -104,4 +107,47 @@ func (s *Service) monthlySeries(ctx context.Context, p period) (IndexSeries, boo
 	}
 
 	return IndexSeries{Index: index, Period: "month", Points: points}, true, nil
+}
+
+// marketSeries draws each enabled market index, in the currency of the report, other than the one
+// already drawn. An index without a conversion to that currency, or without a rate in the period, is
+// left out.
+func (s *Service) marketSeries(
+	ctx context.Context,
+	p period,
+	drawn string,
+	steps []time.Time,
+) ([]IndexSeries, error) {
+	ids, err := s.md.MarketIndexes(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var out []IndexSeries
+
+	for _, id := range ids {
+		if id == drawn {
+			continue
+		}
+
+		rates, err := s.md.IndexRates(ctx, id, p.from.AddDate(0, 0, -1), p.to)
+		if err != nil {
+			return nil, err
+		}
+
+		rates, ok, err := s.inReportCurrency(ctx, p, id, rates)
+		if err != nil {
+			return nil, err
+		}
+
+		if !ok {
+			continue
+		}
+
+		if series, ok := dailySeries(id, rates, p.from, steps); ok {
+			out = append(out, series)
+		}
+	}
+
+	return out, nil
 }

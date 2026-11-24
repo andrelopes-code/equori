@@ -45,6 +45,9 @@ type FeedConfig struct {
 	// CurrentBound bounds the wait of a read for current quotes; WithFeeds sets 3 seconds when
 	// zero (A248 CQ14).
 	CurrentBound time.Duration
+	// RetryAfter is the wait after a tick in which a feed failed; WithFeeds sets 30 minutes when
+	// zero (A265 RI6).
+	RetryAfter time.Duration
 
 	Client *http.Client
 	Clock  clock.Clock
@@ -73,6 +76,10 @@ func (m *Module) WithFeeds(cfg FeedConfig) *Module {
 
 	if cfg.CurrentBound == 0 {
 		cfg.CurrentBound = 3 * time.Second
+	}
+
+	if cfg.RetryAfter == 0 {
+		cfg.RetryAfter = 30 * time.Minute
 	}
 
 	m.feeds = cfg

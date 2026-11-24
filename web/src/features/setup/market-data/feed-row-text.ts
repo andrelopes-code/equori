@@ -10,11 +10,11 @@ export interface FeedRowText {
   detail: string;
   // "Covers 28 instruments", for a price feed only.
   coverage: string | null;
-  issue: { tone: "danger" | "muted"; text: string } | null;
+  issue: { tone: "danger" | "warning" | "muted"; text: string } | null;
 }
 
-// The words under a feed's name: its kind and coverage, and the failure or the pending history
-// when there is one (ADR 025 F10; plan 2 D26).
+// The words under a feed's name: its kind and coverage, and the failure, the pending history or
+// the missing values when there is one (ADR 025 F10; plan 2 D26).
 export function feedRowText(f: Feed, t: TFunction, tag: string): FeedRowText {
   const count = (n: number) => numberFormatter(tag).format(n);
   const detail = [feedSource(t, f.id), t(`marketData.kind.${f.kind}`)].filter(
@@ -61,6 +61,13 @@ function issue(
       text: t("settings.feeds.historyPending.other", {
         count: count(f.history_pending),
       }),
+    };
+  if (f.missing === 1)
+    return { tone: "warning", text: t("settings.feeds.missing.one") };
+  if (f.missing > 1)
+    return {
+      tone: "warning",
+      text: t("settings.feeds.missing.other", { count: count(f.missing) }),
     };
 
   return null;

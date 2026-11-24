@@ -32,6 +32,7 @@ interface Feed {
   suggested: boolean;
   last: string | null;
   stale: boolean;
+  missing: number;
   last_run: string | null;
   error: string | null;
   official: boolean;
@@ -48,6 +49,7 @@ function feeds(patch: Record<string, Partial<Feed>> = {}): Feed[] {
     suggested: ["b3_cotahist", "bcb_ptax", "br_cdi", "br_ipca"].includes(id),
     last: null,
     stale: false,
+    missing: 0,
     last_run: null,
     error: null,
     official: true,

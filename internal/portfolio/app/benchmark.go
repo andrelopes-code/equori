@@ -302,7 +302,7 @@ func (p period) countCredits(b *Benchmark, w window) bool {
 
 // benchmarkRates returns the index of the comparison and its rates in [from − 1, to]. Without a
 // named index, the region's default applies, and a default with no rate gives none. An index of
-// another currency than the report's gives none (R15).
+// another currency than the report's is converted, or gives none (R15, A265 MI8).
 func (s *Service) benchmarkRates(
 	ctx context.Context,
 	p period,
@@ -334,7 +334,12 @@ func (s *Service) benchmarkRates(
 		return "", nil, err
 	}
 
-	if !s.inIndexCurrency(index, p.report) {
+	rates, ok, err := s.inReportCurrency(ctx, p, index, rates)
+	if err != nil {
+		return "", nil, err
+	}
+
+	if !ok {
 		p.unavailable(ReasonCurrencyMismatch)
 
 		return "", nil, nil

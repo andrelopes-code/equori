@@ -21,6 +21,7 @@ function feed(patch: Partial<Feed> = {}): Feed {
     suggested: false,
     last: "2026-11-13",
     stale: false,
+    missing: 0,
     last_run: null,
     error: null,
     official: true,
@@ -54,6 +55,15 @@ describe("feedRowText", () => {
     [1, "Covers 1 instrument"],
   ])("writes a coverage of %i", (covers, text) => {
     expect(feedRowText(feed({ covers }), t, "en-US").coverage).toBe(text);
+  });
+
+  it.each([
+    [1, "1 value missing in the history"],
+    [12, "12 values missing in the history"],
+  ])("states %i missing values of an index", (missing, text) => {
+    expect(
+      feedRowText(feed({ kind: "index", missing }), t, "en-US").issue,
+    ).toEqual({ tone: "warning", text });
   });
 
   it("has no coverage for an index feed", () => {

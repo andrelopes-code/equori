@@ -11,8 +11,8 @@ Amendment A265. Owner, 2026-11-24: the fundamental indexes and quotes that the c
 | `br_banking` against the dates of `cdi`, `selic`, `usd_brl` | The two sets are equal over the whole history |
 | Ibovespa of the B3 site (`indexStatisticsProxy`) | 5,424 sessions, 2005-01-03 to 2026-11-23 |
 | Ibovespa of Yahoo (`^BVSP`) against the B3 | 3 sessions missing, 99 closes off by more than 0.1% |
-| S&P 500 total return (`^SP500TR`) against `^GSPC` | The same 5,257 dates; 10 days whose total return is outside the price return by more than a dividend explains (−0.57% on 2019-07-03, undone on 2019-07-05). Years: 2008 −37.00%, 2019 31.49%, 2022 −18.11%, 2024 25.02% |
-| FTSE Global All Cap (`GEISAC.FGI`) | One day of history. The ETF VT, which follows it since 2011-12-19, has a close and a close with reinvested distributions since 2008-06-26 |
+| S&P 500 total return (`^SP500TR`) against `^GSPC` | The same 5,257 dates; 9 closes away from the median of their neighbors by 0.03% or more, each undone by the next session (−0.57% on 2019-07-03, −0.29% on 2019-03-12, −0.21% on 2014-12-09). Years: 2008 −37.00%, 2019 31.49%, 2022 −18.11%, 2024 25.02% |
+| FTSE Global All Cap (`GEISAC.FGI`) | One day of history. The ETF VT, which follows it since 2011-12-19, has a close and a close with reinvested distributions since 2008-06-26; the two differ by its 61 distributions exactly |
 | BVMF instruments | No session without a price where COTAHIST was loaded, BPAC11 of 2017 excepted (no trade). Every other hole lies in years only Yahoo covered |
 | COTAHIST 2006 | 20,433 spot records quoted per lot of 1,000 (`FATCOT`), SBSP3 among them |
 | COTAHIST sizes, 2006 to 2026 | 9.3 to 108.3 MB a year, 685 MB in all |
@@ -40,11 +40,11 @@ Causes of holes, read in the code: `tickIndex` resumes from the latest rate, so 
 | MI1 | Sources: `br_ibovespa` (index `ibovespa`) and `br_ifix` (`ifix`), B3, daily closes of `GetPortfolioDay`, one request a year; `us_sp500` (`sp500`), the S&P 500 total return; `global_ftse` (`ftse_global`), the FTSE Global All Cap through the ETF VT with reinvested distributions, from 2011-12-19. Ibovespa and IFIX include distributions by their method, so the four compare total returns. |
 | MI2 | A market index is stored as the rate of each session: the close over the close of the session before, less 1, at 12 decimals. It is `daily`, so every reader of a daily index reads it. |
 | MI3 | A close enters after its session: the date is before today in the time zone of the exchange, or the session ended (B3: from 19:00 São Paulo). |
-| MI4 | Total return check: the total return of a session less its price return lies in [−0.0003, 0.004] for `sp500` and [−0.0005, 0.02] for VT. Outside it, or without a total return close, the session takes the price return, and the next session is measured from that level. More than 5 sessions in a row outside the band fail the fetch. |
+| MI4 | Total return check: the ratio of the total return to the price moves by the distributions alone. A ratio more than 0.03% away from the median of the 7 ratios around it is a wrong close: the session takes the median, as one without a total return close does. A session without 3 neighbors on one side may hold a distribution up to the largest of the index (`sp500` 0.12%, VT 3%). A median outside [−0.03%, that largest distribution] of the one before it fails the fetch: the source changed. |
 | MI5 | `official` of `us_sp500` and `global_ftse` is false: enabling them needs `accept_unofficial` (MQ22). `SuggestedFeeds("BR")` names `br_ibovespa` and `br_ifix`. |
 | MI6 | `GET /indexes` states `kind`: `rate` or `market`. A market index is not offered by the calculators and by the fixed income entry: no contract pays it. |
 | MI7 | `indexCurrency`: `ibovespa`, `ifix`, `selic`, `igpm`, `usd_brl` `BRL`; `sp500`, `ftse_global`, `sofr` `USD`; `estr` `EUR`. |
-| MI8 | `GET /reports/return?index=`: an index of another currency than the report is converted through the daily exchange index of the pair (`exchangeIndex` in `internal/portfolio/region_defaults.go`: `usd_brl` for USD to BRL). The converted rate of a day is `(1 + index)(1 + exchange) − 1`, a day without one of the two taking 0 for it, over the dates between the first and the last rate of the index. Without an exchange index, or with it disabled, the reason stays `currency_mismatch`. |
+| MI8 | `GET /reports/return?index=`: an index of another currency than the report is converted through the daily exchange index of the pair (`exchangeIndex` in `internal/portfolio/region_defaults.go`: `usd_brl` for USD to BRL). The converted rate of a day is `(1 + index)(1 + exchange) − 1`, a day without one of the two taking 0 for it, over the dates between the first and the last rate of the index. Without an exchange index, or with it disabled, the reason stays `currency_mismatch`. The return series draws each enabled market index in the currency of the report (portfolio results PS8). |
 | MI9 | The levels in points are not stored. No screen of this change reads them. |
 
 ### Instrument prices (PH)
@@ -96,7 +96,7 @@ Causes of holes, read in the code: `tickIndex` resumes from the latest rate, so 
 | D5 | Does not apply. |
 | S1 | No operation; `kind`, `missing` fields of existing ones. |
 | S2 | The settings screen and the instrument page keep their phone forms. |
-| S3 | The article of the topic `market data`. |
+| S3 | The article `settings_language_and_region.md`. |
 | S4 | `get_market` lists indexes and rates; the new ids appear without a change of schema. |
 | X1 | S701 whole read repairs a hole and a revision. S702 accrued prices follow a revised rate. S703 Ibovespa and IFIX. S704 S&P 500 with a wrong total return close. S705 unofficial index needs acceptance. S706 return against the S&P 500 in BRL. S707 a hole of prices is filled from a year file. S708 a session without a trade is recorded once. |
 | X2 | S706 (report currency other than the index's); a region without an exchange index keeps `currency_mismatch`. |

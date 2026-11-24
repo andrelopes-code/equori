@@ -53,6 +53,11 @@ export const marketDataPtBR: Record<keyof typeof marketDataEn, string> = {
   "marketData.feed.br_cvm_fii": "Informes mensais de fundos imobiliários (CVM)",
   "marketData.feed.br_cvm_cia": "Demonstrações de companhias abertas (CVM)",
   "marketData.feed.us_cpi": "CPI-U (Bureau of Labor Statistics)",
+  "marketData.feed.br_ibovespa": "Ibovespa (B3)",
+  "marketData.feed.br_ifix": "IFIX (B3)",
+  "marketData.feed.us_sp500": "S&P 500 com dividendos (Yahoo Finance)",
+  "marketData.feed.global_ftse":
+    "FTSE Global All Cap, pelo ETF VT (Yahoo Finance)",
   "settings.feeds.current": "Cotação atual",
   "settings.feeds.currentFailed": "Cotação atual falhou: {error}",
   "settings.feeds.covers.none": "Não cobre nenhum ativo",
@@ -61,10 +66,14 @@ export const marketDataPtBR: Record<keyof typeof marketDataEn, string> = {
   "settings.feeds.historyPending.one": "Carregando histórico: 1 pendente",
   "settings.feeds.historyPending.other":
     "Carregando histórico: {count} pendentes",
+  "settings.feeds.missing.one": "1 valor ausente no histórico",
+  "settings.feeds.missing.other": "{count} valores ausentes no histórico",
   "settings.feeds.unofficial.tag": "Não oficial",
   "settings.feeds.unofficial.title": "Ativar uma fonte não oficial",
   "settings.feeds.unofficial.description":
     "Esta fonte não é oficial: não publica termos para este uso e pode parar de responder sem aviso. As cotações dela preenchem apenas as datas que nenhuma fonte oficial cobre.",
+  "settings.feeds.unofficial.indexDescription":
+    "Esta fonte não é oficial: não publica termos para este uso e pode parar de responder sem aviso. Nenhuma fonte oficial do equori publica este índice.",
   "settings.feeds.unofficial.confirm": "Ativar",
   "marketData.kind.price": "Preço",
   "marketData.kind.index": "Índice",
@@ -75,6 +84,7 @@ export const marketDataPtBR: Record<keyof typeof marketDataEn, string> = {
   "marketData.kind.company_report": "Demonstrações de companhia",
   "marketData.status.upToDate": "Em dia",
   "marketData.status.overdue": "Atrasada",
+  "marketData.status.incomplete": "Incompleta",
   "marketData.status.failed": "Falhou",
   "marketData.status.noData": "Sem dados",
   "marketData.status.disabled": "Desativada",
@@ -138,4 +148,12 @@ export const marketDataPtBR: Record<keyof typeof marketDataEn, string> = {
   "marketData.feedSource.br_cvm_cia": "CVM",
   "marketData.feedName.us_cpi": "CPI-U",
   "marketData.feedSource.us_cpi": "Bureau of Labor Statistics",
+  "marketData.feedName.br_ibovespa": "Ibovespa",
+  "marketData.feedSource.br_ibovespa": "B3",
+  "marketData.feedName.br_ifix": "IFIX",
+  "marketData.feedSource.br_ifix": "B3",
+  "marketData.feedName.us_sp500": "S&P 500 com dividendos",
+  "marketData.feedSource.us_sp500": "Yahoo Finance",
+  "marketData.feedName.global_ftse": "FTSE Global All Cap (ETF VT)",
+  "marketData.feedSource.global_ftse": "Yahoo Finance",
 };

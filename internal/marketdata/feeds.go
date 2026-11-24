@@ -11,21 +11,32 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
-// RunFeeds ticks now, then every interval and at every request for a tick (A222 MQ10), until ctx
-// ends, skipping a tick while a requested one runs; then it stops a requested tick and waits for
-// it.
+// RunFeeds ticks now, then every interval, RetryAfter after a tick in which a feed failed (A265 RI6)
+// and at every request for a tick (A222 MQ10), until ctx ends, skipping a tick while a requested one
+// runs; then it stops a requested tick and waits for it.
 func (m *Module) RunFeeds(ctx context.Context, interval time.Duration) {
-	t := time.NewTicker(interval)
+	t := time.NewTimer(interval)
 	defer t.Stop()
 	defer m.refreshes.Wait()
 	defer m.stop()
 
 	for {
+		wait := interval
+
 		if m.running.CompareAndSwap(false, true) {
 			m.again.Store(false)
+
+			start := m.feeds.Clock.Now()
 			m.TickFeeds(ctx)
+
+			if m.failedSince(start) {
+				wait = min(interval, m.feeds.RetryAfter)
+			}
+
 			m.running.Store(false)
 		}
+
+		t.Reset(wait)
 
 		select {
 		case <-ctx.Done():

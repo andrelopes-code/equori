@@ -11,6 +11,9 @@ export function feedRegion(id: string): string {
     case "br_ipca":
     case "br_selic":
     case "br_igpm":
+    case "br_ptax_usd":
+    case "br_ibovespa":
+    case "br_ifix":
     case "br_focus":
     case "br_focus_ipca":
     case "br_tesouro":
@@ -24,6 +27,7 @@ export function feedRegion(id: string): string {
       return "EU";
     case "us_sofr":
     case "us_cpi":
+    case "us_sp500":
       return "US";
     default:
       return "global";

@@ -17,6 +17,7 @@ type feedAPI struct {
 	Suggested bool    `json:"suggested"`
 	Last      *string `json:"last"`
 	Stale     bool    `json:"stale"`
+	Missing   int     `json:"missing"`
 	LastRun   *string `json:"last_run"`
 	Error     *string `json:"error"`
 
@@ -58,6 +59,10 @@ func feedsOf(t *testing.T, h *apitest.Harness) map[string]feedAPI {
 		"ea_hicp",
 		"us_sofr",
 		"us_cpi",
+		"br_ibovespa",
+		"br_ifix",
+		"us_sp500",
+		"global_ftse",
 		"br_focus",
 		"br_focus_ipca",
 		"br_tesouro",

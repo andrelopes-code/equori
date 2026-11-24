@@ -24,7 +24,8 @@ type chartAnswer struct {
 			Timestamp  []int64     `json:"timestamp"`
 			Events     chartEvents `json:"events"`
 			Indicators struct {
-				Quote []series `json:"quote"`
+				Quote    []series   `json:"quote"`
+				Adjusted []adjusted `json:"adjclose"`
 			} `json:"indicators"`
 		} `json:"result"`
 	} `json:"chart"`

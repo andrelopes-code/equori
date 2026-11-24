@@ -151,7 +151,7 @@ func (s Source) Fetch(ctx context.Context, from, to time.Time) ([]index.Rate, er
 	}
 
 	if s.quotes {
-		return s.parseQuotes(body)
+		return s.parseQuotes(body, from)
 	}
 
 	return s.parseRates(body)
@@ -197,48 +197,31 @@ func (s Source) parseRates(body []byte) ([]index.Rate, error) {
 	return out, nil
 }
 
-// parseQuotes turns the quotes of the body, which reach before the days asked, into the variation
-// of each quote day from the quote day before, rounded half to even to 12 decimals.
-func (s Source) parseQuotes(body []byte) ([]index.Rate, error) {
+// parseQuotes turns the quotes of the body, which reach before from, into the variation of each
+// quote day from the quote day before.
+func (s Source) parseQuotes(body []byte, from time.Time) ([]index.Rate, error) {
 	var items []item
 	if err := json.Unmarshal(body, &items); err != nil {
 		return nil, fmt.Errorf("%s: decode: %w", s.id, err)
 	}
 
-	var out []index.Rate
+	levels := make([]index.Level, len(items))
 
-	for i := 0; i+1 < len(items); i++ {
-		date, err := time.Parse(dateLayout, items[i+1].Date)
+	for i, it := range items {
+		date, err := time.Parse(dateLayout, it.Date)
 		if err != nil {
-			return out, fmt.Errorf("%s: date %q: %w", s.id, items[i+1].Date, err)
+			return nil, fmt.Errorf("%s: date %q: %w", s.id, it.Date, err)
 		}
 
-		now, okNow := new(big.Rat).SetString(items[i].Value)
-
-		next, okNext := new(big.Rat).SetString(items[i+1].Value)
-		if !okNow || !okNext || now.Sign() <= 0 {
-			return out, fmt.Errorf("%s: quote of %s is not a positive decimal", s.id, items[i].Date)
-		}
-
-		v := new(big.Rat).Sub(new(big.Rat).Quo(next, now), big.NewRat(1, 1))
-		out = append(out, index.Rate{Date: date, Value: roundHalfEven(v)})
+		levels[i] = index.Level{Date: date, Value: it.Value}
 	}
 
-	return out, nil
-}
-
-// roundHalfEven writes r with 12 decimals, a tie to the even last digit.
-func roundHalfEven(r *big.Rat) string {
-	scale := new(big.Int).Exp(big.NewInt(10), big.NewInt(decimals), nil)
-	n := new(big.Int).Mul(r.Num(), scale)
-	q, m := new(big.Int).QuoRem(n, r.Denom(), new(big.Int))
-
-	twice := new(big.Int).Abs(new(big.Int).Lsh(m, 1))
-	if c := twice.Cmp(r.Denom()); c > 0 || c == 0 && q.Bit(0) == 1 {
-		q.Add(q, big.NewInt(int64(n.Sign())))
+	rates, err := index.Changes(levels, from)
+	if err != nil {
+		return rates, fmt.Errorf("%s: %w", s.id, err)
 	}
 
-	return new(big.Rat).SetFrac(q, scale).FloatString(decimals)
+	return rates, nil
 }
 
 // percentToFraction turns "0.055131" (percent) into "0.000551310000" exactly.

@@ -153,6 +153,7 @@ export function instrumentsApi(overrides: Record<string, Route> = {}) {
             {
               id: "cdi",
               expected: false,
+              kind: "rate",
               period: "day",
               first: "2020-01-01",
               last: "2026-10-16",
@@ -160,6 +161,7 @@ export function instrumentsApi(overrides: Record<string, Route> = {}) {
             {
               id: "ipca",
               expected: true,
+              kind: "rate",
               period: "month",
               first: "2020-01-01",
               last: "2026-09-01",

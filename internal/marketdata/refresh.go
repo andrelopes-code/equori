@@ -57,6 +57,20 @@ func (m *Module) ran(id string, err error) {
 	m.runs[id] = run
 }
 
+// failedSince reports whether a feed failed in a run at or after start.
+func (m *Module) failedSince(start time.Time) bool {
+	m.runsMu.Lock()
+	defer m.runsMu.Unlock()
+
+	for _, run := range m.runs {
+		if run.err != "" && !run.at.Before(start) {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (m *Module) requireAdmin(ctx context.Context) error {
 	ok, err := m.admins.IsAdmin(ctx, auth.MustMemberID(ctx))
 	if err != nil {

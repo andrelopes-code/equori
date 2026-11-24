@@ -55,6 +55,9 @@ type Config struct {
 	// CurrentBound bounds the wait of a read for current quotes; zero keeps the default of
 	// marketdata.WithFeeds (A248 CQ14).
 	CurrentBound time.Duration
+	// RetryAfter is the wait after a tick in which a feed failed; zero keeps the default of
+	// marketdata.
+	RetryAfter time.Duration
 	// ExtraTools join the registry and the chat set; production passes none.
 	ExtraTools []tool.Group
 	// Instance configures backups and the encrypted copy; New sets Version, the keys, Clock, Admins,

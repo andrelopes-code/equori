@@ -11,7 +11,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { ApiProvider } from "@/api/api-context";
 import type { paths } from "@/api/schema.gen";
 import { useIndexList } from "@/features/calculators/rate-source/use-index-rate";
-import { calculatorApiRoutes } from "@/testing/calculator-api";
+import { calculatorApiRoutes, cdiFixture } from "@/testing/calculator-api";
 import { fakeApi } from "@/testing/fake-api";
 
 describe("useIndexList", () => {
@@ -35,6 +35,14 @@ describe("useIndexList", () => {
 
     expect(result.current.paused).toBe(false);
   });
+
+  it("leaves out the index of a market, which no contract pays", async () => {
+    const { result } = renderHook(() => useIndexList(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.indexes.map((x) => x.id)).toEqual(["cdi"]);
+    });
+  });
 });
 
 function wrapper({ children }: { children: ReactNode }) {
@@ -42,8 +50,18 @@ function wrapper({ children }: { children: ReactNode }) {
     defaultOptions: { queries: { retry: false } },
   });
   const client = createClient<paths>({
-    baseUrl: "http://localhost",
-    fetch: fakeApi(calculatorApiRoutes()),
+    baseUrl: "http://localhost/api/v1",
+    fetch: fakeApi(
+      calculatorApiRoutes([
+        cdiFixture(),
+        {
+          id: "ibovespa",
+          period: "day",
+          kind: "market",
+          rates: [{ date: "2026-10-16", rate: "0.01" }],
+        },
+      ]),
+    ),
   });
 
   return (

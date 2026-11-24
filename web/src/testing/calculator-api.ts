@@ -4,6 +4,7 @@ import { sharedRoutes } from "@/testing/transaction-api";
 interface IndexFixture {
   id: string;
   period: "day" | "month";
+  kind?: "rate" | "market";
   rates: { date: string; rate: string }[];
   // The latest survey of the index's expected path (ADR 026), when it has one.
   expectations?: {
@@ -93,6 +94,7 @@ export function calculatorApiRoutes(
         items: indexes.map((x) => ({
           id: x.id,
           period: x.period,
+          kind: x.kind ?? "rate",
           first: x.rates[0]?.date,
           last: x.rates.at(-1)?.date,
           expected: x.expectations !== undefined,

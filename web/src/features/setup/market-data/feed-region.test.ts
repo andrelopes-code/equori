@@ -13,6 +13,9 @@ describe("feedRegion", () => {
     ["br_ipca", "BR"],
     ["br_selic", "BR"],
     ["br_igpm", "BR"],
+    ["br_ptax_usd", "BR"],
+    ["br_ibovespa", "BR"],
+    ["br_ifix", "BR"],
     ["br_focus", "BR"],
     ["br_focus_ipca", "BR"],
     ["br_tesouro", "BR"],
@@ -24,6 +27,8 @@ describe("feedRegion", () => {
     ["ea_hicp", "EU"],
     ["us_sofr", "US"],
     ["us_cpi", "US"],
+    ["us_sp500", "US"],
+    ["global_ftse", "global"],
     ["coinbase", "global"],
     ["yahoo_chart", "global"],
   ])("places %s in %s", (id, region) => {

@@ -1,10 +1,12 @@
 package marketdata_test
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
 )
@@ -224,4 +226,54 @@ func TestRevisedRateRecomputesTheAccrual(t *testing.T) {
 			before,
 		)
 	}
+}
+
+// RI6: a tick in which a feed failed is repeated after the retry wait, not after the interval; a
+// tick without a failure waits for the interval.
+func TestRunFeedsRetriesAfterAFailure(t *testing.T) {
+	t.Parallel()
+
+	requests := make(chan struct{}, 100)
+	fail := true
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests <- struct{}{}
+
+		if fail {
+			fail = false
+
+			http.Error(w, "busy", http.StatusServiceUnavailable)
+
+			return
+		}
+
+		(&sgsServer{cdi: cdiWeek}).ServeHTTP(w, r)
+	}))
+	t.Cleanup(srv.Close)
+	h := apitest.New(
+		t,
+		apitest.Today("2026-01-09"),
+		apitest.RetryAfter(time.Millisecond),
+		apitest.IndexFeeds([]string{"br_cdi"}, indexURLs(srv)),
+	)
+
+	ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
+	defer cancel()
+
+	done := make(chan struct{})
+	go func() {
+		h.App.Marketdata.RunFeeds(ctx, time.Hour)
+		close(done)
+	}()
+
+	// One failed request, then the five windows of the whole read.
+	for range 6 {
+		select {
+		case <-requests:
+		case <-ctx.Done():
+			t.Fatal("the failed tick was not repeated")
+		}
+	}
+
+	cancel()
+	<-done
 }

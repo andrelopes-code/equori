@@ -10,7 +10,9 @@ An admin enables and disables each feed under Settings, "Market data" (ADR 025).
 
 Price feeds: `bcb_ptax`, `b3_cotahist`, `b3_consolidated`, `ecb`, `tesouro_direto`, `cvm_funds`, `coinbase`, `yahoo_chart`. With no feed enabled, equori sends no feed request (N17).
 
-Index feeds: `br_cdi`, `br_ipca`, `eu_estr`, `ea_hicp`, `us_sofr`, `us_cpi`: the index series that accrue the price of a fixed income security that has terms (`PUT /instruments/{code}/terms`). Empty: no index request. An enabled index is fetched from 20 years before today, or from the earliest issue date of a security that follows it when that is earlier. The calculators read the stored rates (`GET /indexes`).
+Index feeds: `br_cdi`, `br_ipca`, `br_selic`, `br_igpm`, `br_ptax_usd`, `eu_estr`, `ea_hicp`, `us_sofr`, `us_cpi`: the index series that accrue the price of a fixed income security that has terms (`PUT /instruments/{code}/terms`). Empty: no index request. An enabled index is fetched from 20 years before today, or from the earliest issue date of a security that follows it when that is earlier. The calculators read the stored rates (`GET /indexes`). The whole history is read again every 7 days and, once a day, while an expected day has no rate; a rate that differs from the stored one replaces it and the log line `index revised` states it (A265 RI1 to RI4).
+
+Market index feeds: `br_ibovespa`, `br_ifix`, `us_sp500`, `global_ftse`: total return indexes a portfolio is compared with (A265 MI1). `us_sp500` and `global_ftse` are unofficial: enabling them needs a confirmation. `global_ftse` is the ETF VT with its distributions reinvested, since 2011-12-19. A return report in reais compares with them through `br_ptax_usd`, which must be enabled.
 
 | Variable | Default | Meaning |
 |---|---|---|
@@ -25,6 +27,8 @@ Index feeds: `br_cdi`, `br_ipca`, `eu_estr`, `ea_hicp`, `us_sofr`, `us_cpi`: the
 | `EQUORI_FEED_EA_HICP_URL` | `https://ec.europa.eu` | Base URL of the Eurostat dissemination API: dataset `prc_hicp_minr`, the euro area's all-items HICP (`geo=EA`, `coicop18=TOTAL`, index 2025 = 100). Each month is stored as its level over the month before, minus 1, on its first day. |
 | `EQUORI_FEED_US_SOFR_URL` | `https://markets.newyorkfed.org` | Base URL of the Markets Data API of the Federal Reserve Bank of New York: SOFR, percent a year on an actual/360 basis, stored as `eu_estr` is. |
 | `EQUORI_FEED_US_CPI_URL` | `https://api.bls.gov` | Base URL of the public API of the Bureau of Labor Statistics, version 1: series `CUUR0000SA0` (CPI-U, all items, U.S. city average, not seasonally adjusted), stored as `ea_hicp` is. Version 1 takes no key and answers 25 requests a day from one address; a first fetch of 20 years takes five. |
+| `EQUORI_FEED_BR_IBOVESPA_URL`, `EQUORI_FEED_BR_IFIX_URL` | `https://sistemaswebb3-listados.b3.com.br` | Base URL of the B3 index statistics: `indexStatisticsProxy/IndexCall/GetPortfolioDay/{query}`, one request per year, the daily closes of `IBOVESPA` and `IFIX`. A close enters from 19:00 in São Paulo. |
+| `EQUORI_FEED_US_SP500_URL`, `EQUORI_FEED_GLOBAL_FTSE_URL` | `https://query1.finance.yahoo.com/v8/finance/chart` | Base URL of the Yahoo Finance chart API: `^SP500TR` checked against `^GSPC`, and the adjusted closes of `VT` checked against its closes. A total return away from the median of its neighbors by more than 0.03% is replaced by it (A265 MI4). |
 | `EQUORI_FEED_BR_FOCUS_URL` | `https://olinda.bcb.gov.br/olinda/servico/Expectativas/versao/v1/odata` | Base URL of the Expectativas API of the Banco Central do Brasil: the Focus survey's medians of the Selic target at each year end, stored as the expected CDI (ADR 026). `br_focus` is enabled only on the settings screen. |
 | `EQUORI_FEED_BR_FOCUS_IPCA_URL` | `https://olinda.bcb.gov.br/olinda/servico/Expectativas/versao/v1/odata` | Base URL of the Expectativas API of the Banco Central do Brasil: the Focus survey's medians of the IPCA at each year end, stored as the expected `ipca` (ADR 026 E12). `br_focus_ipca` is enabled only on the settings screen. |
 | `EQUORI_FEED_BR_TESOURO_URL` | `https://www.tesourotransparente.gov.br/ckan/dataset/df56aa42-484a-4a59-8184-7676580c81e3/resource/796d2059-14e9-44e3-80c9-2d9e30b405c1/download/PrecoTaxaTesouroDireto.csv` | URL of the Tesouro Transparente CSV file `tesouro_direto` reads: the buy rates of Tesouro Prefixado and Tesouro IPCA+ on the latest base date, stored as the curves `br_tesouro_prefixed` and `br_tesouro_ipca` (indexer comparison IC11). `br_tesouro` is enabled only on the settings screen. |
@@ -36,6 +40,7 @@ Index feeds: `br_cdi`, `br_ipca`, `eu_estr`, `ea_hicp`, `us_sofr`, `us_cpi`: the
 A network allowlist for the container adds `olinda.bcb.gov.br` and `bvmf.bmfbovespa.com.br`
 for the enabled feeds (`arquivos.b3.com.br` for `b3_consolidated`; `www.ecb.europa.eu` for `ecb`; `www.tesourotransparente.gov.br` for `tesouro_direto`; `dados.cvm.gov.br` for `cvm_funds`; `api.coinbase.com` for `coinbase`; `query1.finance.yahoo.com` for `yahoo_chart`; `api.bcb.gov.br` for `br_cdi` and
 `br_ipca`; `data-api.ecb.europa.eu` for `eu_estr`; `ec.europa.eu` for `ea_hicp`;
+`sistemaswebb3-listados.b3.com.br` for `br_ibovespa` and `br_ifix`; `query1.finance.yahoo.com` for `us_sp500` and `global_ftse`;
 `markets.newyorkfed.org` for `us_sofr`; `api.bls.gov` for `us_cpi`; `olinda.bcb.gov.br` for `br_focus`).
 
 ## 2. Sources
@@ -55,7 +60,7 @@ A currency the BCB does not quote returns an empty answer and stores nothing.
 
 ## 3. Schedule
 
-The feeds run at start and every 6 hours. Each run fetches from the day after the latest
+The feeds run at start and every 6 hours, and 30 minutes after a run in which one failed. Each run fetches from the day after the latest
 price of the source (per currency for `bcb_ptax`) to today, never earlier than today − 30
 days. A day or currency without data (404, or 400 for `b3_consolidated`) is skipped. A
 `b3_consolidated` file whose status is not `Final` ends the run without a failure. Any other

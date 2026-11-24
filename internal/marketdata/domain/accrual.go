@@ -25,11 +25,12 @@ type IndexRate struct {
 	Rate string
 }
 
-// IndexSummary is an enabled index with stored rates: its period (day or month) and the dates
-// of its first and last rate.
+// IndexSummary is an enabled index with stored rates: its period (day or month), its kind (rate or
+// market) and the dates of its first and last rate.
 type IndexSummary struct {
 	ID          string
 	Period      string
+	Kind        string
 	First, Last time.Time
 	// Expected is set when an enabled expectation source stored points for the index (ADR 026).
 	Expected bool

@@ -17,6 +17,7 @@ function feed(patch: Partial<Feed> = {}): Feed {
     suggested: false,
     last: "2026-11-12",
     stale: false,
+    missing: 0,
     last_run: null,
     error: null,
     official: true,
@@ -36,6 +37,8 @@ describe("feedStatus", () => {
     [{ stale: true }, "overdue", "warning"],
     [{ error: "HTTP 503" }, "failed", "danger"],
     [{ error: "HTTP 503", stale: true }, "failed", "danger"],
+    [{ missing: 2 }, "incomplete", "warning"],
+    [{ missing: 2, stale: true }, "overdue", "warning"],
     [{ last: null }, "noData", "muted"],
     [{ enabled: false }, "disabled", "muted"],
     [{ enabled: false, error: "HTTP 503", stale: true }, "disabled", "muted"],
@@ -48,6 +51,7 @@ describe("feedHasProblem", () => {
   it("is true for an enabled feed that is overdue or failed", () => {
     expect(feedHasProblem(feed({ stale: true }))).toBe(true);
     expect(feedHasProblem(feed({ error: "x" }))).toBe(true);
+    expect(feedHasProblem(feed({ missing: 1 }))).toBe(true);
   });
 
   it("is false for a disabled feed, whatever its state", () => {

@@ -489,6 +489,10 @@ func TestNewIndexSources(t *testing.T) {
 			"ea_hicp",
 			"us_sofr",
 			"us_cpi",
+			"br_ibovespa",
+			"br_ifix",
+			"us_sp500",
+			"global_ftse",
 		},
 	) {
 		t.Fatalf("IndexSourceIDs = %v", got)
@@ -498,6 +502,7 @@ func TestNewIndexSources(t *testing.T) {
 		[]string{"nope"},
 		nil,
 		http.DefaultClient,
+		time.Now,
 	); err == nil || !strings.Contains(err.Error(), "unknown index feed") ||
 		!strings.Contains(err.Error(), "nope") {
 		t.Fatalf("error = %v", err)
@@ -507,6 +512,7 @@ func TestNewIndexSources(t *testing.T) {
 		[]string{"br_cdi"},
 		nil,
 		http.DefaultClient,
+		time.Now,
 	); err != nil || len(got) != 1 ||
 		got[0].ID() != "br_cdi" {
 		t.Fatalf("sources = %v, %v", got, err)

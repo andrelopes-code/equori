@@ -120,6 +120,24 @@ func (e HolidaySource) Valid() bool {
 	}
 }
 
+// Defines values for IndexKind.
+const (
+	IndexKindMarket IndexKind = "market"
+	IndexKindRate   IndexKind = "rate"
+)
+
+// Valid indicates whether the value is a known member of the IndexKind enum.
+func (e IndexKind) Valid() bool {
+	switch e {
+	case IndexKindMarket:
+		return true
+	case IndexKindRate:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for IndexPeriod.
 const (
 	Day   IndexPeriod = "day"
@@ -661,11 +679,17 @@ type Index struct {
 	Expected bool               `json:"expected"`
 	First    openapi_types.Date `json:"first"`
 	Id       string             `json:"id"`
-	Last     openapi_types.Date `json:"last"`
+
+	// Kind A rate a contract pays, or the growth of a market that no contract pays (A265 MI6).
+	Kind IndexKind          `json:"kind"`
+	Last openapi_types.Date `json:"last"`
 
 	// Period The span one rate covers.
 	Period IndexPeriod `json:"period"`
 }
+
+// IndexKind A rate a contract pays, or the growth of a market that no contract pays (A265 MI6).
+type IndexKind string
 
 // IndexPeriod The span one rate covers.
 type IndexPeriod string
@@ -963,6 +987,9 @@ type MarketDataFeed struct {
 
 	// LastRun The last tick that ran the feed since the process started.
 	LastRun *time.Time `json:"last_run"`
+
+	// Missing The expected days of an index without a rate; 0 for any other feed (A265 RI4).
+	Missing int `json:"missing"`
 
 	// Official False for a source that publishes no terms for this use; its prices rank last (A222 MQ1).
 	Official bool `json:"official"`

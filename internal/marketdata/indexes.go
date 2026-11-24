@@ -10,79 +10,138 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/marketdata/domain"
 	"github.com/andrelopes-code/equori/internal/marketdata/index"
+	"github.com/andrelopes-code/equori/internal/marketdata/index/brb3"
 	"github.com/andrelopes-code/equori/internal/marketdata/index/brsgs"
 	"github.com/andrelopes-code/equori/internal/marketdata/index/cpi"
 	"github.com/andrelopes-code/equori/internal/marketdata/index/overnight"
+	"github.com/andrelopes-code/equori/internal/marketdata/index/totalreturn"
 	"github.com/andrelopes-code/equori/internal/marketdata/postgres"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 )
 
+// IndexKindMarket is the kind of an index that no contract pays (A265 MI6).
+const IndexKindMarket = index.KindMarket
+
 type indexEntry struct {
 	id         string
 	defaultURL string
-	// lag is the number of calendar days after the end of a period by which its rate is due
-	// (ADR 025 F9).
+	// lag is the number of calendar days after the end of a period by which the rate of a monthly
+	// index is due (ADR 025 F9); a daily one is due by its business days (A265 RI5).
 	lag   int
-	build func(hc *http.Client, url string) index.Source
+	build func(hc *http.Client, url string, now func() time.Time) index.Source
+	// unofficial is true for a source that publishes no terms for this use (A222 MQ1, A265 MI5).
+	unofficial bool
 }
 
 func indexEntries() []indexEntry {
-	const sgs = "https://api.bcb.gov.br"
+	const (
+		sgs   = "https://api.bcb.gov.br"
+		b3    = "https://sistemaswebb3-listados.b3.com.br"
+		yahoo = "https://query1.finance.yahoo.com/v8/finance/chart"
+	)
 
 	return []indexEntry{
 		{
-			"br_cdi",
-			sgs,
-			5,
-			func(hc *http.Client, url string) index.Source { return brsgs.CDI(hc, url) },
+			id:         "br_cdi",
+			defaultURL: sgs,
+			lag:        5,
+			build: func(hc *http.Client, url string, _ func() time.Time) index.Source {
+				return brsgs.CDI(hc, url)
+			},
 		},
 		{
-			"br_ipca",
-			"https://apisidra.ibge.gov.br",
-			20,
-			func(hc *http.Client, url string) index.Source { return cpi.IPCA(hc, url) },
+			id:         "br_ipca",
+			defaultURL: "https://apisidra.ibge.gov.br",
+			lag:        20,
+			build: func(hc *http.Client, url string, _ func() time.Time) index.Source {
+				return cpi.IPCA(hc, url)
+			},
 		},
 		{
-			"br_selic",
-			sgs,
-			5,
-			func(hc *http.Client, url string) index.Source { return brsgs.Selic(hc, url) },
+			id:         "br_selic",
+			defaultURL: sgs,
+			lag:        5,
+			build: func(hc *http.Client, url string, _ func() time.Time) index.Source {
+				return brsgs.Selic(hc, url)
+			},
 		},
 		{
-			"br_igpm",
-			sgs,
-			20,
-			func(hc *http.Client, url string) index.Source { return brsgs.IGPM(hc, url) },
+			id:         "br_igpm",
+			defaultURL: sgs,
+			lag:        20,
+			build: func(hc *http.Client, url string, _ func() time.Time) index.Source {
+				return brsgs.IGPM(hc, url)
+			},
 		},
 		{
-			"br_ptax_usd",
-			sgs,
-			5,
-			func(hc *http.Client, url string) index.Source { return brsgs.Dollar(hc, url) },
+			id:         "br_ptax_usd",
+			defaultURL: sgs,
+			lag:        5,
+			build: func(hc *http.Client, url string, _ func() time.Time) index.Source {
+				return brsgs.Dollar(hc, url)
+			},
 		},
 		{
-			"eu_estr",
-			"https://data-api.ecb.europa.eu",
-			5,
-			func(hc *http.Client, url string) index.Source { return overnight.ESTR(hc, url) },
+			id:         "eu_estr",
+			defaultURL: "https://data-api.ecb.europa.eu",
+			lag:        5,
+			build: func(hc *http.Client, url string, _ func() time.Time) index.Source {
+				return overnight.ESTR(hc, url)
+			},
 		},
 		{
-			"ea_hicp",
-			"https://ec.europa.eu",
-			25,
-			func(hc *http.Client, url string) index.Source { return cpi.HICP(hc, url) },
+			id:         "ea_hicp",
+			defaultURL: "https://ec.europa.eu",
+			lag:        25,
+			build: func(hc *http.Client, url string, _ func() time.Time) index.Source {
+				return cpi.HICP(hc, url)
+			},
 		},
 		{
-			"us_sofr",
-			"https://markets.newyorkfed.org",
-			5,
-			func(hc *http.Client, url string) index.Source { return overnight.SOFR(hc, url) },
+			id:         "us_sofr",
+			defaultURL: "https://markets.newyorkfed.org",
+			lag:        5,
+			build: func(hc *http.Client, url string, _ func() time.Time) index.Source {
+				return overnight.SOFR(hc, url)
+			},
 		},
 		{
-			"us_cpi",
-			"https://api.bls.gov",
-			20,
-			func(hc *http.Client, url string) index.Source { return cpi.CPIU(hc, url) },
+			id:         "us_cpi",
+			defaultURL: "https://api.bls.gov",
+			lag:        20,
+			build: func(hc *http.Client, url string, _ func() time.Time) index.Source {
+				return cpi.CPIU(hc, url)
+			},
+		},
+		{
+			id:         "br_ibovespa",
+			defaultURL: b3,
+			build: func(hc *http.Client, url string, now func() time.Time) index.Source {
+				return brb3.Ibovespa(hc, url, now)
+			},
+		},
+		{
+			id:         "br_ifix",
+			defaultURL: b3,
+			build: func(hc *http.Client, url string, now func() time.Time) index.Source {
+				return brb3.IFIX(hc, url, now)
+			},
+		},
+		{
+			id:         "us_sp500",
+			defaultURL: yahoo,
+			build: func(hc *http.Client, url string, now func() time.Time) index.Source {
+				return totalreturn.SP500(hc, url, now)
+			},
+			unofficial: true,
+		},
+		{
+			id:         "global_ftse",
+			defaultURL: yahoo,
+			build: func(hc *http.Client, url string, now func() time.Time) index.Source {
+				return totalreturn.FTSEGlobal(hc, url, now)
+			},
+			unofficial: true,
 		},
 	}
 }
@@ -93,7 +152,7 @@ func businessDayIndexes() domain.BusinessDayIndexes {
 	var out domain.BusinessDayIndexes
 
 	for _, e := range indexEntries() {
-		s := e.build(nil, e.defaultURL)
+		s := e.build(nil, e.defaultURL, nil)
 		if c, ok := s.(index.BusinessDayCompounding); ok && c.CompoundsByBusinessDay() {
 			out = append(out, s.Index())
 		}
@@ -121,6 +180,7 @@ func NewIndexSources(
 	ids []string,
 	urls map[string]string,
 	hc *http.Client,
+	now func() time.Time,
 ) ([]index.Source, error) {
 	byID := make(map[string]indexEntry)
 	for _, e := range indexEntries() {
@@ -139,7 +199,7 @@ func NewIndexSources(
 			url = e.defaultURL
 		}
 
-		out = append(out, e.build(hc, url))
+		out = append(out, e.build(hc, url, now))
 	}
 
 	return out, nil
@@ -182,6 +242,7 @@ func (m *Module) Indexes(ctx context.Context) ([]IndexSummary, error) {
 				IndexSummary{
 					ID:       src.Index(),
 					Period:   src.Period(),
+					Kind:     index.KindOf(src),
 					First:    r.First,
 					Last:     r.Last,
 					Expected: slices.Contains(expected, src.Index()),

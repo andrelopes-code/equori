@@ -321,7 +321,7 @@ func newFeedConfig(
 		return marketdata.FeedConfig{}, err
 	}
 
-	if _, err := marketdata.NewIndexSources(cfg.IndexFeeds, nil, feedClient); err != nil {
+	if _, err := marketdata.NewIndexSources(cfg.IndexFeeds, nil, feedClient, clk.Now); err != nil {
 		return marketdata.FeedConfig{}, err
 	}
 
@@ -334,6 +334,7 @@ func newFeedConfig(
 		marketdata.IndexSourceIDs(),
 		cfg.FeedURLs,
 		feedClient,
+		clk.Now,
 	)
 	if err != nil {
 		return marketdata.FeedConfig{}, err
@@ -354,5 +355,6 @@ func newFeedConfig(
 		CatalogBound:   cfg.CatalogBound,
 		ProbeBound:     cfg.ProbeBound,
 		CurrentBound:   cfg.CurrentBound,
+		RetryAfter:     cfg.RetryAfter,
 	}, nil
 }

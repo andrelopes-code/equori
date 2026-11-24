@@ -3,7 +3,8 @@ import type { components } from "@/api/schema.gen";
 type Feed = components["schemas"]["MarketDataFeed"];
 
 export interface FeedStatus {
-  word: "upToDate" | "overdue" | "failed" | "noData" | "disabled";
+  word:
+    "upToDate" | "overdue" | "incomplete" | "failed" | "noData" | "disabled";
   tone: "ok" | "warning" | "danger" | "muted";
 }
 
@@ -19,12 +20,13 @@ export function feedStatus(f: Feed): FeedStatus {
   if (f.error !== null) return { word: "failed", tone: "danger" };
   if (f.last === null) return { word: "noData", tone: "muted" };
   if (f.stale) return { word: "overdue", tone: "warning" };
+  if (f.missing > 0) return { word: "incomplete", tone: "warning" };
 
   return { word: "upToDate", tone: "ok" };
 }
 
 export function feedHasProblem(f: Feed): boolean {
-  return f.enabled && (f.stale || f.error !== null);
+  return f.enabled && (f.stale || f.error !== null || f.missing > 0);
 }
 
 export function summarizeFeeds(feeds: readonly Feed[]): FeedSummary {

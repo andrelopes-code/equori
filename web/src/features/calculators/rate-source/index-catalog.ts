@@ -17,6 +17,25 @@ const traits: Record<string, IndexTraits> = {
   estr: { name: "€STR", form: "spread", currency: "EUR", dailySpread: true },
   sofr: { name: "SOFR", form: "spread", currency: "USD", dailySpread: true },
   hicp: { name: "HICP", form: "spread", currency: "EUR", dailySpread: false },
+  ibovespa: {
+    name: "Ibovespa",
+    form: "percent",
+    currency: "BRL",
+    dailySpread: false,
+  },
+  ifix: { name: "IFIX", form: "percent", currency: "BRL", dailySpread: false },
+  sp500: {
+    name: "S&P 500",
+    form: "percent",
+    currency: "USD",
+    dailySpread: false,
+  },
+  ftse_global: {
+    name: "FTSE Global All Cap",
+    form: "percent",
+    currency: "USD",
+    dailySpread: false,
+  },
   cpi_u: { name: "CPI-U", form: "spread", currency: "USD", dailySpread: false },
 };
 

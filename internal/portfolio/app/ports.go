@@ -115,6 +115,11 @@ type MarketData interface {
 	YearBasis(index string) int
 	// IndexCurrency returns the currency an index belongs to, or "" when unknown (R15).
 	IndexCurrency(index string) money.Currency
+	// ExchangeIndex returns the daily index whose rates are the changes of one unit of from in to,
+	// or "" without one (A265 MI8).
+	ExchangeIndex(from, to money.Currency) string
+	// MarketIndexes returns the enabled daily indexes of a market that hold a rate (A265 MI6).
+	MarketIndexes(ctx context.Context) ([]string, error)
 	// InflationIndex returns the default inflation index of the book's region, or "" (R16).
 	InflationIndex(ctx context.Context, booksID int64) (string, error)
 	// MonthlyRates returns the rates of a monthly index in [from, to], oldest first, each dated
