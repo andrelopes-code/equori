@@ -226,4 +226,13 @@ export const portfolioEn = {
   "portfolio.attribution.col.result": "Result",
   "portfolio.attribution.points": "{value} pp",
   "portfolio.attribution.rows": "Result of each holding in {period}",
+  "portfolio.tabs.label": "Portfolio sections",
+  "portfolio.tabs.summary": "Summary",
+  "portfolio.tabs.results": "Results",
+  "portfolio.tabs.positions": "Positions",
+  "portfolio.tabs.year": "Income and tax",
+  "portfolio.tabs.contributions": "Contributions",
+  "portfolio.positions.subtitle": "What you hold, by account and by asset.",
+  "portfolio.results.subtitle":
+    "How it performed, month by month and against the indexes.",
 } as const;

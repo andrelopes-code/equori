@@ -229,4 +229,12 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.attribution.col.result": "Resultado",
   "portfolio.attribution.points": "{value} p.p.",
   "portfolio.attribution.rows": "Resultado de cada ativo em {period}",
+  "portfolio.tabs.label": "Seções da carteira",
+  "portfolio.tabs.summary": "Resumo",
+  "portfolio.tabs.results": "Resultados",
+  "portfolio.tabs.positions": "Posições",
+  "portfolio.tabs.year": "Proventos e IR",
+  "portfolio.tabs.contributions": "Aportes",
+  "portfolio.positions.subtitle": "O que você tem, por conta e por ativo.",
+  "portfolio.results.subtitle": "Quanto rendeu, mês a mês e contra os índices.",
 };
