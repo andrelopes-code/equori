@@ -311,3 +311,41 @@ function monthlyHistory(count: number, from: string, to: string) {
 function tileOf(label: HTMLElement): HTMLElement {
   return label.parentElement ?? label;
 }
+
+describe("Portfolio results tab: the evolution block", () => {
+  // PR9: the bridge from the opening value to the closing value, in minor units of the series.
+  it("lists the opening value, the net contributions, the return and the closing value", async () => {
+    const history = {
+      from: "2025-10-01",
+      to: "2025-12-31",
+      currency: "BRL",
+      opening: 0,
+      points: [
+        { date: "2025-10-31", value: 100000, flows: 100000 },
+        { date: "2025-11-30", value: 101000, flows: 0 },
+        { date: "2025-12-31", value: 203020, flows: 100000 },
+      ],
+      indexes: [],
+    };
+    const fetch = portfolioApi({
+      "GET /api/v1/reports/return/series": () => json(200, history),
+    });
+    await renderApp("/portfolio/results", { fetch, today: "2025-12-31" });
+
+    const section = await screen.findByRole("region", {
+      name: catalogEn["portfolio.results.evolution"],
+    });
+
+    const rows: [string, RegExp][] = [
+      ["Opening value", /^R\$\s*0\.00$/],
+      ["Net contributions", /^\+R\$\s*2,000\.00$/],
+      ["Return", /^\+R\$\s*30\.20$/],
+      ["Closing value", /^R\$\s*2,030\.20$/],
+      ["Annual rate (IRR)", /^under 12 months$/],
+    ];
+    for (const [label, value] of rows) {
+      const term = await within(section).findByText(label);
+      expect(term.nextElementSibling).toHaveTextContent(value);
+    }
+  });
+});

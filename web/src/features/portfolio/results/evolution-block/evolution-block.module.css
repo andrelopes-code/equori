@@ -1,0 +1,102 @@
+@layer app {
+  /* Two columns: the plot beside its figures */
+  .hero {
+    display: grid;
+    grid-template-columns: 21rem minmax(0, 1fr); /* literal: the column of figures, wide enough for the longest fact */
+    gap: var(--slotted-space-8);
+    align-items: start;
+  }
+
+  .heroEnd {
+    grid-template-columns: minmax(0, 1fr) 21rem; /* literal: fixed row or column size in rem, scales with the root */
+  }
+
+  .heroSide {
+    display: grid;
+    gap: var(--slotted-space-6);
+    min-inline-size: 0;
+  }
+
+  .heroPlot {
+    min-inline-size: 0;
+  }
+
+  /* The area between the value and the money contributed */
+  .plotArea {
+    --slotted-chart-area-opacity: 0.16; /* literal: the strength of the gain area of the mock */
+  }
+
+  /* Key above the plot: the legend of the chart is off */
+  .keyList {
+    display: flex;
+    gap: var(--slotted-space-6);
+    margin: 0 0 var(--slotted-space-3);
+    padding: 0;
+    list-style: none;
+    font-size: var(--slotted-font-size-sm);
+  }
+
+  .keyList li {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-2);
+    white-space: nowrap;
+  }
+
+  .keySwatch {
+    inline-size: 0.75rem; /* literal: 10.5 px square beside 13 px text */
+    block-size: 0.75rem; /* literal: same */
+    border-radius: var(--slotted-radius-xs);
+    background: color-mix(in oklab, var(--slotted-data-1) 16%, transparent);
+  }
+
+  /* The mark repeats the stroke of its line: colour and dash */
+  .seriesMark {
+    display: block;
+    inline-size: 1.5rem; /* literal: fixed row or column size in rem, scales with the root */
+    block-size: 0;
+    border-block-start: 2px solid currentColor; /* literal: the stroke width of the plot's lines */
+  }
+
+  .mark-portfolio {
+    border-block-start-width: 3px; /* literal: the subject's line is one step thicker */
+    color: var(--slotted-data-1);
+  }
+
+  .mark-contributed {
+    color: var(--slotted-text-muted);
+    border-block-start-style: dashed;
+  }
+
+  /* Bridge: the figures from the opening value to the closing value */
+  .bridge {
+    display: grid;
+    margin: 0;
+  }
+
+  .bridge > div {
+    block-size: 2.5rem; /* literal: fixed row or column size in rem, scales with the root */
+    border-block-end: 1px solid var(--slotted-border-subtle);
+  }
+
+  .bridge > div:nth-child(4) dd {
+    font-weight: var(--slotted-font-weight-semibold);
+  }
+
+  .bridge > div:last-child {
+    border-block-end-color: transparent;
+  }
+
+  /* The assistant pane narrows the page: figures go above their plot */
+  @container slotted-page (max-width: 1000px) {
+    /* literal: the page width the assistant pane leaves */
+    .hero,
+    .heroEnd {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .heroEnd .heroSide {
+      order: 2;
+    }
+  }
+}
