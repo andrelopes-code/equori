@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/big"
 	"net/http"
 	"os"
 	"sync"
@@ -74,6 +75,20 @@ type DayArchive interface {
 // (A265 PH5).
 type Witnessed interface {
 	Witness() money.Currency
+}
+
+// Split is the first session of an instrument in new units and the units after it for each unit before
+// it (A266 SA1).
+type Split struct {
+	Instrument money.Currency
+	Date       time.Time
+	Ratio      *big.Rat
+}
+
+// SplitSource is a Source that states the splits of the instruments it quotes, over their whole
+// history (A266 SA2). It returns the splits read before a failure together with the failure.
+type SplitSource interface {
+	Splits(ctx context.Context, ins []Instrument) ([]Split, error)
 }
 
 // ScopeError names the part of a fetch (a code or a day) that failed.

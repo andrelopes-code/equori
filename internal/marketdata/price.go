@@ -307,7 +307,8 @@ func (m *Module) PriceOnOrBefore(
 	return p, err == nil, err
 }
 
-// ListPrices returns the chosen price of each date with prices in [from, to].
+// ListPrices returns the chosen price of each date with prices in [from, to], with the one in the units
+// of after every split (A266 SA4).
 func (m *Module) ListPrices(
 	ctx context.Context,
 	instrument, quote money.Currency,
@@ -330,10 +331,19 @@ func (m *Module) ListPrices(
 		return nil, err
 	}
 
+	splits, err := m.splitsOf(ctx, instrument)
+	if err != nil {
+		return nil, err
+	}
+
 	out := make([]Price, len(rows))
 	for i, r := range rows {
 		if out[i], err = toPrice(r); err != nil {
 			return nil, err
+		}
+
+		if value, ok := domain.Adjusted(out[i].Value, r.Date, splits); ok {
+			out[i].Adjusted = &value
 		}
 	}
 

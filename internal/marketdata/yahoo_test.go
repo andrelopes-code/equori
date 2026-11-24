@@ -56,8 +56,11 @@ func TestS365YahooSymbols(t *testing.T) {
 
 	h.App.Marketdata.TickFeeds(t.Context())
 
+	// Two instruments: the window of the tick, the history and the splits (A266 SA2) of each.
 	paths := fake.recorded()
 	if want := []string{
+		"/yahoo/BRK-B",
+		"/yahoo/BRK-B",
 		"/yahoo/BRK-B",
 		"/yahoo/BRK-B",
 		"/yahoo/BRK-B",

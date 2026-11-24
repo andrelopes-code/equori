@@ -64,8 +64,14 @@ func (m *Module) ListInstrumentQuotes(
 		return nil, err
 	}
 
-	for i := range out {
-		out[i] = withPrices(out[i], prices[quotePair{out[i].Instrument, out[i].Quote}])
+	splits, err := m.allSplits(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for i, q := range out {
+		q = withPrices(q, prices[quotePair{q.Instrument, q.Quote}])
+		out[i] = adjusted(q, splits[q.Instrument])
 	}
 
 	return out, nil

@@ -110,9 +110,14 @@ func (m *Module) tickReports(ctx context.Context, on map[string]bool) {
 	m.tickCompanyReports(ctx, on)
 }
 
-// tickDerived computes the accrued prices, then looks for the holes of the prices, the longest step.
+// tickDerived computes the accrued prices, reads the splits and looks for the holes of the prices, the
+// longest step.
 func (m *Module) tickDerived(ctx context.Context) {
 	m.TickAccrual(ctx)
+
+	if err := m.tickSplits(ctx); err != nil {
+		m.logFeed(ctx, err)
+	}
 
 	if err := m.tickHoles(ctx); err != nil {
 		m.logFeed(ctx, err)

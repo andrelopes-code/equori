@@ -69,7 +69,7 @@ func sourceEntries() []sourceEntry {
 		},
 		{
 			id:         "b3_price_report",
-			defaultURL: "https://www.b3.com.br",
+			defaultURL: b3pricereport.DefaultURL,
 			lag:        5,
 			official:   true,
 			build: func(hc *http.Client, urls map[string]string, _ func() time.Time) feed.Source {

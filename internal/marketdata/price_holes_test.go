@@ -418,8 +418,10 @@ func TestHolesOfAFailingPriceReportWait(t *testing.T) {
 	t.Parallel()
 
 	requests := 0
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		requests++
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Has("filelist") {
+			requests++
+		}
 
 		http.Error(w, "busy", http.StatusGatewayTimeout)
 	}))

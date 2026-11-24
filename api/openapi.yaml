@@ -14673,7 +14673,26 @@ components:
         items:
           type: array
           items:
-            $ref: "#/components/schemas/Price"
+            $ref: "#/components/schemas/PricePoint"
+    PricePoint:
+      type: object
+      additionalProperties: false
+      required: [instrument, quote_instrument, date, value, source]
+      properties:
+        instrument:
+          type: string
+        quote_instrument:
+          type: string
+        date:
+          type: string
+          format: date
+        value:
+          $ref: "#/components/schemas/Rate"
+        adjusted:
+          $ref: "#/components/schemas/Rate"
+        source:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
     InstrumentQuoteList:
       type: object
       required: [items]

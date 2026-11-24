@@ -8260,7 +8260,16 @@ export interface components {
             value: components["schemas"]["Rate"];
         };
         PriceList: {
-            items: components["schemas"]["Price"][];
+            items: components["schemas"]["PricePoint"][];
+        };
+        PricePoint: {
+            instrument: string;
+            quote_instrument: string;
+            /** Format: date */
+            date: string;
+            value: components["schemas"]["Rate"];
+            adjusted?: components["schemas"]["Rate"];
+            source: string;
         };
         InstrumentQuoteList: {
             items: components["schemas"]["InstrumentQuote"][];

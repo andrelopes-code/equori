@@ -172,9 +172,16 @@ func (s *Server) listPrices(
 		return PriceList{}, err
 	}
 
-	items := make([]Price, len(ps))
+	items := make([]PricePoint, len(ps))
 	for i, x := range ps {
-		items[i] = toPriceAPI(x)
+		items[i] = PricePoint{
+			Instrument:      string(x.Instrument),
+			QuoteInstrument: string(x.Quote),
+			Date:            openapi_types.Date{Time: x.Date},
+			Value:           x.Value.Reduced().String(),
+			Adjusted:        adjustedText(x.Adjusted),
+			Source:          x.Source,
+		}
 	}
 
 	return PriceList{Items: items}, nil
@@ -190,4 +197,15 @@ func toPriceAPI(p domain.Price) Price {
 		Value:           p.Value.Reduced().String(),
 		Source:          p.Source,
 	}
+}
+
+// adjustedText is the text of an adjusted price, nil without one.
+func adjustedText(r *money.Rate) *string {
+	if r == nil {
+		return nil
+	}
+
+	text := r.String()
+
+	return &text
 }

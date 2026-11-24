@@ -39,7 +39,7 @@ Market index feeds: `br_ibovespa`, `br_ifix`, `us_sp500`, `global_ftse`: total r
 | `EQUORI_FEED_B3_PRICE_REPORT_URL` | `https://www.b3.com.br` | Base URL of the B3 session search, which serves the price report of each session. |
 
 A network allowlist for the container adds `olinda.bcb.gov.br` and `bvmf.bmfbovespa.com.br`
-for the enabled feeds (`arquivos.b3.com.br` for `b3_consolidated`; `www.b3.com.br` for `b3_price_report`; `www.ecb.europa.eu` for `ecb`; `www.tesourotransparente.gov.br` for `tesouro_direto`; `dados.cvm.gov.br` for `cvm_funds`; `api.coinbase.com` for `coinbase`; `query1.finance.yahoo.com` for `yahoo_chart`; `api.bcb.gov.br` for `br_cdi` and
+for the enabled feeds (`arquivos.b3.com.br` for `b3_consolidated`; `www.b3.com.br` and `sistemaswebb3-listados.b3.com.br` for `b3_price_report`; `www.ecb.europa.eu` for `ecb`; `www.tesourotransparente.gov.br` for `tesouro_direto`; `dados.cvm.gov.br` for `cvm_funds`; `api.coinbase.com` for `coinbase`; `query1.finance.yahoo.com` for `yahoo_chart`; `api.bcb.gov.br` for `br_cdi` and
 `br_ipca`; `data-api.ecb.europa.eu` for `eu_estr`; `ec.europa.eu` for `ea_hicp`;
 `sistemaswebb3-listados.b3.com.br` for `br_ibovespa` and `br_ifix`; `query1.finance.yahoo.com` for `us_sp500` and `global_ftse`;
 `markets.newyorkfed.org` for `us_sofr`; `api.bls.gov` for `us_cpi`; `olinda.bcb.gov.br` for `br_focus`).
@@ -72,6 +72,10 @@ again.
 
 An instrument defined after its feed has run receives prices from the next new day on.
 Earlier prices enter through `POST /prices/import`.
+
+### Splits
+
+Once a day `b3_price_report` (the stock events of the listed companies of the B3, `sistemaswebb3-listados.b3.com.br`) and `yahoo_chart` are read for the splits, reverse splits and bonus shares of each instrument. One that the closes confirm is stored, and the charts and changes of the instrument are adjusted for it; valuations keep the traded close (A266).
 
 ### Holes
 

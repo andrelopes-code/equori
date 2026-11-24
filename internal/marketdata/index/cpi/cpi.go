@@ -235,6 +235,21 @@ func eurostatLevels(s Source, body []byte) ([]level, error) {
 	return out, nil
 }
 
+// blsAnswer is the answer of the public API of the Bureau of Labor Statistics.
+type blsAnswer struct {
+	Status  string   `json:"status"`
+	Message []string `json:"message"`
+	Results struct {
+		Series []struct {
+			Data []struct {
+				Year   string `json:"year"`
+				Period string `json:"period"`
+				Value  string `json:"value"`
+			} `json:"data"`
+		} `json:"series"`
+	} `json:"Results"`
+}
+
 // readBLS reads series CUUR0000SA0 (all items, U.S. city average, not seasonally adjusted) from
 // the public API of the Bureau of Labor Statistics, version 1, which takes no key and at most
 // ten years per request.
@@ -249,19 +264,7 @@ func readBLS(ctx context.Context, s Source, from, to time.Time) ([]level, error)
 		return nil, err
 	}
 
-	var doc struct {
-		Status  string   `json:"status"`
-		Message []string `json:"message"`
-		Results struct {
-			Series []struct {
-				Data []struct {
-					Year   string `json:"year"`
-					Period string `json:"period"`
-					Value  string `json:"value"`
-				} `json:"data"`
-			} `json:"series"`
-		} `json:"Results"`
-	}
+	var doc blsAnswer
 	if err := json.Unmarshal(body, &doc); err != nil {
 		return nil, fmt.Errorf("%s: decode: %w", s.id, err)
 	}

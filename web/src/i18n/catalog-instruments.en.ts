@@ -4,7 +4,7 @@ export const instrumentsEn = {
   "nav.instruments": "Prices",
   "settings.ledger.instruments": "Open prices",
   "instruments.subtitle":
-    "Latest price and price change of each currency and investment; income and splits are not adjusted.",
+    "Latest price and price change of each currency and investment, adjusted for splits; income is not included.",
   "instruments.define": "Add a currency or investment",
   "instruments.caption": "Currencies and investments by type",
   "instruments.empty": "No currency or investment yet",
@@ -126,7 +126,8 @@ export const instrumentsEn = {
   "instrument.col.change": "Change",
   "instrument.col.source": "Source",
   "instrument.yearly.title": "Price change by year",
-  "instrument.yearly.note": "Income paid by the instrument is not included.",
+  "instrument.yearly.note":
+    "Adjusted for splits. Income paid by the instrument is not included.",
   "instrument.yearly.col.year": "Year",
   "instrument.yearly.col.start": "Start price",
   "instrument.yearly.col.end": "End price",

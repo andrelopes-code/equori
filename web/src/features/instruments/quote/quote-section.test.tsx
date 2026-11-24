@@ -65,6 +65,31 @@ describe("Quote section", () => {
     ).toHaveTextContent(`2${catalogEn["instrument.figures.pointsNote"]}`);
   });
 
+  // A266 SA6: 5:1 between the two sessions. The change is the one of the holder, and the table of
+  // prices keeps the traded close.
+  it("measures a range that holds a split by the adjusted prices", async () => {
+    const fetch = api({
+      "GET /api/v1/prices": () =>
+        json(200, {
+          items: [
+            { ...petr("2026-10-14", "170"), adjusted: "34" },
+            petr("2026-10-16", "35.70"),
+          ],
+        }),
+    });
+    await renderApp("/instruments/PETR4", { fetch });
+    const hero = await screen.findByRole("group", {
+      name: "Quote of 10/16/2026 · B3, daily quotes",
+    });
+
+    expect(hero).toHaveTextContent("+5.00%");
+    const figures = screen.getByRole("region", {
+      name: catalogEn["instrument.figures.label"],
+    });
+    expect(await within(figures).findByText("R$34.00")).toBeInTheDocument();
+    expect(within(figures).queryByText("R$170.00")).toBeNull();
+  });
+
   it("writes a dash as the change of a range of one quote", async () => {
     const fetch = api({
       "GET /api/v1/prices": () =>

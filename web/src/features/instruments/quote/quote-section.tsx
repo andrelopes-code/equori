@@ -7,6 +7,7 @@ import { useDeferredValue, useState } from "react";
 import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
 import { priceSeriesQuery } from "@/features/instruments/api";
+import { adjustedPrices } from "@/features/instruments/model/adjusted-prices";
 import { positionTotals } from "@/features/instruments/model/position-totals";
 import { PriceChart } from "@/features/instruments/price-chart/price-chart";
 import { PriceDetails } from "@/features/instruments/price-table/price-details";
@@ -64,8 +65,13 @@ export function QuoteSection({ instrument, quote }: QuoteSectionProps) {
   );
   const { rows } = useInstrumentPositions(instrument.code);
 
-  const prices = series.data?.items ?? [];
-  const reading = quoteReading(recent.data?.items ?? [], prices, activeDate);
+  const traded = series.data?.items ?? [];
+  const prices = adjustedPrices(traded);
+  const reading = quoteReading(
+    adjustedPrices(recent.data?.items ?? []),
+    prices,
+    activeDate,
+  );
   const stats = priceStats(pricesBetween(prices, period));
   const averageCost = positionTotals(rows, quote)?.averageCost ?? null;
 
@@ -125,7 +131,7 @@ export function QuoteSection({ instrument, quote }: QuoteSectionProps) {
       {(series.isPending || stats !== null) && (
         <RangeFigures stats={stats} quote={quote} loading={series.isPending} />
       )}
-      {prices.length > 0 && <PriceDetails prices={prices} />}
+      {traded.length > 0 && <PriceDetails prices={traded} />}
       <YearlyChanges code={instrument.code} quote={quote} first={first} />
     </Stack>
   );

@@ -12,6 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/api/api-context";
 import { priceSeriesQuery } from "@/features/instruments/api";
+import { adjustedPrices } from "@/features/instruments/model/adjusted-prices";
 import { rangeWindow } from "@/features/instruments/model/price-window";
 import { yearlyChanges } from "@/features/instruments/model/yearly-changes";
 import { YearlyChangeRow } from "@/features/instruments/quote/yearly-change-row";
@@ -31,7 +32,7 @@ export function YearlyChanges({ code, quote, first }: YearlyChangesProps) {
   const today = useToday();
   const { from, to } = rangeWindow(today, "max", first);
   const series = useQuery(priceSeriesQuery(api, code, quote, from, to));
-  const rows = yearlyChanges(series.data?.items ?? [], today);
+  const rows = yearlyChanges(adjustedPrices(series.data?.items ?? []), today);
 
   if (rows.length === 0) return null;
 

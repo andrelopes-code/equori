@@ -43,6 +43,8 @@ type Module struct {
 	// holesChecked is the day of the last check of the price holes in this process (A265 PH4); only
 	// a tick touches it, and ticks never overlap.
 	holesChecked time.Time
+	// splitsChecked is the day of the last read of the splits in this process (A266 SA2).
+	splitsChecked time.Time
 
 	// running is set while a tick runs, scheduled or requested (ADR 025 F7); a requested tick
 	// joins refreshes and stops with life.

@@ -157,6 +157,24 @@ func TestSchemaRejectsInvalidPriceHoles(t *testing.T) {
 	}
 }
 
+// A266 SA3.
+func TestSchemaRejectsInvalidSplits(t *testing.T) {
+	t.Parallel()
+
+	pool := pgtest.New(t)
+	for name, sql := range map[string]string{
+		"unknown instrument":         `INSERT INTO marketdata_split VALUES ('ZZZ', '2026-01-02', 2, 'yahoo_chart')`,
+		"a ratio of zero":            `INSERT INTO marketdata_split VALUES ('USD', '2026-01-02', 0, 'yahoo_chart')`,
+		"source outside the pattern": `INSERT INTO marketdata_split VALUES ('USD', '2026-01-02', 2, 'Yahoo')`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			if _, err := pool.Exec(t.Context(), sql); err == nil {
+				t.Fatal("accepted")
+			}
+		})
+	}
+}
+
 // ADR 025 F1.
 func TestSchemaRejectsInvalidFeeds(t *testing.T) {
 	t.Parallel()

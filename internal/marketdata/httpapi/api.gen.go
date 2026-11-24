@@ -1059,7 +1059,24 @@ type PriceInput struct {
 
 // PriceList defines model for PriceList.
 type PriceList struct {
-	Items []Price `json:"items"`
+	Items []PricePoint `json:"items"`
+}
+
+// PricePoint defines model for PricePoint.
+type PricePoint struct {
+	// Adjusted Positive exact decimal with at most 12 decimals (ADR 005).
+	//
+	// Example: 5.4830
+	Adjusted        *Rate              `json:"adjusted,omitempty"`
+	Date            openapi_types.Date `json:"date"`
+	Instrument      string             `json:"instrument"`
+	QuoteInstrument string             `json:"quote_instrument"`
+	Source          string             `json:"source"`
+
+	// Value Positive exact decimal with at most 12 decimals (ADR 005).
+	//
+	// Example: 5.4830
+	Value Rate `json:"value"`
 }
 
 // ProbeInput defines model for ProbeInput.

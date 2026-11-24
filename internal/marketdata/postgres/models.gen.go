@@ -89,3 +89,10 @@ type MarketdataPrice struct {
 	Priority        int16
 	RecordedAt      time.Time
 }
+
+type MarketdataSplit struct {
+	Instrument string
+	Date       time.Time
+	Ratio      pgtype.Numeric
+	Source     string
+}

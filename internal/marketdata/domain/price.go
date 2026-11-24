@@ -29,7 +29,10 @@ type Price struct {
 	Quote      money.Currency
 	Date       time.Time
 	Value      money.Rate
-	Source     string
+	// Adjusted is Value in the units of after every split, nil without one after Date (A266 SA4); set
+	// by ListPrices alone.
+	Adjusted *money.Rate
+	Source   string
 	// At is the instant of a current quote; nil for a close (A248 CQ23).
 	At *time.Time
 	// Open reports whether the session of a current quote is running.

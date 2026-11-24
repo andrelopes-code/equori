@@ -4,7 +4,7 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "nav.instruments": "Cotações",
   "settings.ledger.instruments": "Ver cotações",
   "instruments.subtitle":
-    "Último preço e variação do preço de cada moeda e investimento; sem proventos nem ajuste de desdobramentos.",
+    "Último preço e variação do preço de cada moeda e investimento, com ajuste de desdobramentos; sem proventos.",
   "instruments.define": "Cadastrar moeda ou investimento",
   "instruments.caption": "Moedas e investimentos por tipo",
   "instruments.empty": "Nenhuma moeda ou investimento ainda",
@@ -127,7 +127,7 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "instrument.col.source": "Fonte",
   "instrument.yearly.title": "Variação de preço por ano",
   "instrument.yearly.note":
-    "Proventos pagos pelo instrumento não estão incluídos.",
+    "Com ajuste de desdobramentos. Proventos pagos pelo instrumento não estão incluídos.",
   "instrument.yearly.col.year": "Ano",
   "instrument.yearly.col.start": "Preço inicial",
   "instrument.yearly.col.end": "Preço final",

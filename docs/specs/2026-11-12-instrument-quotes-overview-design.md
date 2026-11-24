@@ -5,7 +5,7 @@ The catalog on `/instruments` gains the price change over a week, a month, a qua
 ## 1. Scope
 
 - The list reads one operation, `listInstrumentQuotes`, instead of one `listPrices` read per visible row (`latestPriceQuery`). The 150 requests of a full catalog become one.
-- The figure is the change of the price. Income paid by the instrument is not included, as in `2026-11-12-yearly-price-change-design.md`. The prices are the closes not adjusted for splits (MQ18 of `2026-11-09-market-quotes-design.md`), so a split reads as a fall. The page subtitle states both.
+- The figure is the change of the price. Income paid by the instrument is not included, as in `2026-11-12-yearly-price-change-design.md`. The prices are the closes not adjusted for splits (MQ18 of `2026-11-09-market-quotes-design.md`), so a split reads as a fall. The page subtitle states both. Amendment A266 of 2026-11-24 (`2026-11-24-split-adjusted-prices-design.md`): the references and the trend are adjusted for splits.
 - Out of scope: total return with income, a comparison against an index, a position column, a high and low of the year, a "best and worst of the week" strip.
 
 ## 2. Decisions
