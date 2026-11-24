@@ -73,7 +73,7 @@ For the series, a point per day over ten years costs about 3,900 valuations of t
 | PR9 | The evolution block draws, over the months of the period, the value, the money contributed (opening value plus the running sum of the flows, as steps), the area between them and the flow of each month on its own strip. Its panel lists opening value, net contributions, return in money (closing − opening − flows) and closing value, and the annual money-weighted rate of `getReturn` when the period has at most 3,660 days and at least 365. |
 | PR10 | A result carries the success or danger tone with its sign written; a percent of windows below zero uses the danger tone, above an index the success tone. The user setting that turns tones off for money applies. |
 | PR11 | Loading keeps every static text (titles, series names, labels, the table header) and draws a placeholder only where a value, a line or a cell comes. Empty and failure are the `ResultState` of the app. |
-| PR12 | The charts are ECharts instances of the app's own (`build-own-element`): end labels on the lines, the fall band, the area below zero and the flow strip share one plot. What the Slotted chart family cannot express is reported to Slotted. |
+| PR12 | The charts are the Slotted `Chart`: dashed strokes for references, a `range` series for the area between two lines, `annotations` for the fall band, the legend replaced by the series list, and `extendOption` for the end labels. The family covers what the mock draws (checked against `dist/docs/chart.md` on 2026-11-24), so no chart imports ECharts directly; an element the family cannot express is reported to Slotted and drawn through `extendOption` with the issue cited. |
 
 ## Client derivations
 
