@@ -84,6 +84,7 @@ export const marketDataPtBR: Record<keyof typeof marketDataEn, string> = {
   "marketData.kind.fund_report": "Informe de fundo",
   "marketData.kind.company_report": "Demonstrações de companhia",
   "marketData.status.upToDate": "Em dia",
+  "marketData.status.loading": "Carregando",
   "marketData.status.overdue": "Atrasada",
   "marketData.status.incomplete": "Incompleta",
   "marketData.status.failed": "Falhou",

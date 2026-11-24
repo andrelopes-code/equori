@@ -161,6 +161,34 @@ func TestFetch(t *testing.T) {
 	}
 }
 
+// A file can hold securities of another day (2023-09-22 holds some of 2023-09-21): they are left out.
+func TestFetchLeavesOutTheSecuritiesOfAnotherDay(t *testing.T) {
+	t.Parallel()
+
+	mixed := strings.Replace(
+		string(report("2023-09-21", priced{"B5P211", "80"}, priced{"IMAB11", "90"})),
+		"</Document>",
+		strings.TrimPrefix(
+			string(report("2023-09-22", priced{"IMAB11", "91"})),
+			`<?xml version="1.0" encoding="utf-8"?><Document>`,
+		),
+		1,
+	)
+	_, src := start(t, map[string][]byte{"SPRE230922": archive(t, map[string][]byte{
+		"a.zip": archive(t, map[string][]byte{"a.xml": []byte(mixed)}),
+	})})
+
+	got, err := src.Fetch(
+		t.Context(),
+		[]money.Currency{"IMAB11", "B5P211"},
+		day("2023-09-22"),
+		day("2023-09-22"),
+	)
+	if err != nil || !slices.Equal(shape(got), []string{"2023-09-22 IMAB11 BRL 91"}) {
+		t.Errorf("quotes = %v, %v, want the one of the day", shape(got), err)
+	}
+}
+
 // Before the simplified report, the full one is read: three revisions, the last one counts.
 func TestFetchReadsTheFullReportOfAnOldDay(t *testing.T) {
 	t.Parallel()

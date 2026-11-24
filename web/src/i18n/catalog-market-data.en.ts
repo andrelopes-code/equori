@@ -79,6 +79,7 @@ export const marketDataEn = {
   "marketData.kind.fund_report": "Fund report",
   "marketData.kind.company_report": "Company report",
   "marketData.status.upToDate": "Up to date",
+  "marketData.status.loading": "Loading",
   "marketData.status.overdue": "Overdue",
   "marketData.status.incomplete": "Incomplete",
   "marketData.status.failed": "Failed",

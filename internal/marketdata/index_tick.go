@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/andrelopes-code/equori/internal/marketdata/index"
@@ -174,14 +175,14 @@ func (m *Module) storeRates(ctx context.Context, src index.Source, rates []index
 		since   time.Time
 	)
 
+	var fresh []index.Rate
+
 	for _, r := range rates {
 		if same(stored[r.Date], r.Value) {
 			continue
 		}
 
-		if err := m.storeRate(ctx, src, r); err != nil {
-			return err
-		}
+		fresh = append(fresh, r)
 
 		if !latest.Found || r.Date.After(latest.Latest) {
 			continue
@@ -194,8 +195,8 @@ func (m *Module) storeRates(ctx context.Context, src index.Source, rates []index
 		}
 	}
 
-	if revised == 0 {
-		return nil
+	if err := m.writeRates(ctx, src, fresh); err != nil || revised == 0 {
+		return err
 	}
 
 	return m.revisedRates(ctx, src.Index(), revised, since)
@@ -266,25 +267,29 @@ func same(a, b string) bool {
 	return okX && okY && x.Cmp(y) == 0
 }
 
-func (m *Module) storeRate(ctx context.Context, src index.Source, r index.Rate) error {
-	var value pgtype.Numeric
-	if err := value.Scan(r.Value); err != nil {
-		return fmt.Errorf("rate of %s: %w", r.Date.Format(time.DateOnly), err)
-	}
+// writeRates writes rates in one transaction.
+func (m *Module) writeRates(ctx context.Context, src index.Source, rates []index.Rate) error {
+	return pgx.BeginFunc(ctx, m.pool, func(tx pgx.Tx) error {
+		q := m.q.WithTx(tx)
 
-	if err := m.q.UpsertIndexRate(
-		ctx,
-		postgres.UpsertIndexRateParams{
-			IndexID: src.Index(),
-			Date:    r.Date,
-			Rate:    value,
-			Source:  src.ID(),
-		},
-	); err != nil {
-		return fmt.Errorf("store the rate of %s: %w", r.Date.Format(time.DateOnly), err)
-	}
+		for _, r := range rates {
+			var value pgtype.Numeric
+			if err := value.Scan(r.Value); err != nil {
+				return fmt.Errorf("rate of %s: %w", r.Date.Format(time.DateOnly), err)
+			}
 
-	return nil
+			if err := q.UpsertIndexRate(ctx, postgres.UpsertIndexRateParams{
+				IndexID: src.Index(),
+				Date:    r.Date,
+				Rate:    value,
+				Source:  src.ID(),
+			}); err != nil {
+				return fmt.Errorf("store the rate of %s: %w", r.Date.Format(time.DateOnly), err)
+			}
+		}
+
+		return nil
+	})
 }
 
 // missingRates counts the expected days of an index between its first and its last stored rate

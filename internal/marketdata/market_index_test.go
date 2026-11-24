@@ -127,6 +127,8 @@ func TestDailyIndexStale(t *testing.T) {
 			)
 			execSQL(t, h, `INSERT INTO marketdata_index_rate (index_id, date, rate, source)
 				VALUES ('`+tt.index+`', '2026-11-19', 0.0005, '`+tt.feed+`')`)
+			execSQL(t, h, `INSERT INTO marketdata_index_check
+				VALUES ('`+tt.index+`', '2006-11-19', '2026-11-20', 0)`)
 
 			if f := feedsOf(t, h)[tt.feed]; f.Stale != tt.want {
 				t.Errorf("%s on %s: stale = %v, want %v", tt.feed, tt.today, f.Stale, tt.want)
@@ -180,5 +182,29 @@ func TestFeedStatesTheHolesOfAnIndex(t *testing.T) {
 		if fs[id].Missing != want {
 			t.Errorf("%s: missing = %d, want %d", id, fs[id].Missing, want)
 		}
+	}
+}
+
+// RI4: an enabled index that was never read whole is loading, not late: a stale date of a load that
+// runs states no lateness, and the load counts as a pending history.
+func TestIndexNeverReadWholeIsLoading(t *testing.T) {
+	t.Parallel()
+
+	h := apitest.New(t, apitest.Today("2026-11-24"), apitest.IndexFeeds([]string{"br_ifix"}, nil))
+	execSQL(t, h, `INSERT INTO marketdata_index_rate (index_id, date, rate, source)
+		VALUES ('ifix', '2020-11-13', 0.001, 'br_ifix')`)
+
+	if f := feedsOf(t, h)["br_ifix"]; f.Stale || f.HistoryPending != 1 {
+		t.Errorf("loading: %+v, want not stale and 1 pending history", f)
+	}
+
+	execSQL(
+		t,
+		h,
+		`INSERT INTO marketdata_index_check VALUES ('ifix', '2006-11-24', '2026-11-24', 0)`,
+	)
+
+	if f := feedsOf(t, h)["br_ifix"]; !f.Stale || f.HistoryPending != 0 {
+		t.Errorf("read whole: %+v, want stale and no pending history", f)
 	}
 }

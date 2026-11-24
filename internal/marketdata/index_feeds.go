@@ -46,20 +46,44 @@ func (m *Module) indexFeeds(ctx context.Context, out []Feed, fs feedState) ([]Fe
 			fs.lags,
 		)
 
-		if f.Enabled && last != nil && src.Period() == index.PeriodDay {
-			if f.Stale, err = m.lateIndex(ctx, src, *last); err != nil {
+		if f.Enabled {
+			if f, err = m.withReadState(ctx, f, src, missing); err != nil {
 				return nil, err
 			}
-		}
-
-		if f.Enabled {
-			f.Missing = missing[src.Index()]
 		}
 
 		out = append(out, f)
 	}
 
 	return out, nil
+}
+
+// withReadState sets on the feed of an enabled index its holes and whether it is late. An index that was
+// never read whole is loading: it counts as a pending history and is not late (A265 RI4).
+func (m *Module) withReadState(
+	ctx context.Context,
+	f Feed,
+	src index.Source,
+	missing map[string]int,
+) (Feed, error) {
+	holes, read := missing[src.Index()]
+	if !read {
+		f.HistoryPending = 1
+		f.Stale = f.Stale && src.Period() == index.PeriodMonth
+
+		return f, nil
+	}
+
+	f.Missing = holes
+
+	if f.Last == nil || src.Period() != index.PeriodDay {
+		return f, nil
+	}
+
+	late, err := m.lateIndex(ctx, src, *f.Last)
+	f.Stale = late
+
+	return f, err
 }
 
 // missingByIndex is the number of expected days without a rate of each index (A265 RI4).

@@ -186,8 +186,8 @@ func lastReport(body []byte) (io.ReadCloser, error) {
 	return last.Open()
 }
 
-// scan reads the securities of a report and returns the last price of the wanted ones. A report
-// without a security, or with one of another day, is malformed.
+// scan reads the securities of a report and returns the last price of the wanted ones. A security of
+// another day is left out, as a few files hold some; a report without one of the day is malformed.
 func scan(r io.Reader, day time.Time, want map[string]bool) ([]feed.Quote, error) {
 	sc := bufio.NewScanner(r)
 	sc.Buffer(make([]byte, 0, 64<<10), maxReportBytes)
@@ -207,7 +207,7 @@ func scan(r io.Reader, day time.Time, want map[string]bool) ([]feed.Quote, error
 		}
 
 		if date, _ := element(security, "Dt"); date != day.Format(time.DateOnly) {
-			return nil, fmt.Errorf("report of %s, want %s", date, day.Format(time.DateOnly))
+			continue
 		}
 
 		read = true
@@ -235,7 +235,7 @@ func scan(r io.Reader, day time.Time, want map[string]bool) ([]feed.Quote, error
 	}
 
 	if !read {
-		return nil, errors.New("read the report: no security")
+		return nil, errors.New("read the report: no security of the day")
 	}
 
 	return out, nil

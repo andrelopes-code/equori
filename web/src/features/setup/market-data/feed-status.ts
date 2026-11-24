@@ -4,7 +4,13 @@ type Feed = components["schemas"]["MarketDataFeed"];
 
 export interface FeedStatus {
   word:
-    "upToDate" | "overdue" | "incomplete" | "failed" | "noData" | "disabled";
+    | "upToDate"
+    | "loading"
+    | "overdue"
+    | "incomplete"
+    | "failed"
+    | "noData"
+    | "disabled";
   tone: "ok" | "warning" | "danger" | "muted";
 }
 
@@ -18,6 +24,9 @@ export interface FeedSummary {
 export function feedStatus(f: Feed): FeedStatus {
   if (!f.enabled) return { word: "disabled", tone: "muted" };
   if (f.error !== null) return { word: "failed", tone: "danger" };
+  // An index that was never read whole counts as a pending history (A265 RI4).
+  if (f.kind === "index" && f.history_pending > 0)
+    return { word: "loading", tone: "muted" };
   if (f.last === null) return { word: "noData", tone: "muted" };
   if (f.stale) return { word: "overdue", tone: "warning" };
   if (f.missing > 0) return { word: "incomplete", tone: "warning" };
