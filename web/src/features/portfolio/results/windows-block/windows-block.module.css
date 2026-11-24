@@ -1,0 +1,81 @@
+@layer app {
+  .plotBox {
+    margin-block-start: var(--slotted-space-6);
+  }
+
+  /* Tiles of the rolling windows */
+  .tileRow {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: var(--slotted-space-6);
+    margin: 0;
+  }
+
+  .tile {
+    display: grid;
+    gap: var(--slotted-space-1);
+    padding-inline-start: var(--slotted-space-4);
+    border-inline-start: 1px solid var(--slotted-border-subtle);
+    white-space: nowrap;
+  }
+
+  .tile dt,
+  .tileNote {
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+  }
+
+  .tile dd {
+    margin: 0;
+  }
+
+  .tileValue {
+    font-size: var(--slotted-font-size-xl);
+    font-weight: var(--slotted-font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tileNote {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-2);
+    block-size: 1.25rem; /* literal: fixed row or column size in rem, scales with the root */
+    font-variant-numeric: tabular-nums;
+  }
+
+  .shareBar {
+    inline-size: 3rem; /* literal: fixed row or column size in rem, scales with the root */
+    block-size: 4px; /* literal: a hairline meter beside 12 px text */
+    border-radius: var(--slotted-radius-full);
+    background: var(--slotted-border-subtle);
+    overflow: hidden;
+  }
+
+  .shareFill {
+    display: block;
+    block-size: 100%;
+  }
+
+  .shareGood {
+    background: var(--slotted-tone-success-solid);
+  }
+
+  .shareBad {
+    background: var(--slotted-tone-danger-solid);
+  }
+
+  /* States */
+  .reason {
+    margin: 0;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-sm);
+  }
+
+  /* The assistant pane narrows the page: three tiles a row */
+  @container slotted-page (max-width: 1000px) {
+    /* literal: the page width the assistant pane leaves */
+    .tileRow {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+}

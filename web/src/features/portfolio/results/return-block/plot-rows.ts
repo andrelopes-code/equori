@@ -49,3 +49,14 @@ export function timeFormat(days: number): Intl.DateTimeFormatOptions {
     ? { month: "short", year: "2-digit" }
     : { year: "numeric" };
 }
+
+// The formatted last value of a series, or an empty text when it holds none.
+export function lastText(
+  data: readonly Record<string, string | number | null>[],
+  id: string,
+  format: (value: number) => string,
+): string {
+  const last = data.filter((row) => typeof row[id] === "number").at(-1)?.[id];
+
+  return typeof last === "number" ? format(last) : "";
+}

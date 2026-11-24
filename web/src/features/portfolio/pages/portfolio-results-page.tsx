@@ -12,12 +12,13 @@ import { ResultsPeriodBar } from "@/features/portfolio/results/period-bar/result
 import { ReturnBlock } from "@/features/portfolio/results/return-block/return-block";
 import { useResults } from "@/features/portfolio/results/use-results";
 import { useResultsSearch } from "@/features/portfolio/results/use-results-search";
+import { WindowsBlock } from "@/features/portfolio/results/windows-block/windows-block";
 import { settingsQuery } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { PageStack } from "@/ui/page-layout/page-stack";
 import { routeTo } from "@/ui/navigation/route-to";
 
-// PT2, PR1 to PR4: the period bar, the return block and "Rendimento por ativo".
+// PT2, PR1 to PR7: the period bar, the return block, the rolling windows and "Rendimento por ativo".
 export function PortfolioResultsPage() {
   const t = useT();
   const api = useApi();
@@ -70,6 +71,8 @@ export function PortfolioResultsPage() {
             report={results.report.data}
             whole={results.whole}
           />
+
+          <WindowsBlock history={results.history.data} />
 
           <AttributionSection />
         </PageStack>

@@ -8,6 +8,7 @@ import { withEndLabels } from "@/features/portfolio/results/return-block/end-lab
 import type { BlockFigures } from "@/features/portfolio/results/return-block/block-figures";
 import { toBasisPoints } from "@/features/portfolio/results/return-block/block-figures";
 import {
+  lastText,
   plotRows,
   portfolioField,
   timeFormat,
@@ -107,14 +108,4 @@ export function ReturnPlot({ series, figures, on }: ReturnPlotProps) {
 
 function firstDaily(figures: BlockFigures): number {
   return figures.indexes.findIndex((i) => i.daily);
-}
-
-function lastText(
-  data: readonly Record<string, string | number | null>[],
-  id: string,
-  format: (value: number) => string,
-): string {
-  const last = data.filter((row) => typeof row[id] === "number").at(-1)?.[id];
-
-  return typeof last === "number" ? format(last) : "";
 }

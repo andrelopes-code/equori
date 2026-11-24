@@ -151,3 +151,110 @@ describe("Portfolio results tab: the return block", () => {
     expect(within(section).queryByText(/pp above/)).not.toBeInTheDocument();
   });
 });
+
+describe("Portfolio results tab: the rolling windows block", () => {
+  // PR7: the windows read the history, with no index the block draws four tiles.
+  it("draws the tiles of the windows of a history of 13 months", async () => {
+    const fetch = portfolioApi({
+      "GET /api/v1/reports/return/series": () =>
+        json(200, monthlyHistory(13, "2025-11-01", "2026-11-24")),
+    });
+    await renderApp("/portfolio/results", { fetch, today: "2026-11-24" });
+
+    const section = await screen.findByRole("region", {
+      name: catalogEn["portfolio.results.windows"],
+    });
+    const today = await within(section).findByText("Today");
+    expect(tileOf(today)).toHaveTextContent(
+      /\+12\.68%12 months to 11\/24\/2026/,
+    );
+    expect(tileOf(within(section).getByText("Best window"))).toHaveTextContent(
+      /\+12\.68%to Nov 2026/,
+    );
+    expect(tileOf(within(section).getByText("Worst window"))).toHaveTextContent(
+      /\+12\.68%to Oct 2026/,
+    );
+    expect(
+      tileOf(within(section).getByText("Windows below zero")),
+    ).toHaveTextContent("0.0%0 of 2");
+    expect(within(section).getAllByText(/ of 2$/)).toHaveLength(1);
+    expect(within(section).queryByText(/^Above /)).not.toBeInTheDocument();
+  });
+
+  // PR7: with an index the block adds the tile of the windows above it.
+  it("draws the share of the windows above the first index", async () => {
+    const history = monthlyHistory(13, "2025-11-01", "2026-11-24");
+    const fetch = portfolioApi({
+      "GET /api/v1/reports/return/series": () =>
+        json(200, {
+          ...history,
+          indexes: [
+            {
+              index: "cdi",
+              period: "day",
+              points: history.points.map((p, k) => ({
+                date: p.date,
+                return_bp: Math.round((1.005 ** (k + 1) - 1) * 10000),
+              })),
+            },
+          ],
+        }),
+    });
+    await renderApp("/portfolio/results", { fetch, today: "2026-11-24" });
+
+    const section = await screen.findByRole("region", {
+      name: catalogEn["portfolio.results.windows"],
+    });
+    const above = await within(section).findByText("Above CDI");
+
+    expect(tileOf(above)).toHaveTextContent("100.0%2 of 2");
+  });
+
+  // PR7: under 12 months the block states the date its first window closes.
+  it("states when the first window closes with a history of 5 months", async () => {
+    const fetch = portfolioApi({
+      "GET /api/v1/reports/return/series": () =>
+        json(200, monthlyHistory(5, "2026-07-06", "2026-11-24")),
+    });
+    await renderApp("/portfolio/results", { fetch, today: "2026-11-24" });
+
+    const section = await screen.findByRole("region", {
+      name: catalogEn["portfolio.results.windows"],
+    });
+
+    expect(
+      await within(section).findByText(
+        "The first window closes on 07/06/2027: the portfolio has 5 months of history and a window takes 12.",
+      ),
+    ).toBeInTheDocument();
+    expect(within(section).queryByText("Today")).not.toBeInTheDocument();
+  });
+});
+
+// A history of `count` months of +1% each, the last point on `to`, with no index.
+function monthlyHistory(count: number, from: string, to: string) {
+  const end = new Date(`${to}T00:00:00Z`);
+  const points = Array.from({ length: count }, (_, k) => {
+    const last = k === count - 1;
+    const day = new Date(
+      Date.UTC(
+        end.getUTCFullYear(),
+        end.getUTCMonth() - (count - 1 - k) + 1,
+        0,
+      ),
+    );
+
+    return {
+      date: last ? to : day.toISOString().slice(0, 10),
+      value: 100000,
+      flows: 0,
+      return_bp: Math.round((1.01 ** (k + 1) - 1) * 10000),
+    };
+  });
+
+  return { from, to, currency: "BRL", opening: 100000, points, indexes: [] };
+}
+
+function tileOf(label: HTMLElement): HTMLElement {
+  return label.parentElement ?? label;
+}
