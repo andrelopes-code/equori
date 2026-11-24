@@ -62,6 +62,17 @@ describe("AccountsPage list", () => {
     ).toBeInTheDocument();
   });
 
+  // The badge of a card passes the corner of its mark, onto the line under the name.
+  it("starts the caption of a card past the badge of its mark", async () => {
+    await renderApp("/accounts", { fetch: fakeApi(accountRoutes()) });
+
+    const card = await screen.findByRole("rowheader", { name: /Itaú Visa/ });
+    const checking = screen.getByRole("rowheader", { name: /^Nubank/ });
+
+    expect(within(card).getByText(/^Credit card/)).toHaveClass("ml-4");
+    expect(within(checking).getByText(/^Checking/)).not.toHaveClass("ml-4");
+  });
+
   // Spec 2026-11-21-mobile-accounts, MA1: on a phone the net worth card holds the figure; the
   // subheading repeated it and was cut by the header's actions.
   it("draws no subheading on a phone", async () => {

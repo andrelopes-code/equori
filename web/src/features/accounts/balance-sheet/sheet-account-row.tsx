@@ -20,6 +20,7 @@ import { LoanLine } from "@/features/accounts/kind-figures/loan-line";
 import { PropertyChangeNote } from "@/features/accounts/kind-figures/property-change-note";
 import { recordShape } from "@/features/accounts/kind-figures/record-shape";
 import { kindTitle } from "@/features/accounts/model/account-kinds";
+import { shapeOf } from "@/features/accounts/model/account-shape";
 import { AccountYield } from "@/features/portfolio";
 import { useT } from "@/i18n/i18n-provider";
 import { MoneyFigure } from "@/ui/money/money-figure";
@@ -106,7 +107,13 @@ export function SheetAccountRow({
             )}
           </Inline>
           {caption !== "" && (
-            <Text size="xs" tone="muted" truncate>
+            <Text
+              // The badge of a card passes the corner of its mark, onto this line.
+              className={shapeOf(account.kind) === "card" ? "ml-4" : undefined}
+              size="xs"
+              tone="muted"
+              truncate
+            >
               {caption}
             </Text>
           )}
