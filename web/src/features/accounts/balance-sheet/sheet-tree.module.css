@@ -24,8 +24,9 @@
     min-inline-size: 0;
   }
 
-  /* Centered on the expander, which stands on the text line and not on a line of its own height,
-     and as wide as it leaves: the codes cut instead of the line. */
+  /* Workaround for Slotted issue #178: the expander stands on the text line, above the middle of a
+     taller content, so the codes take the same line. They are as wide as the expander leaves: the
+     codes cut instead of the line. */
   .positions {
     display: inline-grid;
     align-items: center;
