@@ -140,6 +140,59 @@ func TestRecordInvestmentIncomeS22(t *testing.T) {
 	}
 }
 
+// S700: the proposal of a JCP states the tax the region's rate withholds and records that amount;
+// "0" records the JCP with nothing withheld.
+func TestS700IncomeProposalStatesTheWithheldTax(t *testing.T) {
+	t.Parallel()
+	f := newIncomeFixture(t)
+
+	tests := []struct {
+		name, withheld, shown string
+		recorded              int64
+	}{
+		{"absent takes the rate", "", "7.88", 788},
+		{"zero withholds nothing", "0", "0.00", 0},
+		{"stated", "6.75", "6.75", 675},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			args := map[string]any{
+				"kind":                 "income",
+				"account_id":           f.petr4,
+				"cash_account_id":      f.cash,
+				"date":                 "2026-10-26",
+				"gross":                "45.00",
+				"income_type":          "jcp",
+				"category_id":          f.jcp,
+				"withheld_category_id": f.incomeTax,
+			}
+			if tc.withheld != "" {
+				args["withheld"] = tc.withheld
+			}
+
+			var shown string
+
+			for _, c := range previewTool(t, f.h, "record_investment", args).Changes {
+				if c.Field == "withheld" {
+					shown = c.After.Amount
+				}
+			}
+
+			if shown != tc.shown {
+				t.Errorf("withheld of the proposal = %q, want %q", shown, tc.shown)
+			}
+
+			var out investmentOut
+			toolOutput(t, f.h, "record_investment", args, &out)
+
+			got := amountsByAccount(f.h.Transaction(out.TransactionID))
+			if got[f.incomeTax] != tc.recorded || got[f.cash] != 4500-tc.recorded {
+				t.Errorf("postings = %v", got)
+			}
+		})
+	}
+}
+
 func TestRecordInvestmentOtherUser(t *testing.T) {
 	t.Parallel()
 	f := newInvestFixture(t)

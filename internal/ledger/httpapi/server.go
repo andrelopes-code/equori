@@ -183,6 +183,10 @@ func (s *Server) Register(mux *http.ServeMux) {
 		httpserver.Handle(s.errs, http.StatusOK, s.correctTrade),
 	)
 	mux.HandleFunc(
+		"GET "+BaseURL+"/investment-income/withholding",
+		httpserver.Handle(s.errs, http.StatusOK, s.getIncomeWithholding),
+	)
+	mux.HandleFunc(
 		"PUT "+BaseURL+"/investment-income/{id}",
 		httpserver.Handle(s.errs, http.StatusOK, s.correctInvestmentIncome),
 	)

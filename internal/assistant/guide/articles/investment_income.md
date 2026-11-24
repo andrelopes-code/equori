@@ -3,7 +3,7 @@ Income paid on an Investment is recorded with record_investment kind income, on 
 The types:
 
 - dividend: a company dividend.
-- jcp: interest on equity, taxed at source on the gross amount. When withheld is absent, equori applies the region's rate of the payment date. The assistant passes withheld from the broker notice.
+- jcp: interest on equity, taxed at source on the gross amount. When withheld is absent, record_investment applies the region's rate of the payment date and the proposal states the amount; withheld 0 records nothing withheld. The assistant passes withheld from the broker notice.
 - distribution: a distribution of a real estate fund or another fund.
 - coupon and interest: fixed income payments, as in fixed_income_payments.
 

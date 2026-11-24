@@ -11877,7 +11877,7 @@
         },
         "withheld": {
           "type": "string",
-          "description": "for income: positive tax withheld at source"
+          "description": "for income: tax withheld; region rate when absent"
         },
         "income_type": {
           "type": "string",

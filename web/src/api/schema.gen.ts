@@ -2468,6 +2468,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/investment-income/withholding": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Estimated tax withheld on an income, by the rate of the book's region; 0 where the region withholds none. */
+        get: operations["getIncomeWithholding"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/investment-income/{id}": {
         parameters: {
             query?: never;
@@ -7313,7 +7330,7 @@ export interface components {
             /** Format: date */
             date: string;
             gross: components["schemas"]["Money"];
-            /** @description Default 0, and 15 % of gross for jcp. */
+            /** @description Default the rate of the book's region for the income type on the date, 0 without one; the figure of getIncomeWithholding. */
             withheld?: components["schemas"]["Money"];
             /**
              * Format: uuid
@@ -7326,6 +7343,11 @@ export interface components {
              */
             withheld_category_id?: string;
             description?: string;
+        };
+        IncomeWithholding: {
+            /** @description Basis points of gross. */
+            rate_bp: number;
+            withheld: components["schemas"]["Money"];
         };
         InvestmentIncome: {
             /** Format: uuid */
@@ -13906,6 +13928,35 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Transaction"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    getIncomeWithholding: {
+        parameters: {
+            query: {
+                income_type: components["schemas"]["IncomeType"];
+                /** @description Payment date. */
+                date: string;
+                /** @description Gross amount, in minor units of the base currency. */
+                gross: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncomeWithholding"];
                 };
             };
             400: components["responses"]["Problem"];

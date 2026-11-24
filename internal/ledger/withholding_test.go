@@ -107,3 +107,88 @@ func TestJCPIncomeOutsideBRHasNoDefaultWithholding(t *testing.T) {
 		t.Fatalf("postings = %+v", tx.Postings)
 	}
 }
+
+// S699: the estimate of the tax withheld on an income is the amount a record without withheld
+// takes, and nothing is recorded.
+func TestS699IncomeWithholdingEstimate(t *testing.T) {
+	t.Parallel()
+	f := newIncomeFixture(t)
+
+	tests := []struct {
+		query        string
+		rate, amount int64
+	}{
+		{"income_type=jcp&date=2026-10-26&gross=4500", 1750, 788},
+		{"income_type=jcp&date=2025-12-31&gross=4500", 1500, 675},
+		{"income_type=dividend&date=2026-10-26&gross=4500", 0, 0},
+	}
+	for _, tc := range tests {
+		got := incomeEstimate(t, f.h, tc.query)
+		if got.RateBP != tc.rate || got.Withheld != minorUnits(tc.amount, "BRL") {
+			t.Errorf("%s = %+v, want rate %d and %d BRL", tc.query, got, tc.rate, tc.amount)
+		}
+	}
+
+	for _, query := range []string{
+		"income_type=JCP&date=2026-10-26&gross=4500",
+		"income_type=jcp&date=2026-10-26&gross=0",
+	} {
+		r := f.h.Do(http.MethodGet, "/api/v1/investment-income/withholding?"+query, nil)
+		if r.Status != http.StatusBadRequest {
+			t.Errorf("%s status = %d, want 400: %s", query, r.Status, r.Body)
+		}
+	}
+}
+
+// X2: a region without a rate estimates nothing, in the base currency of its book.
+func TestIncomeWithholdingEstimateOutsideBR(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t, apitest.Today("2026-10-22"))
+	pt := h.LoginAs("pt@example.com", locale.Locale{Language: "pt", Region: "PT"}, "EUR")
+
+	r := h.Call(
+		pt,
+		http.MethodGet,
+		"/api/v1/investment-income/withholding?income_type=jcp&date=2026-10-22&gross=4500",
+		nil,
+	)
+	if r.Status != http.StatusOK {
+		t.Fatalf("status = %d: %s", r.Status, r.Body)
+	}
+
+	var got incomeEstimateOut
+	r.Decode(t, &got)
+
+	if got.RateBP != 0 || got.Withheld != minorUnits(0, "EUR") {
+		t.Fatalf("estimate = %+v", got)
+	}
+}
+
+type estimateMoney struct {
+	Amount   int64  `json:"amount"`
+	Currency string `json:"currency"`
+}
+
+type incomeEstimateOut struct {
+	RateBP   int64         `json:"rate_bp"`
+	Withheld estimateMoney `json:"withheld"`
+}
+
+func incomeEstimate(t *testing.T, h *apitest.Harness, query string) incomeEstimateOut {
+	t.Helper()
+
+	var out incomeEstimateOut
+	h.MustDo(
+		http.MethodGet,
+		"/api/v1/investment-income/withholding?"+query,
+		nil,
+		http.StatusOK,
+		&out,
+	)
+
+	return out
+}
+
+func minorUnits(amount int64, currency string) estimateMoney {
+	return estimateMoney{Amount: amount, Currency: currency}
+}

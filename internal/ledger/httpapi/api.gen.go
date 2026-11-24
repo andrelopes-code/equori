@@ -1961,6 +1961,13 @@ type ForeignPurchaseInput struct {
 // IncomeType defines model for IncomeType.
 type IncomeType = string
 
+// IncomeWithholding defines model for IncomeWithholding.
+type IncomeWithholding struct {
+	// RateBp Basis points of gross.
+	RateBp   int   `json:"rate_bp"`
+	Withheld Money `json:"withheld"`
+}
+
 // Installment defines model for Installment.
 type Installment struct {
 	Count  int                `json:"count"`
@@ -2096,7 +2103,7 @@ type InvestmentIncomeInput struct {
 	// Instrument The investment's code; its holding account is created on the first purchase.
 	Instrument *string `json:"instrument,omitempty"`
 
-	// Withheld Default 0, and 15 % of gross for jcp.
+	// Withheld Default the rate of the book's region for the income type on the date, 0 without one; the figure of getIncomeWithholding.
 	Withheld *Money `json:"withheld,omitempty"`
 
 	// WithheldCategoryId Default the system account taxes.
@@ -2827,6 +2834,17 @@ type ListBalancesParamsBasis string
 type ListInstitutionsParams struct {
 	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// GetIncomeWithholdingParams defines parameters for GetIncomeWithholding.
+type GetIncomeWithholdingParams struct {
+	IncomeType IncomeType `form:"income_type" json:"income_type"`
+
+	// Date Payment date.
+	Date openapi_types.Date `form:"date" json:"date"`
+
+	// Gross Gross amount, in minor units of the base currency.
+	Gross int64 `form:"gross" json:"gross"`
 }
 
 // ListPayeesParams defines parameters for ListPayees.

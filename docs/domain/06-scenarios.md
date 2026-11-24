@@ -1348,3 +1348,7 @@ The scenarios of `docs/specs/2026-11-23-contribution-criteria-design.md`, rules 
 ### S697–S698 Contribution criteria without an answer
 
 Rules CQ2, CQ3 and FQ4 as amended on 2026-11-24 (`docs/specs/2026-11-18-contribution-questions-design.md`), through the HTTP API and the tools. A group of `QSTA3`, `QSTB3` and `QSTC3` holds the nine facts and one own question; the filings give 9 and 7 answers yes and none to `QSTC3`, and the nine answers of each are null. The save returns the targets 3750, 2917 and 3333, and `GET` the same with the null answers; a null answer to the own question returns 422 `contribution_answers_invalid` (S697; `TestS697BlankAnswers`). `save_contribution_plan` with `blank_answers` 0 to 8 returns the same targets and the blank positions (S698; `TestS698BlankAnswersTool`).
+
+### S699–S700 Tax withheld on an income
+
+Rules IE1 and IE3, through the HTTP API and the tools, on a Brazilian book. `GET /investment-income/withholding` of a JCP of 45.00 answers 1750 bp and 7.88 for 2026-10-26, 1500 bp and 6.75 for 2025-12-31, and 0 for a dividend; nothing is recorded (S699). The proposal of `record_investment` for the JCP of 45.00 without `withheld` states 7.88 and records it; `withheld` "0" states and records 0.00; "6.75" states and records 6.75 (S700).

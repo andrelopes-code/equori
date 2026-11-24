@@ -7,6 +7,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/ledger/app"
 	"github.com/andrelopes-code/equori/internal/ledger/domain"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
@@ -232,6 +233,30 @@ func (s *Server) recordInvestmentIncome(
 	}
 
 	return toTransactionAPI(t), location("/transactions/", t.ID), nil
+}
+
+func (s *Server) getIncomeWithholding(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (IncomeWithholding, error) {
+	params, err := httpserver.Query[GetIncomeWithholdingParams](r)
+	if err != nil {
+		return IncomeWithholding{}, err
+	}
+
+	w, err := s.svc.EstimateIncomeWithholding(
+		ctx,
+		auth.MustBooksID(ctx),
+		domain.IncomeType(params.IncomeType),
+		dateOf(params.Date),
+		params.Gross,
+	)
+	if err != nil {
+		return IncomeWithholding{}, err
+	}
+
+	return IncomeWithholding{RateBp: w.RateBP, Withheld: toMoneyAPI(w.Withheld)}, nil
 }
 
 func (s *Server) incomeOrderFromInput(

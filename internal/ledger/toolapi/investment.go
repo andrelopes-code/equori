@@ -30,7 +30,7 @@ type recordInvestmentIn struct {
 	Fees          string               `json:"fees,omitzero"            jsonschema:"for buy and sell: positive fees charged"`
 	Taxes         string               `json:"taxes,omitzero"           jsonschema:"for buy and sell: positive taxes charged"`
 	Gross         string               `json:"gross,omitzero"           jsonschema:"for income: positive gross amount paid"`
-	Withheld      string               `json:"withheld,omitzero"        jsonschema:"for income: positive tax withheld at source"`
+	Withheld      string               `json:"withheld,omitzero"        jsonschema:"for income: tax withheld; region rate when absent"`
 	IncomeType    string               `json:"income_type,omitzero"     jsonschema:"for income: type from get_portfolio with view income_types"`
 	CategoryID    string               `json:"category_id,omitzero"     jsonschema:"for income: income category from list_accounts"`
 
@@ -203,7 +203,7 @@ func (s investmentStep) income(
 		return pv, nil, err
 	}
 
-	withheld, err := s.optional("withheld", in.Withheld)
+	withheld, err := s.withheld(ctx, gross)
 	if err != nil {
 		return pv, nil, err
 	}
@@ -230,6 +230,38 @@ func (s investmentStep) income(
 		t, err := s.fix.income(s.svc)(ctx, s.booksID, o)
 		return recordInvestmentOut{TransactionID: t.ID.String()}, err
 	}, nil
+}
+
+// withheld is the tax the proposal states and records: the one given, zero included, or the one
+// the region's rate takes; nil when neither exists.
+func (s investmentStep) withheld(ctx context.Context, gross money.Money) (*money.Money, error) {
+	in := s.in
+
+	if in.Withheld != "" {
+		given, err := tool.ParseAmount("withheld", in.Withheld, s.target.cashUnit)
+		if err != nil {
+			return nil, err
+		}
+
+		if given.IsNegative() {
+			return nil, tool.InvalidArgument("withheld", "must be zero or greater")
+		}
+
+		return &given, nil
+	}
+
+	estimate, err := s.svc.EstimateIncomeWithholding(
+		ctx,
+		s.booksID,
+		domain.IncomeType(in.IncomeType),
+		in.Date.Time,
+		gross.Amount(),
+	)
+	if err != nil || estimate.RateBP == 0 {
+		return nil, err
+	}
+
+	return &estimate.Withheld, nil
 }
 
 func (s investmentStep) trade(

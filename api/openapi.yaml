@@ -4129,6 +4129,46 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /investment-income/withholding:
+    get:
+      tags: [ledger]
+      operationId: getIncomeWithholding
+      x-book-role: read
+      summary: Estimated tax withheld on an income, by the rate of the book's region; 0 where the region withholds none.
+      parameters:
+        - name: income_type
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/IncomeType"
+        - name: date
+          in: query
+          required: true
+          description: Payment date.
+          schema:
+            type: string
+            format: date
+        - name: gross
+          in: query
+          required: true
+          description: Gross amount, in minor units of the base currency.
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IncomeWithholding"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /investment-income/{id}:
     put:
       tags: [ledger]
@@ -12907,7 +12947,7 @@ components:
         gross:
           $ref: "#/components/schemas/Money"
         withheld:
-          description: Default 0, and 15 % of gross for jcp.
+          description: Default the rate of the book's region for the income type on the date, 0 without one; the figure of getIncomeWithholding.
           allOf:
             - $ref: "#/components/schemas/Money"
         category_id:
@@ -12921,6 +12961,16 @@ components:
         description:
           type: string
           maxLength: 500
+    IncomeWithholding:
+      type: object
+      required: [rate_bp, withheld]
+      properties:
+        rate_bp:
+          type: integer
+          minimum: 0
+          description: Basis points of gross.
+        withheld:
+          $ref: "#/components/schemas/Money"
     InvestmentIncome:
       type: object
       required: [account_id, cash_account_id, income_type, gross, withheld]
