@@ -556,6 +556,11 @@ type ConnectionList struct {
 	NextCursor *string `json:"next_cursor,omitempty"`
 }
 
+// ConnectionNameInput defines model for ConnectionNameInput.
+type ConnectionNameInput struct {
+	Name string `json:"name"`
+}
+
 // CsvColumnSample defines model for CsvColumnSample.
 type CsvColumnSample struct {
 	// Header The header row; absent for a file without one.
@@ -1064,6 +1069,9 @@ type ImportFileMultipartRequestBody ImportFileMultipartBody
 
 // CreateConnectionJSONRequestBody defines body for CreateConnection for application/json ContentType.
 type CreateConnectionJSONRequestBody = ConnectionInput
+
+// RenameConnectionJSONRequestBody defines body for RenameConnection for application/json ContentType.
+type RenameConnectionJSONRequestBody = ConnectionNameInput
 
 // MapExternalAccountJSONRequestBody defines body for MapExternalAccount for application/json ContentType.
 type MapExternalAccountJSONRequestBody = AccountMappingInput

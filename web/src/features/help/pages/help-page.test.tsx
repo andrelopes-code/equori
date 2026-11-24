@@ -25,6 +25,17 @@ function inRegion(region: string) {
 }
 
 describe("help", () => {
+  it("links the sites of the aggregator in the steps of the region", async () => {
+    inRegion("BR");
+    await renderApp("/help/connect-bank", { fetch: fakeApi(sharedRoutes) });
+
+    const link = await screen.findByRole("link", {
+      name: /dashboard\.pluggy\.ai/,
+    });
+
+    expect(link).toHaveAttribute("href", "https://dashboard.pluggy.ai");
+  });
+
   // Spec 2026-11-17-help-design, HP1: the index follows the reader's questions, not the kinds.
   it("leads with the walkthrough, then the pages by area, the symptoms and the terms", async () => {
     await renderApp("/help", { fetch: fakeApi(sharedRoutes) });

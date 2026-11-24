@@ -4,7 +4,7 @@ A bank connection brings the accounts and transactions of an institution without
 
 ## Add the credentials
 
-The administrator of the installation does this once.
+The administrator of the installation does this once. The credentials come from the site of the aggregator. When your region has its own steps, they are at the end of this page.
 
 1. Open [Settings](/settings) and choose **Integrations**.
    ![The settings, with the Integrations section marked](connect-settings)
@@ -25,6 +25,8 @@ Repeat for each bank. A bank added later at the aggregator's site also needs the
 2. Write the **Bank name** and choose **Continue**.
 3. Log in to the aggregator, choose that bank and authorize. No code is copied.
 4. Choose **Link accounts**, or **Connect another bank** to repeat.
+
+Each connection keeps the name you gave. Choose **Rename** to change it.
 
 If the connection is not saved, choose **Try again** before closing the window. There is no need to log in to the aggregator again.
 

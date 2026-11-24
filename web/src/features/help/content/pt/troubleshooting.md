@@ -2,6 +2,16 @@
 
 Cada entrada nomeia um sintoma como a tela o mostra. Em seguida traz a causa, os passos e a página com mais detalhes.
 
+## Um banco adicionado não aparece {#bank-missing}
+
+O banco está no site do agregador, mas ainda não foi conectado ao equori.
+
+1. Abra [Vínculos](/accounts/links) e escolha **Conectar banco**.
+2. Escreva o **Nome do banco** e escolha **Continuar**.
+3. Entre no agregador, escolha o banco e autorize.
+
+Mais: [Conectar um banco](/help/connect-bank).
+
 ## Uma conexão aparece como Parada {#connection-stalled}
 
 O banco não envia dados novos há algumas horas. [Vínculos](/accounts/links) mostra quantas.

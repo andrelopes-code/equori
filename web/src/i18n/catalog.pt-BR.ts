@@ -2642,6 +2642,7 @@ export const catalogPtBR: Catalog = {
   "assistant.action.manage_imports.map_account": "Mapear conta do banco",
   "assistant.action.manage_imports.resolve_record":
     "Resolver registro importado",
+  "assistant.action.manage_imports.rename_connection": "Renomear conexão",
   "assistant.action.manage_imports.delete_connection": "Apagar conexão",
   "assistant.action.manage_imports.delete_integration": "Apagar integração",
   "assistant.field.account": "Conta",

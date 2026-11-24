@@ -1644,7 +1644,8 @@ export interface paths {
         delete: operations["deleteConnection"];
         options?: never;
         head?: never;
-        patch?: never;
+        /** Rename a connection. */
+        patch: operations["renameConnection"];
         trace?: never;
     };
     "/connections/{id}/sync": {
@@ -5941,6 +5942,9 @@ export interface components {
             items: components["schemas"]["Integration"][];
             /** @description Absent on the last page. */
             next_cursor?: string;
+        };
+        ConnectionNameInput: {
+            name: string;
         };
         ConnectToken: {
             token: string;
@@ -12326,6 +12330,36 @@ export interface operations {
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
             409: components["responses"]["Problem"];
+        };
+    };
+    renameConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConnectionNameInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Connection"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
         };
     };
     syncConnection: {

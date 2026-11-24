@@ -81,6 +81,8 @@ func (s *Server) Register(mux *http.ServeMux) {
 	)
 	mux.HandleFunc("GET "+BaseURL+"/connections/{id}",
 		httpserver.Handle(s.errs, http.StatusOK, s.getConnection))
+	mux.HandleFunc("PATCH "+BaseURL+"/connections/{id}",
+		httpserver.Handle(s.errs, http.StatusOK, s.renameConnection))
 	mux.HandleFunc("DELETE "+BaseURL+"/connections/{id}",
 		httpserver.Handle(s.errs, http.StatusOK, s.deleteConnection))
 	mux.HandleFunc("POST "+BaseURL+"/connections/{id}/sync",

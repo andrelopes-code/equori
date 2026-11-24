@@ -8,12 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@slotted/react/dialog";
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldLabel,
-} from "@slotted/react/field";
+import { Field, FieldError, FieldLabel } from "@slotted/react/field";
 import { TextField } from "@slotted/react/text-field";
 import { useState } from "react";
 
@@ -23,7 +18,7 @@ import {
   useUpdateIntegrationCredentials,
 } from "@/features/setup/api";
 import type { Aggregator, Integration } from "@/features/setup/api";
-import { catalogLabel } from "@/features/setup/model/catalog-label";
+import { IntegrationCredentialFields } from "@/features/setup/integrations/integration-credential-fields";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/form-fields/choice-select";
 import { FormNotice } from "@/ui/form-layout/form-notice";
@@ -149,44 +144,16 @@ export function IntegrationDialog({
                 </>
               )}
 
-              {aggregator?.credential_fields.map((field) => {
-                const error = errors[`credentials.${field.name}`];
-                return (
-                  <Field
-                    key={field.name}
-                    invalid={error !== undefined}
-                    required
-                  >
-                    <FieldLabel>
-                      {catalogLabel(
-                        t,
-                        `settings.integrations.field.${field.name}`,
-                        field.name,
-                      )}
-                    </FieldLabel>
-                    <TextField
-                      name={field.name}
-                      type={field.secret ? "password" : "text"}
-                      autoComplete="off"
-                      spellCheck={false}
-                      maxLength={200}
-                      value={values[field.name] ?? ""}
-                      onChange={(event) => {
-                        setValues((current) => ({
-                          ...current,
-                          [field.name]: event.target.value,
-                        }));
-                      }}
-                    />
-                    {error !== undefined && <FieldError>{error}</FieldError>}
-                    {field.secret && (
-                      <FieldDescription>
-                        {t("settings.integrations.secretHint")}
-                      </FieldDescription>
-                    )}
-                  </Field>
-                );
-              })}
+              {aggregator !== undefined && (
+                <IntegrationCredentialFields
+                  fields={aggregator.credential_fields}
+                  values={values}
+                  errors={errors}
+                  onChange={(field, value) => {
+                    setValues((current) => ({ ...current, [field]: value }));
+                  }}
+                />
+              )}
             </FormLayout>
           </DialogBody>
           <DialogFooter>

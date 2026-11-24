@@ -139,6 +139,7 @@ type Repository interface {
 		booksID int64,
 		p page.Request[NameKey],
 	) ([]domain.Connection, *NameKey, error)
+	RenameConnection(ctx context.Context, booksID int64, id uuid.UUID, name string) error
 	DeleteConnection(ctx context.Context, booksID int64, id uuid.UUID) error
 	// LockBookPairing holds the book's pairing lock for one account batch of a sync (A218 rule 3).
 	LockBookPairing(ctx context.Context, booksID int64) (unlock func(), err error)

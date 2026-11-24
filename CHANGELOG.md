@@ -6,6 +6,7 @@ The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/
 
 ### Added
 
+- Links connects a bank: the login at the aggregator opens from equori and the connection is registered, with no id copied. A connection can be renamed.
 - One account serves several goals by amount: a goal holds an account whole or a part of it, with Set aside and Release on its card, and a schedule can set each occurrence aside for a goal.
 - A goal pays an expense: linked on the transaction or on the goal's card, or paid from the goal's own account. The expense counts against neither the budget nor the bucket of its category.
 - The Plan lists earlier installments, scheduled savings and goal deposits beside the buckets; the Track view draws where the month's income went.

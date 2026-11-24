@@ -138,6 +138,28 @@ func (s *Service) ListConnections(
 	return list, next, nil
 }
 
+func (s *Service) RenameConnection(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+	name string,
+) (domain.Connection, error) {
+	if err := s.available(); err != nil {
+		return domain.Connection{}, err
+	}
+
+	name, err := domain.ConnectionName(name, "")
+	if err != nil {
+		return domain.Connection{}, err
+	}
+
+	if err := s.repo.RenameConnection(ctx, booksID, id, name); err != nil {
+		return domain.Connection{}, err
+	}
+
+	return s.Connection(ctx, booksID, id)
+}
+
 func (s *Service) DeleteConnection(ctx context.Context, booksID int64, id uuid.UUID) error {
 	if err := s.available(); err != nil {
 		return err

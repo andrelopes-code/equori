@@ -93,7 +93,7 @@ export const helpGuides: Readonly<Record<string, HelpGuide | undefined>> = {
   "connect-bank": {
     area: "accounts",
     screen: "/accounts",
-    symptoms: ["connection-stalled", "consent-expiring"],
+    symptoms: ["bank-missing", "connection-stalled", "consent-expiring"],
     related: ["bank-connections"],
   },
   statement: { area: "cards", screen: "/cards", related: ["pay-statement"] },

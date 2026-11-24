@@ -27,7 +27,7 @@ func previewImportsAction(
 
 	p := tool.Preview{Action: "manage_imports." + string(in.Action)}
 	switch in.Action {
-	case "sync", "delete_connection":
+	case "sync", "rename_connection", "delete_connection":
 		return previewConnection(ctx, svc, booksID, a, in, p)
 	case "map_account":
 		return previewMapping(ctx, svc, names, booksID, a, in, p)
@@ -58,9 +58,17 @@ func previewConnection(
 	}
 
 	p.Target = c.Name
-	if in.Action == "sync" {
+
+	switch in.Action {
+	case "sync":
 		p.Changes = []tool.Change{{Field: "connection", After: tool.TextValue(c.Name)}}
-	} else {
+	case "rename_connection":
+		p.Changes = []tool.Change{{
+			Field:  "connection",
+			Before: tool.TextValue(c.Name),
+			After:  tool.TextValue(in.Name),
+		}}
+	default:
 		p.Changes, p.Destructive = []tool.Change{
 			{Field: "connection", Before: tool.TextValue(c.Name)},
 		}, true

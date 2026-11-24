@@ -146,18 +146,18 @@
     },
     "connect-credentials": {
       "pt": {
-        "spot": [27.24, 26.68, 45.52, 49.22]
+        "spot": [27.24, 23.7, 45.52, 49.21]
       },
       "en": {
-        "spot": [27.24, 26.68, 45.52, 49.22]
+        "spot": [27.24, 23.7, 45.52, 49.21]
       }
     },
     "connect-create": {
       "pt": {
-        "spot": [65.68, 76.73, 6.35, 6.33]
+        "spot": [65.68, 79.71, 6.35, 6.33]
       },
       "en": {
-        "spot": [64.64, 76.73, 7.39, 6.33]
+        "spot": [64.64, 79.71, 7.39, 6.33]
       }
     },
     "import-account": {
@@ -3178,14 +3178,14 @@
     "check-balance/d77d407a0056.png": "d77d407a00562e044ce75830669852fd339d8482bf282ce55bd3adafb9b87a5a",
     "check-balance/dac10eb31a17.png": "dac10eb31a1740b9141866dd3583538de7c57e269eb8e79390ee3eba0f3844cc",
     "check-balance/ec86090899a5.png": "ec86090899a51b23388ac14d4eefbfd8479099b2ad74cf0fdde7fc02c196ff5e",
-    "connect-bank/connect-add.en.dark.png": "f93e83f4962acf02056ce09e6748e1c698b37771dd6e57e61063aaa4ee0065f8",
-    "connect-bank/connect-add.pt.dark.png": "26deac138b36d0927e554ec1ef9aede44ba82420b20302bf3ab17e776d7e4f97",
-    "connect-bank/connect-create.en.dark.png": "19f6356290b6426f2be1bd91a01ca7944f4039770494b940d7d9b78e82b7c56b",
-    "connect-bank/connect-create.pt.dark.png": "699a3ea81f96029f04795c2640deec3ad1379cf29369bc032a11f340f86c6ca2",
-    "connect-bank/connect-credentials.en.dark.png": "19f6356290b6426f2be1bd91a01ca7944f4039770494b940d7d9b78e82b7c56b",
-    "connect-bank/connect-credentials.pt.dark.png": "699a3ea81f96029f04795c2640deec3ad1379cf29369bc032a11f340f86c6ca2",
-    "connect-bank/connect-settings.en.dark.png": "9e50736c40eaa7ac8cef4ac778942780309fcc969e084a2c61b6a2f8afed7844",
-    "connect-bank/connect-settings.pt.dark.png": "6ecaa802273dbbd6ee097d69f4defe205f40833342fba9d4262409a815f2ff39",
+    "connect-bank/connect-add.en.dark.png": "3aaaa945f978b16cab780b32c0d583636366dee4a662849d8efd275e0c37e31c",
+    "connect-bank/connect-add.pt.dark.png": "0f239d0cbc089930754c1a91fa75a2af7eaa601d73bb5833c79ff314490ce396",
+    "connect-bank/connect-create.en.dark.png": "b15c200d52b6adf0c3c807a73858dcce51d5e17033c06589bbb962f3e8aa7d71",
+    "connect-bank/connect-create.pt.dark.png": "21ea17c42e4671f6e7541155f1cafef6e39ca07fe60874c385f677d65870d07c",
+    "connect-bank/connect-credentials.en.dark.png": "b15c200d52b6adf0c3c807a73858dcce51d5e17033c06589bbb962f3e8aa7d71",
+    "connect-bank/connect-credentials.pt.dark.png": "21ea17c42e4671f6e7541155f1cafef6e39ca07fe60874c385f677d65870d07c",
+    "connect-bank/connect-settings.en.dark.png": "db2a233731932bab7019aedaf74e0db072569c592221060e139c44bf6ef770c8",
+    "connect-bank/connect-settings.pt.dark.png": "9ac2a16cb3f4d99a695f72be3af81357ac74947c7c387a19b31800f4bb719611",
     "contribution-plan/plan-criteria.en.dark.png": "2427ae59e5ae1cbacbee0c16b779dc46f260dec7219f7500baf04140cb16fea5",
     "contribution-plan/plan-criteria.pt.dark.png": "3f508bfe222541479701f3e4ed978dd0b038708392b1dda6c48d2f08c9df9bcb",
     "contribution-plan/plan-edit.en.dark.png": "c94a2784bccb3983943409fc1623fde461ebdcd1c27f2a1dd8114d589e6bab12",
@@ -3392,7 +3392,7 @@
   "inputs": {
     "check-balance": "3b5cac81fb24a1b676e5ccd7b68ba8e9b29d96288ade6316f91196c528a060cd",
     "category-rule": "2406a84a34ce7ce6e8e3912fa9a25853365cb93745f8adec04211d26a1d6aba6",
-    "connect-bank": "31c88bf427bad019c3d7ad5cf55e0ad2f0131e4c5ec9fe32b02990a44ff447a2",
+    "connect-bank": "106a88ab90871044d2c2eddcbb2cf7b782a0c2282ea772ee6300912d195f6312",
     "import-statement": "a4cd0b18be43f15bb9ca84584103f10ba59210d0290a8f5019cbfa1847b9b97f",
     "pay-statement": "0fc55bfe1db198389c5fa67f00f44a1d67c499a993f82d4dd482fe035c25213e",
     "record-transaction": "c5a4ac70cfdec0cd025c7e37992a9b04d45e695475efe2a972548f3377473a40",

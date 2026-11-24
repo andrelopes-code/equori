@@ -4,7 +4,7 @@ Uma conexão bancária traz as contas e as transações de uma instituição sem
 
 ## Cadastrar as credenciais
 
-A pessoa que administra a instalação faz isso uma vez.
+A pessoa que administra a instalação faz isso uma vez. As credenciais vêm do site do agregador. Quando a sua região tem um passo a passo, ele está no fim desta página.
 
 1. Abra [Configurações](/settings) e escolha **Integrações**.
    ![As configurações, com a seção Integrações marcada](connect-settings)
@@ -25,6 +25,8 @@ Repita para cada banco. Um banco adicionado depois no site do agregador também 
 2. Escreva o **Nome do banco** e escolha **Continuar**.
 3. Entre no agregador, escolha esse banco e autorize. Nenhum código é copiado.
 4. Escolha **Vincular contas**, ou **Conectar outro banco** para repetir.
+
+Cada conexão guarda o nome que você deu. Escolha **Renomear** para trocá-lo.
 
 Se a gravação falhar, escolha **Tentar de novo** antes de fechar a janela. Não é preciso entrar no agregador outra vez.
 

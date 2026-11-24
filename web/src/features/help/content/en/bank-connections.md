@@ -2,6 +2,10 @@
 
 A bank connection brings an institution's accounts and transactions without importing files. It depends on an outside service, called an aggregator, that the person who administers the installation sets up in [Settings](/settings).
 
+## Connect the bank
+
+Adding the bank at the site of the aggregator is not enough. In [Links](/accounts/links), choose **Connect bank** for each bank. [Connect a bank](/help/connect-bank) holds the steps.
+
 ## Link the accounts
 
 A connection brings the accounts the institution holds. Each needs a link: your account in equori that receives its transactions.

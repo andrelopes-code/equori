@@ -598,6 +598,29 @@ func (q *Queries) OpenReserveReviews(ctx context.Context, arg OpenReserveReviews
 	return count, err
 }
 
+const renameConnection = `-- name: RenameConnection :execrows
+UPDATE ingestion_connection
+SET
+    name = $1
+WHERE
+    books_id = $2
+    AND id = $3
+`
+
+type RenameConnectionParams struct {
+	Name    string
+	BooksID int64
+	ID      uuid.UUID
+}
+
+func (q *Queries) RenameConnection(ctx context.Context, arg RenameConnectionParams) (int64, error) {
+	result, err := q.db.Exec(ctx, renameConnection, arg.Name, arg.BooksID, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const renameExternalAccount = `-- name: RenameExternalAccount :exec
 UPDATE ingestion_external_account
 SET

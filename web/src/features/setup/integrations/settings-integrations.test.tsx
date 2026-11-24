@@ -141,6 +141,22 @@ describe("integrations settings", () => {
     expect(router.state.location.search).toEqual({ connect: id });
   });
 
+  it("leads from the credentials to the guide that tells where they come from", async () => {
+    await renderApp("/settings?section=integrations", { fetch: api([]) });
+    const view = await section(pt["settings.integrations.title"]);
+
+    await userEvent.click(
+      await view.findByRole("button", {
+        name: pt["settings.integrations.add"],
+      }),
+    );
+    const dialog = within(await screen.findByRole("dialog"));
+
+    expect(
+      dialog.getByRole("link", { name: pt["links.connect.credentialsGuide"] }),
+    ).toHaveAttribute("href", "/help/connect-bank#credentials");
+  });
+
   it("builds the credential fields from the aggregator and sends them without showing them again", async () => {
     const sent: Sent[] = [];
     await renderApp("/settings?section=integrations", { fetch: api(sent) });

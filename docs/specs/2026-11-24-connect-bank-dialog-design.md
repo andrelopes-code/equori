@@ -29,6 +29,10 @@ CB5. After the connection, the dialog lists the accounts found. "Link accounts" 
 
 CB6. The help page `connect-bank` has the section of this task, and its passage of region BR holds the steps in Meu Pluggy and in the Pluggy Dashboard, with the known mistakes.
 
+CB7. A connection is renamed on Links (`PATCH /connections/{id}`, role `write`) and by the action `rename_connection` of `manage_imports`.
+
+CB8. The help names the symptom "an added bank does not appear", and the credentials dialog and the setup state lead to the section `credentials` of the page. Steps draw external links.
+
 ## Cross-cutting questions
 
 - R1: The dialog, portal and steps vary by aggregator. Extension point: `web/src/features/accounts/connect/connect-launchers.ts`, keyed by aggregator id; on the server, `ConnectToken` and `ConnectOrigin` of `Aggregator`.
@@ -43,7 +47,7 @@ CB6. The help page `connect-bank` has the section of this task, and its passage 
 - B2: `createConnectToken` is `write`; `TestConnectToken` covers read, write and no membership. `createConnection` stays `write`.
 - B3: Does not apply: no setting.
 - D3, D4, D5: Does not apply: a connection starts with every account pending and imports nothing.
-- S1: `createConnectToken`, excluded from the tools as `-secret`. No new problem code.
+- S1: `renameConnection`, covered by `manage_imports`. `createConnectToken`, excluded from the tools as `-secret`. No new problem code.
 - S2: Does not apply: Links is desktop-only (ADR 027).
 - S3: Article `imports_and_bank_connections`.
 - S4: The assistant keeps no access: a connection stays the owner's act.

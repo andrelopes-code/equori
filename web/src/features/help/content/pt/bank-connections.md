@@ -2,6 +2,10 @@
 
 Uma conexão bancária traz as contas e as transações de uma instituição sem que você precise importar arquivos. Ela depende de um serviço externo, chamado agregador, que a pessoa que administra a instalação configura em [Configurações](/settings).
 
+## Conectar o banco
+
+Adicionar o banco no site do agregador não basta. Em [Vínculos](/accounts/links), escolha **Conectar banco** para cada banco. [Conectar um banco](/help/connect-bank) traz os passos.
+
 ## Vincular as contas
 
 Uma conexão traz as contas que a instituição tem. Cada uma precisa de um vínculo: a sua conta no equori que recebe as transações dela.

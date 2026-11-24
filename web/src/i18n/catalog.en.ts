@@ -2610,6 +2610,7 @@ export const catalogEn = {
   "assistant.action.manage_imports.sync": "Sync connection",
   "assistant.action.manage_imports.map_account": "Map bank account",
   "assistant.action.manage_imports.resolve_record": "Resolve import record",
+  "assistant.action.manage_imports.rename_connection": "Rename connection",
   "assistant.action.manage_imports.delete_connection": "Delete connection",
   "assistant.action.manage_imports.delete_integration": "Delete integration",
   "assistant.field.account": "Account",

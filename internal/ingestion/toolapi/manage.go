@@ -20,6 +20,7 @@ func (manageImportsAction) Values() []string {
 		"resolve_record",
 		"reopen_record",
 		"undo_decision",
+		"rename_connection",
 		"delete_connection",
 		"delete_integration",
 	}
@@ -33,14 +34,15 @@ func (resolution) Values() []string {
 
 type manageImportsIn struct {
 	Action            manageImportsAction `json:"action"                       jsonschema:"operation to propose"`
-	ConnectionID      string              `json:"connection_id,omitzero"       jsonschema:"for sync, map_account and delete_connection: connection from get_imports"`
+	ConnectionID      string              `json:"connection_id,omitzero"       jsonschema:"connection, from get_imports"`
 	ExternalAccountID string              `json:"external_account_id,omitzero" jsonschema:"for map_account: bank account of the connection, from get_imports"`
-	AccountID         string              `json:"account_id,omitzero"          jsonschema:"for map_account: ledger account receiving the bank account's lines; absent with ignore"`
-	Ignore            bool                `json:"ignore,omitzero"              jsonschema:"for map_account: stop importing this bank account"`
+	AccountID         string              `json:"account_id,omitzero"          jsonschema:"for map_account: ledger account receiving its lines; absent with ignore"`
+	Ignore            bool                `json:"ignore,omitzero"              jsonschema:"for map_account: stop importing it"`
 	SyncFrom          tool.Date           `json:"sync_from,omitzero"           jsonschema:"for map_account: first date imported"`
 	RecordID          string              `json:"record_id,omitzero"           jsonschema:"for resolve_record, reopen_record and undo_decision: record from get_imports"`
 	Resolution        resolution          `json:"resolution,omitzero"          jsonschema:"for resolve_record: match links it to transaction_id, create records a new transaction, discard drops it"`
 	TransactionID     string              `json:"transaction_id,omitzero"      jsonschema:"for resolve_record with match: transaction from search_transactions"`
+	Name              string              `json:"name,omitzero"                jsonschema:"for rename_connection: new name"`
 	IntegrationID     string              `json:"integration_id,omitzero"      jsonschema:"for delete_integration: integration from get_imports"`
 }
 
@@ -75,6 +77,8 @@ func parseImportsAction(in manageImportsIn) (importsAction, error) {
 	switch in.Action {
 	case "sync", "delete_connection":
 		err = required(name, fields, "connection_id")
+	case "rename_connection":
+		err = required(name, fields, "connection_id", "name")
 	case "map_account":
 		// account_id, ignore and sync_from combine as domain.Mapping.Validate checks.
 		err = required(name, slices.DeleteFunc(slices.Clone(fields), func(f field) bool {
@@ -132,6 +136,7 @@ func importFields(in manageImportsIn) []field {
 		},
 		{"resolution", in.Resolution != ""},
 		{"transaction_id", in.TransactionID != ""},
+		{"name", in.Name != ""},
 		{"integration_id", in.IntegrationID != ""},
 	}
 }
@@ -153,9 +158,9 @@ func manageImports(svc *app.Service, names AccountNames) tool.Tool {
 	return tool.NewWrite(tool.Spec{
 		Name: "manage_imports",
 		Description: "Proposes an action on imports and bank connections: sync a connection now, map a bank account of a connection " +
-			"to a ledger account or ignore it, resolve a record that needs review, reopen a discarded record, undo the automatic decision a sync made on a record, delete a connection, or delete an integration without connections. " +
+			"to a ledger account or ignore it, resolve a record that needs review, reopen a discarded record, undo a sync's decision on a record, rename or delete a connection, or delete an integration without connections. " +
 			"Use it when the user asks to sync, map, review or remove a bank link. " +
-			"Do not use it to add credentials or a new connection: the user does that on the Links screen, and get_help explains it. " +
+			"Do not use it to add credentials or a new connection: the user does that on screen, and get_help explains it. " +
 			"The user confirms first.",
 		Effect: tool.Destructive,
 	}, func(ctx context.Context, booksID int64, in manageImportsIn) (tool.Preview, error) {
@@ -213,6 +218,9 @@ func applyImportsAction(
 		}
 
 		return out, nil
+	case "rename_connection":
+		_, err := svc.RenameConnection(ctx, booksID, a.connection, in.Name)
+		return manageImportsOut{ConnectionID: in.ConnectionID}, err
 	case "delete_connection":
 		return manageImportsOut{Deleted: true}, svc.DeleteConnection(ctx, booksID, a.connection)
 	}

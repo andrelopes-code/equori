@@ -279,6 +279,23 @@ func (r *Repository) ListConnections(
 	return out, next, r.withAccounts(ctx, booksID, out)
 }
 
+func (r *Repository) RenameConnection(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+	name string,
+) error {
+	n, err := r.q.RenameConnection(
+		ctx,
+		RenameConnectionParams{BooksID: booksID, ID: id, Name: name},
+	)
+	if err == nil && n == 0 {
+		return app.ErrNotFound
+	}
+
+	return err
+}
+
 func (r *Repository) DeleteConnection(ctx context.Context, booksID int64, id uuid.UUID) error {
 	n, err := r.q.DeleteConnection(ctx, DeleteConnectionParams{BooksID: booksID, ID: id})
 	if err == nil && n == 0 {

@@ -184,7 +184,7 @@ describe("helpNeighbours", () => {
       const library = await loadHelpLibrary(language, "US");
       const symptoms = symptomsOf(library).map((s) => s.id);
 
-      expect(symptoms).toHaveLength(10);
+      expect(symptoms).toHaveLength(11);
 
       for (const page of helpPages) {
         const guide = helpGuides[page.id];

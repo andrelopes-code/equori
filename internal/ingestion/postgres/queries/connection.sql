@@ -153,6 +153,14 @@ ORDER BY
     connection_id,
     id;
 
+-- name: RenameConnection :execrows
+UPDATE ingestion_connection
+SET
+    name = @name
+WHERE
+    books_id = @books_id
+    AND id = @id;
+
 -- name: DeleteConnection :execrows
 DELETE FROM ingestion_connection
 WHERE

@@ -142,6 +142,22 @@ func (s *Server) getConnection(
 	return toConnectionAPI(c), nil
 }
 
+func (s *Server) renameConnection(
+	ctx context.Context, r *http.Request, b RenameConnectionJSONRequestBody,
+) (Connection, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return Connection{}, err
+	}
+
+	c, err := s.svc.RenameConnection(ctx, auth.MustBooksID(ctx), id, b.Name)
+	if err != nil {
+		return Connection{}, err
+	}
+
+	return toConnectionAPI(c), nil
+}
+
 func (s *Server) deleteConnection(
 	ctx context.Context, r *http.Request, _ httpserver.None,
 ) (httpserver.None, error) {

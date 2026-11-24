@@ -758,6 +758,8 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "links.undoOf": "Desfazer {description}",
   "problem.no_decision":
     "Esta linha não tem mais decisão automática para desfazer.",
+  "links.rename": "Renomear",
+  "links.renameOf": "Renomear {name}",
   "links.deleteOf": "Excluir a conexão {name}",
   "links.deleteTitle": "Excluir {name}",
   "links.deleteHint":
@@ -777,6 +779,7 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "links.connect.guide": "Guia completo",
   "links.connect.setup":
     "As credenciais do agregador vêm primeiro. Elas são cadastradas uma vez, nas configurações.",
+  "links.connect.credentialsGuide": "Onde obter estas credenciais",
   "links.connect.setupAction": "Cadastrar credenciais",
   "links.connect.unsupported": "Este agregador não oferece conexão por aqui.",
   "links.connect.done": "{name} conectado",

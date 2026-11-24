@@ -2,6 +2,16 @@
 
 Each entry names a symptom as a screen shows it. It then gives the cause, the steps and the page that holds more.
 
+## An added bank does not appear {#bank-missing}
+
+The bank is at the site of the aggregator, but it is not connected to equori yet.
+
+1. Open [Links](/accounts/links) and choose **Connect bank**.
+2. Write the **Bank name** and choose **Continue**.
+3. Log in to the aggregator, choose the bank and authorize.
+
+More: [Connect a bank](/help/connect-bank).
+
 ## A connection reads Stalled {#connection-stalled}
 
 The bank has sent no new data for some hours. [Links](/accounts/links) shows how many.

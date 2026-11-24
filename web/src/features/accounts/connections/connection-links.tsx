@@ -12,6 +12,7 @@ import { useSyncConnection } from "@/features/accounts/api";
 import { ConnectionAccountsTable } from "@/features/accounts/connections/connection-accounts-table";
 import type { ConnectionMessage } from "@/features/accounts/connections/connection-account-actions";
 import { ConnectionBatches } from "@/features/accounts/connections/connection-batches";
+import { ConnectionRenameDialog } from "@/features/accounts/connections/connection-rename-dialog";
 import { ConnectionDeleteDialog } from "@/features/accounts/connections/connection-delete-dialog";
 import { ConnectionInvestments } from "@/features/accounts/connections/connection-investments";
 import { ConnectionSyncs } from "@/features/accounts/connections/connection-syncs";
@@ -59,6 +60,7 @@ export function ConnectionLinks({
   const sync = useSyncConnection();
   const [batches, setBatches] = useState<ImportBatch[]>([]);
   const [deleting, setDeleting] = useState(false);
+  const [renaming, setRenaming] = useState(false);
   const [message, setMessage] = useState<ConnectionMessage | null>(null);
 
   const provider = providerWords[connection.provider_status];
@@ -86,6 +88,16 @@ export function ConnectionLinks({
           </Inline>
         </Stack>
         <Inline gap={2}>
+          <Button
+            variant="ghost"
+            tone="secondary"
+            aria-label={t("links.renameOf", { name: connection.name })}
+            onClick={() => {
+              setRenaming(true);
+            }}
+          >
+            {t("links.rename")}
+          </Button>
           <Button
             variant="ghost"
             tone="danger"
@@ -137,6 +149,16 @@ export function ConnectionLinks({
         </Alert>
       )}
       <ConnectionBatches batches={batches} accounts={accounts} />
+      <Presence value={renaming ? connection.id : undefined}>
+        {() => (
+          <ConnectionRenameDialog
+            connection={connection}
+            onClose={() => {
+              setRenaming(false);
+            }}
+          />
+        )}
+      </Presence>
       <Presence value={deleting ? connection : undefined}>
         {(target) => (
           <ConnectionDeleteDialog

@@ -1,3 +1,4 @@
+import { Link } from "@slotted/react/link";
 import type { NavigateOptions } from "@tanstack/react-router";
 
 import { inlineParts } from "@/features/help/model/inline-parts";
@@ -26,6 +27,14 @@ export function HelpInline({ markdown, links = true }: HelpInlineProps) {
         >
           {part.text}
         </AppLink>
+      );
+    }
+
+    if (part.type === "link" && links && part.href.startsWith("https://")) {
+      return (
+        <Link key={key} href={part.href} external>
+          {part.text}
+        </Link>
       );
     }
 

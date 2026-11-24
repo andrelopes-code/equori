@@ -759,6 +759,8 @@ export const accountsEn = {
   "links.undo": "Undo",
   "links.undoOf": "Undo {description}",
   "problem.no_decision": "This line has no automatic decision left to undo.",
+  "links.rename": "Rename",
+  "links.renameOf": "Rename {name}",
   "links.deleteOf": "Delete connection {name}",
   "links.deleteTitle": "Delete {name}",
   "links.deleteHint":
@@ -778,6 +780,7 @@ export const accountsEn = {
   "links.connect.guide": "Full guide",
   "links.connect.setup":
     "The credentials of the aggregator come first. They are added once, in the settings.",
+  "links.connect.credentialsGuide": "Where to get these credentials",
   "links.connect.setupAction": "Add credentials",
   "links.connect.unsupported":
     "This aggregator does not offer a connection from here.",

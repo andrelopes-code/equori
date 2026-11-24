@@ -804,6 +804,18 @@ export function useSyncConnection() {
   );
 }
 
+export function useRenameConnection() {
+  return useApiMutation(
+    async (api, { id, name }: { id: string; name: string }) =>
+      unwrap(
+        await api.PATCH("/connections/{id}", {
+          params: { path: { id } },
+          body: { name },
+        }),
+      ),
+  );
+}
+
 export function useDeleteConnection() {
   return useApiMutation(async (api, id: string) =>
     unwrap(await api.DELETE("/connections/{id}", { params: { path: { id } } })),

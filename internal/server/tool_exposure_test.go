@@ -267,6 +267,7 @@ var exposure = map[string]string{
 	"listConnections":                  "get_imports",
 	"createConnection":                 "-secret",
 	"getConnection":                    "get_imports",
+	"renameConnection":                 "manage_imports",
 	"deleteConnection":                 "manage_imports",
 	"syncConnection":                   "manage_imports",
 	"mapExternalAccount":               "manage_imports",
