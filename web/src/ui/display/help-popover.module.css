@@ -1,0 +1,10 @@
+@layer app {
+  /* Workaround for Slotted issue #180: in SectionTags the margin of the tags and the empty part of
+     the button's box add up, and the width cap narrows a button with a negative margin. A container
+     sets a gap of space-4, as SectionTags does. */
+  .trigger {
+    max-inline-size: none;
+    margin-inline-start: calc(var(--slotted-space-2) * -1);
+    cursor: help;
+  }
+}

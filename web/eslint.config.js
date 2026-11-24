@@ -79,6 +79,14 @@ const pageBodyStack = {
     "Stack the blocks of a page in PageStack (@/ui/page-layout/page-stack), not in a Stack with a gap of its own (O19).",
 };
 
+// O20: a question mark of its own takes the size of a button and grows the line of its title.
+const bareHelpMark = {
+  selector:
+    'JSXOpeningElement[name.name="Glyph"]:has(JSXAttribute[name.name="name"][value.value="circle-question"])',
+  message:
+    "Draw a help mark with HelpTip or HelpPopover (@/ui/display), or FieldTitle's help in a form (O20).",
+};
+
 // Flat-config rule options replace instead of merging: every block below
 // restates the full option list for its files.
 const restrict = ({ patterns, paths = [] }) => ["error", { patterns, paths }];
@@ -240,6 +248,7 @@ export default defineConfig(
         bareRouterLink,
         pageHeaderBack,
         bareInlineMessage,
+        bareHelpMark,
         stackedHeading,
         pageBodyStack,
       ],
@@ -262,6 +271,7 @@ export default defineConfig(
         bareRouterLink,
         pageHeaderBack,
         bareInlineMessage,
+        bareHelpMark,
       ],
     },
   },
@@ -282,6 +292,7 @@ export default defineConfig(
         bareRouterLink,
         pageHeaderBack,
         bareInlineMessage,
+        bareHelpMark,
         stackedHeading,
       ],
     },
@@ -289,7 +300,30 @@ export default defineConfig(
   {
     files: ["src/ui/navigation/page-back.tsx"],
     rules: {
-      "no-restricted-syntax": ["error", bareRouterLink, bareInlineMessage],
+      "no-restricted-syntax": [
+        "error",
+        bareRouterLink,
+        bareInlineMessage,
+        bareHelpMark,
+      ],
+    },
+  },
+  {
+    // The three components that draw the help mark (O20).
+    files: [
+      "src/features/help/link/help-link.tsx",
+      "src/ui/display/help-popover.tsx",
+      "src/ui/display/help-tip.tsx",
+    ],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        bareRouterLink,
+        pageHeaderBack,
+        bareInlineMessage,
+        stackedHeading,
+        pageBodyStack,
+      ],
     },
   },
   { files: ["**/*.js"], extends: [tseslint.configs.disableTypeChecked] },

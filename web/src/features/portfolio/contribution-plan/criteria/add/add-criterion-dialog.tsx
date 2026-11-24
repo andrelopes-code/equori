@@ -14,6 +14,7 @@ import { List } from "@slotted/react/list";
 import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
 
+import styles from "@/features/portfolio/contribution-plan/criteria/add/add-criterion-dialog.module.css";
 import { CriterionOption } from "@/features/portfolio/contribution-plan/criteria/add/criterion-option";
 import { MethodHelp } from "@/features/portfolio/contribution-plan/criteria/add/method-help";
 import {
@@ -107,7 +108,7 @@ export function AddCriterionDialog({
 
             <Stack gap={2}>
               <Inline align="center" justify="between" wrap="nowrap">
-                <Inline gap={2} align="center" wrap="nowrap">
+                <Inline gap={4} align="baseline" wrap="nowrap">
                   <Text size="sm" weight="semibold">
                     {t("contributionPlan.criteria.group.signals")}
                   </Text>
@@ -128,24 +129,23 @@ export function AddCriterionDialog({
                 </Button>
               </Inline>
 
-              <div data-slotted-density="comfortable">
-                <List
-                  variant="framed"
-                  aria-label={t("contributionPlan.criteria.group.signals")}
-                >
-                  {piotroskiFacts.map((fact) => (
-                    <CriterionOption
-                      key={fact}
-                      label={criterionText(t, fact, fact)}
-                      added={facts.includes(fact)}
-                      disabled={room < 1}
-                      onAdd={() => {
-                        onFacts([fact]);
-                      }}
-                    />
-                  ))}
-                </List>
-              </div>
+              <List
+                variant="framed"
+                className={styles.signals}
+                aria-label={t("contributionPlan.criteria.group.signals")}
+              >
+                {piotroskiFacts.map((fact) => (
+                  <CriterionOption
+                    key={fact}
+                    label={criterionText(t, fact, fact)}
+                    added={facts.includes(fact)}
+                    disabled={room < 1}
+                    onAdd={() => {
+                      onFacts([fact]);
+                    }}
+                  />
+                ))}
+              </List>
             </Stack>
           </Stack>
         </DialogBody>

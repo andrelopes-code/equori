@@ -146,6 +146,19 @@ const rows = [
     ].join("\n"),
     rule: "react-hooks/rules-of-hooks",
   },
+  {
+    name: "O20 question mark drawn on its own",
+    filePath: "src/ui/y.tsx",
+    code: [
+      'import { Glyph } from "@slotted/react/icon";',
+      "",
+      "export function Y() {",
+      '  return <Glyph name="circle-question" />;',
+      "}",
+      "",
+    ].join("\n"),
+    rule: "no-restricted-syntax",
+  },
 ];
 
 // The first row builds the TypeScript program for the whole project, which outgrows the 5 s default.
