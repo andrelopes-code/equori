@@ -266,16 +266,28 @@ describe("Contribution plan page", () => {
     );
   });
 
-  it("draws the way back to the portfolio inside the page header", async () => {
+  it("names the page with the portfolio heading and links the summary tab", async () => {
     await open();
     await planList();
 
-    const header = document.querySelector<HTMLElement>(
-      "[data-ui='page-header']",
-    );
     expect(
-      within(header ?? document.body).getByRole("link", {
+      screen.getByRole("heading", {
+        level: 1,
         name: catalogPtBR["nav.portfolio"],
+      }),
+    ).toBeInTheDocument();
+    const list = screen.getByRole("tablist", {
+      name: catalogPtBR["portfolio.tabs.label"],
+    });
+
+    expect(
+      within(list).getByRole("tab", {
+        name: catalogPtBR["portfolio.tabs.contributions"],
+      }),
+    ).toHaveAttribute("aria-selected", "true");
+    expect(
+      within(list).getByRole("tab", {
+        name: catalogPtBR["portfolio.tabs.summary"],
       }),
     ).toHaveAttribute("href", "/portfolio");
   });

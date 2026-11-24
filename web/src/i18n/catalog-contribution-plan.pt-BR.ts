@@ -4,10 +4,8 @@ export const contributionPlanPtBR: Record<
   keyof typeof contributionPlanEn,
   string
 > = {
-  "contributionPlan.title": "Plano de aporte",
   "contributionPlan.subtitle":
     "Para onde vai cada aporte para levar a carteira ao ideal",
-  "contributionPlan.open": "Plano de aporte",
   "contributionPlan.edit": "Editar grupos e ideais",
   "contributionPlan.amount": "Aporte",
   "contributionPlan.planHint":

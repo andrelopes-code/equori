@@ -4,7 +4,6 @@ import { contributionPlanEn } from "@/i18n/catalog-contribution-plan.en";
 export const portfolioEn = {
   ...contributionPlanEn,
   "palette.taxYear": "Income and sales of a year",
-  "taxYear.title": "Income and sales in {year}",
   "taxYear.range": "From {from} to {to}.",
   "taxYear.range.pending": "—",
   "taxYear.year": "Year",

@@ -1,9 +1,7 @@
 // The words of the contribution plan screen, spread into portfolioEn.
 export const contributionPlanEn = {
-  "contributionPlan.title": "Contribution plan",
   "contributionPlan.subtitle":
     "Where each contribution goes to bring the portfolio to its target",
-  "contributionPlan.open": "Contribution plan",
   "contributionPlan.edit": "Edit groups and targets",
   "contributionPlan.amount": "Contribution",
   "contributionPlan.planHint":

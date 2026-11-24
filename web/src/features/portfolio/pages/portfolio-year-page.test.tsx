@@ -181,7 +181,7 @@ describe("Tax year of investments", () => {
     ).toBeInTheDocument();
   });
 
-  it("PC13: names the page and draws its way back", async () => {
+  it("PC13: names the page with the portfolio heading and selects its tab", async () => {
     await renderApp("/portfolio/year?year=2025", {
       fetch: taxYearApi([]),
       today: "2026-10-24",
@@ -189,18 +189,20 @@ describe("Tax year of investments", () => {
 
     expect(
       await screen.findByRole("heading", {
-        name: catalogEn["taxYear.title"].replace("{year}", "2025"),
+        level: 1,
+        name: catalogEn["nav.portfolio"],
       }),
     ).toBeInTheDocument();
-    const header = screen
-      .getByRole("heading", {
-        name: catalogEn["taxYear.title"].replace("{year}", "2025"),
-      })
-      .closest<HTMLElement>('[data-ui="page-header"]');
+    const list = screen.getByRole("tablist", {
+      name: catalogEn["portfolio.tabs.label"],
+    });
 
     expect(
-      within(header ?? document.body).getByRole("link", {
-        name: catalogEn["nav.portfolio"],
+      within(list).getByRole("tab", { name: catalogEn["portfolio.tabs.year"] }),
+    ).toHaveAttribute("aria-selected", "true");
+    expect(
+      within(list).getByRole("tab", {
+        name: catalogEn["portfolio.tabs.summary"],
       }),
     ).toHaveAttribute("href", "/portfolio");
   });

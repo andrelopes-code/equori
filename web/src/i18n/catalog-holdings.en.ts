@@ -2,7 +2,6 @@ export const holdingsEn = {
   "holdings.bar": "Proportion",
   "holdings.subtitle":
     "How much you have invested, how much you made and how it performed.",
-  "holdings.year": "Income and sales",
   "holdings.summary": "Portfolio summary",
   "holdings.value": "Portfolio value",
   "holdings.value.note":

@@ -6,6 +6,9 @@
 - `/portfolio/results`: `PortfolioResultsPage` (`pages/portfolio-results-page.tsx`), search validated by `validateResultsSearch` (`results/results-search.ts`).
 - `/portfolio/positions`: `PortfolioPositionsPage` (`pages/portfolio-positions-page.tsx`), search validated by `validatePortfolioSearch`.
 - `/portfolio/year`: `PortfolioYearPage` (`pages/portfolio-year-page.tsx`), search validated by `validateYearSearch` (`pages/year-search.ts`).
+- `/portfolio/contribution-plan`: `ContributionPlanPage` (`pages/contribution-plan-page.tsx`), no search.
+
+The five routes draw `PortfolioAreaHeader` (`area-header/`): the heading "Portfolio", the controls of the tab, the help link and the tabs Summary, Results, Positions, Income and tax, Contributions (PT1). The tax year page draws its three views as a second `Tabs` at the top of its body; `PlanHeader` (`contribution-plan/header/`) is the header of the contribution plan.
 
 Other entry components exported by `index.ts`: `AssetsAllocation`, `AccountYield`, `AccountYieldSection`.
 
@@ -35,6 +38,7 @@ Guide topic (`navigation-map.json`): `investments`.
 - `attribution/`: result of each holding in a year ("Rendimento por ativo"): section, year view, rows, totals and their pure functions.
 - `return-money/`: origin of the closing balance: its list, its bar (`origin-parts`) and the money figures.
 - `account-yield/`: account yield, its section, hook and measured tops.
+- `contribution-plan/`: the contribution plan: header, composer, criteria, editor, ideal, intro, model, month, outside, rules and states.
 - `income-events/`: income events tab, table and charts.
 - `realized-results/`: realized results tab and sales table.
 - `year-totals/`: figure grid and totals table shared by the two tax year tabs.

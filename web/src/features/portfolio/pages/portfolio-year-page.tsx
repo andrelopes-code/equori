@@ -1,27 +1,17 @@
 import { Field } from "@slotted/react/field";
 import { NumberField } from "@slotted/react/number-field";
 import { Page, PageBody } from "@slotted/react/page";
-import {
-  PageHeader,
-  PageHeaderActions,
-  PageHeaderHeading,
-  PageHeaderSubheading,
-  PageHeaderTabs,
-  PageHeaderTitle,
-  PageHeaderTitleArea,
-  PageHeaderTitleRow,
-} from "@slotted/react/page-header";
 import { Tab, TabList, Tabs } from "@slotted/react/tabs";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useNavigate, useSearch } from "@tanstack/react-router";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 
 import { useApi } from "@/api/api-context";
-
 import {
   gainTaxQuery,
   incomeEventsQuery,
   realizedResultsQuery,
 } from "@/features/portfolio/api";
+import { PortfolioAreaHeader } from "@/features/portfolio/area-header/portfolio-area-header";
 import { GainTaxTab } from "@/features/portfolio/gain-tax/gain-tax-tab";
 import { IncomeEventsTab } from "@/features/portfolio/income-events/income-events-tab";
 import { RealizedResultsTab } from "@/features/portfolio/realized-results/realized-results-tab";
@@ -33,7 +23,6 @@ import type {
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { PageBack } from "@/ui/navigation/page-back";
 import { PageStack } from "@/ui/page-layout/page-stack";
 
 // CP-04: a year is stepped one at a time and typed when far away, so the control is a number
@@ -76,50 +65,43 @@ export function PortfolioYearPage() {
   ];
   return (
     <Page width="full">
-      <PageHeader size="lg">
-        <PageHeaderTitleArea>
-          <PageBack render={(props) => <Link {...props} to="/portfolio" />}>
-            {t("nav.portfolio")}
-          </PageBack>
-          <PageHeaderTitleRow>
-            <PageHeaderTitle>
-              <PageHeaderHeading>
-                {t("taxYear.title", { year })}
-              </PageHeaderHeading>
-              <PageHeaderSubheading>
-                {period === undefined
-                  ? t("taxYear.range.pending")
-                  : t("taxYear.range", {
-                      from: formatDate(period.from, tag),
-                      to: formatDate(period.to, tag),
-                    })}
-              </PageHeaderSubheading>
-            </PageHeaderTitle>
-            <PageHeaderActions>
-              <Field necessity="none">
-                <NumberField
-                  aria-label={t("taxYear.year")}
-                  name="year"
-                  value={year}
-                  min={minYear}
-                  max={maxYear}
-                  locale={tag}
-                  format={{ useGrouping: false }}
-                  onValueChange={(next) => {
-                    if (
-                      next !== null &&
-                      Number.isInteger(next) &&
-                      next >= minYear &&
-                      next <= maxYear
-                    )
-                      change({ year: next });
-                  }}
-                />
-              </Field>
-            </PageHeaderActions>
-          </PageHeaderTitleRow>
-        </PageHeaderTitleArea>
-        <PageHeaderTabs>
+      <PortfolioAreaHeader
+        tab="year"
+        subheading={
+          period === undefined
+            ? t("taxYear.range.pending")
+            : t("taxYear.range", {
+                from: formatDate(period.from, tag),
+                to: formatDate(period.to, tag),
+              })
+        }
+        controls={
+          <Field necessity="none">
+            <NumberField
+              aria-label={t("taxYear.year")}
+              name="year"
+              value={year}
+              min={minYear}
+              max={maxYear}
+              locale={tag}
+              format={{ useGrouping: false }}
+              onValueChange={(next) => {
+                if (
+                  next !== null &&
+                  Number.isInteger(next) &&
+                  next >= minYear &&
+                  next <= maxYear
+                )
+                  change({ year: next });
+              }}
+            />
+          </Field>
+        }
+        help="portfolio"
+      />
+
+      <PageBody>
+        <PageStack>
           <Tabs
             value={tab}
             onValueChange={(value) => {
@@ -138,10 +120,7 @@ export function PortfolioYearPage() {
               ))}
             </TabList>
           </Tabs>
-        </PageHeaderTabs>
-      </PageHeader>
-      <PageBody>
-        <PageStack>
+
           {tab === "realized" && <RealizedResultsTab year={year} />}
           {tab === "income" && <IncomeEventsTab year={year} />}
           {tab === "gain_tax" && <GainTaxTab year={year} />}

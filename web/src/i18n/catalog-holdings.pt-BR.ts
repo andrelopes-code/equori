@@ -4,7 +4,6 @@ export const holdingsPtBR: Record<keyof typeof holdingsEn, string> = {
   "holdings.bar": "Proporção",
   "holdings.subtitle":
     "Quanto você tem investido, quanto ganhou e como rendeu.",
-  "holdings.year": "Proventos e vendas",
   "holdings.summary": "Resumo da carteira",
   "holdings.value": "Valor da carteira",
   "holdings.value.note":
