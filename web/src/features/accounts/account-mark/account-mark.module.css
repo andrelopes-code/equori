@@ -98,11 +98,19 @@
       light-dark(var(--slotted-border-subtle), #fff);
   }
 
-  /* The placeholder fills the plate, which clips it to the mark's corner. */
+  /* The placeholder fills the plate and takes its corner. */
   .cover {
     place-self: stretch;
     inline-size: auto;
     block-size: auto;
+    border-radius: inherit;
+  }
+
+  /* The white waits for the image: behind the placeholder it shows as a bright rim at the
+     corners, where the browser smooths the curve. */
+  .plate:has(> .cover[data-loading]) {
+    background: none;
+    box-shadow: none;
   }
 
   .logo {

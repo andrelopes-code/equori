@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 import { fireEvent, render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -100,6 +102,20 @@ describe("AccountMark", () => {
         .querySelector("[data-ui-skeleton]")
         ?.hasAttribute("data-loading"),
     ).toBe(false);
+  });
+
+  // jsdom resolves no layout, so the source of the stylesheet is the check: neither the plate's
+  // white nor the skeleton's own corner may show at the corners of the mark.
+  it("draws the placeholder in the plate's corner, with no plate behind it", () => {
+    const css = readFileSync(
+      "src/features/accounts/account-mark/account-mark.module.css",
+      "utf8",
+    );
+
+    expect(css).toMatch(/\.cover \{[^}]*border-radius: inherit;/);
+    expect(css).toMatch(
+      /\.plate:has\(> \.cover\[data-loading\]\) \{\s*background: none;\s*box-shadow: none;\s*\}/,
+    );
   });
 
   it("badges a card's plate", () => {
