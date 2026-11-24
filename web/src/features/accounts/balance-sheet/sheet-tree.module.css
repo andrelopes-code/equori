@@ -1,0 +1,39 @@
+@layer app {
+  /* The marks of the accounts: a parent's is md and a child's sm (account-mark.module.css). */
+  .table {
+    --slotted-table-mark-size: calc(var(--slotted-target-min) * 1.5);
+    --slotted-table-mark-child-size: var(--slotted-target-min);
+    --slotted-table-branch-size: calc(
+      var(--slotted-space-7) + var(--slotted-space-3)
+    );
+  }
+
+  .container {
+    background: color-mix(in oklab, var(--slotted-text) 3%, transparent);
+  }
+
+  /* The room around a parent's mark; the family keeps half of it. */
+  .account {
+    block-size: calc(
+      var(--slotted-target-min) * 1.5 + 2 * var(--slotted-space-4)
+    );
+  }
+
+  .text {
+    display: grid;
+    min-inline-size: 0;
+  }
+
+  /* Centered on the expander, which stands on the text line and not on a line of its own height,
+     and as wide as it leaves: the codes cut instead of the line. */
+  .positions {
+    display: inline-grid;
+    align-items: center;
+    min-block-size: var(--slotted-target-min);
+    max-inline-size: calc(
+      100% - var(--slotted-target-min) - var(--slotted-control-gap-md)
+    );
+    margin-block: calc((1lh - var(--slotted-target-min)) / 2);
+    vertical-align: top;
+  }
+}

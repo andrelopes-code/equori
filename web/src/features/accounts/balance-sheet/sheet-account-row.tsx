@@ -1,6 +1,12 @@
 import { Inline } from "@slotted/react/inline";
 import { Stack } from "@slotted/react/stack";
-import { TableCell, TableRow, TableRowHeader } from "@slotted/react/table";
+import {
+  TableCell,
+  TableExpander,
+  TableMark,
+  TableRow,
+  TableRowHeader,
+} from "@slotted/react/table";
 import { Tag } from "@slotted/react/tag";
 import { Text } from "@slotted/react/typography";
 
@@ -8,10 +14,8 @@ import { AccountAvatar } from "@/features/accounts/account-mark/account-avatar";
 import { AccountLink } from "@/features/accounts/account-mark/account-link";
 import { AccountRowStatus } from "@/features/accounts/account-mark/account-row-status";
 import { AccountTrend } from "@/features/accounts/balance-sheet/account-trend";
-import styles from "@/features/accounts/balance-sheet/sheet-rail.module.css";
-import { railClass } from "@/features/accounts/balance-sheet/rail-class";
-import { SheetToggle } from "@/features/accounts/balance-sheet/sheet-toggle";
 import type { SheetLine } from "@/features/accounts/balance-sheet/sheet-lines";
+import styles from "@/features/accounts/balance-sheet/sheet-tree.module.css";
 import { LoanLine } from "@/features/accounts/kind-figures/loan-line";
 import { PropertyChangeNote } from "@/features/accounts/kind-figures/property-change-note";
 import { recordShape } from "@/features/accounts/kind-figures/record-shape";
@@ -30,7 +34,6 @@ interface SheetAccountRowProps {
   scale: (code: string) => number;
   // The group shows the yield column.
   yieldColumn: boolean;
-  onToggle: (accountId: string) => void;
 }
 
 // One account of the list: mark, name and caption, status, then the trend, the balance and,
@@ -42,7 +45,6 @@ export function SheetAccountRow({
   date,
   scale,
   yieldColumn,
-  onToggle,
 }: SheetAccountRowProps) {
   const t = useT();
   const { row } = line;
@@ -64,53 +66,50 @@ export function SheetAccountRow({
   return (
     <TableRow
       value={account.id}
+      level={row.depth}
+      parent={row.parentId}
       className={parent ? styles.container : undefined}
     >
-      <TableRowHeader className={railClass(child, line.first, line.last)}>
-        <div className={styles.account}>
-          {!child &&
-            (parent ? (
-              <SheetToggle
-                open={line.open}
-                label={t(
-                  line.open ? "balanceSheet.collapse" : "balanceSheet.expand",
-                  { name: account.name },
-                )}
-                onToggle={() => {
-                  onToggle(account.id);
-                }}
-              />
-            ) : (
-              <span className={styles.slot} aria-hidden="true" />
-            ))}
+      <TableRowHeader className={child ? undefined : styles.account}>
+        {parent && !child && (
+          <TableExpander
+            aria-label={t(
+              line.open ? "balanceSheet.collapse" : "balanceSheet.expand",
+              { name: account.name },
+            )}
+          />
+        )}
+
+        <TableMark>
           <AccountAvatar account={account} size={child ? "sm" : "md"} />
-          <div className={styles.text}>
-            <Inline gap={4} wrap="nowrap" align="center">
-              <Text size="sm" weight={parent ? "semibold" : "medium"} truncate>
-                <AccountLink account={account}>{account.name}</AccountLink>
-              </Text>
-              {account.closed_on !== undefined && (
-                <Tag size="sm" tone="secondary">
-                  {t("balanceSheet.closed")}
-                </Tag>
-              )}
-              {parent && (
-                <Text size="xs" tone="muted" wrap="nowrap">
-                  {t(
-                    row.childCount === 1
-                      ? "balanceSheet.subAccountsOne"
-                      : "balanceSheet.subAccounts",
-                    { count: row.childCount },
-                  )}
-                </Text>
-              )}
-            </Inline>
-            {caption !== "" && (
-              <Text size="xs" tone="muted" truncate>
-                {caption}
+        </TableMark>
+
+        <div className={styles.text}>
+          <Inline gap={4} wrap="nowrap" align="center">
+            <Text size="sm" weight={parent ? "semibold" : "medium"} truncate>
+              <AccountLink account={account}>{account.name}</AccountLink>
+            </Text>
+            {account.closed_on !== undefined && (
+              <Tag size="sm" tone="secondary">
+                {t("balanceSheet.closed")}
+              </Tag>
+            )}
+            {parent && (
+              <Text size="xs" tone="muted" wrap="nowrap">
+                {t(
+                  row.childCount === 1
+                    ? "balanceSheet.subAccountsOne"
+                    : "balanceSheet.subAccounts",
+                  { count: row.childCount },
+                )}
               </Text>
             )}
-          </div>
+          </Inline>
+          {caption !== "" && (
+            <Text size="xs" tone="muted" truncate>
+              {caption}
+            </Text>
+          )}
         </div>
       </TableRowHeader>
 

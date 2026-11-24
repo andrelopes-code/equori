@@ -25,7 +25,7 @@ The accounts list shows each account once, in the groups of the balance sheet, w
 | AL11 | The status is quiet in the list. A difference stays a warning `Tag` with its amount. A reconciled account reads `Reconciled on {date}` in the success text with a check glyph. An account never reconciled reads the same words as the tag today, in the muted text, with no frame. A parent and a credit card show none, as today. |
 | AL12 | Below 600 px the groups are `List`s as today, with the rail on children and the positions row. A parent stays open and is a link like any row; only the positions row is a button. The grouping and the order are two `Select`s in one row. A date of reconciliation in the year of the date shown drops the year, and the yield takes at most 9 rem, so no line wraps. |
 | AL13 | Indicators weighed and dropped, each with its reason. A sentence on the change of net worth in 30 days: the three figures already show the change of each side and of the net worth over the same 30 days. A composition strip over the assets: the share bar of each group (AL4) carries the same shares. An attention panel: the overview's Attention widget already ranks the open differences, and Needs attention (AL5) brings them to the top of this list. A count of accounts never reconciled: it is not an action, since a cash account or a position has no statement to agree with; each such row says it in its own status. |
-| AL14 | Own elements: the rail, the container row, the positions row and the share bar. Slotted `Table` has no hierarchy or collapsible row, `Collapsible` and `Tree` draw no columns, and no family draws a static value within a range (`progress-indicator` announces a task). One finding is opened in `andrelopes-code/slotted` for each in the task that builds the element. |
+| AL14 | The rail, the container row and the positions row are rows of the Slotted `Table` (`guides="branch"`, `expanderRoom="always"`), and the skeleton is one too. Own elements: the rail of the phone's `List` and the share bar. No family draws a static value within a range (`progress-indicator` announces a task). One finding is opened in `andrelopes-code/slotted` for each in the task that builds the element. |
 | AL15 | The header of a group is a Slotted `Section` (O17): the title, the share as its description, the total in its actions. The table takes its name from the title through `aria-label`. |
 | AL16 | The browser remembers the last choice of grouping and order under the key `equori.accounts.sheet`, as `{"group", "order"}`. It holds no identifier, so the key carries no book. The list reads it once per visit; a search parameter in the address wins over it; a value the code does not know reads as the built-in default (Type, Balance); a browser that refuses storage keeps the choice for the visit. The fold state of parents and positions is not remembered. |
 
@@ -33,7 +33,7 @@ The accounts list shows each account once, in the groups of the balance sheet, w
 
 - `sheet-layout.ts` (pure): groups by Type, Institution or None from the groups of `groupBalances`; share; order; positions. It holds no text.
 - `use-attention-set.ts`: the ids of the accounts with an open difference, from the reconciliation queries (AL6).
-- One component per file: the controls, the group header, the container row, the position row, the rail.
+- One component per file: the controls, the group header, the container row, the position row.
 - The figures keep reading `groupBalances` by Type.
 
 ## 4. Cross-cutting questions

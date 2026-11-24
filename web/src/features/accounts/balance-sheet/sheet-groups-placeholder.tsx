@@ -7,13 +7,13 @@ import {
   TableColumnHeader,
   TableContent,
   TableHead,
+  TableMark,
   TableRow,
   TableRowHeader,
 } from "@slotted/react/table";
 
 import styles from "@/features/accounts/balance-sheet/balance-sheet.module.css";
-import { railClass } from "@/features/accounts/balance-sheet/rail-class";
-import rail from "@/features/accounts/balance-sheet/sheet-rail.module.css";
+import tree from "@/features/accounts/balance-sheet/sheet-tree.module.css";
 import { useT } from "@/i18n/i18n-provider";
 
 // The widths of the name, the caption, the status and the balance of each reserved row.
@@ -31,7 +31,14 @@ export function SheetGroupsPlaceholder() {
   const t = useT();
 
   return (
-    <Table columns={3} variant="framed" aria-busy="true">
+    <Table
+      columns={3}
+      variant="framed"
+      guides="branch"
+      expanderRoom="always"
+      className={tree.table}
+      aria-busy="true"
+    >
       <TableContent
         aria-label={t("balanceSheet.account")}
         className={styles.fixed}
@@ -50,24 +57,24 @@ export function SheetGroupsPlaceholder() {
 
         <TableBody>
           {rows.map((row) => (
-            <TableRow key={row.name} value={row.name}>
-              <TableRowHeader className={railClass(false, false, false)}>
-                <div className={rail.account}>
-                  <span className={rail.slot} aria-hidden="true" />
+            <TableRow key={row.name} value={row.name} level={0}>
+              <TableRowHeader className={tree.account}>
+                <TableMark>
                   <Skeleton shape="square" size="md" />
-                  <Stack gap={3}>
-                    <Skeleton
-                      shape="block"
-                      inlineSize={row.name}
-                      blockSize={12}
-                    />
-                    <Skeleton
-                      shape="block"
-                      inlineSize={row.caption}
-                      blockSize={10}
-                    />
-                  </Stack>
-                </div>
+                </TableMark>
+
+                <Stack gap={3}>
+                  <Skeleton
+                    shape="block"
+                    inlineSize={row.name}
+                    blockSize={12}
+                  />
+                  <Skeleton
+                    shape="block"
+                    inlineSize={row.caption}
+                    blockSize={10}
+                  />
+                </Stack>
               </TableRowHeader>
 
               <TableCell>

@@ -28,6 +28,26 @@ export type SheetLine =
       open: boolean;
     } & Sibling);
 
+// The key of a line: an account's id, or the one line its positions fold into.
+export function lineKey(line: SheetLine): string {
+  return line.type === "positions"
+    ? `${line.parentId}:positions`
+    : line.row.account.id;
+}
+
+// The keys of the open lines, as the table holds its expanded rows.
+export function openKeys(lines: readonly SheetLine[]): string[] {
+  return lines.filter((line) => line.open).map(lineKey);
+}
+
+// The line whose state differs from the expanded rows the table asks for.
+export function toggledLine(
+  lines: readonly SheetLine[],
+  expanded: readonly string[],
+): SheetLine | undefined {
+  return lines.find((line) => line.open !== expanded.includes(lineKey(line)));
+}
+
 // The lines the list draws: the rows under a closed parent are left out, and the positions of a
 // parent fold into one line until it is opened (AL8, AL9).
 export function sheetLines(

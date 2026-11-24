@@ -1,12 +1,16 @@
 import { Inline } from "@slotted/react/inline";
-import { TableCell, TableRow, TableRowHeader } from "@slotted/react/table";
+import {
+  TableCell,
+  TableExpander,
+  TableRow,
+  TableRowHeader,
+} from "@slotted/react/table";
 import { Tag } from "@slotted/react/tag";
 import { Text } from "@slotted/react/typography";
 
-import { railClass } from "@/features/accounts/balance-sheet/rail-class";
-import styles from "@/features/accounts/balance-sheet/sheet-rail.module.css";
 import type { SheetLine } from "@/features/accounts/balance-sheet/sheet-lines";
-import { SheetToggle } from "@/features/accounts/balance-sheet/sheet-toggle";
+import { lineKey } from "@/features/accounts/balance-sheet/sheet-lines";
+import styles from "@/features/accounts/balance-sheet/sheet-tree.module.css";
 import { useT } from "@/i18n/i18n-provider";
 
 type PositionsLine = Extract<SheetLine, { type: "positions" }>;
@@ -16,7 +20,6 @@ interface SheetPositionsRowProps {
   // The name of the parent the positions belong to.
   parentName: string;
   yieldColumn: boolean;
-  onToggle: (parentId: string) => void;
 }
 
 // The positions of a parent, in a quantity and not in money, fold into one line: how many they
@@ -25,27 +28,23 @@ export function SheetPositionsRow({
   line,
   parentName,
   yieldColumn,
-  onToggle,
 }: SheetPositionsRowProps) {
   const t = useT();
   const more = line.count - line.codes.length;
 
   return (
-    <TableRow>
-      <TableRowHeader className={railClass(true, line.first, line.last)}>
-        <div className={styles.account}>
-          <SheetToggle
-            open={line.open}
-            label={t(
-              line.open
-                ? "balanceSheet.collapsePositions"
-                : "balanceSheet.expandPositions",
-              { name: parentName },
-            )}
-            onToggle={() => {
-              onToggle(line.parentId);
-            }}
-          />
+    <TableRow value={lineKey(line)} level={line.depth} parent={line.parentId}>
+      <TableRowHeader>
+        <TableExpander
+          aria-label={t(
+            line.open
+              ? "balanceSheet.collapsePositions"
+              : "balanceSheet.expandPositions",
+            { name: parentName },
+          )}
+        />
+
+        <div className={styles.positions}>
           <Inline gap={4} wrap="nowrap" align="center">
             <Text size="sm" tone="muted" wrap="nowrap">
               {t(

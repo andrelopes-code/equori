@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import type { components } from "@/api/schema.gen";
 import { sheetRows } from "@/features/accounts/balance-sheet/balance-sheet";
 import {
+  openKeys,
   sheetLines,
+  toggledLine,
   type SheetLine,
 } from "@/features/accounts/balance-sheet/sheet-lines";
 
@@ -86,6 +88,41 @@ describe("sheetLines", () => {
       "account a 1 first last",
     ]);
   });
+});
+
+describe("toggledLine", () => {
+  const lines = sheetLines(fixture(), {
+    closed: new Set(),
+    positionsOpen: new Set(),
+  });
+
+  it("names the open lines of the list", () => {
+    expect(openKeys(lines)).toEqual(["broker", "cash", "savings"]);
+  });
+
+  it("finds the parent the table closes", () => {
+    expect(summary(found(["cash", "savings"]))).toEqual([
+      "account broker 0 open",
+    ]);
+  });
+
+  it("finds the positions the table opens", () => {
+    expect(
+      summary(found(["broker", "cash", "savings", "broker:positions"])),
+    ).toEqual([
+      "positions broker 1 count=3 codes=ITUB4,PETR4,WEGE3 closed last",
+    ]);
+  });
+
+  it("finds nothing in an equal set", () => {
+    expect(found(openKeys(lines))).toEqual([]);
+  });
+
+  function found(expanded: string[]): SheetLine[] {
+    const line = toggledLine(lines, expanded);
+
+    return line === undefined ? [] : [line];
+  }
 });
 
 function fixture() {

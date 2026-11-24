@@ -12,10 +12,16 @@ import { Text } from "@slotted/react/typography";
 
 import { SheetAccountRow } from "@/features/accounts/balance-sheet/sheet-account-row";
 import styles from "@/features/accounts/balance-sheet/balance-sheet.module.css";
+import tree from "@/features/accounts/balance-sheet/sheet-tree.module.css";
 import { SheetShareBar } from "@/features/accounts/balance-sheet/sheet-share-bar";
 import { SheetGroupHeader } from "@/features/accounts/balance-sheet/sheet-group-header";
 import type { SheetGroupProps } from "@/features/accounts/balance-sheet/sheet-group-props";
-import { sheetLines } from "@/features/accounts/balance-sheet/sheet-lines";
+import {
+  lineKey,
+  openKeys,
+  sheetLines,
+  toggledLine,
+} from "@/features/accounts/balance-sheet/sheet-lines";
 import { SheetPositionsRow } from "@/features/accounts/balance-sheet/sheet-positions-row";
 import { institutionNote } from "@/features/accounts/balance-sheet/institution-note";
 import { useMeasuredTops } from "@/features/portfolio";
@@ -45,6 +51,13 @@ export function BalanceGroupTable({
     section.rows.map((row) => [row.account.id, row.account.name]),
   );
 
+  function handleExpanded(expanded: readonly string[]) {
+    const line = toggledLine(lines, expanded);
+
+    if (line?.type === "positions") onTogglePositions(line.parentId);
+    if (line?.type === "account") onToggleParent(line.row.account.id);
+  }
+
   return (
     <Section>
       <SheetGroupHeader
@@ -58,7 +71,15 @@ export function BalanceGroupTable({
           {section.share !== undefined && (
             <SheetShareBar share={section.share} />
           )}
-          <Table columns={yieldColumn ? 4 : 3} variant="framed">
+          <Table
+            columns={yieldColumn ? 4 : 3}
+            variant="framed"
+            guides="branch"
+            expanderRoom="always"
+            expanded={openKeys(lines)}
+            onExpandedChange={handleExpanded}
+            className={tree.table}
+          >
             <TableContent
               aria-label={label}
               className={cx(styles.fixed, yieldColumn && styles.fixedYield)}
@@ -85,15 +106,14 @@ export function BalanceGroupTable({
                 {lines.map((line) =>
                   line.type === "positions" ? (
                     <SheetPositionsRow
-                      key={`${line.parentId}:positions`}
+                      key={lineKey(line)}
                       line={line}
                       parentName={names.get(line.parentId) ?? ""}
                       yieldColumn={yieldColumn}
-                      onToggle={onTogglePositions}
                     />
                   ) : (
                     <SheetAccountRow
-                      key={line.row.account.id}
+                      key={lineKey(line)}
                       line={line}
                       institution={
                         showInstitution && line.row.depth === 0
@@ -103,7 +123,6 @@ export function BalanceGroupTable({
                       date={date}
                       scale={scale}
                       yieldColumn={yieldColumn}
-                      onToggle={onToggleParent}
                     />
                   ),
                 )}
