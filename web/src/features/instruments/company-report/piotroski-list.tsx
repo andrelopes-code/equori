@@ -33,15 +33,11 @@ const FORMATS: Record<SignalUnit, Intl.NumberFormatOptions> = {
   shares: { maximumFractionDigits: 0 },
 };
 
-// CR11: the nine signals as facts of the accounts, each with the two values it compares. The
-// state is written in words, with no colour by value.
+// CR11: the signals as facts of the accounts, each with the two values it compares. The state is
+// written in words, with no colour by value.
 export function PiotroskiList({ signals, plan }: PiotroskiListProps) {
   const t = useT();
   const [locale] = useAppLocale();
-
-  if (plan === "other") {
-    return <Text size="sm">{t("companyReport.signals.notApplicable")}</Text>;
-  }
 
   if (signals === null) {
     return <Text size="sm">{t("companyReport.signals.few")}</Text>;
@@ -92,6 +88,12 @@ export function PiotroskiList({ signals, plan }: PiotroskiListProps) {
           );
         })}
       </List>
+
+      {plan !== "standard" && (
+        <Text size="sm" tone="muted">
+          {t("companyReport.signals.notApplicable")}
+        </Text>
+      )}
     </Stack>
   );
 }

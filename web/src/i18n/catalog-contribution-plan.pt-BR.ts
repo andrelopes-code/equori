@@ -234,6 +234,7 @@ export const contributionPlanPtBR: Record<
   "contributionPlan.criteria.unnamed": "critério {n}",
   "contributionPlan.criteria.noteAutomatic": "automático",
   "contributionPlan.criteria.noteOwn": "sem dado",
+  "contributionPlan.criteria.noteOutside": "não se aplica",
   "contributionPlan.criteria.noteNoLimit": "defina o limite",
   "contributionPlan.criteria.noteBlank": "escreva a pergunta",
   "contributionPlan.criteria.noteRepeated": "pergunta repetida",

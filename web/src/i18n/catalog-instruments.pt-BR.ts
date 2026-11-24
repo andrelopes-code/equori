@@ -428,7 +428,7 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
     "Sinais de Piotroski, exercício de {year} contra {prior}",
   "companyReport.signals.few": "Os sinais de Piotroski pedem dois exercícios.",
   "companyReport.signals.notApplicable":
-    "Os sinais de Piotroski não se aplicam ao plano de contas desta companhia.",
+    "Os outros seis sinais de Piotroski não se aplicam ao plano de contas desta companhia.",
   "companyReport.signal.p1": "ROA positivo",
   "companyReport.signal.p2": "Fluxo de caixa operacional positivo",
   "companyReport.signal.p3": "ROA maior que no ano anterior",

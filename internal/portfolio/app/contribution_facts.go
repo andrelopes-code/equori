@@ -126,7 +126,7 @@ func setFacts(m *domain.PlanMember, c domain.PlanClass, facts *domain.CompanyFac
 			m.FactDetails[q] = domain.FactDetail{Reason: domain.NoReport}
 		case domain.IsSignal(key):
 			m.FactAnswers[q] = signals[q]
-			m.FactDetails[q] = facts.SignalDetail(signals[q])
+			m.FactDetails[q] = facts.SignalDetail(key, signals[q])
 		case q < len(c.QuestionLimits):
 			m.FactAnswers[q], m.FactDetails[q] = facts.Limit(key, c.QuestionLimits[q])
 		}

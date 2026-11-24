@@ -50,6 +50,12 @@ const cases: [string, CellAnswer, string, string][] = [
     "WEGE3, P/L de até: sim, sua resposta: número de ações não conferido",
   ],
   [
+    "a criterion outside the chart of accounts",
+    { kind: "own", yes: false, reason: "chart" },
+    "não se aplica",
+    "WEGE3, P/L de até: não, sua resposta: não se aplica ao plano de contas",
+  ],
+  [
     "an own criterion",
     { kind: "own", yes: false, reason: undefined },
     "",

@@ -424,7 +424,7 @@ export const instrumentsEn = {
     "Piotroski signals, fiscal year {year} against {prior}",
   "companyReport.signals.few": "Piotroski signals need two fiscal years.",
   "companyReport.signals.notApplicable":
-    "Piotroski signals do not apply to this company's chart of accounts.",
+    "The other six Piotroski signals do not apply to this company's chart of accounts.",
   "companyReport.signal.p1": "Positive ROA",
   "companyReport.signal.p2": "Positive operating cash flow",
   "companyReport.signal.p3": "ROA above the year before",

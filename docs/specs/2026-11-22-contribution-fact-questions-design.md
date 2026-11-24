@@ -61,13 +61,13 @@ Chosen: 3. It sacrifices one implementation of CR11; the cases of CR12 run again
 
 **FQ2 Catalog.** The keys `piotroski_p1` to `piotroski_p9` name the signals P1 to P9 of CR11 (company report). A key matches `^[a-z0-9_]{2,40}$`.
 
-**FQ3 Fact answer.** A fact answer is `yes`, `no` or `none`. For a member that names an instrument, equori reads the first report set of `marketdata.CompanyReports` for its code, and from it the periods of 12 months, newest first: `t`, `t−1`, `t−2`. The answer of a signal is `yes` when the condition of CR11 holds, `no` when it does not, and `none` when an input is absent or a divisor is not above zero. Every answer is `none` when the member names an account, when no report set exists, when the chart of accounts is not `standard`, and with fewer than two fiscal years. Ratios are compared as exact rationals (`math/big`).
+**FQ3 Fact answer.** A fact answer is `yes`, `no` or `none`. For a member that names an instrument, equori reads the first report set of `marketdata.CompanyReports` for its code, and from it the periods of 12 months, newest first: `t`, `t−1`, `t−2`. The answer of a signal is `yes` when the condition of CR11 holds, `no` when it does not, and `none` when an input is absent or a divisor is not above zero. Every answer is `none` when the member names an account, when no report set exists and with fewer than two fiscal years. A chart of accounts that is not `standard` answers P1, P3 and P7 and gives `none` to the other six (amended on 2026-11-24: the accounts of the three have one meaning in every chart; the operating cash flow of a bank, which P2 and P4 read, moves with its deposits and its loans). Ratios are compared as exact rationals (`math/big`).
 
 **FQ4 Effective answer.** The effective answer of a member to a question is the fact answer when it is `yes` or `no`, else the investor's stored answer. CQ3 counts the effective answers.
 
 **FQ5 Derived on every read.** GET, the response of PUT, both previews and the tools derive the member ideals of every group with questions from the effective answers at the time of the read. The stored member ideals of such a group are not read.
 
-**FQ6 Fiscal year.** A member whose fact answers were computed (FQ3, a `standard` chart and two or more fiscal years) carries `facts_year`: the last day of `t`.
+**FQ6 Fiscal year.** A member whose fact answers were computed (FQ3, two or more fiscal years) carries `facts_year`: the last day of `t`.
 
 **FQ7 API.** `ContributionClassInput` gains `question_facts`: an array of at most 10 strings matching `^([a-z0-9_]{2,40})?$`, one per question, `""` for a question without a fact; absent means no fact. `ContributionClass` gains `question_facts`, always present, one string per question. `ContributionMember` gains `fact_answers` (array of `yes`, `no`, `none`, one per question; absent in a group without questions) and `facts_year` (date; absent without FQ6). `answers` stays the investor's stored answers.
 
@@ -80,7 +80,7 @@ Chosen: 3. It sacrifices one implementation of CR11; the cases of CR12 run again
 - Signals, the years of CR12: `t` 2025-12-31 net income 7,700, cash flow 9,000, assets 120,000, long debt 28,000, current assets 45,000, current liabilities 20,000, shares 100, revenue 100,000, gross profit 32,000; `t−1` 2024-12-31 net income 5,000, cash flow 6,000, assets 110,000, long debt 30,000, current assets 40,000, current liabilities 20,000, shares 100, revenue 90,000, gross profit 27,000; `t−2` 2023-12-31 assets 100,000. The nine answers are `yes`; `facts_year` 2025-12-31.
 - The same with shares 110 and gross profit 30,000 in `t`: P7 `no`, P8 `no` (30.00% against 30.00%), the others `yes`.
 - Without `t−2`: P3, P5 and P9 `none`; the others `yes`.
-- With `t` alone: nine `none`, no `facts_year`. A chart `other`: nine `none`, no `facts_year`.
+- With `t` alone: nine `none`, no `facts_year`. A chart `other` with the three years: P1, P3 and P7 `yes`, the others `none`, `facts_year` 2025-12-31; with `t` alone, nine `none`.
 - Current liabilities 0 in `t`: P6 `none`.
 - Effective answers: questions (`piotroski_p1`, "Tem tag along?"). Member A: fact `yes`, stored (não, sim): 2 points. Member B: fact `none`, stored (sim, não): 1 point. Ideals 6667, 3333 (CQ7, first case). Member A with fact `no` and stored (sim, sim): 1 point.
 - Facts (`piotroski_p10`), (`piotroski_p1`, `piotroski_p1`), one fact for two questions: `contribution_question_invalid`.

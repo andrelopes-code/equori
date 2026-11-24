@@ -13,15 +13,17 @@ interface CellContext {
   fact: string;
 }
 
-// The second line of a cell: the figure equori read, or that it has none, so the answer is the
-// investor's; "" for an own criterion and a signal.
+// The second line of a cell: the figure equori read, or that it has none or that the criterion does
+// not apply, so the answer is the investor's; "" for an own criterion and a signal.
 export function cellNote(cell: CellAnswer, context: CellContext): string {
   const { t, locale, fact } = context;
 
   if (cell.kind === "pending") return "";
   if (cell.kind === "own") {
-    return cell.reason === undefined
-      ? ""
+    if (cell.reason === undefined) return "";
+
+    return cell.reason === "chart"
+      ? t("contributionPlan.criteria.noteOutside")
       : t("contributionPlan.criteria.noteOwn");
   }
 

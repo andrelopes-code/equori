@@ -85,7 +85,7 @@ export function CompanyReport({ code }: CompanyReportProps) {
           <CompanyReportFigures figures={figures} />
 
           <PiotroskiList
-            signals={piotroskiSignals(report.periods)}
+            signals={piotroskiSignals(report.periods, report.plan)}
             plan={report.plan}
           />
 

@@ -167,12 +167,12 @@ func (c CompanyCriteria) years(limit *big.Rat) (FactAnswer, FactDetail) {
 	}
 }
 
-// SignalDetail is the detail of a signal of Piotroski: the reason it has no answer, if any.
-func (f CompanyFacts) SignalDetail(a FactAnswer) FactDetail {
+// SignalDetail is the detail of the signal of key: the reason it has no answer, if any.
+func (f CompanyFacts) SignalDetail(key string, a FactAnswer) FactDetail {
 	switch {
 	case a != FactNone:
 		return FactDetail{}
-	case !f.Standard:
+	case !f.applies(key):
 		return FactDetail{Reason: reasonChart}
 	case len(f.Years) < minSignalYears:
 		return FactDetail{Reason: reasonShortHistory}

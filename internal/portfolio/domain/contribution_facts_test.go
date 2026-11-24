@@ -58,7 +58,14 @@ func TestCompanyFactsAnswers(t *testing.T) {
 			wantOK: false,
 		},
 		"FQ10 chart other": {
-			facts: CompanyFacts{Years: []FiscalYear{factsT(), factsT1(), factsT2()}},
+			facts:    CompanyFacts{Years: []FiscalYear{factsT(), factsT1(), factsT2()}},
+			keys:     keys,
+			want:     answers("yes", "none", "yes", "none", "none", "none", "yes", "none", "none"),
+			wantYear: end,
+			wantOK:   true,
+		},
+		"FQ10 chart other, one fiscal year": {
+			facts: CompanyFacts{Years: []FiscalYear{factsT()}},
 			keys:  keys,
 			want:  answers("none", "none", "none", "none", "none", "none", "none", "none", "none"),
 		},
@@ -106,6 +113,34 @@ func TestCompanyFactsAnswers(t *testing.T) {
 
 			if !slices.Equal(got, tc.want) {
 				t.Fatalf("answers = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestSignalDetail(t *testing.T) {
+	t.Parallel()
+
+	bank := CompanyFacts{Years: []FiscalYear{factsT(), factsT1()}}
+
+	for name, tc := range map[string]struct {
+		facts  CompanyFacts
+		key    string
+		answer FactAnswer
+		want   string
+	}{
+		"answered":                 {bank, "piotroski_p1", FactYes, ""},
+		"outside the chart":        {bank, "piotroski_p6", FactNone, "chart"},
+		"in every chart, no input": {bank, "piotroski_p3", FactNone, "missing"},
+		"in every chart, one year": {
+			CompanyFacts{Years: []FiscalYear{factsT()}}, "piotroski_p7", FactNone, "short_history",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			if got := tc.facts.SignalDetail(tc.key, tc.answer).Reason; got != tc.want {
+				t.Fatalf("reason = %q, want %q", got, tc.want)
 			}
 		})
 	}

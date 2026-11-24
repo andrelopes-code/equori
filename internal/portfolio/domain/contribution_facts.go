@@ -2,6 +2,7 @@ package domain
 
 import (
 	"math/big"
+	"slices"
 	"time"
 )
 
@@ -40,6 +41,10 @@ type CompanyFacts struct {
 
 // minSignalYears is the number of fiscal years the signals need.
 const minSignalYears = 2
+
+// everyChart holds the signals that read accounts with one meaning in every chart. The operating
+// cash flow is not one: the one of a bank moves with its deposits and its loans (FQ3).
+var everyChart = []string{"piotroski_p1", "piotroski_p3", "piotroski_p7"}
 
 // signal evaluates one condition of CR11 on the fiscal years t, t-1 and t-2; t2 holds no account
 // when the company has two fiscal years.
@@ -92,15 +97,15 @@ func IsSignal(key string) bool {
 }
 
 // Answers returns one answer per key of facts, FactNone for "" and for a key outside the catalog,
-// and the last day of t. ok is false, and every answer FactNone, when the chart is not standard or
-// fewer than two fiscal years exist (FQ3, FQ6).
+// and the last day of t. A chart that is not standard answers the signals of everyChart alone. ok is
+// false, and every answer FactNone, with fewer than two fiscal years (FQ3, FQ6).
 func (f CompanyFacts) Answers(facts []string) (answers []FactAnswer, year time.Time, ok bool) {
 	answers = make([]FactAnswer, len(facts))
 	for i := range answers {
 		answers[i] = FactNone
 	}
 
-	if !f.Standard || len(f.Years) < minSignalYears {
+	if len(f.Years) < minSignalYears {
 		return answers, time.Time{}, false
 	}
 
@@ -112,12 +117,17 @@ func (f CompanyFacts) Answers(facts []string) (answers []FactAnswer, year time.T
 	}
 
 	for i, key := range facts {
-		if eval, known := factCatalog[key]; known {
+		if eval, known := factCatalog[key]; known && f.applies(key) {
 			answers[i] = eval(t, t1, t2)
 		}
 	}
 
 	return answers, t.End, true
+}
+
+// applies reports whether the chart of the company holds the accounts of the signal of key.
+func (f CompanyFacts) applies(key string) bool {
+	return f.Standard || slices.Contains(everyChart, key)
 }
 
 func roa(t, t1 FiscalYear) *big.Rat {

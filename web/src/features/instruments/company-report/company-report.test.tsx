@@ -108,7 +108,7 @@ describe("Company report on the instrument page", () => {
     ).toHaveAttribute("href", sourceUrl);
   });
 
-  it("writes the plan other in words and draws no signals", async () => {
+  it("writes the plan other in words and draws the signals every chart answers", async () => {
     show(api(report({ plan: "other" })));
 
     expect(await screen.findAllByText("não se aplica")).toHaveLength(2);
@@ -117,11 +117,16 @@ describe("Company report on the instrument page", () => {
     );
     expect(
       screen.getByText(
-        "Os sinais de Piotroski não se aplicam ao plano de contas desta companhia.",
+        "Os outros seis sinais de Piotroski não se aplicam ao plano de contas desta companhia.",
       ),
     ).toBeInTheDocument();
-    expect(screen.queryByText(signalsHeading)).not.toBeInTheDocument();
-    expect(screen.queryByRole("list", { name: signalsHeading })).toBeNull();
+
+    const rows = within(
+      screen.getByRole("list", { name: signalsHeading }),
+    ).getAllByRole("listitem");
+
+    expect(rows).toHaveLength(3);
+    expect(rows[0]).toHaveTextContent("ROA positivo");
   });
 
   it("draws nothing for an instrument without a report", async () => {

@@ -232,6 +232,7 @@ export const contributionPlanEn = {
   "contributionPlan.criteria.unnamed": "criterion {n}",
   "contributionPlan.criteria.noteAutomatic": "automatic",
   "contributionPlan.criteria.noteOwn": "no data",
+  "contributionPlan.criteria.noteOutside": "not applicable",
   "contributionPlan.criteria.noteNoLimit": "set the limit",
   "contributionPlan.criteria.noteBlank": "write the question",
   "contributionPlan.criteria.noteRepeated": "repeated question",

@@ -4,6 +4,9 @@ type Period = components["schemas"]["CompanyReportPeriod"];
 
 const YEAR_MONTHS = 12;
 
+// The signals that read accounts with one meaning in every chart; the server answers the same ones.
+const everyChart: readonly SignalID[] = ["p1", "p3", "p7"];
+
 export type SignalID =
   "p1" | "p2" | "p3" | "p4" | "p5" | "p6" | "p7" | "p8" | "p9";
 export type SignalState = "yes" | "no" | "missing";
@@ -26,8 +29,12 @@ export interface Signals {
   signals: Signal[];
 }
 
-// CR11. Null with fewer than two fiscal years.
-export function piotroskiSignals(periods: Period[]): Signals | null {
+// CR11. Null with fewer than two fiscal years. A chart that is not standard has the signals of
+// everyChart alone.
+export function piotroskiSignals(
+  periods: Period[],
+  plan: string,
+): Signals | null {
   const [t, t1, t2] = periods.filter((p) => p.months === YEAR_MONTHS);
 
   if (t === undefined || t1 === undefined) {
@@ -49,32 +56,30 @@ export function piotroskiSignals(periods: Period[]): Signals | null {
   const turnover = ratio(t.revenue, t1.total_assets);
   const turnoverBefore = ratio(t1.revenue, t2?.total_assets);
 
+  const signals = [
+    positive("p1", roa),
+    positive("p2", cashFlow),
+    compare("p3", "percent", roa, roaBefore, (c, p) => c > p),
+    compare("p4", "percent", cashFlow, roa, (c, p) => c > p),
+    compare("p5", "ratio4", leverage, leverageBefore, (c, p) => c < p),
+    compare("p6", "ratio2", currentRatio, currentRatioBefore, (c, p) => c > p),
+    compare(
+      "p7",
+      "shares",
+      t.shares_issued,
+      t1.shares_issued,
+      (c, p) => c <= p,
+    ),
+    compare("p8", "percent", grossMargin, grossMarginBefore, (c, p) => c > p),
+    compare("p9", "ratio4", turnover, turnoverBefore, (c, p) => c > p),
+  ];
+
   return {
     year: t.period,
     prior: t1.period,
-    signals: [
-      positive("p1", roa),
-      positive("p2", cashFlow),
-      compare("p3", "percent", roa, roaBefore, (c, p) => c > p),
-      compare("p4", "percent", cashFlow, roa, (c, p) => c > p),
-      compare("p5", "ratio4", leverage, leverageBefore, (c, p) => c < p),
-      compare(
-        "p6",
-        "ratio2",
-        currentRatio,
-        currentRatioBefore,
-        (c, p) => c > p,
-      ),
-      compare(
-        "p7",
-        "shares",
-        t.shares_issued,
-        t1.shares_issued,
-        (c, p) => c <= p,
-      ),
-      compare("p8", "percent", grossMargin, grossMarginBefore, (c, p) => c > p),
-      compare("p9", "ratio4", turnover, turnoverBefore, (c, p) => c > p),
-    ],
+    signals: signals.filter(
+      ({ id }) => plan === "standard" || everyChart.includes(id),
+    ),
   };
 }
 
