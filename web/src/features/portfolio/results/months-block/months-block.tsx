@@ -14,10 +14,10 @@ import { indexName } from "@/features/calculators";
 import { monthReturns } from "@/features/portfolio/results/model/month-returns";
 import { compareMonths } from "@/features/portfolio/results/months-block/month-comparison";
 import { MonthFacts } from "@/features/portfolio/results/months-block/month-facts";
-import { monthFigures } from "@/features/portfolio/results/months-block/month-figures";
 import { MonthTable } from "@/features/portfolio/results/months-block/month-table";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/form-fields/choice-select";
+import { monthFigures } from "@/ui/month-heat/month-figures";
 
 type ReturnSeries = components["schemas"]["ReturnSeries"];
 

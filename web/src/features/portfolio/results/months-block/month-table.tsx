@@ -1,8 +1,8 @@
 import type { TableRow } from "@/features/portfolio/results/months-block/month-comparison";
-import { MonthHead } from "@/features/portfolio/results/months-block/month-head";
+import { MonthHeadColumns } from "@/features/portfolio/results/months-block/month-head-columns";
 import { MonthRow } from "@/features/portfolio/results/months-block/month-row";
-import styles from "@/features/portfolio/results/months-block/months-block.module.css";
 import { useT } from "@/i18n/i18n-provider";
+import styles from "@/ui/month-heat/month-heat.module.css";
 
 interface MonthTableProps {
   // Newest year first.
@@ -20,7 +20,7 @@ export function MonthTable({ rows }: MonthTableProps) {
           {t("portfolio.results.months.caption")}
         </caption>
 
-        <MonthHead />
+        <MonthHeadColumns />
 
         <tbody>
           {rows.map((row) => (

@@ -1,7 +1,6 @@
-export interface MonthReturn {
-  month: string;
-  value: number;
-}
+import type { MonthReturn } from "@/ui/month-heat/month-figures";
+
+export type { MonthReturn };
 
 export interface MonthRow {
   year: number;
@@ -52,16 +51,4 @@ export function monthRows(months: readonly MonthReturn[]): MonthRow[] {
       return { year, cells, total: total - 1, accumulated: accumulated - 1 };
     })
     .reverse();
-}
-
-// PR8: the strength of a cell by the size of its return; zero takes none.
-export function heatLevel(
-  value: number | null,
-): { tone: "gain" | "loss"; level: 1 | 2 | 3 | 4 } | null {
-  if (value === null || value === 0) return null;
-
-  const size = Math.abs(value);
-  const level = size < 0.01 ? 1 : size < 0.03 ? 2 : size < 0.06 ? 3 : 4;
-
-  return { tone: value > 0 ? "gain" : "loss", level };
 }

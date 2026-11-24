@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { MonthReturn } from "@/features/portfolio/results/model/month-returns";
-import { monthFigures } from "@/features/portfolio/results/months-block/month-figures";
+import { monthFigures, type MonthReturn } from "@/ui/month-heat/month-figures";
 
 describe("monthFigures", () => {
   it("names the best and the worst month and counts the signs", () => {

@@ -1,10 +1,7 @@
 import { Toned } from "@/features/portfolio/results/shared/toned";
-import {
-  emptyCell,
-  monthCellText,
-} from "@/features/portfolio/results/months-block/month-cell-text";
-import styles from "@/features/portfolio/results/months-block/months-block.module.css";
 import { useAppLocale } from "@/i18n/i18n-provider";
+import { emptyCell, monthCellText } from "@/ui/month-heat/month-cell-text";
+import styles from "@/ui/month-heat/month-heat.module.css";
 
 interface MonthSumCellProps {
   value: number | null;

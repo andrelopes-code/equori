@@ -1,10 +1,10 @@
 import { toBasisPoints } from "@/features/portfolio/results/return-block/block-figures";
 import { FactRow } from "@/features/portfolio/results/shared/fact-row";
 import { Toned } from "@/features/portfolio/results/shared/toned";
-import type { MonthFigures } from "@/features/portfolio/results/months-block/month-figures";
 import styles from "@/features/portfolio/results/months-block/months-block.module.css";
 import { formatMonthSlashYear, formatSignedBasisPoints } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import type { MonthFigures } from "@/ui/month-heat/month-figures";
 
 interface MonthFactsProps {
   figures: MonthFigures;

@@ -1,4 +1,7 @@
-import type { MonthReturn } from "@/features/portfolio/results/model/month-returns";
+export interface MonthReturn {
+  month: string;
+  value: number;
+}
 
 export interface MonthFigures {
   best: MonthReturn;

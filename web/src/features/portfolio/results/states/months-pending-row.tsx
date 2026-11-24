@@ -1,6 +1,6 @@
-import styles from "@/features/portfolio/results/months-block/months-block.module.css";
 import { PendingValue } from "@/features/portfolio/results/states/pending-value";
 import pending from "@/features/portfolio/results/states/pending.module.css";
+import styles from "@/ui/month-heat/month-heat.module.css";
 
 const months = Array.from({ length: 12 }, (_, month) => month);
 

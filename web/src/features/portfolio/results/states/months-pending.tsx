@@ -1,10 +1,11 @@
 import { FactRow } from "@/features/portfolio/results/shared/fact-row";
-import { MonthHead } from "@/features/portfolio/results/months-block/month-head";
+import { MonthHeadColumns } from "@/features/portfolio/results/months-block/month-head-columns";
 import styles from "@/features/portfolio/results/months-block/months-block.module.css";
 import { MonthsPendingRow } from "@/features/portfolio/results/states/months-pending-row";
 import { PendingSection } from "@/features/portfolio/results/states/pending-section";
 import { PendingValue } from "@/features/portfolio/results/states/pending-value";
 import { useT } from "@/i18n/i18n-provider";
+import heat from "@/ui/month-heat/month-heat.module.css";
 
 const facts = [
   ["portfolio.results.months.best", 14],
@@ -32,13 +33,13 @@ export function MonthsPending() {
         ))}
       </dl>
 
-      <div className={styles.monthScroll}>
-        <table className={styles.monthTable}>
-          <caption className={styles.srOnly}>
+      <div className={heat.monthScroll}>
+        <table className={heat.monthTable}>
+          <caption className={heat.srOnly}>
             {t("portfolio.results.months.caption")}
           </caption>
 
-          <MonthHead />
+          <MonthHeadColumns />
 
           <tbody>
             {years.map((year) => (
