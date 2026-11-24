@@ -1,0 +1,67 @@
+export interface MonthReturn {
+  month: string;
+  value: number;
+}
+
+export interface MonthRow {
+  year: number;
+  cells: (number | null)[];
+  total: number;
+  accumulated: number;
+}
+
+// The month return is the growth of the cumulative return between two consecutive month ends.
+export function monthReturns(
+  points: readonly { date: string; return_bp?: number }[],
+): MonthReturn[] {
+  const ends = new Map<string, number>();
+  for (const { date, return_bp } of points) {
+    if (return_bp === undefined) break;
+    ends.set(date.slice(0, 7), return_bp / 10000);
+  }
+
+  let previous = 0;
+
+  return [...ends].map(([month, cumulative]) => {
+    const value = (1 + cumulative) / (1 + previous) - 1;
+    previous = cumulative;
+
+    return { month, value };
+  });
+}
+
+// One row per calendar year, newest first.
+export function monthRows(months: readonly MonthReturn[]): MonthRow[] {
+  const years = [
+    ...new Set(months.map((m) => Number(m.month.slice(0, 4)))),
+  ].sort();
+  let accumulated = 1;
+
+  return years
+    .map((year) => {
+      const cells = Array<number | null>(12).fill(null);
+      let total = 1;
+      for (const { month, value } of months) {
+        if (Number(month.slice(0, 4)) !== year) continue;
+
+        cells[Number(month.slice(5, 7)) - 1] = value;
+        total *= 1 + value;
+      }
+      accumulated *= total;
+
+      return { year, cells, total: total - 1, accumulated: accumulated - 1 };
+    })
+    .reverse();
+}
+
+// PR8: the strength of a cell by the size of its return; zero takes none.
+export function heatLevel(
+  value: number | null,
+): { tone: "gain" | "loss"; level: 1 | 2 | 3 | 4 } | null {
+  if (value === null || value === 0) return null;
+
+  const size = Math.abs(value);
+  const level = size < 0.01 ? 1 : size < 0.03 ? 2 : size < 0.06 ? 3 : 4;
+
+  return { tone: value > 0 ? "gain" : "loss", level };
+}

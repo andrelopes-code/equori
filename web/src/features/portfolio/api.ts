@@ -94,6 +94,37 @@ export function returnQuery(
   });
 }
 
+export function returnSeriesQuery(
+  api: Client<paths>,
+  accountID: string | null | undefined,
+  from: string | undefined,
+  to: string,
+  step: "day" | "week" | "month",
+  valueIn: string | undefined,
+  enabled: boolean,
+) {
+  return queryOptions({
+    queryKey: ["return-series", accountID, from, to, step, valueIn] as const,
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/reports/return/series", {
+          params: {
+            query: {
+              ...(accountID === null || accountID === undefined
+                ? {}
+                : { account_id: accountID }),
+              ...(from === undefined ? {} : { from }),
+              to,
+              step,
+              ...(valueIn === undefined ? {} : { value_in: valueIn }),
+            },
+          },
+        }),
+      ),
+    enabled: enabled && accountID !== undefined && valueIn !== undefined,
+  });
+}
+
 export function realizedResultsQuery(api: Client<paths>, year: number) {
   return queryOptions({
     queryKey: ["realized-results", year] as const,
