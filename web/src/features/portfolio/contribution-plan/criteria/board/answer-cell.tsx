@@ -1,5 +1,6 @@
+import type { RovingGridCellProps } from "@slotted/react/roving-focus";
+
 import styles from "@/features/portfolio/contribution-plan/criteria/board/board.module.css";
-import type { BoardFocus } from "@/features/portfolio/contribution-plan/criteria/board/use-board-focus";
 import type { CellAnswer } from "@/features/portfolio/contribution-plan/criteria/model/cell-answer";
 import { useT } from "@/i18n/i18n-provider";
 import { cx } from "@/ui/cx";
@@ -9,7 +10,7 @@ interface AnswerCellProps {
   // The figure equori read, or whose answer it is; "" for none.
   note: string;
   label: string;
-  focus: ReturnType<BoardFocus["cellProps"]>;
+  focus: RovingGridCellProps;
   onAnswer: (yes: boolean) => void;
 }
 

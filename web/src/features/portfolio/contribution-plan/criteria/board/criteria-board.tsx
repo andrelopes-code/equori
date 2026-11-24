@@ -1,11 +1,11 @@
 import type { CSSProperties } from "react";
+import { useRovingGrid } from "@slotted/react/roving-focus";
 import { Text } from "@slotted/react/typography";
 
 import { AnswerCell } from "@/features/portfolio/contribution-plan/criteria/board/answer-cell";
 import { AssetHead } from "@/features/portfolio/contribution-plan/criteria/board/asset-head";
 import styles from "@/features/portfolio/contribution-plan/criteria/board/board.module.css";
 import { CriterionHead } from "@/features/portfolio/contribution-plan/criteria/board/criterion-head";
-import { useBoardFocus } from "@/features/portfolio/contribution-plan/criteria/board/use-board-focus";
 import type {
   BoardAsset,
   BoardRow,
@@ -48,14 +48,16 @@ export function CriteriaBoard({
 }: CriteriaBoardProps) {
   const t = useT();
   const [locale] = useAppLocale();
-  const { board, cellProps } = useBoardFocus(rows.length, assets.length);
+  const { cellProps } = useRovingGrid({
+    rows: rows.length,
+    columns: assets.length,
+  });
 
   const greatest = Math.max(0, ...assets.map((a) => a.ideal ?? 0));
 
   return (
     <div className={styles.scroll}>
       <div
-        ref={board}
         role="grid"
         aria-label={t("contributionPlan.criteria.boardLabel", { name })}
         aria-rowcount={rows.length + 1}

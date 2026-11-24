@@ -264,7 +264,7 @@ describe("Contribution plan, criteria", () => {
     await openBoard([answered]);
     const grid = await board();
 
-    const stops = [...grid.querySelectorAll("[data-cell]")].filter(
+    const stops = [...grid.querySelectorAll('[role="gridcell"] > *')].filter(
       (cell) => cell.getAttribute("tabindex") === "0",
     );
     expect(stops).toHaveLength(1);
