@@ -28,7 +28,7 @@ A lista mostra o nome, o valor de mercado, o lucro ou prejuízo em dinheiro e em
 
 Um preço com mais de 7 dias aparece ao lado do valor. Um investimento sem preço fica fora do total e da porcentagem: registre um preço na página do investimento, em [Cotações](/instruments), ou importe um arquivo de preços.
 
-Registre compras, vendas e proventos pelos botões acima da lista.
+Registre compras, vendas e proventos pelos botões acima da lista. O botão **+** na linha de um investimento abre o registro do provento desse investimento.
 
 ## Como rendeu
 

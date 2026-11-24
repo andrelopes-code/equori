@@ -74,7 +74,7 @@ export function holdingsColumns({
       rowHeader: true,
       hideable: false,
       flex: 1,
-      minWidth: 260,
+      minWidth: 300,
     },
     {
       id: "trend",

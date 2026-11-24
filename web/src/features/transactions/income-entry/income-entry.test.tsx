@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
+import { catalogPtBR } from "@/i18n/catalog.pt-BR";
 import { chooseEntryKind } from "@/testing/entry-kind";
 import { problem } from "@/testing/fake-api";
 import {
@@ -142,6 +143,116 @@ describe("investment income entry", () => {
     });
   });
 
+  // IE2, A235: the estimate never fills the field by itself; "Use estimate" copies it.
+  it("copies the estimated tax of a JCP into the withheld field on request", async () => {
+    const sent: unknown[] = [];
+    await renderApp(path, {
+      fetch: api(sent, { jcpWithholding: { rateBp: 1750, withheld: 788 } }),
+    });
+    await chooseType(catalogEn["income.type.jcp"]);
+    await type(catalogEn["income.gross"], "4500");
+    const use = await screen.findByRole("button", {
+      name: catalogEn["trade.useEstimate"],
+    });
+    const withheld = screen.getByRole("textbox", {
+      name: optionalName(catalogEn["income.withheld"]),
+    });
+    expect(withheld).toHaveValue("0.00");
+    expect(
+      screen.getByText(
+        catalogEn["income.estimateNote"].replace("{rate}", "17.50%"),
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(catalogEn["income.noneWithheld"]),
+    ).toBeInTheDocument();
+
+    await userEvent.click(use);
+
+    expect(withheld).toHaveValue("7.88");
+    expect(
+      screen.queryByText(catalogEn["income.noneWithheld"]),
+    ).not.toBeInTheDocument();
+
+    await pick(catalogEn["income.category"], "Dividends");
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["entry.save"] }),
+    );
+    await waitFor(() => {
+      expect(sent).toHaveLength(1);
+    });
+    expect(sent[0]).toMatchObject({ withheld: brl(788) });
+  });
+
+  it("records the JCP with nothing withheld when the estimate is not used", async () => {
+    const sent: unknown[] = [];
+    await renderApp(path, {
+      fetch: api(sent, { jcpWithholding: { rateBp: 1750, withheld: 788 } }),
+    });
+    await chooseType(catalogEn["income.type.jcp"]);
+    await type(catalogEn["income.gross"], "4500");
+    await screen.findByRole("button", { name: catalogEn["trade.useEstimate"] });
+    await pick(catalogEn["income.category"], "Dividends");
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["entry.save"] }),
+    );
+    await waitFor(() => {
+      expect(sent).toHaveLength(1);
+    });
+    expect(sent[0]).toMatchObject({ withheld: brl(0) });
+  });
+
+  it("draws no estimate for a type the region withholds nothing on", async () => {
+    await renderApp(path, {
+      fetch: api([], { jcpWithholding: { rateBp: 1750, withheld: 788 } }),
+    });
+    await chooseType(catalogEn["income.type.dividend"]);
+    await type(catalogEn["income.gross"], "4500");
+    expect(await screen.findAllByText(moneyValue(/45\.00/))).not.toHaveLength(
+      0,
+    );
+    expect(
+      screen.queryByRole("button", { name: catalogEn["trade.useEstimate"] }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(catalogEn["income.noneWithheld"]),
+    ).not.toBeInTheDocument();
+  });
+
+  // IE4: a distribution of a fund is named, not written as its code.
+  it.each([catalogEn, catalogPtBR])("names every income type", (catalog) => {
+    for (const code of ["coupon", "distribution", "dividend", "interest"]) {
+      expect(catalog).toHaveProperty([`income.type.${code}`]);
+    }
+  });
+
+  // IE6: the account of the route stands over the holding a stored draft names.
+  it("opens on the account of the route, not on the one of the stored draft", async () => {
+    storeDraft("PETR4");
+    const sent: unknown[] = [];
+    await renderApp(path, { fetch: api(sent) });
+    await screen.findByRole("combobox", { name: catalogEn["income.type"] });
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["entry.save"] }),
+    );
+    await waitFor(() => {
+      expect(sent).toHaveLength(1);
+    });
+    expect(sent[0]).toMatchObject({ instrument: instrumentCode });
+  });
+
+  it("keeps the holding of the stored draft when the route opens another kind", async () => {
+    storeDraft("PETR4");
+    await renderApp(`/transactions/new?kind=trade&account_id=${securityID}`, {
+      fetch: api([]),
+    });
+    await screen.findByRole("textbox", { name: catalogEn["trade.quantity"] });
+
+    expect(
+      JSON.parse(sessionStorage.getItem("equori.draft.new-income") ?? "{}"),
+    ).toMatchObject({ brokerageId: brokerID, instrument: "PETR4" });
+  });
+
   // FC20: a link of the instrument page starts the form from its income type, gross and date.
   it("starts from the income type, gross and date of the route", async () => {
     const sent: unknown[] = [];
@@ -235,3 +346,21 @@ describe("investment income entry", () => {
     });
   });
 });
+
+function storeDraft(instrument: string) {
+  sessionStorage.setItem(
+    "equori.draft.new-income",
+    JSON.stringify({
+      brokerageId: brokerID,
+      instrument,
+      cashAccountId: null,
+      date: "2026-10-17",
+      incomeType: "dividend",
+      gross: 1000,
+      withheld: 0,
+      categoryId: dividendsID,
+      withheldCategoryId: null,
+      description: "",
+    }),
+  );
+}

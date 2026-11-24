@@ -579,6 +579,25 @@ export function incomeTypesQuery(api: Client<paths>) {
   });
 }
 
+// The tax the book's region withholds on an income of gross minor units, an estimate.
+export function incomeWithholdingQuery(
+  api: Client<paths>,
+  incomeType: string,
+  date: string,
+  gross: number,
+) {
+  return queryOptions({
+    queryKey: ["income-withholding", incomeType, date, gross] as const,
+    retry: false,
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/investment-income/withholding", {
+          params: { query: { income_type: incomeType, date, gross } },
+        }),
+      ),
+  });
+}
+
 export function useCreateTransaction() {
   const api = useApi();
   const queryClient = useQueryClient();

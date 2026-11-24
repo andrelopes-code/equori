@@ -18,6 +18,7 @@ export const holdingsEn = {
   "holdings.income.none": "None received this year",
   "holdings.income.open": "View",
   "holdings.income.record": "Record income",
+  "holdings.income.recordOf": "Record income from {name}",
   "holdings.return": "How it performed",
   "holdings.period.year": "Last 12 months",
   "holdings.period.years3": "Last 3 years",

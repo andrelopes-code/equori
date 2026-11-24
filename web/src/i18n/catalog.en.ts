@@ -1233,6 +1233,7 @@ export const catalogEn = {
   "income.type.lending_fee": "Securities lending fee",
   "income.type.interest": "Interest",
   "income.type.coupon": "Coupon",
+  "income.type.distribution": "Fund distribution",
   "income.type.bonus_shares": "Bonus shares",
   "income.gross": "Gross amount",
   "income.grossHelp": "The amount before any tax is taken off.",
@@ -1243,6 +1244,9 @@ export const catalogEn = {
   "income.withheldCategoryPlaceholder": "Default tax account",
   "income.category": "Income category",
   "income.net": "Net amount",
+  "income.estimate": "Estimate",
+  "income.estimateNote": "Withheld: {rate} of the gross amount",
+  "income.noneWithheld": "Nothing withheld",
   "income.required.type": "Choose the income type.",
   "income.withheldTooHigh":
     "The withheld amount must be below the gross amount.",

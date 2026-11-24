@@ -1,0 +1,7 @@
+@layer app {
+  /* The actions of the rows end on one vertical line, whatever the length of the name. */
+  .cell {
+    inline-size: 100%;
+    min-inline-size: 0;
+  }
+}

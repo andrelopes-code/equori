@@ -20,6 +20,7 @@ export const holdingsPtBR: Record<keyof typeof holdingsEn, string> = {
   "holdings.income.none": "Nenhum recebido neste ano",
   "holdings.income.open": "Ver",
   "holdings.income.record": "Registrar provento",
+  "holdings.income.recordOf": "Registrar provento de {name}",
   "holdings.return": "Como rendeu",
   "holdings.period.year": "Últimos 12 meses",
   "holdings.period.years3": "\u00daltimos 3 anos",

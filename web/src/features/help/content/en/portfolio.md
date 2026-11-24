@@ -28,7 +28,7 @@ The list shows the name, the market value, the gain or loss in money and in perc
 
 A price older than 7 days shows beside the value. An investment without a price stays out of the total and the percentage: record a price on the investment's page, under [Quotes](/instruments), or import a file of prices.
 
-Record buys, sales and income with the buttons above the list.
+Record buys, sales and income with the buttons above the list. The **+** button on the row of an investment opens the income form of that investment.
 
 ## How it performed
 

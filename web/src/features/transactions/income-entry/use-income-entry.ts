@@ -23,6 +23,7 @@ import {
   isIncomeDraft,
 } from "@/features/transactions/income-entry/income-draft";
 import type { IncomeDraft } from "@/features/transactions/income-entry/income-draft";
+import { useIncomeEstimate } from "@/features/transactions/income-entry/use-income-estimate";
 import { useBrokerages } from "@/features/transactions/brokerage-account/use-brokerages";
 import type { NewTransactionSearch } from "@/features/transactions/model/search";
 import { useT } from "@/i18n/i18n-provider";
@@ -41,7 +42,7 @@ export interface IncomeCorrection {
 
 // The state of the investment income form. The server stores the amounts; the net amount here is
 // gross minus withheld, a preview. Withheld is always sent, so what the form shows is what is
-// recorded: the default a jurisdiction sets for a type is not assumed here. A correction keeps
+// recorded: the default a jurisdiction sets for a type is an estimate the reader may use. A correction keeps
 // no draft in the browser and reads the balance without the income it replaces (A227 IC10).
 export function useIncomeEntry(
   accountId: string | null,
@@ -61,7 +62,7 @@ export function useIncomeEntry(
     if (correction !== undefined) return correction.start;
     const stored = readStored(draftKey);
     const start = isIncomeDraft(stored) ? stored : emptyIncome(today);
-    return { ...start, ...incomePreset(presets) };
+    return { ...start, ...incomePreset(accountId, presets) };
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [summary, setSummary] = useState<string | null>(null);
@@ -96,6 +97,7 @@ export function useIncomeEntry(
     payer?.id,
     draft.date,
   );
+  const estimate = useIncomeEstimate(draft.incomeType, draft.date, draft.gross);
   const withheldTooHigh = draft.withheld > 0 && draft.withheld >= draft.gross;
   const net =
     draft.gross > 0 && !withheldTooHigh ? draft.gross - draft.withheld : null;
@@ -111,6 +113,7 @@ export function useIncomeEntry(
     base,
     types: types.data ?? [],
     net,
+    estimate,
     ready: base !== undefined && scale !== null && types.data !== undefined,
   };
 

@@ -31,7 +31,12 @@ export function useBuiltEntries(
 ) {
   const trade = useTradeEntry(accountId, brokerageId, undefined, presets);
   const fixedIncome = useFixedIncomeEntry(brokerageId, contract);
-  const income = useIncomeEntry(accountId, undefined, presets);
+  // The account of a route that opens another kind says nothing of a stored income draft (IE6).
+  const income = useIncomeEntry(
+    investment === "investment_income" ? accountId : null,
+    undefined,
+    presets,
+  );
   const note = useNoteEntry(brokerageId);
   const foreign = useForeignEntry(accountId);
   const exchange = useExchangeEntry(accountId);

@@ -32,13 +32,18 @@ export function emptyIncome(
   };
 }
 
-// The initial values a link of the entry route gives the fields of the form (FC20).
+// The initial values a link of the entry route gives the fields of the form (FC20). The account of
+// the route stands over the holding a stored draft names (IE6).
 export function incomePreset(
+  accountId: string | null,
   search: NewTransactionSearch,
 ): Partial<IncomeDraft> {
   const { income_type: incomeType, gross, date } = search;
 
   return {
+    ...(accountId === null
+      ? {}
+      : { brokerageId: null, instrument: null, cashAccountId: null }),
     ...(incomeType === undefined ? {} : { incomeType }),
     ...(gross === undefined ? {} : { gross }),
     ...(date === undefined ? {} : { date }),

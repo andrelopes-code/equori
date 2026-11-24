@@ -269,6 +269,36 @@ describe("Portfolio positions page", () => {
     ).toHaveAttribute("href", "/instruments");
   });
 
+  // IE6: the income of a row is recorded on the account of the row.
+  it("IE6: a position opens the income form on its account, and cash does not", async () => {
+    await renderApp("/portfolio/positions", { fetch: portfolioApi() });
+    const grid = await list();
+    await within(grid).findAllByRole("link", { name: "MXRF11" });
+
+    const links = within(grid).getAllByRole("link", {
+      name: catalogEn["holdings.income.recordOf"].replace("{name}", "MXRF11"),
+    });
+    const accounts = links.map((link) =>
+      new URL(link.getAttribute("href") ?? "", "http://x").searchParams.get(
+        "account_id",
+      ),
+    );
+
+    expect(accounts).toEqual(
+      positions
+        .filter((p) => p.instrument === "MXRF11")
+        .map((p) => p.account_id),
+    );
+    expect(
+      within(grid).queryByRole("link", {
+        name: catalogEn["holdings.income.recordOf"].replace(
+          "{name}",
+          "XP cash",
+        ),
+      }),
+    ).not.toBeInTheDocument();
+  });
+
   it("PP3: the page header holds the trade as its one solid action", async () => {
     await renderApp("/portfolio/positions", { fetch: portfolioApi() });
     const grid = await list();

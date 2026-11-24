@@ -120,6 +120,8 @@ export interface InvestmentOptions {
   balances?: Record<string, number>;
   answer?: () => Response;
   incomeTypes?: string[];
+  // The rate, in basis points, and the tax the region withholds on a JCP; every other type has none.
+  jcpWithholding?: { rateBp: number; withheld: number };
   incomeAnswer?: () => Response;
   noteAnswer?: () => Response;
   actionAnswer?: () => Response;
@@ -238,6 +240,15 @@ export function investmentRoutes(
       json(200, {
         items: options.incomeTypes ?? ["dividend", "jcp", "interest", "coupon"],
       }),
+    "GET /api/v1/investment-income/withholding": (req: Request) => {
+      const jcp = new URL(req.url).searchParams.get("income_type") === "jcp";
+      const estimate = jcp ? options.jcpWithholding : undefined;
+
+      return json(200, {
+        rate_bp: estimate?.rateBp ?? 0,
+        withheld: brl(estimate?.withheld ?? 0),
+      });
+    },
     "POST /api/v1/investment-income": async (req: Request) => {
       sent.push(await req.json());
       return (
