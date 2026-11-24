@@ -77,7 +77,7 @@ Checked by request on 2026-11-18 on `dfp_cia_aberta_2025.zip` (12,863,177 bytes)
 
 `SuggestedFeeds("BR")` adds it.
 
-**CR4 Listings.** From `valor_mobiliario` of the FCA, the rows with `Mercado` "Bolsa", `Data_Fim_Negociacao` blank and `Codigo_Negociacao` matching `^[A-Z0-9]{4}[0-9]{1,2}$`, of the highest `Versao` of a company: the trading code, exchange `BVMF`, the company's identifier (`CNPJ_Companhia` without punctuation) and `Nome_Empresarial`. When two companies give one code, neither listing is stored.
+**CR4 Listings.** From `valor_mobiliario` of the FCA, the rows with `Mercado` "Bolsa", `Data_Fim_Negociacao` blank and `Codigo_Negociacao`, in upper case, matching `^[A-Z][A-Z0-9]{3}[0-9]{1,2}$`, of the highest `Versao` of a company: the trading code, exchange `BVMF`, the company's identifier (`CNPJ_Companhia` without punctuation) and `Nome_Empresarial`. When two companies give one code, neither listing is stored. A row without such a code takes the one the exchange lists for the company (amended on 2026-11-24: the FCA of 2021 to 2026 gives "000000" for the units of BTG Pactual, and that of 2026 no code for six other traded companies; identifiers and codes checked against the list of companies of the exchange).
 
 **CR5 Accounts.** Each is null when the line is absent or the chart of accounts is `other` and the account is marked standard only; a null is never zero.
 
@@ -113,7 +113,7 @@ The web computes them from the periods, as the fund report does; each is a pure 
 
 **CR10 Positive years.** Of the five latest fiscal years, how many have a net income above zero, written "3 de 5". With fewer than five stored, "2 de 3" and the count of years stored.
 
-**CR11 Signals of Piotroski.** On the latest fiscal year `t`, the one before `t−1`, and the total assets at the end of `t−2`, each signal is "sim", "não" or "sem dado" (an input missing), and the screen writes the two values it compares. The chart `other` writes "não se aplica ao plano de contas desta companhia" once for the nine.
+**CR11 Signals of Piotroski.** On the latest fiscal year `t`, the one before `t−1`, and the total assets at the end of `t−2`, each signal is "sim", "não" or "sem dado" (an input missing), and the screen writes the two values it compares. The chart `other` lists P1, P3 and P7 and writes once that the other six do not apply to the chart of accounts of the company (amended on 2026-11-24).
 
 | ID | Signal | Holds when |
 |---|---|---|

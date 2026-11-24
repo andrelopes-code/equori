@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/andrelopes-code/equori/internal/marketdata/companyreport"
 )
@@ -20,9 +21,21 @@ const (
 )
 
 var (
-	codePattern = regexp.MustCompile(`^[A-Z0-9]{4}[0-9]{1,2}$`)
+	codePattern = regexp.MustCompile(`^[A-Z][A-Z0-9]{3}[0-9]{1,2}$`)
 	// unitPart is a number of a composition and the class of share it counts.
 	unitPart = regexp.MustCompile(`([0-9]+)\s+(?:ON|PN|aç|[A-Z]{4}[0-9])`)
+	// exchangeCodes names, by identifier, the security of each company whose filing gives no
+	// trading code, as the exchange lists it on 2026-11-24.
+	// shortcut: kept by hand, read the exchange's company list when a company is missing.
+	exchangeCodes = map[string]string{
+		"03853896000140": "MBRF3",
+		"05917486000140": "WDCN3",
+		"08902291000115": "CMIN3",
+		"30306294000145": "BPAC11",
+		"33042730000104": "CSNA3",
+		"59693110000129": "OBTC3",
+		"61189288000189": "AMAR3",
+	}
 )
 
 // listed is a candidate listing and the version of the row it came from.
@@ -59,9 +72,9 @@ func readListings(f *os.File, size int64, year int) ([]companyreport.Listing, er
 			id := identifierReplacer.Replace(r.get("CNPJ_Companhia"))
 			newest[id] = max(newest[id], version)
 
-			code := r.get("Codigo_Negociacao")
+			code := tradingCode(r, id)
 			if r.get("Mercado") != "Bolsa" || r.get("Data_Fim_Negociacao") != "" ||
-				!codePattern.MatchString(code) {
+				code == "" {
 				return
 			}
 
@@ -79,6 +92,17 @@ func readListings(f *os.File, size int64, year int) ([]companyreport.Listing, er
 	}
 
 	return pick(rows, newest), nil
+}
+
+// tradingCode is the code the row states, else the one the exchange gives the company; "" without
+// either (CR4).
+func tradingCode(r record, identifier string) string {
+	code := strings.ToUpper(r.get("Codigo_Negociacao"))
+	if codePattern.MatchString(code) {
+		return code
+	}
+
+	return exchangeCodes[identifier]
 }
 
 // sharesPerUnit sums the numbers of the composition of a unit; nil when it names none or the sum
