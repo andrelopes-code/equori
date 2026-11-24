@@ -17,7 +17,8 @@ const debounceMs = 250;
 // The amount of the strip and the draft of the targets (the saved plan outside edit mode) with the
 // plan they produce: the preview for the amount, or the saved plan itself while the amount is
 // zero and no group has rules or criteria (GR8: such a group sends the preview without the amount).
-// A change of either is sent after 250 ms; the figures keep the previous answer until the next one
+// A change of either is sent after 250 ms, and a new answer of the filings in the saved plan at once
+// (a feed loaded while the screen is open); the figures keep the previous answer until the next one
 // arrives, and `pending` says so. A draft with a blank class name is not sent, and a criterion the
 // server would refuse leaves the draft that is.
 export function useContributionPreview(
@@ -49,6 +50,9 @@ export function useContributionPreview(
     asked.classes.some((c) => (c.questions?.length ?? 0) > 0);
   const sends = asked.amount > 0 || byRule || byCriteria;
   const currency = plan?.total.currency;
+  const factAnswers = JSON.stringify(
+    plan?.classes.map((c) => c.members.map((m) => m.fact_answers)),
+  );
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -70,9 +74,10 @@ export function useContributionPreview(
         : {}),
       classes: asked.classes,
     });
-    // askedKey stands for asked: the parsed copy changes identity on every render.
+    // askedKey stands for asked: the parsed copy changes identity on every render. factAnswers is
+    // not the plan: a preview refetches it, and a moving quote would send previews without end.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [askedKey, ready, currency, mutate]);
+  }, [askedKey, factAnswers, ready, currency, mutate]);
 
   const previewed = ready && sends && preview.data !== undefined;
   const view = previewed ? preview.data : plan;

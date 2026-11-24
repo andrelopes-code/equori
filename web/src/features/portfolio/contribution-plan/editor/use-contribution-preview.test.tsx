@@ -1,4 +1,6 @@
-import { waitFor } from "@testing-library/react";
+import { useState } from "react";
+
+import { act, waitFor } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import type { components } from "@/api/schema.gen";
@@ -37,6 +39,26 @@ const plan = (rules: (typeof rule)[]): Plan => ({
   missing: [],
 });
 
+// A saved plan with one member, whose one criterion the filings answer so.
+const answered = (answer: "none" | "yes"): Plan => ({
+  ...plan([]),
+  classes: plan([]).classes.map((cls) => ({
+    ...cls,
+    questions: ["Retorno sobre os ativos positivo"],
+    question_facts: ["piotroski_p1"],
+    question_limits: [""],
+    members: [
+      {
+        instrument: "BPAC11",
+        value: brl(1000000),
+        answers: [false],
+        fact_answers: [answer],
+        fact_details: [{}],
+      },
+    ],
+  })),
+});
+
 function setup() {
   const bodies: { amount?: unknown; classes: unknown[] }[] = [];
   const fetchImpl: typeof fetch = async (input, init) => {
@@ -52,8 +74,11 @@ function setup() {
     });
   };
   let view: Plan | undefined;
+  let setPlan: (plan: Plan) => void = () => undefined;
 
-  function Probe({ plan: saved, draft }: { plan: Plan; draft?: PlanDraft }) {
+  function Probe({ plan: first, draft }: { plan: Plan; draft?: PlanDraft }) {
+    const [saved, setSaved] = useState(first);
+    setPlan = setSaved;
     view = useContributionPreview(saved, draft).view;
 
     return null;
@@ -65,7 +90,13 @@ function setup() {
       { fetch: fetchImpl },
     );
 
-  return { bodies, mount, view: () => view };
+  const refetch = (next: Plan) => {
+    act(() => {
+      setPlan(next);
+    });
+  };
+
+  return { bodies, mount, refetch, view: () => view };
 }
 
 describe("useContributionPreview", () => {
@@ -99,6 +130,29 @@ describe("useContributionPreview", () => {
 
     expect(bodies).toHaveLength(0);
     expect(view()?.classes[0]?.rules).toEqual([]);
+  });
+
+  it("sends the preview again when the answers of the saved plan change", async () => {
+    const { bodies, mount, refetch } = setup();
+    mount({ ...answered("none"), amount: brl(5000) });
+
+    // StrictMode sends the first preview twice.
+    await waitFor(() => {
+      expect(bodies).toHaveLength(2);
+    });
+
+    const sent = bodies.length;
+    refetch({ ...answered("none"), amount: brl(5000) });
+    await new Promise((resolve) => setTimeout(resolve, 400));
+
+    expect(bodies).toHaveLength(sent);
+
+    refetch({ ...answered("yes"), amount: brl(5000) });
+
+    await waitFor(() => {
+      expect(bodies).toHaveLength(sent + 1);
+    });
+    expect(bodies.at(-1)).toEqual(bodies[0]);
   });
 
   it("sends a draft with criteria without amount, less the incomplete ones", async () => {
