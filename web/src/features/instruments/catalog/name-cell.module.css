@@ -1,0 +1,6 @@
+@layer app {
+  .tag {
+    flex: none;
+    margin-inline-end: var(--slotted-space-4);
+  }
+}

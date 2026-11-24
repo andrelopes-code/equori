@@ -18,7 +18,8 @@ Endpoints used by `api.ts` (OpenAPI paths):
 Folders:
 
 - `pages/`: the two route components, their styles and tests.
-- `catalog/`: the instrument grid and the latest-price cell of the list screen.
+- `catalog/`: the instrument grid of the list screen, its columns and its cells.
+- `hide-instrument/`: the actions that hide or show one security, and the selection that does it for many.
 - `define-instrument/`: the dialog that defines an instrument, with search, probe and symbol defaults.
 - `edit-instrument/`: the dialog that edits an instrument and its symbols.
 - `remove-instrument/`: the action that removes an instrument.

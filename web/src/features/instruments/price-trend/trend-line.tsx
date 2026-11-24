@@ -12,11 +12,18 @@ interface TrendLineProps {
   // The instrument the prices are quoted in: its scale writes the values of the description.
   quote: string;
   name: string;
+  // Drawn without the tone of its direction.
+  muted?: boolean;
 }
 
 // The line of the price of an instrument over 3 months, beside its figures. The tone follows the
 // direction of the period, unless the reader chose sign-only amounts. Nothing below 3 prices.
-export function TrendLine({ data, quote, name }: TrendLineProps) {
+export function TrendLine({
+  data,
+  quote,
+  name,
+  muted = false,
+}: TrendLineProps) {
   const t = useT();
   const [tag] = useAppLocale();
   const scale = useScale();
@@ -25,7 +32,7 @@ export function TrendLine({ data, quote, name }: TrendLineProps) {
 
   if (trend === null) return null;
 
-  const tone = amountTone("result", trend.direction);
+  const tone = muted ? "neutral" : amountTone("result", trend.direction);
   const digits = numberFormatter(tag, {
     maximumFractionDigits: scale?.(quote) ?? 2,
   });

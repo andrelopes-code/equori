@@ -5,7 +5,7 @@ import { FormNotice } from "@/ui/form-layout/form-notice";
 
 interface BulkOutcomeNoticeProps {
   outcome: BulkOutcome;
-  summary: "bulk.resolved" | "bulk.voided";
+  summary: "bulk.resolved" | "bulk.voided" | "bulk.changed";
   labelOf: (id: string) => string;
 }
 

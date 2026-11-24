@@ -3286,6 +3286,7 @@ export const catalogPtBR: Catalog = {
   "overview.open": "Abrir",
   "bulk.resolved": "{done} resolvidas, {refused} recusadas.",
   "bulk.voided": "{done} anuladas, {refused} recusadas.",
+  "bulk.changed": "{done} alterados, {refused} recusados.",
   "bulk.refusedLine": "{label}: {reason}",
   "bulk.total": "Total: {amount}",
   "selection.void": "Anular",

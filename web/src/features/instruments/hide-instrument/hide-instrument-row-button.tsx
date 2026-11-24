@@ -10,6 +10,7 @@ interface HideInstrumentRowButtonProps {
 }
 
 // A238 HD9: one click on the list row hides the security or shows it again, with no confirmation.
+// The glyph is the state of the row; the name of the button is the action.
 export function HideInstrumentRowButton({ row }: HideInstrumentRowButtonProps) {
   const t = useT();
   const setHidden = useSetInstrumentHidden();
@@ -35,7 +36,7 @@ export function HideInstrumentRowButton({ row }: HideInstrumentRowButtonProps) {
       onClick={handleClick}
     >
       <Icon>
-        <Glyph name={row.hidden ? "eye" : "eye-off"} />
+        <Glyph name={row.hidden ? "eye-off" : "eye"} />
       </Icon>
     </IconButton>
   );

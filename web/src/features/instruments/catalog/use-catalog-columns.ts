@@ -43,6 +43,15 @@ export function useCatalogColumns(rows: readonly CatalogRow[]) {
   );
   const columns = useMemo<GridColumn<CatalogRow>[]>(
     () => [
+      // The action on a row stands beside its mark and its code (A238 HD13).
+      {
+        id: "actions",
+        label: t("instruments.col.actions"),
+        kind: "actions",
+        accessor: () => "",
+        width: 56,
+        sortable: false,
+      },
       {
         id: "code",
         label: t("instruments.col.code"),
@@ -59,7 +68,7 @@ export function useCatalogColumns(rows: readonly CatalogRow[]) {
         // One line in the fixed row height; a longer name ends in an ellipsis.
         text: "truncate",
         flex: 1,
-        minWidth: 160,
+        minWidth: 220,
         priority: 3,
       },
       {
@@ -136,14 +145,6 @@ export function useCatalogColumns(rows: readonly CatalogRow[]) {
         accessor: "exchange",
         width: 80,
         priority: 7,
-      },
-      {
-        id: "actions",
-        label: t("instruments.col.actions"),
-        kind: "actions",
-        accessor: () => "",
-        width: 56,
-        sortable: false,
       },
     ],
     [t, typeOptions, subtypeOptions, quoteOptions],

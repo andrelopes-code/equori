@@ -19,7 +19,7 @@ const gridRows = (grid: HTMLElement) =>
       (row) =>
         [
           ...row.querySelectorAll(
-            '[role="rowheader"], [role="gridcell"], [role="columnheader"]',
+            '[role="rowheader"], [role="gridcell"]:not([data-part="selection"]), [role="columnheader"]:not([data-column="__selection"])',
           ),
         ]
           .map((cell) => cell.textContent)
@@ -30,7 +30,7 @@ const bp = (value: number) => formatSignedBasisPoints(value, "en-US");
 
 const codesOf = (grid: HTMLElement, codes: readonly string[]) =>
   gridRows(grid)
-    .map((row) => row.split("|")[0] ?? "")
+    .map((row) => row.split("|")[1] ?? "")
     .filter((code) => codes.includes(code));
 
 const withoutPrice = (code: string) =>
@@ -59,12 +59,12 @@ describe("Instrument catalog", () => {
     });
     await within(grid).findByText("38.45");
     expect(gridRows(grid)).toEqual([
-      "Code|Name|Latest price|Last 3 months|Price date|1W|1M|3M|12M|YTD|Quote currency|Subtype|Exchange|Actions",
+      "Actions|Code|Name|Latest price|Last 3 months|Price date|1W|1M|3M|12M|YTD|Quote currency|Subtype|Exchange",
       "Fixed income · 1",
-      `CDB1|CDB Bank One|${catalogEn["instruments.noPrice"]}|||—|—|—|—|—|BRL|cdb||`,
+      `|CDB1|CDB Bank One|${catalogEn["instruments.noPrice"]}|||—|—|—|—|—|BRL|cdb|`,
       "Stocks · 2",
-      `PETR4|Petrobras PN|38.45||10/16/2026|${bp(681)}|${bp(-388)}|—|${bp(2500)}|${bp(986)}|BRL||B3SA|`,
-      "VALE3|Vale ON|61.20||10/10/2026|—|—|—|" + bp(2000) + "|—|BRL||B3SA|",
+      `|PETR4|Petrobras PN|38.45||10/16/2026|${bp(681)}|${bp(-388)}|—|${bp(2500)}|${bp(986)}|BRL||B3SA`,
+      "|VALE3|Vale ON|61.20||10/10/2026|—|—|—|" + bp(2000) + "|—|BRL||B3SA",
       "Currencies · 2",
     ]);
   });
@@ -250,7 +250,7 @@ describe("Instrument catalog", () => {
     await waitFor(() => {
       expect(gridRows(grid).slice(1)).toEqual([
         "Stocks · 1",
-        `PETR4|Petrobras PN|38.45||10/16/2026|${bp(681)}|${bp(-388)}|—|${bp(2500)}|${bp(986)}|BRL||B3SA|`,
+        `|PETR4|Petrobras PN|38.45||10/16/2026|${bp(681)}|${bp(-388)}|—|${bp(2500)}|${bp(986)}|BRL||B3SA`,
       ]);
     });
   });
@@ -692,8 +692,9 @@ async function openProbeForm() {
 
 // A238 HD9
 describe("Hidden instruments", () => {
-  const withHiddenVale = () =>
+  const withHiddenVale = (routes: Parameters<typeof api>[0] = {}) =>
     api({
+      ...routes,
       "GET /api/v1/instruments": () =>
         json(200, {
           items: [
@@ -775,6 +776,153 @@ describe("Hidden instruments", () => {
     expect(within(grid).queryByRole("button", { name: "Hide BRL" })).toBeNull();
   });
 
+  it("HD12: tags a hidden row and only it, and mutes its changes", async () => {
+    await renderApp("/instruments", { fetch: withHiddenVale() });
+    const grid = await screen.findByRole("grid", {
+      name: catalogEn["instruments.caption"],
+    });
+    await within(grid).findByText("PETR4");
+
+    await userEvent.setup().click(
+      screen.getByRole("button", {
+        name: catalogEn["instruments.hidden.show"].replace("{count}", "1"),
+      }),
+    );
+
+    const row = (await within(grid).findByText("VALE3")).closest(
+      '[role="row"]',
+    );
+    expect(row).toHaveTextContent(catalogEn["instrument.hidden"]);
+    expect(within(grid).getByText(bp(2000))).toHaveAttribute(
+      "data-tone",
+      "muted",
+    );
+    expect(
+      within(grid).getAllByText(catalogEn["instrument.hidden"]),
+    ).toHaveLength(1);
+  });
+
+  it("HD13: hides every marked security in one action and clears the marks", async () => {
+    const sent: string[] = [];
+    const accept = (code: string) => () => {
+      sent.push(code);
+      return new Response(null, { status: 204 });
+    };
+    const fetch = api({
+      "PUT /api/v1/instruments/PETR4/hidden": accept("PETR4"),
+      "PUT /api/v1/instruments/CDB1/hidden": accept("CDB1"),
+    });
+    await renderApp("/instruments", { fetch });
+    const grid = await screen.findByRole("grid", {
+      name: catalogEn["instruments.caption"],
+    });
+    const user = userEvent.setup();
+
+    await user.click(
+      await within(grid).findByRole("checkbox", { name: /PETR4/ }),
+    );
+    await user.click(within(grid).getByRole("checkbox", { name: /CDB1/ }));
+    const bar = await selectionBar();
+
+    expect(within(bar).queryByRole("button", { name: /Show/ })).toBeNull();
+
+    await user.click(within(bar).getByRole("button", { name: "Hide 2" }));
+
+    await waitFor(() => {
+      expect([...sent].sort()).toEqual(["CDB1", "PETR4"]);
+    });
+    await waitFor(() => {
+      expect(
+        within(grid).getByRole("checkbox", { name: /PETR4/ }),
+      ).not.toBeChecked();
+    });
+  });
+
+  it("HD13: marks every security and no currency", async () => {
+    const fetch = api();
+    await renderApp("/instruments", { fetch });
+    const grid = await screen.findByRole("grid", {
+      name: catalogEn["instruments.caption"],
+    });
+    await within(grid).findByText("38.45");
+    const user = userEvent.setup();
+
+    await user.click(within(grid).getByRole("button", { name: /Currencies/ }));
+    expect(
+      await within(grid).findByRole("checkbox", { name: /USD/ }),
+    ).toBeDisabled();
+
+    const [all] = within(grid).getAllByRole("checkbox");
+    if (all === undefined) throw new Error("no header checkbox");
+    await user.click(all);
+
+    expect(
+      within(await selectionBar()).getByRole("button", { name: "Hide 3" }),
+    ).toBeVisible();
+  });
+
+  it("HD13: shows the marked hidden securities again", async () => {
+    const sent: string[] = [];
+    const fetch = withHiddenVale({
+      "DELETE /api/v1/instruments/VALE3/hidden": () => {
+        sent.push("VALE3");
+        return new Response(null, { status: 204 });
+      },
+    });
+    await renderApp("/instruments", { fetch });
+    const grid = await screen.findByRole("grid", {
+      name: catalogEn["instruments.caption"],
+    });
+    const user = userEvent.setup();
+    await user.click(
+      await screen.findByRole("button", {
+        name: catalogEn["instruments.hidden.show"].replace("{count}", "1"),
+      }),
+    );
+
+    await user.click(
+      await within(grid).findByRole("checkbox", { name: /VALE3/ }),
+    );
+    const bar = await selectionBar();
+    expect(within(bar).queryByRole("button", { name: /Hide/ })).toBeNull();
+    await user.click(within(bar).getByRole("button", { name: "Show 1" }));
+
+    await waitFor(() => {
+      expect(sent).toEqual(["VALE3"]);
+    });
+  });
+
+  it("HD13: names a refused security and keeps it marked", async () => {
+    const fetch = api({
+      "PUT /api/v1/instruments/PETR4/hidden": () => problem(404, "not_found"),
+      "PUT /api/v1/instruments/CDB1/hidden": () =>
+        new Response(null, { status: 204 }),
+    });
+    await renderApp("/instruments", { fetch });
+    const grid = await screen.findByRole("grid", {
+      name: catalogEn["instruments.caption"],
+    });
+    const user = userEvent.setup();
+    await user.click(
+      await within(grid).findByRole("checkbox", { name: /PETR4/ }),
+    );
+    await user.click(within(grid).getByRole("checkbox", { name: /CDB1/ }));
+
+    await user.click(
+      within(await selectionBar()).getByRole("button", { name: "Hide 2" }),
+    );
+
+    expect(
+      await screen.findByText(
+        `1 changed, 1 refused. PETR4: ${catalogEn["problem.not_found"]}`,
+      ),
+    ).toBeInTheDocument();
+    expect(within(grid).getByRole("checkbox", { name: /PETR4/ })).toBeChecked();
+    expect(
+      within(grid).getByRole("checkbox", { name: /CDB1/ }),
+    ).not.toBeChecked();
+  });
+
   it("draws no toggle when nothing is hidden", async () => {
     await renderApp("/instruments", { fetch: api() });
     await screen.findByRole("grid", { name: catalogEn["instruments.caption"] });
@@ -782,3 +930,9 @@ describe("Hidden instruments", () => {
     expect(screen.queryByRole("button", { name: /Show hidden/ })).toBeNull();
   });
 });
+
+function selectionBar() {
+  return screen.findByRole("group", {
+    name: catalogEn["instruments.selection.label"],
+  });
+}

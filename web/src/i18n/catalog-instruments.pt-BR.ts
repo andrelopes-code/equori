@@ -92,6 +92,10 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "instrument.show.row": "Reexibir {code}",
   "instruments.col.actions": "Ações",
   "instrument.show": "Reexibir",
+  "instrument.hidden": "Oculto",
+  "instruments.selection.label": "Ativos selecionados",
+  "instruments.selection.hide": "Ocultar {count}",
+  "instruments.selection.show": "Reexibir {count}",
   "instruments.hidden.show": "Mostrar ocultos ({count})",
   "instruments.hidden.hide": "Esconder ocultos",
   "instrument.edit.description":

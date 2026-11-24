@@ -23,6 +23,8 @@ import { useApi } from "@/api/api-context";
 import { DefineInstrumentDialog } from "@/features/instruments/define-instrument/define-instrument-dialog";
 import { catalogRows } from "@/features/instruments/model/catalog-rows";
 import { PriceImportDialog } from "@/features/instruments/price-import/price-import-dialog";
+import { HideSelectionFooter } from "@/features/instruments/hide-instrument/hide-selection-footer";
+import { useHideSelection } from "@/features/instruments/hide-instrument/use-hide-selection";
 import { InstrumentsGrid } from "@/features/instruments/catalog/instruments-grid";
 import { instrumentQuotesQuery } from "@/features/instruments/api";
 import { instrumentsQuery, settingsQuery } from "@/features/setup";
@@ -52,6 +54,7 @@ export function InstrumentsPage() {
       base === undefined ? [] : catalogRows(items, base, quotes.data ?? []),
     [items, base, quotes.data],
   );
+  const selection = useHideSelection(rows);
   const [defining, setDefining] = useState(false);
   const [importing, setImporting] = useState(false);
   const define = () => {
@@ -61,7 +64,15 @@ export function InstrumentsPage() {
     setShowHidden((shown) => !shown);
   };
   return (
-    <Page width="full" fill>
+    <Page
+      width="full"
+      fill
+      footer={
+        selection.selection.length > 0 ? (
+          <HideSelectionFooter selection={selection} />
+        ) : undefined
+      }
+    >
       <PageHeader size="lg">
         <PageHeaderTitleArea>
           <PageHeaderTitleRow>
@@ -127,6 +138,7 @@ export function InstrumentsPage() {
               instruments.isPending || base === undefined || quotes.isPending
             }
             quotesFailed={quotes.isError}
+            selection={selection}
           />
         )}
       </PageBody>

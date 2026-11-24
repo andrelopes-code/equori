@@ -11,6 +11,8 @@ import { ProblemError, unwrap } from "@/api/problem";
 import type { components, paths } from "@/api/schema.gen";
 import { latestPrice } from "@/features/instruments/model/instrument-groups";
 import { priceWindow } from "@/features/instruments/model/price-window";
+import { bulkOutcome } from "@/ui/feedback/bulk-outcome";
+import type { BulkItem } from "@/ui/feedback/bulk-outcome";
 
 export const instrumentKeys = {
   all: ["instruments"] as const,
@@ -219,16 +221,49 @@ export function useSetInstrumentHidden() {
   const api = useApi();
   return useMutation({
     mutationFn: async ({ code, hidden }: { code: string; hidden: boolean }) =>
-      unwrap(
-        hidden
-          ? await api.PUT("/instruments/{code}/hidden", {
-              params: { path: { code } },
-            })
-          : await api.DELETE("/instruments/{code}/hidden", {
-              params: { path: { code } },
-            }),
-      ),
+      unwrap(await setHidden(api, code, hidden)),
   });
+}
+
+// Every code is tried: a refused one never stops the others, and the outcome names it (A238 HD13).
+// shortcut: one request per code; a bulk operation when selections of hundreds are common.
+export function useSetInstrumentsHidden() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async ({
+      codes,
+      hidden,
+    }: {
+      codes: readonly string[];
+      hidden: boolean;
+    }) => {
+      const results = await Promise.all(
+        codes.map(async (code): Promise<BulkItem> => {
+          try {
+            await unwrap(await setHidden(api, code, hidden));
+            return { id: code, status: "done" };
+          } catch (error) {
+            return { id: code, status: refusalStatus(error) };
+          }
+        }),
+      );
+
+      return bulkOutcome(results, "done");
+    },
+  });
+}
+
+function setHidden(api: Client<paths>, code: string, hidden: boolean) {
+  const params = { path: { code } };
+
+  return hidden
+    ? api.PUT("/instruments/{code}/hidden", { params })
+    : api.DELETE("/instruments/{code}/hidden", { params });
+}
+
+// A request that never reached the server has no problem code: it reads as problem.transport.
+function refusalStatus(error: unknown): string {
+  return error instanceof ProblemError ? error.problem.code : "transport";
 }
 
 export function useEditInstrument() {

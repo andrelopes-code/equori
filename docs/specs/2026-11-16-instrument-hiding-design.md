@@ -3,6 +3,7 @@
 - Date: 2026-11-16
 - Status: requested by the owner on 2026-11-16, decisions delegated ("sem perguntas idiotas").
 - Amendment: A238. Scenarios: S489 and S490.
+- Amendment 2026-11-24 (owner: the hide button sits far from the name, marking in bulk is missing and a hidden row reads like any other): HD12 and HD13.
 - Complements: `docs/specs/2026-11-11-instrument-removal-design.md` (A223).
 
 ## 1. Context
@@ -29,6 +30,9 @@
 | HD10 | The tool `manage_instrument` gains the actions `hide` and `show`, with the errors of HD2. |
 | HD11 | The export carries `marketdata_instrument_hidden` as a fact table (it holds `books_id`). `ArchiveVersion` becomes 22 with the step `addInstrumentHidden`, which adds the empty table to an older archive. |
 
+| HD12 | A hidden row of the list differs from the others in every column: the tag "Hidden" before the name, at the start of its cell (owner, 2026-11-24), the text and the trend line in the muted ink, the changes without the tone of their direction, and the crossed eye in its row button. The glyph of the row button is the state of the row; its name is the action. |
+| HD13 | The list marks rows: a checkbox, the row button and the code stay pinned at the start of the row, in this order, which replaces the end position of the `actions` column for this list. A currency takes no mark. While a row is marked, the page footer holds, from the start edge, "Hide n" for the visible marked rows, "Show n" for the hidden ones and "Clear". The action sends one request per code; a refused code stays marked and a notice names it with its reason. |
+
 ## 3. Cross-cutting questions
 
 | ID | Answer |
@@ -37,7 +41,7 @@
 | R2 | Does not apply. |
 | R3 | Does not apply: no new value set. |
 | R4 | Does not apply: no extension point. |
-| R5 | Texts: `instrument.hide`, `instrument.show`, `instrument.hidden`, `instruments.hidden.toggle` and the changed `problem.instrument_in_use`, each with pt-BR and en text. |
+| R5 | Texts: `instrument.hide`, `instrument.show`, `instrument.hidden`, `instruments.hidden.toggle`, `instruments.selection.*`, `bulk.changed` and the changed `problem.instrument_in_use`, each with pt-BR and en text. |
 | R6 | Does not apply: the feature writes no number or date. |
 | C1 | Does not apply: no amount is stored or computed. |
 | C2 | Does not apply: no amounts are added or compared. |
@@ -54,7 +58,7 @@
 | D4 | Does not apply. |
 | D5 | Does not apply. |
 | S1 | `hideInstrument` and `showInstrument` are covered by the actions `hide` and `show` of `manage_instrument` (HD10). No new `Problem.code`. |
-| S2 | The header action and the toggle keep the phone scope of the screens; the toggle fits 360 px (ADR 027). |
+| S2 | The header action and the toggle keep the phone scope of the screens; the toggle fits 360 px (ADR 027). The list and its marks are desktop-only (ADR 027, S6). |
 | S3 | The guide article of the instrument screen gains hiding and showing. |
 | S4 | Does not apply: the assistant lists instruments through a tool that stays unchanged. |
 | X1 | S489: hiding `CRA024002S2` removes it from the list, `include_hidden=true` returns it with `hidden: true`, another book still lists it, and showing returns it to the list. S490: a security referenced by a voided transaction is refused on removal with 409 and can be hidden. |

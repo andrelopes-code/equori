@@ -7,23 +7,21 @@ import { VisuallyHidden } from "@slotted/react/visually-hidden";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useMemo, useState } from "react";
 
-import { HideInstrumentRowButton } from "@/features/instruments/hide-instrument/hide-instrument-row-button";
-import { ChangeCell } from "@/features/instruments/catalog/change-cell";
-import { PriceCell } from "@/features/instruments/catalog/price-cell";
-import { PriceDateCell } from "@/features/instruments/catalog/price-date-cell";
-import { TrendCell } from "@/features/instruments/catalog/trend-cell";
+import { useCatalogCells } from "@/features/instruments/catalog/use-catalog-cells";
 import { useCatalogColumns } from "@/features/instruments/catalog/use-catalog-columns";
+import type { HideSelection } from "@/features/instruments/hide-instrument/use-hide-selection";
 import type { CatalogRow } from "@/features/instruments/model/catalog-rows";
 import { typeLabel } from "@/features/instruments/model/instrument-labels";
 import styles from "@/features/instruments/pages/instruments-page.module.css";
 import { useT } from "@/i18n/i18n-provider";
-import { AppLink } from "@/ui/navigation/app-link";
+import { BulkOutcomeNotice } from "@/ui/feedback/bulk-outcome-notice";
 
 interface InstrumentsGridProps {
   rows: readonly CatalogRow[];
   loading: boolean;
   // The read of the quotes failed: the price cells say so and the grid stays usable (IQ11).
   quotesFailed: boolean;
+  selection: HideSelection;
 }
 
 const initialQuery: GridQuery = {
@@ -37,52 +35,18 @@ export function InstrumentsGrid({
   rows,
   loading,
   quotesFailed,
+  selection,
 }: InstrumentsGridProps) {
   const t = useT();
   const navigate = useNavigate();
   const { columns, fields, types } = useCatalogColumns(rows);
   const [query, setQuery] = useState<GridQuery>(initialQuery);
   const [opened, setOpened] = useState<readonly string[] | undefined>();
-  const cellRenderers = useMemo(
-    () => ({
-      code: ({ row }: { row: CatalogRow }) => (
-        <AppLink
-          variant="neutral"
-          underline="hover"
-          to={{ to: "/instruments/$code", params: { code: row.code } }}
-        >
-          {row.code}
-        </AppLink>
-      ),
-      // The column truncates a plain span child of the cell, not a bare string or a family: the
-      // name stays one line in the fixed row, and a hidden row reads dimmer.
-      name: ({ row }: { row: CatalogRow }) => (
-        <span
-          className={row.hidden ? styles.dimmed : undefined}
-          title={row.name}
-        >
-          {row.name}
-        </span>
-      ),
-      actions: ({ row }: { row: CatalogRow }) => (
-        <HideInstrumentRowButton row={row} />
-      ),
-      price: ({ row }: { row: CatalogRow }) => (
-        <PriceCell row={row} failed={quotesFailed} />
-      ),
-      trend: ({ row }: { row: CatalogRow }) => <TrendCell row={row} />,
-      priceDate: ({ row }: { row: CatalogRow }) => <PriceDateCell row={row} />,
-      week: ({ row }: { row: CatalogRow }) => <ChangeCell bp={row.week} />,
-      month: ({ row }: { row: CatalogRow }) => <ChangeCell bp={row.month} />,
-      quarter: ({ row }: { row: CatalogRow }) => (
-        <ChangeCell bp={row.quarter} />
-      ),
-      year: ({ row }: { row: CatalogRow }) => <ChangeCell bp={row.year} />,
-      yearToDate: ({ row }: { row: CatalogRow }) => (
-        <ChangeCell bp={row.yearToDate} />
-      ),
-    }),
-    [quotesFailed],
+  const cellRenderers = useCatalogCells(quotesFailed);
+  // A currency has no hidden state, so it takes no mark (HD2).
+  const disabledKeys = useMemo(
+    () => rows.filter((row) => row.type === "currency").map((row) => row.code),
+    [rows],
   );
   const renderHeader = useCallback(
     ({ column }: { column: { id: string; label: string } }) =>
@@ -113,6 +77,14 @@ export function InstrumentsGrid({
 
   return (
     <div className={styles.region}>
+      {selection.refusal !== null && (
+        <BulkOutcomeNotice
+          outcome={selection.refusal}
+          summary="bulk.changed"
+          labelOf={(code) => code}
+        />
+      )}
+
       <FilterBar
         fields={fields}
         value={query.filter ?? null}
@@ -140,7 +112,7 @@ export function InstrumentsGrid({
           // The group rows carry the type, so its own column stays out of sight.
           defaultColumnState={{
             hidden: ["type"],
-            pinned: { start: [], end: ["actions"] },
+            pinned: { start: ["actions", "code"], end: [] },
           }}
           loading={loading}
           query={query}
@@ -154,6 +126,14 @@ export function InstrumentsGrid({
             );
           }}
           height="100%"
+          selectionMode="multiple"
+          disabledKeys={disabledKeys}
+          value={selection.selection}
+          onValueChange={(value) => {
+            selection.setMarked(
+              typeof value === "string" ? [value] : (value ?? []),
+            );
+          }}
           activatable
           onActivate={(event) => {
             void navigate({

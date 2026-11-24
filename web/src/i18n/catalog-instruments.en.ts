@@ -92,6 +92,10 @@ export const instrumentsEn = {
   "instrument.show.row": "Show {code}",
   "instruments.col.actions": "Actions",
   "instrument.show": "Show",
+  "instrument.hidden": "Hidden",
+  "instruments.selection.label": "Selected instruments",
+  "instruments.selection.hide": "Hide {count}",
+  "instruments.selection.show": "Show {count}",
   "instruments.hidden.show": "Show hidden ({count})",
   "instruments.hidden.hide": "Leave hidden out",
   "instrument.edit.description":

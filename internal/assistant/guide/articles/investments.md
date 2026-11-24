@@ -27,6 +27,8 @@ manage_instrument acts on a security; action names the operation and code the se
 - request_history: from, the first date; the enabled sources load the prices since then.
 - hide removes the security from the lists of this book and show brings it back; delete removes a security no book uses.
 
+The Instruments screen hides a security with the eye at the start of its row. The checkboxes mark several, and the bar at the foot hides or shows every marked security at once. Show hidden lists the hidden ones, dimmed and tagged Hidden. A currency cannot be hidden.
+
 Instruments and prices are shared by every book of the instance; a contract of record_fixed_income belongs to its book alone.
 
 Opening a calculator. The assistant opens a calculator with its inputs filled through the tool open_calculator, which returns a link to the screen of the calculator. Amounts are read as decimal values in the base currency, a value finer than the currency is rejected, and rates are read in percent. The screen shows the result, the evidence and the method; the link carries no figure computed by the assistant.

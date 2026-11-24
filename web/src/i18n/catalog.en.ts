@@ -3254,6 +3254,7 @@ export const catalogEn = {
   "overview.open": "Open",
   "bulk.resolved": "{done} resolved, {refused} refused.",
   "bulk.voided": "{done} voided, {refused} refused.",
+  "bulk.changed": "{done} changed, {refused} refused.",
   "bulk.refusedLine": "{label}: {reason}",
   "bulk.total": "Total: {amount}",
   "selection.void": "Void",

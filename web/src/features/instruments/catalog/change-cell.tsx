@@ -9,10 +9,12 @@ const none = "—";
 interface ChangeCellProps {
   // The change of the price in basis points; null when no reference price exists (IQ5).
   bp: number | null;
+  // The row is hidden: the change keeps its sign and loses its colour (A238 HD12).
+  muted: boolean;
 }
 
 // A change is a percentage of a public price, so privacy mode leaves it in view (IQ9).
-export function ChangeCell({ bp }: ChangeCellProps) {
+export function ChangeCell({ bp, muted }: ChangeCellProps) {
   const [locale] = useAppLocale();
   const amountTone = useAmountTone();
 
@@ -27,7 +29,7 @@ export function ChangeCell({ bp }: ChangeCellProps) {
     <Text
       size="sm"
       numeric="tabular"
-      tone={amountTone("result", directionOf(bp))}
+      tone={muted ? "muted" : amountTone("result", directionOf(bp))}
     >
       {formatSignedBasisPoints(bp, locale)}
     </Text>
