@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
@@ -96,7 +96,7 @@ const section = () =>
   });
 
 async function renderReport(body: unknown) {
-  await renderApp("/portfolio", {
+  await renderApp("/portfolio/results", {
     fetch: portfolioApi({
       "GET /api/v1/reports/attribution": () => json(200, body),
     }),
@@ -219,15 +219,19 @@ describe("Attribution section", () => {
   });
 
   it("draws nothing for a book with no measured year", async () => {
-    await renderApp("/portfolio", { fetch: portfolioApi() });
+    await renderApp("/portfolio/results", { fetch: portfolioApi() });
 
-    await screen.findByRole("region", { name: catalogEn["holdings.return"] });
+    await screen.findByRole("tab", {
+      name: catalogEn["portfolio.tabs.results"],
+    });
 
-    expect(
-      screen.queryByRole("region", {
-        name: catalogEn["portfolio.attribution.title"],
-      }),
-    ).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("region", {
+          name: catalogEn["portfolio.attribution.title"],
+        }),
+      ).not.toBeInTheDocument();
+    });
   });
 });
 

@@ -153,7 +153,7 @@ describe("Fixed income panel", () => {
 
   it("FC36: draws the verdict and the four blocks of the mock, in order", async () => {
     localStorage.setItem("equori.locale", portuguese);
-    await renderApp("/portfolio", {
+    await renderApp("/portfolio/positions", {
       today: "2026-11-18",
       fetch: fixedIncomeApi(),
     });
@@ -232,7 +232,7 @@ describe("Fixed income panel", () => {
 
   it("minimizes to the heading and the start of the body, and keeps the choice", async () => {
     localStorage.setItem("equori.locale", portuguese);
-    const first = await renderApp("/portfolio", {
+    const first = await renderApp("/portfolio/positions", {
       today: "2026-11-18",
       fetch: fixedIncomeApi(),
     });
@@ -255,7 +255,7 @@ describe("Fixed income panel", () => {
     expect(localStorage.getItem(collapsedKey)).toBe("true");
 
     first.unmount();
-    await renderApp("/portfolio", {
+    await renderApp("/portfolio/positions", {
       today: "2026-11-18",
       fetch: fixedIncomeApi(),
     });
@@ -273,7 +273,7 @@ describe("Fixed income panel", () => {
 
   it("toggles from a click anywhere on its header", async () => {
     localStorage.setItem("equori.locale", portuguese);
-    await renderApp("/portfolio", {
+    await renderApp("/portfolio/positions", {
       today: "2026-11-18",
       fetch: fixedIncomeApi(),
     });
@@ -302,7 +302,7 @@ describe("Fixed income panel", () => {
 
   it("FC36: draws no panel for a book without fixed income", async () => {
     const fetch = fixedIncomeApi({}, false);
-    await renderApp("/portfolio", { fetch });
+    await renderApp("/portfolio/positions", { fetch });
     await screen.findByRole("grid", { name: catalogEn["holdings.list"] });
 
     expect(
@@ -328,7 +328,7 @@ describe("Fixed income panel", () => {
         special_value: i.special_value,
       })),
     };
-    await renderApp("/portfolio", {
+    await renderApp("/portfolio/positions", {
       today: "2026-11-18",
       fetch: fixedIncomeApi({
         "GET /api/v1/issuer-exposure": () => json(200, bare),
@@ -349,7 +349,7 @@ describe("Fixed income panel", () => {
   });
 
   it("FC36: says so when the window holds no payment", async () => {
-    await renderApp("/portfolio", {
+    await renderApp("/portfolio/positions", {
       today: "2026-11-18",
       fetch: fixedIncomeApi({
         "GET /api/v1/fixed-income-events": () => json(200, { items: [] }),
@@ -363,7 +363,7 @@ describe("Fixed income panel", () => {
   });
 
   it("FC36: names a payment whose rate is not published", async () => {
-    await renderApp("/portfolio", {
+    await renderApp("/portfolio/positions", {
       today: "2026-11-18",
       fetch: fixedIncomeApi(),
     });
@@ -375,7 +375,7 @@ describe("Fixed income panel", () => {
   });
 
   it("FC36: writes no rate notice for a fixed-rate payment without a value", async () => {
-    await renderApp("/portfolio", {
+    await renderApp("/portfolio/positions", {
       today: "2026-11-18",
       fetch: fixedIncomeApi({
         "GET /api/v1/fixed-income-events": () =>
@@ -393,7 +393,7 @@ describe("Fixed income panel", () => {
   });
 
   it("FC36: names a payment of a holding that has no market value", async () => {
-    await renderApp("/portfolio", {
+    await renderApp("/portfolio/positions", {
       today: "2026-11-18",
       fetch: fixedIncomeApi({
         "GET /api/v1/positions": () =>

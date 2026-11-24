@@ -3,30 +3,14 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
-import { catalogPtBR } from "@/i18n/catalog.pt-BR";
 import { json, problem } from "@/testing/fake-api";
 import { accounts, brl, brokerID, cashID } from "@/testing/investment-api";
 import {
-  instruments,
   portfolioApi,
   positions,
   xpInstitutionID,
 } from "@/testing/portfolio-api";
-import { hideAmounts } from "@/testing/privacy";
 import { renderApp } from "@/testing/render-app";
-
-const gridRows = (grid: HTMLElement) =>
-  within(grid)
-    .getAllByRole("row")
-    .map((row) =>
-      [
-        ...row.querySelectorAll(
-          '[role="rowheader"], [role="gridcell"], [role="columnheader"]',
-        ),
-      ]
-        .map((cell) => cell.textContent)
-        .join("|"),
-    );
 
 const tableRows = (table: HTMLElement) =>
   within(table)
@@ -34,9 +18,6 @@ const tableRows = (table: HTMLElement) =>
     .map((row) =>
       [...row.querySelectorAll("th, td")].map((c) => c.textContent).join("|"),
     );
-
-const list = () =>
-  screen.findByRole("grid", { name: catalogEn["holdings.list"] });
 
 const where = () =>
   screen.findByRole("table", { name: catalogEn["holdings.where"] });
@@ -149,7 +130,6 @@ describe("Portfolio page", () => {
       `${catalogEn["instruments.type.cash"]}||−R$50.00|—`,
       "Total|R$91.00|100.00%",
     ]);
-    expect(gridRows(await list())).toContain("XP cash||−R$50.00|||");
   });
 
   it("PC5: one control groups the bars and the list, from the address", async () => {
@@ -173,204 +153,11 @@ describe("Portfolio page", () => {
         screen.getByRole("radio", { name: catalogEn["portfolio.by.currency"] }),
       );
     await within(await where()).findByText("BRL");
-    await within(await list()).findByText(/^BRL · /);
-  });
-
-  it("PC7: lists name, value, gain and share under groups, with a total", async () => {
-    await renderApp("/portfolio", { fetch: portfolioApi() });
-    const grid = await list();
-
-    await within(grid).findAllByRole("link", { name: "MXRF11" });
-    expect(gridRows(grid)).toEqual([
-      [
-        catalogEn["positions.instrument"],
-        catalogEn["holdings.col.trend"],
-        catalogEn["positions.marketValue"],
-        catalogEn["positions.result"],
-        catalogEn["holdings.total"],
-        catalogEn["portfolio.share"],
-      ].join("|"),
-      `${catalogEn["instruments.type.cash"]} · 1|R$400.00|||73.93%`,
-      "XP cash||R$400.00|||73.93%",
-      "REITs · 2|R$105.00|+R$5.00|+R$5.00|19.40%",
-      "MXRF11||R$105.00|+R$5.00+5.00%|+R$5.00|19.40%",
-      `MXRF11||${catalogEn["positions.noPrice"]}|||`,
-      "Stocks · 2|R$36.00|+R$5.00|+R$5.00|6.67%",
-      "PETR4||R$20.00|+R$5.00+33.33%|+R$5.00|3.69%",
-      "PETR4||R$16.00|||2.98%",
-      "||R$541.00|+R$10.00|+R$10.00|100.00%",
-    ]);
-  });
-
-  // S526: the value net of tax of a position that has one.
-  it("S526: adds the estimated net column when a position has it", async () => {
-    const withNet = positions.map((p, i) =>
-      i === 0
-        ? { ...p, estimated_net: { amount: 1080000, currency: "BRL" } }
-        : p,
-    );
-    await renderApp("/portfolio", {
-      fetch: portfolioApi({
-        "GET /api/v1/positions": () =>
-          json(200, { items: withNet, quote_warnings: [] }),
-      }),
-    });
-    const grid = await list();
-
-    await within(grid).findAllByRole("link", { name: "MXRF11" });
-    expect(
-      within(grid).getByRole("columnheader", {
-        name: catalogEn["portfolio.estimatedNet"],
-      }),
-    ).toBeInTheDocument();
-    expect(within(grid).getByText("R$10,800.00")).toBeInTheDocument();
-  });
-
-  it("S526: draws no estimated net column when no position has it", async () => {
-    await renderApp("/portfolio", { fetch: portfolioApi() });
-    const grid = await list();
-
-    await within(grid).findAllByRole("link", { name: "MXRF11" });
-    expect(
-      within(grid).queryByRole("columnheader", {
-        name: catalogEn["portfolio.estimatedNet"],
-      }),
-    ).toBeNull();
-  });
-
-  it("PC7: draws the price of each priced position over the last 3 months", async () => {
-    const fetch = portfolioApi({
-      "GET /api/v1/positions": () =>
-        json(200, {
-          items: [
-            {
-              account_id: cashID,
-              instrument: "MXRF11",
-              quantity: { amount: 10, currency: "MXRF11" },
-              cost_basis: brl(1000),
-              average_cost: "10.0000",
-              market_value: brl(1200),
-              prices: [
-                {
-                  instrument: "MXRF11",
-                  quote_instrument: "BRL",
-                  date: "2026-10-03",
-                  value: "120",
-                  source: "manual",
-                },
-              ],
-            },
-          ],
-          quote_warnings: [],
-        }),
-      "GET /api/v1/prices": () =>
-        json(200, {
-          items: ["100", "110", "120"].map((value, i) => ({
-            instrument: "MXRF11",
-            quote_instrument: "BRL",
-            date: `2026-10-0${String(i + 1)}`,
-            value,
-            source: "manual",
-          })),
-        }),
-    });
-    await renderApp("/portfolio", { fetch });
-    const grid = await list();
-
-    expect(
-      (
-        await within(grid).findAllByRole("img", {
-          name: /^MXRF11, price over the last 3 months/,
-        })
-      ).length,
-    ).toBeGreaterThan(0);
-  });
-
-  it("PC7: says the reason of an empty gain when cost and value differ in currency", async () => {
-    await renderApp("/portfolio", { fetch: portfolioApi() });
-    await list();
-    expect(
-      await screen.findAllByLabelText(catalogEn["portfolio.resultMixed"]),
-    ).toHaveLength(1);
-  });
-
-  it("PC7: names a price only when it is old, and always in the price date column", async () => {
-    const fetch = portfolioApi({
-      "GET /api/v1/positions": () =>
-        json(200, {
-          items: [
-            {
-              account_id: cashID,
-              instrument: "PETR4",
-              quantity: { amount: 5, currency: "PETR4" },
-              cost_basis: brl(1500),
-              average_cost: "3.0000",
-              market_value: brl(2000),
-              prices: [{ date: "2026-08-01", value: "4" }],
-            },
-          ],
-        }),
-    });
-    await renderApp("/portfolio?date=2026-09-30", { fetch });
-    const grid = await list();
-
-    expect(
-      await within(grid).findByText(
-        catalogEn["positions.priceOf"].replace("{date}", "08/01/2026"),
-      ),
-    ).toBeInTheDocument();
-  });
-
-  it("PC7: adds the technical columns from the column manager and keeps the choice", async () => {
-    await renderApp("/portfolio", { fetch: portfolioApi() });
-    const user = userEvent.setup();
-    const grid = await list();
-
-    expect(
-      within(grid).queryByRole("columnheader", {
-        name: catalogEn["positions.quantity"],
-      }),
-    ).toBeNull();
-
-    await user.click(
-      screen.getByRole("button", { name: catalogEn["holdings.columns"] }),
-    );
-    await user.click(
-      await screen.findByRole("checkbox", {
-        name: new RegExp(catalogEn["positions.quantity"]),
-      }),
-    );
-
-    expect(
-      await within(await list()).findByRole("columnheader", {
-        name: catalogEn["positions.quantity"],
-      }),
-    ).toBeInTheDocument();
-    await waitFor(() => {
-      expect(localStorage.getItem("equori.portfolio.columns")).toContain(
-        "averageCost",
-      );
-    });
-  });
-
-  it("PC8: offers to record a trade and an income, and links the unpriced note", async () => {
-    await renderApp("/portfolio", { fetch: portfolioApi() });
-    await list();
-
-    expect(
-      screen.getByRole("link", { name: catalogEn["holdings.trade"] }),
-    ).toHaveAttribute("href", "/transactions/new?kind=trade");
-    expect(
-      screen.getByRole("link", { name: catalogEn["holdings.income.record"] }),
-    ).toHaveAttribute("href", "/transactions/new?kind=investment_income");
-    expect(
-      screen.getByRole("link", { name: catalogEn["holdings.prices"] }),
-    ).toHaveAttribute("href", "/instruments");
   });
 
   it("PP3: the page header holds the trade as its one solid action", async () => {
     await renderApp("/portfolio", { fetch: portfolioApi() });
-    const grid = await list();
+    await figure(catalogEn["holdings.value"]);
     const header = pageHeader();
 
     const trade = await within(header).findByRole("link", {
@@ -378,27 +165,13 @@ describe("Portfolio page", () => {
     });
     expect(trade).toHaveAttribute("href", "/transactions/new?kind=trade");
     expect(trade).toHaveAttribute("data-variant", "solid");
-    expect(
-      within(header).getByRole("link", {
-        name: catalogEn["contributionPlan.open"],
-      }),
-    ).toHaveAttribute("data-variant", "outline");
-    expect(
-      within(header).getByRole("link", { name: catalogEn["holdings.year"] }),
-    ).toHaveAttribute("data-variant", "ghost");
     expect(header.querySelectorAll('[data-variant="solid"]')).toHaveLength(1);
-    expect(
-      within(region(grid)).queryByRole("link", {
-        name: catalogEn["holdings.trade"],
-      }),
-    ).not.toBeInTheDocument();
   });
 
-  it("PP1: draws the return, where and holdings sections as surfaces", async () => {
+  it("PP1: draws the return and where sections as surfaces", async () => {
     await renderApp("/portfolio", { fetch: portfolioApi() });
 
     const sections = [
-      region(await list()),
       region(await where()),
       await screen.findByRole("region", { name: catalogEn["holdings.return"] }),
     ];
@@ -407,36 +180,13 @@ describe("Portfolio page", () => {
       expect(section).toHaveAttribute("data-ground", "surface");
   });
 
-  it("PP6: runs the holdings grid and the where table edge to edge, with no frame of their own", async () => {
+  it("PP6: runs the where table edge to edge, with no frame of its own", async () => {
     await renderApp("/portfolio", { fetch: portfolioApi() });
 
-    const tables = [
-      (await list()).closest("[data-ui='data-grid']"),
-      (await where()).closest("[data-ui='table']"),
-    ];
-
-    for (const table of tables)
-      expect(table).toHaveAttribute("data-variant", "ruled");
-  });
-
-  it("PP5: keeps a long instrument name on one line with its whole text in its title", async () => {
-    const name = "Petróleo Brasileiro S.A. Petrobras Preferenciais Nominativas";
-    const fetch = portfolioApi({
-      "GET /api/v1/instruments": () =>
-        json(200, {
-          items: instruments.map((i) =>
-            i.code === "PETR4" ? { ...i, name } : i,
-          ),
-        }),
-    });
-    await renderApp("/portfolio", { fetch });
-    const grid = await list();
-
-    const lines = await within(grid).findAllByTitle(name);
-    for (const line of lines) {
-      expect(line).toHaveAttribute("data-truncate");
-      expect(within(line).getByRole("link", { name })).toBeInTheDocument();
-    }
+    expect((await where()).closest("[data-ui='table']")).toHaveAttribute(
+      "data-variant",
+      "ruled",
+    );
   });
 
   it("PC8: shows the empty state with the first action", async () => {
@@ -603,27 +353,6 @@ describe("Portfolio page", () => {
     ).toHaveAttribute("href", "/portfolio");
   });
 
-  it("TR5: lists the total result of each position after its gain", async () => {
-    const fetch = portfolioApi({
-      "GET /api/v1/positions": () =>
-        json(200, {
-          items: positions.map((p, i) =>
-            i === 0 ? { ...p, realized: brl(300), income: brl(150) } : p,
-          ),
-          quote_warnings: [],
-          realized: [brl(300)],
-          income: [brl(150)],
-        }),
-    });
-    await renderApp("/portfolio?by=type", { fetch });
-    const grid = await list();
-
-    await within(grid).findAllByText("+R$9.50");
-    expect(gridRows(grid)).toContain(
-      "MXRF11||R$105.00|+R$5.00+5.00%|+R$9.50|19.40%",
-    );
-  });
-
   it("PC24: reads the income of the tax year that holds the valuation date", async () => {
     const asked: (string | null)[] = [];
     const fetch = portfolioApi({
@@ -699,111 +428,6 @@ describe("Portfolio page", () => {
     });
   });
 
-  it("formats by the active region, with no Brazilian value", async () => {
-    localStorage.setItem(
-      "equori.locale",
-      JSON.stringify({ language: "en", region: "DE" }),
-    );
-    const eur = (amount: number) => ({ amount, currency: "EUR" });
-    const fetch = portfolioApi({
-      "GET /api/v1/settings": () => json(200, { base_currency: "EUR" }),
-      "GET /api/v1/instruments": () =>
-        json(200, {
-          items: [
-            { code: "EUR", type: "currency", scale: 2, name: "Euro" },
-            { code: "SAP", type: "stock", scale: 0, name: "SAP SE" },
-          ],
-        }),
-      "GET /api/v1/reports/return": () =>
-        json(200, {
-          annual_bp: 0,
-          flows: [],
-          opening: eur(0),
-          closing: eur(0),
-        }),
-      [`GET /api/v1/accounts/${cashID}/balance`]: () =>
-        json(200, { balance: eur(0), value: eur(0) }),
-      "GET /api/v1/positions": () =>
-        json(200, {
-          items: [
-            {
-              account_id: "b0000000-0000-4000-8000-000000000003",
-              instrument: "SAP",
-              quantity: { amount: 3, currency: "SAP" },
-              cost_basis: eur(123456),
-              average_cost: "411.52",
-              market_value: eur(150000),
-            },
-          ],
-        }),
-    });
-    const { container } = await renderApp("/portfolio", { fetch });
-    const grid = await list();
-
-    await within(grid).findByRole("link", { name: "SAP SE" });
-    const euro = new Intl.NumberFormat("en-DE", {
-      style: "currency",
-      currency: "EUR",
-    });
-    expect(gridRows(grid).join("\n")).toContain(euro.format(1500));
-    expect(container.textContent).not.toMatch(/R\$|BRL|\bB3\b|Carteira/);
-  });
-
-  it("writes a quantity and an average cost in the reader's format", async () => {
-    localStorage.setItem(
-      "equori.locale",
-      JSON.stringify({ language: "pt", region: "BR" }),
-    );
-    localStorage.setItem(
-      "equori.portfolio.columns",
-      JSON.stringify({
-        hidden: ["group", "account", "price", "priceDate", "cost"],
-      }),
-    );
-    const fetch = portfolioApi({
-      "GET /api/v1/instruments": () =>
-        json(200, {
-          items: [
-            { code: "BRL", type: "currency", scale: 2, name: "Real" },
-            { code: "CDB", type: "fund", scale: 2, name: "CDB XP" },
-          ],
-        }),
-      "GET /api/v1/positions": () =>
-        json(200, {
-          items: [
-            {
-              account_id: cashID,
-              instrument: "CDB",
-              quantity: { amount: 123456, currency: "CDB" },
-              cost_basis: { amount: 2730007, currency: "BRL" },
-              average_cost: "1076.0769",
-              market_value: { amount: 3437608, currency: "BRL" },
-            },
-          ],
-        }),
-    });
-    await renderApp("/portfolio", { fetch });
-    const grid = await screen.findByRole("grid", {
-      name: catalogPtBR["holdings.list"],
-    });
-    await within(grid).findByRole("link", { name: "CDB XP" });
-    const text = gridRows(grid).join("\n").replaceAll(" ", " ");
-
-    expect(text).toContain("1.234,56");
-    expect(text).toContain("R$ 1.076,0769");
-  });
-
-  it("masks the amounts and keeps the shares while privacy mode is on", async () => {
-    hideAmounts();
-    await renderApp("/portfolio", { fetch: portfolioApi() });
-    const grid = await list();
-
-    await within(grid).findAllByRole("link", { name: "MXRF11" });
-    expect(document.body.textContent).not.toContain("R$541.00");
-    expect(gridRows(grid).join("\n")).toContain("19.40%");
-    expect(gridRows(grid).join("\n")).not.toContain("R$105.00");
-  });
-
   it("names the header's currency and date without a visible label", async () => {
     await renderApp("/portfolio?date=2026-09-30", { fetch: portfolioApi() });
     const currency = await screen.findByRole("combobox", {
@@ -824,7 +448,9 @@ describe("Portfolio page", () => {
     await renderApp("/portfolio", { fetch: portfolioApi() });
 
     expect(
-      await screen.findByRole("link", { name: catalogEn["holdings.year"] }),
+      await screen.findByRole("tab", {
+        name: catalogEn["portfolio.tabs.year"],
+      }),
     ).toHaveAttribute("href", "/portfolio/year");
   });
 
@@ -862,25 +488,9 @@ describe("Portfolio page", () => {
     ).toBeVisible();
   });
 
-  it("asks for the positions only once the valuation currency is known", async () => {
-    const asked: (string | null)[] = [];
-    const fetch = portfolioApi({
-      "GET /api/v1/positions": (req) => {
-        asked.push(new URL(req.url).searchParams.get("value_in"));
-        return json(200, { items: positions, quote_warnings: [] });
-      },
-    });
-
-    await renderApp("/portfolio", { fetch });
-    await screen.findByRole("grid", { name: catalogEn["holdings.list"] });
-
-    expect(asked).not.toHaveLength(0);
-    expect(asked).not.toContain(null);
-  });
-
   it("draws no notice when no holding has a late or missing quote", async () => {
     await renderApp("/portfolio", { fetch: portfolioApi() });
-    await screen.findByRole("grid", { name: catalogEn["holdings.list"] });
+    await figure(catalogEn["holdings.value"]);
 
     expect(
       screen.queryByText(

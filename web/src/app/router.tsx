@@ -44,8 +44,11 @@ import { InstrumentPage, InstrumentsPage } from "@/features/instruments/routes";
 import {
   ContributionPlanPage,
   PortfolioPage,
+  PortfolioPositionsPage,
+  PortfolioResultsPage,
   PortfolioYearPage,
   validatePortfolioSearch,
+  validateResultsSearch,
   validateYearSearch,
 } from "@/features/portfolio/routes";
 import { ReportsPage, validateReportsSearch } from "@/features/reports/routes";
@@ -446,6 +449,20 @@ const portfolioRoute = createRoute({
   component: PortfolioPage,
 });
 
+const portfolioResultsRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "portfolio/results",
+  validateSearch: validateResultsSearch,
+  component: PortfolioResultsPage,
+});
+
+const portfolioPositionsRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "portfolio/positions",
+  validateSearch: validatePortfolioSearch,
+  component: PortfolioPositionsPage,
+});
+
 const portfolioYearRoute = createRoute({
   getParentRoute: () => authedRoute,
   path: "portfolio/year",
@@ -658,6 +675,8 @@ export const routeTree = rootRoute.addChildren([
     statementRoute,
     instrumentsRoute,
     portfolioRoute,
+    portfolioResultsRoute,
+    portfolioPositionsRoute,
     portfolioYearRoute,
     contributionPlanRoute,
     reportsRoute,
