@@ -121,6 +121,24 @@ func TestSchemaRejectsInvalidHistory(t *testing.T) {
 	}
 }
 
+// A265 RI4.
+func TestSchemaRejectsInvalidIndexChecks(t *testing.T) {
+	t.Parallel()
+
+	pool := pgtest.New(t)
+	for name, sql := range map[string]string{
+		"identifier outside the pattern": `INSERT INTO marketdata_index_check VALUES ('CDI', '2006-01-01', '2026-01-01', 0)`,
+		"negative holes":                 `INSERT INTO marketdata_index_check VALUES ('cdi', '2006-01-01', '2026-01-01', -1)`,
+		"no day":                         `INSERT INTO marketdata_index_check (index_id, from_date, missing) VALUES ('cdi', '2006-01-01', 0)`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			if _, err := pool.Exec(t.Context(), sql); err == nil {
+				t.Fatal("accepted")
+			}
+		})
+	}
+}
+
 // ADR 025 F1.
 func TestSchemaRejectsInvalidFeeds(t *testing.T) {
 	t.Parallel()

@@ -12,6 +12,28 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const deleteAccruedOfIndex = `-- name: DeleteAccruedOfIndex :exec
+DELETE FROM marketdata_price p USING marketdata_fixed_income_terms t
+WHERE
+    t.index_id = $1
+    AND p.instrument = t.instrument_code
+    AND p.source = $2
+    AND p.date >= $3
+`
+
+type DeleteAccruedOfIndexParams struct {
+	IndexID  *string
+	Source   string
+	FromDate time.Time
+}
+
+// Deletes the prices of @source dated on or after from_date of each security that follows the
+// index: an accrual over a rate written before the latest one is computed again (A265 RI2).
+func (q *Queries) DeleteAccruedOfIndex(ctx context.Context, arg DeleteAccruedOfIndexParams) error {
+	_, err := q.db.Exec(ctx, deleteAccruedOfIndex, arg.IndexID, arg.Source, arg.FromDate)
+	return err
+}
+
 const earliestIndexRate = `-- name: EarliestIndexRate :one
 SELECT
     coalesce(min(date), DATE '0001-01-01')::date AS earliest,
@@ -33,6 +55,41 @@ func (q *Queries) EarliestIndexRate(ctx context.Context, indexID string) (Earlie
 	var i EarliestIndexRateRow
 	err := row.Scan(&i.Earliest, &i.Found)
 	return i, err
+}
+
+const indexCheck = `-- name: IndexCheck :many
+SELECT
+    index_id, from_date, checked_on, missing
+FROM
+    marketdata_index_check
+WHERE
+    index_id = $1
+`
+
+// The last whole read of the index, no row when it was never read whole (A265 RI1).
+func (q *Queries) IndexCheck(ctx context.Context, indexID string) ([]MarketdataIndexCheck, error) {
+	rows, err := q.db.Query(ctx, indexCheck, indexID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []MarketdataIndexCheck
+	for rows.Next() {
+		var i MarketdataIndexCheck
+		if err := rows.Scan(
+			&i.IndexID,
+			&i.FromDate,
+			&i.CheckedOn,
+			&i.Missing,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const indexRange = `-- name: IndexRange :one
@@ -104,6 +161,69 @@ func (q *Queries) LatestIndexRate(ctx context.Context, indexID string) (LatestIn
 	var i LatestIndexRateRow
 	err := row.Scan(&i.Latest, &i.Found)
 	return i, err
+}
+
+const listIndexChecks = `-- name: ListIndexChecks :many
+SELECT
+    index_id, from_date, checked_on, missing
+FROM
+    marketdata_index_check
+`
+
+func (q *Queries) ListIndexChecks(ctx context.Context) ([]MarketdataIndexCheck, error) {
+	rows, err := q.db.Query(ctx, listIndexChecks)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []MarketdataIndexCheck
+	for rows.Next() {
+		var i MarketdataIndexCheck
+		if err := rows.Scan(
+			&i.IndexID,
+			&i.FromDate,
+			&i.CheckedOn,
+			&i.Missing,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listIndexDates = `-- name: ListIndexDates :many
+SELECT
+    date
+FROM
+    marketdata_index_rate
+WHERE
+    index_id = $1
+ORDER BY
+    date
+`
+
+func (q *Queries) ListIndexDates(ctx context.Context, indexID string) ([]time.Time, error) {
+	rows, err := q.db.Query(ctx, listIndexDates, indexID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []time.Time
+	for rows.Next() {
+		var date time.Time
+		if err := rows.Scan(&date); err != nil {
+			return nil, err
+		}
+		items = append(items, date)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listIndexRates = `-- name: ListIndexRates :many
@@ -192,6 +312,53 @@ func (q *Queries) ListIndexRatesBetween(ctx context.Context, arg ListIndexRatesB
 		return nil, err
 	}
 	return items, nil
+}
+
+const setIndexCheck = `-- name: SetIndexCheck :exec
+INSERT INTO
+    marketdata_index_check (index_id, from_date, checked_on, missing)
+VALUES
+    ($1, $2, $3, $4)
+ON CONFLICT (index_id) DO UPDATE
+SET
+    from_date = EXCLUDED.from_date,
+    checked_on = EXCLUDED.checked_on,
+    missing = EXCLUDED.missing
+`
+
+type SetIndexCheckParams struct {
+	IndexID   string
+	FromDate  time.Time
+	CheckedOn time.Time
+	Missing   int32
+}
+
+func (q *Queries) SetIndexCheck(ctx context.Context, arg SetIndexCheckParams) error {
+	_, err := q.db.Exec(ctx, setIndexCheck,
+		arg.IndexID,
+		arg.FromDate,
+		arg.CheckedOn,
+		arg.Missing,
+	)
+	return err
+}
+
+const setIndexMissing = `-- name: SetIndexMissing :exec
+UPDATE marketdata_index_check
+SET
+    missing = $1
+WHERE
+    index_id = $2
+`
+
+type SetIndexMissingParams struct {
+	Missing int32
+	IndexID string
+}
+
+func (q *Queries) SetIndexMissing(ctx context.Context, arg SetIndexMissingParams) error {
+	_, err := q.db.Exec(ctx, setIndexMissing, arg.Missing, arg.IndexID)
+	return err
 }
 
 const upsertIndexRate = `-- name: UpsertIndexRate :exec

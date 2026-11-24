@@ -53,6 +53,13 @@ type MarketdataHoliday struct {
 	Name     string
 }
 
+type MarketdataIndexCheck struct {
+	IndexID   string
+	FromDate  time.Time
+	CheckedOn time.Time
+	Missing   int32
+}
+
 type MarketdataInstrument struct {
 	Code           string
 	InstrumentType string

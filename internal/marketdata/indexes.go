@@ -8,8 +8,6 @@ import (
 	"slices"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgtype"
-
 	"github.com/andrelopes-code/equori/internal/marketdata/domain"
 	"github.com/andrelopes-code/equori/internal/marketdata/index"
 	"github.com/andrelopes-code/equori/internal/marketdata/index/brsgs"
@@ -18,13 +16,6 @@ import (
 	"github.com/andrelopes-code/equori/internal/marketdata/postgres"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 )
-
-// indexWindowDays bounds one fetch: the SGS refuses a daily series over ten years, and five years
-// leave room.
-const indexWindowDays = 1825
-
-// indexHistoryYears is how far back an enabled index is fetched (calculators design §6).
-const indexHistoryYears = 20
 
 type indexEntry struct {
 	id         string
@@ -154,104 +145,6 @@ func NewIndexSources(
 	return out, nil
 }
 
-// tickIndex fetches the rates of an index from the day after the latest stored one to today; a
-// first fetch starts 20 years before today, at the earliest issue date of a security that follows
-// the index, or at the history start of the source, whichever is earliest. A store that starts
-// after that day is filled back to it first, once per process: a series that begins later answers
-// nothing for the days before it. On a failure the next tick fetches the same days.
-func (m *Module) tickIndex(ctx context.Context, src index.Source) error {
-	start, err := m.indexStart(ctx, src)
-	if err != nil {
-		return err
-	}
-
-	earliest, err := m.q.EarliestIndexRate(ctx, src.Index())
-	if err != nil {
-		return err
-	}
-
-	today := m.feeds.Clock.Today(ctx)
-	if !earliest.Found {
-		if err := m.fetchRates(ctx, src, start, today); err != nil {
-			return err
-		}
-
-		m.filledBack.Store(src.ID(), true)
-
-		return nil
-	}
-
-	// A month of slack covers a start that falls on a day without a rate.
-	if _, done := m.filledBack.Load(src.ID()); !done &&
-		earliest.Earliest.After(start.AddDate(0, 1, 0)) {
-		if err := m.fetchRates(ctx, src, start, earliest.Earliest.AddDate(0, 0, -1)); err != nil {
-			return err
-		}
-
-		m.filledBack.Store(src.ID(), true)
-	}
-
-	latest, err := m.q.LatestIndexRate(ctx, src.Index())
-	if err != nil {
-		return err
-	}
-
-	return m.fetchRates(ctx, src, latest.Latest.AddDate(0, 0, 1), today)
-}
-
-// indexStart is the first day the store of src holds.
-func (m *Module) indexStart(ctx context.Context, src index.Source) (time.Time, error) {
-	followed := src.Index()
-
-	issued, err := m.q.IndexTermsStart(ctx, &followed)
-	if err != nil {
-		return time.Time{}, err
-	}
-
-	from := m.feeds.Clock.Today(ctx).AddDate(-indexHistoryYears, 0, 0)
-	if issued.N > 0 && issued.IssuedOn.Before(from) {
-		from = issued.IssuedOn
-	}
-
-	if since := historySince(src); !since.IsZero() && since.Before(from) {
-		from = since
-	}
-
-	return from, nil
-}
-
-// historySince is the history start src declares, zero when it declares none.
-func historySince(src index.Source) time.Time {
-	if h, ok := src.(index.HistoryStart); ok {
-		return h.HistorySince()
-	}
-
-	return time.Time{}
-}
-
-// fetchRates fetches and stores the rates of src in [from, to], one window at a time.
-func (m *Module) fetchRates(ctx context.Context, src index.Source, from, to time.Time) error {
-	for !from.After(to) {
-		end := from.AddDate(0, 0, indexWindowDays)
-		if end.After(to) {
-			end = to
-		}
-
-		rates, err := src.Fetch(ctx, from, end)
-		if storeErr := m.storeRates(ctx, src, rates); err == nil {
-			err = storeErr
-		}
-
-		if err != nil {
-			return err
-		}
-
-		from = end.AddDate(0, 0, 1)
-	}
-
-	return nil
-}
-
 // Indexes lists the enabled indexes with at least one stored rate: those suggested for the
 // caller's region first (ADR 025 F3), each part in the order of the registry.
 func (m *Module) Indexes(ctx context.Context) ([]IndexSummary, error) {
@@ -341,29 +234,6 @@ func (m *Module) IndexRates(
 	}
 
 	return out, nil
-}
-
-func (m *Module) storeRates(ctx context.Context, src index.Source, rates []index.Rate) error {
-	for _, r := range rates {
-		var value pgtype.Numeric
-		if err := value.Scan(r.Value); err != nil {
-			return fmt.Errorf("rate of %s: %w", r.Date.Format(time.DateOnly), err)
-		}
-
-		if err := m.q.UpsertIndexRate(
-			ctx,
-			postgres.UpsertIndexRateParams{
-				IndexID: src.Index(),
-				Date:    r.Date,
-				Rate:    value,
-				Source:  src.ID(),
-			},
-		); err != nil {
-			return fmt.Errorf("store the rate of %s: %w", r.Date.Format(time.DateOnly), err)
-		}
-	}
-
-	return nil
 }
 
 func rank(suggested []string, id string) int {

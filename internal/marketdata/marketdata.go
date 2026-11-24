@@ -39,10 +39,6 @@ type Module struct {
 	// unofficial are the price sources ranked last (A222 MQ2), computed once in New.
 	unofficial domain.UnofficialSources
 
-	// filledBack holds the id of each index source whose store was filled back to its start in
-	// this process (tickIndex).
-	filledBack sync.Map
-
 	// running is set while a tick runs, scheduled or requested (ADR 025 F7); a requested tick
 	// joins refreshes and stops with life.
 	running   atomic.Bool

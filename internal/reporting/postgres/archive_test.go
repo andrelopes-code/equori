@@ -46,6 +46,7 @@ func TestEveryTableIsClassified(t *testing.T) {
 	// marketdata_fund_report holds the latest monthly reports a feed fetches again (fund report FR6).
 	// marketdata_company_report, marketdata_company_listing and marketdata_company_share_count hold
 	// the filings a feed fetches again (company report CR6, contribution criteria AC15).
+	// marketdata_index_check holds the last whole read of each index (A265 RI4).
 	// marketdata_history holds the instance's queue of history requests (A222 MQ4).
 	// marketdata_institution_indicator holds the indicators a feed fetches again (A237).
 	// ingestion_instance_settings holds the instance's sync interval (ADR 029 BK23).
@@ -74,6 +75,7 @@ func TestEveryTableIsClassified(t *testing.T) {
 		"marketdata_feed",
 		"marketdata_fund_report",
 		"marketdata_history",
+		"marketdata_index_check",
 		"marketdata_index_expectation",
 		"marketdata_institution_indicator",
 		"outbox_delivery",

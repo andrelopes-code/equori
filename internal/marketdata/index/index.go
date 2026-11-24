@@ -27,6 +27,13 @@ type BusinessDayCompounding interface {
 	CompoundsByBusinessDay() bool
 }
 
+// Calendared is implemented by a Source that publishes one rate each business day of a calendar of
+// the registry: a business day between two rates without one is a hole (A265 RI3).
+type Calendared interface {
+	// Calendar is the identifier of the calendar, empty for none.
+	Calendar() string
+}
+
 // HistoryStart is implemented by a Source whose index a security of its region counts from a date
 // more than the default history back, such as the base of the VNA of a government bond: the store
 // holds its rates from that date.

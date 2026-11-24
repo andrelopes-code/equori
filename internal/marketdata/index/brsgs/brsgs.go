@@ -105,6 +105,16 @@ func (s Source) Period() string          { return s.period }
 
 func (s Source) CompoundsByBusinessDay() bool { return s.businessDay }
 
+// Calendar is the banking calendar of the daily series: their dates over 20 years are its business
+// days (measured on 2026-11-24).
+func (s Source) Calendar() string {
+	if s.period == index.PeriodDay {
+		return "br_banking"
+	}
+
+	return ""
+}
+
 type item struct {
 	Date  string `json:"data"`
 	Value string `json:"valor"`
