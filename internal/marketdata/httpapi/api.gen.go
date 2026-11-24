@@ -198,6 +198,27 @@ func (e InstrumentType) Valid() bool {
 	}
 }
 
+// Defines values for MarketDataFeedActivity.
+const (
+	Idle    MarketDataFeedActivity = "idle"
+	Queued  MarketDataFeedActivity = "queued"
+	Running MarketDataFeedActivity = "running"
+)
+
+// Valid indicates whether the value is a known member of the MarketDataFeedActivity enum.
+func (e MarketDataFeedActivity) Valid() bool {
+	switch e {
+	case Idle:
+		return true
+	case Queued:
+		return true
+	case Running:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for MarketDataFeedKind.
 const (
 	MarketDataFeedKindCompanyReport MarketDataFeedKind = "company_report"
@@ -964,6 +985,9 @@ type InstrumentType string
 
 // MarketDataFeed defines model for MarketDataFeed.
 type MarketDataFeed struct {
+	// Activity What the process does with the feed now (A267 FA1).
+	Activity MarketDataFeedActivity `json:"activity"`
+
 	// Covers The number of defined instruments the source quotes; 0 for an index or expectation feed (A222 MQ25).
 	Covers int `json:"covers"`
 
@@ -1006,6 +1030,9 @@ type MarketDataFeed struct {
 	// SymbolOverride The source reads a symbol set on the instrument (A222 MQ20).
 	SymbolOverride bool `json:"symbol_override"`
 }
+
+// MarketDataFeedActivity What the process does with the feed now (A267 FA1).
+type MarketDataFeedActivity string
 
 // MarketDataFeedKind defines model for MarketDataFeed.Kind.
 type MarketDataFeedKind string

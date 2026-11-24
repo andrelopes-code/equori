@@ -7973,6 +7973,11 @@ export interface components {
              * @description The last tick that ran the feed since the process started.
              */
             last_run: string | null;
+            /**
+             * @description What the process does with the feed now (A267 FA1).
+             * @enum {string}
+             */
+            activity: "idle" | "queued" | "running";
             /** @description The failure of that tick, null when it succeeded. */
             error: string | null;
             /** @description False for a source that publishes no terms for this use; its prices rank last (A222 MQ1). */

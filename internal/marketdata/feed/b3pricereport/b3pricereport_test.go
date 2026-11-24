@@ -27,6 +27,9 @@ func day(s string) time.Time {
 	return d
 }
 
+// today is the instant of every source of the tests.
+func today() time.Time { return time.Date(2026, time.November, 24, 12, 0, 0, 0, time.UTC) }
+
 // priced is one report of a file; an empty last price is a security without a trade.
 type priced struct{ ticker, last string }
 
@@ -109,7 +112,7 @@ func start(t *testing.T, files map[string][]byte) (*server, b3pricereport.Source
 	srv := httptest.NewServer(s)
 	t.Cleanup(srv.Close)
 
-	return s, b3pricereport.New(srv.Client(), srv.URL)
+	return s, b3pricereport.New(srv.Client(), srv.URL, today)
 }
 
 func shape(quotes []feed.Quote) []string {
@@ -156,8 +159,11 @@ func TestFetch(t *testing.T) {
 		t.Errorf("quotes = %v, want %v", shape(got), want)
 	}
 
-	if !slices.Equal(s.asked, []string{"SPRE220610", "SPRE220613", "SPRE220614"}) {
-		t.Errorf("asked = %v, want the three weekdays and no full report", s.asked)
+	if !slices.Equal(s.asked, []string{"SPRE220610", "SPRE220613", "PR220613", "SPRE220614"}) {
+		t.Errorf(
+			"asked = %v, want the three weekdays and the full report of the empty one",
+			s.asked,
+		)
 	}
 }
 
@@ -186,6 +192,42 @@ func TestFetchLeavesOutTheSecuritiesOfAnotherDay(t *testing.T) {
 	)
 	if err != nil || !slices.Equal(shape(got), []string{"2023-09-22 IMAB11 BRL 91"}) {
 		t.Errorf("quotes = %v, %v, want the one of the day", shape(got), err)
+	}
+}
+
+// A settled day without a simplified report of it is read from the full one; a young one waits.
+func TestFetchFallsBackToTheFullReport(t *testing.T) {
+	t.Parallel()
+
+	full := func(date string) []byte {
+		return archive(t, map[string][]byte{"a.zip": archive(t, map[string][]byte{
+			"a.xml": report(date, priced{"IMAB11", "94.95"}),
+		})})
+	}
+	_, src := start(t, map[string][]byte{
+		"SPRE230922": full("2023-09-21"),
+		"PR230922":   full("2023-09-22"),
+		"PR261123":   full("2026-11-23"),
+	})
+
+	got, err := src.Fetch(
+		t.Context(),
+		[]money.Currency{"IMAB11"},
+		day("2023-09-22"),
+		day("2023-09-22"),
+	)
+	if err != nil || !slices.Equal(shape(got), []string{"2023-09-22 IMAB11 BRL 94.95"}) {
+		t.Errorf("settled day: %v, %v", shape(got), err)
+	}
+
+	got, err = src.Fetch(
+		t.Context(),
+		[]money.Currency{"IMAB11"},
+		day("2026-11-23"),
+		day("2026-11-23"),
+	)
+	if err != nil || len(got) != 0 {
+		t.Errorf("young day: %v, %v, want none", shape(got), err)
 	}
 }
 
@@ -231,8 +273,15 @@ func TestFetchOfALongRangeReadsItsLastDays(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(s.asked) != 24 || s.asked[0] != "SPRE261020" {
-		t.Errorf("asked = %d files from %s, want 24 from SPRE261020", len(s.asked), s.asked[0])
+	simplified := slices.DeleteFunc(s.asked, func(name string) bool {
+		return strings.HasPrefix(name, "PR")
+	})
+	if len(simplified) != 24 || simplified[0] != "SPRE261020" {
+		t.Errorf(
+			"asked = %d files from %s, want 24 from SPRE261020",
+			len(simplified),
+			simplified[0],
+		)
 	}
 }
 
@@ -268,7 +317,7 @@ func TestFetchRefusesAMalformedFile(t *testing.T) {
 func TestCodes(t *testing.T) {
 	t.Parallel()
 
-	got := b3pricereport.New(nil, "").Codes([]feed.Instrument{
+	got := b3pricereport.New(nil, "", today).Codes([]feed.Instrument{
 		{Code: "IMAB11", Type: "etf", Exchange: "BVMF", QuoteCurrency: "BRL"},
 		{Code: "AAPL", Type: "stock", Exchange: "XNAS", QuoteCurrency: "USD"},
 		{Code: "USD", Type: "currency"},

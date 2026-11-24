@@ -6,10 +6,17 @@ export interface RegionVerdict {
   tone: "ok" | "muted" | "warning";
 }
 
-// The verdict of a region, in words: no feed active, feeds with a problem, or up to date.
+// The verdict of a region, in words: no feed active, first loads, feeds with a problem, or up to date.
 export function regionVerdict(s: FeedSummary, t: TFunction): RegionVerdict {
   if (s.enabled === 0)
     return { text: t("marketData.verdict.noneActive"), tone: "muted" };
+  if (s.loading === 1)
+    return { text: t("marketData.count.loading.one"), tone: "muted" };
+  if (s.loading > 1)
+    return {
+      text: t("marketData.count.loading.other", { count: s.loading }),
+      tone: "muted",
+    };
   if (s.problems === 1)
     return { text: t("marketData.count.problems.one"), tone: "warning" };
   if (s.problems > 1)

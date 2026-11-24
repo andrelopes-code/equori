@@ -213,6 +213,13 @@
     inline-size: var(--slotted-space-3);
   }
 
+  /* The loader takes the place of the dot, inside the line of the word. */
+  .loader {
+    --slotted-progress-indicator-size: var(--slotted-space-6);
+
+    flex: none;
+  }
+
   .dot[data-tone="ok"] {
     background: var(--slotted-tone-success-solid);
   }

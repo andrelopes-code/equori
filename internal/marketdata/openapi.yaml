@@ -1348,7 +1348,7 @@ schemas:
   MarketDataFeed:
     type: object
     additionalProperties: false
-    required: [id, kind, enabled, suggested, last, stale, missing, last_run, error, official, covers, history_pending, symbol_override, current, current_at, current_error]
+    required: [id, kind, enabled, suggested, last, stale, missing, last_run, activity, error, official, covers, history_pending, symbol_override, current, current_at, current_error]
     properties:
       id:
         type: string
@@ -1377,6 +1377,10 @@ schemas:
         format: date-time
         nullable: true
         description: The last tick that ran the feed since the process started.
+      activity:
+        type: string
+        enum: [idle, queued, running]
+        description: What the process does with the feed now (A267 FA1).
       error:
         type: string
         nullable: true

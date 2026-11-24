@@ -19,6 +19,7 @@ type feedAPI struct {
 	Stale     bool    `json:"stale"`
 	Missing   int     `json:"missing"`
 	LastRun   *string `json:"last_run"`
+	Activity  string  `json:"activity"`
 	Error     *string `json:"error"`
 
 	Official       bool `json:"official"`

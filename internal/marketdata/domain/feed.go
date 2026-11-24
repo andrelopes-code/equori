@@ -14,6 +14,13 @@ const (
 	FeedCompanyReport = "company_report"
 )
 
+// Activities of a feed (A267 FA1).
+const (
+	ActivityIdle    = "idle"
+	ActivityQueued  = "queued"
+	ActivityRunning = "running"
+)
+
 // Feed is a price or index source with its state for the instance (ADR 025 F5).
 type Feed struct {
 	ID        string
@@ -28,6 +35,8 @@ type Feed struct {
 	// LastRun and Error describe the last tick that ran the feed since the process started.
 	LastRun *time.Time
 	Error   *string
+	// Activity is what the process does with the feed now (A267 FA1).
+	Activity string
 
 	// Official is false for a source whose prices rank last (A222 MQ1).
 	Official bool

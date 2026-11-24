@@ -108,20 +108,6 @@ func (m *Module) CompanyReports(ctx context.Context, code string) ([]CompanyRepo
 	return out, nil
 }
 
-// tickCompanyReports runs the enabled company report sources.
-func (m *Module) tickCompanyReports(ctx context.Context, on map[string]bool) {
-	for _, src := range m.feeds.CompanyReports {
-		if on[src.ID()] {
-			err := m.tickCompanyReport(ctx, src)
-			if err != nil {
-				m.logFeed(ctx, err, "source", src.ID())
-			}
-
-			m.ran(src.ID(), err)
-		}
-	}
-}
-
 // tickCompanyReport replaces the stored rows of each fetched file and the listings, and deletes
 // the rows of the files outside the window.
 func (m *Module) tickCompanyReport(ctx context.Context, src companyreport.Source) error {

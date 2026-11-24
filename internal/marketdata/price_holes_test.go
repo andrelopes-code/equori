@@ -316,6 +316,11 @@ func reportServer(t *testing.T, files map[string]string) (*httptest.Server, func
 
 		mu.Unlock()
 
+		if files[name] == "busy" {
+			http.Error(w, "busy", http.StatusServiceUnavailable)
+			return
+		}
+
 		var outer, inner bytes.Buffer
 
 		zw := zip.NewWriter(&outer)

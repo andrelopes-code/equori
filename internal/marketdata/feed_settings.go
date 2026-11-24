@@ -222,6 +222,7 @@ func (m *Module) feed(
 
 	m.runsMu.Lock()
 	run, ok := m.runs[id]
+	f.Activity = m.activity(id)
 	m.runsMu.Unlock()
 
 	if ok {
@@ -358,10 +359,11 @@ func (m *Module) storeFeeds(ctx context.Context, on map[string]bool) error {
 	return tx.Commit(ctx)
 }
 
-// feedEnabled requests the history of a price source that was enabled and forgets the sessions no
-// source held a price of: this one can hold it (A265 PH5).
+// feedEnabled requests the history of a price source that was enabled, asks for its run (A267 FA3) and
+// forgets the sessions no source held a price of: this one can hold it (A265 PH5).
 func (m *Module) feedEnabled(ctx context.Context, id string) error {
 	m.requestFeedHistory(ctx, id)
+	m.want(id)
 
 	if err := m.q.DeletePriceHoles(ctx); err != nil {
 		return fmt.Errorf("empty the price holes: %w", err)

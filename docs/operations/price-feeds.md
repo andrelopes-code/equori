@@ -51,7 +51,7 @@ for the enabled feeds (`arquivos.b3.com.br` for `b3_consolidated`; `www.b3.com.b
 | `bcb_ptax` | Every currency instrument except `BRL` | `ExchangeRatePeriod` per currency for the whole window | `cotacaoVenda` of the `Fechamento` bulletin, quoted in `BRL` |
 | `b3_cotahist` | Instruments with exchange `BVMF` and quote currency `BRL` | `COTAHIST_D{DDMMYYYY}.ZIP` per weekday | `PREULT` of the spot market (`TPMERC` 010) over its quotation factor (`FATCOT`), quoted in `BRL` |
 | `b3_consolidated` | Instruments with exchange `BVMF` and quote currency `BRL` | `TradeInformationConsolidatedFile` per weekday: a request by name returns a token, the token returns the file | `LastPric` of the ticker in any segment, quoted in `BRL`; covers the fixed income ETFs (`AUPO11`, `LFTS11`) that COTAHIST omits |
-| `b3_price_report` | Instruments with exchange `BVMF` and quote currency `BRL` | `pesquisapregao/download?filelist=SPRE{YYMMDD}.zip,` per weekday, `PR{YYMMDD}.zip,` for a day before 2022-02-01; an empty archive is a day without a session | `LastPric` of the last revision, quoted in `BRL`; covers the fixed income ETFs that COTAHIST omits, since 2018-06-12 |
+| `b3_price_report` | Instruments with exchange `BVMF` and quote currency `BRL` | `pesquisapregao/download?filelist=SPRE{YYMMDD}.zip,` per weekday, `PR{YYMMDD}.zip,` for a day over 7 days old without one; an empty archive is a day without a session | `LastPric` of the last revision, quoted in `BRL`; covers the fixed income ETFs that COTAHIST omits, since 2018-06-12 |
 | `ecb` | Every currency instrument except `EUR` | One XML file with the last 90 days | Units of the currency per euro, stored as the price of `EUR` quoted in that currency |
 | `tesouro_direto` | Instruments of type `fixed_income`, no exchange, quote currency `BRL`, code `{LFT,LTN,NTNF,NTNB,NTNBP,NTNC,EDUCA,RENDA}.{YYYYMMDD}` | One CSV file with every title and date | `PU Venda Manha` at `Data Base`, quoted in `BRL`; a zero price is skipped |
 | `cvm_funds` | Instruments of type `fund`, no exchange, quote currency `BRL`, code a 14-character CNPJ without punctuation | One ZIP file per year up to 2020 and per month from 2021 | `VL_QUOTA` at `DT_COMPTC`, quoted in `BRL`; a subclass line and a zero value are skipped |
@@ -62,7 +62,7 @@ A currency the BCB does not quote returns an empty answer and stores nothing.
 
 ## 3. Schedule
 
-The feeds run at start and every 6 hours, and 30 minutes after a run in which one failed. Each run fetches from the day after the latest
+The feeds run at start and every 6 hours, 30 minutes after a run in which one failed, and one feed at once when it is enabled. A run takes the indexes first and the histories last. Each run fetches from the day after the latest
 price of the source (per currency for `bcb_ptax`) to today, never earlier than today − 30
 days. A day or currency without data (404, or 400 for `b3_consolidated`) is skipped. A
 `b3_consolidated` file whose status is not `Final` ends the run without a failure. Any other

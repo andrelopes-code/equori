@@ -73,7 +73,7 @@ func TestSplits(t *testing.T) {
 		})
 	}
 
-	got, err := b3pricereport.New(srv.Client(), srv.URL).Splits(t.Context(), ins)
+	got, err := b3pricereport.New(srv.Client(), srv.URL, today).Splits(t.Context(), ins)
 	if err == nil || !strings.Contains(err.Error(), "issuer FAIL: status 502") {
 		t.Errorf("error = %v, want the failure of FAIL alone", err)
 	}

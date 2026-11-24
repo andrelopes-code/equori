@@ -123,20 +123,6 @@ func (m *Module) FundReports(ctx context.Context, code string) (FundReportList, 
 	return out, nil
 }
 
-// tickFundReports runs the enabled fund report sources.
-func (m *Module) tickFundReports(ctx context.Context, on map[string]bool) {
-	for _, src := range m.feeds.FundReports {
-		if on[src.ID()] {
-			err := m.tickFundReport(ctx, src)
-			if err != nil {
-				m.logFeed(ctx, err, "source", src.ID())
-			}
-
-			m.ran(src.ID(), err)
-		}
-	}
-}
-
 // tickFundReport replaces the stored rows of each fetched period and keeps the latest periods.
 func (m *Module) tickFundReport(ctx context.Context, src fundreport.Source) error {
 	have, err := m.q.ListFundReportPeriods(ctx, src.ID())

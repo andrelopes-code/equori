@@ -96,20 +96,6 @@ func (m *Module) Curves(ctx context.Context) ([]Curve, error) {
 	return out, nil
 }
 
-// tickCurves runs the enabled curve sources.
-func (m *Module) tickCurves(ctx context.Context, on map[string]bool) {
-	for _, src := range m.feeds.Curves {
-		if on[src.ID()] {
-			err := m.tickCurve(ctx, src)
-			if err != nil {
-				m.logFeed(ctx, err, "source", src.ID())
-			}
-
-			m.ran(src.ID(), err)
-		}
-	}
-}
-
 // tickCurve replaces the stored points of each fetched curve with the file of the source.
 func (m *Module) tickCurve(ctx context.Context, src curve.Source) error {
 	curves, err := src.Fetch(ctx)

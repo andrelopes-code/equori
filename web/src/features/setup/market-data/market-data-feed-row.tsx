@@ -1,3 +1,4 @@
+import { Loader } from "@slotted/react/progress-indicator";
 import { Switch } from "@slotted/react/switch";
 import { Tag } from "@slotted/react/tag";
 import { Text } from "@slotted/react/typography";
@@ -43,6 +44,8 @@ export function MarketDataFeedRow({ feed, controls }: MarketDataFeedRowProps) {
   const fullName = feedFullName(t, feed.id);
   const text = feedRowText(feed, t, tag);
   const status = feedStatus(feed);
+  const working = feed.enabled && feed.activity !== "idle";
+  const running = feed.enabled && feed.activity === "running";
   const describedBy = [`${id}-line`, `${id}-status`]
     .concat(text.issue === null ? [] : [`${id}-issue`])
     .join(" ");
@@ -61,6 +64,7 @@ export function MarketDataFeedRow({ feed, controls }: MarketDataFeedRowProps) {
     <div
       className={styles.row}
       data-issue={text.issue === null ? undefined : ""}
+      aria-busy={running || undefined}
     >
       <div className={styles.main}>
         <div className={styles.name}>
@@ -99,15 +103,21 @@ export function MarketDataFeedRow({ feed, controls }: MarketDataFeedRowProps) {
         )}
 
         <Text size="sm" weight="medium" className={styles.date}>
-          {feed.last === null ? "—" : formatDate(feed.last, tag)}
+          {feed.last !== null && formatDate(feed.last, tag)}
+          {feed.last === null &&
+            t(working ? "marketData.firstLoad" : "marketData.noDate")}
         </Text>
 
         <Text size="sm" tone={statusTone[status.tone]} className={styles.word}>
-          <span
-            className={styles.dot}
-            data-tone={status.tone}
-            aria-hidden="true"
-          />
+          {running ? (
+            <Loader size="sm" decorative className={styles.loader} />
+          ) : (
+            <span
+              className={styles.dot}
+              data-tone={status.tone}
+              aria-hidden="true"
+            />
+          )}
           {t(`marketData.status.${status.word}`)}
         </Text>
       </div>

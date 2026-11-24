@@ -2,7 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { useApi } from "@/api/api-context";
-import { feedHasProblem } from "@/features/setup/market-data/feed-status";
+import {
+  feedHasProblem,
+  isActive,
+} from "@/features/setup/market-data/feed-status";
 import { MarketDataNotices } from "@/features/setup/market-data/market-data-notices";
 import { MarketDataPlaceholder } from "@/features/setup/market-data/market-data-placeholder";
 import { MarketDataRegions } from "@/features/setup/market-data/market-data-regions";
@@ -43,7 +46,7 @@ export function SettingsMarketData() {
     items.some(
       (f) => runsBefore.has(f.id) && runsBefore.get(f.id) === f.last_run,
     );
-  const working = polling || enabled.some((f) => f.history_pending > 0);
+  const working = polling || enabled.some(isActive);
   const failure = set.error ?? refresh.error;
 
   function handleSet(id: string, on: boolean, acceptUnofficial: boolean) {

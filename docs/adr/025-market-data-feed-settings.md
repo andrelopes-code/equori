@@ -70,6 +70,10 @@ The price source `b3_consolidated` reads the B3 consolidated trades file, which 
 
 `docs/specs/2026-11-24-reference-indexes-design.md` amends F9 for daily indexes: a daily index is stale when more than 2 business days of its calendar, or 3 weekdays without a calendar, lie between its last rate and today. F5 gains `missing`, the expected days of an index without a rate. The market indexes `br_ibovespa` and `br_ifix` join the suggestions of `BR`; `us_sp500` and `global_ftse` are unofficial. A tick in which a feed failed is repeated after 30 minutes. Once a day the tick looks for sessions of an exchange without a price and asks every enabled source (PH2 to PH7). The price source `b3_price_report` joins the suggestions of `BR`.
 
+## Amendment of 2026-11-24 (A267)
+
+`docs/specs/2026-11-24-feed-activity-design.md` amends F5, F7 and F10: each feed states its `activity`, enabling a feed runs it at once, and the screen follows a run to its end.
+
 ## Revisit criterion
 
 An instance whose users need different feed sets, or a feed whose publication delay varies beyond its `Lag`.

@@ -50,6 +50,16 @@ type Module struct {
 	// joins refreshes and stops with life.
 	running   atomic.Bool
 	refreshes sync.WaitGroup
+	// wanted are the feeds to run at once, apart from the tick (A267 FA3); looping is set while RunFeeds
+	// reads it.
+	wanted  chan string
+	looping atomic.Bool
+	// jobs counts, by feed, what is queued and what runs (A267 FA1), under runsMu; locks keeps two
+	// runs of one feed apart, and accrual two runs of the accrual.
+	jobs    map[string]*feedJobs
+	locks   sync.Map
+	accrual sync.Mutex
+
 	// kick wakes RunFeeds for a requested tick; again is set by a request while a tick may run
 	// without it (A222 MQ10).
 	kick   chan struct{}
@@ -75,7 +85,14 @@ func New(pool *pgxpool.Pool) *Module {
 	}
 
 	return &Module{
-		pool: pool, q: postgres.New(pool), calendars: calendars, businessDays: businessDayIndexes(),
-		unofficial: unofficialSources(), kick: make(chan struct{}, 1), spot: newSpotCache(),
+		pool:         pool,
+		q:            postgres.New(pool),
+		calendars:    calendars,
+		businessDays: businessDayIndexes(),
+		unofficial:   unofficialSources(),
+		kick:         make(chan struct{}, 1),
+		wanted:       make(chan string, 64),
+		jobs:         map[string]*feedJobs{},
+		spot:         newSpotCache(),
 	}
 }

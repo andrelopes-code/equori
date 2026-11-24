@@ -14,6 +14,7 @@ import {
   reloadHome,
 } from "@/features/session";
 import type { BooksMembership } from "@/features/session";
+import { isActive } from "@/features/setup/market-data/feed-status";
 import { useAppLocaleState } from "@/i18n/i18n-provider";
 
 export const setupKeys = {
@@ -673,6 +674,23 @@ type MarketDataFeed = components["schemas"]["MarketDataFeed"];
 
 // ADR 025 F5. runsBefore holds the last_run of each enabled feed when an update was requested;
 // the list is read every 5 seconds until each of them ran again.
+// How often the feeds are read again: often while one runs or waits, or until the runs asked for ended,
+// rarely while a history waits for a tick, never otherwise (A267 FA5).
+function feedsInterval(
+  feeds: readonly MarketDataFeed[],
+  runsBefore: ReadonlyMap<string, string | null> | null,
+): number | false {
+  const asked = (f: MarketDataFeed) =>
+    runsBefore !== null &&
+    runsBefore.has(f.id) &&
+    runsBefore.get(f.id) === f.last_run;
+
+  if (feeds.some((f) => f.activity !== "idle" || asked(f))) return 2_000;
+  if (feeds.some(isActive)) return 10_000;
+
+  return false;
+}
+
 export function marketDataFeedsQuery(
   api: Client<paths>,
   runsBefore: ReadonlyMap<string, string | null> | null = null,
@@ -682,13 +700,7 @@ export function marketDataFeedsQuery(
     queryFn: async () =>
       (await unwrap(await api.GET("/market-data/feeds"))).items,
     refetchInterval: (query) =>
-      runsBefore !== null &&
-      (query.state.data ?? []).some(
-        (f: MarketDataFeed) =>
-          runsBefore.has(f.id) && runsBefore.get(f.id) === f.last_run,
-      )
-        ? 5_000
-        : false,
+      feedsInterval(query.state.data ?? [], runsBefore),
   });
 }
 

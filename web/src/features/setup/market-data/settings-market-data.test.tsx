@@ -34,6 +34,7 @@ interface Feed {
   stale: boolean;
   missing: number;
   last_run: string | null;
+  activity: string;
   error: string | null;
   official: boolean;
   covers: number;
@@ -51,6 +52,7 @@ function feeds(patch: Record<string, Partial<Feed>> = {}): Feed[] {
     stale: false,
     missing: 0,
     last_run: null,
+    activity: "idle",
     error: null,
     official: true,
     covers: 0,
@@ -256,6 +258,45 @@ describe("Market data section (ADR 025 F10)", () => {
       }),
     ).toBeVisible();
   });
+
+  // A267 FA4, FA5: a feed just enabled reads as its first load, and the screen reads it again until
+  // the load ends.
+  it("follows the first load of a feed to its end", async () => {
+    let answers = 0;
+    const loading = feeds({
+      br_cdi: { enabled: true, activity: "running", history_pending: 1 },
+    });
+    const done = feeds({ br_cdi: { enabled: true, last: "2026-10-16" } });
+    const a = api(loading);
+    const turning = (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = new URL(new Request(input, init).url).pathname;
+      if (path !== "/api/v1/market-data/feeds") return a.fetch(input, init);
+
+      answers += 1;
+
+      return Promise.resolve(
+        Response.json({ items: answers === 1 ? loading : done }),
+      );
+    };
+    const fetch: typeof a.fetch = Object.assign(turning, {
+      calls: a.fetch.calls,
+    });
+    await open(fetch);
+
+    expect(
+      await within(section()).findByText(catalogEn["marketData.firstLoad"]),
+    ).toBeVisible();
+    expect(
+      within(section()).getByText(catalogEn["marketData.status.loading"]),
+    ).toBeVisible();
+
+    expect(
+      await within(section()).findByText("10/16/2026", {}, { timeout: 6_000 }),
+    ).toBeVisible();
+    expect(
+      within(section()).queryByText(catalogEn["marketData.firstLoad"]),
+    ).toBeNull();
+  }, 15_000);
 
   it("shows no loader when nothing is pending", async () => {
     const a = api(feeds({ yahoo_chart: { enabled: true } }));

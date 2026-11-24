@@ -17,6 +17,9 @@ import (
 // after its latest accrued price up to today or maturity. A failure is logged by instrument; the
 // next tick tries again.
 func (m *Module) TickAccrual(ctx context.Context) {
+	m.accrual.Lock()
+	defer m.accrual.Unlock()
+
 	rows, err := m.q.ListTerms(ctx)
 	if err != nil {
 		m.logFeed(ctx, err, "source", sourceAccrual)

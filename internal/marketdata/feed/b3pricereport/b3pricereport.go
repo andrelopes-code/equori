@@ -23,6 +23,8 @@ const (
 	path = "/pesquisapregao/download?filelist="
 	// windowDays is how far back of its end a range is read.
 	windowDays = 31
+	// settledDays is the age of a day whose full report is read: a younger one is preliminary.
+	settledDays = 7
 	// maxInnerBytes bounds the compressed report inside the archive, about 7 MB for the full one.
 	maxInnerBytes = 64 << 20
 	// maxReportBytes bounds one security of a report; one takes about 2 KB.
@@ -32,9 +34,9 @@ const (
 var (
 	// since is the earliest session whose full report was read (2026-11-24).
 	since = time.Date(2018, time.June, 12, 0, 0, 0, 0, time.UTC)
-	// simplified is the day from which the simplified report alone is read: it was published for
-	// 2022-01-10 and not for 2021-11-10.
-	simplified = time.Date(2022, time.February, 1, 0, 0, 0, 0, time.UTC)
+	// errAnotherDay is a report without a security of its day: the B3 published the one of 2023-09-21
+	// as the simplified report of 2023-09-22.
+	errAnotherDay = errors.New("read the report: no security of the day")
 
 	endOfReport = []byte("</PricRpt>")
 )
@@ -43,10 +45,11 @@ var (
 type Source struct {
 	client  *http.Client
 	baseURL string
+	now     func() time.Time
 }
 
-func New(c *http.Client, baseURL string) Source {
-	return Source{client: c, baseURL: strings.TrimSuffix(baseURL, "/")}
+func New(c *http.Client, baseURL string, now func() time.Time) Source {
+	return Source{client: c, baseURL: strings.TrimSuffix(baseURL, "/"), now: now}
 }
 
 func (Source) ID() string { return "b3_price_report" }
@@ -111,14 +114,17 @@ func (s Source) Fetch(
 	return out, nil
 }
 
-// fetchDay reads the simplified report of day, or the full one for a day before it existed.
+// fetchDay reads the simplified report of day, or the full one when there is none of a settled day: it
+// began in 2022, and a few days lack it.
 func (s Source) fetchDay(
 	ctx context.Context,
 	day time.Time,
 	want map[string]bool,
 ) ([]feed.Quote, error) {
 	quotes, err := s.fetchReport(ctx, "SPRE", day, want)
-	if errors.Is(err, feed.ErrNoData) && day.Before(simplified) {
+
+	settled := day.Before(s.now().AddDate(0, 0, -settledDays))
+	if settled && (errors.Is(err, feed.ErrNoData) || errors.Is(err, errAnotherDay)) {
 		return s.fetchReport(ctx, "PR", day, want)
 	}
 
@@ -235,7 +241,7 @@ func scan(r io.Reader, day time.Time, want map[string]bool) ([]feed.Quote, error
 	}
 
 	if !read {
-		return nil, errors.New("read the report: no security of the day")
+		return nil, errAnotherDay
 	}
 
 	return out, nil

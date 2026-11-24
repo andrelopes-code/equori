@@ -5,7 +5,9 @@ type Feed = components["schemas"]["MarketDataFeed"];
 export interface FeedStatus {
   word:
     | "upToDate"
+    | "updating"
     | "loading"
+    | "queued"
     | "overdue"
     | "incomplete"
     | "failed"
@@ -18,15 +20,19 @@ export interface FeedSummary {
   total: number;
   enabled: number;
   problems: number;
+  // The feeds that load or wait for their first load (A267 FA4).
+  loading: number;
 }
 
-// ADR 025 F9: only an enabled feed is overdue or failed. A disabled feed reads as disabled.
+// ADR 025 F9: only an enabled feed is overdue or failed. A disabled feed reads as disabled. What the
+// process does now comes first: a run, then a first load that waits (A267 FA4).
 export function feedStatus(f: Feed): FeedStatus {
   if (!f.enabled) return { word: "disabled", tone: "muted" };
+  if (f.activity === "running")
+    return { word: isFirstLoad(f) ? "loading" : "updating", tone: "muted" };
+  if (f.activity === "queued" && isFirstLoad(f))
+    return { word: "queued", tone: "muted" };
   if (f.error !== null) return { word: "failed", tone: "danger" };
-  // An index that was never read whole counts as a pending history (A265 RI4).
-  if (f.kind === "index" && f.history_pending > 0)
-    return { word: "loading", tone: "muted" };
   if (f.last === null) return { word: "noData", tone: "muted" };
   if (f.stale) return { word: "overdue", tone: "warning" };
   if (f.missing > 0) return { word: "incomplete", tone: "warning" };
@@ -34,8 +40,23 @@ export function feedStatus(f: Feed): FeedStatus {
   return { word: "upToDate", tone: "ok" };
 }
 
+// A feed without data, or an index that was never read whole, which counts as a pending history
+// (A265 RI4).
+export function isFirstLoad(f: Feed): boolean {
+  return f.last === null || (f.kind === "index" && f.history_pending > 0);
+}
+
+// The process works on the feed: the screen reads it again until it is done.
+export function isActive(f: Feed): boolean {
+  return f.enabled && (f.activity !== "idle" || f.history_pending > 0);
+}
+
 export function feedHasProblem(f: Feed): boolean {
-  return f.enabled && (f.stale || f.error !== null || f.missing > 0);
+  return (
+    f.enabled &&
+    f.activity === "idle" &&
+    (f.stale || f.error !== null || f.missing > 0)
+  );
 }
 
 export function summarizeFeeds(feeds: readonly Feed[]): FeedSummary {
@@ -43,5 +64,8 @@ export function summarizeFeeds(feeds: readonly Feed[]): FeedSummary {
     total: feeds.length,
     enabled: feeds.filter((f) => f.enabled).length,
     problems: feeds.filter(feedHasProblem).length,
+    loading: feeds.filter(
+      (f) => f.enabled && f.activity !== "idle" && isFirstLoad(f),
+    ).length,
   };
 }

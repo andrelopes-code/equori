@@ -16,7 +16,9 @@ const t = (key: MessageKey, vars: Record<string, string | number> = {}) =>
 
 describe("regionVerdict", () => {
   it("says no feed is active before anything else", () => {
-    expect(regionVerdict({ total: 3, enabled: 0, problems: 0 }, t)).toEqual({
+    expect(
+      regionVerdict({ total: 3, enabled: 0, problems: 0, loading: 0 }, t),
+    ).toEqual({
       text: "None active",
       tone: "muted",
     });
@@ -26,14 +28,27 @@ describe("regionVerdict", () => {
     [1, "1 with a problem"],
     [2, "2 with problems"],
   ])("counts %i feeds with a problem in the warning tone", (problems, text) => {
-    expect(regionVerdict({ total: 4, enabled: 3, problems }, t)).toEqual({
+    expect(
+      regionVerdict({ total: 4, enabled: 3, problems, loading: 0 }, t),
+    ).toEqual({
       text,
       tone: "warning",
     });
   });
 
+  it.each([
+    [1, "1 loading"],
+    [3, "3 loading"],
+  ])("counts %i first loads before the problems", (loading, text) => {
+    expect(
+      regionVerdict({ total: 4, enabled: 4, problems: 1, loading }, t),
+    ).toEqual({ text, tone: "muted" });
+  });
+
   it("says a healthy region is up to date", () => {
-    expect(regionVerdict({ total: 8, enabled: 8, problems: 0 }, t)).toEqual({
+    expect(
+      regionVerdict({ total: 8, enabled: 8, problems: 0, loading: 0 }, t),
+    ).toEqual({
       text: "Up to date",
       tone: "ok",
     });
@@ -42,15 +57,15 @@ describe("regionVerdict", () => {
 
 describe("regionLine", () => {
   it("writes the active count", () => {
-    expect(regionLine({ total: 8, enabled: 8, problems: 0 }, t)).toBe(
-      "8 of 8 active",
-    );
+    expect(
+      regionLine({ total: 8, enabled: 8, problems: 0, loading: 0 }, t),
+    ).toBe("8 of 8 active");
   });
 
   it("writes the singular for one source", () => {
-    expect(regionLine({ total: 1, enabled: 0, problems: 0 }, t)).toBe(
-      "0 of 1 active",
-    );
+    expect(
+      regionLine({ total: 1, enabled: 0, problems: 0, loading: 0 }, t),
+    ).toBe("0 of 1 active");
   });
 });
 
@@ -59,8 +74,8 @@ describe("othersSummary", () => {
     expect(
       othersSummary(
         [
-          { total: 3, enabled: 1, problems: 0 },
-          { total: 2, enabled: 0, problems: 0 },
+          { total: 3, enabled: 1, problems: 0, loading: 0 },
+          { total: 2, enabled: 0, problems: 0, loading: 0 },
         ],
         t,
       ),
@@ -68,8 +83,8 @@ describe("othersSummary", () => {
   });
 
   it("writes none active, in the singular for one region", () => {
-    expect(othersSummary([{ total: 1, enabled: 0, problems: 0 }], t)).toBe(
-      "1 region · 1 source · none active",
-    );
+    expect(
+      othersSummary([{ total: 1, enabled: 0, problems: 0, loading: 0 }], t),
+    ).toBe("1 region · 1 source · none active");
   });
 });

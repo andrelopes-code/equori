@@ -23,6 +23,7 @@ function feed(patch: Partial<Feed> = {}): Feed {
     stale: false,
     missing: 0,
     last_run: null,
+    activity: "idle",
     error: null,
     official: true,
     covers: 28,

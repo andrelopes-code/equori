@@ -20,6 +20,11 @@ func (m *Module) RunFeeds(ctx context.Context, interval time.Duration) {
 	defer m.refreshes.Wait()
 	defer m.stop()
 
+	m.looping.Store(true)
+	defer m.looping.Store(false)
+
+	m.refreshes.Go(func() { m.runWanted(ctx) })
+
 	for {
 		wait := interval
 
@@ -47,10 +52,11 @@ func (m *Module) RunFeeds(ctx context.Context, interval time.Duration) {
 	}
 }
 
-// TickFeeds fetches each enabled source from the day after its latest price (per code), never
-// earlier than today − 30 days, to today. Consecutive codes with the same start share one
-// fetch. A failure is logged and kept as the feed's state; the next tick fetches the same days
-// again.
+// TickFeeds fetches each enabled source: the indexes and the other sources of one file first, then the
+// prices, then the reports and the pending histories, the longest steps (A267 FA2). A price source is
+// fetched from the day after its latest price (per code), never earlier than today − 30 days, to today.
+// Consecutive codes with the same start share one fetch. A failure is logged and kept as the feed's
+// state; the next tick fetches the same days again.
 func (m *Module) TickFeeds(ctx context.Context) {
 	on, err := m.enabledFeeds(ctx)
 	if err != nil {
@@ -58,56 +64,14 @@ func (m *Module) TickFeeds(ctx context.Context) {
 		return
 	}
 
-	for _, src := range m.feeds.Sources {
-		if on[src.ID()] {
-			m.ran(src.ID(), errors.Join(m.tick(ctx, src), m.tickHistory(ctx, src)))
-		}
+	jobs := m.jobsOf(on)
+	m.enqueue(jobs)
+
+	for _, j := range jobs {
+		m.runJob(ctx, j)
 	}
-
-	for _, src := range m.feeds.Indexes {
-		if on[src.ID()] {
-			err := m.tickIndex(ctx, src)
-			if err != nil {
-				m.logFeed(ctx, err, "source", src.ID())
-			}
-
-			m.ran(src.ID(), err)
-		}
-	}
-
-	for _, src := range m.feeds.Expectations {
-		if on[src.ID()] {
-			err := m.tickExpectation(ctx, src)
-			if err != nil {
-				m.logFeed(ctx, err, "source", src.ID())
-			}
-
-			m.ran(src.ID(), err)
-		}
-	}
-
-	m.tickCurves(ctx, on)
-
-	for _, src := range m.feeds.Institutions {
-		if on[src.ID()] {
-			err := m.tickInstitution(ctx, src)
-			if err != nil {
-				m.logFeed(ctx, err, "source", src.ID())
-			}
-
-			m.ran(src.ID(), err)
-		}
-	}
-
-	m.tickReports(ctx, on)
 
 	m.tickDerived(ctx)
-}
-
-// tickReports runs the fund report and the company report sources.
-func (m *Module) tickReports(ctx context.Context, on map[string]bool) {
-	m.tickFundReports(ctx, on)
-	m.tickCompanyReports(ctx, on)
 }
 
 // tickDerived computes the accrued prices, reads the splits and looks for the holes of the prices, the
