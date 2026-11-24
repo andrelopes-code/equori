@@ -7,6 +7,7 @@ import { useApi } from "@/api/api-context";
 import { PortfolioAreaHeader } from "@/features/portfolio/area-header/portfolio-area-header";
 import { ValueInSelect } from "@/features/portfolio/area-header/value-in-select";
 import { AttributionSection } from "@/features/portfolio/attribution/attribution-section";
+import { MonthsBlock } from "@/features/portfolio/results/months-block/months-block";
 import { ResultsAccountSelect } from "@/features/portfolio/results/results-account-select";
 import { ResultsPeriodBar } from "@/features/portfolio/results/period-bar/results-period-bar";
 import { ReturnBlock } from "@/features/portfolio/results/return-block/return-block";
@@ -18,7 +19,7 @@ import { useT } from "@/i18n/i18n-provider";
 import { PageStack } from "@/ui/page-layout/page-stack";
 import { routeTo } from "@/ui/navigation/route-to";
 
-// PT2, PR1 to PR7: the period bar, the return block, the rolling windows and "Rendimento por ativo".
+// PT2, PR1 to PR7: the period bar, the return block, the rolling windows, the months and "Rendimento por ativo".
 export function PortfolioResultsPage() {
   const t = useT();
   const api = useApi();
@@ -73,6 +74,8 @@ export function PortfolioResultsPage() {
           />
 
           <WindowsBlock history={results.history.data} />
+
+          <MonthsBlock history={results.history.data} />
 
           <AttributionSection />
         </PageStack>

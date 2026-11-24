@@ -1,0 +1,147 @@
+@layer app {
+  .factStrip {
+    display: flex;
+    gap: var(--slotted-space-8);
+    margin: 0 0 var(--slotted-space-4);
+  }
+
+  /* The rows of the shared fact list read side by side, the value after its label */
+  .factStrip > * {
+    gap: var(--slotted-space-3);
+    justify-content: flex-start;
+  }
+
+  /* Month by month */
+  .monthScroll {
+    overflow-x: auto;
+  }
+
+  .monthTable {
+    inline-size: 100%;
+    border-collapse: separate;
+    border-spacing: 2px; /* literal: the gap that keeps heat cells apart */
+    font-size: var(--slotted-font-size-sm);
+    font-variant-numeric: tabular-nums;
+    table-layout: fixed;
+  }
+
+  .monthTable th,
+  .monthTable td {
+    block-size: 2.25rem; /* literal: fixed row or column size in rem, scales with the root */
+    padding: 0 var(--slotted-space-2);
+    border-radius: var(--slotted-radius-xs);
+    text-align: end;
+    white-space: nowrap;
+  }
+
+  .monthTable thead th {
+    block-size: 2rem; /* literal: fixed row or column size in rem, scales with the root */
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+    font-weight: var(--slotted-font-weight-medium);
+  }
+
+  .monthTable .yearCol {
+    inline-size: 4rem; /* literal: fixed row or column size in rem, scales with the root */
+    text-align: start;
+    font-weight: var(--slotted-font-weight-medium);
+  }
+
+  .monthTable .sumCol {
+    inline-size: 6.5rem; /* literal: fixed row or column size in rem, scales with the root */
+  }
+
+  .monthTable strong {
+    font-weight: var(--slotted-font-weight-semibold);
+  }
+
+  .gain1 {
+    background: color-mix(
+      in oklab,
+      var(--slotted-tone-success-solid) 8%,
+      transparent
+    );
+  }
+  .gain2 {
+    background: color-mix(
+      in oklab,
+      var(--slotted-tone-success-solid) 18%,
+      transparent
+    );
+  }
+  .gain3 {
+    background: color-mix(
+      in oklab,
+      var(--slotted-tone-success-solid) 30%,
+      transparent
+    );
+  }
+  .gain4 {
+    background: color-mix(
+      in oklab,
+      var(--slotted-tone-success-solid) 44%,
+      transparent
+    );
+  }
+  .loss1 {
+    background: color-mix(
+      in oklab,
+      var(--slotted-tone-danger-solid) 8%,
+      transparent
+    );
+  }
+  .loss2 {
+    background: color-mix(
+      in oklab,
+      var(--slotted-tone-danger-solid) 18%,
+      transparent
+    );
+  }
+  .loss3 {
+    background: color-mix(
+      in oklab,
+      var(--slotted-tone-danger-solid) 30%,
+      transparent
+    );
+  }
+  .loss4 {
+    background: color-mix(
+      in oklab,
+      var(--slotted-tone-danger-solid) 44%,
+      transparent
+    );
+  }
+
+  .srOnly {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  /* The assistant pane narrows the page */
+  @container slotted-page (max-width: 1000px) {
+    /* literal: the page width the assistant pane leaves */
+    .factStrip {
+      gap: var(--slotted-space-5);
+    }
+
+    .monthTable {
+      font-size: var(--slotted-font-size-xs);
+    }
+
+    .monthTable th,
+    .monthTable td {
+      padding: 0 var(--slotted-space-1);
+    }
+
+    .monthTable .yearCol {
+      inline-size: 2.75rem; /* literal: fixed row or column size in rem, scales with the root */
+    }
+
+    .monthTable .sumCol {
+      inline-size: 4.25rem; /* literal: fixed row or column size in rem, scales with the root */
+    }
+  }
+}

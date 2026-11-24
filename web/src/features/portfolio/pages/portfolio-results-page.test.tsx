@@ -231,6 +231,59 @@ describe("Portfolio results tab: the rolling windows block", () => {
   });
 });
 
+describe("Portfolio results tab: the month by month block", () => {
+  // PR8: the table reads the history, heat classes by size, the comparison subtracts the index.
+  it("draws the table of the months, the facts and the comparison with an index", async () => {
+    const fetch = portfolioApi({
+      "GET /api/v1/reports/return/series": () => json(200, historySeries),
+    });
+    await renderApp("/portfolio/results", { fetch, today: "2025-12-31" });
+
+    const section = await screen.findByRole("region", {
+      name: catalogEn["portfolio.results.months"],
+    });
+    const table = await within(section).findByRole("table", {
+      name: catalogEn["portfolio.results.months.caption"],
+    });
+    const row = within(table)
+      .getByRole("rowheader", { name: "2025" })
+      .closest("tr");
+    const cells = within(row ?? table).getAllByRole("cell");
+
+    expect(cells.map((c) => c.textContent)).toEqual([
+      ...Array<string>(10).fill("–"),
+      "1.00",
+      "2.00",
+      "3.02",
+      "3.02",
+    ]);
+    expect(cells[10]).toHaveClass(/gain2/);
+    expect(cells[11]).toHaveClass(/gain2/);
+    expect(within(table).getAllByRole("columnheader")[1]).toHaveTextContent(
+      "Jan",
+    );
+    expect(
+      within(section).getByText("Best month").nextElementSibling,
+    ).toHaveTextContent("+2.00% · Dec-2025");
+    expect(
+      within(section).getByText("Months above zero").nextElementSibling,
+    ).toHaveTextContent("2 of 2");
+
+    await userEvent.click(
+      within(section).getByRole("combobox", {
+        name: catalogEn["portfolio.results.months.compare"],
+      }),
+    );
+    await userEvent.click(await screen.findByRole("option", { name: "CDI" }));
+
+    await waitFor(() => {
+      expect(within(row ?? table).getAllByRole("cell")[10]).toHaveTextContent(
+        "0.50",
+      );
+    });
+  });
+});
+
 // A history of `count` months of +1% each, the last point on `to`, with no index.
 function monthlyHistory(count: number, from: string, to: string) {
   const end = new Date(`${to}T00:00:00Z`);

@@ -24,6 +24,7 @@ import {
   formatRelativeDays,
   numberFormatter,
   formatReferenceMonth,
+  formatMonthShort,
   formatReferenceMonthCompact,
   parseAmount,
   todayISO,
@@ -120,6 +121,16 @@ describe("formatReferenceMonthCompact", () => {
     ["2026-11", "en", "Nov-2026"],
   ] as const)("formats %s in %s as %s", (month, locale, want) => {
     expect(formatReferenceMonthCompact(month, locale)).toBe(want);
+  });
+});
+
+describe("formatMonthShort", () => {
+  it.each([
+    ["2026-02", "pt-BR", "Fev"],
+    ["2026-11", "en", "Nov"],
+    ["2026-05", "en", "May"],
+  ] as const)("formats %s in %s as %s", (month, locale, want) => {
+    expect(formatMonthShort(month, locale)).toBe(want);
   });
 });
 
