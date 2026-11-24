@@ -10,7 +10,6 @@ import { priceSeriesQuery } from "@/features/instruments/api";
 import { adjustedPrices } from "@/features/instruments/model/adjusted-prices";
 import { positionTotals } from "@/features/instruments/model/position-totals";
 import { PriceChart } from "@/features/instruments/price-chart/price-chart";
-import { PriceDetails } from "@/features/instruments/price-table/price-details";
 import { PriceRangeControl } from "@/features/instruments/quote/price-range-control";
 import { priceStats } from "@/features/instruments/model/price-stats";
 import {
@@ -65,8 +64,7 @@ export function QuoteSection({ instrument, quote }: QuoteSectionProps) {
   );
   const { rows } = useInstrumentPositions(instrument.code);
 
-  const traded = series.data?.items ?? [];
-  const prices = adjustedPrices(traded);
+  const prices = adjustedPrices(series.data?.items ?? []);
   const reading = quoteReading(
     adjustedPrices(recent.data?.items ?? []),
     prices,
@@ -131,7 +129,6 @@ export function QuoteSection({ instrument, quote }: QuoteSectionProps) {
       {(series.isPending || stats !== null) && (
         <RangeFigures stats={stats} quote={quote} loading={series.isPending} />
       )}
-      {traded.length > 0 && <PriceDetails prices={traded} />}
       <YearlyChanges code={instrument.code} quote={quote} first={first} />
     </Stack>
   );

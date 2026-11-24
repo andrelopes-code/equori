@@ -50,6 +50,7 @@ describe("Instrument page", () => {
   it("shows the instrument and its prices of the last 90 days with the source of each", async () => {
     const queries: URLSearchParams[] = [];
     const fetch = api({
+      ...petrWithCoverage(),
       "GET /api/v1/prices": (req) => {
         queries.push(new URL(req.url).searchParams);
         return json(200, {
@@ -107,16 +108,22 @@ describe("Instrument page", () => {
   });
 
   // L1, DL1, DL2
-  it("L1: the page holds the summary line and no price table until the button is pressed", async () => {
+  it("L1: the data section opens the layer and the page holds no price table before", async () => {
     const fetch = api({
+      ...petrWithCoverage(),
       "GET /api/v1/prices": () => json(200, { items: twoPrices }),
     });
     await renderApp("/instruments/PETR4", { fetch });
+    const data = (
+      await screen.findByRole("heading", {
+        name: catalogEn["instrument.data.title"],
+      })
+    ).closest("section");
 
     expect(
-      await screen.findByText(
-        "Prices: 2, from 10/14/2026 to 10/16/2026. Latest source: Manual.",
-      ),
+      within(data ?? document.body).getByRole("button", {
+        name: catalogEn["instrument.prices.open"],
+      }),
     ).toBeVisible();
     expect(
       screen.queryByRole("table", {
@@ -125,8 +132,99 @@ describe("Instrument page", () => {
     ).toBeNull();
   });
 
+  it("IM11: the layer reads the year of the last quote, and another by the filter", async () => {
+    const queries: string[] = [];
+    const fetch = api({
+      "GET /api/v1/instruments/PETR4": () =>
+        json(200, {
+          code: "PETR4",
+          type: "stock",
+          scale: 0,
+          name: "Petrobras PN",
+          quote_currency: "BRL",
+          exchange: "B3SA",
+          coverage: {
+            first: "2024-03-14",
+            last: "2026-10-16",
+            count: 2,
+            stale: false,
+            missing: 0,
+            sources: [],
+          },
+        }),
+      "GET /api/v1/prices": (req) => {
+        const { searchParams } = new URL(req.url);
+        const span = `${searchParams.get("from") ?? ""}/${searchParams.get("to") ?? ""}`;
+        queries.push(span);
+
+        return json(200, {
+          items:
+            span === "2024-01-01/2024-12-31"
+              ? [{ ...twoPrices[0], date: "2024-03-14", value: "12.00" }]
+              : twoPrices,
+        });
+      },
+    });
+    await renderApp("/instruments/PETR4", { fetch });
+    const user = userEvent.setup();
+    await user.click(
+      await screen.findByRole("button", {
+        name: catalogEn["instrument.prices.open"],
+      }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    await waitFor(() => {
+      expect(queries).toContain("2026-01-01/2026-12-31");
+    });
+    expect(queries).not.toContain("2024-01-01/2024-12-31");
+
+    const years = within(dialog).getByRole("combobox", {
+      name: catalogEn["instrument.prices.year"],
+    });
+    expect(years).toHaveTextContent("2026");
+    await user.click(years);
+    expect(
+      screen.getAllByRole("option").map((option) => option.textContent),
+    ).toEqual(["2026", "2025", "2024"]);
+    await user.click(screen.getByRole("option", { name: "2024" }));
+
+    await waitFor(() => {
+      expect(
+        rowTexts(
+          within(dialog).getByRole("table", {
+            name: catalogEn["instrument.prices.caption"],
+          }),
+        ).slice(1),
+      ).toEqual(["03/14/2024|12.00|—|B3, daily quotes"]);
+    });
+  });
+
+  it("IM11: a year whose read fails offers the retry inside the layer", async () => {
+    const fetch = api({
+      ...petrWithCoverage(),
+      "GET /api/v1/prices": (req) =>
+        new URL(req.url).searchParams.get("from") === "2026-01-01"
+          ? problem(500, "internal")
+          : json(200, { items: twoPrices }),
+    });
+    await renderApp("/instruments/PETR4", { fetch });
+    await userEvent.setup().click(
+      await screen.findByRole("button", {
+        name: catalogEn["instrument.prices.open"],
+      }),
+    );
+    const dialog = await screen.findByRole("dialog");
+
+    expect(
+      await within(dialog).findByRole("button", {
+        name: catalogEn["common.retry"],
+      }),
+    ).toBeVisible();
+  });
+
   it("L1: the layer opens with the figure strip", async () => {
     const fetch = api({
+      ...petrWithCoverage(),
       "GET /api/v1/prices": () => json(200, { items: twoPrices }),
     });
     await renderApp("/instruments/PETR4", { fetch });
@@ -139,9 +237,11 @@ describe("Instrument page", () => {
     const card = (label: string) =>
       within(dialog).getByText(label).closest("[data-ui='stat-card']");
 
-    expect(card(catalogEn["instrument.prices.points"])).toHaveTextContent(
-      "Prices2",
-    );
+    await waitFor(() => {
+      expect(card(catalogEn["instrument.prices.points"])).toHaveTextContent(
+        "Prices2",
+      );
+    });
     expect(card(catalogEn["instrument.prices.first"])).toHaveTextContent(
       "First date10/14/2026R$38.10",
     );
@@ -158,6 +258,7 @@ describe("Instrument page", () => {
 
   it("L1: the filter keeps the change of the full series", async () => {
     const fetch = api({
+      ...petrWithCoverage(),
       "GET /api/v1/prices": () => json(200, { items: twoPrices }),
     });
     await renderApp("/instruments/PETR4", { fetch });

@@ -109,15 +109,14 @@ export const instrumentsEn = {
   "instrument.prices.noQuote":
     "The base currency is the unit of every price and has no price of its own.",
   "instrument.prices.open": "View prices by date",
-  "instrument.prices.summary":
-    "Prices: {count}, from {from} to {to}. Latest source: {source}.",
   "instrument.prices.layer.description":
-    "Every price of the instrument by date, with its change and source.",
+    "The traded prices of one year, with their change and source.",
   "instrument.prices.points": "Prices",
   "instrument.prices.first": "First date",
   "instrument.prices.last": "Last date",
   "instrument.prices.high": "Highest",
   "instrument.prices.low": "Lowest",
+  "instrument.prices.year": "Year",
   "instrument.prices.filter": "Source",
   "instrument.prices.filter.all": "All sources",
   "instrument.chart.title": "Price",

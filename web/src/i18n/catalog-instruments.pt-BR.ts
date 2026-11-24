@@ -109,15 +109,14 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "instrument.prices.noQuote":
     "A moeda base é a unidade de todos os preços e não tem preço próprio.",
   "instrument.prices.open": "Ver preços por data",
-  "instrument.prices.summary":
-    "Preços: {count}, de {from} a {to}. Última fonte: {source}.",
   "instrument.prices.layer.description":
-    "Todos os preços do instrumento por data, com variação e fonte.",
+    "Os preços negociados de um ano, com variação e fonte.",
   "instrument.prices.points": "Preços",
   "instrument.prices.first": "Primeira data",
   "instrument.prices.last": "Última data",
   "instrument.prices.high": "Máxima",
   "instrument.prices.low": "Mínima",
+  "instrument.prices.year": "Ano",
   "instrument.prices.filter": "Fonte",
   "instrument.prices.filter.all": "Todas as fontes",
   "instrument.chart.title": "Preço",
