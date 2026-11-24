@@ -2,7 +2,7 @@ import { useSyncExternalStore } from "react";
 
 import { preference } from "@/theme/preference";
 import type { Preference } from "@/theme/preference";
-import { surfaceSets } from "@/theme/surface-recipe";
+import { groundName, surfaceSets } from "@/theme/surface-recipe";
 
 // Spec A11 and A12, docs/specs/2026-10-29-appearance-studio-design.md.
 export { surfaceSets };
@@ -61,16 +61,14 @@ export function useSurface<N extends SurfaceName>(
   return [useSyncExternalStore(value.subscribe, value.snapshot), value.apply];
 }
 
-// The attributes that give an element under the root a theme's own surfaces (spec A14).
-export function surfaceAttributes(
-  values: ThemeSurfaces,
-): Record<`data-equori-${ThemeSurfaceName}`, string> {
+// The attributes that give an element under the root a theme's own surfaces (spec A14): the variants
+// of surface-variants.ts.
+export function surfaceAttributes(values: ThemeSurfaces) {
   return {
-    "data-equori-depth": values.depth,
-    "data-equori-step": values.step,
-    "data-equori-borders": values.borders,
-    "data-equori-shadows": values.shadows,
-    "data-equori-chart": values.chart,
+    "data-slotted-variant-ground": groundName(values.depth, values.step),
+    "data-slotted-variant-borders": values.borders,
+    "data-slotted-variant-shadows": values.shadows,
+    "data-slotted-variant-chart": values.chart,
   };
 }
 
@@ -95,7 +93,18 @@ function surface<N extends SurfaceName>(name: N): Preference<SurfaceValue<N>> {
     surfaceSets[name],
     fallback,
     (value) => {
-      document.documentElement.setAttribute(`data-equori-${name}`, value);
+      paintSurface(name, value);
     },
   );
+}
+
+function paintSurface(name: SurfaceName, value: string): void {
+  const root = document.documentElement;
+
+  if (name === "depth" || name === "step")
+    root.setAttribute(
+      "data-slotted-variant-ground",
+      groundName(surfaces.depth.snapshot(), surfaces.step.snapshot()),
+    );
+  else root.setAttribute(`data-slotted-variant-${name}`, value);
 }

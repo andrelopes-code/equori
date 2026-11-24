@@ -116,8 +116,8 @@ describe("appearance studio", () => {
     );
 
     expect(document.documentElement).toHaveAttribute(
-      "data-equori-depth",
-      "oled",
+      "data-slotted-variant-ground",
+      "oled-wide",
     );
     expect(localStorage.getItem("equori.depth")).toBe("oled");
   });
@@ -159,7 +159,10 @@ describe("appearance studio", () => {
     expect(terminal?.style.getPropertyValue("--slotted-seed-accent")).toBe(
       "#f59e0b",
     );
-    expect(terminal).toHaveAttribute("data-equori-depth", "oled");
+    expect(terminal).toHaveAttribute(
+      "data-slotted-variant-ground",
+      "oled-standard",
+    );
   });
 
   it("reads a changed value as custom and saves it as a theme", async () => {

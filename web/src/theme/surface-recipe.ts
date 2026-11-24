@@ -5,7 +5,7 @@ import defaultTheme from "@slotted/themes/default";
 // tokens it sets: a Slotted derivation for a colour, a CSS value for a shadow or a series.
 // high-contrast keeps the compiled theme. The standard values repeat equori.theme.ts, so an
 // element under another value returns to the compiled look; surface-recipe.theme.test.ts checks
-// both the repetition and the contrast of every value.
+// the repetition, and equori.theme.test.ts the contrast of every value (surface-variants.ts).
 export type SurfaceScheme = "dark" | "light";
 export type SurfaceTokens = Readonly<Record<string, Derivation | string>>;
 export type SurfaceRule = Readonly<
@@ -24,8 +24,6 @@ export const surfaceSets = {
 
 type SurfaceName = keyof typeof surfaceSets;
 type SurfaceValue<N extends SurfaceName> = (typeof surfaceSets)[N][number];
-
-export const surfaceSchemes: readonly SurfaceScheme[] = ["dark", "light"];
 
 // The ground of a dark scheme carries a tone's chroma up to 0.08, as equori.theme.ts does.
 const dark = (l: number): Derivation => ({
@@ -154,7 +152,14 @@ export const surfaceRecipe: {
   },
 };
 
-// The grounds of one depth and step: the raised layer depends on both, so they form one rule.
+// The value of the ground axis: the raised layer depends on the depth and on the step.
+export function groundName(
+  depth: SurfaceValue<"depth">,
+  step: SurfaceValue<"step">,
+): string {
+  return `${depth}-${step}`;
+}
+
 export function groundRule(
   depth: SurfaceValue<"depth">,
   step: SurfaceValue<"step">,

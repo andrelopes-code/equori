@@ -35,15 +35,15 @@ describe("themes", () => {
     applyThemeValues(curatedThemes.terminal);
 
     expect(document.documentElement).toHaveAttribute(
-      "data-equori-depth",
-      "oled",
+      "data-slotted-variant-ground",
+      "oled-standard",
     );
     expect(document.documentElement).toHaveAttribute(
-      "data-equori-borders",
+      "data-slotted-variant-borders",
       "strong",
     );
     expect(document.documentElement).toHaveAttribute(
-      "data-equori-shadows",
+      "data-slotted-variant-shadows",
       "flat",
     );
   });

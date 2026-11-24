@@ -4,7 +4,6 @@ import "@slotted/react/styles.css";
 import "@fontsource-variable/geist";
 import "@fontsource-variable/geist-mono";
 import "@/theme/equori.gen.css";
-import "@/theme/surface.gen.css";
 
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";

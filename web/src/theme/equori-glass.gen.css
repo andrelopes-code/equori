@@ -243,15 +243,310 @@
     --_slotted-scheme-anchor: initial;
   }
 
+  [data-slotted-variant-ground] {
+    --_variant_ground_soft-standard: initial;
+    --_variant_ground_soft-wide: initial;
+    --_variant_ground_standard-standard: initial;
+    --_variant_ground_standard-wide: initial;
+    --_variant_ground_deep-standard: initial;
+    --_variant_ground_deep-wide: initial;
+    --_variant_ground_oled-standard: initial;
+    --_variant_ground_oled-wide: initial;
+  }
+
+  [data-slotted-variant-ground="soft-standard"] {
+    --_variant_ground_soft-standard: ;
+  }
+
+  [data-slotted-variant-ground="soft-wide"] {
+    --_variant_ground_soft-wide: ;
+  }
+
+  [data-slotted-variant-ground="standard-standard"] {
+    --_variant_ground_standard-standard: ;
+  }
+
+  [data-slotted-variant-ground="standard-wide"] {
+    --_variant_ground_standard-wide: ;
+  }
+
+  [data-slotted-variant-ground="deep-standard"] {
+    --_variant_ground_deep-standard: ;
+  }
+
+  [data-slotted-variant-ground="deep-wide"] {
+    --_variant_ground_deep-wide: ;
+  }
+
+  [data-slotted-variant-ground="oled-standard"] {
+    --_variant_ground_oled-standard: ;
+  }
+
+  [data-slotted-variant-ground="oled-wide"] {
+    --_variant_ground_oled-wide: ;
+  }
+
+  [data-slotted-variant-borders] {
+    --_variant_borders_none: initial;
+    --_variant_borders_subtle: initial;
+    --_variant_borders_strong: initial;
+  }
+
+  [data-slotted-variant-borders="none"] {
+    --_variant_borders_none: ;
+  }
+
+  [data-slotted-variant-borders="subtle"] {
+    --_variant_borders_subtle: ;
+  }
+
+  [data-slotted-variant-borders="strong"] {
+    --_variant_borders_strong: ;
+  }
+
+  [data-slotted-variant-shadows] {
+    --_variant_shadows_flat: initial;
+    --_variant_shadows_soft: initial;
+    --_variant_shadows_deep: initial;
+  }
+
+  [data-slotted-variant-shadows="flat"] {
+    --_variant_shadows_flat: ;
+  }
+
+  [data-slotted-variant-shadows="soft"] {
+    --_variant_shadows_soft: ;
+  }
+
+  [data-slotted-variant-shadows="deep"] {
+    --_variant_shadows_deep: ;
+  }
+
+  [data-slotted-variant-chart] {
+    --_variant_chart_spectrum: initial;
+    --_variant_chart_accent: initial;
+    --_variant_chart_distinct: initial;
+    --_variant_chart_mono: initial;
+  }
+
+  [data-slotted-variant-chart="spectrum"] {
+    --_variant_chart_spectrum: ;
+  }
+
+  [data-slotted-variant-chart="accent"] {
+    --_variant_chart_accent: ;
+  }
+
+  [data-slotted-variant-chart="distinct"] {
+    --_variant_chart_distinct: ;
+  }
+
+  [data-slotted-variant-chart="mono"] {
+    --_variant_chart_mono: ;
+  }
+
+  [data-slotted-variant-contrast] {
+    --_variant_contrast_standard: initial;
+    --_variant_contrast_high: initial;
+  }
+
+  [data-slotted-variant-contrast="standard"] {
+    --_variant_contrast_standard: ;
+  }
+
+  [data-slotted-variant-contrast="high"] {
+    --_variant_contrast_high: ;
+  }
+
+  @scope ([data-slotted-theme="equori-glass"][data-slotted-scheme="light"], [data-slotted-theme="equori-glass"] [data-slotted-scheme="light"], [data-slotted-scheme="light"] [data-slotted-theme="equori-glass"]:not([data-slotted-scheme]), [data-slotted-theme="equori-glass"][data-slotted-scheme="dark"], [data-slotted-theme="equori-glass"] [data-slotted-scheme="dark"], [data-slotted-scheme="dark"] [data-slotted-theme="equori-glass"]:not([data-slotted-scheme]), [data-slotted-theme="equori-glass"][data-slotted-scheme="high-contrast"], [data-slotted-theme="equori-glass"] [data-slotted-scheme="high-contrast"], [data-slotted-scheme="high-contrast"] [data-slotted-theme="equori-glass"]:not([data-slotted-scheme]), [data-slotted-theme="equori-glass"][data-slotted-scheme="system"], [data-slotted-theme="equori-glass"] [data-slotted-scheme="system"], [data-slotted-scheme="system"] [data-slotted-theme="equori-glass"]:not([data-slotted-scheme])) to ([data-slotted-scheme], [data-slotted-theme]) {
+    :scope,
+    [data-slotted-seeds],
+    :where([data-slotted-variant-ground], [data-slotted-variant-borders], [data-slotted-variant-shadows], [data-slotted-variant-chart], [data-slotted-variant-contrast]) {
+      --_variant_contrast_high_light_text-muted: var(--_variant_contrast_high)oklch(from var(--slotted-seed-neutral) 0.43 min(calc(c * 0.9), 0.06) h);
+      --_variant_contrast_standard_light_text-muted: var(--_variant_contrast_standard)oklch(from var(--slotted-seed-neutral) 0.522 min(calc(c * 0.913), 0.06) h);
+      --_variant_chart_mono_light_data-8: var(--_variant_chart_mono)oklch(from var(--slotted-seed-accent) 0.745 min(calc(c * 1), 0.16) h);
+      --_variant_chart_mono_light_data-7: var(--_variant_chart_mono)oklch(from var(--slotted-seed-accent) 0.69 min(calc(c * 1), 0.16) h);
+      --_variant_chart_mono_light_data-6: var(--_variant_chart_mono)oklch(from var(--slotted-seed-accent) 0.635 min(calc(c * 1), 0.16) h);
+      --_variant_chart_mono_light_data-5: var(--_variant_chart_mono)oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1), 0.16) h);
+      --_variant_chart_mono_light_data-4: var(--_variant_chart_mono)oklch(from var(--slotted-seed-accent) 0.525 min(calc(c * 1), 0.16) h);
+      --_variant_chart_mono_light_data-3: var(--_variant_chart_mono)oklch(from var(--slotted-seed-accent) 0.47 min(calc(c * 1), 0.16) h);
+      --_variant_chart_mono_light_data-2: var(--_variant_chart_mono)oklch(from var(--slotted-seed-accent) 0.415 min(calc(c * 1), 0.16) h);
+      --_variant_chart_mono_light_data-1: var(--_variant_chart_mono)oklch(from var(--slotted-seed-accent) 0.36 min(calc(c * 1), 0.16) h);
+      --_variant_chart_distinct_light_data-8: var(--_variant_chart_distinct)oklab(from oklch(from var(--slotted-seed-accent) 0.6 1 calc(h + 45)) l calc(a * max(0, min(0.15, (0.14412 + a * (0.05116 + a * (0.07978 + a * (0.0192 + a * (-0.06304))))) + b * (-0.04943 + a * (-0.07412 + a * (0.06912 + a * (0.0072))))))) calc(b * max(0, min(0.15, (0.14412 + a * (0.05116 + a * (0.07978 + a * (0.0192 + a * (-0.06304))))) + b * (-0.04943 + a * (-0.07412 + a * (0.06912 + a * (0.0072))))))));
+      --_variant_chart_distinct_light_data-7: var(--_variant_chart_distinct)oklab(from oklch(from var(--slotted-seed-accent) 0.42 1 calc(h + 90)) l calc(a * max(0, min(0.15, (0.11967 + a * (0.06382 + a * (-0.07478 + a * (-0.01924 + a * (0.05016))))) + b * (-0.07 + a * (-0.09934 + a * (0.10896 + a * (0.07448))))))) calc(b * max(0, min(0.15, (0.11967 + a * (0.06382 + a * (-0.07478 + a * (-0.01924 + a * (0.05016))))) + b * (-0.07 + a * (-0.09934 + a * (0.10896 + a * (0.07448))))))));
+      --_variant_chart_distinct_light_data-6: var(--_variant_chart_distinct)oklab(from oklch(from var(--slotted-seed-accent) 0.6 1 calc(h + 135)) l calc(a * max(0, min(0.15, (0.14412 + a * (0.05116 + a * (0.07978 + a * (0.0192 + a * (-0.06304))))) + b * (-0.04943 + a * (-0.07412 + a * (0.06912 + a * (0.0072))))))) calc(b * max(0, min(0.15, (0.14412 + a * (0.05116 + a * (0.07978 + a * (0.0192 + a * (-0.06304))))) + b * (-0.04943 + a * (-0.07412 + a * (0.06912 + a * (0.0072))))))));
+      --_variant_chart_distinct_light_data-5: var(--_variant_chart_distinct)oklab(from oklch(from var(--slotted-seed-accent) 0.42 1 calc(h + 180)) l calc(a * max(0, min(0.15, (0.11967 + a * (0.06382 + a * (-0.07478 + a * (-0.01924 + a * (0.05016))))) + b * (-0.07 + a * (-0.09934 + a * (0.10896 + a * (0.07448))))))) calc(b * max(0, min(0.15, (0.11967 + a * (0.06382 + a * (-0.07478 + a * (-0.01924 + a * (0.05016))))) + b * (-0.07 + a * (-0.09934 + a * (0.10896 + a * (0.07448))))))));
+      --_variant_chart_distinct_light_data-4: var(--_variant_chart_distinct)oklab(from oklch(from var(--slotted-seed-accent) 0.6 1 calc(h + 225)) l calc(a * max(0, min(0.15, (0.14412 + a * (0.05116 + a * (0.07978 + a * (0.0192 + a * (-0.06304))))) + b * (-0.04943 + a * (-0.07412 + a * (0.06912 + a * (0.0072))))))) calc(b * max(0, min(0.15, (0.14412 + a * (0.05116 + a * (0.07978 + a * (0.0192 + a * (-0.06304))))) + b * (-0.04943 + a * (-0.07412 + a * (0.06912 + a * (0.0072))))))));
+      --_variant_chart_distinct_light_data-3: var(--_variant_chart_distinct)oklab(from oklch(from var(--slotted-seed-accent) 0.42 1 calc(h + 270)) l calc(a * max(0, min(0.15, (0.11967 + a * (0.06382 + a * (-0.07478 + a * (-0.01924 + a * (0.05016))))) + b * (-0.07 + a * (-0.09934 + a * (0.10896 + a * (0.07448))))))) calc(b * max(0, min(0.15, (0.11967 + a * (0.06382 + a * (-0.07478 + a * (-0.01924 + a * (0.05016))))) + b * (-0.07 + a * (-0.09934 + a * (0.10896 + a * (0.07448))))))));
+      --_variant_chart_distinct_light_data-2: var(--_variant_chart_distinct)oklab(from oklch(from var(--slotted-seed-accent) 0.6 1 calc(h + 315)) l calc(a * max(0, min(0.15, (0.14412 + a * (0.05116 + a * (0.07978 + a * (0.0192 + a * (-0.06304))))) + b * (-0.04943 + a * (-0.07412 + a * (0.06912 + a * (0.0072))))))) calc(b * max(0, min(0.15, (0.14412 + a * (0.05116 + a * (0.07978 + a * (0.0192 + a * (-0.06304))))) + b * (-0.04943 + a * (-0.07412 + a * (0.06912 + a * (0.0072))))))));
+      --_variant_chart_distinct_light_data-1: var(--_variant_chart_distinct)oklab(from oklch(from var(--slotted-seed-accent) 0.42 1 h) l calc(a * max(0, min(0.15, (0.11967 + a * (0.06382 + a * (-0.07478 + a * (-0.01924 + a * (0.05016))))) + b * (-0.07 + a * (-0.09934 + a * (0.10896 + a * (0.07448))))))) calc(b * max(0, min(0.15, (0.11967 + a * (0.06382 + a * (-0.07478 + a * (-0.01924 + a * (0.05016))))) + b * (-0.07 + a * (-0.09934 + a * (0.10896 + a * (0.07448))))))));
+      --_variant_chart_accent_light_data-8: var(--_variant_chart_accent)oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1000), 0.16) calc(h + 315));
+      --_variant_chart_accent_light_data-7: var(--_variant_chart_accent)oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1000), 0.16) calc(h + 270));
+      --_variant_chart_accent_light_data-6: var(--_variant_chart_accent)oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1000), 0.16) calc(h + 225));
+      --_variant_chart_accent_light_data-5: var(--_variant_chart_accent)oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1000), 0.16) calc(h + 180));
+      --_variant_chart_accent_light_data-4: var(--_variant_chart_accent)oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1000), 0.16) calc(h + 135));
+      --_variant_chart_accent_light_data-3: var(--_variant_chart_accent)oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1000), 0.16) calc(h + 90));
+      --_variant_chart_accent_light_data-2: var(--_variant_chart_accent)oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1000), 0.16) calc(h + 45));
+      --_variant_chart_accent_light_data-1: var(--_variant_chart_accent)oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1000), 0.16) h);
+      --_variant_chart_spectrum_light_data-8: var(--_variant_chart_spectrum)oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1000), 0.16) calc(h + 120));
+      --_variant_chart_spectrum_light_data-7: var(--_variant_chart_spectrum)oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1000), 0.16) calc(h + 45));
+      --_variant_chart_spectrum_light_data-6: var(--_variant_chart_spectrum)oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1000), 0.16) calc(h + 210));
+      --_variant_chart_spectrum_light_data-5: var(--_variant_chart_spectrum)oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1000), 0.16) calc(h + 315));
+      --_variant_chart_spectrum_light_data-4: var(--_variant_chart_spectrum)oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1000), 0.16) calc(h + 90));
+      --_variant_chart_spectrum_light_data-3: var(--_variant_chart_spectrum)oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1000), 0.16) calc(h + 270));
+      --_variant_chart_spectrum_light_data-2: var(--_variant_chart_spectrum)oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1000), 0.16) calc(h + 135));
+      --_variant_chart_spectrum_light_data-1: var(--_variant_chart_spectrum)oklch(from var(--slotted-seed-accent) 0.58 min(calc(c * 1000), 0.16) h);
+      --_variant_shadows_deep_light_shadow-lg: var(--_variant_shadows_deep)0 22px 40px -8px rgb(15 23 42 / 0.22), 0 8px 16px -8px rgb(15 23 42 / 0.14);
+      --_variant_shadows_deep_light_shadow-md: var(--_variant_shadows_deep)0 8px 18px -4px rgb(15 23 42 / 0.16), 0 3px 6px -3px rgb(15 23 42 / 0.12);
+      --_variant_shadows_deep_light_shadow-sm: var(--_variant_shadows_deep)0 2px 6px rgb(15 23 42 / 0.12), 0 1px 2px rgb(15 23 42 / 0.10);
+      --_variant_shadows_soft_light_shadow-lg: var(--_variant_shadows_soft)0 10px 15px -3px rgb(15 23 42 / 0.10), 0 4px 6px -4px rgb(15 23 42 / 0.08);
+      --_variant_shadows_soft_light_shadow-md: var(--_variant_shadows_soft)0 4px 6px -1px rgb(15 23 42 / 0.08), 0 2px 4px -2px rgb(15 23 42 / 0.08);
+      --_variant_shadows_soft_light_shadow-sm: var(--_variant_shadows_soft)0 1px 3px rgb(15 23 42 / 0.08), 0 1px 2px -1px rgb(15 23 42 / 0.08);
+      --_variant_shadows_flat_light_shadow-lg: var(--_variant_shadows_flat)none;
+      --_variant_shadows_flat_light_shadow-md: var(--_variant_shadows_flat)none;
+      --_variant_shadows_flat_light_shadow-sm: var(--_variant_shadows_flat)none;
+      --_variant_borders_strong_light_border-subtle: var(--_variant_borders_strong)oklch(from var(--slotted-seed-neutral) 0.82 min(calc(c * 0.45), 0.06) h);
+      --_variant_borders_subtle_light_border-subtle: var(--_variant_borders_subtle)oklch(from var(--slotted-seed-neutral) 0.898 min(calc(c * 0.313), 0.049) h);
+      --_variant_borders_none_light_border-subtle: var(--_variant_borders_none)var(--slotted-surface-raised);
+      --_variant_ground_oled-wide_light_surface-raised: var(--_variant_ground_oled-wide)oklch(from var(--slotted-seed-neutral) 1 min(calc(c * 0.22), 0.006) h);
+      --_variant_ground_oled-wide_light_surface: var(--_variant_ground_oled-wide)oklch(from var(--slotted-seed-neutral) 1 min(calc(c * 0.22), 0.006) h);
+      --_variant_ground_oled-wide_light_surface-sunken: var(--_variant_ground_oled-wide)oklch(from var(--slotted-seed-neutral) 1 min(calc(c * 0.22), 0.012) h);
+      --_variant_ground_oled-standard_light_surface-raised: var(--_variant_ground_oled-standard)oklch(from var(--slotted-seed-neutral) 1 min(calc(c * 0.22), 0.006) h);
+      --_variant_ground_oled-standard_light_surface: var(--_variant_ground_oled-standard)oklch(from var(--slotted-seed-neutral) 1 min(calc(c * 0.22), 0.006) h);
+      --_variant_ground_oled-standard_light_surface-sunken: var(--_variant_ground_oled-standard)oklch(from var(--slotted-seed-neutral) 1 min(calc(c * 0.22), 0.012) h);
+      --_variant_ground_deep-wide_light_surface-raised: var(--_variant_ground_deep-wide)oklch(from var(--slotted-seed-neutral) 0.992 min(calc(c * 0.22), 0.006) h);
+      --_variant_ground_deep-wide_light_surface: var(--_variant_ground_deep-wide)oklch(from var(--slotted-seed-neutral) 0.98 min(calc(c * 0.22), 0.006) h);
+      --_variant_ground_deep-wide_light_surface-sunken: var(--_variant_ground_deep-wide)oklch(from var(--slotted-seed-neutral) 0.962 min(calc(c * 0.22), 0.012) h);
+      --_variant_ground_deep-standard_light_surface-raised: var(--_variant_ground_deep-standard)oklch(from var(--slotted-seed-neutral) 0.98 min(calc(c * 0.22), 0.006) h);
+      --_variant_ground_deep-standard_light_surface: var(--_variant_ground_deep-standard)oklch(from var(--slotted-seed-neutral) 0.98 min(calc(c * 0.22), 0.006) h);
+      --_variant_ground_deep-standard_light_surface-sunken: var(--_variant_ground_deep-standard)oklch(from var(--slotted-seed-neutral) 0.962 min(calc(c * 0.22), 0.012) h);
+      --_variant_ground_standard-wide_light_surface-raised: var(--_variant_ground_standard-wide)oklch(from var(--slotted-seed-neutral) 0.997 min(calc(c * 0.22), 0.006) h);
+      --_variant_ground_standard-wide_light_surface: var(--_variant_ground_standard-wide)oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
+      --_variant_ground_standard-wide_light_surface-sunken: var(--_variant_ground_standard-wide)oklch(from var(--slotted-seed-neutral) 0.97 min(calc(c * 0.22), 0.012) h);
+      --_variant_ground_standard-standard_light_surface-raised: var(--_variant_ground_standard-standard)oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
+      --_variant_ground_standard-standard_light_surface: var(--_variant_ground_standard-standard)oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
+      --_variant_ground_standard-standard_light_surface-sunken: var(--_variant_ground_standard-standard)oklch(from var(--slotted-seed-neutral) 0.97 min(calc(c * 0.22), 0.012) h);
+      --_variant_ground_soft-wide_light_surface-raised: var(--_variant_ground_soft-wide)oklch(from var(--slotted-seed-neutral) 1 min(calc(c * 0.22), 0.006) h);
+      --_variant_ground_soft-wide_light_surface: var(--_variant_ground_soft-wide)oklch(from var(--slotted-seed-neutral) 0.99 min(calc(c * 0.22), 0.006) h);
+      --_variant_ground_soft-wide_light_surface-sunken: var(--_variant_ground_soft-wide)oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.012) h);
+      --_variant_ground_soft-standard_light_surface-raised: var(--_variant_ground_soft-standard)oklch(from var(--slotted-seed-neutral) 0.99 min(calc(c * 0.22), 0.006) h);
+      --_variant_ground_soft-standard_light_surface: var(--_variant_ground_soft-standard)oklch(from var(--slotted-seed-neutral) 0.99 min(calc(c * 0.22), 0.006) h);
+      --_variant_ground_soft-standard_light_surface-sunken: var(--_variant_ground_soft-standard)oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.012) h);
+      --_variant_contrast_high_dark_text-muted: var(--_variant_contrast_high)oklch(from var(--slotted-seed-neutral) 0.8 min(calc(c * 0.25), 0.05) h);
+      --_variant_contrast_standard_dark_text-muted: var(--_variant_contrast_standard)oklch(from var(--slotted-seed-neutral) 0.712 min(calc(c * 0.318), 0.06) h);
+      --_variant_chart_mono_dark_data-8: var(--_variant_chart_mono)oklch(from var(--slotted-seed-accent) 0.475 min(calc(c * 1), 0.16) h);
+      --_variant_chart_mono_dark_data-7: var(--_variant_chart_mono)oklch(from var(--slotted-seed-accent) 0.53 min(calc(c * 1), 0.16) h);
+      --_variant_chart_mono_dark_data-6: var(--_variant_chart_mono)oklch(from var(--slotted-seed-accent) 0.585 min(calc(c * 1), 0.16) h);
+      --_variant_chart_mono_dark_data-5: var(--_variant_chart_mono)oklch(from var(--slotted-seed-accent) 0.64 min(calc(c * 1), 0.16) h);
+      --_variant_chart_mono_dark_data-4: var(--_variant_chart_mono)oklch(from var(--slotted-seed-accent) 0.695 min(calc(c * 1), 0.16) h);
+      --_variant_chart_mono_dark_data-3: var(--_variant_chart_mono)oklch(from var(--slotted-seed-accent) 0.75 min(calc(c * 1), 0.16) h);
+      --_variant_chart_mono_dark_data-2: var(--_variant_chart_mono)oklch(from var(--slotted-seed-accent) 0.805 min(calc(c * 1), 0.16) h);
+      --_variant_chart_mono_dark_data-1: var(--_variant_chart_mono)oklch(from var(--slotted-seed-accent) 0.86 min(calc(c * 1), 0.16) h);
+      --_variant_chart_distinct_dark_data-8: var(--_variant_chart_distinct)oklab(from oklch(from var(--slotted-seed-accent) 0.6 1 calc(h + 45)) l calc(a * max(0, min(0.15, (0.14412 + a * (0.05116 + a * (0.07978 + a * (0.0192 + a * (-0.06304))))) + b * (-0.04943 + a * (-0.07412 + a * (0.06912 + a * (0.0072))))))) calc(b * max(0, min(0.15, (0.14412 + a * (0.05116 + a * (0.07978 + a * (0.0192 + a * (-0.06304))))) + b * (-0.04943 + a * (-0.07412 + a * (0.06912 + a * (0.0072))))))));
+      --_variant_chart_distinct_dark_data-7: var(--_variant_chart_distinct)oklab(from oklch(from var(--slotted-seed-accent) 0.82 1 calc(h + 90)) l calc(a * max(0, min(0.14, (0.10159 + a * (-0.04459 + a * (0.1105 + a * (0.02196 + a * (-0.09752))))) + b * (0.04028 + a * (-0.0305 + a * (-0.02764 + a * (-0.06632))))))) calc(b * max(0, min(0.14, (0.10159 + a * (-0.04459 + a * (0.1105 + a * (0.02196 + a * (-0.09752))))) + b * (0.04028 + a * (-0.0305 + a * (-0.02764 + a * (-0.06632))))))));
+      --_variant_chart_distinct_dark_data-6: var(--_variant_chart_distinct)oklab(from oklch(from var(--slotted-seed-accent) 0.6 1 calc(h + 135)) l calc(a * max(0, min(0.15, (0.14412 + a * (0.05116 + a * (0.07978 + a * (0.0192 + a * (-0.06304))))) + b * (-0.04943 + a * (-0.07412 + a * (0.06912 + a * (0.0072))))))) calc(b * max(0, min(0.15, (0.14412 + a * (0.05116 + a * (0.07978 + a * (0.0192 + a * (-0.06304))))) + b * (-0.04943 + a * (-0.07412 + a * (0.06912 + a * (0.0072))))))));
+      --_variant_chart_distinct_dark_data-5: var(--_variant_chart_distinct)oklab(from oklch(from var(--slotted-seed-accent) 0.82 1 calc(h + 180)) l calc(a * max(0, min(0.14, (0.10159 + a * (-0.04459 + a * (0.1105 + a * (0.02196 + a * (-0.09752))))) + b * (0.04028 + a * (-0.0305 + a * (-0.02764 + a * (-0.06632))))))) calc(b * max(0, min(0.14, (0.10159 + a * (-0.04459 + a * (0.1105 + a * (0.02196 + a * (-0.09752))))) + b * (0.04028 + a * (-0.0305 + a * (-0.02764 + a * (-0.06632))))))));
+      --_variant_chart_distinct_dark_data-4: var(--_variant_chart_distinct)oklab(from oklch(from var(--slotted-seed-accent) 0.6 1 calc(h + 225)) l calc(a * max(0, min(0.15, (0.14412 + a * (0.05116 + a * (0.07978 + a * (0.0192 + a * (-0.06304))))) + b * (-0.04943 + a * (-0.07412 + a * (0.06912 + a * (0.0072))))))) calc(b * max(0, min(0.15, (0.14412 + a * (0.05116 + a * (0.07978 + a * (0.0192 + a * (-0.06304))))) + b * (-0.04943 + a * (-0.07412 + a * (0.06912 + a * (0.0072))))))));
+      --_variant_chart_distinct_dark_data-3: var(--_variant_chart_distinct)oklab(from oklch(from var(--slotted-seed-accent) 0.82 1 calc(h + 270)) l calc(a * max(0, min(0.14, (0.10159 + a * (-0.04459 + a * (0.1105 + a * (0.02196 + a * (-0.09752))))) + b * (0.04028 + a * (-0.0305 + a * (-0.02764 + a * (-0.06632))))))) calc(b * max(0, min(0.14, (0.10159 + a * (-0.04459 + a * (0.1105 + a * (0.02196 + a * (-0.09752))))) + b * (0.04028 + a * (-0.0305 + a * (-0.02764 + a * (-0.06632))))))));
+      --_variant_chart_distinct_dark_data-2: var(--_variant_chart_distinct)oklab(from oklch(from var(--slotted-seed-accent) 0.6 1 calc(h + 315)) l calc(a * max(0, min(0.15, (0.14412 + a * (0.05116 + a * (0.07978 + a * (0.0192 + a * (-0.06304))))) + b * (-0.04943 + a * (-0.07412 + a * (0.06912 + a * (0.0072))))))) calc(b * max(0, min(0.15, (0.14412 + a * (0.05116 + a * (0.07978 + a * (0.0192 + a * (-0.06304))))) + b * (-0.04943 + a * (-0.07412 + a * (0.06912 + a * (0.0072))))))));
+      --_variant_chart_distinct_dark_data-1: var(--_variant_chart_distinct)oklab(from oklch(from var(--slotted-seed-accent) 0.82 1 h) l calc(a * max(0, min(0.14, (0.10159 + a * (-0.04459 + a * (0.1105 + a * (0.02196 + a * (-0.09752))))) + b * (0.04028 + a * (-0.0305 + a * (-0.02764 + a * (-0.06632))))))) calc(b * max(0, min(0.14, (0.10159 + a * (-0.04459 + a * (0.1105 + a * (0.02196 + a * (-0.09752))))) + b * (0.04028 + a * (-0.0305 + a * (-0.02764 + a * (-0.06632))))))));
+      --_variant_chart_accent_dark_data-8: var(--_variant_chart_accent)oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1000), 0.16) calc(h + 315));
+      --_variant_chart_accent_dark_data-7: var(--_variant_chart_accent)oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1000), 0.16) calc(h + 270));
+      --_variant_chart_accent_dark_data-6: var(--_variant_chart_accent)oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1000), 0.16) calc(h + 225));
+      --_variant_chart_accent_dark_data-5: var(--_variant_chart_accent)oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1000), 0.16) calc(h + 180));
+      --_variant_chart_accent_dark_data-4: var(--_variant_chart_accent)oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1000), 0.16) calc(h + 135));
+      --_variant_chart_accent_dark_data-3: var(--_variant_chart_accent)oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1000), 0.16) calc(h + 90));
+      --_variant_chart_accent_dark_data-2: var(--_variant_chart_accent)oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1000), 0.16) calc(h + 45));
+      --_variant_chart_accent_dark_data-1: var(--_variant_chart_accent)oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1000), 0.16) h);
+      --_variant_chart_spectrum_dark_data-8: var(--_variant_chart_spectrum)oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1000), 0.16) calc(h + 120));
+      --_variant_chart_spectrum_dark_data-7: var(--_variant_chart_spectrum)oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1000), 0.16) calc(h + 45));
+      --_variant_chart_spectrum_dark_data-6: var(--_variant_chart_spectrum)oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1000), 0.16) calc(h + 210));
+      --_variant_chart_spectrum_dark_data-5: var(--_variant_chart_spectrum)oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1000), 0.16) calc(h + 315));
+      --_variant_chart_spectrum_dark_data-4: var(--_variant_chart_spectrum)oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1000), 0.16) calc(h + 90));
+      --_variant_chart_spectrum_dark_data-3: var(--_variant_chart_spectrum)oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1000), 0.16) calc(h + 270));
+      --_variant_chart_spectrum_dark_data-2: var(--_variant_chart_spectrum)oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1000), 0.16) calc(h + 135));
+      --_variant_chart_spectrum_dark_data-1: var(--_variant_chart_spectrum)oklch(from var(--slotted-seed-accent) 0.66 min(calc(c * 1000), 0.16) h);
+      --_variant_shadows_deep_dark_shadow-lg: var(--_variant_shadows_deep)0 22px 40px -8px rgb(0 0 0 / 0.70), 0 8px 16px -8px rgb(0 0 0 / 0.60);
+      --_variant_shadows_deep_dark_shadow-md: var(--_variant_shadows_deep)0 8px 18px -4px rgb(0 0 0 / 0.65), 0 3px 6px -3px rgb(0 0 0 / 0.55);
+      --_variant_shadows_deep_dark_shadow-sm: var(--_variant_shadows_deep)0 2px 6px rgb(0 0 0 / 0.55), 0 1px 2px rgb(0 0 0 / 0.50);
+      --_variant_shadows_soft_dark_shadow-lg: var(--_variant_shadows_soft)0 10px 15px -3px rgb(0 0 0 / 0.60), 0 4px 6px -4px rgb(0 0 0 / 0.50);
+      --_variant_shadows_soft_dark_shadow-md: var(--_variant_shadows_soft)0 4px 6px -1px rgb(0 0 0 / 0.50), 0 2px 4px -2px rgb(0 0 0 / 0.45);
+      --_variant_shadows_soft_dark_shadow-sm: var(--_variant_shadows_soft)0 1px 3px rgb(0 0 0 / 0.45), 0 1px 2px -1px rgb(0 0 0 / 0.40);
+      --_variant_shadows_flat_dark_shadow-lg: var(--_variant_shadows_flat)none;
+      --_variant_shadows_flat_dark_shadow-md: var(--_variant_shadows_flat)none;
+      --_variant_shadows_flat_dark_shadow-sm: var(--_variant_shadows_flat)none;
+      --_variant_borders_strong_dark_border-subtle: var(--_variant_borders_strong)oklch(from var(--slotted-seed-neutral) 0.38 min(calc(c * 0.29), 0.06) h);
+      --_variant_borders_subtle_dark_border-subtle: var(--_variant_borders_subtle)oklch(from var(--slotted-seed-neutral) 0.275 min(calc(c * 0.22), 0.051) h);
+      --_variant_borders_none_dark_border-subtle: var(--_variant_borders_none)var(--slotted-surface-raised);
+      --_variant_ground_oled-wide_dark_surface-raised: var(--_variant_ground_oled-wide)oklch(from var(--slotted-seed-neutral) 0.14 min(calc(c * 0.22), 0.08) h);
+      --_variant_ground_oled-wide_dark_surface: var(--_variant_ground_oled-wide)oklch(from var(--slotted-seed-neutral) 0 min(calc(c * 0.22), 0.08) h);
+      --_variant_ground_oled-wide_dark_surface-sunken: var(--_variant_ground_oled-wide)oklch(from var(--slotted-seed-neutral) 0 min(calc(c * 0.22), 0.08) h);
+      --_variant_ground_oled-standard_dark_surface-raised: var(--_variant_ground_oled-standard)oklch(from var(--slotted-seed-neutral) 0.13 min(calc(c * 0.22), 0.08) h);
+      --_variant_ground_oled-standard_dark_surface: var(--_variant_ground_oled-standard)oklch(from var(--slotted-seed-neutral) 0 min(calc(c * 0.22), 0.08) h);
+      --_variant_ground_oled-standard_dark_surface-sunken: var(--_variant_ground_oled-standard)oklch(from var(--slotted-seed-neutral) 0 min(calc(c * 0.22), 0.08) h);
+      --_variant_ground_deep-wide_dark_surface-raised: var(--_variant_ground_deep-wide)oklch(from var(--slotted-seed-neutral) 0.17 min(calc(c * 0.22), 0.08) h);
+      --_variant_ground_deep-wide_dark_surface: var(--_variant_ground_deep-wide)oklch(from var(--slotted-seed-neutral) 0.115 min(calc(c * 0.22), 0.08) h);
+      --_variant_ground_deep-wide_dark_surface-sunken: var(--_variant_ground_deep-wide)oklch(from var(--slotted-seed-neutral) 0.095 min(calc(c * 0.22), 0.08) h);
+      --_variant_ground_deep-standard_dark_surface-raised: var(--_variant_ground_deep-standard)oklch(from var(--slotted-seed-neutral) 0.16 min(calc(c * 0.22), 0.08) h);
+      --_variant_ground_deep-standard_dark_surface: var(--_variant_ground_deep-standard)oklch(from var(--slotted-seed-neutral) 0.115 min(calc(c * 0.22), 0.08) h);
+      --_variant_ground_deep-standard_dark_surface-sunken: var(--_variant_ground_deep-standard)oklch(from var(--slotted-seed-neutral) 0.095 min(calc(c * 0.22), 0.08) h);
+      --_variant_ground_standard-wide_dark_surface-raised: var(--_variant_ground_standard-wide)oklch(from var(--slotted-seed-neutral) 0.21 min(calc(c * 0.22), 0.08) h);
+      --_variant_ground_standard-wide_dark_surface: var(--_variant_ground_standard-wide)oklch(from var(--slotted-seed-neutral) 0.155 min(calc(c * 0.22), 0.08) h);
+      --_variant_ground_standard-wide_dark_surface-sunken: var(--_variant_ground_standard-wide)oklch(from var(--slotted-seed-neutral) 0.13 min(calc(c * 0.22), 0.08) h);
+      --_variant_ground_standard-standard_dark_surface-raised: var(--_variant_ground_standard-standard)oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.08) h);
+      --_variant_ground_standard-standard_dark_surface: var(--_variant_ground_standard-standard)oklch(from var(--slotted-seed-neutral) 0.155 min(calc(c * 0.22), 0.08) h);
+      --_variant_ground_standard-standard_dark_surface-sunken: var(--_variant_ground_standard-standard)oklch(from var(--slotted-seed-neutral) 0.13 min(calc(c * 0.22), 0.08) h);
+      --_variant_ground_soft-wide_dark_surface-raised: var(--_variant_ground_soft-wide)oklch(from var(--slotted-seed-neutral) 0.23 min(calc(c * 0.22), 0.08) h);
+      --_variant_ground_soft-wide_dark_surface: var(--_variant_ground_soft-wide)oklch(from var(--slotted-seed-neutral) 0.175 min(calc(c * 0.22), 0.08) h);
+      --_variant_ground_soft-wide_dark_surface-sunken: var(--_variant_ground_soft-wide)oklch(from var(--slotted-seed-neutral) 0.15 min(calc(c * 0.22), 0.08) h);
+      --_variant_ground_soft-standard_dark_surface-raised: var(--_variant_ground_soft-standard)oklch(from var(--slotted-seed-neutral) 0.22 min(calc(c * 0.22), 0.08) h);
+      --_variant_ground_soft-standard_dark_surface: var(--_variant_ground_soft-standard)oklch(from var(--slotted-seed-neutral) 0.175 min(calc(c * 0.22), 0.08) h);
+      --_variant_ground_soft-standard_dark_surface-sunken: var(--_variant_ground_soft-standard)oklch(from var(--slotted-seed-neutral) 0.15 min(calc(c * 0.22), 0.08) h);
+      --_light_text-muted: var(--_variant_contrast_standard_light_text-muted, var(--_variant_contrast_high_light_text-muted));
+      --_light_data-8: var(--_variant_chart_spectrum_light_data-8, var(--_variant_chart_accent_light_data-8, var(--_variant_chart_distinct_light_data-8, var(--_variant_chart_mono_light_data-8))));
+      --_light_data-7: var(--_variant_chart_spectrum_light_data-7, var(--_variant_chart_accent_light_data-7, var(--_variant_chart_distinct_light_data-7, var(--_variant_chart_mono_light_data-7))));
+      --_light_data-6: var(--_variant_chart_spectrum_light_data-6, var(--_variant_chart_accent_light_data-6, var(--_variant_chart_distinct_light_data-6, var(--_variant_chart_mono_light_data-6))));
+      --_light_data-5: var(--_variant_chart_spectrum_light_data-5, var(--_variant_chart_accent_light_data-5, var(--_variant_chart_distinct_light_data-5, var(--_variant_chart_mono_light_data-5))));
+      --_light_data-4: var(--_variant_chart_spectrum_light_data-4, var(--_variant_chart_accent_light_data-4, var(--_variant_chart_distinct_light_data-4, var(--_variant_chart_mono_light_data-4))));
+      --_light_data-3: var(--_variant_chart_spectrum_light_data-3, var(--_variant_chart_accent_light_data-3, var(--_variant_chart_distinct_light_data-3, var(--_variant_chart_mono_light_data-3))));
+      --_light_data-2: var(--_variant_chart_spectrum_light_data-2, var(--_variant_chart_accent_light_data-2, var(--_variant_chart_distinct_light_data-2, var(--_variant_chart_mono_light_data-2))));
+      --_light_data-1: var(--_variant_chart_spectrum_light_data-1, var(--_variant_chart_accent_light_data-1, var(--_variant_chart_distinct_light_data-1, var(--_variant_chart_mono_light_data-1))));
+      --_light_shadow-lg: var(--_variant_shadows_flat_light_shadow-lg, var(--_variant_shadows_soft_light_shadow-lg, var(--_variant_shadows_deep_light_shadow-lg)));
+      --_light_shadow-md: var(--_variant_shadows_flat_light_shadow-md, var(--_variant_shadows_soft_light_shadow-md, var(--_variant_shadows_deep_light_shadow-md)));
+      --_light_shadow-sm: var(--_variant_shadows_flat_light_shadow-sm, var(--_variant_shadows_soft_light_shadow-sm, var(--_variant_shadows_deep_light_shadow-sm)));
+      --_light_border-subtle: var(--_variant_borders_none_light_border-subtle, var(--_variant_borders_subtle_light_border-subtle, var(--_variant_borders_strong_light_border-subtle)));
+      --_light_surface-raised: var(--_variant_ground_soft-standard_light_surface-raised, var(--_variant_ground_soft-wide_light_surface-raised, var(--_variant_ground_standard-standard_light_surface-raised, var(--_variant_ground_standard-wide_light_surface-raised, var(--_variant_ground_deep-standard_light_surface-raised, var(--_variant_ground_deep-wide_light_surface-raised, var(--_variant_ground_oled-standard_light_surface-raised, var(--_variant_ground_oled-wide_light_surface-raised))))))));
+      --_light_surface: var(--_variant_ground_soft-standard_light_surface, var(--_variant_ground_soft-wide_light_surface, var(--_variant_ground_standard-standard_light_surface, var(--_variant_ground_standard-wide_light_surface, var(--_variant_ground_deep-standard_light_surface, var(--_variant_ground_deep-wide_light_surface, var(--_variant_ground_oled-standard_light_surface, var(--_variant_ground_oled-wide_light_surface))))))));
+      --_light_surface-sunken: var(--_variant_ground_soft-standard_light_surface-sunken, var(--_variant_ground_soft-wide_light_surface-sunken, var(--_variant_ground_standard-standard_light_surface-sunken, var(--_variant_ground_standard-wide_light_surface-sunken, var(--_variant_ground_deep-standard_light_surface-sunken, var(--_variant_ground_deep-wide_light_surface-sunken, var(--_variant_ground_oled-standard_light_surface-sunken, var(--_variant_ground_oled-wide_light_surface-sunken))))))));
+      --_dark_text-muted: var(--_variant_contrast_standard_dark_text-muted, var(--_variant_contrast_high_dark_text-muted));
+      --_dark_data-8: var(--_variant_chart_spectrum_dark_data-8, var(--_variant_chart_accent_dark_data-8, var(--_variant_chart_distinct_dark_data-8, var(--_variant_chart_mono_dark_data-8))));
+      --_dark_data-7: var(--_variant_chart_spectrum_dark_data-7, var(--_variant_chart_accent_dark_data-7, var(--_variant_chart_distinct_dark_data-7, var(--_variant_chart_mono_dark_data-7))));
+      --_dark_data-6: var(--_variant_chart_spectrum_dark_data-6, var(--_variant_chart_accent_dark_data-6, var(--_variant_chart_distinct_dark_data-6, var(--_variant_chart_mono_dark_data-6))));
+      --_dark_data-5: var(--_variant_chart_spectrum_dark_data-5, var(--_variant_chart_accent_dark_data-5, var(--_variant_chart_distinct_dark_data-5, var(--_variant_chart_mono_dark_data-5))));
+      --_dark_data-4: var(--_variant_chart_spectrum_dark_data-4, var(--_variant_chart_accent_dark_data-4, var(--_variant_chart_distinct_dark_data-4, var(--_variant_chart_mono_dark_data-4))));
+      --_dark_data-3: var(--_variant_chart_spectrum_dark_data-3, var(--_variant_chart_accent_dark_data-3, var(--_variant_chart_distinct_dark_data-3, var(--_variant_chart_mono_dark_data-3))));
+      --_dark_data-2: var(--_variant_chart_spectrum_dark_data-2, var(--_variant_chart_accent_dark_data-2, var(--_variant_chart_distinct_dark_data-2, var(--_variant_chart_mono_dark_data-2))));
+      --_dark_data-1: var(--_variant_chart_spectrum_dark_data-1, var(--_variant_chart_accent_dark_data-1, var(--_variant_chart_distinct_dark_data-1, var(--_variant_chart_mono_dark_data-1))));
+      --_dark_shadow-lg: var(--_variant_shadows_flat_dark_shadow-lg, var(--_variant_shadows_soft_dark_shadow-lg, var(--_variant_shadows_deep_dark_shadow-lg)));
+      --_dark_shadow-md: var(--_variant_shadows_flat_dark_shadow-md, var(--_variant_shadows_soft_dark_shadow-md, var(--_variant_shadows_deep_dark_shadow-md)));
+      --_dark_shadow-sm: var(--_variant_shadows_flat_dark_shadow-sm, var(--_variant_shadows_soft_dark_shadow-sm, var(--_variant_shadows_deep_dark_shadow-sm)));
+      --_dark_border-subtle: var(--_variant_borders_none_dark_border-subtle, var(--_variant_borders_subtle_dark_border-subtle, var(--_variant_borders_strong_dark_border-subtle)));
+      --_dark_surface-raised: var(--_variant_ground_soft-standard_dark_surface-raised, var(--_variant_ground_soft-wide_dark_surface-raised, var(--_variant_ground_standard-standard_dark_surface-raised, var(--_variant_ground_standard-wide_dark_surface-raised, var(--_variant_ground_deep-standard_dark_surface-raised, var(--_variant_ground_deep-wide_dark_surface-raised, var(--_variant_ground_oled-standard_dark_surface-raised, var(--_variant_ground_oled-wide_dark_surface-raised))))))));
+      --_dark_surface: var(--_variant_ground_soft-standard_dark_surface, var(--_variant_ground_soft-wide_dark_surface, var(--_variant_ground_standard-standard_dark_surface, var(--_variant_ground_standard-wide_dark_surface, var(--_variant_ground_deep-standard_dark_surface, var(--_variant_ground_deep-wide_dark_surface, var(--_variant_ground_oled-standard_dark_surface, var(--_variant_ground_oled-wide_dark_surface))))))));
+      --_dark_surface-sunken: var(--_variant_ground_soft-standard_dark_surface-sunken, var(--_variant_ground_soft-wide_dark_surface-sunken, var(--_variant_ground_standard-standard_dark_surface-sunken, var(--_variant_ground_standard-wide_dark_surface-sunken, var(--_variant_ground_deep-standard_dark_surface-sunken, var(--_variant_ground_deep-wide_dark_surface-sunken, var(--_variant_ground_oled-standard_dark_surface-sunken, var(--_variant_ground_oled-wide_dark_surface-sunken))))))));
+    }
+  }
+
   @scope ([data-slotted-theme="equori-glass"][data-slotted-scheme="light"], [data-slotted-theme="equori-glass"] [data-slotted-scheme="light"], [data-slotted-scheme="light"] [data-slotted-theme="equori-glass"]:not([data-slotted-scheme])) to ([data-slotted-scheme], [data-slotted-theme]) {
     :scope,
-    [data-slotted-seeds] {
+    [data-slotted-seeds],
+    :where([data-slotted-variant-ground], [data-slotted-variant-borders], [data-slotted-variant-shadows], [data-slotted-variant-chart], [data-slotted-variant-contrast]) {
       color-scheme: light;
       --slotted-focus-ring-color: var(--slotted-tone-accent-border);
       --slotted-focus-ring-color-invalid: var(--slotted-tone-danger-border);
-      --slotted-border-subtle: oklch(from var(--slotted-seed-neutral) 0.898 min(calc(c * 0.313), 0.049) h);
+      --slotted-border-subtle: var(--_light_border-subtle, oklch(from var(--slotted-seed-neutral) 0.898 min(calc(c * 0.313), 0.049) h));
       --slotted-text: oklch(from var(--slotted-seed-neutral) 0.208 min(calc(c * 0.978), 0.035) h);
-      --slotted-text-muted: oklch(from var(--slotted-seed-neutral) 0.522 min(calc(c * 0.913), 0.06) h);
+      --slotted-text-muted: var(--_light_text-muted, oklch(from var(--slotted-seed-neutral) 0.522 min(calc(c * 0.913), 0.06) h));
       --slotted-disabled-background: oklch(from var(--slotted-seed-neutral) 0.929 min(calc(c * 0.31), 0.033) h);
       --slotted-disabled-foreground: oklch(from var(--slotted-seed-neutral) 0.554 min(calc(c * 1), 0.06) h);
       --slotted-disabled-border: oklch(from var(--slotted-seed-neutral) 0.869 min(calc(c * 0.487), 0.06) h);
@@ -300,9 +595,9 @@
       --slotted-tone-danger-text: oklch(from oklab(from oklch(from oklch(from var(--slotted-seed-danger) clamp(0, calc(l + -0.072), 1) min(calc(c * 0.885), 0.25) h) l c h / c) min(l, calc(0.502 + alpha * (((0.01713 + (a / max(alpha, 0.00001)) * (0.13551 + (a / max(alpha, 0.00001)) * (0.0296 + (a / max(alpha, 0.00001)) * (-0.1512 + (a / max(alpha, 0.00001)) * (-0.03624))))) + (b / max(alpha, 0.00001)) * (0.01513 + (a / max(alpha, 0.00001)) * (0.06418 + (a / max(alpha, 0.00001)) * (-0.196 + (a / max(alpha, 0.00001)) * (-0.07432))))) + alpha * (((-0.01637 + (a / max(alpha, 0.00001)) * (-0.29287 + (a / max(alpha, 0.00001)) * (-0.50994 + (a / max(alpha, 0.00001)) * (2.70884 + (a / max(alpha, 0.00001)) * (0.33088))))) + (b / max(alpha, 0.00001)) * (-0.52048 + (a / max(alpha, 0.00001)) * (-0.71586 + (a / max(alpha, 0.00001)) * (3.61728 + (a / max(alpha, 0.00001)) * (0.41312))))) + alpha * ((0.41295 + (a / max(alpha, 0.00001)) * (1.94934 + (a / max(alpha, 0.00001)) * (-0.2907 + (a / max(alpha, 0.00001)) * (-8.54016 + (a / max(alpha, 0.00001)) * (-1.52776))))) + (b / max(alpha, 0.00001)) * (1.4369 + (a / max(alpha, 0.00001)) * (1.0969 + (a / max(alpha, 0.00001)) * (-10.89596 + (a / max(alpha, 0.00001)) * (-1.39368))))))))) a b / 1) l c h);
       --slotted-tone-danger-subtle-hover: oklch(from var(--slotted-seed-danger) 0.971 min(calc(c * 0.06), 0.06) h);
       --slotted-tone-danger-subtle-active: oklch(from var(--slotted-seed-danger) 0.936 min(calc(c * 0.144), 0.06) calc(h + -10));
-      --slotted-surface: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
-      --slotted-surface-raised: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
-      --slotted-surface-sunken: oklch(from var(--slotted-seed-neutral) 0.97 min(calc(c * 0.22), 0.012) h);
+      --slotted-surface: var(--_light_surface, oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h));
+      --slotted-surface-raised: var(--_light_surface-raised, oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h));
+      --slotted-surface-sunken: var(--_light_surface-sunken, oklch(from var(--slotted-seed-neutral) 0.97 min(calc(c * 0.22), 0.012) h));
       --slotted-surface-inverse: oklch(from var(--slotted-seed-neutral) 0.245 min(calc(c * 0.952), 0.041) h);
       --slotted-tone-neutral-solid: var(--slotted-surface-inverse);
       --slotted-tone-neutral-solid-hover: var(--slotted-surface-inverse-hover);
@@ -328,14 +623,14 @@
       --slotted-tone-info-subtle-active: oklch(from var(--slotted-seed-info) 0.932 min(calc(c * 0.145), 0.06) h);
       --slotted-tone-info-border: oklch(from oklab(from oklch(from oklch(from var(--slotted-seed-info) clamp(0, calc(l + 0.058), 1) min(calc(c * 0.991), 0.25) h) l c h / c) min(l, calc(0.6029 + alpha * (((0.01353 + (a / max(alpha, 0.00001)) * (0.1238 + (a / max(alpha, 0.00001)) * (-0.02612 + (a / max(alpha, 0.00001)) * (-0.06224 + (a / max(alpha, 0.00001)) * (0.08112))))) + (b / max(alpha, 0.00001)) * (0.00406 + (a / max(alpha, 0.00001)) * (-0.00008 + (a / max(alpha, 0.00001)) * (-0.12732 + (a / max(alpha, 0.00001)) * (0.11864))))) + alpha * (((0.02819 + (a / max(alpha, 0.00001)) * (-0.06359 + (a / max(alpha, 0.00001)) * (0.40756 + (a / max(alpha, 0.00001)) * (1.00212 + (a / max(alpha, 0.00001)) * (-1.41272))))) + (b / max(alpha, 0.00001)) * (-0.27016 + (a / max(alpha, 0.00001)) * (0.29648 + (a / max(alpha, 0.00001)) * (2.05888 + (a / max(alpha, 0.00001)) * (-2.36776))))) + alpha * ((0.19721 + (a / max(alpha, 0.00001)) * (0.75434 + (a / max(alpha, 0.00001)) * (-2.97652 + (a / max(alpha, 0.00001)) * (-2.01276 + (a / max(alpha, 0.00001)) * (4.2672))))) + (b / max(alpha, 0.00001)) * (0.45478 + (a / max(alpha, 0.00001)) * (-1.9677 + (a / max(alpha, 0.00001)) * (-4.60308 + (a / max(alpha, 0.00001)) * (7.3612))))))))) a b / 1) l c h);
       --slotted-tone-info-text: oklch(from oklab(from oklch(from oklch(from var(--slotted-seed-info) clamp(0, calc(l + 0), 1) min(calc(c * 1), 0.25) h) l c h / c) min(l, calc(0.4996 + alpha * (((0.01749 + (a / max(alpha, 0.00001)) * (0.13486 + (a / max(alpha, 0.00001)) * (0.02804 + (a / max(alpha, 0.00001)) * (-0.15308 + (a / max(alpha, 0.00001)) * (-0.03744))))) + (b / max(alpha, 0.00001)) * (0.01505 + (a / max(alpha, 0.00001)) * (0.0648 + (a / max(alpha, 0.00001)) * (-0.19708 + (a / max(alpha, 0.00001)) * (-0.07824))))) + alpha * (((-0.02211 + (a / max(alpha, 0.00001)) * (-0.28415 + (a / max(alpha, 0.00001)) * (-0.48764 + (a / max(alpha, 0.00001)) * (2.7512 + (a / max(alpha, 0.00001)) * (0.3512))))) + (b / max(alpha, 0.00001)) * (-0.52183 + (a / max(alpha, 0.00001)) * (-0.72802 + (a / max(alpha, 0.00001)) * (3.6514 + (a / max(alpha, 0.00001)) * (0.47536))))) + alpha * ((0.43624 + (a / max(alpha, 0.00001)) * (1.93247 + (a / max(alpha, 0.00001)) * (-0.37886 + (a / max(alpha, 0.00001)) * (-8.72208 + (a / max(alpha, 0.00001)) * (-1.60608))))) + (b / max(alpha, 0.00001)) * (1.44681 + (a / max(alpha, 0.00001)) * (1.13798 + (a / max(alpha, 0.00001)) * (-11.05816 + (a / max(alpha, 0.00001)) * (-1.61624))))))))) a b / 1) l c h);
-      --slotted-data-1: #7368d4;
-      --slotted-data-2: #b46400;
-      --slotted-data-3: #009597;
-      --slotted-data-4: #c6495b;
-      --slotted-data-5: #0083ce;
-      --slotted-data-6: #4d8e16;
-      --slotted-data-7: #ad51a7;
-      --slotted-data-8: #c4530f;
+      --slotted-data-1: var(--_light_data-1, #7368d4);
+      --slotted-data-2: var(--_light_data-2, #b46400);
+      --slotted-data-3: var(--_light_data-3, #009597);
+      --slotted-data-4: var(--_light_data-4, #c6495b);
+      --slotted-data-5: var(--_light_data-5, #0083ce);
+      --slotted-data-6: var(--_light_data-6, #4d8e16);
+      --slotted-data-7: var(--_light_data-7, #ad51a7);
+      --slotted-data-8: var(--_light_data-8, #c4530f);
       --slotted-data-1-on: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
       --slotted-data-2-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
       --slotted-data-3-on: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
@@ -345,9 +640,9 @@
       --slotted-data-7-on: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
       --slotted-data-8-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
       --slotted-shadow-xs: 0 1px 2px rgb(15 23 42 / 0.06);
-      --slotted-shadow-sm: 0 1px 3px rgb(15 23 42 / 0.08), 0 1px 2px -1px rgb(15 23 42 / 0.08);
-      --slotted-shadow-md: 0 4px 6px -1px rgb(15 23 42 / 0.08), 0 2px 4px -2px rgb(15 23 42 / 0.08);
-      --slotted-shadow-lg: 0 10px 15px -3px rgb(15 23 42 / 0.10), 0 4px 6px -4px rgb(15 23 42 / 0.08);
+      --slotted-shadow-sm: var(--_light_shadow-sm, 0 1px 3px rgb(15 23 42 / 0.08), 0 1px 2px -1px rgb(15 23 42 / 0.08));
+      --slotted-shadow-md: var(--_light_shadow-md, 0 4px 6px -1px rgb(15 23 42 / 0.08), 0 2px 4px -2px rgb(15 23 42 / 0.08));
+      --slotted-shadow-lg: var(--_light_shadow-lg, 0 10px 15px -3px rgb(15 23 42 / 0.10), 0 4px 6px -4px rgb(15 23 42 / 0.08));
       --slotted-mark-track-color: var(--slotted-border-subtle);
       --slotted-mark-ring-color: var(--slotted-surface-raised);
       --slotted-current-edge: transparent;
@@ -386,13 +681,14 @@
 
   @scope ([data-slotted-theme="equori-glass"][data-slotted-scheme="dark"], [data-slotted-theme="equori-glass"] [data-slotted-scheme="dark"], [data-slotted-scheme="dark"] [data-slotted-theme="equori-glass"]:not([data-slotted-scheme])) to ([data-slotted-scheme], [data-slotted-theme]) {
     :scope,
-    [data-slotted-seeds] {
+    [data-slotted-seeds],
+    :where([data-slotted-variant-ground], [data-slotted-variant-borders], [data-slotted-variant-shadows], [data-slotted-variant-chart], [data-slotted-variant-contrast]) {
       color-scheme: dark;
       --slotted-focus-ring-color: var(--slotted-tone-accent-border);
       --slotted-focus-ring-color-invalid: var(--slotted-tone-danger-border);
-      --slotted-border-subtle: oklch(from var(--slotted-seed-neutral) 0.275 min(calc(c * 0.22), 0.051) h);
+      --slotted-border-subtle: var(--_dark_border-subtle, oklch(from var(--slotted-seed-neutral) 0.275 min(calc(c * 0.22), 0.051) h));
       --slotted-text: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
-      --slotted-text-muted: oklch(from var(--slotted-seed-neutral) 0.712 min(calc(c * 0.318), 0.06) h);
+      --slotted-text-muted: var(--_dark_text-muted, oklch(from var(--slotted-seed-neutral) 0.712 min(calc(c * 0.318), 0.06) h));
       --slotted-disabled-background: oklch(from var(--slotted-seed-neutral) 0.19 min(calc(c * 0.22), 0.08) h);
       --slotted-disabled-foreground: oklch(from var(--slotted-seed-neutral) 0.552 min(calc(c * 0.339), 0.06) h);
       --slotted-disabled-border: oklch(from var(--slotted-seed-neutral) 0.25 min(calc(c * 0.22), 0.046) h);
@@ -441,9 +737,9 @@
       --slotted-tone-danger-text: oklch(from oklab(from oklch(from oklch(from var(--slotted-seed-danger) clamp(0, calc(l + 0.134), 0.711) min(calc(c * 1), 0.166) h) l c h / c) max(l, calc(0.611 + alpha * (((0.03846 + (a / max(alpha, 0.00001)) * (0.14272 + (a / max(alpha, 0.00001)) * (-0.13044 + (a / max(alpha, 0.00001)) * (-0.0182 + (a / max(alpha, 0.00001)) * (0.09656))))) + (b / max(alpha, 0.00001)) * (-0.04588 + (a / max(alpha, 0.00001)) * (-0.02674 + (a / max(alpha, 0.00001)) * (0.05892 + (a / max(alpha, 0.00001)) * (0.03952))))) + alpha * (((-0.46314 + (a / max(alpha, 0.00001)) * (-0.25933 + (a / max(alpha, 0.00001)) * (2.06252 + (a / max(alpha, 0.00001)) * (0.3038 + (a / max(alpha, 0.00001)) * (-1.66096))))) + (b / max(alpha, 0.00001)) * (0.56457 + (a / max(alpha, 0.00001)) * (0.4557 + (a / max(alpha, 0.00001)) * (-1.00784 + (a / max(alpha, 0.00001)) * (-0.66128))))) + alpha * ((2.46442 + (a / max(alpha, 0.00001)) * (0.96347 + (a / max(alpha, 0.00001)) * (-8.42548 + (a / max(alpha, 0.00001)) * (-1.12116 + (a / max(alpha, 0.00001)) * (6.26304))))) + (b / max(alpha, 0.00001)) * (-2.25633 + (a / max(alpha, 0.00001)) * (-1.6379 + (a / max(alpha, 0.00001)) * (3.93092 + (a / max(alpha, 0.00001)) * (2.42616))))))))) a b / 1) l c h);
       --slotted-tone-danger-subtle-hover: oklch(from var(--slotted-seed-danger) 0.187 min(calc(c * 0.055), 0.06) h);
       --slotted-tone-danger-subtle-active: oklch(from var(--slotted-seed-danger) 0.209 min(calc(c * 0.1), 0.06) calc(h + -8));
-      --slotted-surface: oklch(from var(--slotted-seed-neutral) 0.155 min(calc(c * 0.22), 0.08) h);
-      --slotted-surface-raised: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.08) h);
-      --slotted-surface-sunken: oklch(from var(--slotted-seed-neutral) 0.13 min(calc(c * 0.22), 0.08) h);
+      --slotted-surface: var(--_dark_surface, oklch(from var(--slotted-seed-neutral) 0.155 min(calc(c * 0.22), 0.08) h));
+      --slotted-surface-raised: var(--_dark_surface-raised, oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.08) h));
+      --slotted-surface-sunken: var(--_dark_surface-sunken, oklch(from var(--slotted-seed-neutral) 0.13 min(calc(c * 0.22), 0.08) h));
       --slotted-surface-inverse: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
       --slotted-tone-neutral-solid: var(--slotted-surface-inverse);
       --slotted-tone-neutral-solid-hover: var(--slotted-surface-inverse-hover);
@@ -469,14 +765,14 @@
       --slotted-tone-info-subtle-active: oklch(from var(--slotted-seed-info) 0.222 min(calc(c * 0.066), 0.06) h);
       --slotted-tone-info-border: oklch(from oklab(from oklch(from oklch(from var(--slotted-seed-info) clamp(0, calc(l + 0.226), 0.714) min(calc(c * 1), 0.143) h) l c h / c) max(l, calc(0.5129 + alpha * (((-0.00004 + (a / max(alpha, 0.00001)) * (0.12718 + (a / max(alpha, 0.00001)) * (0.00012 + (a / max(alpha, 0.00001)) * (0 + (a / max(alpha, 0.00001)) * (-0.00008))))) + (b / max(alpha, 0.00001)) * (-0.01266 + (a / max(alpha, 0.00001)) * (0 + (a / max(alpha, 0.00001)) * (-0.00016)))) + alpha * (((0.22974 + (a / max(alpha, 0.00001)) * (0.00013 + (a / max(alpha, 0.00001)) * (-0.21006 + (a / max(alpha, 0.00001)) * (-0.00012 + (a / max(alpha, 0.00001)) * (0.00136))))) + (b / max(alpha, 0.00001)) * (-0.00264 + (a / max(alpha, 0.00001)) * (0.01022 + (a / max(alpha, 0.00001)) * (0.00348 + (a / max(alpha, 0.00001)) * (0.00016))))) + alpha * ((-0.00413 + (a / max(alpha, 0.00001)) * (0.0196 + (a / max(alpha, 0.00001)) * (0.01032 + (a / max(alpha, 0.00001)) * (-0.0122 + (a / max(alpha, 0.00001)) * (-0.00632))))) + (b / max(alpha, 0.00001)) * (-0.1877 + (a / max(alpha, 0.00001)) * (0.00056 + (a / max(alpha, 0.00001)) * (0.19164 + (a / max(alpha, 0.00001)) * (-0.00064))))))))) a b / 1) l c h);
       --slotted-tone-info-text: oklch(from oklab(from oklch(from oklch(from var(--slotted-seed-info) clamp(0, calc(l + 0.226), 0.714) min(calc(c * 1), 0.143) h) l c h / c) max(l, calc(0.6175 + alpha * (((0.0406 + (a / max(alpha, 0.00001)) * (0.14467 + (a / max(alpha, 0.00001)) * (-0.13242 + (a / max(alpha, 0.00001)) * (-0.01764 + (a / max(alpha, 0.00001)) * (0.09888))))) + (b / max(alpha, 0.00001)) * (-0.04964 + (a / max(alpha, 0.00001)) * (-0.0351 + (a / max(alpha, 0.00001)) * (0.07096 + (a / max(alpha, 0.00001)) * (0.0608))))) + alpha * (((-0.51057 + (a / max(alpha, 0.00001)) * (-0.29433 + (a / max(alpha, 0.00001)) * (2.13382 + (a / max(alpha, 0.00001)) * (0.29916 + (a / max(alpha, 0.00001)) * (-1.72616))))) + (b / max(alpha, 0.00001)) * (0.63433 + (a / max(alpha, 0.00001)) * (0.59642 + (a / max(alpha, 0.00001)) * (-1.21788 + (a / max(alpha, 0.00001)) * (-1.01256))))) + alpha * ((2.66863 + (a / max(alpha, 0.00001)) * (1.10008 + (a / max(alpha, 0.00001)) * (-8.82554 + (a / max(alpha, 0.00001)) * (-1.12128 + (a / max(alpha, 0.00001)) * (6.60888))))) + (b / max(alpha, 0.00001)) * (-2.53673 + (a / max(alpha, 0.00001)) * (-2.15628 + (a / max(alpha, 0.00001)) * (4.73444 + (a / max(alpha, 0.00001)) * (3.6944))))))))) a b / 1) l c h);
-      --slotted-data-1: #8a82e9;
-      --slotted-data-2: #cb7f00;
-      --slotted-data-3: #00a8a8;
-      --slotted-data-4: #de6674;
-      --slotted-data-5: #069ce4;
-      --slotted-data-6: #68a63f;
-      --slotted-data-7: #c46dbd;
-      --slotted-data-8: #db703b;
+      --slotted-data-1: var(--_dark_data-1, #8a82e9);
+      --slotted-data-2: var(--_dark_data-2, #cb7f00);
+      --slotted-data-3: var(--_dark_data-3, #00a8a8);
+      --slotted-data-4: var(--_dark_data-4, #de6674);
+      --slotted-data-5: var(--_dark_data-5, #069ce4);
+      --slotted-data-6: var(--_dark_data-6, #68a63f);
+      --slotted-data-7: var(--_dark_data-7, #c46dbd);
+      --slotted-data-8: var(--_dark_data-8, #db703b);
       --slotted-data-1-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
       --slotted-data-2-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
       --slotted-data-3-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
@@ -486,9 +782,9 @@
       --slotted-data-7-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
       --slotted-data-8-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
       --slotted-shadow-xs: 0 1px 2px rgb(0 0 0 / 0.40);
-      --slotted-shadow-sm: 0 1px 3px rgb(0 0 0 / 0.45), 0 1px 2px -1px rgb(0 0 0 / 0.40);
-      --slotted-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.50), 0 2px 4px -2px rgb(0 0 0 / 0.45);
-      --slotted-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.60), 0 4px 6px -4px rgb(0 0 0 / 0.50);
+      --slotted-shadow-sm: var(--_dark_shadow-sm, 0 1px 3px rgb(0 0 0 / 0.45), 0 1px 2px -1px rgb(0 0 0 / 0.40));
+      --slotted-shadow-md: var(--_dark_shadow-md, 0 4px 6px -1px rgb(0 0 0 / 0.50), 0 2px 4px -2px rgb(0 0 0 / 0.45));
+      --slotted-shadow-lg: var(--_dark_shadow-lg, 0 10px 15px -3px rgb(0 0 0 / 0.60), 0 4px 6px -4px rgb(0 0 0 / 0.50));
       --slotted-mark-track-color: var(--slotted-border-subtle);
       --slotted-mark-ring-color: var(--slotted-surface-raised);
       --slotted-current-edge: transparent;
@@ -527,7 +823,8 @@
 
   @scope ([data-slotted-theme="equori-glass"][data-slotted-scheme="high-contrast"], [data-slotted-theme="equori-glass"] [data-slotted-scheme="high-contrast"], [data-slotted-scheme="high-contrast"] [data-slotted-theme="equori-glass"]:not([data-slotted-scheme])) to ([data-slotted-scheme], [data-slotted-theme]) {
     :scope,
-    [data-slotted-seeds] {
+    [data-slotted-seeds],
+    :where([data-slotted-variant-ground], [data-slotted-variant-borders], [data-slotted-variant-shadows], [data-slotted-variant-chart], [data-slotted-variant-contrast]) {
       color-scheme: light;
       --slotted-focus-ring-color: var(--slotted-tone-accent-border);
       --slotted-focus-ring-color-invalid: var(--slotted-tone-danger-border);
@@ -668,13 +965,14 @@
 
   @scope ([data-slotted-theme="equori-glass"][data-slotted-scheme="system"], [data-slotted-theme="equori-glass"] [data-slotted-scheme="system"], [data-slotted-scheme="system"] [data-slotted-theme="equori-glass"]:not([data-slotted-scheme])) to ([data-slotted-scheme], [data-slotted-theme]) {
     :scope,
-    [data-slotted-seeds] {
+    [data-slotted-seeds],
+    :where([data-slotted-variant-ground], [data-slotted-variant-borders], [data-slotted-variant-shadows], [data-slotted-variant-chart], [data-slotted-variant-contrast]) {
       color-scheme: light;
       --slotted-focus-ring-color: var(--slotted-tone-accent-border);
       --slotted-focus-ring-color-invalid: var(--slotted-tone-danger-border);
-      --slotted-border-subtle: oklch(from var(--slotted-seed-neutral) 0.898 min(calc(c * 0.313), 0.049) h);
+      --slotted-border-subtle: var(--_light_border-subtle, oklch(from var(--slotted-seed-neutral) 0.898 min(calc(c * 0.313), 0.049) h));
       --slotted-text: oklch(from var(--slotted-seed-neutral) 0.208 min(calc(c * 0.978), 0.035) h);
-      --slotted-text-muted: oklch(from var(--slotted-seed-neutral) 0.522 min(calc(c * 0.913), 0.06) h);
+      --slotted-text-muted: var(--_light_text-muted, oklch(from var(--slotted-seed-neutral) 0.522 min(calc(c * 0.913), 0.06) h));
       --slotted-disabled-background: oklch(from var(--slotted-seed-neutral) 0.929 min(calc(c * 0.31), 0.033) h);
       --slotted-disabled-foreground: oklch(from var(--slotted-seed-neutral) 0.554 min(calc(c * 1), 0.06) h);
       --slotted-disabled-border: oklch(from var(--slotted-seed-neutral) 0.869 min(calc(c * 0.487), 0.06) h);
@@ -723,9 +1021,9 @@
       --slotted-tone-danger-text: oklch(from oklab(from oklch(from oklch(from var(--slotted-seed-danger) clamp(0, calc(l + -0.072), 1) min(calc(c * 0.885), 0.25) h) l c h / c) min(l, calc(0.502 + alpha * (((0.01713 + (a / max(alpha, 0.00001)) * (0.13551 + (a / max(alpha, 0.00001)) * (0.0296 + (a / max(alpha, 0.00001)) * (-0.1512 + (a / max(alpha, 0.00001)) * (-0.03624))))) + (b / max(alpha, 0.00001)) * (0.01513 + (a / max(alpha, 0.00001)) * (0.06418 + (a / max(alpha, 0.00001)) * (-0.196 + (a / max(alpha, 0.00001)) * (-0.07432))))) + alpha * (((-0.01637 + (a / max(alpha, 0.00001)) * (-0.29287 + (a / max(alpha, 0.00001)) * (-0.50994 + (a / max(alpha, 0.00001)) * (2.70884 + (a / max(alpha, 0.00001)) * (0.33088))))) + (b / max(alpha, 0.00001)) * (-0.52048 + (a / max(alpha, 0.00001)) * (-0.71586 + (a / max(alpha, 0.00001)) * (3.61728 + (a / max(alpha, 0.00001)) * (0.41312))))) + alpha * ((0.41295 + (a / max(alpha, 0.00001)) * (1.94934 + (a / max(alpha, 0.00001)) * (-0.2907 + (a / max(alpha, 0.00001)) * (-8.54016 + (a / max(alpha, 0.00001)) * (-1.52776))))) + (b / max(alpha, 0.00001)) * (1.4369 + (a / max(alpha, 0.00001)) * (1.0969 + (a / max(alpha, 0.00001)) * (-10.89596 + (a / max(alpha, 0.00001)) * (-1.39368))))))))) a b / 1) l c h);
       --slotted-tone-danger-subtle-hover: oklch(from var(--slotted-seed-danger) 0.971 min(calc(c * 0.06), 0.06) h);
       --slotted-tone-danger-subtle-active: oklch(from var(--slotted-seed-danger) 0.936 min(calc(c * 0.144), 0.06) calc(h + -10));
-      --slotted-surface: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
-      --slotted-surface-raised: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
-      --slotted-surface-sunken: oklch(from var(--slotted-seed-neutral) 0.97 min(calc(c * 0.22), 0.012) h);
+      --slotted-surface: var(--_light_surface, oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h));
+      --slotted-surface-raised: var(--_light_surface-raised, oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h));
+      --slotted-surface-sunken: var(--_light_surface-sunken, oklch(from var(--slotted-seed-neutral) 0.97 min(calc(c * 0.22), 0.012) h));
       --slotted-surface-inverse: oklch(from var(--slotted-seed-neutral) 0.245 min(calc(c * 0.952), 0.041) h);
       --slotted-tone-neutral-solid: var(--slotted-surface-inverse);
       --slotted-tone-neutral-solid-hover: var(--slotted-surface-inverse-hover);
@@ -751,14 +1049,14 @@
       --slotted-tone-info-subtle-active: oklch(from var(--slotted-seed-info) 0.932 min(calc(c * 0.145), 0.06) h);
       --slotted-tone-info-border: oklch(from oklab(from oklch(from oklch(from var(--slotted-seed-info) clamp(0, calc(l + 0.058), 1) min(calc(c * 0.991), 0.25) h) l c h / c) min(l, calc(0.6029 + alpha * (((0.01353 + (a / max(alpha, 0.00001)) * (0.1238 + (a / max(alpha, 0.00001)) * (-0.02612 + (a / max(alpha, 0.00001)) * (-0.06224 + (a / max(alpha, 0.00001)) * (0.08112))))) + (b / max(alpha, 0.00001)) * (0.00406 + (a / max(alpha, 0.00001)) * (-0.00008 + (a / max(alpha, 0.00001)) * (-0.12732 + (a / max(alpha, 0.00001)) * (0.11864))))) + alpha * (((0.02819 + (a / max(alpha, 0.00001)) * (-0.06359 + (a / max(alpha, 0.00001)) * (0.40756 + (a / max(alpha, 0.00001)) * (1.00212 + (a / max(alpha, 0.00001)) * (-1.41272))))) + (b / max(alpha, 0.00001)) * (-0.27016 + (a / max(alpha, 0.00001)) * (0.29648 + (a / max(alpha, 0.00001)) * (2.05888 + (a / max(alpha, 0.00001)) * (-2.36776))))) + alpha * ((0.19721 + (a / max(alpha, 0.00001)) * (0.75434 + (a / max(alpha, 0.00001)) * (-2.97652 + (a / max(alpha, 0.00001)) * (-2.01276 + (a / max(alpha, 0.00001)) * (4.2672))))) + (b / max(alpha, 0.00001)) * (0.45478 + (a / max(alpha, 0.00001)) * (-1.9677 + (a / max(alpha, 0.00001)) * (-4.60308 + (a / max(alpha, 0.00001)) * (7.3612))))))))) a b / 1) l c h);
       --slotted-tone-info-text: oklch(from oklab(from oklch(from oklch(from var(--slotted-seed-info) clamp(0, calc(l + 0), 1) min(calc(c * 1), 0.25) h) l c h / c) min(l, calc(0.4996 + alpha * (((0.01749 + (a / max(alpha, 0.00001)) * (0.13486 + (a / max(alpha, 0.00001)) * (0.02804 + (a / max(alpha, 0.00001)) * (-0.15308 + (a / max(alpha, 0.00001)) * (-0.03744))))) + (b / max(alpha, 0.00001)) * (0.01505 + (a / max(alpha, 0.00001)) * (0.0648 + (a / max(alpha, 0.00001)) * (-0.19708 + (a / max(alpha, 0.00001)) * (-0.07824))))) + alpha * (((-0.02211 + (a / max(alpha, 0.00001)) * (-0.28415 + (a / max(alpha, 0.00001)) * (-0.48764 + (a / max(alpha, 0.00001)) * (2.7512 + (a / max(alpha, 0.00001)) * (0.3512))))) + (b / max(alpha, 0.00001)) * (-0.52183 + (a / max(alpha, 0.00001)) * (-0.72802 + (a / max(alpha, 0.00001)) * (3.6514 + (a / max(alpha, 0.00001)) * (0.47536))))) + alpha * ((0.43624 + (a / max(alpha, 0.00001)) * (1.93247 + (a / max(alpha, 0.00001)) * (-0.37886 + (a / max(alpha, 0.00001)) * (-8.72208 + (a / max(alpha, 0.00001)) * (-1.60608))))) + (b / max(alpha, 0.00001)) * (1.44681 + (a / max(alpha, 0.00001)) * (1.13798 + (a / max(alpha, 0.00001)) * (-11.05816 + (a / max(alpha, 0.00001)) * (-1.61624))))))))) a b / 1) l c h);
-      --slotted-data-1: #7368d4;
-      --slotted-data-2: #b46400;
-      --slotted-data-3: #009597;
-      --slotted-data-4: #c6495b;
-      --slotted-data-5: #0083ce;
-      --slotted-data-6: #4d8e16;
-      --slotted-data-7: #ad51a7;
-      --slotted-data-8: #c4530f;
+      --slotted-data-1: var(--_light_data-1, #7368d4);
+      --slotted-data-2: var(--_light_data-2, #b46400);
+      --slotted-data-3: var(--_light_data-3, #009597);
+      --slotted-data-4: var(--_light_data-4, #c6495b);
+      --slotted-data-5: var(--_light_data-5, #0083ce);
+      --slotted-data-6: var(--_light_data-6, #4d8e16);
+      --slotted-data-7: var(--_light_data-7, #ad51a7);
+      --slotted-data-8: var(--_light_data-8, #c4530f);
       --slotted-data-1-on: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
       --slotted-data-2-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
       --slotted-data-3-on: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
@@ -768,9 +1066,9 @@
       --slotted-data-7-on: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
       --slotted-data-8-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
       --slotted-shadow-xs: 0 1px 2px rgb(15 23 42 / 0.06);
-      --slotted-shadow-sm: 0 1px 3px rgb(15 23 42 / 0.08), 0 1px 2px -1px rgb(15 23 42 / 0.08);
-      --slotted-shadow-md: 0 4px 6px -1px rgb(15 23 42 / 0.08), 0 2px 4px -2px rgb(15 23 42 / 0.08);
-      --slotted-shadow-lg: 0 10px 15px -3px rgb(15 23 42 / 0.10), 0 4px 6px -4px rgb(15 23 42 / 0.08);
+      --slotted-shadow-sm: var(--_light_shadow-sm, 0 1px 3px rgb(15 23 42 / 0.08), 0 1px 2px -1px rgb(15 23 42 / 0.08));
+      --slotted-shadow-md: var(--_light_shadow-md, 0 4px 6px -1px rgb(15 23 42 / 0.08), 0 2px 4px -2px rgb(15 23 42 / 0.08));
+      --slotted-shadow-lg: var(--_light_shadow-lg, 0 10px 15px -3px rgb(15 23 42 / 0.10), 0 4px 6px -4px rgb(15 23 42 / 0.08));
       --slotted-mark-track-color: var(--slotted-border-subtle);
       --slotted-mark-ring-color: var(--slotted-surface-raised);
       --slotted-current-edge: transparent;
@@ -810,13 +1108,14 @@
   @media (prefers-color-scheme: dark) {
     @scope ([data-slotted-theme="equori-glass"][data-slotted-scheme="system"], [data-slotted-theme="equori-glass"] [data-slotted-scheme="system"], [data-slotted-scheme="system"] [data-slotted-theme="equori-glass"]:not([data-slotted-scheme])) to ([data-slotted-scheme], [data-slotted-theme]) {
       :scope,
-      [data-slotted-seeds] {
+      [data-slotted-seeds],
+      :where([data-slotted-variant-ground], [data-slotted-variant-borders], [data-slotted-variant-shadows], [data-slotted-variant-chart], [data-slotted-variant-contrast]) {
         color-scheme: dark;
         --slotted-focus-ring-color: var(--slotted-tone-accent-border);
         --slotted-focus-ring-color-invalid: var(--slotted-tone-danger-border);
-        --slotted-border-subtle: oklch(from var(--slotted-seed-neutral) 0.275 min(calc(c * 0.22), 0.051) h);
+        --slotted-border-subtle: var(--_dark_border-subtle, oklch(from var(--slotted-seed-neutral) 0.275 min(calc(c * 0.22), 0.051) h));
         --slotted-text: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
-        --slotted-text-muted: oklch(from var(--slotted-seed-neutral) 0.712 min(calc(c * 0.318), 0.06) h);
+        --slotted-text-muted: var(--_dark_text-muted, oklch(from var(--slotted-seed-neutral) 0.712 min(calc(c * 0.318), 0.06) h));
         --slotted-disabled-background: oklch(from var(--slotted-seed-neutral) 0.19 min(calc(c * 0.22), 0.08) h);
         --slotted-disabled-foreground: oklch(from var(--slotted-seed-neutral) 0.552 min(calc(c * 0.339), 0.06) h);
         --slotted-disabled-border: oklch(from var(--slotted-seed-neutral) 0.25 min(calc(c * 0.22), 0.046) h);
@@ -865,9 +1164,9 @@
         --slotted-tone-danger-text: oklch(from oklab(from oklch(from oklch(from var(--slotted-seed-danger) clamp(0, calc(l + 0.134), 0.711) min(calc(c * 1), 0.166) h) l c h / c) max(l, calc(0.611 + alpha * (((0.03846 + (a / max(alpha, 0.00001)) * (0.14272 + (a / max(alpha, 0.00001)) * (-0.13044 + (a / max(alpha, 0.00001)) * (-0.0182 + (a / max(alpha, 0.00001)) * (0.09656))))) + (b / max(alpha, 0.00001)) * (-0.04588 + (a / max(alpha, 0.00001)) * (-0.02674 + (a / max(alpha, 0.00001)) * (0.05892 + (a / max(alpha, 0.00001)) * (0.03952))))) + alpha * (((-0.46314 + (a / max(alpha, 0.00001)) * (-0.25933 + (a / max(alpha, 0.00001)) * (2.06252 + (a / max(alpha, 0.00001)) * (0.3038 + (a / max(alpha, 0.00001)) * (-1.66096))))) + (b / max(alpha, 0.00001)) * (0.56457 + (a / max(alpha, 0.00001)) * (0.4557 + (a / max(alpha, 0.00001)) * (-1.00784 + (a / max(alpha, 0.00001)) * (-0.66128))))) + alpha * ((2.46442 + (a / max(alpha, 0.00001)) * (0.96347 + (a / max(alpha, 0.00001)) * (-8.42548 + (a / max(alpha, 0.00001)) * (-1.12116 + (a / max(alpha, 0.00001)) * (6.26304))))) + (b / max(alpha, 0.00001)) * (-2.25633 + (a / max(alpha, 0.00001)) * (-1.6379 + (a / max(alpha, 0.00001)) * (3.93092 + (a / max(alpha, 0.00001)) * (2.42616))))))))) a b / 1) l c h);
         --slotted-tone-danger-subtle-hover: oklch(from var(--slotted-seed-danger) 0.187 min(calc(c * 0.055), 0.06) h);
         --slotted-tone-danger-subtle-active: oklch(from var(--slotted-seed-danger) 0.209 min(calc(c * 0.1), 0.06) calc(h + -8));
-        --slotted-surface: oklch(from var(--slotted-seed-neutral) 0.155 min(calc(c * 0.22), 0.08) h);
-        --slotted-surface-raised: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.08) h);
-        --slotted-surface-sunken: oklch(from var(--slotted-seed-neutral) 0.13 min(calc(c * 0.22), 0.08) h);
+        --slotted-surface: var(--_dark_surface, oklch(from var(--slotted-seed-neutral) 0.155 min(calc(c * 0.22), 0.08) h));
+        --slotted-surface-raised: var(--_dark_surface-raised, oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.08) h));
+        --slotted-surface-sunken: var(--_dark_surface-sunken, oklch(from var(--slotted-seed-neutral) 0.13 min(calc(c * 0.22), 0.08) h));
         --slotted-surface-inverse: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
         --slotted-tone-neutral-solid: var(--slotted-surface-inverse);
         --slotted-tone-neutral-solid-hover: var(--slotted-surface-inverse-hover);
@@ -893,14 +1192,14 @@
         --slotted-tone-info-subtle-active: oklch(from var(--slotted-seed-info) 0.222 min(calc(c * 0.066), 0.06) h);
         --slotted-tone-info-border: oklch(from oklab(from oklch(from oklch(from var(--slotted-seed-info) clamp(0, calc(l + 0.226), 0.714) min(calc(c * 1), 0.143) h) l c h / c) max(l, calc(0.5129 + alpha * (((-0.00004 + (a / max(alpha, 0.00001)) * (0.12718 + (a / max(alpha, 0.00001)) * (0.00012 + (a / max(alpha, 0.00001)) * (0 + (a / max(alpha, 0.00001)) * (-0.00008))))) + (b / max(alpha, 0.00001)) * (-0.01266 + (a / max(alpha, 0.00001)) * (0 + (a / max(alpha, 0.00001)) * (-0.00016)))) + alpha * (((0.22974 + (a / max(alpha, 0.00001)) * (0.00013 + (a / max(alpha, 0.00001)) * (-0.21006 + (a / max(alpha, 0.00001)) * (-0.00012 + (a / max(alpha, 0.00001)) * (0.00136))))) + (b / max(alpha, 0.00001)) * (-0.00264 + (a / max(alpha, 0.00001)) * (0.01022 + (a / max(alpha, 0.00001)) * (0.00348 + (a / max(alpha, 0.00001)) * (0.00016))))) + alpha * ((-0.00413 + (a / max(alpha, 0.00001)) * (0.0196 + (a / max(alpha, 0.00001)) * (0.01032 + (a / max(alpha, 0.00001)) * (-0.0122 + (a / max(alpha, 0.00001)) * (-0.00632))))) + (b / max(alpha, 0.00001)) * (-0.1877 + (a / max(alpha, 0.00001)) * (0.00056 + (a / max(alpha, 0.00001)) * (0.19164 + (a / max(alpha, 0.00001)) * (-0.00064))))))))) a b / 1) l c h);
         --slotted-tone-info-text: oklch(from oklab(from oklch(from oklch(from var(--slotted-seed-info) clamp(0, calc(l + 0.226), 0.714) min(calc(c * 1), 0.143) h) l c h / c) max(l, calc(0.6175 + alpha * (((0.0406 + (a / max(alpha, 0.00001)) * (0.14467 + (a / max(alpha, 0.00001)) * (-0.13242 + (a / max(alpha, 0.00001)) * (-0.01764 + (a / max(alpha, 0.00001)) * (0.09888))))) + (b / max(alpha, 0.00001)) * (-0.04964 + (a / max(alpha, 0.00001)) * (-0.0351 + (a / max(alpha, 0.00001)) * (0.07096 + (a / max(alpha, 0.00001)) * (0.0608))))) + alpha * (((-0.51057 + (a / max(alpha, 0.00001)) * (-0.29433 + (a / max(alpha, 0.00001)) * (2.13382 + (a / max(alpha, 0.00001)) * (0.29916 + (a / max(alpha, 0.00001)) * (-1.72616))))) + (b / max(alpha, 0.00001)) * (0.63433 + (a / max(alpha, 0.00001)) * (0.59642 + (a / max(alpha, 0.00001)) * (-1.21788 + (a / max(alpha, 0.00001)) * (-1.01256))))) + alpha * ((2.66863 + (a / max(alpha, 0.00001)) * (1.10008 + (a / max(alpha, 0.00001)) * (-8.82554 + (a / max(alpha, 0.00001)) * (-1.12128 + (a / max(alpha, 0.00001)) * (6.60888))))) + (b / max(alpha, 0.00001)) * (-2.53673 + (a / max(alpha, 0.00001)) * (-2.15628 + (a / max(alpha, 0.00001)) * (4.73444 + (a / max(alpha, 0.00001)) * (3.6944))))))))) a b / 1) l c h);
-        --slotted-data-1: #8a82e9;
-        --slotted-data-2: #cb7f00;
-        --slotted-data-3: #00a8a8;
-        --slotted-data-4: #de6674;
-        --slotted-data-5: #069ce4;
-        --slotted-data-6: #68a63f;
-        --slotted-data-7: #c46dbd;
-        --slotted-data-8: #db703b;
+        --slotted-data-1: var(--_dark_data-1, #8a82e9);
+        --slotted-data-2: var(--_dark_data-2, #cb7f00);
+        --slotted-data-3: var(--_dark_data-3, #00a8a8);
+        --slotted-data-4: var(--_dark_data-4, #de6674);
+        --slotted-data-5: var(--_dark_data-5, #069ce4);
+        --slotted-data-6: var(--_dark_data-6, #68a63f);
+        --slotted-data-7: var(--_dark_data-7, #c46dbd);
+        --slotted-data-8: var(--_dark_data-8, #db703b);
         --slotted-data-1-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
         --slotted-data-2-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
         --slotted-data-3-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
@@ -910,9 +1209,9 @@
         --slotted-data-7-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
         --slotted-data-8-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
         --slotted-shadow-xs: 0 1px 2px rgb(0 0 0 / 0.40);
-        --slotted-shadow-sm: 0 1px 3px rgb(0 0 0 / 0.45), 0 1px 2px -1px rgb(0 0 0 / 0.40);
-        --slotted-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.50), 0 2px 4px -2px rgb(0 0 0 / 0.45);
-        --slotted-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.60), 0 4px 6px -4px rgb(0 0 0 / 0.50);
+        --slotted-shadow-sm: var(--_dark_shadow-sm, 0 1px 3px rgb(0 0 0 / 0.45), 0 1px 2px -1px rgb(0 0 0 / 0.40));
+        --slotted-shadow-md: var(--_dark_shadow-md, 0 4px 6px -1px rgb(0 0 0 / 0.50), 0 2px 4px -2px rgb(0 0 0 / 0.45));
+        --slotted-shadow-lg: var(--_dark_shadow-lg, 0 10px 15px -3px rgb(0 0 0 / 0.60), 0 4px 6px -4px rgb(0 0 0 / 0.50));
         --slotted-mark-track-color: var(--slotted-border-subtle);
         --slotted-mark-ring-color: var(--slotted-surface-raised);
         --slotted-current-edge: transparent;
@@ -1110,7 +1409,8 @@
 
     @scope ([data-slotted-theme="equori-glass"][data-slotted-scheme="light"], [data-slotted-theme="equori-glass"] [data-slotted-scheme="light"], [data-slotted-scheme="light"] [data-slotted-theme="equori-glass"]:not([data-slotted-scheme])) to ([data-slotted-scheme], [data-slotted-theme]) {
       :scope,
-      [data-slotted-seeds] {
+      [data-slotted-seeds],
+      :where([data-slotted-variant-ground], [data-slotted-variant-borders], [data-slotted-variant-shadows], [data-slotted-variant-chart], [data-slotted-variant-contrast]) {
         --slotted-surface-material: var(--slotted-surface);
         --slotted-material-backdrop: none;
       }
@@ -1118,7 +1418,8 @@
 
     @scope ([data-slotted-theme="equori-glass"][data-slotted-scheme="dark"], [data-slotted-theme="equori-glass"] [data-slotted-scheme="dark"], [data-slotted-scheme="dark"] [data-slotted-theme="equori-glass"]:not([data-slotted-scheme])) to ([data-slotted-scheme], [data-slotted-theme]) {
       :scope,
-      [data-slotted-seeds] {
+      [data-slotted-seeds],
+      :where([data-slotted-variant-ground], [data-slotted-variant-borders], [data-slotted-variant-shadows], [data-slotted-variant-chart], [data-slotted-variant-contrast]) {
         --slotted-surface-material: var(--slotted-surface);
         --slotted-material-backdrop: none;
       }
@@ -1126,7 +1427,8 @@
 
     @scope ([data-slotted-theme="equori-glass"][data-slotted-scheme="high-contrast"], [data-slotted-theme="equori-glass"] [data-slotted-scheme="high-contrast"], [data-slotted-scheme="high-contrast"] [data-slotted-theme="equori-glass"]:not([data-slotted-scheme])) to ([data-slotted-scheme], [data-slotted-theme]) {
       :scope,
-      [data-slotted-seeds] {
+      [data-slotted-seeds],
+      :where([data-slotted-variant-ground], [data-slotted-variant-borders], [data-slotted-variant-shadows], [data-slotted-variant-chart], [data-slotted-variant-contrast]) {
         --slotted-surface-material: var(--slotted-surface);
         --slotted-material-backdrop: none;
       }
@@ -1134,7 +1436,8 @@
 
     @scope ([data-slotted-theme="equori-glass"][data-slotted-scheme="system"], [data-slotted-theme="equori-glass"] [data-slotted-scheme="system"], [data-slotted-scheme="system"] [data-slotted-theme="equori-glass"]:not([data-slotted-scheme])) to ([data-slotted-scheme], [data-slotted-theme]) {
       :scope,
-      [data-slotted-seeds] {
+      [data-slotted-seeds],
+      :where([data-slotted-variant-ground], [data-slotted-variant-borders], [data-slotted-variant-shadows], [data-slotted-variant-chart], [data-slotted-variant-contrast]) {
         --slotted-surface-material: var(--slotted-surface);
         --slotted-material-backdrop: none;
       }
@@ -1281,7 +1584,8 @@
 
     @scope ([data-slotted-theme="equori-glass"][data-slotted-scheme="light"], [data-slotted-theme="equori-glass"] [data-slotted-scheme="light"], [data-slotted-scheme="light"] [data-slotted-theme="equori-glass"]:not([data-slotted-scheme])) to ([data-slotted-scheme], [data-slotted-theme]) {
       :scope,
-      [data-slotted-seeds] {
+      [data-slotted-seeds],
+      :where([data-slotted-variant-ground], [data-slotted-variant-borders], [data-slotted-variant-shadows], [data-slotted-variant-chart], [data-slotted-variant-contrast]) {
         --slotted-focus-ring-color: Highlight;
         --slotted-focus-ring-color-invalid: Highlight;
         --slotted-border-subtle: ButtonBorder;
@@ -1421,7 +1725,8 @@
 
     @scope ([data-slotted-theme="equori-glass"][data-slotted-scheme="dark"], [data-slotted-theme="equori-glass"] [data-slotted-scheme="dark"], [data-slotted-scheme="dark"] [data-slotted-theme="equori-glass"]:not([data-slotted-scheme])) to ([data-slotted-scheme], [data-slotted-theme]) {
       :scope,
-      [data-slotted-seeds] {
+      [data-slotted-seeds],
+      :where([data-slotted-variant-ground], [data-slotted-variant-borders], [data-slotted-variant-shadows], [data-slotted-variant-chart], [data-slotted-variant-contrast]) {
         --slotted-focus-ring-color: Highlight;
         --slotted-focus-ring-color-invalid: Highlight;
         --slotted-border-subtle: ButtonBorder;
@@ -1561,7 +1866,8 @@
 
     @scope ([data-slotted-theme="equori-glass"][data-slotted-scheme="high-contrast"], [data-slotted-theme="equori-glass"] [data-slotted-scheme="high-contrast"], [data-slotted-scheme="high-contrast"] [data-slotted-theme="equori-glass"]:not([data-slotted-scheme])) to ([data-slotted-scheme], [data-slotted-theme]) {
       :scope,
-      [data-slotted-seeds] {
+      [data-slotted-seeds],
+      :where([data-slotted-variant-ground], [data-slotted-variant-borders], [data-slotted-variant-shadows], [data-slotted-variant-chart], [data-slotted-variant-contrast]) {
         --slotted-focus-ring-color: Highlight;
         --slotted-focus-ring-color-invalid: Highlight;
         --slotted-border-subtle: ButtonBorder;
@@ -1701,7 +2007,8 @@
 
     @scope ([data-slotted-theme="equori-glass"][data-slotted-scheme="system"], [data-slotted-theme="equori-glass"] [data-slotted-scheme="system"], [data-slotted-scheme="system"] [data-slotted-theme="equori-glass"]:not([data-slotted-scheme])) to ([data-slotted-scheme], [data-slotted-theme]) {
       :scope,
-      [data-slotted-seeds] {
+      [data-slotted-seeds],
+      :where([data-slotted-variant-ground], [data-slotted-variant-borders], [data-slotted-variant-shadows], [data-slotted-variant-chart], [data-slotted-variant-contrast]) {
         --slotted-focus-ring-color: Highlight;
         --slotted-focus-ring-color-invalid: Highlight;
         --slotted-border-subtle: ButtonBorder;

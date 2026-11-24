@@ -2,6 +2,7 @@ import { extendTheme } from "@slotted/theme";
 import defaultTheme from "@slotted/themes/default";
 
 import { overlayItemRules } from "./overlay-items.ts";
+import { surfaceVariants } from "./surface-variants.ts";
 
 // A total closes its table with one rule in the softened rule colour; the double rule of a
 // ledger sheet read as a heavy line (owner review item 17).
@@ -222,6 +223,7 @@ export default extendTheme(
         "--slotted-data-8": "#c4530f",
       },
     },
+    variants: surfaceVariants,
     base: {
       // The steps above the body text read large for what they head: an empty region, a dialog,
       // a section and the figure of a card spoke louder than the page around them. Each step from

@@ -45,6 +45,8 @@ pre-commit:
               - "web/src/theme/equori.theme.ts"
               - "web/src/theme/equori-glass.theme.ts"
               - "web/src/theme/glass/**"
+              - "web/src/theme/surface-recipe.ts"
+              - "web/src/theme/surface-variants.ts"
               - "internal/platform/config/variables.go"
               - "internal/platform/config/gen/**"
             run: make gen-check

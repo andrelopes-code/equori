@@ -200,9 +200,8 @@ export default defineConfig(
       "src/theme/equori-glass.theme.test.ts",
       "src/theme/glass/**",
       "src/theme/overlay-items.ts",
-      "src/theme/surface-gen.ts",
       "src/theme/surface-recipe.theme.test.ts",
-      "src/theme/surface-sheet.ts",
+      "src/theme/surface-variants.ts",
     ],
     rules: {
       "no-restricted-imports": restrict({

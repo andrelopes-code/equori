@@ -1,7 +1,14 @@
 import defaultTheme from "@slotted/themes/default";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { applySurfaces, surfaceDefaults, surfaces } from "@/theme/surface";
+import theme from "@/theme/equori.theme";
+import {
+  applySurfaces,
+  surfaceDefaults,
+  surfaceNames,
+  surfaceSets,
+  surfaces,
+} from "@/theme/surface";
 import { surfaceRecipe } from "@/theme/surface-recipe";
 
 describe("surface values", () => {
@@ -14,8 +21,8 @@ describe("surface values", () => {
     surfaces.depth.apply("oled");
 
     expect(document.documentElement).toHaveAttribute(
-      "data-equori-depth",
-      "oled",
+      "data-slotted-variant-ground",
+      "oled-wide",
     );
     expect(localStorage.getItem("equori.depth")).toBe("oled");
   });
@@ -26,9 +33,32 @@ describe("surface values", () => {
     surfaces.borders.apply("subtle");
 
     expect(document.documentElement).toHaveAttribute(
-      "data-equori-borders",
+      "data-slotted-variant-borders",
       "subtle",
     );
+  });
+
+  it("names a variant of the theme on the root for every value", () => {
+    for (const name of surfaceNames)
+      for (const value of surfaceSets[name]) {
+        applySurfaces({ ...surfaceDefaults, [name]: value });
+
+        const chosen = [...document.documentElement.attributes]
+          .filter((a) => a.name.startsWith("data-slotted-variant-"))
+          .map((a) => [a.name.slice("data-slotted-variant-".length), a.value]);
+
+        expect(chosen.map(([axis]) => axis).sort()).toEqual(
+          Object.keys(theme.variants ?? {}).sort(),
+        );
+        for (const [axis = "", variant = ""] of chosen)
+          expect(theme.variants?.[axis]).toHaveProperty(variant);
+      }
+  });
+
+  it("leaves the high-contrast scheme to the compiled theme", () => {
+    for (const values of Object.values(theme.variants ?? {}))
+      for (const rule of Object.values(values))
+        expect(Object.keys(rule).sort()).toEqual(["dark", "light"]);
   });
 
   it("reads a stored value outside the set as the default", () => {
