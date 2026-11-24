@@ -47,13 +47,13 @@ export function ReturnPlot({ series, figures, on }: ReturnPlotProps) {
       slot: 1,
       format: exact,
     },
-    ...figures.indexes.map((index, position): ChartSeries => ({
+    ...figures.indexes.map((index): ChartSeries => ({
       id: index.id,
       kind: "line",
       field: index.id,
       label: index.name,
       slot: index.slot as ChartSeries["slot"],
-      stroke: position === firstDaily(figures) ? "solid" : "dashed",
+      stroke: index.dashed ? "dashed" : "solid",
       connectNulls: true,
       format: exact,
     })),
@@ -104,8 +104,4 @@ export function ReturnPlot({ series, figures, on }: ReturnPlotProps) {
       extendOption={(option) => withEndLabels(option, labels)}
     />
   );
-}
-
-function firstDaily(figures: BlockFigures): number {
-  return figures.indexes.findIndex((i) => i.daily);
 }

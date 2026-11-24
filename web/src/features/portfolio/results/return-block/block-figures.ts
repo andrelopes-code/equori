@@ -20,6 +20,8 @@ export interface IndexFigure {
   id: string;
   name: string;
   daily: boolean;
+  // The first daily index is drawn solid, the others dashed.
+  dashed: boolean;
   slot: number;
   // The cumulative return at the last point, as a fraction.
   last: number | null;
@@ -41,6 +43,7 @@ export function blockFigures(series: ReturnSeries): BlockFigures {
   const held = series.points.filter((p) => p.return_bp !== undefined);
   const total = (held.at(-1)?.return_bp ?? null) === null ? null : lastOf(held);
   const inflation = series.indexes.find((i) => i.period === "month");
+  const firstDaily = series.indexes.findIndex((i) => i.period === "day");
 
   return {
     total,
@@ -58,6 +61,9 @@ export function blockFigures(series: ReturnSeries): BlockFigures {
       id: index.index,
       name: indexName(index.index),
       daily: index.period === "day",
+      // Workaround for Slotted issue #186: the chart has no dotted stroke, so the third reference
+      // repeats the dash.
+      dashed: position !== firstDaily,
       slot: Math.min(position + firstIndexSlot, lastSlot),
       last: lastOf(index.points),
       apart:

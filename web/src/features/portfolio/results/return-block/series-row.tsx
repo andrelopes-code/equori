@@ -7,6 +7,8 @@ interface SeriesRowProps {
   value: ReactNode;
   // The slot of the data scale of the series; its mark repeats the stroke of the line.
   slot: number;
+  // The line is drawn dashed.
+  dashed?: boolean;
   on: boolean;
   // Absent for the portfolio, whose line is always drawn.
   onToggle?: (() => void) | undefined;
@@ -21,15 +23,24 @@ const markNames = [
   "ftse",
 ] as const;
 
-export function SeriesRow({ name, value, slot, on, onToggle }: SeriesRowProps) {
+export function SeriesRow({
+  name,
+  value,
+  slot,
+  dashed = false,
+  on,
+  onToggle,
+}: SeriesRowProps) {
   const mark =
     styles[`mark-${markNames[Math.min(slot, markNames.length) - 1] ?? "ftse"}`];
+  const marks = [
+    styles.seriesMark,
+    mark,
+    dashed ? styles.markDashed : undefined,
+  ].filter((name) => name !== undefined);
   const content = (
     <>
-      <span
-        className={`${styles.seriesMark ?? ""} ${mark ?? ""}`}
-        aria-hidden="true"
-      />
+      <span className={marks.join(" ")} aria-hidden="true" />
       <span className={styles.seriesName}>{name}</span>
       <span className={styles.seriesValue}>{value}</span>
     </>

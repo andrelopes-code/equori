@@ -91,7 +91,7 @@ export function WindowsPlot({ figures }: WindowsPlotProps) {
       x={{
         field: "date",
         type: "time",
-        format: { month: "short", year: "2-digit" },
+        format: { year: "numeric" },
       }}
       y={{ format: (value: number) => percent.format(value) }}
       extendOption={(option) => withEndLabels(option, labels)}

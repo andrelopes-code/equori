@@ -5,4 +5,16 @@
     align-items: center;
     gap: var(--slotted-space-3);
   }
+
+  /* The assistant pane narrows the page: the presets take the first line, the range the second */
+  @container slotted-page (max-width: 1000px) {
+    /* literal: the page width the assistant pane leaves */
+    .periodBar {
+      flex-wrap: wrap;
+    }
+
+    .periodBar > :first-child {
+      flex: 1 0 100%;
+    }
+  }
 }

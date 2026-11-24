@@ -304,6 +304,16 @@ export function formatReferenceMonthCompact(
   return `${name}-${String(year)}`;
 }
 
+// The short month and the four-digit year, with a slash: "nov/2026", "Nov/2026".
+export function formatMonthSlashYear(month: string, locale: string): string {
+  const [year = 0, m = 1] = month.split("-").map(Number);
+  const name = dateFormat(locale, { month: "short" })
+    .format(new Date(Date.UTC(year, m - 1, 1)))
+    .replace(".", "");
+
+  return `${name}/${String(year)}`;
+}
+
 // The short name of a month: "Nov" in English, "Nov" in pt-BR (the full stop of the locale dropped).
 export function formatMonthShort(month: string, locale: string): string {
   const [year = 0, m = 1] = month.split("-").map(Number);

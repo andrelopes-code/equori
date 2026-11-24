@@ -25,6 +25,7 @@ import {
   numberFormatter,
   formatReferenceMonth,
   formatMonthShort,
+  formatMonthSlashYear,
   formatReferenceMonthCompact,
   parseAmount,
   todayISO,
@@ -121,6 +122,16 @@ describe("formatReferenceMonthCompact", () => {
     ["2026-11", "en", "Nov-2026"],
   ] as const)("formats %s in %s as %s", (month, locale, want) => {
     expect(formatReferenceMonthCompact(month, locale)).toBe(want);
+  });
+});
+
+describe("formatMonthSlashYear", () => {
+  it.each([
+    ["2019-12", "pt-BR", "dez/2019"],
+    ["2019-12", "en", "Dec/2019"],
+    ["2026-05", "en", "May/2026"],
+  ] as const)("formats %s in %s as %s", (month, locale, want) => {
+    expect(formatMonthSlashYear(month, locale)).toBe(want);
   });
 });
 

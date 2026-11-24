@@ -137,22 +137,22 @@
 
   .mark-ibov {
     color: var(--slotted-data-3);
-    border-block-start-style: dashed;
   }
 
   .mark-ipca {
     color: var(--slotted-data-4);
-    border-block-start-style: dotted;
   }
 
   .mark-sp500 {
     color: var(--slotted-data-5);
-    border-block-start-style: dashed;
   }
 
   .mark-ftse {
     color: var(--slotted-data-6);
-    border-block-start-style: dotted;
+  }
+
+  .markDashed {
+    border-block-start-style: dashed;
   }
 
   @container slotted-page (max-width: 1000px) {

@@ -2,7 +2,7 @@ import type { Window } from "@/features/portfolio/results/model/rolling-windows"
 import { toBasisPoints } from "@/features/portfolio/results/return-block/block-figures";
 import { Toned } from "@/features/portfolio/results/shared/toned";
 import { WindowTile } from "@/features/portfolio/results/windows-block/window-tile";
-import { formatReferenceMonth, formatSignedBasisPoints } from "@/i18n/format";
+import { formatMonthSlashYear, formatSignedBasisPoints } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
 interface ExtremeTileProps {
@@ -24,7 +24,7 @@ export function ExtremeTile({ label, window }: ExtremeTileProps) {
         </Toned>
       }
       note={t("portfolio.results.windows.until", {
-        month: formatReferenceMonth(window.end, tag),
+        month: formatMonthSlashYear(window.end, tag),
       })}
     />
   );

@@ -22,6 +22,30 @@ describe("withEndLabels", () => {
     });
   });
 
+  it("draws one end label per series and no second label", () => {
+    const option = withEndLabels(
+      {
+        series: [
+          { id: "portfolio", label: { show: true } },
+          { id: "cdi", label: { show: true } },
+        ],
+      },
+      { portfolio: "Portfolio 3.02%", cdi: "CDI 1.00%" },
+    );
+
+    const labelled = (id: string, formatter: string) => ({
+      id,
+      label: { show: false },
+      endLabel: { show: true, formatter, distance: 8 },
+      labelLayout: { moveOverlap: "shiftY" },
+    });
+
+    expect(option.series).toEqual([
+      labelled("portfolio", "Portfolio 3.02%"),
+      labelled("cdi", "CDI 1.00%"),
+    ]);
+  });
+
   it("returns an option without series as it is", () => {
     const option = { grid: {} };
 

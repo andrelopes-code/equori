@@ -5,6 +5,7 @@ import type {
   EvolutionField,
   EvolutionRow,
 } from "@/features/portfolio/results/evolution-block/evolution-rows";
+import { withoutAxisLabels } from "@/features/portfolio/results/evolution-block/hide-axis-labels";
 import type { EvolutionAxes } from "@/features/portfolio/results/evolution-block/use-evolution-axes";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
@@ -53,6 +54,7 @@ export function FlowStrip({ rows, axes }: FlowStripProps) {
       series={series}
       x={axes.x}
       y={axes.y}
+      extendOption={withoutAxisLabels}
     />
   );
 }

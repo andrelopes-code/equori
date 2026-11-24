@@ -57,17 +57,17 @@ export function ReturnVerdict({
               return <Fragment key={position}>{part.value}</Fragment>;
 
             return (
-              <Toned key={position} value={c.points}>
-                {t(
-                  c.points >= 0
-                    ? "portfolio.results.return.above"
-                    : "portfolio.results.return.below",
-                  {
-                    points: points.format(Math.abs(c.points) * 100),
-                    index: c.name,
-                  },
-                )}
-              </Toned>
+              <Fragment key={position}>
+                <Toned value={c.points}>
+                  {t(
+                    c.points >= 0
+                      ? "portfolio.results.return.above.figure"
+                      : "portfolio.results.return.below.figure",
+                    { points: points.format(Math.abs(c.points) * 100) },
+                  )}
+                </Toned>{" "}
+                {t("portfolio.results.return.against", { index: c.name })}
+              </Fragment>
             );
           })}{" "}
           {t("portfolio.results.return.sameDays")}

@@ -93,7 +93,11 @@ describe("Portfolio results tab: the return block", () => {
 
     const section = await loadedSection(catalogEn["portfolio.results.return"]);
     expect(await within(section).findByText("+3.02%")).toBeInTheDocument();
-    expect(within(section).getByText(/2\.02 pp above CDI/)).toBeInTheDocument();
+    const above = within(section).getByText("2.02 pp above");
+    expect(above).toHaveClass(/gain/);
+    expect(above.parentElement).toHaveTextContent(
+      "2.02 pp above CDI over the same days.",
+    );
 
     const list = within(section).getByRole("list", {
       name: catalogEn["portfolio.results.series"],
@@ -163,10 +167,10 @@ describe("Portfolio results tab: the rolling windows block", () => {
       /\+12\.68%12 months to 11\/24\/2026/,
     );
     expect(tileOf(within(section).getByText("Best window"))).toHaveTextContent(
-      /\+12\.68%to Nov 2026/,
+      /\+12\.68%to Nov\/2026/,
     );
     expect(tileOf(within(section).getByText("Worst window"))).toHaveTextContent(
-      /\+12\.68%to Oct 2026/,
+      /\+12\.68%to Oct\/2026/,
     );
     expect(
       tileOf(within(section).getByText("Windows below zero")),
@@ -252,10 +256,14 @@ describe("Portfolio results tab: the month by month block", () => {
     );
     expect(
       within(section).getByText("Best month").nextElementSibling,
-    ).toHaveTextContent("+2.00% · Dec-2025");
+    ).toHaveTextContent("+2.00% · Dec/2025");
     expect(
       within(section).getByText("Months above zero").nextElementSibling,
     ).toHaveTextContent("2 of 2");
+    expect(
+      within(section).getByText("Months above zero").nextElementSibling
+        ?.firstElementChild,
+    ).toHaveClass(/gain/);
 
     await userEvent.click(
       within(section).getByRole("combobox", {

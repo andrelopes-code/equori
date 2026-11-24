@@ -6,13 +6,14 @@ import { FactRow } from "@/features/portfolio/results/shared/fact-row";
 import { Toned } from "@/features/portfolio/results/shared/toned";
 import {
   formatBasisPoints,
-  formatReferenceMonth,
-  formatReferenceMonthCompact,
+  formatMonthSlashYear,
   formatSignedBasisPoints,
 } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
 type ReturnSeries = components["schemas"]["ReturnSeries"];
+
+const separator = " · ";
 
 interface ReturnFactsProps {
   series: ReturnSeries;
@@ -49,7 +50,7 @@ export function ReturnFacts({ series, figures }: ReturnFactsProps) {
           <Toned value={real.value}>
             {t(realKey, {
               rate: signed(real.value),
-              month: formatReferenceMonth(real.until.slice(0, 7), tag),
+              month: formatMonthSlashYear(real.until.slice(0, 7), tag),
             })}
           </Toned>
         </FactRow>
@@ -65,13 +66,12 @@ export function ReturnFacts({ series, figures }: ReturnFactsProps) {
 
       {fall !== null && (
         <FactRow label={t("portfolio.results.fact.fall")}>
-          <Toned value={fall.value}>
-            {t("portfolio.results.fact.fall.value", {
-              rate: signed(fall.value),
-              from: formatReferenceMonthCompact(fall.from.slice(0, 7), tag),
-              to: formatReferenceMonthCompact(fall.to.slice(0, 7), tag),
-            })}
-          </Toned>
+          <Toned value={fall.value}>{signed(fall.value)}</Toned>
+          {separator}
+          {t("portfolio.results.fact.fall.dates", {
+            from: formatMonthSlashYear(fall.from.slice(0, 7), tag),
+            to: formatMonthSlashYear(fall.to.slice(0, 7), tag),
+          })}
         </FactRow>
       )}
     </FactList>

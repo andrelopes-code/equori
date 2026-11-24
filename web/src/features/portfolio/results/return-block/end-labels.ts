@@ -1,8 +1,9 @@
 // The room the labels at the end of the lines take at the right of the plot, in pixels.
 const endLabelSpace = 120;
 
-// The family draws no label at the end of a line, so the engine's option takes one per series,
-// named by the series id. This stays until the family exposes it.
+// Workaround for Slotted issue #185: the chart cannot label a line at its last point, so the
+// engine's option takes one end label per series, named by the series id, and the series' own label
+// is turned off so a line is never labelled twice.
 export function withEndLabels(
   option: Record<string, unknown>,
   labels: Readonly<Record<string, string>>,
@@ -23,6 +24,7 @@ export function withEndLabels(
 
       return {
         ...entry,
+        ...(Reflect.has(entry, "label") ? { label: { show: false } } : {}),
         endLabel: { show: true, formatter: label, distance: 8 },
         labelLayout: { moveOverlap: "shiftY" },
       };

@@ -48,7 +48,6 @@ export interface WindowFigures {
 export function windowFigures(series: ReturnSeries): WindowFigures {
   const months = monthReturns(series.points);
   const windows = rollingWindows(months);
-  const firstDaily = blockFigures(series).indexes.findIndex((i) => i.daily);
   const indexes = blockFigures(series).indexes.map(
     (meta, position): IndexWindows => {
       const own = rollingWindows(
@@ -59,7 +58,7 @@ export function windowFigures(series: ReturnSeries): WindowFigures {
         id: meta.id,
         name: meta.name,
         slot: meta.slot,
-        dashed: position !== firstDaily,
+        dashed: meta.dashed,
         windows: own,
         above:
           position < comparedIndexes
