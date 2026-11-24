@@ -34,11 +34,13 @@ export function AccountRowStatus({
   const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
   const today = useToday();
+  const card = account.kind === "credit_card";
   const status = useQuery({
     ...reconciliationQuery(useApi(), account.id),
-    enabled: account.kind !== "credit_card",
+    enabled: !card,
   });
-  if (status.data === undefined) return null;
+  // A disabled query still returns what the overview cached.
+  if (card || status.data === undefined) return null;
 
   // K9, K10: a property is valued, not reconciled with an institution.
   const property = account.kind === "property";
