@@ -9,18 +9,23 @@ import (
 	"github.com/andrelopes-code/equori/internal/marketdata/feed"
 )
 
-// dayFilesPerCheck bounds the daily files one check asks for (A265 PH4).
-const dayFilesPerCheck = 31
+const (
+	// dayFilesPerCheck bounds the daily files one check asks for (A265 PH4).
+	dayFilesPerCheck = 31
+	// yearSpanDays is a range that a source with year files reads from them (A222 MQ12).
+	yearSpanDays = 32
+)
 
-// askYears asks src for each year that holds a hole of a pair it quotes. A whole year makes a source
-// with year files read them: its daily files of a past year are gone.
+// askYears asks src for each year that holds a hole of a pair it quotes, from its first day to its
+// last hole. More than a month makes a source with year files read them, and the last session asked
+// is one the file holds, so no daily file of a past year, which the source no longer keeps, is read.
 func (m *Module) askYears(
 	ctx context.Context,
 	src feed.Source,
 	holes []*pairHoles,
-	today time.Time,
 ) error {
 	byYear := make(map[int][]*pairHoles)
+	last := make(map[int]time.Time)
 
 	for _, h := range holes {
 		if !slices.Contains(h.sources, src.ID()) {
@@ -31,21 +36,22 @@ func (m *Module) askYears(
 			if pairs := byYear[d.Year()]; !slices.Contains(pairs, h) {
 				byYear[d.Year()] = append(pairs, h)
 			}
+
+			if d.After(last[d.Year()]) {
+				last[d.Year()] = d
+			}
 		}
 	}
 
 	var failed error
 
 	for year, pairs := range byYear {
-		to := time.Date(year, time.December, 31, 0, 0, 0, 0, time.UTC)
-		if to.After(today) {
-			to = today
+		from := time.Date(year, time.January, 1, 0, 0, 0, 0, time.UTC)
+		if early := last[year].AddDate(0, 0, -yearSpanDays); early.Before(from) {
+			from = early
 		}
 
-		from := time.Date(year, time.January, 1, 0, 0, 0, 0, time.UTC)
-
-		err := m.askHoles(ctx, src, pairs, from, to)
-		failed = errors.Join(failed, err)
+		failed = errors.Join(failed, m.askHoles(ctx, src, pairs, from, last[year]))
 	}
 
 	return failed

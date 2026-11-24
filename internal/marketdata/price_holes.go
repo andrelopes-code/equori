@@ -65,7 +65,7 @@ func (m *Module) tickHoles(ctx context.Context) error {
 	for _, src := range sources {
 		err = errors.Join(
 			err,
-			m.askYears(ctx, src, holes, today),
+			m.askYears(ctx, src, holes),
 			m.askDays(ctx, src, holes, today),
 		)
 	}

@@ -38,6 +38,15 @@ func holeHarness(t *testing.T) (*apitest.Harness, *b3Fake, func()) {
 		map[string]string{"b3_consolidated": srv.URL + "/b3c", "b3_cotahist": srv.URL + "/b3"},
 	))
 
+	seedHoles(t, h, "b3_cotahist")
+
+	return h, b, func() { days.Add(1) }
+}
+
+// seedHoles stores PETR4, the five sessions and the prices of source of the first and the last one.
+func seedHoles(t *testing.T, h *apitest.Harness, source string) {
+	t.Helper()
+
 	execSQL(t, h, `INSERT INTO marketdata_instrument
 		(code, instrument_type, scale, name, quote_currency, exchange)
 		VALUES ('PETR4', 'stock', 0, 'Petrobras PN', 'BRL', 'BVMF')`)
@@ -46,16 +55,14 @@ func holeHarness(t *testing.T) (*apitest.Harness, *b3Fake, func()) {
 		FROM generate_series('2025-03-03'::date, '2025-03-07', '1 day') d`)
 	execSQL(t, h, `INSERT INTO marketdata_price
 		(instrument, quote_instrument, date, value, source, priority) VALUES
-		('PETR4', 'BRL', '2025-03-03', 36, 'b3_cotahist', 3),
-		('PETR4', 'BRL', '2025-03-07', 37, 'b3_cotahist', 3)`)
+		('PETR4', 'BRL', '2025-03-03', 36, '`+source+`', 3),
+		('PETR4', 'BRL', '2025-03-07', 37, '`+source+`', 3)`)
 	execSQL(
 		t,
 		h,
 		`INSERT INTO marketdata_history (source, instrument, from_date, requested_at, done_at)
-		VALUES ('b3_cotahist', 'PETR4', '2000-01-01', now(), now())`,
+		VALUES ('`+source+`', 'PETR4', '2000-01-01', now(), now())`,
 	)
-
-	return h, b, func() { days.Add(1) }
 }
 
 func petr4Dates(h *apitest.Harness) []string {
@@ -197,4 +204,40 @@ func TestHoleOfACurrencyIsFilled(t *testing.T) {
 	assertRows(t, h.Rows(`SELECT date::text FROM marketdata_price
 		WHERE instrument = 'USD' AND date BETWEEN '2026-10-19' AND '2026-10-23' ORDER BY date`),
 		"2026-10-19", "2026-10-20", "2026-10-21", "2026-10-22", "2026-10-23")
+}
+
+// PH4: the question of a past year ends on its last hole, so no daily file of that year is asked of a
+// source that no longer keeps it: the 22 weekdays of the window of the tick are all it is asked for.
+func TestHolesOfAPastYearAskNoDailyFile(t *testing.T) {
+	t.Parallel()
+
+	b := &b3Fake{years: map[string][]byte{"2025": yearFile(
+		"2025",
+		cotahistRecord("20250305", "PETR4", "010", 3650),
+		cotahistRecord("20250306", "VALE3", "010", 6100),
+	)}}
+	srv := httptest.NewServer(b)
+	t.Cleanup(srv.Close)
+
+	h := apitest.New(t, apitest.Today("2027-06-01"), apitest.PriceFeeds(
+		[]string{"b3_consolidated"},
+		map[string]string{"b3_consolidated": srv.URL + "/b3c", "b3_cotahist": srv.URL + "/b3"},
+	))
+	seedHoles(t, h, "b3_consolidated")
+
+	h.App.Marketdata.TickFeeds(t.Context())
+
+	days := 0
+
+	for _, r := range b.take() {
+		if strings.HasPrefix(r, "/b3c/") {
+			days++
+		}
+	}
+
+	if days != 22 {
+		t.Errorf("daily files asked = %d, want 22", days)
+	}
+
+	assertRows(t, petr4Dates(h), "2025-03-03 36.00", "2025-03-05 36.50", "2025-03-07 37.00")
 }
