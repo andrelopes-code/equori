@@ -72,14 +72,9 @@ func (s *Service) Return(
 	in money.Currency,
 	index string,
 ) (ReturnReport, error) {
-	ids := []uuid.UUID{accountID}
-	if accountID == uuid.Nil {
-		roots, err := s.brokerageRoots(ctx, booksID)
-		if err != nil {
-			return ReturnReport{}, err
-		}
-
-		ids = roots
+	ids, err := s.treeIDs(ctx, booksID, accountID)
+	if err != nil {
+		return ReturnReport{}, err
 	}
 
 	report, err := s.returnOf(ctx, booksID, ids, from, to, in)
@@ -92,6 +87,19 @@ func (s *Service) Return(
 	}
 
 	return report, nil
+}
+
+// treeIDs is the account of the request, or every brokerage tree of the book for the nil one.
+func (s *Service) treeIDs(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+) ([]uuid.UUID, error) {
+	if accountID == uuid.Nil {
+		return s.brokerageRoots(ctx, booksID)
+	}
+
+	return []uuid.UUID{accountID}, nil
 }
 
 // brokerageRoots lists the brokerage accounts that have no brokerage parent.

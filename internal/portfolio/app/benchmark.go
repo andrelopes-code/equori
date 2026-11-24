@@ -79,6 +79,9 @@ type period struct {
 	recorded bool
 	flows    []ReturnFlow
 	credits  []valuedCredit
+
+	// cuts are dates that end a piece although no flow is dated on them.
+	cuts []time.Time
 }
 
 // compare sets on report its profile, its time-weighted return, its comparison with the index
@@ -92,25 +95,9 @@ func (s *Service) compare(
 	index string,
 	report *ReturnReport,
 ) error {
-	p := newPeriod(booksID, ids, from, to, report)
-
-	profile, recorded, err := s.profileOf(ctx, booksID, ids, report.Opening.Currency())
+	p, index, rates, err := s.periodOf(ctx, booksID, ids, from, to, index, report)
 	if err != nil {
 		return err
-	}
-
-	report.Profile = profile
-	p.recorded = recorded
-
-	index, rates, err := s.benchmarkRates(ctx, p, index)
-	if err != nil {
-		return err
-	}
-
-	if recorded {
-		if err := s.recordFlows(ctx, &p, rates); err != nil {
-			return err
-		}
 	}
 
 	start, ends, dates, err := s.pieces(ctx, p, from, to)

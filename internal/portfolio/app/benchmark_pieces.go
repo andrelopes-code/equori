@@ -5,8 +5,45 @@ import (
 	"slices"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/andrelopes-code/equori/internal/portfolio/domain"
 )
+
+// periodOf builds the period of a report, with its profile, the index of its comparison and the
+// rates of that index, and the flows of R19 when the yield of the tree is recorded. A named index
+// is validated before any figure is left out (R2).
+func (s *Service) periodOf(
+	ctx context.Context,
+	booksID int64,
+	ids []uuid.UUID,
+	from, to time.Time,
+	index string,
+	report *ReturnReport,
+) (period, string, []IndexRate, error) {
+	p := newPeriod(booksID, ids, from, to, report)
+
+	profile, recorded, err := s.profileOf(ctx, booksID, ids, report.Opening.Currency())
+	if err != nil {
+		return period{}, "", nil, err
+	}
+
+	report.Profile = profile
+	p.recorded = recorded
+
+	index, rates, err := s.benchmarkRates(ctx, p, index)
+	if err != nil {
+		return period{}, "", nil, err
+	}
+
+	if recorded {
+		if err := s.recordFlows(ctx, &p, rates); err != nil {
+			return period{}, "", nil, err
+		}
+	}
+
+	return p, index, rates, nil
+}
 
 // factor is the time-weighted factor of the pieces: a tree whose yield is recorded earns only
 // yield, so a piece that starts at 0 contributes 1 (R20).
@@ -51,6 +88,12 @@ func (s *Service) pieces(
 		}
 
 		flowOn[f.Date] += f.Amount.Amount()
+	}
+
+	for _, c := range p.cuts {
+		if !c.Before(start) && c.Before(end) && !slices.Contains(dates, c) {
+			dates = append(dates, c)
+		}
 	}
 
 	slices.SortFunc(dates, time.Time.Compare)

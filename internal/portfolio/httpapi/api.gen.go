@@ -228,6 +228,24 @@ func (e ReturnReportProfile) Valid() bool {
 	}
 }
 
+// Defines values for ReturnSeriesIndexPeriod.
+const (
+	ReturnSeriesIndexPeriodDay   ReturnSeriesIndexPeriod = "day"
+	ReturnSeriesIndexPeriodMonth ReturnSeriesIndexPeriod = "month"
+)
+
+// Valid indicates whether the value is a known member of the ReturnSeriesIndexPeriod enum.
+func (e ReturnSeriesIndexPeriod) Valid() bool {
+	switch e {
+	case ReturnSeriesIndexPeriodDay:
+		return true
+	case ReturnSeriesIndexPeriodMonth:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for GetAllocationParamsBy.
 const (
 	GetAllocationParamsByCurrency    GetAllocationParamsBy = "currency"
@@ -243,6 +261,27 @@ func (e GetAllocationParamsBy) Valid() bool {
 	case GetAllocationParamsByInstitution:
 		return true
 	case GetAllocationParamsByType:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetReturnSeriesParamsStep.
+const (
+	GetReturnSeriesParamsStepDay   GetReturnSeriesParamsStep = "day"
+	GetReturnSeriesParamsStepMonth GetReturnSeriesParamsStep = "month"
+	GetReturnSeriesParamsStepWeek  GetReturnSeriesParamsStep = "week"
+)
+
+// Valid indicates whether the value is a known member of the GetReturnSeriesParamsStep enum.
+func (e GetReturnSeriesParamsStep) Valid() bool {
+	switch e {
+	case GetReturnSeriesParamsStepDay:
+		return true
+	case GetReturnSeriesParamsStepMonth:
+		return true
+	case GetReturnSeriesParamsStepWeek:
 		return true
 	default:
 		return false
@@ -956,6 +995,46 @@ type ReturnReport struct {
 // ReturnReportProfile rate when every holding is the value_in currency or a fixed income instrument quoted in it; market otherwise (amendment A208 R11).
 type ReturnReportProfile string
 
+// ReturnSeries defines model for ReturnSeries.
+type ReturnSeries struct {
+	Currency string              `json:"currency"`
+	From     openapi_types.Date  `json:"from"`
+	Indexes  []ReturnSeriesIndex `json:"indexes"`
+
+	// Opening The value of the tree at the end of the day before from, in minor units of currency.
+	Opening int64               `json:"opening"`
+	Points  []ReturnSeriesPoint `json:"points"`
+	To      openapi_types.Date  `json:"to"`
+}
+
+// ReturnSeriesIndex defines model for ReturnSeriesIndex.
+type ReturnSeriesIndex struct {
+	Index  string                   `json:"index"`
+	Period ReturnSeriesIndexPeriod  `json:"period"`
+	Points []ReturnSeriesIndexPoint `json:"points"`
+}
+
+// ReturnSeriesIndexPeriod defines model for ReturnSeriesIndex.Period.
+type ReturnSeriesIndexPeriod string
+
+// ReturnSeriesIndexPoint defines model for ReturnSeriesIndexPoint.
+type ReturnSeriesIndexPoint struct {
+	Date     openapi_types.Date `json:"date"`
+	ReturnBp int                `json:"return_bp"`
+}
+
+// ReturnSeriesPoint defines model for ReturnSeriesPoint.
+type ReturnSeriesPoint struct {
+	Date openapi_types.Date `json:"date"`
+
+	// Flows The external flows dated after the previous point, or from from for the first, up to date.
+	Flows int64 `json:"flows"`
+
+	// ReturnBp Absent from the first point whose time-weighted return is undefined.
+	ReturnBp *int  `json:"return_bp,omitempty"`
+	Value    int64 `json:"value"`
+}
+
 // SubtypeList defines model for SubtypeList.
 type SubtypeList struct {
 	Items []string `json:"items"`
@@ -1041,6 +1120,18 @@ type GetReturnParams struct {
 	ValueIn   *string             `form:"value_in,omitempty" json:"value_in,omitempty"`
 	Index     *string             `form:"index,omitempty" json:"index,omitempty"`
 }
+
+// GetReturnSeriesParams defines parameters for GetReturnSeries.
+type GetReturnSeriesParams struct {
+	AccountId *openapi_types.UUID       `form:"account_id,omitempty" json:"account_id,omitempty"`
+	From      *openapi_types.Date       `form:"from,omitempty" json:"from,omitempty"`
+	To        openapi_types.Date        `form:"to" json:"to"`
+	ValueIn   *string                   `form:"value_in,omitempty" json:"value_in,omitempty"`
+	Step      GetReturnSeriesParamsStep `form:"step" json:"step"`
+}
+
+// GetReturnSeriesParamsStep defines parameters for GetReturnSeries.
+type GetReturnSeriesParamsStep string
 
 // SaveContributionPlanJSONRequestBody defines body for SaveContributionPlan for application/json ContentType.
 type SaveContributionPlanJSONRequestBody = ContributionPlanInput

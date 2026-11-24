@@ -4385,6 +4385,33 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/reports/return/series": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Value, external flows and cumulative time-weighted return of an account tree at each step date of a period (portfolio results PS1 to PS6).
+         * @description The tree, the flows and the valuation are those of GET /reports/return. Without from the period starts on the
+         *     first posting of the tree. The step dates are to and every day (day), every seventh day counted back from to
+         *     (week) or the last day of each calendar month (month) of the period; 400 invalid_request when from is after to
+         *     or the period holds more than 400 step dates. A point holds the value at the end of its day, the external flows
+         *     dated after the previous point, and return_bp: the time-weighted return from the day before from, absent once
+         *     the return is undefined. indexes holds the default daily index of the book's region, one point per step date,
+         *     and its inflation index, one point per whole calendar month with a rate, each only in its own currency; an
+         *     index point is the growth of the index from from to its date, over calendar days.
+         */
+        get: operations["getReturnSeries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/reports/attribution": {
         parameters: {
             query?: never;
@@ -8965,6 +8992,44 @@ export interface components {
         ReturnExcluded: {
             income?: components["schemas"]["ReturnExcludedPart"];
             expense?: components["schemas"]["ReturnExcludedPart"];
+        };
+        ReturnSeries: {
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+            currency: string;
+            /**
+             * Format: int64
+             * @description The value of the tree at the end of the day before from, in minor units of currency.
+             */
+            opening: number;
+            points: components["schemas"]["ReturnSeriesPoint"][];
+            indexes: components["schemas"]["ReturnSeriesIndex"][];
+        };
+        ReturnSeriesPoint: {
+            /** Format: date */
+            date: string;
+            /** Format: int64 */
+            value: number;
+            /**
+             * Format: int64
+             * @description The external flows dated after the previous point, or from from for the first, up to date.
+             */
+            flows: number;
+            /** @description Absent from the first point whose time-weighted return is undefined. */
+            return_bp?: number;
+        };
+        ReturnSeriesIndex: {
+            index: string;
+            /** @enum {string} */
+            period: "day" | "month";
+            points: components["schemas"]["ReturnSeriesIndexPoint"][];
+        };
+        ReturnSeriesIndexPoint: {
+            /** Format: date */
+            date: string;
+            return_bp: number;
         };
         ReturnExcludedPart: {
             amount: components["schemas"]["Money"];
@@ -17222,6 +17287,36 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReturnReport"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    getReturnSeries: {
+        parameters: {
+            query: {
+                account_id?: string;
+                from?: string;
+                to: string;
+                value_in?: string;
+                step: "day" | "week" | "month";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReturnSeries"];
                 };
             };
             400: components["responses"]["Problem"];

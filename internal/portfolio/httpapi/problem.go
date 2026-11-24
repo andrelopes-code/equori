@@ -147,6 +147,18 @@ func rangeProblem(err error) (problem.Details, bool) {
 		}
 
 		return d, true
+	case errors.Is(err, app.ErrInvalidSeriesRange):
+		d := problem.New(
+			http.StatusBadRequest,
+			"invalid_request",
+			"from must not be after to, and the series must not exceed 400 step dates",
+		)
+		d.Errors = []problem.FieldError{
+			{Field: "from", Message: "must be on or before to"},
+			{Field: "to", Message: "must be on or after from, within 400 step dates"},
+		}
+
+		return d, true
 	case errors.Is(err, app.ErrInvalidDayRange):
 		d := problem.New(
 			http.StatusBadRequest,

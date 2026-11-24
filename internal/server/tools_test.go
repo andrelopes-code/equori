@@ -31,6 +31,7 @@ var exclusions = map[string]bool{
 	"-credential": true, // a token or a password: it would enter a stored conversation or a log (ADR 020 C8)
 	"-erase":      true, // erases a book with all its data; the owner confirms it by typing the name (DB1)
 	"-editor":     true, // a spreadsheet is a snapshot of its editor, read and written by the editor alone (ADR 038)
+	"-series":     true, // a chart read of dated points beside get_portfolio, which answers a language model in figures (portfolio results PS7)
 }
 
 // withoutOperation are the tools that map to no operation, with the reason.

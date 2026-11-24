@@ -7470,6 +7470,67 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /reports/return/series:
+    get:
+      tags: [portfolio]
+      operationId: getReturnSeries
+      x-book-role: read
+      summary: Value, external flows and cumulative time-weighted return of an account tree at each step date of a period (portfolio results PS1 to PS6).
+      description: |
+        The tree, the flows and the valuation are those of GET /reports/return. Without from the period starts on the
+        first posting of the tree. The step dates are to and every day (day), every seventh day counted back from to
+        (week) or the last day of each calendar month (month) of the period; 400 invalid_request when from is after to
+        or the period holds more than 400 step dates. A point holds the value at the end of its day, the external flows
+        dated after the previous point, and return_bp: the time-weighted return from the day before from, absent once
+        the return is undefined. indexes holds the default daily index of the book's region, one point per step date,
+        and its inflation index, one point per whole calendar month with a rate, each only in its own currency; an
+        index point is the growth of the index from from to its date, over calendar days.
+      parameters:
+        - name: account_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: value_in
+          in: query
+          required: false
+          schema:
+            type: string
+            pattern: "^[A-Z]{3}$"
+        - name: step
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [day, week, month]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReturnSeries"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /reports/attribution:
     get:
       tags: [portfolio]
@@ -15962,6 +16023,71 @@ components:
           $ref: "#/components/schemas/ReturnExcludedPart"
         expense:
           $ref: "#/components/schemas/ReturnExcludedPart"
+    ReturnSeries:
+      type: object
+      required: [from, to, currency, opening, points, indexes]
+      properties:
+        from:
+          type: string
+          format: date
+        to:
+          type: string
+          format: date
+        currency:
+          type: string
+          pattern: "^[A-Z]{3}$"
+        opening:
+          type: integer
+          format: int64
+          description: The value of the tree at the end of the day before from, in minor units of currency.
+        points:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReturnSeriesPoint"
+        indexes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReturnSeriesIndex"
+    ReturnSeriesPoint:
+      type: object
+      required: [date, value, flows]
+      properties:
+        date:
+          type: string
+          format: date
+        value:
+          type: integer
+          format: int64
+        flows:
+          type: integer
+          format: int64
+          description: The external flows dated after the previous point, or from from for the first, up to date.
+        return_bp:
+          type: integer
+          description: Absent from the first point whose time-weighted return is undefined.
+    ReturnSeriesIndex:
+      type: object
+      required: [index, period, points]
+      properties:
+        index:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
+        period:
+          type: string
+          enum: [day, month]
+        points:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReturnSeriesIndexPoint"
+    ReturnSeriesIndexPoint:
+      type: object
+      required: [date, return_bp]
+      properties:
+        date:
+          type: string
+          format: date
+        return_bp:
+          type: integer
     ReturnExcludedPart:
       type: object
       required: [amount, categories]
