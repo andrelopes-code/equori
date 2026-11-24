@@ -14,7 +14,7 @@ Issue #69. Approved mock: `docs/superpowers/mocks/2026-11-24-portfolio-results-d
 
 ## Non-goals
 
-- Price benchmarks (Ibovespa, S&P 500, FTSE Global All Cap). The index catalogue holds rate indexes (`internal/marketdata/index`); a benchmark quoted as a level needs a source of its own. The series list of the tab is drawn from the response, so a later index appears without a change to the tab.
+- Price benchmarks (Ibovespa, S&P 500, FTSE Global All Cap) as a data source: another session delivers them (owner, 2026-11-24). The series lists them once the catalogue offers them (PS8); the tab draws its series list from the response, so it needs no change.
 - A new layout for the Summary tab and the Projection tab. Each gets its own mock.
 - A phone form (ADR 027: the portfolio is a desk screen).
 
@@ -55,6 +55,7 @@ For the series, a point per day over ten years costs about 3,900 valuations of t
 | PS4 | `return_bp` is absent on a point whose factor is undefined (a gain without invested base, a piece that loses everything) and on every later point. |
 | PS5 | `indexes` holds the default daily index of the book's region and its inflation index, each only when its currency is the currency of the report (A208 R15) and it has a rate in the period. A daily index holds one point per step date: the growth of the rates dated in `[from, date]`. A monthly index holds one point per whole calendar month of the period with a stored rate, dated on the last day of that month: the growth of the rates of the whole months from `from`; it stops at the first month without a rate. |
 | PS6 | The index points grow over calendar days, also on the days the tree held nothing. The comparison of `getReturn`, which leaves those days out (R14), stays the figure of record for a period; the series is the drawing. The tab states the difference in the method layer. |
+| PS8 | When the market data module offers benchmarks quoted as a level, `indexes` also holds each one enabled for the book in the currency of the report, one point per step date: the level at the date over the level at `from − 1`. The plan that adds them is written after that module's port exists. |
 | PS7 | The operation needs the role `read`. The assistant reads the return through `getReturn`; the series is excluded from the tools. |
 
 ### Results tab (PR)
