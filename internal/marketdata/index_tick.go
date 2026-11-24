@@ -356,8 +356,15 @@ func calendarOf(src index.Source) string {
 	return ""
 }
 
+// monthsBetween counts the months between the months of prev and next, both exclusive.
 func monthsBetween(prev, next time.Time) int32 {
-	return int32((next.Year()-prev.Year())*12 + int(next.Month()) - int(prev.Month()) - 1)
+	var n int32
+
+	for d := prev.AddDate(0, 1, 0); d.Before(next); d = d.AddDate(0, 1, 0) {
+		n++
+	}
+
+	return n
 }
 
 // daysBetween counts the days between prev and next, both exclusive, that keep holds for.

@@ -241,3 +241,33 @@ func TestHolesOfAPastYearAskNoDailyFile(t *testing.T) {
 
 	assertRows(t, petr4Dates(h), "2025-03-03 36.00", "2025-03-05 36.50", "2025-03-07 37.00")
 }
+
+// PH4: the daily files over 31 wait for the next check; a hole before the days the source keeps is
+// recorded at once.
+func TestHolesOverTheDailyFilesWait(t *testing.T) {
+	t.Parallel()
+
+	b := &b3Fake{years: map[string][]byte{}}
+	srv := httptest.NewServer(b)
+	t.Cleanup(srv.Close)
+
+	h := apitest.New(t, apitest.Today("2026-11-10"), apitest.PriceFeeds(
+		[]string{"b3_consolidated"},
+		map[string]string{"b3_consolidated": srv.URL + "/b3c", "b3_cotahist": srv.URL + "/b3"},
+	))
+	seedHoles(t, h, "b3_consolidated")
+	execSQL(t, h, `INSERT INTO marketdata_index_rate (index_id, date, rate, source)
+		SELECT 'ibovespa', d, 0, 'br_ibovespa'
+		FROM generate_series('2026-08-01'::date, '2026-09-09', '1 day') d`)
+	execSQL(t, h, `INSERT INTO marketdata_price
+		(instrument, quote_instrument, date, value, source, priority) VALUES
+		('PETR4', 'BRL', '2026-11-09', 37, 'b3_consolidated', 3)`)
+
+	h.App.Marketdata.TickFeeds(t.Context())
+
+	// The 3 sessions of March 2025 are older than 500 days; of the 40 of 2026, the latest 31 are asked.
+	assertRows(t, h.Rows(`SELECT count(*), min(date)::text FROM marketdata_price_hole
+		WHERE date < '2026-01-01'`), "3 2025-03-04")
+	assertRows(t, h.Rows(`SELECT count(*), min(date)::text FROM marketdata_price_hole
+		WHERE date > '2026-01-01'`), "31 2026-08-10")
+}

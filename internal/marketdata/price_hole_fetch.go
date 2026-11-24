@@ -101,7 +101,7 @@ func (m *Module) askDays(
 		}
 
 		for _, h := range byDay[d] {
-			h.failed = true
+			h.waiting = append(h.waiting, d)
 		}
 	}
 
@@ -153,6 +153,7 @@ func (h *pairHoles) take(quotes []feed.Quote) []feed.Quote {
 
 		if i := slices.IndexFunc(h.dates, q.Date.Equal); i >= 0 {
 			h.dates = slices.Delete(h.dates, i, i+1)
+
 			out = append(out, q)
 		}
 	}

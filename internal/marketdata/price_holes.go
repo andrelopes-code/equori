@@ -24,8 +24,10 @@ type pairHoles struct {
 	dates      []time.Time
 	// sources are the enabled sources that ever quoted the pair.
 	sources []string
-	// failed is set when one of them failed, or was not asked for every date: nothing is recorded.
+	// failed is set when one of them failed: nothing is recorded.
 	failed bool
+	// waiting are the dates left for the next check: they are not recorded.
+	waiting []time.Time
 }
 
 // tickHoles looks, once a day, for the sessions without a price of each instrument and asks every
@@ -259,6 +261,10 @@ func (m *Module) recordHoles(ctx context.Context, holes []*pairHoles) error {
 		}
 
 		for _, d := range h.dates {
+			if slices.ContainsFunc(h.waiting, d.Equal) {
+				continue
+			}
+
 			if err := m.q.RecordPriceHole(ctx, postgres.RecordPriceHoleParams{
 				Instrument:      string(h.instrument.Code),
 				QuoteInstrument: string(h.quote),
