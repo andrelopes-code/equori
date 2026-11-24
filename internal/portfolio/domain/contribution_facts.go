@@ -2,7 +2,6 @@ package domain
 
 import (
 	"math/big"
-	"slices"
 	"time"
 )
 
@@ -28,23 +27,24 @@ type FiscalYear struct {
 	NetIncome          *int64
 	OperatingCashFlow  *int64
 	SharesIssued       *int64
+	// CapitalRaised is true when the capital grew with new resources in the year, false when it grew
+	// only with reserves, nil when it did not grow or the filing does not say.
+	CapitalRaised *bool
 }
 
 // CompanyFacts is the fiscal years of one company, newest first; Standard reports the chart of
 // accounts the signals read (CR5).
 type CompanyFacts struct {
 	Standard bool
-	Years    []FiscalYear
+	// Financial is true for a company of the financial sector, which no study of the signals covers.
+	Financial bool
+	Years     []FiscalYear
 	// Criteria are the figures a criterion with a limit reads.
 	Criteria CompanyCriteria
 }
 
 // minSignalYears is the number of fiscal years the signals need.
 const minSignalYears = 2
-
-// everyChart holds the signals that read accounts with one meaning in every chart. The operating
-// cash flow is not one: the one of a bank moves with its deposits and its loans (FQ3).
-var everyChart = []string{"piotroski_p1", "piotroski_p3", "piotroski_p7"}
 
 // signal evaluates one condition of CR11 on the fiscal years t, t-1 and t-2; t2 holds no account
 // when the company has two fiscal years.
@@ -66,13 +66,7 @@ var factCatalog = map[string]signal{
 	"piotroski_p6": func(t, t1, _ FiscalYear) FactAnswer {
 		return greater(currentRatio(t), currentRatio(t1))
 	},
-	"piotroski_p7": func(t, t1, _ FiscalYear) FactAnswer {
-		if t.SharesIssued == nil || t1.SharesIssued == nil {
-			return FactNone
-		}
-
-		return answer(*t.SharesIssued <= *t1.SharesIssued)
-	},
+	"piotroski_p7": func(t, t1, _ FiscalYear) FactAnswer { return noIssue(t, t1) },
 	"piotroski_p8": func(t, t1, _ FiscalYear) FactAnswer {
 		return greater(grossMargin(t), grossMargin(t1))
 	},
@@ -97,15 +91,15 @@ func IsSignal(key string) bool {
 }
 
 // Answers returns one answer per key of facts, FactNone for "" and for a key outside the catalog,
-// and the last day of t. A chart that is not standard answers the signals of everyChart alone. ok is
-// false, and every answer FactNone, with fewer than two fiscal years (FQ3, FQ6).
+// and the last day of t. ok is false, and every answer FactNone, when the chart is not standard, for
+// a financial company and with fewer than two fiscal years (FQ3, FQ6).
 func (f CompanyFacts) Answers(facts []string) (answers []FactAnswer, year time.Time, ok bool) {
 	answers = make([]FactAnswer, len(facts))
 	for i := range answers {
 		answers[i] = FactNone
 	}
 
-	if len(f.Years) < minSignalYears {
+	if !f.Standard || f.Financial || len(f.Years) < minSignalYears {
 		return answers, time.Time{}, false
 	}
 
@@ -117,7 +111,7 @@ func (f CompanyFacts) Answers(facts []string) (answers []FactAnswer, year time.T
 	}
 
 	for i, key := range facts {
-		if eval, known := factCatalog[key]; known && f.applies(key) {
+		if eval, known := factCatalog[key]; known {
 			answers[i] = eval(t, t1, t2)
 		}
 	}
@@ -125,9 +119,17 @@ func (f CompanyFacts) Answers(facts []string) (answers []FactAnswer, year time.T
 	return answers, t.End, true
 }
 
-// applies reports whether the chart of the company holds the accounts of the signal of key.
-func (f CompanyFacts) applies(key string) bool {
-	return f.Standard || slices.Contains(everyChart, key)
+// noIssue answers P7: no common equity issued in t. A rise of the capital says by itself what it
+// was made of; without one, a rise of the count of shares has no known cause.
+func noIssue(t, t1 FiscalYear) FactAnswer {
+	switch {
+	case t.CapitalRaised != nil:
+		return answer(!*t.CapitalRaised)
+	case t.SharesIssued == nil || t1.SharesIssued == nil || *t.SharesIssued > *t1.SharesIssued:
+		return FactNone
+	}
+
+	return FactYes
 }
 
 func roa(t, t1 FiscalYear) *big.Rat {

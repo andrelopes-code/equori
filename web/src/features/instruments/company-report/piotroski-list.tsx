@@ -15,11 +15,13 @@ import type {
   SignalUnit,
 } from "@/features/instruments/company-report/piotroski";
 import { numberFormatter } from "@/i18n/format";
+import type { TFunction } from "@/i18n/i18n-provider";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
 interface PiotroskiListProps {
   signals: Signals | null;
   plan: string;
+  financial: boolean;
 }
 
 const FORMATS: Record<SignalUnit, Intl.NumberFormatOptions> = {
@@ -33,11 +35,23 @@ const FORMATS: Record<SignalUnit, Intl.NumberFormatOptions> = {
   shares: { maximumFractionDigits: 0 },
 };
 
-// CR11: the signals as facts of the accounts, each with the two values it compares. The state is
-// written in words, with no colour by value.
-export function PiotroskiList({ signals, plan }: PiotroskiListProps) {
+// CR11: the nine signals as facts of the accounts, each with the two values it compares. The state
+// is written in words, with no colour by value.
+export function PiotroskiList({
+  signals,
+  plan,
+  financial,
+}: PiotroskiListProps) {
   const t = useT();
   const [locale] = useAppLocale();
+
+  if (financial) {
+    return <Text size="sm">{t("companyReport.signals.financial")}</Text>;
+  }
+
+  if (plan !== "standard") {
+    return <Text size="sm">{t("companyReport.signals.notApplicable")}</Text>;
+  }
 
   if (signals === null) {
     return <Text size="sm">{t("companyReport.signals.few")}</Text>;
@@ -75,9 +89,14 @@ export function PiotroskiList({ signals, plan }: PiotroskiListProps) {
                     {t(`companyReport.signal.${signal.id}`)}
                   </ListItemLabel>
                   <ListItemDescription>
-                    {signal.prior === null
-                      ? current
-                      : t("companyReport.signal.compare", { current, prior })}
+                    {typeof signal.raised === "boolean" &&
+                      t(
+                        signal.raised
+                          ? "companyReport.signal.raised"
+                          : "companyReport.signal.reserves",
+                      )}
+                    {typeof signal.raised !== "boolean" &&
+                      compared(t, current, prior)}
                   </ListItemDescription>
                 </ListItemBody>
                 <ListItemEnd>
@@ -88,12 +107,12 @@ export function PiotroskiList({ signals, plan }: PiotroskiListProps) {
           );
         })}
       </List>
-
-      {plan !== "standard" && (
-        <Text size="sm" tone="muted">
-          {t("companyReport.signals.notApplicable")}
-        </Text>
-      )}
     </Stack>
   );
+}
+
+function compared(t: TFunction, current: string, prior: string): string {
+  return prior === ""
+    ? current
+    : t("companyReport.signal.compare", { current, prior });
 }

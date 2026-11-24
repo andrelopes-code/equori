@@ -21,8 +21,9 @@ func (p marketPort) CompanyFacts(
 
 	report := sets[0].Report
 	facts := domain.CompanyFacts{
-		Standard: report.Plan == "standard",
-		Criteria: companyCriteria(sets[0].Figures),
+		Standard:  report.Plan == "standard",
+		Financial: report.Financial,
+		Criteria:  companyCriteria(sets[0].Figures),
 	}
 
 	for _, r := range report.Periods {
@@ -41,6 +42,7 @@ func (p marketPort) CompanyFacts(
 			NetIncome:          r.NetIncome,
 			OperatingCashFlow:  r.OperatingCashFlow,
 			SharesIssued:       r.SharesIssued,
+			CapitalRaised:      r.CapitalRaised,
 		})
 	}
 

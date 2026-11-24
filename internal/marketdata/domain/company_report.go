@@ -11,8 +11,10 @@ type CompanyReport struct {
 	Name         string
 	Consolidated bool
 	Plan         string
-	Currency     string
-	Periods      []CompanyReportPeriod
+	// Financial is true for a company of the financial sector.
+	Financial bool
+	Currency  string
+	Periods   []CompanyReportPeriod
 	// SharesPerUnit is the number of shares of the security the report was asked for, 1 for a
 	// share; nil when unknown.
 	SharesPerUnit *int
@@ -46,4 +48,7 @@ type CompanyReportPeriod struct {
 	EquityMinority  *int64
 	// ClassesDiffer is true when a share of one class does not stand for a share of another.
 	ClassesDiffer bool
+	// CapitalRaised is true when the share capital grew with new resources in the period, false when
+	// it grew only with reserves, nil when it did not grow or the filing does not say.
+	CapitalRaised *bool
 }

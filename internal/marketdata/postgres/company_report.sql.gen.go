@@ -10,6 +10,29 @@ import (
 	"time"
 )
 
+const companyFinancial = `-- name: CompanyFinancial :one
+SELECT
+    coalesce(bool_or(financial), FALSE)::boolean AS financial
+FROM
+    marketdata_company_listing
+WHERE
+    source = $1
+    AND identifier = $2
+`
+
+type CompanyFinancialParams struct {
+	Source     string
+	Identifier string
+}
+
+// CR4: whether a listing of the identifier is of the financial sector; false without a listing.
+func (q *Queries) CompanyFinancial(ctx context.Context, arg CompanyFinancialParams) (bool, error) {
+	row := q.db.QueryRow(ctx, companyFinancial, arg.Source, arg.Identifier)
+	var financial bool
+	err := row.Scan(&financial)
+	return financial, err
+}
+
 const companyListing = `-- name: CompanyListing :one
 SELECT
     identifier,
@@ -110,9 +133,9 @@ func (q *Queries) DeleteCompanyShareCounts(ctx context.Context, arg DeleteCompan
 
 const insertCompanyListing = `-- name: InsertCompanyListing :exec
 INSERT INTO
-    marketdata_company_listing (source, exchange, code, identifier, name, shares_per_unit)
+    marketdata_company_listing (source, exchange, code, identifier, name, shares_per_unit, financial)
 VALUES
-    ($1, $2, $3, $4, $5, $6)
+    ($1, $2, $3, $4, $5, $6, $7)
 `
 
 type InsertCompanyListingParams struct {
@@ -122,6 +145,7 @@ type InsertCompanyListingParams struct {
 	Identifier    string
 	Name          string
 	SharesPerUnit *int16
+	Financial     bool
 }
 
 func (q *Queries) InsertCompanyListing(ctx context.Context, arg InsertCompanyListingParams) error {
@@ -132,6 +156,7 @@ func (q *Queries) InsertCompanyListing(ctx context.Context, arg InsertCompanyLis
 		arg.Identifier,
 		arg.Name,
 		arg.SharesPerUnit,
+		arg.Financial,
 	)
 	return err
 }
@@ -165,7 +190,8 @@ INSERT INTO
         shares_treasury,
         net_income_parent,
         equity_minority,
-        classes_differ
+        classes_differ,
+        capital_raised
     )
 VALUES
     (
@@ -195,7 +221,8 @@ VALUES
         $24,
         $25,
         $26,
-        $27
+        $27,
+        $28
     )
 `
 
@@ -227,6 +254,7 @@ type InsertCompanyReportParams struct {
 	NetIncomeParent    *int64
 	EquityMinority     *int64
 	ClassesDiffer      bool
+	CapitalRaised      *bool
 }
 
 func (q *Queries) InsertCompanyReport(ctx context.Context, arg InsertCompanyReportParams) error {
@@ -258,6 +286,7 @@ func (q *Queries) InsertCompanyReport(ctx context.Context, arg InsertCompanyRepo
 		arg.NetIncomeParent,
 		arg.EquityMinority,
 		arg.ClassesDiffer,
+		arg.CapitalRaised,
 	)
 	return err
 }
@@ -335,7 +364,8 @@ SELECT
     shares_treasury,
     net_income_parent,
     equity_minority,
-    classes_differ
+    classes_differ,
+    capital_raised
 FROM
     marketdata_company_report
 WHERE
@@ -377,6 +407,7 @@ type ListCompanyReportsRow struct {
 	NetIncomeParent    *int64
 	EquityMinority     *int64
 	ClassesDiffer      bool
+	CapitalRaised      *bool
 }
 
 // CR6: the reports of the identifier, newest period first, then most months first.
@@ -415,6 +446,7 @@ func (q *Queries) ListCompanyReports(ctx context.Context, arg ListCompanyReports
 			&i.NetIncomeParent,
 			&i.EquityMinority,
 			&i.ClassesDiffer,
+			&i.CapitalRaised,
 		); err != nil {
 			return nil, err
 		}

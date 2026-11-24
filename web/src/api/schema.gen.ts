@@ -7733,6 +7733,8 @@ export interface components {
             consolidated: boolean;
             /** @description standard, or other for a chart of accounts without the standard lines (CR5). */
             plan: string;
+            /** @description True for a company of the financial sector, which the signals do not cover (CR11). */
+            financial: boolean;
             currency: string;
             /** @description Newest first by period, then by months. */
             periods: components["schemas"]["CompanyReportPeriod"][];
@@ -7818,6 +7820,8 @@ export interface components {
              * @description Count of shares held in treasury.
              */
             shares_treasury: number | null;
+            /** @description True when the share capital grew with new resources in the period, false when it grew only with reserves, null when it did not grow or the filing does not say (CR5). */
+            capital_raised: boolean | null;
         };
         FundReportList: {
             items: components["schemas"]["FundReport"][];

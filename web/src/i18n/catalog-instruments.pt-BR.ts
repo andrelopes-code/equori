@@ -405,6 +405,7 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
     "Um P/L baixo também pode indicar que se espera queda do lucro.",
   "companyReport.reason.no_report": "sem demonstrações",
   "companyReport.reason.chart": "não se aplica ao plano de contas",
+  "companyReport.reason.financial": "o método não cobre companhias financeiras",
   "companyReport.reason.missing": "dado ausente nas demonstrações",
   "companyReport.reason.short_history": "histórico curto",
   "companyReport.reason.stale": "balanço com mais de 200 dias",
@@ -432,7 +433,9 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
     "Sinais de Piotroski, exercício de {year} contra {prior}",
   "companyReport.signals.few": "Os sinais de Piotroski pedem dois exercícios.",
   "companyReport.signals.notApplicable":
-    "Os outros seis sinais de Piotroski não se aplicam ao plano de contas desta companhia.",
+    "Os sinais de Piotroski não se aplicam ao plano de contas desta companhia.",
+  "companyReport.signals.financial":
+    "Os estudos dos sinais de Piotroski deixam de fora as companhias financeiras.",
   "companyReport.signal.p1": "ROA positivo",
   "companyReport.signal.p2": "Fluxo de caixa operacional positivo",
   "companyReport.signal.p3": "ROA maior que no ano anterior",
@@ -443,6 +446,8 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "companyReport.signal.p8": "Margem bruta maior que no ano anterior",
   "companyReport.signal.p9": "Giro do ativo maior que no ano anterior",
   "companyReport.signal.compare": "{current} contra {prior}",
+  "companyReport.signal.raised": "capital aumentado com recursos novos",
+  "companyReport.signal.reserves": "capital aumentado só com reservas",
   "companyReport.signal.yes": "sim",
   "companyReport.signal.no": "não",
   "companyReport.signal.missing": "sem dado",

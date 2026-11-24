@@ -26,6 +26,7 @@ func marketCompanyReports(
 			Name:         r.Name,
 			Consolidated: r.Consolidated,
 			Plan:         r.Plan,
+			Financial:    r.Financial,
 			Currency:     r.Currency,
 			Periods:      make([]companyReportPeriodView, len(r.Periods)),
 		}
@@ -58,6 +59,10 @@ func companyReportPeriod(p domain.CompanyReportPeriod) companyReportPeriodView {
 		SharesIssued:       optionalInt(p.SharesIssued),
 		SharesTreasury:     optionalInt(p.SharesTreasury),
 	}
+	if p.CapitalRaised != nil {
+		v.CapitalRaised = tool.OptionalBool{B: *p.CapitalRaised, Set: true}
+	}
+
 	if p.Delivered != nil {
 		v.Delivered = tool.DateOf(*p.Delivered)
 	}

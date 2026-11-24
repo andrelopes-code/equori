@@ -34,6 +34,7 @@ func (s *Server) listCompanyReports(
 			Name:         c.Name,
 			Consolidated: c.Consolidated,
 			Plan:         c.Plan,
+			Financial:    c.Financial,
 			Currency:     c.Currency,
 			Periods:      periods,
 		}
@@ -61,5 +62,6 @@ func companyReportPeriod(p domain.CompanyReportPeriod) CompanyReportPeriod {
 		OperatingCashFlow:  p.OperatingCashFlow,
 		SharesIssued:       p.SharesIssued,
 		SharesTreasury:     p.SharesTreasury,
+		CapitalRaised:      p.CapitalRaised,
 	}
 }

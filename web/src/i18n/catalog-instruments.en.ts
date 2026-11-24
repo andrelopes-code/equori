@@ -402,6 +402,7 @@ export const instrumentsEn = {
     "A low P/E can also mean that a fall of the profit is expected.",
   "companyReport.reason.no_report": "no statements",
   "companyReport.reason.chart": "does not apply to this chart of accounts",
+  "companyReport.reason.financial": "the method covers no financial company",
   "companyReport.reason.missing": "missing from the statements",
   "companyReport.reason.short_history": "short history",
   "companyReport.reason.stale": "balance older than 200 days",
@@ -428,7 +429,9 @@ export const instrumentsEn = {
     "Piotroski signals, fiscal year {year} against {prior}",
   "companyReport.signals.few": "Piotroski signals need two fiscal years.",
   "companyReport.signals.notApplicable":
-    "The other six Piotroski signals do not apply to this company's chart of accounts.",
+    "Piotroski signals do not apply to this company's chart of accounts.",
+  "companyReport.signals.financial":
+    "The studies of the Piotroski signals leave out financial companies.",
   "companyReport.signal.p1": "Positive ROA",
   "companyReport.signal.p2": "Positive operating cash flow",
   "companyReport.signal.p3": "ROA above the year before",
@@ -439,6 +442,8 @@ export const instrumentsEn = {
   "companyReport.signal.p8": "Gross margin above the year before",
   "companyReport.signal.p9": "Asset turnover above the year before",
   "companyReport.signal.compare": "{current} against {prior}",
+  "companyReport.signal.raised": "capital raised with new resources",
+  "companyReport.signal.reserves": "capital raised only with reserves",
   "companyReport.signal.yes": "yes",
   "companyReport.signal.no": "no",
   "companyReport.signal.missing": "no data",

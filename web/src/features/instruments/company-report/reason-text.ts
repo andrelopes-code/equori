@@ -4,6 +4,7 @@ import type { TFunction } from "@/i18n/i18n-provider";
 const reasonKeys: Record<string, MessageKey> = {
   no_report: "companyReport.reason.no_report",
   chart: "companyReport.reason.chart",
+  financial: "companyReport.reason.financial",
   missing: "companyReport.reason.missing",
   short_history: "companyReport.reason.short_history",
   stale: "companyReport.reason.stale",

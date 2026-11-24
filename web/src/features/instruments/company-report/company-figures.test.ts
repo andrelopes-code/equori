@@ -165,6 +165,7 @@ function period(
     operating_cash_flow: null,
     shares_issued: null,
     shares_treasury: null,
+    capital_raised: null,
     ...accounts,
   };
 }
@@ -177,6 +178,7 @@ function report(periods: Period[], plan = "standard"): Report {
     name: "Company",
     consolidated: true,
     plan,
+    financial: false,
     currency: "BRL",
     periods,
   };

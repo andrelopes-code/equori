@@ -11,6 +11,7 @@ describe("reasonText", () => {
     ["shares", "número de ações não conferido"],
     ["loss", "prejuízo em 12 meses"],
     ["no_report", "sem demonstrações"],
+    ["financial", "o método não cobre companhias financeiras"],
   ])("writes %s in words", (reason, text) => {
     expect(reasonText(t, reason)).toBe(text);
   });

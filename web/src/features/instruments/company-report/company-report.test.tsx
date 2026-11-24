@@ -108,7 +108,7 @@ describe("Company report on the instrument page", () => {
     ).toHaveAttribute("href", sourceUrl);
   });
 
-  it("writes the plan other in words and draws the signals every chart answers", async () => {
+  it("writes the plan other in words and draws no signals", async () => {
     show(api(report({ plan: "other" })));
 
     expect(await screen.findAllByText("não se aplica")).toHaveLength(2);
@@ -117,16 +117,38 @@ describe("Company report on the instrument page", () => {
     );
     expect(
       screen.getByText(
-        "Os outros seis sinais de Piotroski não se aplicam ao plano de contas desta companhia.",
+        "Os sinais de Piotroski não se aplicam ao plano de contas desta companhia.",
       ),
     ).toBeInTheDocument();
+    expect(screen.queryByRole("list", { name: signalsHeading })).toBeNull();
+  });
 
-    const rows = within(
-      screen.getByRole("list", { name: signalsHeading }),
-    ).getAllByRole("listitem");
+  it("draws no signals of a financial company", async () => {
+    show(api(report({ financial: true })));
 
-    expect(rows).toHaveLength(3);
-    expect(rows[0]).toHaveTextContent("ROA positivo");
+    expect(
+      await screen.findByText(
+        "Os estudos dos sinais de Piotroski deixam de fora as companhias financeiras.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("list", { name: signalsHeading })).toBeNull();
+  });
+
+  it("writes in words how the capital grew", async () => {
+    const reserves = report();
+    const periods = reserves.periods.map((p) =>
+      p.period === "2025-12-31"
+        ? { ...p, shares_issued: 113, capital_raised: false }
+        : p,
+    );
+    show(api({ ...reserves, periods }));
+
+    const list = await screen.findByRole("list", { name: signalsHeading });
+    const row = within(list).getAllByRole("listitem")[6];
+
+    expect(row).toHaveTextContent("Sem emissão de ações");
+    expect(row).toHaveTextContent("capital aumentado só com reservas");
+    expect(row).toHaveTextContent("sim");
   });
 
   it("draws nothing for an instrument without a report", async () => {
@@ -176,8 +198,10 @@ function api(item: Report | null, figures: Figures[] = []) {
 
 // Three fiscal years (the years of the CR12 signals case) and the quarter of 2026 with its
 // counterpart of 2025.
-function report(over: { plan?: string; equity?: number | null } = {}): Report {
-  const { plan = "standard", equity = 100000 } = over;
+function report(
+  over: { plan?: string; financial?: boolean; equity?: number | null } = {},
+): Report {
+  const { plan = "standard", financial = false, equity = 100000 } = over;
 
   return {
     source: "br_cvm_cia",
@@ -186,6 +210,7 @@ function report(over: { plan?: string; equity?: number | null } = {}): Report {
     name: "Petrobras S.A.",
     consolidated: true,
     plan,
+    financial,
     currency: "BRL",
     periods: [
       period("2026-09-30", 9, {
@@ -249,6 +274,7 @@ function period(
     operating_cash_flow: null,
     shares_issued: null,
     shares_treasury: null,
+    capital_raised: null,
     ...accounts,
   };
 }

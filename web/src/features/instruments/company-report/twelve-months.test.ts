@@ -74,6 +74,7 @@ function period(
     operating_cash_flow: null,
     shares_issued: null,
     shares_treasury: null,
+    capital_raised: null,
     ...accounts,
   };
 }

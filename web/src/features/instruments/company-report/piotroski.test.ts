@@ -11,7 +11,7 @@ type Period = components["schemas"]["CompanyReportPeriod"];
 
 describe("piotroskiSignals", () => {
   it("CR11 holds the nine signals of the years of CR12", () => {
-    const signals = piotroskiSignals(years({}), "standard");
+    const signals = piotroskiSignals(years({}));
 
     expect(signals?.year).toBe("2025-12-31");
     expect(signals?.prior).toBe("2024-12-31");
@@ -39,8 +39,7 @@ describe("piotroskiSignals", () => {
 
   it("CR11 fails P7 and P8 with more shares and an equal gross margin", () => {
     const signals = piotroskiSignals(
-      years({ shares_issued: 110, gross_profit: 30000 }),
-      "standard",
+      years({ shares_issued: 110, capital_raised: true, gross_profit: 30000 }),
     );
 
     expectSignal(signals, "p7", "no", 110, 100);
@@ -48,7 +47,7 @@ describe("piotroskiSignals", () => {
   });
 
   it("CR11 without t-2 has no data for P3, P5 and P9", () => {
-    const signals = piotroskiSignals(years({}).slice(0, 2), "standard");
+    const signals = piotroskiSignals(years({}).slice(0, 2));
 
     for (const id of ["p3", "p5", "p9"] as const) {
       expectSignal(signals, id, "missing", null, null);
@@ -59,14 +58,30 @@ describe("piotroskiSignals", () => {
   });
 
   it("CR11 with one fiscal year has no signals", () => {
-    expect(piotroskiSignals(years({}).slice(0, 1), "standard")).toBeNull();
+    expect(piotroskiSignals(years({}).slice(0, 1))).toBeNull();
   });
 
-  it("CR11 of another chart holds the signals every chart answers", () => {
-    const signals = piotroskiSignals(years({}), "other");
+  it.each([
+    ["new resources", true, 110, "no"],
+    ["new resources, fewer shares", true, 90, "no"],
+    ["reserves", false, 110, "yes"],
+    ["no rise of the capital", null, 100, "yes"],
+    ["more shares of no known cause", null, 110, "missing"],
+  ])("CR11 answers P7 of %s", (_, raised, shares, state) => {
+    const signals = piotroskiSignals(
+      years({ capital_raised: raised, shares_issued: shares }),
+    );
 
-    expect(signals?.signals.map((s) => s.id)).toEqual(["p1", "p3", "p7"]);
-    expectSignal(signals, "p3", "yes", 0.07, 0.05);
+    expectSignal(signals, "p7", state, shares, 100);
+    expect(signals?.signals.find((s) => s.id === "p7")?.raised).toBe(raised);
+  });
+
+  it("CR11 answers P7 of reserves without a count", () => {
+    const signals = piotroskiSignals(
+      years({ capital_raised: false, shares_issued: null }),
+    );
+
+    expectSignal(signals, "p7", "yes", null, 100);
   });
 });
 
@@ -149,6 +164,7 @@ function period(
     operating_cash_flow: null,
     shares_issued: null,
     shares_treasury: null,
+    capital_raised: null,
     ...accounts,
   };
 }

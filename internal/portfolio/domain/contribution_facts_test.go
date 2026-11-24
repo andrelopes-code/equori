@@ -34,6 +34,7 @@ func TestCompanyFactsAnswers(t *testing.T) {
 			facts: standardFacts(
 				with(factsT(), func(y *FiscalYear) {
 					y.SharesIssued = i64(110)
+					y.CapitalRaised = flag(true)
 					y.GrossProfit = i64(30_000)
 				}),
 				factsT1(),
@@ -58,16 +59,18 @@ func TestCompanyFactsAnswers(t *testing.T) {
 			wantOK: false,
 		},
 		"FQ10 chart other": {
-			facts:    CompanyFacts{Years: []FiscalYear{factsT(), factsT1(), factsT2()}},
-			keys:     keys,
-			want:     answers("yes", "none", "yes", "none", "none", "none", "yes", "none", "none"),
-			wantYear: end,
-			wantOK:   true,
-		},
-		"FQ10 chart other, one fiscal year": {
-			facts: CompanyFacts{Years: []FiscalYear{factsT()}},
+			facts: CompanyFacts{Years: []FiscalYear{factsT(), factsT1(), factsT2()}},
 			keys:  keys,
 			want:  answers("none", "none", "none", "none", "none", "none", "none", "none", "none"),
+		},
+		"FQ10 financial company of the standard chart": {
+			facts: CompanyFacts{
+				Standard:  true,
+				Financial: true,
+				Years:     []FiscalYear{factsT(), factsT1(), factsT2()},
+			},
+			keys: keys,
+			want: answers("none", "none", "none", "none", "none", "none", "none", "none", "none"),
 		},
 		"FQ10 current liabilities zero in t": {
 			facts: standardFacts(
@@ -121,26 +124,58 @@ func TestCompanyFactsAnswers(t *testing.T) {
 func TestSignalDetail(t *testing.T) {
 	t.Parallel()
 
-	bank := CompanyFacts{Years: []FiscalYear{factsT(), factsT1()}}
+	years := []FiscalYear{factsT(), factsT1()}
+	financial := standardFacts(years...)
+	financial.Financial = true
 
 	for name, tc := range map[string]struct {
 		facts  CompanyFacts
-		key    string
 		answer FactAnswer
 		want   string
 	}{
-		"answered":                 {bank, "piotroski_p1", FactYes, ""},
-		"outside the chart":        {bank, "piotroski_p6", FactNone, "chart"},
-		"in every chart, no input": {bank, "piotroski_p3", FactNone, "missing"},
-		"in every chart, one year": {
-			CompanyFacts{Years: []FiscalYear{factsT()}}, "piotroski_p7", FactNone, "short_history",
-		},
+		"answered":          {standardFacts(years...), FactYes, ""},
+		"financial company": {financial, FactNone, "financial"},
+		"another chart":     {CompanyFacts{Years: years}, FactNone, "chart"},
+		"no input":          {standardFacts(years...), FactNone, "missing"},
+		"one fiscal year":   {standardFacts(factsT()), FactNone, "short_history"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			if got := tc.facts.SignalDetail(tc.key, tc.answer).Reason; got != tc.want {
+			if got := tc.facts.SignalDetail(tc.answer).Reason; got != tc.want {
 				t.Fatalf("reason = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestNoSharesIssued(t *testing.T) {
+	t.Parallel()
+
+	for name, tc := range map[string]struct {
+		raised *bool
+		shares *int64
+		want   FactAnswer
+	}{
+		"CR11 new resources":                 {flag(true), i64(110), FactNo},
+		"CR11 new resources, fewer shares":   {flag(true), i64(90), FactNo},
+		"CR11 reserves":                      {flag(false), i64(110), FactYes},
+		"CR11 reserves, without a count":     {flag(false), nil, FactYes},
+		"CR11 no rise of the capital":        {nil, i64(100), FactYes},
+		"CR11 fewer shares":                  {nil, i64(90), FactYes},
+		"CR11 more shares of no known cause": {nil, i64(110), FactNone},
+		"CR11 neither":                       {nil, nil, FactNone},
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			facts := standardFacts(with(factsT(), func(y *FiscalYear) {
+				y.CapitalRaised, y.SharesIssued = tc.raised, tc.shares
+			}), factsT1())
+
+			got, _, _ := facts.Answers([]string{"piotroski_p7"})
+			if got[0] != tc.want {
+				t.Fatalf("P7 = %s, want %s", got[0], tc.want)
 			}
 		})
 	}
@@ -344,6 +379,8 @@ func factClass(questions, facts []string) PlanClass {
 
 	return c
 }
+
+func flag(v bool) *bool { return &v }
 
 func i64(v int64) *int64 { return &v }
 

@@ -69,6 +69,12 @@ const cases: [string, CellAnswer, string, string][] = [
     "WEGE3, P/L de até: sem resposta",
   ],
   [
+    "a company the method does not cover",
+    { kind: "own", yes: null, reason: "financial" },
+    "não se aplica",
+    "WEGE3, P/L de até: sem resposta, o método não cobre companhias financeiras",
+  ],
+  [
     "an own criterion",
     { kind: "own", yes: false, reason: undefined },
     "",

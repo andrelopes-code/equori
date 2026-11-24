@@ -167,6 +167,7 @@ type companyReportView struct {
 	Name         string                    `json:"name"`
 	Consolidated bool                      `json:"consolidated"`
 	Plan         string                    `json:"plan"`
+	Financial    bool                      `json:"financial"`
 	Currency     string                    `json:"currency"`
 	Periods      []companyReportPeriodView `json:"periods"`
 }
@@ -190,6 +191,8 @@ type companyReportPeriodView struct {
 	OperatingCashFlow  tool.OptionalInt `json:"operating_cash_flow,omitzero"`
 	SharesIssued       tool.OptionalInt `json:"shares_issued,omitzero"`
 	SharesTreasury     tool.OptionalInt `json:"shares_treasury,omitzero"`
+
+	CapitalRaised tool.OptionalBool `json:"capital_raised,omitzero" jsonschema:"whether the share capital grew with new resources; false: only with reserves"`
 }
 
 type curvePointView struct {

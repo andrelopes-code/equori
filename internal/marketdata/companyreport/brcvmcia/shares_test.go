@@ -72,6 +72,7 @@ func TestFetchUnitComposition(t *testing.T) {
 
 			files := fixtureFiles(t, "fca_cia_aberta_2026.zip")
 			files["/FCA/DADOS/fca_cia_aberta_2026.zip"] = zipOf(t, map[string]string{
+				"fca_cia_aberta_geral_2026.csv": sectorHeader + "\n",
 				"fca_cia_aberta_valor_mobiliario_2026.csv": listingHeader + "\n" +
 					line(weg, "2026-01-01", "1", "1", "WEG S.A.", "Units", "WEGE11", composition,
 						"Bolsa", "2007-06-22", "") + "\n",

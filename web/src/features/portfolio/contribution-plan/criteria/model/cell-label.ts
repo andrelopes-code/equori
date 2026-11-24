@@ -43,7 +43,7 @@ export function cellNote(cell: CellAnswer, context: CellContext): string {
   if (cell.kind === "own") {
     if (cell.reason === undefined) return "";
 
-    return cell.reason === "chart"
+    return cell.reason === "chart" || cell.reason === "financial"
       ? t("contributionPlan.criteria.noteOutside")
       : t("contributionPlan.criteria.noteOwn");
   }

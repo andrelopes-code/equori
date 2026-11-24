@@ -15,6 +15,7 @@ const (
 	reasonLoss           = "loss"
 	reasonNegativeEquity = "negative_equity"
 	reasonChart          = "chart"
+	reasonFinancial      = "financial"
 
 	// NoReport is the reason of a member without a company report (AC14).
 	NoReport = "no_report"
@@ -167,12 +168,14 @@ func (c CompanyCriteria) years(limit *big.Rat) (FactAnswer, FactDetail) {
 	}
 }
 
-// SignalDetail is the detail of the signal of key: the reason it has no answer, if any.
-func (f CompanyFacts) SignalDetail(key string, a FactAnswer) FactDetail {
+// SignalDetail is the detail of a signal of Piotroski: the reason it has no answer, if any.
+func (f CompanyFacts) SignalDetail(a FactAnswer) FactDetail {
 	switch {
 	case a != FactNone:
 		return FactDetail{}
-	case !f.applies(key):
+	case f.Financial:
+		return FactDetail{Reason: reasonFinancial}
+	case !f.Standard:
 		return FactDetail{Reason: reasonChart}
 	case len(f.Years) < minSignalYears:
 		return FactDetail{Reason: reasonShortHistory}

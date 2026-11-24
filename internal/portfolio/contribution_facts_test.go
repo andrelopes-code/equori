@@ -44,6 +44,8 @@ type fiscalYear struct {
 	end                                                  string
 	totalAssets, currentAssets, currentLiabilities, debt any
 	revenue, grossProfit, netIncome, cashFlow, shares    any
+	// raised is the capital_raised of the report.
+	raised any
 }
 
 // S675: a save with the nine facts for two stocks of three fiscal years returns the fact
@@ -334,11 +336,12 @@ func seedFiscalYears(
 			`INSERT INTO marketdata_company_report (source, identifier, period, months, file,
 				currency, name, consolidated, plan, total_assets, current_assets,
 				current_liabilities, long_debt, revenue, gross_profit, net_income,
-				operating_cash_flow, shares_issued)
+				operating_cash_flow, shares_issued, capital_raised)
 			VALUES ('br_cvm_cia', $1, $2::date, 12, $13, 'BRL', $3, true,
-				'standard', $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+				'standard', $4, $5, $6, $7, $8, $9, $10, $11, $12, $14)`,
 			identifier, y.end, code, y.totalAssets, y.currentAssets, y.currentLiabilities,
 			y.debt, y.revenue, y.grossProfit, y.netIncome, y.cashFlow, y.shares, "dfp_"+y.end[:4],
+			y.raised,
 		)
 		if err != nil {
 			t.Fatalf("seed the report %s of %s: %v", y.end, code, err)
@@ -365,10 +368,11 @@ func factYearsA() []fiscalYear {
 	}
 }
 
-// factYearsB is factYearsA with 110 shares and a gross profit of 30,000 in the newest year.
+// factYearsB is factYearsA with 110 shares, issued for new resources, and a gross profit of 30,000
+// in the newest year.
 func factYearsB() []fiscalYear {
 	y := factYearsA()
-	y[0].shares, y[0].grossProfit = int64(110), int64(30000)
+	y[0].shares, y[0].raised, y[0].grossProfit = int64(110), true, int64(30000)
 
 	return y
 }

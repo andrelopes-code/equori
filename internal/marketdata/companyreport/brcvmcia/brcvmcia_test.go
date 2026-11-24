@@ -30,6 +30,8 @@ const (
 		"ORDEM_EXERC;DT_FIM_EXERC;CD_CONTA;DS_CONTA;VL_CONTA;ST_CONTA_FIXA"
 	flowHeader = "CNPJ_CIA;DT_REFER;VERSAO;DENOM_CIA;CD_CVM;GRUPO_DFP;MOEDA;ESCALA_MOEDA;" +
 		"ORDEM_EXERC;DT_INI_EXERC;DT_FIM_EXERC;CD_CONTA;DS_CONTA;VL_CONTA;ST_CONTA_FIXA"
+	movementHeader = "CNPJ_CIA;DT_REFER;VERSAO;DENOM_CIA;CD_CVM;GRUPO_DFP;MOEDA;ESCALA_MOEDA;" +
+		"ORDEM_EXERC;DT_INI_EXERC;DT_FIM_EXERC;COLUNA_DF;CD_CONTA;DS_CONTA;VL_CONTA;ST_CONTA_FIXA"
 	generalHeader = "CNPJ_CIA;DT_REFER;VERSAO;DENOM_CIA;CD_CVM;CATEG_DOC;ID_DOC;DT_RECEB;LINK_DOC"
 	capitalHeader = "CNPJ_CIA;DT_REFER;VERSAO;DENOM_CIA;QT_ACAO_ORDIN_CAP_INTEGR;" +
 		"QT_ACAO_PREF_CAP_INTEGR;QT_ACAO_TOTAL_CAP_INTEGR;QT_ACAO_ORDIN_TESOURO;" +
@@ -37,6 +39,9 @@ const (
 	listingHeader = "CNPJ_Companhia;Data_Referencia;Versao;ID_Documento;Nome_Empresarial;" +
 		"Valor_Mobiliario;Codigo_Negociacao;Composicao_BDR_Unit;Mercado;" +
 		"Data_Inicio_Negociacao;Data_Fim_Negociacao"
+
+	sectorHeader = "CNPJ_Companhia;Data_Referencia;Versao;ID_Documento;Nome_Empresarial;" +
+		"Setor_Atividade"
 
 	modified = "Mon, 16 Nov 2026 12:00:00 GMT"
 )
@@ -46,7 +51,7 @@ var (
 
 	statementKinds = []string{
 		"BPA_con", "BPA_ind", "BPP_con", "BPP_ind", "DRE_con", "DRE_ind",
-		"DFC_MI_con", "DFC_MI_ind", "DFC_MD_con", "DFC_MD_ind",
+		"DFC_MI_con", "DFC_MI_ind", "DFC_MD_con", "DFC_MD_ind", "DMPL_con", "DMPL_ind",
 	}
 )
 
@@ -250,7 +255,7 @@ func wantListings() []companyreport.Listing {
 	return []companyreport.Listing{
 		{
 			Exchange: "BVMF", Code: "BNCX4", Identifier: "22222222000122", Name: "BANCO X",
-			SharesPerUnit: count(1),
+			SharesPerUnit: count(1), Financial: true,
 		},
 		{
 			Exchange: "BVMF", Code: "INDS3", Identifier: "11111111000111", Name: "IND SA",
@@ -478,7 +483,14 @@ func listingMembers(yearBefore bool) map[string]string {
 	return map[string]string{
 		"fca_cia_aberta_valor_mobiliario_" + year + ".csv": listingHeader + "\n" +
 			strings.Join(rows, "\n") + "\n",
+		"fca_cia_aberta_geral_" + year + ".csv": sectorHeader + "\n" +
+			sectorRow(weg, "1", "Emp. Adm. Part. - Máqs., Equip., Veíc. e Peças") +
+			sectorRow(banco, "1", "Bancos"),
 	}
+}
+
+func sectorRow(cnpj, version, sector string) string {
+	return line(cnpj, "2026-01-01", version, "1", names[cnpj], sector) + "\n"
 }
 
 // filing is the fields every row of one company, period and version share.
@@ -500,6 +512,12 @@ func (f filing) balance(code, description, value string) string {
 func (f filing) flow(code, description, value string) string {
 	return line(f.cnpj, f.ref, f.version, names[f.cnpj], "1", "DF", "REAL", f.scale, f.order,
 		f.ini, f.fim, code, description, value, "S")
+}
+
+// movement is a row of the statement of changes in equity.
+func (f filing) movement(column, code, description, value string) string {
+	return line(f.cnpj, f.ref, f.version, names[f.cnpj], "1", "DF", "REAL", f.scale, f.order,
+		f.ini, f.fim, column, code, description, value, "S")
 }
 
 func general(cnpj, ref, version, received string) string {
@@ -525,6 +543,10 @@ func members(prefix, year string, rows map[string][]string) map[string]string {
 		header := balanceHeader
 		if strings.HasPrefix(kind, "DRE") || strings.HasPrefix(kind, "DFC") {
 			header = flowHeader
+		}
+
+		if strings.HasPrefix(kind, "DMPL") {
+			header = movementHeader
 		}
 
 		put(kind+"_", header, kind)

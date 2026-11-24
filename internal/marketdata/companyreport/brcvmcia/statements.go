@@ -41,6 +41,8 @@ type statement struct {
 	ini, fim      time.Time
 	currentAssets string
 	perShare      []perShare
+	// movements holds the lines of the statement of changes in equity by their code.
+	movements map[string]movement
 }
 
 func readStatements(f *os.File, size int64, a archive) ([]companyreport.Report, error) {
@@ -66,6 +68,16 @@ func readStatements(f *os.File, size int64, a archive) ([]companyreport.Report, 
 			if err := readStatement(zr, member, kind, filings, into); err != nil {
 				return nil, err
 			}
+		}
+
+		// The signals read the fiscal years alone (CR11).
+		if a.kind != "dfp" {
+			continue
+		}
+
+		member := base + "DMPL_" + scope + "_" + year + ".csv"
+		if err := readMovements(zr, member, filings, into); err != nil {
+			return nil, err
 		}
 	}
 
@@ -198,6 +210,7 @@ func build(
 			SharesIssued:   capitals[k].issued,
 			SharesTreasury: capitals[k].treasury,
 			ClassesDiffer:  st.classesDiffer(capitals[k]),
+			CapitalRaised:  st.capitalRaised(),
 		}
 
 		for a := range accountCount {

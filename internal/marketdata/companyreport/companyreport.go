@@ -29,6 +29,9 @@ type Report struct {
 	// ClassesDiffer is true when the earnings per share of two classes differ by a factor above
 	// 1.5 (contribution criteria AC0).
 	ClassesDiffer bool
+	// CapitalRaised is true when the share capital grew with new resources in the period, false when
+	// it grew only with reserves, nil when it did not grow or the filing does not say.
+	CapitalRaised *bool
 }
 
 // Listing ties a trading code of an exchange to a company (CR4).
@@ -36,6 +39,8 @@ type Listing struct {
 	Exchange, Code, Identifier, Name string
 	// SharesPerUnit is 1 for a share, the shares a unit holds for a unit, nil when unknown.
 	SharesPerUnit *int
+	// Financial is true for a bank, an insurer and any other company of the financial sector.
+	Financial bool
 }
 
 // ShareCount is the capital of a company in units of shares, as a filing of one year states it.

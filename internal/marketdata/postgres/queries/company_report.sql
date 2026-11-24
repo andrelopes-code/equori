@@ -40,7 +40,8 @@ INSERT INTO
         shares_treasury,
         net_income_parent,
         equity_minority,
-        classes_differ
+        classes_differ,
+        capital_raised
     )
 VALUES
     (
@@ -70,7 +71,8 @@ VALUES
         @shares_treasury,
         @net_income_parent,
         @equity_minority,
-        @classes_differ
+        @classes_differ,
+        @capital_raised
     );
 
 -- name: DeleteCompanyListings :exec
@@ -80,9 +82,9 @@ WHERE
 
 -- name: InsertCompanyListing :exec
 INSERT INTO
-    marketdata_company_listing (source, exchange, code, identifier, name, shares_per_unit)
+    marketdata_company_listing (source, exchange, code, identifier, name, shares_per_unit, financial)
 VALUES
-    (@source, @exchange, @code, @identifier, @name, @shares_per_unit);
+    (@source, @exchange, @code, @identifier, @name, @shares_per_unit, @financial);
 
 -- name: CompanyListing :one
 SELECT
@@ -94,6 +96,16 @@ WHERE
     source = @source
     AND exchange = @exchange
     AND code = @code;
+
+-- name: CompanyFinancial :one
+-- CR4: whether a listing of the identifier is of the financial sector; false without a listing.
+SELECT
+    coalesce(bool_or(financial), FALSE)::boolean AS financial
+FROM
+    marketdata_company_listing
+WHERE
+    source = @source
+    AND identifier = @identifier;
 
 -- name: ListCompanyReports :many
 -- CR6: the reports of the identifier, newest period first, then most months first.
@@ -122,7 +134,8 @@ SELECT
     shares_treasury,
     net_income_parent,
     equity_minority,
-    classes_differ
+    classes_differ,
+    capital_raised
 FROM
     marketdata_company_report
 WHERE

@@ -4833,6 +4833,9 @@
               "plan": {
                 "type": "string"
               },
+              "financial": {
+                "type": "boolean"
+              },
               "currency": {
                 "type": "string"
               },
@@ -4893,6 +4896,10 @@
                     },
                     "shares_treasury": {
                       "type": "integer"
+                    },
+                    "capital_raised": {
+                      "type": "boolean",
+                      "description": "whether the share capital grew with new resources; false: only with reserves"
                     }
                   },
                   "required": [
@@ -4910,6 +4917,7 @@
               "name",
               "consolidated",
               "plan",
+              "financial",
               "currency",
               "periods"
             ],

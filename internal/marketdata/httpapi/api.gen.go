@@ -372,6 +372,9 @@ type CompanyReport struct {
 	Consolidated bool   `json:"consolidated"`
 	Currency     string `json:"currency"`
 
+	// Financial True for a company of the financial sector, which the signals do not cover (CR11).
+	Financial bool `json:"financial"`
+
 	// Identifier The company's identifier at the regulator.
 	Identifier string `json:"identifier"`
 	Name       string `json:"name"`
@@ -392,6 +395,9 @@ type CompanyReportList struct {
 
 // CompanyReportPeriod A null account is a line the filing lacks or the chart of accounts does not hold; it is never zero.
 type CompanyReportPeriod struct {
+	// CapitalRaised True when the share capital grew with new resources in the period, false when it grew only with reserves, null when it did not grow or the filing does not say (CR5).
+	CapitalRaised *bool `json:"capital_raised"`
+
 	// Cash Minor units of the report's currency.
 	Cash *int64 `json:"cash"`
 

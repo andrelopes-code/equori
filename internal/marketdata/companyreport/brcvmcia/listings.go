@@ -20,7 +20,21 @@ const (
 	maxUnitsShares = 100
 )
 
+// holdingPrefix starts the sector of a holding: the sector of its companies follows.
+const holdingPrefix = "Emp. Adm. Part. - "
+
 var (
+	// financialSectors names the sectors of the financial companies among those of the register.
+	financialSectors = []string{
+		"Arrendamento Mercantil",
+		"Bancos",
+		"Bolsas de Valores/Mercadorias e Futuros",
+		"Crédito Imobiliário",
+		"Intermediação Financeira",
+		"Securitização de Recebíveis",
+		"Seguradoras e Corretoras",
+	}
+
 	codePattern = regexp.MustCompile(`^[A-Z][A-Z0-9]{3}[0-9]{1,2}$`)
 	// unitPart is a number of a composition and the class of share it counts.
 	unitPart = regexp.MustCompile(`([0-9]+)\s+(?:ON|PN|aç|[A-Z]{4}[0-9])`)
@@ -44,13 +58,27 @@ type listed struct {
 	listing companyreport.Listing
 }
 
-// readListings reads the member valor_mobiliario of the FCA of year (CR4).
+// readListings reads the members geral and valor_mobiliario of the FCA of year (CR4).
 func readListings(f *os.File, size int64, year int) ([]companyreport.Listing, error) {
 	zr, err := zip.NewReader(f, size)
 	if err != nil {
 		return nil, fmt.Errorf("open CVM archive: %w", err)
 	}
 
+	financial, err := readFinancial(zr, year)
+	if err != nil {
+		return nil, err
+	}
+
+	return readSecurities(zr, year, financial)
+}
+
+// readSecurities keeps the securities traded on the exchange.
+func readSecurities(
+	zr *zip.Reader,
+	year int,
+	financial map[string]bool,
+) ([]companyreport.Listing, error) {
 	required := []string{
 		"CNPJ_Companhia", "Versao", "Nome_Empresarial", "Codigo_Negociacao", "Mercado",
 		"Data_Fim_Negociacao", "Valor_Mobiliario", "Composicao_BDR_Unit",
@@ -59,7 +87,7 @@ func readListings(f *os.File, size int64, year int) ([]companyreport.Listing, er
 
 	var rows []listed
 
-	err = readMember(
+	err := readMember(
 		zr,
 		"fca_cia_aberta_valor_mobiliario_"+strconv.Itoa(year)+".csv",
 		required,
@@ -84,6 +112,7 @@ func readListings(f *os.File, size int64, year int) ([]companyreport.Listing, er
 				Identifier:    id,
 				Name:          r.get("Nome_Empresarial"),
 				SharesPerUnit: sharesPerUnit(r),
+				Financial:     financial[id],
 			}})
 		},
 	)
@@ -92,6 +121,33 @@ func readListings(f *os.File, size int64, year int) ([]companyreport.Listing, er
 	}
 
 	return pick(rows, newest), nil
+}
+
+// readFinancial holds the identifiers of the companies whose newest version names a financial
+// sector.
+func readFinancial(zr *zip.Reader, year int) (map[string]bool, error) {
+	out := map[string]bool{}
+	newest := map[string]int{}
+
+	err := readMember(
+		zr,
+		"fca_cia_aberta_geral_"+strconv.Itoa(year)+".csv",
+		[]string{"CNPJ_Companhia", "Versao", "Setor_Atividade"},
+		func(r record) {
+			id := identifierReplacer.Replace(r.get("CNPJ_Companhia"))
+
+			version, err := strconv.Atoi(r.get("Versao"))
+			if err != nil || version < newest[id] {
+				return
+			}
+
+			sector := strings.TrimPrefix(r.get("Setor_Atividade"), holdingPrefix)
+			newest[id] = version
+			out[id] = slices.Contains(financialSectors, sector)
+		},
+	)
+
+	return out, err
 }
 
 // tradingCode is the code the row states, else the one the exchange gives the company; "" without

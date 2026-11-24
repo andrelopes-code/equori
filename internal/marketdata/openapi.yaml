@@ -1083,7 +1083,7 @@ schemas:
   CompanyReport:
     type: object
     additionalProperties: false
-    required: [source, source_url, identifier, name, consolidated, plan, currency, periods]
+    required: [source, source_url, identifier, name, consolidated, plan, financial, currency, periods]
     properties:
       source:
         type: string
@@ -1102,6 +1102,9 @@ schemas:
         type: string
         pattern: "^[a-z0-9_]{2,40}$"
         description: standard, or other for a chart of accounts without the standard lines (CR5).
+      financial:
+        type: boolean
+        description: True for a company of the financial sector, which the signals do not cover (CR11).
       currency:
         type: string
       periods:
@@ -1113,7 +1116,7 @@ schemas:
     type: object
     additionalProperties: false
     description: A null account is a line the filing lacks or the chart of accounts does not hold; it is never zero.
-    required: [period, months, delivered, total_assets, current_assets, cash, short_investments, current_liabilities, short_debt, long_debt, equity, revenue, gross_profit, net_income, operating_cash_flow, shares_issued, shares_treasury]
+    required: [period, months, delivered, total_assets, current_assets, cash, short_investments, current_liabilities, short_debt, long_debt, equity, revenue, gross_profit, net_income, operating_cash_flow, shares_issued, shares_treasury, capital_raised]
     properties:
       period:
         type: string
@@ -1198,6 +1201,10 @@ schemas:
         format: int64
         nullable: true
         description: Count of shares held in treasury.
+      capital_raised:
+        type: boolean
+        nullable: true
+        description: True when the share capital grew with new resources in the period, false when it grew only with reserves, null when it did not grow or the filing does not say (CR5).
   FundReportList:
     type: object
     required: [items, candidates]

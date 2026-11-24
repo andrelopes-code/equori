@@ -43,6 +43,7 @@ type companyPeriodAPI struct {
 	OperatingCashFlow  *int64  `json:"operating_cash_flow"`
 	SharesIssued       *int64  `json:"shares_issued"`
 	SharesTreasury     *int64  `json:"shares_treasury"`
+	CapitalRaised      *bool   `json:"capital_raised"`
 }
 
 type companyReportAPI struct {
@@ -52,6 +53,7 @@ type companyReportAPI struct {
 	Name         string             `json:"name"`
 	Consolidated bool               `json:"consolidated"`
 	Plan         string             `json:"plan"`
+	Financial    bool               `json:"financial"`
 	Currency     string             `json:"currency"`
 	Periods      []companyPeriodAPI `json:"periods"`
 }
@@ -266,7 +268,8 @@ func TestS603CompanyReportsTool(t *testing.T) {
 }
 
 func wantWEG() companyReportAPI {
-	return companyReportAPI{
+	raised := false
+	out := companyReportAPI{
 		Source: "br_cvm_cia", SourceURL: companyReportURL, Identifier: "84429695000111",
 		Name: "WEG S.A.", Consolidated: true, Plan: "standard", Currency: "BRL",
 		Periods: []companyPeriodAPI{
@@ -281,6 +284,9 @@ func wantWEG() companyReportAPI {
 				absent, 2900000000, absent, 480000000, absent, absent, absent),
 		},
 	}
+	out.Periods[1].CapitalRaised = &raised
+
+	return out
 }
 
 func wantIND() companyReportAPI {
@@ -298,7 +304,7 @@ func wantIND() companyReportAPI {
 func wantBanco() companyReportAPI {
 	return companyReportAPI{
 		Source: "br_cvm_cia", SourceURL: companyReportURL, Identifier: "22222222000122",
-		Name: "BANCO X", Consolidated: true, Plan: "other", Currency: "BRL",
+		Name: "BANCO X", Consolidated: true, Plan: "other", Financial: true, Currency: "BRL",
 		Periods: []companyPeriodAPI{
 			companyPeriod("2025-12-31", 12, "2026-03-20",
 				90000000000, absent, absent, absent, absent, absent, absent,
@@ -474,6 +480,11 @@ func companyDFP2025() map[string]string {
 			bancoYear.flow("3.09", "Lucro/Prejuízo Consolidado do Período", "9000"),
 			bancoYear.flow("3.11", "Reversão dos Juros sobre Capital Próprio", "0"),
 		},
+		"DMPL_con": {
+			wegYear.movement(
+				"Capital Social Integralizado", "5.04.01", "Aumentos de Capital", "5000",
+			),
+		},
 		"DFC_MI_con": {wegYear.flow("6.01", "Caixa Líquido Atividades Operacionais", "7000")},
 		"DFC_MD_con": {bancoYear.flow("6.01", "Caixa Líquido Atividades Operacionais", "3000")},
 		"BPA_ind": {
@@ -573,6 +584,8 @@ func companyListings() map[string]string {
 	return map[string]string{
 		"fca_cia_aberta_valor_mobiliario_2026.csv": header + "\n" +
 			strings.Join(rows, "\n") + "\n",
+		"fca_cia_aberta_geral_2026.csv": "CNPJ_Companhia;Versao;Setor_Atividade\n" +
+			companyLine(companyBANCO, "1", "Bancos") + "\n",
 	}
 }
 
@@ -590,6 +603,11 @@ func (f companyFiling) since(ini string) companyFiling {
 func (f companyFiling) balance(code, description, value string) string {
 	return companyLine(f.cnpj, f.ref, f.version, companyNames[f.cnpj], "1", "DF", "REAL",
 		f.scale, f.order, f.fim, code, description, value, "S")
+}
+
+func (f companyFiling) movement(column, code, description, value string) string {
+	return companyLine(f.cnpj, f.ref, f.version, companyNames[f.cnpj], "1", "DF", "REAL",
+		f.scale, f.order, f.ini, f.fim, column, code, description, value, "S")
 }
 
 func (f companyFiling) flow(code, description, value string) string {
@@ -615,6 +633,8 @@ func companyMembers(prefix, year string, rows map[string][]string) map[string]st
 			"ORDEM_EXERC;DT_FIM_EXERC;CD_CONTA;DS_CONTA;VL_CONTA;ST_CONTA_FIXA"
 		flow = "CNPJ_CIA;DT_REFER;VERSAO;DENOM_CIA;CD_CVM;GRUPO_DFP;MOEDA;ESCALA_MOEDA;" +
 			"ORDEM_EXERC;DT_INI_EXERC;DT_FIM_EXERC;CD_CONTA;DS_CONTA;VL_CONTA;ST_CONTA_FIXA"
+		movement = "CNPJ_CIA;DT_REFER;VERSAO;DENOM_CIA;CD_CVM;GRUPO_DFP;MOEDA;ESCALA_MOEDA;" +
+			"ORDEM_EXERC;DT_INI_EXERC;DT_FIM_EXERC;COLUNA_DF;CD_CONTA;DS_CONTA;VL_CONTA;ST_CONTA_FIXA"
 		general = "CNPJ_CIA;DT_REFER;VERSAO;DENOM_CIA;CD_CVM;CATEG_DOC;ID_DOC;DT_RECEB;LINK_DOC"
 		capital = "CNPJ_CIA;DT_REFER;VERSAO;DENOM_CIA;QT_ACAO_ORDIN_CAP_INTEGR;" +
 			"QT_ACAO_PREF_CAP_INTEGR;QT_ACAO_TOTAL_CAP_INTEGR;QT_ACAO_ORDIN_TESOURO;" +
@@ -633,11 +653,15 @@ func companyMembers(prefix, year string, rows map[string][]string) map[string]st
 
 	for _, kind := range []string{
 		"BPA_con", "BPA_ind", "BPP_con", "BPP_ind", "DRE_con", "DRE_ind",
-		"DFC_MI_con", "DFC_MI_ind", "DFC_MD_con", "DFC_MD_ind",
+		"DFC_MI_con", "DFC_MI_ind", "DFC_MD_con", "DFC_MD_ind", "DMPL_con", "DMPL_ind",
 	} {
 		header := balance
 		if strings.HasPrefix(kind, "DRE") || strings.HasPrefix(kind, "DFC") {
 			header = flow
+		}
+
+		if strings.HasPrefix(kind, "DMPL") {
+			header = movement
 		}
 
 		put(kind+"_", header, kind)

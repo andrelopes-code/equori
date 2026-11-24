@@ -240,7 +240,7 @@ func storeCompanyListings(
 	for _, l := range listings {
 		err := q.InsertCompanyListing(ctx, postgres.InsertCompanyListingParams{
 			Source: source, Exchange: l.Exchange, Code: l.Code, Identifier: l.Identifier,
-			Name: l.Name, SharesPerUnit: smallint(l.SharesPerUnit),
+			Name: l.Name, SharesPerUnit: smallint(l.SharesPerUnit), Financial: l.Financial,
 		})
 		if err != nil {
 			return fmt.Errorf("store the listing %s of %s: %w", l.Code, source, err)
@@ -264,6 +264,7 @@ func companyReportParams(
 		OperatingCashFlow: r.OperatingCashFlow, SharesIssued: r.SharesIssued,
 		SharesTreasury: r.SharesTreasury, NetIncomeParent: r.NetIncomeParent,
 		EquityMinority: r.EquityMinority, ClassesDiffer: r.ClassesDiffer,
+		CapitalRaised: r.CapitalRaised,
 	}
 }
 
@@ -298,6 +299,13 @@ func (m *Module) storedCompanyReport(
 		out.Periods = append(out.Periods, companyReportPeriod(r))
 	}
 
+	out.Financial, err = m.q.CompanyFinancial(ctx, postgres.CompanyFinancialParams{
+		Source: src.ID(), Identifier: identifier,
+	})
+	if err != nil {
+		return CompanyReport{}, fmt.Errorf("read the sector of %s: %w", in.Code, err)
+	}
+
 	out.ShareCounts, err = m.shareCounts(ctx, src.ID(), identifier)
 
 	return out, err
@@ -312,6 +320,6 @@ func companyReportPeriod(r postgres.ListCompanyReportsRow) domain.CompanyReportP
 		GrossProfit: r.GrossProfit, NetIncome: r.NetIncome, OperatingCashFlow: r.OperatingCashFlow,
 		SharesIssued: r.SharesIssued, SharesTreasury: r.SharesTreasury,
 		NetIncomeParent: r.NetIncomeParent, EquityMinority: r.EquityMinority,
-		ClassesDiffer: r.ClassesDiffer,
+		ClassesDiffer: r.ClassesDiffer, CapitalRaised: r.CapitalRaised,
 	}
 }

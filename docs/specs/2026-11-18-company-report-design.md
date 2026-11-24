@@ -41,7 +41,8 @@ Research of 2026-11-18, each source read by a real request unless stated.
 
 - A rule that picks stocks from accounting ratios loses most of its return after publication (McLean and Pontiff 2016; Hou, Xue and Zhang 2020); the Brazilian factors of NEFIN reach no t of 3.0 from 2001 to 2026 (spec of the fund report, Evidence). This is the reason the signals of Piotroski are facts without a sum.
 - Each figure of this spec is an identity of the filings: it follows from the stored accounts alone.
-- Not verified: the full text of Piotroski (2000); the definitions of CR10 follow its published description of the nine signals.
+- Piotroski (2000), sections 2.3 and 3.1, read on 2026-11-24 ([Chicago GSB Selected Paper 84](https://tevgeniou.github.io/EquityRiskFactors/bibliography/ValueInvestingReview.pdf)): P1 to P6, P8 and P9 of CR11 follow its definitions. P7 is `EQ_OFFER`, "the firm did not issue common equity": a bonus and a split issue none, so the count of shares alone does not answer it. Equal leverage in both years is not defined there; P5 answers "não".
+- The samples read leave out financial companies: Walkshäusl (2020), 35 countries with Brazil, SIC 6000 to 6999; the [study in Brazilian Business Review](https://www.redalyc.org/journal/1230/123075329001/123075329001.pdf) and [Chagas, Leal and Roquete (2020)](https://repec.emnuvens.com.br/repec/article/download/2394/1596/8598), Brazil.
 
 ## Facts of the register
 
@@ -79,6 +80,8 @@ Checked by request on 2026-11-18 on `dfp_cia_aberta_2025.zip` (12,863,177 bytes)
 
 **CR4 Listings.** From `valor_mobiliario` of the FCA, the rows with `Mercado` "Bolsa", `Data_Fim_Negociacao` blank and `Codigo_Negociacao`, in upper case, matching `^[A-Z][A-Z0-9]{3}[0-9]{1,2}$`, of the highest `Versao` of a company: the trading code, exchange `BVMF`, the company's identifier (`CNPJ_Companhia` without punctuation) and `Nome_Empresarial`. When two companies give one code, neither listing is stored. A row without such a code takes the one the exchange lists for the company (amended on 2026-11-24: the FCA of 2021 to 2026 gives "000000" for the units of BTG Pactual, and that of 2026 no code for six other traded companies; identifiers and codes checked against the list of companies of the exchange).
 
+**CR4 Sector** (amended on 2026-11-24). A listing is `financial` when the member `geral` of the FCA gives its company, in the highest `Versao`, the `Setor_Atividade` "Bancos", "Seguradoras e Corretoras", "Intermediação Financeira", "Bolsas de Valores/Mercadorias e Futuros", "Arrendamento Mercantil", "Crédito Imobiliário" or "Securitização de Recebíveis", with or without the prefix "Emp. Adm. Part. - " of a holding. The company of an instrument is financial when a listing of its identifier is. On 2026-11-24: 51 of 439 listings, 14 companies of them of the chart `standard`.
+
 **CR5 Accounts.** Each is null when the line is absent or the chart of accounts is `other` and the account is marked standard only; a null is never zero.
 
 | Account | Line | Charts |
@@ -95,11 +98,12 @@ Checked by request on 2026-11-18 on `dfp_cia_aberta_2025.zip` (12,863,177 bytes)
 | `gross_profit` | `3.03` | standard |
 | `net_income` | level-two line of the income statement whose description holds "Lucro" and "Período"; of two, the higher code | both |
 | `operating_cash_flow` | `6.01` of the cash flow statement, indirect (`DFC_MI`) or direct (`DFC_MD`) | both |
+| `capital_raised` (boolean, fiscal years alone; amended on 2026-11-24) | statement of changes in equity (`DMPL`), lines `5.04.NN` and `5.06.NN` whose column "Capital Social Integralizado" is above zero: true when the column "Patrimônio Líquido" of one of them is above zero (new resources), false when none is (reserves); null without such a line | both |
 | `shares_issued`, `shares_treasury` | `QT_ACAO_TOTAL_CAP_INTEGR`, `QT_ACAO_TOTAL_TESOURO` of `composicao_capital` | both |
 
 The chart is `standard` when line `1.01` of the assets reads "Ativo Circulante", else `other`. The amounts are integers of minor units; the shares are integer counts.
 
-**CR6 Storage and API.** Table `marketdata_company_report (source, identifier, period, months, file, currency, name, consolidated, plan, delivered, total_assets, current_assets, cash, short_investments, current_liabilities, short_debt, long_debt, equity, revenue, gross_profit, net_income, operating_cash_flow, shares_issued, shares_treasury)`, primary key `(source, identifier, period, months)`; `file` names the file the row came from (`dfp_2025`, `itr_2026`). Table `marketdata_company_listing (source, exchange, code, identifier, name)`, primary key `(source, exchange, code)`. No `books_id`: market data shared by the instance, as `marketdata_fund_report`. A fetch replaces the rows of each file it read and of the listings it read, and deletes the rows of files outside the window of CR3. `GET /company-reports?code=` (`listCompanyReports`) returns `items`: one report set per enabled source that holds a company for the instrument, with source, source address, identifier, name, consolidated, plan, currency and the periods, newest first by period, then by months. The company of an instrument is the one its symbol for the source names (the mechanism of FR15), else the one the listing of its exchange and code names. An unknown code, an instrument without a company and a disabled source give an empty list.
+**CR6 Storage and API.** Table `marketdata_company_report (source, identifier, period, months, file, currency, name, consolidated, plan, delivered, total_assets, current_assets, cash, short_investments, current_liabilities, short_debt, long_debt, equity, revenue, gross_profit, net_income, operating_cash_flow, shares_issued, shares_treasury, capital_raised)`, primary key `(source, identifier, period, months)`; `file` names the file the row came from (`dfp_2025`, `itr_2026`). Table `marketdata_company_listing (source, exchange, code, identifier, name, financial)`, primary key `(source, exchange, code)`. No `books_id`: market data shared by the instance, as `marketdata_fund_report`. A fetch replaces the rows of each file it read and of the listings it read, and deletes the rows of files outside the window of CR3. `GET /company-reports?code=` (`listCompanyReports`) returns `items`: one report set per enabled source that holds a company for the instrument, with source, source address, identifier, name, consolidated, plan, financial, currency and the periods, newest first by period, then by months. The company of an instrument is the one its symbol for the source names (the mechanism of FR15), else the one the listing of its exchange and code names. An unknown code, an instrument without a company and a disabled source give an empty list.
 
 ### Figures of the screen
 
@@ -113,7 +117,7 @@ The web computes them from the periods, as the fund report does; each is a pure 
 
 **CR10 Positive years.** Of the five latest fiscal years, how many have a net income above zero, written "3 de 5". With fewer than five stored, "2 de 3" and the count of years stored.
 
-**CR11 Signals of Piotroski.** On the latest fiscal year `t`, the one before `t−1`, and the total assets at the end of `t−2`, each signal is "sim", "não" or "sem dado" (an input missing), and the screen writes the two values it compares. The chart `other` lists P1, P3 and P7 and writes once that the other six do not apply to the chart of accounts of the company (amended on 2026-11-24).
+**CR11 Signals of Piotroski.** On the latest fiscal year `t`, the one before `t−1`, and the total assets at the end of `t−2`, each signal is "sim", "não" or "sem dado" (an input missing), and the screen writes the two values it compares. A financial company and the chart `other` have no signal, and the screen writes why (amended on 2026-11-24: P1, P3 and P7 were answered for the chart `other` for one day; no study read scores a part of the nine).
 
 | ID | Signal | Holds when |
 |---|---|---|
@@ -123,7 +127,7 @@ The web computes them from the periods, as the fund report does; each is a pure 
 | P4 | Cash flow above net income | `operating_cash_flow(t) ÷ total_assets(t−1) > net_income(t) ÷ total_assets(t−1)` |
 | P5 | Leverage fell | `long_debt(t) ÷ mean(total_assets(t), total_assets(t−1)) < long_debt(t−1) ÷ mean(total_assets(t−1), total_assets(t−2))` |
 | P6 | Current ratio rose | `current_assets(t) ÷ current_liabilities(t) > current_assets(t−1) ÷ current_liabilities(t−1)` |
-| P7 | No shares issued | `shares_issued(t) ≤ shares_issued(t−1)` |
+| P7 | No shares issued | `capital_raised(t)` false; or null and `shares_issued(t) ≤ shares_issued(t−1)`. Fails when it is true; "sem dado" when it is null and the count rose or is absent (amended on 2026-11-24) |
 | P8 | Gross margin rose | `gross_profit(t) ÷ revenue(t) > gross_profit(t−1) ÷ revenue(t−1)` |
 | P9 | Asset turnover rose | `revenue(t) ÷ total_assets(t−1) > revenue(t−1) ÷ total_assets(t−2)` |
 
@@ -138,7 +142,7 @@ A ratio whose divisor is not above zero makes its signal "sem dado". P2 and P4 s
 - Net margin (CR9): 120 over 800: 15.00%. Revenue 0: none.
 - Net debt over equity (CR9): debts 100 and 300, cash 50, investments 50, equity 1,000: 0.30. Debts 0, cash 100, investments 0, equity 1,000: −0.10.
 - Positive years (CR10): 10, −5, 3, 0, 7: 3 of 5. 10 and 7 alone: 2 of 2.
-- Signals (CR11): `t−2` total assets 1,000; `t−1` net income 50, cash flow 60, assets 1,100, long debt 300, current assets 400, current liabilities 200, shares 100, revenue 900, gross profit 270; `t` net income 77, cash flow 90, assets 1,200, long debt 280, current assets 450, current liabilities 200, shares 100, revenue 1,000, gross profit 320. P1 sim (7.00%); P2 sim (8.18%); P3 sim (7.00% against 5.00%); P4 sim (8.18% against 7.00%); P5 sim (0.2435 against 0.2857); P6 sim (2.25 against 2.00); P7 sim (100 against 100); P8 sim (32.00% against 30.00%); P9 sim (0.9091 against 0.9000). The same years with shares 110 in `t` and gross profit 300 in `t`: P7 não, P8 não (30.00% against 30.00%). Without `t−2`: P3, P5 and P9 sem dado.
+- Signals (CR11): `t−2` total assets 1,000; `t−1` net income 50, cash flow 60, assets 1,100, long debt 300, current assets 400, current liabilities 200, shares 100, revenue 900, gross profit 270; `t` net income 77, cash flow 90, assets 1,200, long debt 280, current assets 450, current liabilities 200, shares 100, revenue 1,000, gross profit 320. P1 sim (7.00%); P2 sim (8.18%); P3 sim (7.00% against 5.00%); P4 sim (8.18% against 7.00%); P5 sim (0.2435 against 0.2857); P6 sim (2.25 against 2.00); P7 sim (100 against 100); P8 sim (32.00% against 30.00%); P9 sim (0.9091 against 0.9000). The same years with shares 110 and new resources in `t` and gross profit 300 in `t`: P7 não, P8 não (30.00% against 30.00%). Without `t−2`: P3, P5 and P9 sem dado.
 
 ## Screen
 
@@ -152,7 +156,7 @@ A ratio whose divisor is not above zero makes its signal "sem dado". P2 and P4 s
   - "Margem líquida", "12 meses até 30/09/2026"
   - "Dívida líquida sobre patrimônio", "balanço de 30/09/2026"
   - "Anos com lucro", "dos 5 últimos exercícios"
-- Signals: a framed list "Sinais de Piotroski, exercício de 2025 contra 2024", nine rows of fixed height: the signal's name as label, the two compared values as description, "sim", "não" or "sem dado" at the end in the text colour. No sum, no colour by value.
+- Signals: a framed list "Sinais de Piotroski, exercício de 2025 contra 2024", nine rows of fixed height: the signal's name as label, the two compared values as description (for P7, "capital aumentado com recursos novos" or "capital aumentado só com reservas" when the filing says it), "sim", "não" or "sem dado" at the end in the text colour. No sum, no colour by value.
 - Fixed text under the figures: each figure is computed from the filings as stated; the signals are facts of the accounts, not a grade; the decision is the investor's.
 - The source as a link to the dataset page ("CVM, Portal de Dados Abertos").
 - A missing figure is written in words: "sem dado", or "não se aplica" with the note "plano de contas desta companhia".
