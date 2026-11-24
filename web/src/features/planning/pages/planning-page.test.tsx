@@ -140,7 +140,7 @@ describe("PlanningPage agenda", () => {
     });
     await userEvent.click(day);
 
-    expect(day).toHaveAttribute("aria-selected", "true");
+    expect(day).toHaveAttribute("aria-pressed", "true");
     expect(
       within(grid).queryByRole("button", { name: /^October 21/ }),
     ).not.toBeInTheDocument();
