@@ -14,7 +14,6 @@ import { List } from "@slotted/react/list";
 import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
 
-import styles from "@/features/portfolio/contribution-plan/criteria/add/add-criterion-dialog.module.css";
 import { CriterionOption } from "@/features/portfolio/contribution-plan/criteria/add/criterion-option";
 import { MethodHelp } from "@/features/portfolio/contribution-plan/criteria/add/method-help";
 import {
@@ -108,13 +107,10 @@ export function AddCriterionDialog({
 
             <Stack gap={2}>
               <Inline align="center" justify="between" wrap="nowrap">
-                <Inline gap={4} align="baseline" wrap="nowrap">
-                  <Text size="sm" weight="semibold">
-                    {t("contributionPlan.criteria.group.signals")}
-                  </Text>
-
+                <Text size="sm" weight="semibold">
+                  {t("contributionPlan.criteria.group.signals")}
                   <MethodHelp />
-                </Inline>
+                </Text>
 
                 <Button
                   size="sm"
@@ -131,7 +127,6 @@ export function AddCriterionDialog({
 
               <List
                 variant="framed"
-                className={styles.signals}
                 aria-label={t("contributionPlan.criteria.group.signals")}
               >
                 {piotroskiFacts.map((fact) => (

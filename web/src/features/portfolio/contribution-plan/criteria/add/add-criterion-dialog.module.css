@@ -1,9 +1,0 @@
-@layer app {
-  /* Workaround for Slotted issue #179: a one-line row leaves 2px around the button of its actions.
-     The row takes its height from the button, with space-4 above and below it. */
-  .signals {
-    --slotted-list-item-min-block-size: calc(
-      var(--slotted-control-height-sm) + var(--slotted-space-4) * 2
-    );
-  }
-}
