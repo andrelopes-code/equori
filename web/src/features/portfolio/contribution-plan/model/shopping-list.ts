@@ -74,7 +74,9 @@ export function receivingEntries(
           orderOf(member.quantity, member.unit_value, scaleOf),
         );
       if (member.instrument !== undefined) entry.code = member.instrument;
-      if (cls.questions.length > 0) entry.criteria = pointsOf(member);
+      const points = pointsOf(member);
+      if (cls.questions.length > 0 && points !== undefined)
+        entry.criteria = points;
       if (member.instrument === undefined) entry.byValue = true;
       else if (member.unit_value === undefined) entry.unpriced = true;
       entries.push(entry);
@@ -122,12 +124,14 @@ export function groupCost(group: Plan["classes"][number]): Money | undefined {
   };
 }
 
-// The answers "yes" of a member: the ones equori gives, else the investor's (FQ4).
-function pointsOf(member: Plan["classes"][number]["members"][number]): {
-  yes: number;
-  count: number;
-} {
+// The answers "yes" of a member: the ones equori gives, else the investor's (FQ4); undefined with a
+// blank one, as the member takes an equal share (CQ3).
+function pointsOf(
+  member: Plan["classes"][number]["members"][number],
+): { yes: number; count: number } | undefined {
   const answers = effectiveAnswers(member.answers ?? [], member.fact_answers);
+
+  if (answers.includes(null)) return undefined;
 
   return { yes: answers.filter(Boolean).length, count: answers.length };
 }

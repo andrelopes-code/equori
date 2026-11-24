@@ -66,7 +66,8 @@ type contributionMemberOut struct {
 	Quantity     tool.Money               `json:"quantity,omitzero"       jsonschema:"units to buy, an estimate at the prices of today"`
 	Cost         tool.Money               `json:"cost,omitzero"           jsonschema:"cost of the order in the base currency, never above amount"`
 	Answers      []bool                   `json:"answers,omitzero"        jsonschema:"one answer per question of the group, true for yes"`
-	FactAnswers  []string                 `json:"fact_answers,omitzero"   jsonschema:"per question: yes or no from the filings, none when the investor's answer applies"`
+	BlankAnswers []int                    `json:"blank_answers,omitzero"  jsonschema:"0-based positions of answers left blank"`
+	FactAnswers  []string                 `json:"fact_answers,omitzero"   jsonschema:"per question: yes or no from the filings, none when the investor's answer applies; blank: an equal share"`
 	FactDetails  []contributionFactDetail `json:"fact_details,omitzero"   jsonschema:"per question: the figure the answer read and its date, or the reason it has none"`
 	FactsYear    string                   `json:"facts_year,omitzero"     jsonschema:"last day of the fiscal year the fact answers read"`
 }
@@ -207,11 +208,38 @@ func contributionClassOf(c app.ContributionClass) contributionClassOut {
 			Amount:       optionalMoney(m.Amount),
 			Quantity:     optionalMoney(m.Quantity),
 			Cost:         optionalMoney(m.Cost),
-			Answers:      m.Answers,
+			Answers:      answersOf(m.Answers),
+			BlankAnswers: blanksOf(m.Answers),
 			FactAnswers:  factAnswersOf(m.FactAnswers),
 			FactDetails:  factDetailsOf(m.FactDetails),
 			FactsYear:    factsYearOf(m.FactsYear),
 		})
+	}
+
+	return out
+}
+
+// answersOf writes a blank answer as false; blanksOf names it.
+func answersOf(in []*bool) []bool {
+	if len(in) == 0 {
+		return nil
+	}
+
+	out := make([]bool, len(in))
+	for i, a := range in {
+		out[i] = a != nil && *a
+	}
+
+	return out
+}
+
+func blanksOf(in []*bool) []int {
+	var out []int
+
+	for i, a := range in {
+		if a == nil {
+			out = append(out, i)
+		}
 	}
 
 	return out

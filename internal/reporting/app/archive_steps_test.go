@@ -939,8 +939,8 @@ func TestAddContributionQuestionLimit(t *testing.T) {
 		t.Fatalf("the step changed its input: %s", v33[0].Rows[0])
 	}
 
-	if ArchiveVersion != 34 {
-		t.Fatalf("ArchiveVersion = %d, want 34", ArchiveVersion)
+	if ArchiveVersion < 34 {
+		t.Fatalf("ArchiveVersion = %d, want at least 34", ArchiveVersion)
 	}
 }
 

@@ -23,12 +23,15 @@ export function AssetHead({ asset, count, greatest, onOpen }: AssetHeadProps) {
   const [locale] = useAppLocale();
 
   const share = asset.ideal === undefined ? "" : shareText(asset.ideal, locale);
-  const label = t("contributionPlan.criteria.idealOf", {
-    name: asset.name,
-    share,
-    yes: String(asset.points),
-    count: String(count),
-  });
+  const counted = { yes: String(asset.points), count: String(count) };
+  const label =
+    asset.points === undefined
+      ? t("contributionPlan.criteria.idealOfEqual", { name: asset.name, share })
+      : t("contributionPlan.criteria.idealOf", {
+          name: asset.name,
+          share,
+          ...counted,
+        });
 
   return (
     <div role="columnheader" aria-label={label} className={styles.asset}>
@@ -54,10 +57,9 @@ export function AssetHead({ asset, count, greatest, onOpen }: AssetHeadProps) {
       </Text>
 
       <Text size="xs" tone="muted" className={styles.points}>
-        {t("contributionPlan.criteria.points", {
-          yes: String(asset.points),
-          count: String(count),
-        })}
+        {asset.points === undefined
+          ? t("contributionPlan.criteria.equalShare")
+          : t("contributionPlan.criteria.points", counted)}
       </Text>
 
       <span aria-hidden="true" className={styles.idealTrack}>

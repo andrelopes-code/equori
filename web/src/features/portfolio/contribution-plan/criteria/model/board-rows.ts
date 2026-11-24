@@ -22,7 +22,8 @@ export interface BoardAsset {
   instrument: string | undefined;
   // One cell per row.
   cells: CellAnswer[];
-  points: number;
+  // Undefined with a blank answer.
+  points: number | undefined;
   // The derived ideal inside the group, a fraction; undefined without a yes or before the preview.
   ideal: number | undefined;
 }
@@ -43,14 +44,16 @@ export function boardOf(
   }));
 
   const assets = edit.members.map((member) => {
-    const stored = rows.map((_, q) => member.answers?.[q] ?? false);
+    const stored = rows.map(
+      (row, q) => member.answers?.[q] ?? (row.fact === "" ? false : null),
+    );
     const cells = rows.map((row, q) =>
       cellAnswer({
         answered,
         member,
         fact: row.fact,
         limit: row.limit,
-        stored: stored[q] ?? false,
+        stored: stored[q] ?? null,
         complete: row.state === "ok",
       }),
     );
@@ -82,13 +85,9 @@ export function boardOf(
   return { rows, assets };
 }
 
-// The names of the assets no report answers an automatic criterion for.
-export function withoutReport(assets: BoardAsset[]): string[] {
+// The names of the assets that take an equal share of the group: a blank answer (CQ3).
+export function equalShares(assets: BoardAsset[]): string[] {
   return assets
-    .filter((asset) =>
-      asset.cells.some(
-        (cell) => cell.kind === "own" && cell.reason === "no_report",
-      ),
-    )
+    .filter((asset) => asset.points === undefined)
     .map((asset) => asset.name);
 }

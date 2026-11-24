@@ -109,7 +109,7 @@ export function usePlanEditor(plan: Plan | undefined) {
     removeQuestion: (index: number, q: number) => {
       change((d) => questions.removeQuestion(d, index, q));
     },
-    setAnswer: (index: number, at: number, q: number, yes: boolean) => {
+    setAnswer: (index: number, at: number, q: number, yes: boolean | null) => {
       change((d) => questions.setAnswer(d, index, at, q, yes));
     },
     setMemberTarget: (index: number, at: number, bp: number) => {

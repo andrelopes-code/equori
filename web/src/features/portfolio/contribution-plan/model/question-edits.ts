@@ -78,7 +78,7 @@ export function addFactQuestions(
     questionLimits: [...c.questionLimits, ...added.map(() => "")],
     members: c.members.map((m) => ({
       ...m,
-      answers: [...(m.answers ?? []), ...added.map(() => false)],
+      answers: [...(m.answers ?? []), ...added.map(() => null)],
     })),
   }));
 }
@@ -129,7 +129,7 @@ export function setAnswer(
   index: number,
   at: number,
   q: number,
-  yes: boolean,
+  yes: boolean | null,
 ): EditDraft {
   return updateClass(draft, index, (cls) => ({
     ...cls,

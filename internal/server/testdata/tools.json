@@ -6082,12 +6082,19 @@
                           },
                           "description": "one answer per question of the group, true for yes"
                         },
+                        "blank_answers": {
+                          "type": "array",
+                          "items": {
+                            "type": "integer"
+                          },
+                          "description": "0-based positions of answers left blank"
+                        },
                         "fact_answers": {
                           "type": "array",
                           "items": {
                             "type": "string"
                           },
-                          "description": "per question: yes or no from the filings, none when the investor's answer applies"
+                          "description": "per question: yes or no from the filings, none when the investor's answer applies; blank: an equal share"
                         },
                         "fact_details": {
                           "type": "array",
@@ -6127,7 +6134,7 @@
                       "properties": {
                         "instrument_type": {
                           "type": "string",
-                          "description": "security type, such as fixed_income or stock"
+                          "description": "type, such as fixed_income or stock"
                         },
                         "subtypes": {
                           "type": "array",
@@ -6138,7 +6145,7 @@
                         },
                         "quote_currency": {
                           "type": "string",
-                          "description": "currency the security is quoted in, such as USD"
+                          "description": "quote currency, such as USD"
                         },
                         "return_kind": {
                           "type": "string",
@@ -12357,7 +12364,7 @@
               },
               "target_bp": {
                 "type": "integer",
-                "description": "basis points of the portfolio: 4000 is 40%; the classes add up to 10000"
+                "description": "basis points of the portfolio: 4000 is 40%; they add up to 10000"
               },
               "members": {
                 "type": "array",
@@ -12366,15 +12373,15 @@
                   "properties": {
                     "account_id": {
                       "type": "string",
-                      "description": "account counted whole in the class, such as a reserve; instead of instrument"
+                      "description": "account counted whole, such as a reserve; instead of instrument"
                     },
                     "instrument": {
                       "type": "string",
-                      "description": "security code such as BOVA11, counted in every Brokerage holding it; instead of account_id"
+                      "description": "code such as BOVA11, counted in every Brokerage; instead of account_id"
                     },
                     "target_bp": {
                       "type": "integer",
-                      "description": "basis points of the class; all members add up to 10000, or none has a target"
+                      "description": "basis points of the class; members add up to 10000, or none has one"
                     },
                     "answers": {
                       "type": "array",
@@ -12382,6 +12389,13 @@
                         "type": "boolean"
                       },
                       "description": "per question of the group, true for yes"
+                    },
+                    "blank_answers": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer"
+                      },
+                      "description": "0-based positions to leave blank, only with a fact"
                     }
                   },
                   "additionalProperties": false
@@ -12393,7 +12407,7 @@
                 "items": {
                   "type": "string"
                 },
-                "description": "the investor's yes-or-no questions, at most 20 of 1 to 200 characters; with them, members carry answers and no target_bp"
+                "description": "yes-or-no questions, at most 20 of 1 to 200 characters; members then carry answers and no target_bp"
               },
               "question_facts": {
                 "type": "array",
@@ -12416,7 +12430,7 @@
                   "properties": {
                     "instrument_type": {
                       "type": "string",
-                      "description": "security type, such as fixed_income or stock"
+                      "description": "type, such as fixed_income or stock"
                     },
                     "subtypes": {
                       "type": "array",
@@ -12427,7 +12441,7 @@
                     },
                     "quote_currency": {
                       "type": "string",
-                      "description": "currency the security is quoted in, such as USD"
+                      "description": "quote currency, such as USD"
                     },
                     "return_kind": {
                       "type": "string",
@@ -12452,7 +12466,7 @@
                   },
                   "additionalProperties": false
                 },
-                "description": "conditions of a group by rule, at most 5, instead of members: a security that meets one joins it"
+                "description": "conditions, at most 5, instead of members: a security that meets one joins"
               }
             },
             "required": [
@@ -12747,12 +12761,19 @@
                       },
                       "description": "one answer per question of the group, true for yes"
                     },
+                    "blank_answers": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer"
+                      },
+                      "description": "0-based positions of answers left blank"
+                    },
                     "fact_answers": {
                       "type": "array",
                       "items": {
                         "type": "string"
                       },
-                      "description": "per question: yes or no from the filings, none when the investor's answer applies"
+                      "description": "per question: yes or no from the filings, none when the investor's answer applies; blank: an equal share"
                     },
                     "fact_details": {
                       "type": "array",
@@ -12792,7 +12813,7 @@
                   "properties": {
                     "instrument_type": {
                       "type": "string",
-                      "description": "security type, such as fixed_income or stock"
+                      "description": "type, such as fixed_income or stock"
                     },
                     "subtypes": {
                       "type": "array",
@@ -12803,7 +12824,7 @@
                     },
                     "quote_currency": {
                       "type": "string",
-                      "description": "currency the security is quoted in, such as USD"
+                      "description": "quote currency, such as USD"
                     },
                     "return_kind": {
                       "type": "string",

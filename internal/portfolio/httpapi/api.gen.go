@@ -398,11 +398,11 @@ type ContributionMember struct {
 	AfterShareBp *int                `json:"after_share_bp,omitempty"`
 	Amount       *Money              `json:"amount,omitempty"`
 
-	// Answers One answer per question of the group, true for yes (CQ2); absent in a group without questions.
-	Answers *[]bool `json:"answers,omitempty"`
-	Cost    *Money  `json:"cost,omitempty"`
+	// Answers One answer per question of the group, true for yes, null for a question with a fact the investor did not answer (CQ2); absent in a group without questions.
+	Answers *[]*bool `json:"answers,omitempty"`
+	Cost    *Money   `json:"cost,omitempty"`
 
-	// FactAnswers The answer of the filings to each question of the group; none when the investor's answer applies (FQ3). Absent in a group without questions.
+	// FactAnswers The answer of the filings to each question of the group; none when the investor's answer applies (FQ3). A member with none and a null answer takes an equal share of the group (CQ3). Absent in a group without questions.
 	FactAnswers *[]ContributionMemberFactAnswers `json:"fact_answers,omitempty"`
 
 	// FactDetails What each answer of fact_answers read (AC14). Absent in a group without questions.
@@ -425,10 +425,10 @@ type ContributionMemberFactAnswers string
 type ContributionMemberInput struct {
 	AccountId *openapi_types.UUID `json:"account_id,omitempty"`
 
-	// Answers One answer per question of the group, true for yes (CQ2); absent in a group without questions.
-	Answers    *[]bool `json:"answers,omitempty"`
-	Instrument *string `json:"instrument,omitempty"`
-	TargetBp   *int    `json:"target_bp,omitempty"`
+	// Answers One answer per question of the group, true for yes, null for a question with a fact the investor did not answer (CQ2); absent in a group without questions.
+	Answers    *[]*bool `json:"answers,omitempty"`
+	Instrument *string  `json:"instrument,omitempty"`
+	TargetBp   *int     `json:"target_bp,omitempty"`
 }
 
 // ContributionMissing defines model for ContributionMissing.

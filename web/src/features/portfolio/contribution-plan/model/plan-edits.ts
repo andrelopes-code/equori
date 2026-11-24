@@ -289,7 +289,10 @@ function newMember(
   targetBp: number,
 ): MemberDraft {
   if (cls.byQuestions)
-    return { ...ref, answers: cls.questions.map(() => false) };
+    return {
+      ...ref,
+      answers: cls.questionFacts.map((fact) => (fact === "" ? false : null)),
+    };
 
   return cls.split ? { ...ref, targetBp } : { ...ref };
 }

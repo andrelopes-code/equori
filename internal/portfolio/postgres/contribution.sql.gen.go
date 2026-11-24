@@ -56,7 +56,7 @@ type InsertContributionAnswerParams struct {
 	ClassID          uuid.UUID
 	QuestionPosition int32
 	MemberPosition   int32
-	Yes              bool
+	Yes              *bool
 }
 
 func (q *Queries) InsertContributionAnswer(ctx context.Context, arg InsertContributionAnswerParams) error {
@@ -264,7 +264,7 @@ type ListContributionAnswersRow struct {
 	ClassID          uuid.UUID
 	QuestionPosition int32
 	MemberPosition   int32
-	Yes              bool
+	Yes              *bool
 }
 
 func (q *Queries) ListContributionAnswers(ctx context.Context, booksID int64) ([]ListContributionAnswersRow, error) {

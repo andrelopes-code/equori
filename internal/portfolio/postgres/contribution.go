@@ -98,7 +98,7 @@ func (r *Repository) attachQuestions(
 		}
 
 		for j := range c.Members {
-			c.Members[j].Answers = make([]bool, len(c.Questions))
+			c.Members[j].Answers = make([]*bool, len(c.Questions))
 		}
 	}
 

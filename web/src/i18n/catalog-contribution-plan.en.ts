@@ -238,12 +238,16 @@ export const contributionPlanEn = {
   "contributionPlan.criteria.noteRepeated": "repeated question",
   "contributionPlan.criteria.yes": "yes",
   "contributionPlan.criteria.no": "no",
+  "contributionPlan.criteria.blank": "no answer",
   "contributionPlan.criteria.waiting": "computing",
   "contributionPlan.criteria.points": "{yes} of {count}",
+  "contributionPlan.criteria.equalShare": "equal share",
   "contributionPlan.criteria.boardLabel": "Criteria by asset of {name}",
   "contributionPlan.criteria.criterionColumn": "Criterion",
   "contributionPlan.criteria.idealOf":
     "target of {name} in the group: {share}, {yes} of {count} criteria",
+  "contributionPlan.criteria.idealOfEqual":
+    "target of {name} in the group: {share}, equal share as an answer is missing",
   "contributionPlan.criteria.cellAutomatic":
     "{asset}, {criterion}: {answer}, {figure}, data of {date}, answered by equori",
   "contributionPlan.criteria.cellSignal":
@@ -253,6 +257,9 @@ export const contributionPlanEn = {
   "contributionPlan.criteria.cellOwn": "{asset}, {criterion}: {answer}",
   "contributionPlan.criteria.cellOwnReason":
     "{asset}, {criterion}: {answer}, your answer: {reason}",
+  "contributionPlan.criteria.cellBlank": "{asset}, {criterion}: no answer",
+  "contributionPlan.criteria.cellBlankReason":
+    "{asset}, {criterion}: no answer, {reason}",
   "contributionPlan.criteria.cellWaiting": "{asset}, {criterion}: computing",
   "contributionPlan.criteria.statementsOf": "See the data of {name}",
   "contributionPlan.criteria.byCriteria": "the targets come from the criteria",
@@ -265,10 +272,10 @@ export const contributionPlanEn = {
     "The target of each asset is its part of the points of the group.",
   "contributionPlan.criteria.noYes":
     "No yes: the group receives the amount without a split among the assets.",
-  "contributionPlan.criteria.noReport":
-    "No statements: {names}. The answer is yours for these assets.",
+  "contributionPlan.criteria.equalShares":
+    "Equal share of the group, an answer is missing: {names}.",
   "contributionPlan.criteria.rules":
-    "A yes is a point. Price of the end of last month.",
+    "A yes is a point. Without an answer, an equal share. Price of the end of last month.",
   "contributionPlan.criteria.incompleteOne":
     "Complete {count} criterion to save",
   "contributionPlan.criteria.incompleteMany":

@@ -21,6 +21,13 @@ describe("effectiveAnswers", () => {
     ]);
   });
 
+  it("leaves blank what neither the filings nor the investor answer", () => {
+    expect(effectiveAnswers([null, null], ["yes", "none"])).toEqual([
+      true,
+      null,
+    ]);
+  });
+
   it("returns the answers without facts", () => {
     expect(effectiveAnswers([true, false], undefined)).toEqual([true, false]);
   });

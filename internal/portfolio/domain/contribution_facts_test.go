@@ -213,23 +213,23 @@ func TestIdealsFromFactAnswers(t *testing.T) {
 
 	for name, tc := range map[string]struct {
 		a, b []FactAnswer
-		ansA []bool
+		ansA []*bool
 		want []*int
 	}{
 		"FQ10 fact yes over a stored no": {
 			a:    answers(FactYes, FactNone),
 			b:    answers(FactNone, FactNone),
-			ansA: []bool{false, true},
+			ansA: said(false, true),
 			want: targets(6667, 3333),
 		},
 		"FQ10 fact no over a stored yes": {
 			a:    answers(FactNo, FactNone),
 			b:    answers(FactNone, FactNone),
-			ansA: []bool{true, true},
+			ansA: said(true, true),
 			want: targets(5000, 5000),
 		},
 		"no fact answers keeps the stored answers": {
-			ansA: []bool{false, true},
+			ansA: said(false, true),
 			want: targets(5000, 5000),
 		},
 	} {
@@ -239,8 +239,81 @@ func TestIdealsFromFactAnswers(t *testing.T) {
 			c := factClass(questions, facts)
 			c.Members = []PlanMember{
 				{Instrument: "QSTA3", Answers: tc.ansA, FactAnswers: tc.a},
-				{Instrument: "QSTB3", Answers: []bool{true, false}, FactAnswers: tc.b},
+				{Instrument: "QSTB3", Answers: said(true, false), FactAnswers: tc.b},
 			}
+
+			got, err := (Plan{Classes: []PlanClass{c}}).WithIdeals()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if g := memberTargets(got.Classes[0]); !slices.EqualFunc(g, tc.want, equalTarget) {
+				t.Fatalf("targets = %v, want %v", show(g), show(tc.want))
+			}
+		})
+	}
+}
+
+func TestIdealsWithoutEveryAnswer(t *testing.T) {
+	t.Parallel()
+
+	none := answers(FactNone, FactNone)
+	signals := func(p1, p2 FactAnswer) []FactAnswer { return answers(p1, p2) }
+
+	for name, tc := range map[string]struct {
+		members []PlanMember
+		want    []*int
+	}{
+		"CQ3 the equal share, the others by points": {
+			members: []PlanMember{
+				{Answers: make([]*bool, 2), FactAnswers: signals(FactYes, FactYes)},
+				{Answers: make([]*bool, 2), FactAnswers: signals(FactYes, FactNo)},
+				{Answers: make([]*bool, 2), FactAnswers: none},
+				{Answers: make([]*bool, 2), FactAnswers: none},
+			},
+			want: targets(3333, 1667, 2500, 2500),
+		},
+		"CQ3 one blank answer leaves the points": {
+			members: []PlanMember{
+				{Answers: make([]*bool, 2), FactAnswers: signals(FactYes, FactYes)},
+				{Answers: make([]*bool, 2), FactAnswers: signals(FactYes, FactNone)},
+			},
+			want: targets(5000, 5000),
+		},
+		"CQ3 no answered by the filings is a no": {
+			members: []PlanMember{
+				{Answers: make([]*bool, 2), FactAnswers: signals(FactYes, FactNo)},
+				{Answers: make([]*bool, 2), FactAnswers: signals(FactNo, FactNo)},
+			},
+			want: targets(10000, 0),
+		},
+		"CQ3 the investor answers what the filings do not": {
+			members: []PlanMember{
+				{Answers: make([]*bool, 2), FactAnswers: signals(FactYes, FactYes)},
+				{Answers: said(false, false), FactAnswers: none},
+			},
+			want: targets(10000, 0),
+		},
+		"CQ3 no member with every answer": {
+			members: []PlanMember{
+				{Answers: make([]*bool, 2), FactAnswers: none},
+				{Answers: make([]*bool, 2), FactAnswers: none},
+			},
+			want: []*int{nil, nil},
+		},
+		"CQ3 no yes among the members with every answer": {
+			members: []PlanMember{
+				{Answers: make([]*bool, 2), FactAnswers: signals(FactNo, FactNo)},
+				{Answers: make([]*bool, 2), FactAnswers: none},
+			},
+			want: []*int{nil, nil},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			c := factClass([]string{"P1", "P2"}, []string{"piotroski_p1", "piotroski_p2"})
+			c.Members = tc.members
 
 			got, err := (Plan{Classes: []PlanClass{c}}).WithIdeals()
 			if err != nil {
@@ -265,7 +338,7 @@ func factClass(questions, facts []string) PlanClass {
 	if len(questions) > 0 {
 		c.Members = []PlanMember{{
 			Instrument: "QSTA3",
-			Answers:    make([]bool, len(questions)),
+			Answers:    said(make([]bool, len(questions))...),
 		}}
 	}
 

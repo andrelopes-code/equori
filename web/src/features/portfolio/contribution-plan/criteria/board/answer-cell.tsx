@@ -2,6 +2,10 @@ import type { RovingGridCellProps } from "@slotted/react/roving-focus";
 
 import styles from "@/features/portfolio/contribution-plan/criteria/board/board.module.css";
 import type { CellAnswer } from "@/features/portfolio/contribution-plan/criteria/model/cell-answer";
+import {
+  cellWord,
+  nextAnswer,
+} from "@/features/portfolio/contribution-plan/criteria/model/cell-label";
 import { useT } from "@/i18n/i18n-provider";
 import { cx } from "@/ui/cx";
 
@@ -11,7 +15,8 @@ interface AnswerCellProps {
   note: string;
   label: string;
   focus: RovingGridCellProps;
-  onAnswer: (yes: boolean) => void;
+  // The next answer of the investor: yes or no, and null for a blank one.
+  onAnswer: (yes: boolean | null) => void;
 }
 
 // Families read: toggle (one line and no second figure), data-grid (a cell that holds a control,
@@ -26,16 +31,15 @@ export function AnswerCell({
 }: AnswerCellProps) {
   const t = useT();
 
-  const yes = cell.kind !== "pending" && cell.yes;
-  const answer = t(
-    yes ? "contributionPlan.criteria.yes" : "contributionPlan.criteria.no",
-  );
-  const word =
-    cell.kind === "pending" ? t("contributionPlan.criteria.waiting") : answer;
+  const blank = cell.kind === "own" && cell.yes === null;
+  const yes = cell.kind !== "pending" && cell.yes === true;
+  const word = cellWord(t, cell, note);
   const content = (
     <>
-      <span aria-hidden="true">{word}</span>
-      {note !== "" && (
+      <span aria-hidden="true" className={cx(blank && styles.note)}>
+        {word}
+      </span>
+      {note !== "" && !blank && (
         <span aria-hidden="true" className={styles.note}>
           {note}
         </span>
@@ -65,13 +69,13 @@ export function AnswerCell({
       <button
         {...focus}
         type="button"
-        aria-pressed={yes}
+        aria-pressed={blank ? "mixed" : yes}
         aria-label={label}
         title={label}
         data-yes={yes}
         className={cx(styles.answer, styles.own)}
         onClick={() => {
-          onAnswer(!yes);
+          onAnswer(nextAnswer(cell));
         }}
       >
         {content}

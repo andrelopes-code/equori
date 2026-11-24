@@ -119,15 +119,15 @@ describe("addFactQuestions", () => {
     text: `Text ${String(i + 1)}`,
   }));
 
-  it("appends one question per entry with a false answer per member", () => {
+  it("appends one question per entry with a blank answer per member", () => {
     const cls = addFactQuestions(draft(), 0, nine).classes[0];
 
     expect(cls?.questions).toEqual(nine.map((f) => f.text));
     expect(cls?.questionFacts).toEqual(nine.map((f) => f.fact));
     expect(cls?.questionLimits).toEqual(Array<string>(9).fill(""));
     expect(cls?.members.map((m) => m.answers)).toEqual([
-      Array<boolean>(9).fill(false),
-      Array<boolean>(9).fill(false),
+      Array<null>(9).fill(null),
+      Array<null>(9).fill(null),
     ]);
   });
 

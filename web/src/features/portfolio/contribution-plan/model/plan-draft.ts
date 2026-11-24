@@ -10,8 +10,9 @@ export interface MemberDraft {
   accountId?: string;
   instrument?: string;
   targetBp?: number;
-  // One answer per question of the class, true for "sim" (CQ2).
-  answers?: boolean[];
+  // One answer per question of the class, true for "sim", null for a blank one of a question with
+  // a fact (CQ2).
+  answers?: (boolean | null)[];
 }
 
 export interface ClassDraft {

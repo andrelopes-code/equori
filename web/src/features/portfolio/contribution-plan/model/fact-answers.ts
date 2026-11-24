@@ -13,11 +13,12 @@ export const piotroskiFacts: readonly string[] = [
   "piotroski_p9",
 ];
 
-// The answers CQ3 counts: the fact where the filings decide, else the investor's (FQ4).
+// The answers CQ3 counts: the fact where the filings decide, else the investor's, null when blank
+// (FQ4).
 export function effectiveAnswers(
-  answers: boolean[],
+  answers: (boolean | null)[],
   factAnswers: FactAnswer[] | undefined,
-): boolean[] {
+): (boolean | null)[] {
   return answers.map((answer, q) =>
     factDecides(factAnswers, q) ? factAnswers?.[q] === "yes" : answer,
   );

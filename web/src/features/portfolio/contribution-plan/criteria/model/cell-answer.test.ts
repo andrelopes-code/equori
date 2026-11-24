@@ -98,7 +98,43 @@ describe("cellAnswer", () => {
   });
 });
 
+describe("cellAnswer without an answer", () => {
+  it("is blank with the reason equori gives none", () => {
+    expect(
+      cellAnswer({ ...input, member: { accountId: "acc-1" }, stored: null }),
+    ).toEqual({ kind: "own", yes: null, reason: "no_report" });
+  });
+
+  it("draws the answer equori gives over a blank one", () => {
+    expect(cellAnswer({ ...input, stored: null })).toMatchObject({
+      kind: "automatic",
+      yes: false,
+    });
+  });
+});
+
 describe("cellPoints", () => {
+  it("is undefined with a blank answer", () => {
+    expect(
+      cellPoints(
+        [
+          { kind: "automatic", yes: true, detail: {} },
+          { kind: "own", yes: null, reason: "chart" },
+        ],
+        [null, null],
+      ),
+    ).toBeUndefined();
+  });
+
+  it("does not take a pending cell for a blank one", () => {
+    expect(
+      cellPoints(
+        [{ kind: "automatic", yes: true, detail: {} }, { kind: "pending" }],
+        [null, null],
+      ),
+    ).toBe(1);
+  });
+
   it("counts the answers yes and the stored answer of a pending cell", () => {
     expect(
       cellPoints(

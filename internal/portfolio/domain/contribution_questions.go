@@ -40,8 +40,8 @@ func (c PlanClass) QuestionIdeals() bool {
 	})
 }
 
-// IdealsFromAnswers returns the member targets of CQ3 for the given counts of answers true; nil
-// when every count is zero.
+// IdealsFromAnswers returns the member targets of CQ3 for the given weights; nil when every weight
+// is zero.
 func IdealsFromAnswers(yes []int) []int {
 	total := 0
 	for _, s := range yes {
@@ -98,12 +98,12 @@ func (c PlanClass) withIdeals() (PlanClass, error) {
 		return PlanClass{}, err
 	}
 
-	yes, err := countYes(c.Members, len(questions))
+	points, err := countPoints(c.Members, facts)
 	if err != nil {
 		return PlanClass{}, err
 	}
 
-	ideals := IdealsFromAnswers(yes)
+	ideals := IdealsFromAnswers(idealWeights(points))
 	out := c
 	out.Questions = questions
 	out.QuestionFacts = facts
@@ -200,8 +200,9 @@ func cleanFacts(raw []string, questions int) ([]string, error) {
 	return slices.Clone(raw), nil
 }
 
-func countYes(members []PlanMember, questions int) ([]int, error) {
-	yes := make([]int, len(members))
+// countPoints returns the answers true of each member; nil for a member that lacks an answer (CQ3).
+func countPoints(members []PlanMember, facts []string) ([]*int, error) {
+	points := make([]*int, len(members))
 
 	for i, m := range members {
 		if m.TargetBP != nil {
@@ -211,30 +212,77 @@ func countYes(members []PlanMember, questions int) ([]int, error) {
 			)
 		}
 
-		if len(m.Answers) != questions {
+		if len(m.Answers) != len(facts) {
 			return nil, fmt.Errorf(
 				"%w: %d answers for %d questions",
 				ErrAnswersInvalid,
 				len(m.Answers),
-				questions,
+				len(facts),
 			)
 		}
 
 		for q, a := range m.Answers {
-			if effectiveAnswer(m, q, a) {
-				yes[i]++
+			if a == nil && facts[q] == "" {
+				return nil, fmt.Errorf("%w: no answer to question %d", ErrAnswersInvalid, q+1)
 			}
+		}
+
+		points[i] = m.points()
+	}
+
+	return points, nil
+}
+
+// points counts the effective answers true; nil when one is blank.
+func (m PlanMember) points() *int {
+	yes := 0
+
+	for q, a := range m.Answers {
+		effective := effectiveAnswer(m, q, a)
+		if effective == nil {
+			return nil
+		}
+
+		if *effective {
+			yes++
 		}
 	}
 
-	return yes, nil
+	return &yes
 }
 
-// effectiveAnswer applies FQ4: the fact answer when it is yes or no, else the stored answer.
-func effectiveAnswer(m PlanMember, q int, stored bool) bool {
+// effectiveAnswer applies FQ4: the fact answer when it is yes or no, else the stored answer, nil
+// when blank.
+func effectiveAnswer(m PlanMember, q int, stored *bool) *bool {
 	if len(m.FactAnswers) == len(m.Answers) && m.FactAnswers[q] != FactNone {
-		return m.FactAnswers[q] == FactYes
+		yes := m.FactAnswers[q] == FactYes
+
+		return &yes
 	}
 
 	return stored
+}
+
+// idealWeights gives a member without points the weight of an equal share of the class, and the
+// others the rest by points (CQ3): with n members, u of them without points, and s the sum of the
+// points, s and p(n-u) add up to n times s.
+func idealWeights(points []*int) []int {
+	sum, scored := 0, 0
+
+	for _, p := range points {
+		if p != nil {
+			sum += *p
+			scored++
+		}
+	}
+
+	out := make([]int, len(points))
+	for i, p := range points {
+		out[i] = sum
+		if p != nil {
+			out[i] = *p * scored
+		}
+	}
+
+	return out
 }

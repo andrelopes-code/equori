@@ -59,9 +59,9 @@ type PlanMember struct {
 	AccountID  uuid.UUID
 	Instrument money.Currency
 	TargetBP   *int
-	// Answers holds one answer per question of the class, true for "sim" (CQ2); nil without
-	// questions.
-	Answers []bool
+	// Answers holds one answer per question of the class, true for "sim", nil for a question with
+	// a fact the investor did not answer (CQ2); nil without questions.
+	Answers []*bool
 	// FactAnswers holds the answer of the filings to each question (FQ3); nil means every answer
 	// is the investor's. FactsYear is the fiscal year they read (FQ6).
 	FactAnswers []FactAnswer

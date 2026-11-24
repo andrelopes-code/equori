@@ -303,9 +303,7 @@ describe("Contribution plan, criteria", () => {
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(
-        "Sem demonstrações: ITUB4. Nesses ativos a resposta é sua.",
-      ),
+      screen.getByText("Parte igual do grupo, por falta de resposta: ITUB4."),
     ).toBeVisible();
 
     await user.click(screen.getByRole("button", { name: "Salvar" }));
@@ -317,11 +315,48 @@ describe("Contribution plan, criteria", () => {
         question_facts: ["price_earnings_max"],
         question_limits: ["15"],
         members: [
-          { instrument: "WEGE3", answers: [false] },
-          { instrument: "ITUB4", answers: [false] },
+          { instrument: "WEGE3", answers: [null] },
+          { instrument: "ITUB4", answers: [null] },
         ],
       });
     });
+  });
+
+  it("gives the equal share to an asset with a blank answer until the investor answers", async () => {
+    const blank = {
+      ...answered,
+      members: answered.members.map((m) =>
+        m.instrument === "ITUB4" ? { ...m, answers: [true, null] } : m,
+      ),
+    };
+    const user = await openBoard([blank]);
+    const grid = await board();
+    const cell = (answer: string) =>
+      within(grid).findByRole("button", {
+        name: `ITUB4, P/L de até: ${answer}`,
+      });
+
+    expect(
+      within(grid).getByRole("columnheader", {
+        name: "ideal de ITUB4 no grupo: 67%, parte igual por falta de resposta",
+      }),
+    ).toHaveTextContent("parte igual");
+
+    const open = await cell("sem resposta, número de ações não conferido");
+    expect(open).toHaveAttribute("aria-pressed", "mixed");
+    expect(open).toHaveTextContent(/^sem dado$/);
+
+    await user.click(open);
+    await user.click(
+      await cell("não, sua resposta: número de ações não conferido"),
+    );
+    await user.click(
+      await cell("sim, sua resposta: número de ações não conferido"),
+    );
+
+    expect(
+      await cell("sem resposta, número de ações não conferido"),
+    ).toBeVisible();
   });
 
   it("stores a percent limit as a fraction", async () => {

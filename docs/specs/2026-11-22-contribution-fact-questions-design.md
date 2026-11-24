@@ -63,7 +63,7 @@ Chosen: 3. It sacrifices one implementation of CR11; the cases of CR12 run again
 
 **FQ3 Fact answer.** A fact answer is `yes`, `no` or `none`. For a member that names an instrument, equori reads the first report set of `marketdata.CompanyReports` for its code, and from it the periods of 12 months, newest first: `t`, `t−1`, `t−2`. The answer of a signal is `yes` when the condition of CR11 holds, `no` when it does not, and `none` when an input is absent or a divisor is not above zero. Every answer is `none` when the member names an account, when no report set exists and with fewer than two fiscal years. A chart of accounts that is not `standard` answers P1, P3 and P7 and gives `none` to the other six (amended on 2026-11-24: the accounts of the three have one meaning in every chart; the operating cash flow of a bank, which P2 and P4 read, moves with its deposits and its loans). Ratios are compared as exact rationals (`math/big`).
 
-**FQ4 Effective answer.** The effective answer of a member to a question is the fact answer when it is `yes` or `no`, else the investor's stored answer. CQ3 counts the effective answers.
+**FQ4 Effective answer.** The effective answer of a member to a question is the fact answer when it is `yes` or `no`, else the investor's stored answer, blank when the investor gave none (amended on 2026-11-24). CQ3 counts the effective answers; a blank one is not a `no`.
 
 **FQ5 Derived on every read.** GET, the response of PUT, both previews and the tools derive the member ideals of every group with questions from the effective answers at the time of the read. The stored member ideals of such a group are not read.
 
@@ -123,7 +123,7 @@ A fact question row writes its catalog text by key, read-only, with the muted no
 
 ### Assets without filings
 
-Under the asset rows of a group that names a fact, one muted line of fixed height names the members without `facts_year`: "Sem demonstrações para os sinais: {nomes}. Sem um sim seu, esses ativos não recebem aporte." The line is absent when every member has filings. Review of 2026-11-22 on the demo book: ITUB4 and BBAS3 (chart `other`), BPAC11 and BOVA11 (no company report) showed "ideal 0% do grupo" with the reason only in their own facts line.
+Superseded on 2026-11-24: the line under the board names the assets that take an equal share (CQ3). Under the asset rows of a group that names a fact, one muted line of fixed height names the members without `facts_year`: "Sem demonstrações para os sinais: {nomes}. Sem um sim seu, esses ativos não recebem aporte." The line is absent when every member has filings. Review of 2026-11-22 on the demo book: ITUB4 and BBAS3 (chart `other`), BPAC11 and BOVA11 (no company report) showed "ideal 0% do grupo" with the reason only in their own facts line.
 
 ## Cross-cutting questions
 

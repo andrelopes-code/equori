@@ -76,7 +76,7 @@ type ContributionMember struct {
 	AccountID    uuid.UUID
 	Instrument   money.Currency
 	TargetBP     *int
-	Answers      []bool              // one per question of the class (CQ2); nil without questions
+	Answers      []*bool             // one per question of the class (CQ2); nil without questions
 	FactAnswers  []domain.FactAnswer // one per question of the class (FQ3); nil without questions
 	FactDetails  []domain.FactDetail // one per question of the class (AC14); nil without questions
 	FactsYear    *time.Time          // last day of the fiscal year the fact answers read (FQ6)

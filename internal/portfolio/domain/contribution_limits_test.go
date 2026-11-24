@@ -160,7 +160,7 @@ func TestWithIdealsTwentyQuestions(t *testing.T) {
 
 		for i := range n {
 			c.Questions = append(c.Questions, string(rune('a'+i)))
-			m.Answers = append(m.Answers, true)
+			m.Answers = append(m.Answers, said(true)...)
 		}
 
 		c.Members = []PlanMember{m}

@@ -23,7 +23,7 @@ import { useCriteriaEdits } from "@/features/portfolio/contribution-plan/criteri
 import type { BoardAsset } from "@/features/portfolio/contribution-plan/criteria/model/board-rows";
 import {
   boardOf,
-  withoutReport,
+  equalShares,
 } from "@/features/portfolio/contribution-plan/criteria/model/board-rows";
 import type { PlanEditor } from "@/features/portfolio/contribution-plan/editor/use-plan-editor";
 import type { EditClass } from "@/features/portfolio/contribution-plan/model/plan-edits";
@@ -68,8 +68,8 @@ export function CriteriaSection({
   const companies = useCompanyFigures(
     assets.flatMap((a) => (a.instrument === undefined ? [] : [a.instrument])),
   );
-  const unanswered = withoutReport(assets);
-  const noYes = rows.length > 0 && assets.every((a) => a.points === 0);
+  const unanswered = equalShares(assets);
+  const noYes = rows.length > 0 && assets.every((a) => (a.points ?? 0) === 0);
 
   function openerOf({ instrument }: BoardAsset) {
     if (instrument === undefined || !companies.has(instrument)) {

@@ -13,6 +13,27 @@ interface CellContext {
   fact: string;
 }
 
+// The first line of a cell: the answer, the wait, or why a blank answer has none.
+export function cellWord(t: TFunction, cell: CellAnswer, note: string): string {
+  if (cell.kind === "pending") return t("contributionPlan.criteria.waiting");
+
+  if (cell.yes === null)
+    return note === "" ? t("contributionPlan.criteria.blank") : note;
+
+  return answerWord(t, cell.yes);
+}
+
+// The answer a press of the cell gives: an own criterion turns between yes and no; one equori gives
+// no answer to goes from blank to no, to yes, and back.
+export function nextAnswer(
+  cell: Extract<CellAnswer, { kind: "own" }>,
+): boolean | null {
+  if (cell.yes === null) return false;
+  if (!cell.yes) return true;
+
+  return cell.reason === undefined ? false : null;
+}
+
 // The second line of a cell: the figure equori read, or that it has none or that the criterion does
 // not apply, so the answer is the investor's; "" for an own criterion and a signal.
 export function cellNote(cell: CellAnswer, context: CellContext): string {
@@ -45,9 +66,17 @@ export function cellLabel(cell: CellAnswer, context: CellContext): string {
     return t("contributionPlan.criteria.cellWaiting", { asset, criterion });
   }
 
-  const answer = t(
-    cell.yes ? "contributionPlan.criteria.yes" : "contributionPlan.criteria.no",
-  );
+  if (cell.kind === "own" && cell.yes === null) {
+    return cell.reason === undefined
+      ? t("contributionPlan.criteria.cellBlank", { asset, criterion })
+      : t("contributionPlan.criteria.cellBlankReason", {
+          asset,
+          criterion,
+          reason: reasonText(t, cell.reason),
+        });
+  }
+
+  const answer = answerWord(t, cell.yes === true);
 
   if (cell.kind === "own") {
     return cell.reason === undefined
@@ -80,4 +109,10 @@ export function cellLabel(cell: CellAnswer, context: CellContext): string {
         answer,
         reason: reasonText(t, reason),
       });
+}
+
+function answerWord(t: TFunction, yes: boolean): string {
+  return t(
+    yes ? "contributionPlan.criteria.yes" : "contributionPlan.criteria.no",
+  );
 }

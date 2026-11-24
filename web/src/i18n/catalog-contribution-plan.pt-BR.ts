@@ -240,12 +240,16 @@ export const contributionPlanPtBR: Record<
   "contributionPlan.criteria.noteRepeated": "pergunta repetida",
   "contributionPlan.criteria.yes": "sim",
   "contributionPlan.criteria.no": "não",
+  "contributionPlan.criteria.blank": "sem resposta",
   "contributionPlan.criteria.waiting": "calculando",
   "contributionPlan.criteria.points": "{yes} de {count}",
+  "contributionPlan.criteria.equalShare": "parte igual",
   "contributionPlan.criteria.boardLabel": "Critérios por ativo de {name}",
   "contributionPlan.criteria.criterionColumn": "Critério",
   "contributionPlan.criteria.idealOf":
     "ideal de {name} no grupo: {share}, {yes} de {count} critérios",
+  "contributionPlan.criteria.idealOfEqual":
+    "ideal de {name} no grupo: {share}, parte igual por falta de resposta",
   "contributionPlan.criteria.cellAutomatic":
     "{asset}, {criterion}: {answer}, {figure}, dado de {date}, respondido pelo equori",
   "contributionPlan.criteria.cellSignal":
@@ -255,6 +259,9 @@ export const contributionPlanPtBR: Record<
   "contributionPlan.criteria.cellOwn": "{asset}, {criterion}: {answer}",
   "contributionPlan.criteria.cellOwnReason":
     "{asset}, {criterion}: {answer}, sua resposta: {reason}",
+  "contributionPlan.criteria.cellBlank": "{asset}, {criterion}: sem resposta",
+  "contributionPlan.criteria.cellBlankReason":
+    "{asset}, {criterion}: sem resposta, {reason}",
   "contributionPlan.criteria.cellWaiting": "{asset}, {criterion}: calculando",
   "contributionPlan.criteria.statementsOf": "Ver os dados de {name}",
   "contributionPlan.criteria.byCriteria": "os ideais vêm dos critérios",
@@ -267,10 +274,10 @@ export const contributionPlanPtBR: Record<
     "O ideal de cada ativo é a sua parte dos pontos do grupo.",
   "contributionPlan.criteria.noYes":
     "Nenhum sim: o grupo recebe o valor sem divisão entre os ativos.",
-  "contributionPlan.criteria.noReport":
-    "Sem demonstrações: {names}. Nesses ativos a resposta é sua.",
+  "contributionPlan.criteria.equalShares":
+    "Parte igual do grupo, por falta de resposta: {names}.",
   "contributionPlan.criteria.rules":
-    "Um sim, um ponto. Preço do fim do mês anterior.",
+    "Um sim, um ponto. Sem resposta, parte igual. Preço do fim do mês anterior.",
   "contributionPlan.criteria.incompleteOne":
     "Complete {count} critério para salvar",
   "contributionPlan.criteria.incompleteMany":

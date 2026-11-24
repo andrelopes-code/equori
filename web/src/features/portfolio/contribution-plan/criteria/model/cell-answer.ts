@@ -5,10 +5,10 @@ type Group = components["schemas"]["ContributionClass"];
 type Detail = components["schemas"]["ContributionFactDetail"];
 
 // What a cell of the board draws: the answer equori gives with the figure it read, the investor's
-// own answer (with the reason equori gives none), or the wait for the preview.
+// own answer (null when blank, with the reason equori gives none), or the wait for the preview.
 export type CellAnswer =
   | { kind: "automatic"; yes: boolean; detail: Detail }
-  | { kind: "own"; yes: boolean; reason: string | undefined }
+  | { kind: "own"; yes: boolean | null; reason: string | undefined }
   | { kind: "pending" };
 
 interface CellInput {
@@ -17,8 +17,8 @@ interface CellInput {
   member: MemberDraft;
   fact: string;
   limit: string;
-  // The stored answer of the investor.
-  stored: boolean;
+  // The stored answer of the investor, null when blank.
+  stored: boolean | null;
   // Whether the preview can answer the criterion: a limit is set.
   complete: boolean;
 }
@@ -57,7 +57,14 @@ export function cellAnswer({
 }
 
 // The points of an asset: its cells that answer yes; a pending cell counts the stored answer.
-export function cellPoints(cells: CellAnswer[], stored: boolean[]): number {
+// Undefined with a blank answer: the asset takes an equal share (CQ3).
+export function cellPoints(
+  cells: CellAnswer[],
+  stored: (boolean | null)[],
+): number | undefined {
+  if (cells.some((cell) => cell.kind === "own" && cell.yes === null))
+    return undefined;
+
   return cells.filter((cell, q) =>
     cell.kind === "pending" ? (stored[q] ?? false) : cell.yes,
   ).length;

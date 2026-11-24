@@ -227,7 +227,7 @@ func contributionClass(c app.ContributionClass) ContributionClass {
 	return out
 }
 
-func optionalAnswers(a []bool) *[]bool {
+func optionalAnswers(a []*bool) *[]*bool {
 	if a == nil {
 		return nil
 	}

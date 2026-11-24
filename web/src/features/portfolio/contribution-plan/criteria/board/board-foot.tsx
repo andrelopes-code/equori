@@ -7,7 +7,7 @@ import { useT } from "@/i18n/i18n-provider";
 interface BoardFootProps {
   // Whether no asset has a point.
   noYes: boolean;
-  // The names of the assets without statements.
+  // The names of the assets that take an equal share.
   unanswered: string[];
   // The name of the group.
   name: string;
@@ -26,7 +26,7 @@ export function BoardFoot({
   const text = [
     noYes ? t("contributionPlan.criteria.noYes") : "",
     unanswered.length > 0
-      ? t("contributionPlan.criteria.noReport", {
+      ? t("contributionPlan.criteria.equalShares", {
           names: unanswered.join(", "),
         })
       : "",

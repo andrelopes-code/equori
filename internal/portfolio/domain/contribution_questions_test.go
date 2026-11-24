@@ -116,8 +116,17 @@ func TestWithIdealsRejects(t *testing.T) {
 				TargetBP:  fullTargetBP,
 				Questions: []string{"Q1"},
 				Members: []PlanMember{
-					{Instrument: "AAAA3", Answers: []bool{true}, TargetBP: target(10000)},
+					{Instrument: "AAAA3", Answers: said(true), TargetBP: target(10000)},
 				},
+			},
+			want: ErrAnswersInvalid,
+		},
+		"CQ2 a blank answer to an own question": {
+			class: PlanClass{
+				Name:      "Q",
+				TargetBP:  fullTargetBP,
+				Questions: []string{"Q1"},
+				Members:   []PlanMember{{Instrument: "AAAA3", Answers: []*bool{nil}}},
 			},
 			want: ErrAnswersInvalid,
 		},
@@ -125,7 +134,7 @@ func TestWithIdealsRejects(t *testing.T) {
 			class: PlanClass{
 				Name:     "Q",
 				TargetBP: fullTargetBP,
-				Members:  []PlanMember{{Instrument: "AAAA3", Answers: []bool{true}}},
+				Members:  []PlanMember{{Instrument: "AAAA3", Answers: said(true)}},
 			},
 			want: ErrAnswersInvalid,
 		},
@@ -185,11 +194,21 @@ func questionClass(questions []string, answers ...[]bool) PlanClass {
 	for i, a := range answers {
 		c.Members = append(c.Members, PlanMember{
 			Instrument: money.Currency("QST" + string(rune('A'+i)) + "3"),
-			Answers:    a,
+			Answers:    said(a...),
 		})
 	}
 
 	return c
+}
+
+// said are answers the investor gave; none of them is blank.
+func said(values ...bool) []*bool {
+	out := make([]*bool, len(values))
+	for i := range values {
+		out[i] = &values[i]
+	}
+
+	return out
 }
 
 func memberTargets(c PlanClass) []*int {

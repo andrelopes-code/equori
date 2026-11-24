@@ -9260,9 +9260,9 @@ export interface components {
             account_id?: string;
             instrument?: string;
             target_bp?: number;
-            /** @description One answer per question of the group, true for yes (CQ2); absent in a group without questions. */
-            answers?: boolean[];
-            /** @description The answer of the filings to each question of the group; none when the investor's answer applies (FQ3). Absent in a group without questions. */
+            /** @description One answer per question of the group, true for yes, null for a question with a fact the investor did not answer (CQ2); absent in a group without questions. */
+            answers?: (boolean | null)[];
+            /** @description The answer of the filings to each question of the group; none when the investor's answer applies (FQ3). A member with none and a null answer takes an equal share of the group (CQ3). Absent in a group without questions. */
             fact_answers?: ("yes" | "no" | "none")[];
             /** @description What each answer of fact_answers read (AC14). Absent in a group without questions. */
             fact_details?: components["schemas"]["ContributionFactDetail"][];
@@ -9323,8 +9323,8 @@ export interface components {
             account_id?: string;
             instrument?: string;
             target_bp?: number;
-            /** @description One answer per question of the group, true for yes (CQ2); absent in a group without questions. */
-            answers?: boolean[];
+            /** @description One answer per question of the group, true for yes, null for a question with a fact the investor did not answer (CQ2); absent in a group without questions. */
+            answers?: (boolean | null)[];
         };
         ContributionPreviewInput: {
             amount?: components["schemas"]["Money"];

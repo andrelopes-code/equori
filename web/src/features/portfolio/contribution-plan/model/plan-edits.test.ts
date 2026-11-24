@@ -13,6 +13,7 @@ import {
   startEditing,
 } from "@/features/portfolio/contribution-plan/model/plan-edits";
 import {
+  addFactQuestions,
   addQuestion,
   setByQuestions,
 } from "@/features/portfolio/contribution-plan/model/question-edits";
@@ -150,6 +151,18 @@ describe("plan edits in question mode", () => {
     expect(added.classes[1]?.members[2]).toEqual({
       instrument: "ITUB4",
       answers: [false, false],
+    });
+  });
+
+  it("leaves the answers of a new member to facts blank", () => {
+    const facts = addFactQuestions(questioned(), 1, [
+      { fact: "piotroski_p1", text: "P1" },
+    ]);
+    const added = addMember(facts, 1, { instrument: "ITUB4" });
+
+    expect(added.classes[1]?.members[2]).toEqual({
+      instrument: "ITUB4",
+      answers: [false, false, null],
     });
   });
 

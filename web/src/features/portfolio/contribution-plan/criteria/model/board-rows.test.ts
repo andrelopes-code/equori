@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { components } from "@/api/schema.gen";
 import {
   boardOf,
-  withoutReport,
+  equalShares,
 } from "@/features/portfolio/contribution-plan/criteria/model/board-rows";
 import type { EditClass } from "@/features/portfolio/contribution-plan/model/plan-edits";
 
@@ -88,10 +88,23 @@ describe("boardOf", () => {
   });
 });
 
-describe("withoutReport", () => {
-  it("names the assets no report answers for", () => {
-    expect(withoutReport(boardOf(edit, answered, name).assets)).toEqual([
-      "Reserva",
-    ]);
+describe("equalShares", () => {
+  const blank = {
+    ...edit,
+    members: [
+      { instrument: "WEGE3", answers: [true, null, true] },
+      { accountId: "acc-1", answers: [false, null, false] },
+    ],
+  };
+
+  it("names the assets with a blank answer, which have no points", () => {
+    const { assets } = boardOf(blank, answered, name);
+
+    expect(assets.map((a) => a.points)).toEqual([2, undefined]);
+    expect(equalShares(assets)).toEqual(["Reserva"]);
+  });
+
+  it("names none when every asset has its answers", () => {
+    expect(equalShares(boardOf(edit, answered, name).assets)).toEqual([]);
   });
 });

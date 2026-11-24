@@ -88,6 +88,23 @@ describe("shoppingList", () => {
     expect(shoppingList(plan, names)[0]?.criteria).toBeUndefined();
   });
 
+  it("counts no points of a member with a blank answer (CQ3)", () => {
+    const view: Plan = {
+      ...plan,
+      classes: plan.classes.map((cls) => ({
+        ...cls,
+        questions: ["P1"],
+        members: cls.members.map((m) => ({
+          ...m,
+          answers: [null],
+          fact_answers: ["none"],
+        })),
+      })),
+    };
+
+    expect(shoppingList(view, names)[0]?.criteria).toBeUndefined();
+  });
+
   it("lists the order of the member: its quantity and its cost (S408, CN17)", () => {
     const view = withPetr4({
       quantity: { amount: 25, currency: "PETR4" },
