@@ -26,6 +26,8 @@ type pairHoles struct {
 	sources []string
 	// failed is set when one of them failed: no date is recorded but those of noTrade.
 	failed bool
+	// waiting are the days a source with daily files did not answer: they are asked by the next tick.
+	waiting []time.Time
 	// noTrade are the sessions a witnessed source states to be without a trade.
 	noTrade []time.Time
 }
@@ -72,7 +74,9 @@ func (m *Module) tickHoles(ctx context.Context) error {
 		err = errors.Join(err, m.askDays(ctx, src, holes))
 	}
 
-	m.holesChecked = today
+	if !slices.ContainsFunc(holes, func(h *pairHoles) bool { return len(h.waiting) > 0 }) {
+		m.holesChecked = today
+	}
 
 	return errors.Join(err, m.recordHoles(ctx, holes))
 }
@@ -323,6 +327,10 @@ func (m *Module) recordHole(
 	noTrade bool,
 ) error {
 	for _, d := range dates {
+		if slices.ContainsFunc(h.waiting, d.Equal) {
+			continue
+		}
+
 		if err := m.q.RecordPriceHole(ctx, postgres.RecordPriceHoleParams{
 			Instrument:      string(h.instrument.Code),
 			QuoteInstrument: string(h.quote),

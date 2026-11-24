@@ -11,8 +11,12 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
-// yearSpanDays is a range that a source with year files reads from them (A222 MQ12).
-const yearSpanDays = 32
+const (
+	// yearSpanDays is a range that a source with year files reads from them (A222 MQ12).
+	yearSpanDays = 32
+	// maxFailedDays is the number of failing days in a row that ends the questions of a source.
+	maxFailedDays = 3
+)
 
 // askYears asks src for each year that holds a hole of a pair it quotes, from its first day to its
 // last hole. More than a month makes a source with year files read them, and the last session asked
@@ -60,8 +64,9 @@ func (m *Module) askYears(
 	return failed
 }
 
-// askDays asks a source with one file per day for each day still without a price, the latest first.
-// The first failure ends it: the host is down, and the next check asks again.
+// askDays asks a source with one file per day for each day still without a price, the latest first. A
+// failing day waits for the next tick; maxFailedDays in a row end the questions, as a host that is down
+// does.
 func (m *Module) askDays(
 	ctx context.Context,
 	src feed.Source,
@@ -88,22 +93,30 @@ func (m *Module) askDays(
 
 	days := slices.SortedFunc(maps.Keys(byDay), func(a, b time.Time) int { return b.Compare(a) })
 
-	for i, d := range days {
-		err := m.askHoles(ctx, src, byDay[d], d, d)
-		if err == nil {
-			continue
-		}
+	var (
+		failed error
+		inRow  int
+	)
 
-		for _, rest := range days[i:] {
-			for _, h := range byDay[rest] {
-				h.failed = true
+	for _, d := range days {
+		inRow++
+
+		if inRow <= maxFailedDays {
+			err := m.askHoles(ctx, src, byDay[d], d, d)
+			if err == nil {
+				inRow = 0
+				continue
 			}
+
+			failed = errors.Join(failed, err)
 		}
 
-		return err
+		for _, h := range byDay[d] {
+			h.waiting = append(h.waiting, d)
+		}
 	}
 
-	return nil
+	return failed
 }
 
 // askHoles fetches [from, to] of the pairs from src, stores the prices of their holes and drops them
@@ -136,7 +149,7 @@ func (m *Module) askHoles(
 
 	for _, h := range pairs {
 		if _, ok := failures[h.instrument.Code]; ok {
-			h.failed = true
+			h.failed = h.failed || !from.Equal(to)
 			continue
 		}
 

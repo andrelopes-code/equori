@@ -413,14 +413,16 @@ func TestS710HolesFilledByThePriceReport(t *testing.T) {
 	}
 }
 
-// PH4: the first failing day ends the questions of a check, and nothing of its pair is recorded.
+// PH4: three failing days in a row end the questions of a check, nothing of them is recorded and the
+// next tick asks again.
 func TestHolesOfAFailingPriceReportWait(t *testing.T) {
 	t.Parallel()
 
-	requests := 0
+	var asked []string
+
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Query().Has("filelist") {
-			requests++
+		if name := r.URL.Query().Get("filelist"); name != "" {
+			asked = append(asked, name)
 		}
 
 		http.Error(w, "busy", http.StatusGatewayTimeout)
@@ -432,15 +434,69 @@ func TestHolesOfAFailingPriceReportWait(t *testing.T) {
 		map[string]string{"b3_price_report": srv.URL},
 	))
 	seedHoles(t, h, "b3_price_report")
+	execSQL(t, h, `INSERT INTO marketdata_index_rate (index_id, date, rate, source)
+		VALUES ('ibovespa', '2025-02-28', 0, 'br_ibovespa')`)
+	execSQL(t, h, `INSERT INTO marketdata_price
+		(instrument, quote_instrument, date, value, source, priority)
+		VALUES ('PETR4', 'BRL', '2025-02-27', 36, 'b3_price_report', 3)`)
 
 	h.App.Marketdata.TickFeeds(t.Context())
 
-	// One request of the tick and one of the check.
-	if requests != 2 {
-		t.Errorf("requests = %d, want 2", requests)
+	// One request of the tick and three of the check, of the four holes.
+	if len(asked) != 4 {
+		t.Errorf("asked = %v, want 4 files", asked)
 	}
 
 	assertRows(t, h.Rows(`SELECT date::text FROM marketdata_price_hole`))
+
+	asked = nil
+
+	h.App.Marketdata.TickFeeds(t.Context())
+
+	if len(asked) != 4 {
+		t.Errorf("asked by the next tick = %v, want 4 files", asked)
+	}
+}
+
+// PH4: a failing day does not end the questions: the other days are stored and recorded, and the next
+// tick asks the failing one alone.
+func TestHoleOfAFailingDayIsAskedAlone(t *testing.T) {
+	t.Parallel()
+
+	files := map[string]string{
+		"SPRE250304": priceReport("2025-03-04", "PETR4 36.1"),
+		"SPRE250305": "busy",
+		"SPRE250306": priceReport("2025-03-06", "VALE3 60"),
+	}
+	srv, asked := reportServer(t, files)
+
+	h := apitest.New(t, apitest.Today("2026-11-10"), apitest.PriceFeeds(
+		[]string{"b3_price_report"},
+		map[string]string{"b3_price_report": srv.URL},
+	))
+	seedHoles(t, h, "b3_price_report")
+
+	h.App.Marketdata.TickFeeds(t.Context())
+
+	assertRows(t, h.Rows(`SELECT date::text FROM marketdata_price WHERE date = '2025-03-04'`),
+		"2025-03-04")
+	assertRows(t, h.Rows(`SELECT date::text FROM marketdata_price_hole`), "2025-03-06")
+
+	before := len(asked())
+
+	h.App.Marketdata.TickFeeds(t.Context())
+
+	var old []string
+
+	for _, name := range asked()[before:] {
+		if strings.HasPrefix(name, "SPRE25") {
+			old = append(old, name)
+		}
+	}
+
+	if !slices.Equal(old, []string{"SPRE250305"}) {
+		t.Errorf("asked by the next tick = %v, want the failing day alone", old)
+	}
 }
 
 // PH2, PH4: while b3_cotahist is enabled, b3_consolidated does not read its year files again.
