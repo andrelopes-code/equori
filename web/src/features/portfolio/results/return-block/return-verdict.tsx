@@ -2,9 +2,9 @@ import { Fragment } from "react";
 
 import styles from "@/features/portfolio/results/return-block/return-block.module.css";
 import { toBasisPoints } from "@/features/portfolio/results/return-block/block-figures";
-import { Toned } from "@/features/portfolio/results/shared/toned";
 import { formatSignedBasisPoints, numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { Toned } from "@/ui/money/toned";
 
 interface ReturnVerdictProps {
   // The cumulative return of the period, as a fraction.

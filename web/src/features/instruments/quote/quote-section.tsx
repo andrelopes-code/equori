@@ -12,6 +12,7 @@ import { positionTotals } from "@/features/instruments/model/position-totals";
 import { PriceChart } from "@/features/instruments/price-chart/price-chart";
 import { PriceRangeControl } from "@/features/instruments/quote/price-range-control";
 import { priceStats } from "@/features/instruments/model/price-stats";
+import { MonthsBlock } from "@/features/instruments/months/months-block";
 import {
   type PriceRange,
   rangeWindow,
@@ -19,7 +20,6 @@ import {
 import { QuoteHero } from "@/features/instruments/quote/quote-hero";
 import { quoteReading } from "@/features/instruments/quote/quote-reading";
 import { RangeFigures } from "@/features/instruments/quote/range-figures";
-import { YearlyChanges } from "@/features/instruments/quote/yearly-changes";
 import { useInstrumentPositions } from "@/features/instruments/model/use-instrument-positions";
 import {
   type Period,
@@ -89,47 +89,54 @@ export function QuoteSection({ instrument, quote }: QuoteSectionProps) {
     );
 
   return (
-    <Stack gap={4} aria-busy={shown !== range || undefined}>
-      <div className={styles.head}>
-        <div className={styles.hero}>
-          <QuoteHero
-            reading={reading}
-            quote={quote}
-            loading={recent.isPending}
-            stale={instrument.coverage?.stale ?? false}
-          />
-        </div>
-        <div className={styles.controls}>
-          {period !== null && (
-            <Button size="sm" variant="ghost" onClick={handleClearPeriod}>
-              {t("instrument.period.clear")}
-            </Button>
-          )}
+    <Stack gap={8}>
+      <Stack gap={4} aria-busy={shown !== range || undefined}>
+        <div className={styles.head}>
+          <div className={styles.hero}>
+            <QuoteHero
+              reading={reading}
+              quote={quote}
+              loading={recent.isPending}
+              stale={instrument.coverage?.stale ?? false}
+            />
+          </div>
+          <div className={styles.controls}>
+            {period !== null && (
+              <Button size="sm" variant="ghost" onClick={handleClearPeriod}>
+                {t("instrument.period.clear")}
+              </Button>
+            )}
 
-          <PriceRangeControl value={range} onChange={handleRangeChange} />
+            <PriceRangeControl value={range} onChange={handleRangeChange} />
+          </div>
         </div>
-      </div>
-      {(series.isPending || prices.length > 0) && (
-        <PriceChart
-          key={shown}
-          prices={prices}
-          quote={quote}
-          loading={series.isPending}
-          averageCost={averageCost}
-          onActiveDateChange={setActiveDate}
-          period={period}
-          onPeriodChange={setPeriod}
-        />
-      )}
-      {series.data?.items.length === 0 && (
-        <Text size="sm" tone="muted">
-          {t("instrument.prices.empty")}
-        </Text>
-      )}
-      {(series.isPending || stats !== null) && (
-        <RangeFigures stats={stats} quote={quote} loading={series.isPending} />
-      )}
-      <YearlyChanges code={instrument.code} quote={quote} first={first} />
+        {(series.isPending || prices.length > 0) && (
+          <PriceChart
+            key={shown}
+            prices={prices}
+            quote={quote}
+            loading={series.isPending}
+            averageCost={averageCost}
+            onActiveDateChange={setActiveDate}
+            period={period}
+            onPeriodChange={setPeriod}
+          />
+        )}
+        {series.data?.items.length === 0 && (
+          <Text size="sm" tone="muted">
+            {t("instrument.prices.empty")}
+          </Text>
+        )}
+        {(series.isPending || stats !== null) && (
+          <RangeFigures
+            stats={stats}
+            quote={quote}
+            loading={series.isPending}
+          />
+        )}
+      </Stack>
+
+      <MonthsBlock code={instrument.code} quote={quote} first={first} />
     </Stack>
   );
 }

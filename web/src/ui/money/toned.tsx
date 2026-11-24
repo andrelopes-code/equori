@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
-import styles from "@/features/portfolio/results/shared/shared.module.css";
 import { directionOf, useAmountTone } from "@/ui/money/amount-tone";
+import styles from "@/ui/money/toned.module.css";
 
 interface TonedProps {
   // The signed result the text states: its sign picks the tone.

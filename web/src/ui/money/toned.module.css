@@ -1,0 +1,10 @@
+@layer app {
+  /* A result reads in its tone; the sign and the word stay in the text */
+  .gain {
+    color: var(--slotted-tone-success-text);
+  }
+
+  .loss {
+    color: var(--slotted-tone-danger-text);
+  }
+}

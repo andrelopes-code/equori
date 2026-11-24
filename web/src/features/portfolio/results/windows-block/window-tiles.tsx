@@ -1,5 +1,4 @@
 import { toBasisPoints } from "@/features/portfolio/results/return-block/block-figures";
-import { Toned } from "@/features/portfolio/results/shared/toned";
 import { AboveTile } from "@/features/portfolio/results/windows-block/above-tile";
 import { ExtremeTile } from "@/features/portfolio/results/windows-block/extreme-tile";
 import { ShareNote } from "@/features/portfolio/results/windows-block/share-note";
@@ -12,6 +11,7 @@ import {
   numberFormatter,
 } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { Toned } from "@/ui/money/toned";
 
 interface WindowTilesProps {
   figures: WindowFigures;

@@ -4,10 +4,10 @@ import type {
   IrrRow,
 } from "@/features/portfolio/results/evolution-block/evolution-figures";
 import { FactRow } from "@/features/portfolio/results/shared/fact-row";
-import { Toned } from "@/features/portfolio/results/shared/toned";
 import { formatSignedBasisPoints } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import { Toned } from "@/ui/money/toned";
 
 interface EvolutionBridgeProps {
   figures: EvolutionFigures;

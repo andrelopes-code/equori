@@ -3,13 +3,13 @@ import type { BlockFigures } from "@/features/portfolio/results/return-block/blo
 import { toBasisPoints } from "@/features/portfolio/results/return-block/block-figures";
 import { FactList } from "@/features/portfolio/results/shared/fact-list";
 import { FactRow } from "@/features/portfolio/results/shared/fact-row";
-import { Toned } from "@/features/portfolio/results/shared/toned";
 import {
   formatBasisPoints,
   formatMonthSlashYear,
   formatSignedBasisPoints,
 } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { Toned } from "@/ui/money/toned";
 
 type ReturnSeries = components["schemas"]["ReturnSeries"];
 

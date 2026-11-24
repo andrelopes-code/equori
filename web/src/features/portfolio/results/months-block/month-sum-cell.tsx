@@ -1,5 +1,5 @@
-import { Toned } from "@/features/portfolio/results/shared/toned";
 import { useAppLocale } from "@/i18n/i18n-provider";
+import { Toned } from "@/ui/money/toned";
 import { emptyCell, monthCellText } from "@/ui/month-heat/month-cell-text";
 import styles from "@/ui/month-heat/month-heat.module.css";
 

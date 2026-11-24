@@ -1,9 +1,9 @@
 import type { Window } from "@/features/portfolio/results/model/rolling-windows";
 import { toBasisPoints } from "@/features/portfolio/results/return-block/block-figures";
-import { Toned } from "@/features/portfolio/results/shared/toned";
 import { WindowTile } from "@/features/portfolio/results/windows-block/window-tile";
 import { formatMonthSlashYear, formatSignedBasisPoints } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { Toned } from "@/ui/money/toned";
 
 interface ExtremeTileProps {
   label: string;

@@ -14,7 +14,7 @@ describe("Instrument page in privacy mode", () => {
       fetch: api(),
     });
     await screen.findByRole("group", { name: /^Quote of 10\/16\/2026/ });
-    await screen.findByText(catalogEn["instrument.figures.pointsNote"]);
+    await screen.findByText(catalogEn["instrument.figures.low"]);
     await screen.findByRole("region", {
       name: catalogEn["instrument.position.figures"],
     });

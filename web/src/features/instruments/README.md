@@ -30,6 +30,7 @@ Folders:
 - `price-chart/`: the price chart and its axis.
 - `fund-report/`: the fund report section of a listed real estate fund: its figures, the break-even line and their pure functions.
 - `positions/`: the positions that hold the instrument.
+- `months/`: the price change of each month and year (`docs/specs/2026-11-24-instrument-months-design.md`).
 - `quote/`: the quote section, hero, range figures and range control.
 - `sources/`: the "Where to check" section, the external pages that show the instrument (`docs/specs/2026-11-13-instrument-sources-design.md`).
 - `price-table/`: the price table and its details.

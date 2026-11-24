@@ -1,5 +1,7 @@
 # Yearly price change
 
+Replaced by `2026-11-24-instrument-months-design.md`, which draws the change of each month and keeps the change of the year.
+
 A table of the price change of one instrument per calendar year, on `/instruments/$code`. The range control (1W to max) covers windows that end today; this table answers "how much did the price move in 2024".
 
 ## 1. Scope

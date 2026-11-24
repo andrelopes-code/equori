@@ -1,6 +1,6 @@
 import type { PriceStats } from "@/features/instruments/model/price-stats";
 import { usePriceFormat } from "@/features/instruments/model/use-price-format";
-import { formatDate, numberFormatter } from "@/i18n/format";
+import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { RangeChange } from "@/features/instruments/quote/range-change";
 import { FigureCard } from "@/ui/display/figure-card";
@@ -12,7 +12,7 @@ interface RangeFiguresProps {
   loading: boolean;
 }
 
-// IP7: while loading, stats is null; the change, the high, the low and the number of quotes of the range.
+// IP7: while loading, stats is null; the change, the high and the low of the range.
 export function RangeFigures({ stats, quote, loading }: RangeFiguresProps) {
   const t = useT();
   const [locale] = useAppLocale();
@@ -32,16 +32,6 @@ export function RangeFigures({ stats, quote, loading }: RangeFiguresProps) {
         loading={loading}
         value={stats === null ? undefined : format.text(stats.low.value)}
         note={stats === null ? "" : formatDate(stats.low.date, locale)}
-      />
-      <FigureCard
-        label={t("instrument.figures.points")}
-        loading={loading}
-        value={
-          stats === null
-            ? undefined
-            : numberFormatter(locale).format(stats.count)
-        }
-        note={t("instrument.figures.pointsNote")}
       />
     </FigureGrid>
   );

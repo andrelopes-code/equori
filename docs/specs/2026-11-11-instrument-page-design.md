@@ -1,5 +1,7 @@
 # Instrument page redesign
 
+Amended by `2026-11-24-instrument-months-design.md`: the prices by date open from the Data section (IP1), the range figures are three (IP7) and the table of prices reads one year (IP12).
+
 Redesign of `/instruments/$code` (`InstrumentPage`, PC19, A222 MQ35/MQ36) for every instrument type: currency, stock, ETF, REIT, depositary receipt, fund, crypto and fixed income. Scope is the page body, its placeholder and the price chart. The header actions, the dialogs and the API contract do not change.
 
 ## 1. Diagnosis
