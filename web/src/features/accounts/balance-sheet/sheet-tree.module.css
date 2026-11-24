@@ -23,18 +23,4 @@
     display: grid;
     min-inline-size: 0;
   }
-
-  /* Workaround for Slotted issue #178: the expander stands on the text line, above the middle of a
-     taller content, so the codes take the same line. They are as wide as the expander leaves: the
-     codes cut instead of the line. */
-  .positions {
-    display: inline-grid;
-    align-items: center;
-    min-block-size: var(--slotted-target-min);
-    max-inline-size: calc(
-      100% - var(--slotted-target-min) - var(--slotted-control-gap-md)
-    );
-    margin-block: calc((1lh - var(--slotted-target-min)) / 2);
-    vertical-align: top;
-  }
 }

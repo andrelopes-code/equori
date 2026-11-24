@@ -10,7 +10,6 @@ import { Text } from "@slotted/react/typography";
 
 import type { SheetLine } from "@/features/accounts/balance-sheet/sheet-lines";
 import { lineKey } from "@/features/accounts/balance-sheet/sheet-lines";
-import styles from "@/features/accounts/balance-sheet/sheet-tree.module.css";
 import { useT } from "@/i18n/i18n-provider";
 
 type PositionsLine = Extract<SheetLine, { type: "positions" }>;
@@ -44,29 +43,27 @@ export function SheetPositionsRow({
           )}
         />
 
-        <div className={styles.positions}>
-          <Inline gap={4} wrap="nowrap" align="center">
-            <Text size="sm" tone="muted" wrap="nowrap">
-              {t(
-                line.count === 1
-                  ? "balanceSheet.positionsOne"
-                  : "balanceSheet.positions",
-                { count: line.count },
-              )}
-            </Text>
-            {!line.open &&
-              line.codes.map((code) => (
-                <Tag key={code} size="sm" tone="secondary">
-                  {code}
-                </Tag>
-              ))}
-            {!line.open && more > 0 && (
-              <Text size="xs" tone="muted" wrap="nowrap">
-                {t("balanceSheet.morePositions", { count: more })}
-              </Text>
+        <Inline gap={4} wrap="nowrap" align="center">
+          <Text size="sm" tone="muted" wrap="nowrap">
+            {t(
+              line.count === 1
+                ? "balanceSheet.positionsOne"
+                : "balanceSheet.positions",
+              { count: line.count },
             )}
-          </Inline>
-        </div>
+          </Text>
+          {!line.open &&
+            line.codes.map((code) => (
+              <Tag key={code} size="sm" tone="secondary">
+                {code}
+              </Tag>
+            ))}
+          {!line.open && more > 0 && (
+            <Text size="xs" tone="muted" wrap="nowrap">
+              {t("balanceSheet.morePositions", { count: more })}
+            </Text>
+          )}
+        </Inline>
       </TableRowHeader>
       <TableCell />
       <TableCell />
