@@ -1,4 +1,4 @@
-import { Text } from "@slotted/react/typography";
+import { MessageActivity, MessageActivityStep } from "@slotted/react/message";
 
 import { sourceIcon } from "@/features/assistant/message/source-icon";
 import styles from "@/features/assistant/message/turn-activity.module.css";
@@ -14,33 +14,19 @@ interface SourceStepsProps {
   running: boolean;
 }
 
-// Workaround for Slotted issue #113: no token sets the ground, the corner and the current edge of a
-// step's tile, nor the ink of its tick, so the steps are an own element (owner decision of
-// 2026-11-23). Families read: message, typography.
+// The sources of a turn, one step each: the last one is current while the turn runs.
 export function SourceSteps({ entries, running }: SourceStepsProps) {
   return (
-    <ol className={styles.steps}>
-      {entries.map((entry, i) => {
-        const current = running && i === entries.length - 1;
-
-        return (
-          <li
-            key={entry.tool}
-            className={styles.step}
-            aria-current={current ? "step" : undefined}
-          >
-            <span className={styles.tile} aria-hidden="true">
-              <AssistantIcon
-                name={current ? sourceIcon(entry.tool) : "check"}
-              />
-            </span>
-
-            <Text size="sm" tone={current ? "default" : "muted"}>
-              {entry.label}
-            </Text>
-          </li>
-        );
-      })}
-    </ol>
+    <MessageActivity variant="plain" shimmer={false} className={styles.steps}>
+      {entries.map((entry, i) => (
+        <MessageActivityStep
+          key={entry.tool}
+          status={running && i === entries.length - 1 ? "current" : "complete"}
+          icon={<AssistantIcon name={sourceIcon(entry.tool)} />}
+        >
+          {entry.label}
+        </MessageActivityStep>
+      ))}
+    </MessageActivity>
   );
 }

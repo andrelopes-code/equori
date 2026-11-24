@@ -46,10 +46,10 @@ describe("TurnActivity", () => {
 
     const first = screen
       .getByText(catalogEn["assistant.step.list_accounts"])
-      .closest("li");
+      .closest('[data-part="activity-step"]');
     const last = screen
       .getByText(catalogEn["assistant.step.search_transactions"])
-      .closest("li");
+      .closest('[data-part="activity-step"]');
 
     expect(last).toHaveAttribute("aria-current", "step");
     expect(first).not.toHaveAttribute("aria-current");
