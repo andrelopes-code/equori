@@ -19,6 +19,7 @@ Guide topic (`navigation-map.json`): `investments`.
 - `GET /reports/allocation`
 - `GET /accounts/{id}/balance`
 - `GET /reports/return`
+- `GET /reports/return/series` (the history by month and the period at its step, read by `results/use-results.ts`)
 - `GET /reports/attribution`
 - `GET /realized-results`
 - `GET /income-events`
@@ -27,7 +28,7 @@ Guide topic (`navigation-map.json`): `investments`.
 
 - `pages/`: the routed pages, their tests, the hook the summary and positions pages share (`use-portfolio-view.ts`) and the tax year search.
 - `area-header/`: the header and the tabs of the five routes of the area, the valuation currency select and the valuation date input.
-- `results/`: the search of the results route.
+- `results/`: the Results tab: the search, the reads (`use-results.ts`), the body that picks the state (`results-body.tsx`, `results-loaded.tsx`), `period-bar/`, the four blocks (`return-block/`, `windows-block/`, `months-block/`, `evolution-block/`), their pure functions (`model/`), the parts they share (`shared/`) and the pending, empty and failed states (`states/`).
 - `model/`: search, holdings, shares, labels, return summary, axis, accounts, yield and year figures used by several folders.
 - `holdings/`: holdings section, grid, columns, cells and column state.
 - `allocation/`: allocation table, assets allocation, share bar and where-money section.

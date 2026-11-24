@@ -91,9 +91,7 @@ describe("Portfolio results tab: the return block", () => {
       today: "2025-12-31",
     });
 
-    const section = await screen.findByRole("region", {
-      name: catalogEn["portfolio.results.return"],
-    });
+    const section = await loadedSection(catalogEn["portfolio.results.return"]);
     expect(await within(section).findByText("+3.02%")).toBeInTheDocument();
     expect(within(section).getByText(/2\.02 pp above CDI/)).toBeInTheDocument();
 
@@ -143,9 +141,7 @@ describe("Portfolio results tab: the return block", () => {
     });
     await renderApp("/portfolio/results", { fetch, today: "2025-12-31" });
 
-    const section = await screen.findByRole("region", {
-      name: catalogEn["portfolio.results.return"],
-    });
+    const section = await loadedSection(catalogEn["portfolio.results.return"]);
     expect(await within(section).findByText("+3.02%")).toBeInTheDocument();
     expect(within(section).queryByRole("switch")).not.toBeInTheDocument();
     expect(within(section).queryByText(/pp above/)).not.toBeInTheDocument();
@@ -161,9 +157,7 @@ describe("Portfolio results tab: the rolling windows block", () => {
     });
     await renderApp("/portfolio/results", { fetch, today: "2026-11-24" });
 
-    const section = await screen.findByRole("region", {
-      name: catalogEn["portfolio.results.windows"],
-    });
+    const section = await loadedSection(catalogEn["portfolio.results.windows"]);
     const today = await within(section).findByText("Today");
     expect(tileOf(today)).toHaveTextContent(
       /\+12\.68%12 months to 11\/24\/2026/,
@@ -202,9 +196,7 @@ describe("Portfolio results tab: the rolling windows block", () => {
     });
     await renderApp("/portfolio/results", { fetch, today: "2026-11-24" });
 
-    const section = await screen.findByRole("region", {
-      name: catalogEn["portfolio.results.windows"],
-    });
+    const section = await loadedSection(catalogEn["portfolio.results.windows"]);
     const above = await within(section).findByText("Above CDI");
 
     expect(tileOf(above)).toHaveTextContent("100.0%2 of 2");
@@ -218,9 +210,7 @@ describe("Portfolio results tab: the rolling windows block", () => {
     });
     await renderApp("/portfolio/results", { fetch, today: "2026-11-24" });
 
-    const section = await screen.findByRole("region", {
-      name: catalogEn["portfolio.results.windows"],
-    });
+    const section = await loadedSection(catalogEn["portfolio.results.windows"]);
 
     expect(
       await within(section).findByText(
@@ -239,9 +229,7 @@ describe("Portfolio results tab: the month by month block", () => {
     });
     await renderApp("/portfolio/results", { fetch, today: "2025-12-31" });
 
-    const section = await screen.findByRole("region", {
-      name: catalogEn["portfolio.results.months"],
-    });
+    const section = await loadedSection(catalogEn["portfolio.results.months"]);
     const table = await within(section).findByRole("table", {
       name: catalogEn["portfolio.results.months.caption"],
     });
@@ -332,9 +320,9 @@ describe("Portfolio results tab: the evolution block", () => {
     });
     await renderApp("/portfolio/results", { fetch, today: "2025-12-31" });
 
-    const section = await screen.findByRole("region", {
-      name: catalogEn["portfolio.results.evolution"],
-    });
+    const section = await loadedSection(
+      catalogEn["portfolio.results.evolution"],
+    );
 
     const rows: [string, RegExp][] = [
       ["Opening value", /^R\$\s*0\.00$/],
@@ -349,3 +337,98 @@ describe("Portfolio results tab: the evolution block", () => {
     }
   });
 });
+
+describe("Portfolio results tab: pending, empty and failed", () => {
+  // PR11: while the history is pending, the four sections draw their labels and no figure.
+  it("draws the headings of the four sections and no figure while the series is pending", async () => {
+    const fetch = portfolioApi({
+      "GET /api/v1/reports/return/series": () =>
+        new Promise<Response>(() => undefined),
+    });
+    await renderApp("/portfolio/results", { fetch, today: "2025-12-31" });
+
+    const names = [
+      "portfolio.results.return",
+      "portfolio.results.windows",
+      "portfolio.results.months",
+      "portfolio.results.evolution",
+    ] as const;
+    for (const name of names) {
+      const section = await screen.findByRole("region", {
+        name: catalogEn[name],
+      });
+      expect(section).toHaveAttribute("aria-busy", "true");
+      expect(
+        within(section).getByRole("heading", { name: catalogEn[name] }),
+      ).toBeInTheDocument();
+    }
+
+    const list = screen.getByRole("list", {
+      name: catalogEn["portfolio.results.series"],
+    });
+    expect(within(list).getByText("Portfolio")).toBeInTheDocument();
+    expect(screen.queryByText(/\d%/)).not.toBeInTheDocument();
+  });
+
+  // PR11: a portfolio with no point in its history draws the empty state and no section.
+  it("draws the empty state in place of the sections with an empty portfolio", async () => {
+    const fetch = portfolioApi({
+      "GET /api/v1/reports/return/series": () =>
+        json(200, { ...historySeries, points: [], indexes: [] }),
+    });
+    await renderApp("/portfolio/results", { fetch, today: "2025-12-31" });
+
+    expect(
+      await screen.findByText(catalogEn["portfolio.empty"]),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("region", {
+        name: catalogEn["portfolio.results.return"],
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("radio", { name: "12 months" }),
+    ).not.toBeInTheDocument();
+  });
+
+  // PR11: a failed series draws the failure in the first section and asks again on retry.
+  it("draws the failure and asks the series again on retry", async () => {
+    let asked = 0;
+    const fetch = portfolioApi({
+      "GET /api/v1/reports/return/series": () => {
+        asked += 1;
+
+        return json(500, { title: "Server error", status: 500 });
+      },
+    });
+    await renderApp("/portfolio/results", { fetch, today: "2025-12-31" });
+
+    expect(
+      await screen.findByText(catalogEn["portfolio.results.failed"]),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("region", {
+        name: catalogEn["portfolio.results.windows"],
+      }),
+    ).not.toBeInTheDocument();
+
+    const before = asked;
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["common.retry"] }),
+    );
+
+    await waitFor(() => {
+      expect(asked).toBeGreaterThan(before);
+    });
+  });
+});
+
+// The region of a block once its read has answered: a pending block is busy.
+async function loadedSection(name: string) {
+  return waitFor(() => {
+    const section = screen.getByRole("region", { name });
+    expect(section).not.toHaveAttribute("aria-busy");
+
+    return section;
+  });
+}

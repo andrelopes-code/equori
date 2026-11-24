@@ -1,8 +1,10 @@
+import type { ReactNode } from "react";
+
 import styles from "@/features/portfolio/results/return-block/return-block.module.css";
 
 interface SeriesRowProps {
   name: string;
-  value: string;
+  value: ReactNode;
   // The slot of the data scale of the series; its mark repeats the stroke of the line.
   slot: number;
   on: boolean;

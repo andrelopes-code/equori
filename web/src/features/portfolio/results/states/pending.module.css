@@ -1,0 +1,56 @@
+@layer app {
+  /* A plot placeholder takes the plot height of the Chart size it stands in for */
+  .plot {
+    display: block;
+    inline-size: 100%;
+  }
+
+  .md {
+    block-size: var(
+      --slotted-chart-plot-block-size,
+      calc(var(--slotted-space-12, 4rem) * 4)
+    );
+  }
+
+  .lg {
+    block-size: var(
+      --slotted-chart-plot-block-size-lg,
+      calc(var(--slotted-space-12, 4rem) * 6)
+    );
+  }
+
+  .gridLine {
+    stroke: var(--slotted-border-subtle);
+    stroke-width: 1px; /* literal: the weight of a grid line */
+    vector-effect: non-scaling-stroke;
+  }
+
+  .pendingLine {
+    fill: none;
+    stroke: var(--slotted-border-strong);
+    stroke-width: 2px; /* literal: the weight of a plot line */
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+    animation: pendingPulse var(--slotted-duration-loop-slow, 2s) ease-in-out
+      infinite;
+  }
+
+  .pendingCell {
+    background: var(--slotted-border-subtle);
+    animation: pendingPulse var(--slotted-duration-loop-slow, 2s) ease-in-out
+      infinite;
+  }
+
+  @keyframes pendingPulse {
+    50% {
+      opacity: 0.45;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pendingLine,
+    .pendingCell {
+      animation: none;
+    }
+  }
+}
