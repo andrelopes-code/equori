@@ -124,3 +124,19 @@ Each is a pure function with a test of hand-computed values.
 ## Left to the builder
 
 File names inside `web/src/features/portfolio/results/`, the ECharts option objects, and the split of components under the size limits.
+
+## Amendment 1: one page for the summary and the results (owner review of 2026-11-25)
+
+The tab "Resumo" repeated the tab "Resultados": its section "Como rendeu" stated the return against the indexes and the walk from the opening value to the closing value, which the return block and the wealth block of PR state. The owner asked for one page.
+
+| ID | Rule |
+|---|---|
+| PT1 | Replaced. The tabs and their routes: Resultados `/portfolio`, Posições `/portfolio/positions`, Proventos e IR `/portfolio/year`, Aportes `/portfolio/contribution-plan`. `/portfolio/results` redirects to `/portfolio` and keeps its search. There is no tab "Resumo". |
+| PT2 | Replaced. Resultados holds, in order: the quote warnings, the four figures (value, gain, total result, income of the year) at today's date, the period bar, the blocks of PR and "Rendimento por ativo". Posições holds "Onde está o dinheiro", "Renda fixa" and the positions grid. The section "Como rendeu" is removed with the components only it used; "Detalhes e método" of the return block stays. |
+| PT3 | Replaced. The header controls: the account and the valuation currency on Resultados; the valuation currency and the valuation date on Posições; the year on Proventos e IR. Then the help link and the primary action, at one gap, with no `Divider`. |
+| PT5 | Replaced. The empty portfolio and a failure of the positions read draw their `ResultState` on Resultados, in place of the figures and of every block, and on Posições. |
+| PT6 | New. The three views of Proventos e IR (sales, income, monthly tax) are chosen by a `SegmentedControl` at the top of the page body, not by a second row of tabs; the choice stays in the search (`tab`). |
+
+The search of `/portfolio` is the search of PR1 and PR2 (`value_in`, `account`, `period`, `from`, `to`); `date` and `by` live on `/portfolio/positions` only. A link that carried `date` to `/portfolio` (the gain in the currency of the cost) goes to `/portfolio/positions`.
+
+Cross-cutting questions: no answer of the spec changes; S3: the article of the topic `investments` and the help page `portfolio` follow the new tabs.
