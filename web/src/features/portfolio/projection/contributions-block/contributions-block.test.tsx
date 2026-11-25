@@ -227,4 +227,29 @@ describe("Contributions block", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(region.queryByText("from Sep/2026")).toBeNull();
   });
+
+  // Born 1994-03 and withdrawals at 60: the withdrawals start in 2054-03.
+  it("PX9: a change from the withdrawal month shows an error, Save does nothing and Remove works", async () => {
+    const late = { month: "2054-03-01", amount: 200000 };
+    const region = await block([...changes, late]);
+    const name = "Change contribution from Mar/2054";
+    await userEvent.click(await region.findByRole("button", { name }));
+    const dialog = within(await screen.findByRole("dialog"));
+
+    expect(
+      dialog.getByText(
+        catalogEn["portfolio.projection.contributions.error.late"],
+      ),
+    ).toBeInTheDocument();
+    await userEvent.click(dialog.getByRole("button", { name: "Save" }));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+    await userEvent.click(
+      dialog.getByRole("button", { name: "Remove change" }),
+    );
+
+    await waitFor(() => {
+      expect(region.queryByRole("button", { name })).toBeNull();
+    });
+  });
 });

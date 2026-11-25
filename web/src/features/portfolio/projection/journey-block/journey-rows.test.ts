@@ -33,7 +33,7 @@ const projection = [
 
 describe("journeyRows", () => {
   it("draws the history in major units and anchors the projection on today", () => {
-    expect(journeyRows(history, projection, 2)).toEqual([
+    expect(journeyRows(history, projection, "2054-03", 2)).toEqual([
       {
         date: "2026-10-31",
         value: 100,
@@ -67,7 +67,9 @@ describe("journeyRows", () => {
   });
 
   it("draws only the projection when the history holds no point", () => {
-    expect(journeyRows({ ...history, points: [] }, projection, 2)).toEqual([
+    expect(
+      journeyRows({ ...history, points: [] }, projection, "2054-03", 2),
+    ).toEqual([
       {
         date: "2026-12-31",
         value: null,
@@ -82,6 +84,17 @@ describe("journeyRows", () => {
         projected: 125,
         top: 125,
       },
+    ]);
+  });
+
+  it("PX6: ends the money contributed on the month before the withdrawals", () => {
+    const rows = journeyRows(history, projection, "2027-01", 2);
+
+    expect(rows.map((r) => [r.date, r.contributed, r.projected])).toEqual([
+      ["2026-10-31", 90, null],
+      ["2026-11-25", 95, 110],
+      ["2026-12-31", 102, 120],
+      ["2027-01-31", null, 125],
     ]);
   });
 });

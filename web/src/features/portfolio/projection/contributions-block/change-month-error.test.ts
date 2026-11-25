@@ -17,14 +17,26 @@ describe("monthError", () => {
     ["2026-09", "past"],
     ["2026-10", null],
     ["2027-01", null],
-  ])("PJ2, PJ4: %s against the current month 2026-10 is %s", (month, want) => {
-    expect(monthError(month, others, "2026-10")).toBe(want);
-  });
+    ["2054-02", null],
+    ["2054-03", "late"],
+    ["2054-04", "late"],
+  ])(
+    "PJ2, PJ4, PX9: %s from 2026-10 to the withdrawals of 2054-03 is %s",
+    (month, want) => {
+      expect(monthError(month, others, "2026-10", "2054-03")).toBe(want);
+    },
+  );
 
   it("reports a past month before a taken one", () => {
     const past = [{ month: "2026-06-01", amount: 1 }];
 
-    expect(monthError("2026-06", past, "2026-10")).toBe("past");
+    expect(monthError("2026-06", past, "2026-10", "2054-03")).toBe("past");
+  });
+
+  it("reports a taken month before a late one", () => {
+    const late = [{ month: "2054-06-01", amount: 1 }];
+
+    expect(monthError("2054-06", late, "2026-10", "2054-03")).toBe("taken");
   });
 });
 

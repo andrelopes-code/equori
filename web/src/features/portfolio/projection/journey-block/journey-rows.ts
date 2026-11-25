@@ -18,11 +18,12 @@ export interface JourneyRow extends Record<JourneyField, unknown> {
 }
 
 // PX6: the recorded value and the money contributed from the history, then the projection and the
-// money contributed going on with the contributions of the plan; the last recorded row also
-// carries the projection, so its line starts on today's value.
+// money contributed going on with the contributions of the plan until the withdrawals; the last
+// recorded row also carries the projection, so its line starts on today's value.
 export function journeyRows(
   history: components["schemas"]["ReturnSeries"],
   projection: readonly ProjectionRow[],
+  withdrawalFrom: string,
   scale: number,
 ): JourneyRow[] {
   const divisor = 10 ** scale;
@@ -43,7 +44,8 @@ export function journeyRows(
     return {
       date: monthEnd(row.month),
       value: null,
-      contributed: sum / divisor,
+      // Withdrawals take value out, so from here value less contributions is not the return.
+      contributed: row.month < withdrawalFrom ? sum / divisor : null,
       projected: row.value / divisor,
       top: row.value / divisor,
     };

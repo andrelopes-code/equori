@@ -306,7 +306,7 @@ export const portfolioEn = {
     "Where the plan leads and how the record stands.",
   "portfolio.projection.plan.title": "Plan",
   "portfolio.projection.plan.description":
-    "Values change the projection at once; saving stores the plan and its date.",
+    "In today's money. Changes show at once; saving stores the plan and its date.",
   "portfolio.projection.plan.save": "Save plan",
   "portfolio.projection.plan.age": "Age",
   "portfolio.projection.plan.ageValue": "{years} years",
@@ -321,7 +321,7 @@ export const portfolioEn = {
   "portfolio.projection.plan.modeIncome": "Income a month",
   "portfolio.projection.plan.modeRate": "Rate a year",
   "portfolio.projection.plan.income": "Desired income",
-  "portfolio.projection.plan.incomeHint": "A month, in today's money.",
+  "portfolio.projection.plan.incomeHint": "Net of other income.",
   "portfolio.projection.plan.rate": "Withdrawal rate",
   "portfolio.projection.plan.rateHint": "Of the portfolio.",
   "portfolio.projection.plan.rangeError": "From {min} to {max}",
@@ -425,6 +425,8 @@ export const portfolioEn = {
     "Another change already holds this month.",
   "portfolio.projection.contributions.error.past":
     "The month cannot be before the current month.",
+  "portfolio.projection.contributions.error.late":
+    "The month must be before the withdrawals.",
   "portfolio.projection.contributions.effect.lead":
     "With this change the plan reaches {value} at age {age},",
   "portfolio.projection.contributions.effect.tail":

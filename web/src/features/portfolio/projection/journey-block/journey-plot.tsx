@@ -17,7 +17,8 @@ interface JourneyPlotProps {
 }
 
 // PX6: the recorded value (solid), the money contributed and the projection (dashed), the area
-// between the value and the money contributed, and the marks at today and at the withdrawal age.
+// between the value and the money contributed up to the withdrawals, and the marks at today and at
+// the withdrawal age.
 export function JourneyPlot({
   rows,
   axes,

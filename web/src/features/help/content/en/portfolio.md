@@ -51,8 +51,8 @@ In [Income and sales](/portfolio/year), the **Gain or loss on sales** tab opens 
 
 The **Projection** tab shows where the plan leads the portfolio, by age. It needs your birth date, which stays in the profile and in [Settings](/settings). Values are in today's money.
 
-- **Plan**: the age of the withdrawals (**Withdrawals at**), the last age (**Until age**), the **Real return** and the **Inflation**. The **Withdrawal** is an **Income a month** or a **Rate a year** of the portfolio. Values change the projection at once, and **Save plan** stores the plan with its date.
-- **Wealth journey**: the recorded value and the projection on one chart. Beside it, the amount needed at the withdrawal age, the share of the way done, the income the plan sustains and the age the income ends, if it does not last.
+- **Plan**: the age of the withdrawals (**Withdrawals at**), the last age (**Until age**), the **Real return** and the **Inflation**. The **Withdrawal** is an **Income a month**, net of other income, or a **Rate a year** of the portfolio. The return above the withdrawal stays in the portfolio. Values change the projection at once, and **Save plan** stores the plan with its date.
+- **Wealth journey**: the recorded value and the projection on one chart. Beside it, the amount needed at the withdrawal age, the share of the way done, the income the plan sustains and the age the income ends, if it does not last. The money contributed and the return run up to the withdrawals.
 - **Plan against recorded**: the recorded value beside the line of the plan, since the first month of the portfolio. Until the month the plan was saved, the line adds the recorded contributions at the rate of the plan; after it, the planned contribution.
-- **Planned contributions**: the monthly contribution since the start, with the changes you planned, up to 40. A contribution before the current month does not change.
+- **Planned contributions**: the monthly contribution since the start, with the changes you planned, up to 40. A contribution before the current month does not change. A change starts before the withdrawals.
 - **Year by year**: each year with the age at its end, the contributions, the return, the withdrawals, the money contributed and the value. The table opens with 12 years, and **Show the … years** opens all of them.

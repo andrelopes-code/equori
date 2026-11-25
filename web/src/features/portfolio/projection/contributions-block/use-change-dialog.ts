@@ -45,7 +45,7 @@ export function useChangeDialog({
   );
   const [amount, setAmount] = useState(target.change?.amount ?? 0);
 
-  const error = monthError(month, others, current);
+  const error = monthError(month, others, current, base.withdrawalFrom);
   const change = { month: `${month}-01`, amount };
   const effect = error === null ? changeEffect(base, others, change) : null;
 

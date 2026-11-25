@@ -66,7 +66,7 @@ export function JourneyBlock({
     view === "nominal"
       ? toNominal(figures.rows, draft.inflationBp)
       : figures.rows;
-  const rows = journeyRows(history, shown, digits);
+  const rows = journeyRows(history, shown, figures.withdrawalFrom, digits);
   const todayDate = history.points.at(-1)?.date;
   const from = formatYear(history.points[0]?.date ?? today, tag);
 

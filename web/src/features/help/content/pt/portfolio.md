@@ -51,8 +51,8 @@ Em [Proventos e vendas](/portfolio/year), a aba **Lucro ou prejuízo nas vendas*
 
 A aba **Projeção** mostra aonde o plano leva a carteira, por idade. Ela precisa da sua data de nascimento, que fica no perfil e em [Configurações](/settings). Os valores estão em dinheiro de hoje.
 
-- **Plano**: a idade das retiradas (**Retiradas aos**), a idade final (**Até os**), a **Rentabilidade real** e a **Inflação**. A **Retirada** é uma **Renda por mês** ou uma **Taxa ao ano** da carteira. Os valores mudam a projeção na hora, e **Salvar plano** guarda o plano com a sua data.
-- **Jornada do patrimônio**: o valor registrado e a projeção no mesmo gráfico. Ao lado, o valor necessário na idade das retiradas, a parte do caminho já feita, a renda que o plano sustenta e a idade em que a renda acaba, se ela não durar.
+- **Plano**: a idade das retiradas (**Retiradas aos**), a idade final (**Até os**), a **Rentabilidade real** e a **Inflação**. A **Retirada** é uma **Renda por mês**, já descontadas outras rendas, ou uma **Taxa ao ano** da carteira. O rendimento acima da retirada fica na carteira. Os valores mudam a projeção na hora, e **Salvar plano** guarda o plano com a sua data.
+- **Jornada do patrimônio**: o valor registrado e a projeção no mesmo gráfico. Ao lado, o valor necessário na idade das retiradas, a parte do caminho já feita, a renda que o plano sustenta e a idade em que a renda acaba, se ela não durar. O aportado e o rendimento vão até as retiradas.
 - **Plano contra realizado**: o valor registrado ao lado da linha do plano, desde o primeiro mês da carteira. Até o mês em que o plano foi salvo, a linha soma os aportes registrados à taxa do plano; depois, o aporte planejado.
-- **Aportes planejados**: o aporte mensal desde o início, com as mudanças que você planejou, até 40. Um aporte antes do mês atual não muda.
+- **Aportes planejados**: o aporte mensal desde o início, com as mudanças que você planejou, até 40. Um aporte antes do mês atual não muda. Uma mudança começa antes das retiradas.
 - **Ano a ano**: cada ano com a idade no fim dele, os aportes, o rendimento, as retiradas, o aportado e o patrimônio. A tabela abre com 12 anos, e **Mostrar os … anos** abre todos.

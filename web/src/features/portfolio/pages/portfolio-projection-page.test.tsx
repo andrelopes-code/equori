@@ -375,7 +375,11 @@ describe("Portfolio projection page", () => {
     ).toBeInTheDocument();
     // The approved mock writes the two amounts of the verdict in the compact form.
     expect(journey.getByText(/211\.28K needed at 60/)).toBeInTheDocument();
-    expect(journey.getByText(/883\.34K/)).toBeInTheDocument();
+    expect(journey.getByText("R$883.34K")).toBeInTheDocument();
+    // The summary of the plot: the area of the return ends where the withdrawals start.
+    expect(
+      journey.getByText(/Return: from .* up to R\$883\.34K at 2054 · age 60\./),
+    ).toBeInTheDocument();
     for (const key of ["Recorded", "Projection", "Contributed", "Return"])
       expect(journey.getByText(key)).toBeInTheDocument();
     expect(fact("Needed at age 60")).toMatch(/211,281\.71$/);

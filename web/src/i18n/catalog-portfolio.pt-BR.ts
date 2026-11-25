@@ -307,7 +307,7 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
     "Aonde o plano leva e como o realizado anda.",
   "portfolio.projection.plan.title": "Plano",
   "portfolio.projection.plan.description":
-    "Os valores mudam a projeção na hora; salvar guarda o plano e a data.",
+    "Em dinheiro de hoje. A projeção muda na hora; salvar guarda o plano e a data.",
   "portfolio.projection.plan.save": "Salvar plano",
   "portfolio.projection.plan.age": "Idade",
   "portfolio.projection.plan.ageValue": "{years} anos",
@@ -322,7 +322,7 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.projection.plan.modeIncome": "Renda por mês",
   "portfolio.projection.plan.modeRate": "Taxa ao ano",
   "portfolio.projection.plan.income": "Renda desejada",
-  "portfolio.projection.plan.incomeHint": "Por mês, em dinheiro de hoje.",
+  "portfolio.projection.plan.incomeHint": "Líquida de outras rendas.",
   "portfolio.projection.plan.rate": "Taxa de retirada",
   "portfolio.projection.plan.rateHint": "Do patrimônio.",
   "portfolio.projection.plan.rangeError": "De {min} a {max}",
@@ -425,6 +425,8 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
     "Outra mudança já ocupa este mês.",
   "portfolio.projection.contributions.error.past":
     "O mês não pode ser anterior ao mês atual.",
+  "portfolio.projection.contributions.error.late":
+    "O mês deve ser anterior às retiradas.",
   "portfolio.projection.contributions.effect.lead":
     "Com esta mudança o plano chega a {value} aos {age},",
   "portfolio.projection.contributions.effect.tail": "contra o plano sem ela.",
