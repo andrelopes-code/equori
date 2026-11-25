@@ -388,4 +388,6 @@ export const contributionPlanEn = {
     "An asset chosen in a group counts before any rule. Among rules, an asset joins the first group of the list.",
   "problem.contribution_rule_invalid":
     "A group holds chosen assets or 1 to 5 rules, and each rule needs valid conditions.",
+  "problem.contribution_plan_changed":
+    "The plan changed since it was read. Reload and try again.",
 } as const;

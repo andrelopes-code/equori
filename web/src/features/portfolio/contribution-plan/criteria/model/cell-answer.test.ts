@@ -17,6 +17,9 @@ const answered: Group = {
   question_facts: ["price_earnings_max", "", "roe_min"],
   question_limits: ["15", "", "0.12"],
   question_ideals: true,
+  question_effects: [],
+  question_reviews: [],
+  held: false,
   rules: [],
   matched: [],
   members: [

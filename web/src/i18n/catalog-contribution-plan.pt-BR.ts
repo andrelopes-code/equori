@@ -390,4 +390,6 @@ export const contributionPlanPtBR: Record<
     "Um ativo escolhido em um grupo vale antes das regras. Entre regras, o ativo entra no primeiro grupo da lista.",
   "problem.contribution_rule_invalid":
     "Um grupo tem ativos escolhidos ou de 1 a 5 regras, e cada regra precisa de condições válidas.",
+  "problem.contribution_plan_changed":
+    "O plano mudou desde a última leitura. Recarregue e tente de novo.",
 };

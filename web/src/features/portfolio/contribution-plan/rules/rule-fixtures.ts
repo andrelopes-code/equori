@@ -42,6 +42,9 @@ export const previewRoute = () =>
         question_facts: [],
         question_limits: [],
         question_ideals: false,
+        question_effects: [],
+        question_reviews: [],
+        held: false,
         rules: [],
         matched: [{ instrument: "CDB1", value: brl(1800000), share_bp: 10000 }],
         members: [],
@@ -49,4 +52,6 @@ export const previewRoute = () =>
     ],
     outside: [],
     missing: [],
+    revision: 1,
+    holds_ignored: false,
   } satisfies Plan);

@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/portfolio/domain"
@@ -10,8 +11,10 @@ import (
 
 // assembler builds the view in the base currency and keeps the first money error.
 type assembler struct {
-	base money.Currency
-	err  error
+	base  money.Currency
+	holds domain.Holds
+	today time.Time
+	err   error
 }
 
 func assemble(
@@ -19,19 +22,23 @@ func assemble(
 	val valuation,
 	base money.Currency,
 	split bool,
+	today time.Time,
 ) (ContributionView, error) {
-	a := &assembler{base: base}
+	a := &assembler{base: base, holds: p.Holds(today), today: today}
 	view := ContributionView{
-		Amount:   p.Amount,
-		Complete: len(val.missing) == 0,
-		Total:    a.money(0),
-		Classes:  make([]ContributionClass, len(p.Classes)),
-		Outside:  val.outside,
-		Missing:  val.missing,
+		Revision:     p.Revision,
+		HoldsIgnored: a.holds.Ignored,
+		Amount:       p.Amount,
+		Complete:     len(val.missing) == 0,
+		Total:        a.money(0),
+		Classes:      make([]ContributionClass, len(p.Classes)),
+		Outside:      val.outside,
+		Missing:      val.missing,
 	}
 
 	for i, c := range p.Classes {
 		view.Classes[i] = a.class(c, val.values[i], val.units[i], val.matched[i])
+		a.conditions(&view.Classes[i], c, i)
 	}
 
 	view.Total = a.money(sumOf(classValues(&view)))
@@ -132,71 +139,6 @@ func (a *assembler) shares(view *ContributionView) {
 
 	if bp, ok := domain.Drift(classSlots(view, values)); ok {
 		view.DriftBP = &bp
-	}
-}
-
-// split divides the amount of the plan over the classes, then over the members of a class with
-// member targets (CN7, CN8), and sets the figures after it.
-func (a *assembler) split(view *ContributionView, p domain.Plan) {
-	values := classValues(view)
-	amount := p.Amount.Amount()
-	amounts := domain.Split(classSlots(view, values), amount)
-	after := make([]int64, len(values))
-
-	var totalAfter int64
-
-	for i, v := range values {
-		after[i] = v + amounts[i]
-		totalAfter += after[i]
-		part := a.money(amounts[i])
-		view.Classes[i].Amount = &part
-	}
-
-	total := a.money(totalAfter)
-	view.TotalAfter = &total
-
-	if bp, ok := domain.Drift(classSlots(view, after)); ok {
-		view.DriftAfterBP = &bp
-	}
-
-	if totalAfter > 0 {
-		for i, bp := range sharesOf(after) {
-			view.Classes[i].AfterShareBP = &bp
-		}
-	}
-
-	for i := range view.Classes {
-		a.splitMembers(&view.Classes[i], p.Classes[i].Members, amounts[i])
-	}
-}
-
-func (a *assembler) splitMembers(c *ContributionClass, members []domain.PlanMember, amount int64) {
-	after := memberValues(c)
-
-	if len(members) > 0 && members[0].TargetBP != nil {
-		slots := make([]domain.Slot, len(members))
-		for j, m := range c.Members {
-			slots[j] = domain.Slot{TargetBP: *members[j].TargetBP, Value: m.Value.Amount()}
-		}
-
-		for j, part := range domain.Split(slots, amount) {
-			share := a.money(part)
-			c.Members[j].Amount = &share
-			after[j] += part
-		}
-	}
-
-	var total int64
-	for _, v := range after {
-		total += v
-	}
-
-	if total <= 0 {
-		return
-	}
-
-	for j, bp := range sharesOf(after) {
-		c.Members[j].AfterShareBP = &bp
 	}
 }
 

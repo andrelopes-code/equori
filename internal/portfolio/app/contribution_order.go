@@ -10,11 +10,12 @@ import (
 type receiver struct {
 	class  int
 	member int
+	one    bool // a group of one: the class takes the cost of its member too (CO10)
 }
 
 // orders turns the split of a complete preview into the orders and the leftover (CN17, CN18).
 func (a *assembler) orders(view *ContributionView, p domain.Plan, val valuation) {
-	entries, receivers := orderEntries(view, p, val)
+	entries, receivers := a.orderEntries(view, p, val)
 	orders, leftover := domain.Execute(entries, p.Amount.Amount())
 
 	for k, o := range orders {
@@ -45,6 +46,10 @@ func (a *assembler) apply(
 	m := &view.Classes[r.class].Members[r.member]
 	m.Cost = &cost
 
+	if r.one {
+		view.Classes[r.class].Cost = &cost
+	}
+
 	if e.Unit > 0 {
 		q, err := money.NewOf(o.Quantity, m.Instrument, val.scales[r.class][r.member])
 		if err != nil && a.err == nil {
@@ -55,8 +60,9 @@ func (a *assembler) apply(
 	}
 }
 
-// orderEntries lists one entry per member of a class with member targets and one per other class.
-func orderEntries(
+// orderEntries lists one entry per member of a class with member ideals and one per other class.
+// A held entry weighs 0 (CO12); a group of one is ordered on its member (CO10).
+func (a *assembler) orderEntries(
 	view *ContributionView,
 	p domain.Plan,
 	val valuation,
@@ -67,11 +73,16 @@ func orderEntries(
 	)
 
 	for i, c := range view.Classes {
-		members := p.Classes[i].Members
+		ideals := p.Classes[i].MemberIdeals()
 
-		if len(members) == 0 || members[0].TargetBP == nil {
+		if ideals == nil {
+			weight := int64(c.TargetBP) * 10000
+			if !a.holds.Ignored && a.holds.Classes[i] {
+				weight = 0
+			}
+
 			entries = append(entries, domain.Entry{
-				Weight:  int64(c.TargetBP) * 10000,
+				Weight:  weight,
 				Value:   c.Value.Amount(),
 				Planned: c.Amount.Amount(),
 			})
@@ -80,19 +91,26 @@ func orderEntries(
 			continue
 		}
 
+		one := p.Classes[i].Members[0].TargetBP == nil
+		held := a.heldMembers(i)
+
 		for j, m := range c.Members {
 			e := domain.Entry{
-				Weight:  int64(c.TargetBP) * int64(*members[j].TargetBP),
+				Weight:  int64(c.TargetBP) * int64(ideals[j]),
 				Value:   m.Value.Amount(),
 				Planned: m.Amount.Amount(),
 				Scale:   val.scales[i][j],
 			}
+			if j < len(held) && held[j] {
+				e.Weight = 0
+			}
+
 			if m.UnitValue != nil {
 				e.Unit = m.UnitValue.Amount()
 			}
 
 			entries = append(entries, e)
-			receivers = append(receivers, receiver{class: i, member: j})
+			receivers = append(receivers, receiver{class: i, member: j, one: one})
 		}
 	}
 

@@ -88,10 +88,14 @@ var contributionProblems = []struct {
 		"a member is not an investment account or a security of the catalog",
 	},
 	{
+		domain.ErrPlanChanged, http.StatusConflict,
+		"contribution_plan_changed", "the plan changed since it was read",
+	},
+	{
 		domain.ErrQuestionInvalid,
 		http.StatusUnprocessableEntity,
 		"contribution_question_invalid",
-		"a question has 1 to 200 characters and differs from the others, and a group holds at most 10",
+		"a question has 1 to 200 characters and differs from the others, and a group holds at most 20",
 	},
 	{
 		domain.ErrAnswersInvalid, http.StatusUnprocessableEntity,

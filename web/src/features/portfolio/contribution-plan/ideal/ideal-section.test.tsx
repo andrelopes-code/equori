@@ -41,6 +41,9 @@ it("draws one row per matched security of an open group by rule", async () => {
         question_facts: [],
         question_limits: [],
         question_ideals: false,
+        question_effects: [],
+        question_reviews: [],
+        held: false,
         rules: [{ instrument_type: "fixed_income" }],
         matched: [
           { instrument: "CDB1", value: brl(600000), share_bp: 6000 },
@@ -51,6 +54,8 @@ it("draws one row per matched security of an open group by rule", async () => {
     ],
     outside: [],
     missing: [],
+    revision: 1,
+    holds_ignored: false,
   };
   const user = userEvent.setup();
   renderWithProviders(

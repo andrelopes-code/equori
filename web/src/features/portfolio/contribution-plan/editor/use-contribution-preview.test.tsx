@@ -30,6 +30,9 @@ const plan = (rules: (typeof rule)[]): Plan => ({
       question_facts: [],
       question_limits: [],
       question_ideals: false,
+      question_effects: [],
+      question_reviews: [],
+      held: false,
       rules,
       matched: [],
       members: [],
@@ -37,6 +40,8 @@ const plan = (rules: (typeof rule)[]): Plan => ({
   ],
   outside: [],
   missing: [],
+  revision: 1,
+  holds_ignored: false,
 });
 
 // A saved plan with one member, whose one criterion the filings answer so.

@@ -24,6 +24,9 @@ const plan: Plan = {
       question_facts: [],
       question_limits: [],
       question_ideals: false,
+      question_effects: [],
+      question_reviews: [],
+      held: false,
       rules: [],
       matched: [],
       members: [{ instrument: "CDB1", value: brl(1000), share_bp: 10000 }],
@@ -31,6 +34,8 @@ const plan: Plan = {
   ],
   outside: [],
   missing: [],
+  revision: 1,
+  holds_ignored: false,
 };
 
 function setup() {

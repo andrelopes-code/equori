@@ -3,7 +3,7 @@ package app
 import "testing"
 
 // A version 35 archive holds no condition column; the step gives every row the default of
-// migration 00156 and keeps the input (CO1, CO3, CO7, CO8, CO15).
+// migration 00156 and keeps the input (S732; CO1, CO3, CO7, CO8, CO15).
 func TestAddContributionConditions(t *testing.T) {
 	t.Parallel()
 

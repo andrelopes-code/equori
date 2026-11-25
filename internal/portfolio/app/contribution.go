@@ -46,6 +46,9 @@ type ContributionView struct {
 	Current      *CurrentQuotes // nil when no value took a current quote (A248 CQ24)
 
 	GuaranteeName string // empty without a guarantee in the base currency (GR8)
+
+	Revision     int64 // of the stored plan, 0 without one; the new one after a save (CO15)
+	HoldsIgnored bool  // no group keeps a positive ideal in the split (CO13)
 }
 
 type ContributionClass struct {
@@ -55,14 +58,20 @@ type ContributionClass struct {
 	QuestionFacts  []string // one fact key per question, "" for the investor's own (FQ1)
 	QuestionLimits []string // one limit per question, "" without one (AC11)
 	QuestionIdeals bool     // the members' targets come from the answers, one at least true (CQ5)
-	Value          money.Money
-	ShareBP        *int
-	AfterShareBP   *int
-	Amount         *money.Money
-	Cost           *money.Money // cash-like class: the amount of its order (CN17)
-	Members        []ContributionMember
-	Rules          []domain.PlanRule
-	Matched        []ContributionMatched
+
+	QuestionEffects []string     // one effect per question (CO1)
+	QuestionReviews []int        // one reminder in months per question, 0 for none (CO7)
+	Held            bool         // CO9
+	Forgone         *money.Money // held group without member ideals, in a preview (CO14)
+
+	Value        money.Money
+	ShareBP      *int
+	AfterShareBP *int
+	Amount       *money.Money
+	Cost         *money.Money // cash-like class: the amount of its order (CN17)
+	Members      []ContributionMember
+	Rules        []domain.PlanRule
+	Matched      []ContributionMatched
 }
 
 // ContributionMatched is a security that a rule of a group takes (GR5, GR8).
@@ -87,6 +96,15 @@ type ContributionMember struct {
 	Amount       *money.Money // set for every member of a class with member targets
 	Quantity     *money.Money // instrument member with a unit value, at the instrument scale (CN17)
 	Cost         *money.Money // set with Amount, in the base currency (CN17)
+
+	AnswerDates     []*time.Time // CO3
+	AnswerOverrides []bool       // CO3
+	Released        bool         // CO8
+	Held            bool         // CO6
+	HeldBy          []int        // criteria of effect hold answered no
+	WarnedBy        []int        // criteria of effect warn answered no
+	Due             []int        // questions whose answer is due (CO7)
+	Forgone         *money.Money // held member of a group with ideals, in a preview (CO14)
 }
 
 type ContributionOutside struct {
@@ -132,46 +150,25 @@ func (s *Service) ContributionPlan(ctx context.Context, booksID int64) (Contribu
 }
 
 // SaveContributionPlan validates the plan as PreviewContribution does, with the amount optional,
-// stores it and returns it as ContributionPlan does.
+// stores it and returns it as ContributionPlan does; the view carries the new revision (CO15).
 func (s *Service) SaveContributionPlan(
 	ctx context.Context,
 	booksID int64,
 	p domain.Plan,
 ) (ContributionView, error) {
-	p, err := s.withIdeals(ctx, p)
+	p, ab, base, err := s.prepareContribution(ctx, booksID, p, func(base money.Currency) bool {
+		return p.Amount == nil || p.Amount.Currency() == base
+	})
 	if err != nil {
 		return ContributionView{}, err
 	}
 
-	if err := p.Check(); err != nil {
-		return ContributionView{}, err
-	}
-
-	base, err := s.ledger.BaseCurrency(ctx, booksID)
+	revision, err := s.repo.SaveContributionPlan(ctx, booksID, p)
 	if err != nil {
-		return ContributionView{}, err
-	}
-
-	if p.Amount != nil && p.Amount.Currency() != base {
-		return ContributionView{}, ErrContributionAmountInvalid
-	}
-
-	ab, err := s.loadAccountBook(ctx, booksID)
-	if err != nil {
-		return ContributionView{}, err
-	}
-
-	if err := s.validateMembers(ctx, ab, p); err != nil {
-		return ContributionView{}, err
-	}
-
-	if err := s.validateRules(ctx, ab, p, base); err != nil {
-		return ContributionView{}, err
-	}
-
-	if _, err := s.repo.SaveContributionPlan(ctx, booksID, p); err != nil {
 		return ContributionView{}, fmt.Errorf("store the contribution plan: %w", err)
 	}
+
+	p.Revision = revision
 
 	return s.contributionView(ctx, booksID, ab, p, base, false)
 }
@@ -183,34 +180,10 @@ func (s *Service) PreviewContribution(
 	p domain.Plan,
 	amount money.Money,
 ) (ContributionView, error) {
-	p, err := s.withIdeals(ctx, p)
+	p, ab, base, err := s.prepareContribution(ctx, booksID, p, func(base money.Currency) bool {
+		return amount.Amount() > 0 && amount.Currency() == base
+	})
 	if err != nil {
-		return ContributionView{}, err
-	}
-
-	if err := p.Check(); err != nil {
-		return ContributionView{}, err
-	}
-
-	base, err := s.ledger.BaseCurrency(ctx, booksID)
-	if err != nil {
-		return ContributionView{}, err
-	}
-
-	if amount.Amount() <= 0 || amount.Currency() != base {
-		return ContributionView{}, ErrContributionAmountInvalid
-	}
-
-	ab, err := s.loadAccountBook(ctx, booksID)
-	if err != nil {
-		return ContributionView{}, err
-	}
-
-	if err := s.validateMembers(ctx, ab, p); err != nil {
-		return ContributionView{}, err
-	}
-
-	if err := s.validateRules(ctx, ab, p, base); err != nil {
 		return ContributionView{}, err
 	}
 
@@ -225,30 +198,8 @@ func (s *Service) PreviewDraft(
 	booksID int64,
 	p domain.Plan,
 ) (ContributionView, error) {
-	p, err := s.withIdeals(ctx, p)
+	p, ab, base, err := s.prepareContribution(ctx, booksID, p, nil)
 	if err != nil {
-		return ContributionView{}, err
-	}
-
-	if err := p.Check(); err != nil {
-		return ContributionView{}, err
-	}
-
-	base, err := s.ledger.BaseCurrency(ctx, booksID)
-	if err != nil {
-		return ContributionView{}, err
-	}
-
-	ab, err := s.loadAccountBook(ctx, booksID)
-	if err != nil {
-		return ContributionView{}, err
-	}
-
-	if err := s.validateMembers(ctx, ab, p); err != nil {
-		return ContributionView{}, err
-	}
-
-	if err := s.validateRules(ctx, ab, p, base); err != nil {
 		return ContributionView{}, err
 	}
 

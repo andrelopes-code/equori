@@ -39,7 +39,7 @@ func (s *Server) saveContributionPlan(
 	_ *http.Request,
 	in ContributionPlanInput,
 ) (ContributionPlan, error) {
-	p := domain.Plan{Classes: planClasses(in.Classes)}
+	p := domain.Plan{Classes: planClasses(in.Classes), Expected: in.Revision}
 
 	if in.Amount != nil {
 		amount, err := inputAmount(*in.Amount)
@@ -102,47 +102,6 @@ func inputAmount(m Money) (money.Money, error) {
 	return amount, nil
 }
 
-func planClasses(in []ContributionClassInput) []domain.PlanClass {
-	out := make([]domain.PlanClass, len(in))
-	for i, c := range in {
-		members := make([]domain.PlanMember, len(c.Members))
-		for j, m := range c.Members {
-			members[j] = domain.PlanMember{TargetBP: m.TargetBp}
-			if m.Answers != nil {
-				members[j].Answers = *m.Answers
-			}
-
-			if m.AccountId != nil {
-				members[j].AccountID = *m.AccountId
-			}
-
-			if m.Instrument != nil {
-				members[j].Instrument = money.Currency(*m.Instrument)
-			}
-		}
-
-		out[i] = domain.PlanClass{
-			Name:     c.Name,
-			TargetBP: c.TargetBp,
-			Members:  members,
-			Rules:    planRules(c.Rules),
-		}
-		if c.Questions != nil {
-			out[i].Questions = *c.Questions
-		}
-
-		if c.QuestionFacts != nil {
-			out[i].QuestionFacts = *c.QuestionFacts
-		}
-
-		if c.QuestionLimits != nil {
-			out[i].QuestionLimits = *c.QuestionLimits
-		}
-	}
-
-	return out
-}
-
 func contributionPlan(v app.ContributionView) ContributionPlan {
 	out := ContributionPlan{
 		Amount:       optionalMoney(v.Amount),
@@ -156,6 +115,8 @@ func contributionPlan(v app.ContributionView) ContributionPlan {
 		Outside:      make([]ContributionOutside, len(v.Outside)),
 		Missing:      make([]ContributionMissing, len(v.Missing)),
 		Current:      toCurrent(v.Current),
+		Revision:     v.Revision,
+		HoldsIgnored: v.HoldsIgnored,
 
 		GuaranteeName: optional(v.GuaranteeName),
 	}
@@ -203,28 +164,46 @@ func contributionClass(c app.ContributionClass) ContributionClass {
 		Members:        make([]ContributionMember, len(c.Members)),
 		Rules:          contributionRules(c.Rules),
 		Matched:        contributionMatched(c.Matched),
+
+		QuestionEffects: retypeStrings[ContributionClassQuestionEffects](c.QuestionEffects),
+		QuestionReviews: retypeInts[ContributionClassQuestionReviews](c.QuestionReviews),
+		Held:            c.Held,
+		Forgone:         optionalMoney(c.Forgone),
 	}
 
 	for i, m := range c.Members {
-		out.Members[i] = ContributionMember{
-			AccountId:    optionalID(m.AccountID),
-			Instrument:   optional(string(m.Instrument)),
-			TargetBp:     m.TargetBP,
-			Answers:      optionalAnswers(m.Answers),
-			FactAnswers:  optionalFactAnswers(m.FactAnswers),
-			FactDetails:  optionalFactDetails(m.FactDetails),
-			FactsYear:    optionalDate(m.FactsYear),
-			Value:        toMoney(m.Value),
-			ShareBp:      m.ShareBP,
-			AfterShareBp: m.AfterShareBP,
-			UnitValue:    optionalMoney(m.UnitValue),
-			Amount:       optionalMoney(m.Amount),
-			Quantity:     optionalMoney(m.Quantity),
-			Cost:         optionalMoney(m.Cost),
-		}
+		out.Members[i] = contributionMember(m)
 	}
 
 	return out
+}
+
+func contributionMember(m app.ContributionMember) ContributionMember {
+	return ContributionMember{
+		AccountId:    optionalID(m.AccountID),
+		Instrument:   optional(string(m.Instrument)),
+		TargetBp:     m.TargetBP,
+		Answers:      optionalAnswers(m.Answers),
+		FactAnswers:  optionalFactAnswers(m.FactAnswers),
+		FactDetails:  optionalFactDetails(m.FactDetails),
+		FactsYear:    optionalDate(m.FactsYear),
+		Value:        toMoney(m.Value),
+		ShareBp:      m.ShareBP,
+		AfterShareBp: m.AfterShareBP,
+		UnitValue:    optionalMoney(m.UnitValue),
+		Amount:       optionalMoney(m.Amount),
+		Quantity:     optionalMoney(m.Quantity),
+		Cost:         optionalMoney(m.Cost),
+
+		AnswerDates:     optionalDates(m.AnswerDates),
+		AnswerOverrides: optionalList(m.AnswerOverrides),
+		Released:        trueOrNil(m.Released),
+		Held:            trueOrNil(m.Held),
+		HeldBy:          optionalList(m.HeldBy),
+		WarnedBy:        optionalList(m.WarnedBy),
+		Due:             optionalList(m.Due),
+		Forgone:         optionalMoney(m.Forgone),
+	}
 }
 
 func optionalAnswers(a []*bool) *[]*bool {

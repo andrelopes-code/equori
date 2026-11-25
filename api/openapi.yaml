@@ -7744,7 +7744,7 @@ paths:
       operationId: saveContributionPlan
       x-book-role: write
       summary: Replaces the contribution plan and returns it as getContributionPlan does.
-      description: 422 contribution_target_sum, contribution_member_target_sum, contribution_class_name_duplicate, contribution_member_duplicate, contribution_member_invalid, contribution_amount_invalid, contribution_question_invalid, contribution_answers_invalid or contribution_rule_invalid; 400 invalid_request when the plan breaks a limit (CN2 to CN4, CN11, CQ1 to CQ3, GR1).
+      description: 422 contribution_target_sum, contribution_member_target_sum, contribution_class_name_duplicate, contribution_member_duplicate, contribution_member_invalid, contribution_amount_invalid, contribution_question_invalid, contribution_answers_invalid or contribution_rule_invalid; 409 contribution_plan_changed when revision differs from the stored one (CO15); 400 invalid_request when the plan breaks a limit (CN2 to CN4, CN11, CQ1 to CQ3, GR1).
       requestBody:
         required: true
         content:
@@ -7763,6 +7763,8 @@ paths:
         "401":
           $ref: "#/components/responses/Problem"
         "403":
+          $ref: "#/components/responses/Problem"
+        "409":
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
@@ -16678,8 +16680,15 @@ components:
             type: string
     ContributionPlan:
       type: object
-      required: [status, total, classes, outside, missing]
+      required: [status, total, classes, outside, missing, revision, holds_ignored]
       properties:
+        revision:
+          type: integer
+          format: int64
+          description: Revision of the stored plan, 0 without one; a save returns the new one (CO15).
+        holds_ignored:
+          type: boolean
+          description: True when no group keeps a positive ideal in the split, so the holds are ignored for it (CO13).
         amount:
           $ref: "#/components/schemas/Money"
         status:
@@ -16714,8 +16723,25 @@ components:
           description: Name of the deposit guarantee of the book's region in the base currency; absent without one (GR8).
     ContributionClass:
       type: object
-      required: [name, target_bp, value, questions, question_facts, question_limits, question_ideals, members, rules, matched]
+      required: [name, target_bp, value, questions, question_facts, question_limits, question_ideals, question_effects, question_reviews, held, members, rules, matched]
       properties:
+        question_effects:
+          type: array
+          items:
+            type: string
+            enum: [warn, hold, weigh]
+          description: One effect per question of the group (CO1).
+        question_reviews:
+          type: array
+          items:
+            type: integer
+            enum: [0, 1, 3, 6, 12]
+          description: One reminder in months per question of the group, 0 for none (CO7).
+        held:
+          type: boolean
+          description: True when the group is held (CO9).
+        forgone:
+          $ref: "#/components/schemas/Money"
         name:
           type: string
         target_bp:
@@ -16807,6 +16833,41 @@ components:
       type: object
       required: [value]
       properties:
+        answer_dates:
+          type: array
+          items:
+            type: string
+            format: date
+            nullable: true
+          description: The day each answer was given, null for none or for an older answer (CO3); absent in a group without questions.
+        answer_overrides:
+          type: array
+          items:
+            type: boolean
+          description: True where the investor's answer replaces the fact's (CO3); absent in a group without questions.
+        released:
+          type: boolean
+          description: True when released for the month of today (CO8); absent otherwise.
+        held:
+          type: boolean
+          description: True when a criterion of effect hold answers no and the member is not released (CO6); absent otherwise.
+        held_by:
+          type: array
+          items:
+            type: integer
+          description: Positions of the criteria of effect hold answered no (CO6); absent without one.
+        warned_by:
+          type: array
+          items:
+            type: integer
+          description: Positions of the criteria of effect warn answered no (CO1); absent without one.
+        due:
+          type: array
+          items:
+            type: integer
+          description: Positions of the questions whose answer is due (CO7); absent without one.
+        forgone:
+          $ref: "#/components/schemas/Money"
         account_id:
           type: string
           format: uuid
@@ -16878,6 +16939,11 @@ components:
       type: object
       required: [classes]
       properties:
+        revision:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Revision the writer read; a different stored revision returns 409 contribution_plan_changed, absent skips the check (CO15).
         amount:
           $ref: "#/components/schemas/Money"
         classes:
@@ -16902,6 +16968,20 @@ components:
           items:
             type: string
           description: The investor's yes-or-no questions of the group (CQ1); empty without them.
+        question_effects:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+            enum: [warn, hold, weigh]
+          description: One effect per question; absent keeps the stored effect, else weigh (CO1, CO16).
+        question_reviews:
+          type: array
+          maxItems: 20
+          items:
+            type: integer
+            enum: [0, 1, 3, 6, 12]
+          description: One reminder in months per question; absent keeps the stored reminder, else 0 (CO7, CO16).
         question_facts:
           type: array
           maxItems: 20
@@ -16942,6 +17022,23 @@ components:
     ContributionMemberInput:
       type: object
       properties:
+        answer_dates:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+            format: date
+            nullable: true
+          description: The day each answer was given; absent keeps the date of an unchanged answer, else today (CO16).
+        answer_overrides:
+          type: array
+          maxItems: 20
+          items:
+            type: boolean
+          description: True where the answer replaces the fact's; absent keeps the stored values (CO3, CO16).
+        released:
+          type: boolean
+          description: True releases the member for the month of today, false clears the release, absent keeps it (CO8, CO16).
         account_id:
           type: string
           format: uuid

@@ -25,6 +25,9 @@ const saved: Plan = {
       question_facts: [],
       question_limits: [],
       question_ideals: false,
+      question_effects: [],
+      question_reviews: [],
+      held: false,
       rules: [],
       matched: [],
       members: [
@@ -52,6 +55,9 @@ const saved: Plan = {
       question_facts: [],
       question_limits: [],
       question_ideals: false,
+      question_effects: [],
+      question_reviews: [],
+      held: false,
       rules: [],
       matched: [],
       members: [],
@@ -59,6 +65,8 @@ const saved: Plan = {
   ],
   outside: [],
   missing: [],
+  revision: 1,
+  holds_ignored: false,
 };
 
 describe("plan draft", () => {
@@ -180,6 +188,9 @@ describe("plan draft", () => {
           question_facts: [],
           question_limits: [],
           question_ideals: true,
+          question_effects: [],
+          question_reviews: [],
+          held: false,
           rules: [],
           matched: [],
           members: [
@@ -220,6 +231,9 @@ describe("plan draft", () => {
           question_facts: ["piotroski_p1", ""],
           question_limits: ["", ""],
           question_ideals: true,
+          question_effects: [],
+          question_reviews: [],
+          held: false,
           rules: [],
           matched: [],
           members: [],

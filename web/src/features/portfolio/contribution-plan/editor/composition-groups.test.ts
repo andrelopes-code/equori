@@ -31,6 +31,9 @@ const view = {
       question_facts: [],
       question_limits: [],
       question_ideals: false,
+      question_effects: [],
+      question_reviews: [],
+      held: false,
       rules: [],
       matched: [],
       members: [],
@@ -45,12 +48,17 @@ const view = {
       question_facts: [],
       question_limits: [],
       question_ideals: false,
+      question_effects: [],
+      question_reviews: [],
+      held: false,
       rules: [],
       matched: [],
     },
   ],
   outside: [],
   missing: [],
+  revision: 1,
+  holds_ignored: false,
 } as Plan;
 
 describe("compositionGroups", () => {

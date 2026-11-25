@@ -4539,7 +4539,7 @@ export interface paths {
         get: operations["getContributionPlan"];
         /**
          * Replaces the contribution plan and returns it as getContributionPlan does.
-         * @description 422 contribution_target_sum, contribution_member_target_sum, contribution_class_name_duplicate, contribution_member_duplicate, contribution_member_invalid, contribution_amount_invalid, contribution_question_invalid, contribution_answers_invalid or contribution_rule_invalid; 400 invalid_request when the plan breaks a limit (CN2 to CN4, CN11, CQ1 to CQ3, GR1).
+         * @description 422 contribution_target_sum, contribution_member_target_sum, contribution_class_name_duplicate, contribution_member_duplicate, contribution_member_invalid, contribution_amount_invalid, contribution_question_invalid, contribution_answers_invalid or contribution_rule_invalid; 409 contribution_plan_changed when revision differs from the stored one (CO15); 400 invalid_request when the plan breaks a limit (CN2 to CN4, CN11, CQ1 to CQ3, GR1).
          */
         put: operations["saveContributionPlan"];
         post?: never;
@@ -9356,6 +9356,13 @@ export interface components {
             special?: string[];
         };
         ContributionPlan: {
+            /**
+             * Format: int64
+             * @description Revision of the stored plan, 0 without one; a save returns the new one (CO15).
+             */
+            revision: number;
+            /** @description True when no group keeps a positive ideal in the split, so the holds are ignored for it (CO13). */
+            holds_ignored: boolean;
             amount?: components["schemas"]["Money"];
             /** @enum {string} */
             status: "complete" | "incomplete";
@@ -9372,6 +9379,13 @@ export interface components {
             guarantee_name?: string;
         };
         ContributionClass: {
+            /** @description One effect per question of the group (CO1). */
+            question_effects: ("warn" | "hold" | "weigh")[];
+            /** @description One reminder in months per question of the group, 0 for none (CO7). */
+            question_reviews: (0 | 1 | 3 | 6 | 12)[];
+            /** @description True when the group is held (CO9). */
+            held: boolean;
+            forgone?: components["schemas"]["Money"];
             name: string;
             target_bp: number;
             /** @description The investor's yes-or-no questions of the group (CQ1); empty without them. */
@@ -9411,6 +9425,21 @@ export interface components {
             share_bp?: number;
         };
         ContributionMember: {
+            /** @description The day each answer was given, null for none or for an older answer (CO3); absent in a group without questions. */
+            answer_dates?: (string | null)[];
+            /** @description True where the investor's answer replaces the fact's (CO3); absent in a group without questions. */
+            answer_overrides?: boolean[];
+            /** @description True when released for the month of today (CO8); absent otherwise. */
+            released?: boolean;
+            /** @description True when a criterion of effect hold answers no and the member is not released (CO6); absent otherwise. */
+            held?: boolean;
+            /** @description Positions of the criteria of effect hold answered no (CO6); absent without one. */
+            held_by?: number[];
+            /** @description Positions of the criteria of effect warn answered no (CO1); absent without one. */
+            warned_by?: number[];
+            /** @description Positions of the questions whose answer is due (CO7); absent without one. */
+            due?: number[];
+            forgone?: components["schemas"]["Money"];
             /** Format: uuid */
             account_id?: string;
             instrument?: string;
@@ -9450,6 +9479,11 @@ export interface components {
             kind: "price" | "rate";
         };
         ContributionPlanInput: {
+            /**
+             * Format: int64
+             * @description Revision the writer read; a different stored revision returns 409 contribution_plan_changed, absent skips the check (CO15).
+             */
+            revision?: number;
             amount?: components["schemas"]["Money"];
             classes: components["schemas"]["ContributionClassInput"][];
         };
@@ -9458,6 +9492,10 @@ export interface components {
             target_bp: number;
             /** @description The investor's yes-or-no questions of the group (CQ1); empty without them. */
             questions?: string[];
+            /** @description One effect per question; absent keeps the stored effect, else weigh (CO1, CO16). */
+            question_effects?: ("warn" | "hold" | "weigh")[];
+            /** @description One reminder in months per question; absent keeps the stored reminder, else 0 (CO7, CO16). */
+            question_reviews?: (0 | 1 | 3 | 6 | 12)[];
             /** @description One fact key per question of the group, empty for a question the investor answers (FQ1); absent without facts. */
             question_facts?: string[];
             /** @description One limit per question of the group, empty for a question without one; a rate is a fraction (AC11). Absent without limits. */
@@ -9474,6 +9512,12 @@ export interface components {
             date?: string;
         };
         ContributionMemberInput: {
+            /** @description The day each answer was given; absent keeps the date of an unchanged answer, else today (CO16). */
+            answer_dates?: (string | null)[];
+            /** @description True where the answer replaces the fact's; absent keeps the stored values (CO3, CO16). */
+            answer_overrides?: boolean[];
+            /** @description True releases the member for the month of today, false clears the release, absent keeps it (CO8, CO16). */
+            released?: boolean;
             /** Format: uuid */
             account_id?: string;
             instrument?: string;
@@ -17679,6 +17723,7 @@ export interface operations {
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
             403: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
         };
     };

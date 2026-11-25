@@ -51,7 +51,7 @@ func (s *Service) contributionView(
 		return ContributionView{}, err
 	}
 
-	view, err := assemble(p, val, base, split)
+	view, err := assemble(p, val, base, split, today)
 	if err != nil {
 		return ContributionView{}, err
 	}

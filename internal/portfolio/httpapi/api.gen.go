@@ -9,6 +9,102 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// Defines values for ContributionClassQuestionEffects.
+const (
+	ContributionClassQuestionEffectsHold  ContributionClassQuestionEffects = "hold"
+	ContributionClassQuestionEffectsWarn  ContributionClassQuestionEffects = "warn"
+	ContributionClassQuestionEffectsWeigh ContributionClassQuestionEffects = "weigh"
+)
+
+// Valid indicates whether the value is a known member of the ContributionClassQuestionEffects enum.
+func (e ContributionClassQuestionEffects) Valid() bool {
+	switch e {
+	case ContributionClassQuestionEffectsHold:
+		return true
+	case ContributionClassQuestionEffectsWarn:
+		return true
+	case ContributionClassQuestionEffectsWeigh:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ContributionClassQuestionReviews.
+const (
+	ContributionClassQuestionReviewsN0  ContributionClassQuestionReviews = 0
+	ContributionClassQuestionReviewsN1  ContributionClassQuestionReviews = 1
+	ContributionClassQuestionReviewsN12 ContributionClassQuestionReviews = 12
+	ContributionClassQuestionReviewsN3  ContributionClassQuestionReviews = 3
+	ContributionClassQuestionReviewsN6  ContributionClassQuestionReviews = 6
+)
+
+// Valid indicates whether the value is a known member of the ContributionClassQuestionReviews enum.
+func (e ContributionClassQuestionReviews) Valid() bool {
+	switch e {
+	case ContributionClassQuestionReviewsN0:
+		return true
+	case ContributionClassQuestionReviewsN1:
+		return true
+	case ContributionClassQuestionReviewsN12:
+		return true
+	case ContributionClassQuestionReviewsN3:
+		return true
+	case ContributionClassQuestionReviewsN6:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ContributionClassInputQuestionEffects.
+const (
+	ContributionClassInputQuestionEffectsHold  ContributionClassInputQuestionEffects = "hold"
+	ContributionClassInputQuestionEffectsWarn  ContributionClassInputQuestionEffects = "warn"
+	ContributionClassInputQuestionEffectsWeigh ContributionClassInputQuestionEffects = "weigh"
+)
+
+// Valid indicates whether the value is a known member of the ContributionClassInputQuestionEffects enum.
+func (e ContributionClassInputQuestionEffects) Valid() bool {
+	switch e {
+	case ContributionClassInputQuestionEffectsHold:
+		return true
+	case ContributionClassInputQuestionEffectsWarn:
+		return true
+	case ContributionClassInputQuestionEffectsWeigh:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ContributionClassInputQuestionReviews.
+const (
+	ContributionClassInputQuestionReviewsN0  ContributionClassInputQuestionReviews = 0
+	ContributionClassInputQuestionReviewsN1  ContributionClassInputQuestionReviews = 1
+	ContributionClassInputQuestionReviewsN12 ContributionClassInputQuestionReviews = 12
+	ContributionClassInputQuestionReviewsN3  ContributionClassInputQuestionReviews = 3
+	ContributionClassInputQuestionReviewsN6  ContributionClassInputQuestionReviews = 6
+)
+
+// Valid indicates whether the value is a known member of the ContributionClassInputQuestionReviews enum.
+func (e ContributionClassInputQuestionReviews) Valid() bool {
+	switch e {
+	case ContributionClassInputQuestionReviewsN0:
+		return true
+	case ContributionClassInputQuestionReviewsN1:
+		return true
+	case ContributionClassInputQuestionReviewsN12:
+		return true
+	case ContributionClassInputQuestionReviewsN3:
+		return true
+	case ContributionClassInputQuestionReviewsN6:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ContributionMemberFactAnswers.
 const (
 	No   ContributionMemberFactAnswers = "no"
@@ -393,11 +489,18 @@ type ContributionClass struct {
 	AfterShareBp *int   `json:"after_share_bp,omitempty"`
 	Amount       *Money `json:"amount,omitempty"`
 	Cost         *Money `json:"cost,omitempty"`
+	Forgone      *Money `json:"forgone,omitempty"`
+
+	// Held True when the group is held (CO9).
+	Held bool `json:"held"`
 
 	// Matched The securities a rule of the group takes (GR5, GR8).
 	Matched []ContributionMatched `json:"matched"`
 	Members []ContributionMember  `json:"members"`
 	Name    string                `json:"name"`
+
+	// QuestionEffects One effect per question of the group (CO1).
+	QuestionEffects []ContributionClassQuestionEffects `json:"question_effects"`
 
 	// QuestionFacts One fact key per question of the group, empty for a question the investor answers (FQ1).
 	QuestionFacts []string `json:"question_facts"`
@@ -408,6 +511,9 @@ type ContributionClass struct {
 	// QuestionLimits One limit per question of the group, empty without one (AC11).
 	QuestionLimits []string `json:"question_limits"`
 
+	// QuestionReviews One reminder in months per question of the group, 0 for none (CO7).
+	QuestionReviews []ContributionClassQuestionReviews `json:"question_reviews"`
+
 	// Questions The investor's yes-or-no questions of the group (CQ1); empty without them.
 	Questions []string           `json:"questions"`
 	Rules     []ContributionRule `json:"rules"`
@@ -416,16 +522,28 @@ type ContributionClass struct {
 	Value     Money              `json:"value"`
 }
 
+// ContributionClassQuestionEffects defines model for ContributionClass.QuestionEffects.
+type ContributionClassQuestionEffects string
+
+// ContributionClassQuestionReviews defines model for ContributionClass.QuestionReviews.
+type ContributionClassQuestionReviews int
+
 // ContributionClassInput defines model for ContributionClassInput.
 type ContributionClassInput struct {
 	Members []ContributionMemberInput `json:"members"`
 	Name    string                    `json:"name"`
+
+	// QuestionEffects One effect per question; absent keeps the stored effect, else weigh (CO1, CO16).
+	QuestionEffects *[]ContributionClassInputQuestionEffects `json:"question_effects,omitempty"`
 
 	// QuestionFacts One fact key per question of the group, empty for a question the investor answers (FQ1); absent without facts.
 	QuestionFacts *[]string `json:"question_facts,omitempty"`
 
 	// QuestionLimits One limit per question of the group, empty for a question without one; a rate is a fraction (AC11). Absent without limits.
 	QuestionLimits *[]string `json:"question_limits,omitempty"`
+
+	// QuestionReviews One reminder in months per question; absent keeps the stored reminder, else 0 (CO7, CO16).
+	QuestionReviews *[]ContributionClassInputQuestionReviews `json:"question_reviews,omitempty"`
 
 	// Questions The investor's yes-or-no questions of the group (CQ1); empty without them.
 	Questions *[]string `json:"questions,omitempty"`
@@ -434,6 +552,12 @@ type ContributionClassInput struct {
 	Rules    *[]ContributionRule `json:"rules,omitempty"`
 	TargetBp int                 `json:"target_bp"`
 }
+
+// ContributionClassInputQuestionEffects defines model for ContributionClassInput.QuestionEffects.
+type ContributionClassInputQuestionEffects string
+
+// ContributionClassInputQuestionReviews defines model for ContributionClassInput.QuestionReviews.
+type ContributionClassInputQuestionReviews int
 
 // ContributionFactDetail The figure an answer read and the end of what it reads, or the reason it has none; empty for a question the investor answers.
 type ContributionFactDetail struct {
@@ -455,9 +579,18 @@ type ContributionMember struct {
 	AfterShareBp *int                `json:"after_share_bp,omitempty"`
 	Amount       *Money              `json:"amount,omitempty"`
 
+	// AnswerDates The day each answer was given, null for none or for an older answer (CO3); absent in a group without questions.
+	AnswerDates *[]*openapi_types.Date `json:"answer_dates,omitempty"`
+
+	// AnswerOverrides True where the investor's answer replaces the fact's (CO3); absent in a group without questions.
+	AnswerOverrides *[]bool `json:"answer_overrides,omitempty"`
+
 	// Answers One answer per question of the group, true for yes, null for a question with a fact the investor did not answer (CQ2); absent in a group without questions.
 	Answers *[]*bool `json:"answers,omitempty"`
 	Cost    *Money   `json:"cost,omitempty"`
+
+	// Due Positions of the questions whose answer is due (CO7); absent without one.
+	Due *[]int `json:"due,omitempty"`
 
 	// FactAnswers The answer of the filings to each question of the group; none when the investor's answer applies (FQ3). A member with none and a null answer takes an equal share of the group (CQ3). Absent in a group without questions.
 	FactAnswers *[]ContributionMemberFactAnswers `json:"fact_answers,omitempty"`
@@ -466,13 +599,26 @@ type ContributionMember struct {
 	FactDetails *[]ContributionFactDetail `json:"fact_details,omitempty"`
 
 	// FactsYear Last day of the fiscal year the fact answers read (FQ6); absent when none was computed.
-	FactsYear  *openapi_types.Date `json:"facts_year,omitempty"`
-	Instrument *string             `json:"instrument,omitempty"`
-	Quantity   *Money              `json:"quantity,omitempty"`
-	ShareBp    *int                `json:"share_bp,omitempty"`
-	TargetBp   *int                `json:"target_bp,omitempty"`
-	UnitValue  *Money              `json:"unit_value,omitempty"`
-	Value      Money               `json:"value"`
+	FactsYear *openapi_types.Date `json:"facts_year,omitempty"`
+	Forgone   *Money              `json:"forgone,omitempty"`
+
+	// Held True when a criterion of effect hold answers no and the member is not released (CO6); absent otherwise.
+	Held *bool `json:"held,omitempty"`
+
+	// HeldBy Positions of the criteria of effect hold answered no (CO6); absent without one.
+	HeldBy     *[]int  `json:"held_by,omitempty"`
+	Instrument *string `json:"instrument,omitempty"`
+	Quantity   *Money  `json:"quantity,omitempty"`
+
+	// Released True when released for the month of today (CO8); absent otherwise.
+	Released  *bool  `json:"released,omitempty"`
+	ShareBp   *int   `json:"share_bp,omitempty"`
+	TargetBp  *int   `json:"target_bp,omitempty"`
+	UnitValue *Money `json:"unit_value,omitempty"`
+	Value     Money  `json:"value"`
+
+	// WarnedBy Positions of the criteria of effect warn answered no (CO1); absent without one.
+	WarnedBy *[]int `json:"warned_by,omitempty"`
 }
 
 // ContributionMemberFactAnswers defines model for ContributionMember.FactAnswers.
@@ -482,10 +628,19 @@ type ContributionMemberFactAnswers string
 type ContributionMemberInput struct {
 	AccountId *openapi_types.UUID `json:"account_id,omitempty"`
 
+	// AnswerDates The day each answer was given; absent keeps the date of an unchanged answer, else today (CO16).
+	AnswerDates *[]*openapi_types.Date `json:"answer_dates,omitempty"`
+
+	// AnswerOverrides True where the answer replaces the fact's; absent keeps the stored values (CO3, CO16).
+	AnswerOverrides *[]bool `json:"answer_overrides,omitempty"`
+
 	// Answers One answer per question of the group, true for yes, null for a question with a fact the investor did not answer (CQ2); absent in a group without questions.
 	Answers    *[]*bool `json:"answers,omitempty"`
 	Instrument *string  `json:"instrument,omitempty"`
-	TargetBp   *int     `json:"target_bp,omitempty"`
+
+	// Released True releases the member for the month of today, false clears the release, absent keeps it (CO8, CO16).
+	Released *bool `json:"released,omitempty"`
+	TargetBp *int  `json:"target_bp,omitempty"`
 }
 
 // ContributionMissing defines model for ContributionMissing.
@@ -518,13 +673,19 @@ type ContributionPlan struct {
 	DriftBp      *int                `json:"drift_bp,omitempty"`
 
 	// GuaranteeName Name of the deposit guarantee of the book's region in the base currency; absent without one (GR8).
-	GuaranteeName *string                `json:"guarantee_name,omitempty"`
-	Leftover      *Money                 `json:"leftover,omitempty"`
-	Missing       []ContributionMissing  `json:"missing"`
-	Outside       []ContributionOutside  `json:"outside"`
-	Status        ContributionPlanStatus `json:"status"`
-	Total         Money                  `json:"total"`
-	TotalAfter    *Money                 `json:"total_after,omitempty"`
+	GuaranteeName *string `json:"guarantee_name,omitempty"`
+
+	// HoldsIgnored True when no group keeps a positive ideal in the split, so the holds are ignored for it (CO13).
+	HoldsIgnored bool                  `json:"holds_ignored"`
+	Leftover     *Money                `json:"leftover,omitempty"`
+	Missing      []ContributionMissing `json:"missing"`
+	Outside      []ContributionOutside `json:"outside"`
+
+	// Revision Revision of the stored plan, 0 without one; a save returns the new one (CO15).
+	Revision   int64                  `json:"revision"`
+	Status     ContributionPlanStatus `json:"status"`
+	Total      Money                  `json:"total"`
+	TotalAfter *Money                 `json:"total_after,omitempty"`
 }
 
 // ContributionPlanStatus defines model for ContributionPlan.Status.
@@ -534,6 +695,9 @@ type ContributionPlanStatus string
 type ContributionPlanInput struct {
 	Amount  *Money                   `json:"amount,omitempty"`
 	Classes []ContributionClassInput `json:"classes"`
+
+	// Revision Revision the writer read; a different stored revision returns 409 contribution_plan_changed, absent skips the check (CO15).
+	Revision *int64 `json:"revision,omitempty"`
 }
 
 // ContributionPreviewInput defines model for ContributionPreviewInput.

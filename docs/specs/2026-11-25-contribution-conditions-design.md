@@ -117,7 +117,7 @@ Each is a test of the domain function.
 
 | Operation | Change |
 |---|---|
-| `getContributionPlan`, `previewContributionPlan`, `saveContributionPlan` | The plan gains `revision`, `holds_ignored`. A class gains `question_effects`, `question_reviews`, `held`, `forgone`. A member gains `answer_dates`, `answer_overrides`, `released`, `held`, `held_by` (positions of the criteria that answer no), `warned_by`, `due` (positions), `forgone`. The input gains `revision`, `question_effects` (`warn`, `hold`, `weigh`), `question_reviews` (0, 1, 3, 6, 12), `answer_dates`, `answer_overrides`, `released`. A list whose length differs from the questions, or an unknown value, returns `contribution_question_invalid` or `contribution_answers_invalid` |
+| `getContributionPlan`, `previewContributionPlan`, `saveContributionPlan` | The plan gains `revision`, `holds_ignored`. A class gains `question_effects`, `question_reviews`, `held`, `forgone`. A member gains `answer_dates`, `answer_overrides`, `released`, `held`, `held_by` (positions of the criteria that answer no), `warned_by`, `due` (positions), `forgone`; a field of a member that is false or empty is absent. The input gains `revision`, `question_effects` (`warn`, `hold`, `weigh`), `question_reviews` (0, 1, 3, 6, 12), `answer_dates`, `answer_overrides`, `released`. A list whose length differs from the questions, or an unknown value, returns `contribution_question_invalid` or `contribution_answers_invalid` |
 | `getSentimentIndex`, `GET /sentiment-indexes/{id}`, `read` | `id`, `enabled`, latest `value` and `date`, `since`, `days`, `counts` (101 integers, days per value). Unknown id: 404 `not_found` |
 
 The screen computes "{n}% dos dias" from `counts`.
