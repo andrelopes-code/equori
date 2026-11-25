@@ -2,7 +2,6 @@ package toolapi
 
 import (
 	"context"
-	"time"
 
 	"github.com/google/uuid"
 
@@ -26,6 +25,8 @@ type contributionView struct {
 	Classes      []contributionClassOut `json:"classes"`
 	Outside      []contributionOutside  `json:"outside"                 jsonschema:"holdings and accounts that belong to no member"`
 	Missing      []contributionMissing  `json:"missing"                 jsonschema:"holdings and accounts without a price or a rate"`
+	Revision     int64                  `json:"revision,omitzero"       jsonschema:"stored plan revision"`
+	HoldsIgnored bool                   `json:"holds_ignored,omitzero"  jsonschema:"every group held: the split ignores holds"`
 
 	GuaranteeName string `json:"guarantee_name,omitzero" jsonschema:"deposit guarantee scheme of the base currency, such as FGC"`
 }
@@ -46,36 +47,17 @@ type contributionClassOut struct {
 	QuestionIdeals bool     `json:"question_ideals,omitzero" jsonschema:"true when the member target_bp values derive from the answers and one answer is yes"`
 	QuestionFacts  []string `json:"question_facts,omitzero"  jsonschema:"one fact key per question, empty for the investor's own; a question with one is answered from the company's filings and price"`
 	QuestionLimits []string `json:"question_limits,omitzero" jsonschema:"one limit per question, empty without one; a rate is a fraction"`
+
+	QuestionEffects []string   `json:"question_effects,omitzero" jsonschema:"warn, hold or weigh per question"`
+	QuestionReviews []int      `json:"question_reviews,omitzero" jsonschema:"months per question"`
+	Held            bool       `json:"held,omitzero"             jsonschema:"group held"`
+	Forgone         tool.Money `json:"forgone,omitzero"          jsonschema:"amount given up by a hold, in a preview"`
 }
 
 type contributionMatchedOut struct {
 	Instrument string     `json:"instrument"`
 	Value      tool.Money `json:"value"`
 	ShareBP    int        `json:"share_bp,omitzero"`
-}
-
-type contributionMemberOut struct {
-	AccountID    string                   `json:"account_id,omitzero"`
-	Instrument   string                   `json:"instrument,omitzero"`
-	TargetBP     int                      `json:"target_bp,omitzero"`
-	Value        tool.Money               `json:"value"`
-	ShareBP      int                      `json:"share_bp,omitzero"`
-	AfterShareBP int                      `json:"after_share_bp,omitzero"`
-	UnitValue    tool.Money               `json:"unit_value,omitzero"`
-	Amount       tool.Money               `json:"amount,omitzero"`
-	Quantity     tool.Money               `json:"quantity,omitzero"       jsonschema:"units to buy, an estimate at the prices of today"`
-	Cost         tool.Money               `json:"cost,omitzero"           jsonschema:"cost of the order in the base currency, never above amount"`
-	Answers      []bool                   `json:"answers,omitzero"        jsonschema:"one answer per question of the group, true for yes"`
-	BlankAnswers []int                    `json:"blank_answers,omitzero"  jsonschema:"0-based positions of answers left blank"`
-	FactAnswers  []string                 `json:"fact_answers,omitzero"   jsonschema:"per question: yes or no from the filings, none when the investor's answer applies; blank: an equal share"`
-	FactDetails  []contributionFactDetail `json:"fact_details,omitzero"   jsonschema:"per question: the figure the answer read and its date, or the reason it has none"`
-	FactsYear    string                   `json:"facts_year,omitzero"     jsonschema:"last day of the fiscal year the fact answers read"`
-}
-
-type contributionFactDetail struct {
-	Value  string    `json:"value,omitzero"`
-	Reason string    `json:"reason,omitzero"`
-	Date   tool.Date `json:"date,omitzero"`
 }
 
 type contributionOutside struct {
@@ -136,6 +118,8 @@ func contributionViewOf(v app.ContributionView) contributionView {
 		Classes:      []contributionClassOut{},
 		Outside:      []contributionOutside{},
 		Missing:      []contributionMissing{},
+		Revision:     v.Revision,
+		HoldsIgnored: v.HoldsIgnored,
 
 		GuaranteeName: v.GuaranteeName,
 	}
@@ -182,6 +166,11 @@ func contributionClassOf(c app.ContributionClass) contributionClassOut {
 		QuestionIdeals: c.QuestionIdeals,
 		QuestionFacts:  c.QuestionFacts,
 		QuestionLimits: c.QuestionLimits,
+
+		QuestionEffects: c.QuestionEffects,
+		QuestionReviews: c.QuestionReviews,
+		Held:            c.Held,
+		Forgone:         optionalMoney(c.Forgone),
 	}
 
 	for _, r := range c.Rules {
@@ -197,89 +186,10 @@ func contributionClassOf(c app.ContributionClass) contributionClassOut {
 	}
 
 	for _, m := range c.Members {
-		out.Members = append(out.Members, contributionMemberOut{
-			AccountID:    idText(m.AccountID),
-			Instrument:   string(m.Instrument),
-			TargetBP:     valueOf(m.TargetBP),
-			Value:        tool.MoneyOf(m.Value),
-			ShareBP:      valueOf(m.ShareBP),
-			AfterShareBP: valueOf(m.AfterShareBP),
-			UnitValue:    optionalMoney(m.UnitValue),
-			Amount:       optionalMoney(m.Amount),
-			Quantity:     optionalMoney(m.Quantity),
-			Cost:         optionalMoney(m.Cost),
-			Answers:      answersOf(m.Answers),
-			BlankAnswers: blanksOf(m.Answers),
-			FactAnswers:  factAnswersOf(m.FactAnswers),
-			FactDetails:  factDetailsOf(m.FactDetails),
-			FactsYear:    factsYearOf(m.FactsYear),
-		})
+		out.Members = append(out.Members, contributionMemberOf(m))
 	}
 
 	return out
-}
-
-// answersOf writes a blank answer as false; blanksOf names it.
-func answersOf(in []*bool) []bool {
-	if len(in) == 0 {
-		return nil
-	}
-
-	out := make([]bool, len(in))
-	for i, a := range in {
-		out[i] = a != nil && *a
-	}
-
-	return out
-}
-
-func blanksOf(in []*bool) []int {
-	var out []int
-
-	for i, a := range in {
-		if a == nil {
-			out = append(out, i)
-		}
-	}
-
-	return out
-}
-
-func factAnswersOf(in []domain.FactAnswer) []string {
-	if len(in) == 0 {
-		return nil
-	}
-
-	out := make([]string, len(in))
-	for i, a := range in {
-		out[i] = string(a)
-	}
-
-	return out
-}
-
-func factDetailsOf(in []domain.FactDetail) []contributionFactDetail {
-	if len(in) == 0 {
-		return nil
-	}
-
-	out := make([]contributionFactDetail, len(in))
-	for i, d := range in {
-		out[i] = contributionFactDetail{Value: d.Value, Reason: d.Reason}
-		if d.Date != nil {
-			out[i].Date = tool.DateOf(*d.Date)
-		}
-	}
-
-	return out
-}
-
-func factsYearOf(t *time.Time) string {
-	if t == nil {
-		return ""
-	}
-
-	return t.Format(time.DateOnly)
 }
 
 func contributionRuleOf(r domain.PlanRule) contributionRuleIn {

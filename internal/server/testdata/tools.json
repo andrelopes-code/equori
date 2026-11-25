@@ -6127,6 +6127,68 @@
                         "facts_year": {
                           "type": "string",
                           "description": "last day of the fiscal year the fact answers read"
+                        },
+                        "answer_dates": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "description": "day of each answer"
+                        },
+                        "answer_overrides": {
+                          "type": "array",
+                          "items": {
+                            "type": "integer"
+                          },
+                          "description": "0-based positions of overridden facts"
+                        },
+                        "released": {
+                          "type": "boolean",
+                          "description": "freed for this month"
+                        },
+                        "held": {
+                          "type": "boolean",
+                          "description": "held"
+                        },
+                        "held_by": {
+                          "type": "array",
+                          "items": {
+                            "type": "integer"
+                          },
+                          "description": "0-based hold criteria answered no"
+                        },
+                        "warned_by": {
+                          "type": "array",
+                          "items": {
+                            "type": "integer"
+                          },
+                          "description": "0-based warn criteria answered no"
+                        },
+                        "due": {
+                          "type": "array",
+                          "items": {
+                            "type": "integer"
+                          },
+                          "description": "0-based questions due for review"
+                        },
+                        "forgone": {
+                          "type": "object",
+                          "properties": {
+                            "amount": {
+                              "type": "string",
+                              "description": "decimal amount in the instrument's scale, such as -1234.56"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "description": "currency or instrument code"
+                            }
+                          },
+                          "description": "amount given up by a hold, in a preview",
+                          "required": [
+                            "amount",
+                            "currency"
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -6142,18 +6204,18 @@
                       "properties": {
                         "instrument_type": {
                           "type": "string",
-                          "description": "type, such as fixed_income or stock"
+                          "description": "fixed_income, stock"
                         },
                         "subtypes": {
                           "type": "array",
                           "items": {
                             "type": "string"
                           },
-                          "description": "subtypes of instrument_type, such as cdb or lci"
+                          "description": "subtypes, such as cdb or lci"
                         },
                         "quote_currency": {
                           "type": "string",
-                          "description": "quote currency, such as USD"
+                          "description": "quote currency"
                         },
                         "return_kind": {
                           "type": "string",
@@ -6169,7 +6231,7 @@
                         },
                         "daily_liquidity": {
                           "type": "boolean",
-                          "description": "redeemable any business day near its accrued value"
+                          "description": "redeemable any business day"
                         },
                         "guarantee": {
                           "type": "string",
@@ -6241,6 +6303,43 @@
                       "type": "string"
                     },
                     "description": "one limit per question, empty without one; a rate is a fraction"
+                  },
+                  "question_effects": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "warn, hold or weigh per question"
+                  },
+                  "question_reviews": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    },
+                    "description": "months per question"
+                  },
+                  "held": {
+                    "type": "boolean",
+                    "description": "group held"
+                  },
+                  "forgone": {
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "type": "string",
+                        "description": "decimal amount in the instrument's scale, such as -1234.56"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "description": "currency or instrument code"
+                      }
+                    },
+                    "description": "amount given up by a hold, in a preview",
+                    "required": [
+                      "amount",
+                      "currency"
+                    ],
+                    "additionalProperties": false
                   }
                 },
                 "required": [
@@ -6310,6 +6409,14 @@
                 "additionalProperties": false
               },
               "description": "holdings and accounts without a price or a rate"
+            },
+            "revision": {
+              "type": "integer",
+              "description": "stored plan revision"
+            },
+            "holds_ignored": {
+              "type": "boolean",
+              "description": "every group held: the split ignores holds"
             },
             "guarantee_name": {
               "type": "string",
@@ -12360,7 +12467,7 @@
   },
   {
     "name": "save_contribution_plan",
-    "description": "Proposes the contribution plan of the book: the classes of the portfolio, the target share of each, the holdings of each class and the monthly amount. It replaces the whole plan: read the current one with get_portfolio view contribution and repeat what stays. Use it when the user defines or changes the target split or the monthly contribution. Do not use it to see where one contribution goes: get_portfolio view contribution with amount does, and stores nothing. The user confirms first.",
+    "description": "Proposes the contribution plan of the book: the classes, their target shares, their holdings and the monthly amount. It replaces the whole plan: read it with get_portfolio view contribution and repeat what stays. Use it when the user changes the target split or the monthly contribution. Do not use it to see where a contribution goes: get_portfolio view contribution with amount does, and stores nothing. The user confirms first.",
     "effect": "write",
     "idempotent": false,
     "input_schema": {
@@ -12368,7 +12475,7 @@
       "properties": {
         "amount": {
           "type": "string",
-          "description": "monthly contribution as a positive decimal in the base currency; absent stores none"
+          "description": "monthly contribution, positive decimal; absent stores none"
         },
         "classes": {
           "type": "array",
@@ -12377,11 +12484,11 @@
             "properties": {
               "name": {
                 "type": "string",
-                "description": "name of the class, 1 to 60 characters, unique in the plan"
+                "description": "unique name, 1 to 60 characters"
               },
               "target_bp": {
                 "type": "integer",
-                "description": "basis points of the portfolio: 4000 is 40%; they add up to 10000"
+                "description": "basis points of the portfolio: 4000 is 40%; add up to 10000"
               },
               "members": {
                 "type": "array",
@@ -12390,15 +12497,15 @@
                   "properties": {
                     "account_id": {
                       "type": "string",
-                      "description": "account counted whole, such as a reserve; instead of instrument"
+                      "description": "account counted whole, such as a reserve"
                     },
                     "instrument": {
                       "type": "string",
-                      "description": "code such as BOVA11, counted in every Brokerage; instead of account_id"
+                      "description": "code such as BOVA11, in every Brokerage"
                     },
                     "target_bp": {
                       "type": "integer",
-                      "description": "basis points of the class; members add up to 10000, or none has one"
+                      "description": "basis points; add up to 10000, or none"
                     },
                     "answers": {
                       "type": "array",
@@ -12412,7 +12519,18 @@
                       "items": {
                         "type": "integer"
                       },
-                      "description": "0-based positions to leave blank, only with a fact"
+                      "description": "0-based blank positions"
+                    },
+                    "answer_overrides": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer"
+                      },
+                      "description": "0-based positions of overridden facts"
+                    },
+                    "released": {
+                      "type": "boolean",
+                      "description": "frees a held asset this month"
                     }
                   },
                   "additionalProperties": false
@@ -12424,14 +12542,14 @@
                 "items": {
                   "type": "string"
                 },
-                "description": "yes-or-no questions, at most 20 of 1 to 200 characters; members then carry answers and no target_bp"
+                "description": "yes-or-no questions, at most 20 of 1 to 200 characters; members then carry answers"
               },
               "question_facts": {
                 "type": "array",
                 "items": {
                   "type": "string"
                 },
-                "description": "fact key per question, empty for none: piotroski_p1 to piotroski_p9 or a limit key (guide contribution_plan)"
+                "description": "fact key per question, empty for none: piotroski_p1 to piotroski_p9 or a limit key"
               },
               "question_limits": {
                 "type": "array",
@@ -12447,18 +12565,18 @@
                   "properties": {
                     "instrument_type": {
                       "type": "string",
-                      "description": "type, such as fixed_income or stock"
+                      "description": "fixed_income, stock"
                     },
                     "subtypes": {
                       "type": "array",
                       "items": {
                         "type": "string"
                       },
-                      "description": "subtypes of instrument_type, such as cdb or lci"
+                      "description": "subtypes, such as cdb or lci"
                     },
                     "quote_currency": {
                       "type": "string",
-                      "description": "quote currency, such as USD"
+                      "description": "quote currency"
                     },
                     "return_kind": {
                       "type": "string",
@@ -12474,7 +12592,7 @@
                     },
                     "daily_liquidity": {
                       "type": "boolean",
-                      "description": "redeemable any business day near its accrued value"
+                      "description": "redeemable any business day"
                     },
                     "guarantee": {
                       "type": "string",
@@ -12483,7 +12601,21 @@
                   },
                   "additionalProperties": false
                 },
-                "description": "conditions, at most 5, instead of members: a security that meets one joins"
+                "description": "at most 5, instead of members"
+              },
+              "question_effects": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "warn, hold or weigh per question"
+              },
+              "question_reviews": {
+                "type": "array",
+                "items": {
+                  "type": "integer"
+                },
+                "description": "reminder in months per question"
               }
             },
             "required": [
@@ -12493,7 +12625,7 @@
             ],
             "additionalProperties": false
           },
-          "description": "every class, at most 20; an empty list removes the plan"
+          "description": "at most 20; an empty list removes the plan"
         }
       },
       "required": [
@@ -12815,6 +12947,68 @@
                     "facts_year": {
                       "type": "string",
                       "description": "last day of the fiscal year the fact answers read"
+                    },
+                    "answer_dates": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "day of each answer"
+                    },
+                    "answer_overrides": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer"
+                      },
+                      "description": "0-based positions of overridden facts"
+                    },
+                    "released": {
+                      "type": "boolean",
+                      "description": "freed for this month"
+                    },
+                    "held": {
+                      "type": "boolean",
+                      "description": "held"
+                    },
+                    "held_by": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer"
+                      },
+                      "description": "0-based hold criteria answered no"
+                    },
+                    "warned_by": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer"
+                      },
+                      "description": "0-based warn criteria answered no"
+                    },
+                    "due": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer"
+                      },
+                      "description": "0-based questions due for review"
+                    },
+                    "forgone": {
+                      "type": "object",
+                      "properties": {
+                        "amount": {
+                          "type": "string",
+                          "description": "decimal amount in the instrument's scale, such as -1234.56"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "description": "currency or instrument code"
+                        }
+                      },
+                      "description": "amount given up by a hold, in a preview",
+                      "required": [
+                        "amount",
+                        "currency"
+                      ],
+                      "additionalProperties": false
                     }
                   },
                   "required": [
@@ -12830,18 +13024,18 @@
                   "properties": {
                     "instrument_type": {
                       "type": "string",
-                      "description": "type, such as fixed_income or stock"
+                      "description": "fixed_income, stock"
                     },
                     "subtypes": {
                       "type": "array",
                       "items": {
                         "type": "string"
                       },
-                      "description": "subtypes of instrument_type, such as cdb or lci"
+                      "description": "subtypes, such as cdb or lci"
                     },
                     "quote_currency": {
                       "type": "string",
-                      "description": "quote currency, such as USD"
+                      "description": "quote currency"
                     },
                     "return_kind": {
                       "type": "string",
@@ -12857,7 +13051,7 @@
                     },
                     "daily_liquidity": {
                       "type": "boolean",
-                      "description": "redeemable any business day near its accrued value"
+                      "description": "redeemable any business day"
                     },
                     "guarantee": {
                       "type": "string",
@@ -12929,6 +13123,43 @@
                   "type": "string"
                 },
                 "description": "one limit per question, empty without one; a rate is a fraction"
+              },
+              "question_effects": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "warn, hold or weigh per question"
+              },
+              "question_reviews": {
+                "type": "array",
+                "items": {
+                  "type": "integer"
+                },
+                "description": "months per question"
+              },
+              "held": {
+                "type": "boolean",
+                "description": "group held"
+              },
+              "forgone": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "description": "amount given up by a hold, in a preview",
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
               }
             },
             "required": [
@@ -12998,6 +13229,14 @@
             "additionalProperties": false
           },
           "description": "holdings and accounts without a price or a rate"
+        },
+        "revision": {
+          "type": "integer",
+          "description": "stored plan revision"
+        },
+        "holds_ignored": {
+          "type": "boolean",
+          "description": "every group held: the split ignores holds"
         },
         "guarantee_name": {
           "type": "string",

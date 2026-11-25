@@ -13,47 +13,53 @@ import (
 )
 
 type contributionMemberIn struct {
-	AccountID    string `json:"account_id,omitzero"    jsonschema:"account counted whole, such as a reserve; instead of instrument"`
-	Instrument   string `json:"instrument,omitzero"    jsonschema:"code such as BOVA11, counted in every Brokerage; instead of account_id"`
-	TargetBP     int    `json:"target_bp,omitzero"     jsonschema:"basis points of the class; members add up to 10000, or none has one"`
+	AccountID    string `json:"account_id,omitzero"    jsonschema:"account counted whole, such as a reserve"`
+	Instrument   string `json:"instrument,omitzero"    jsonschema:"code such as BOVA11, in every Brokerage"`
+	TargetBP     int    `json:"target_bp,omitzero"     jsonschema:"basis points; add up to 10000, or none"`
 	Answers      []bool `json:"answers,omitzero"       jsonschema:"per question of the group, true for yes"`
-	BlankAnswers []int  `json:"blank_answers,omitzero" jsonschema:"0-based positions to leave blank, only with a fact"`
+	BlankAnswers []int  `json:"blank_answers,omitzero" jsonschema:"0-based blank positions"`
+
+	AnswerOverrides []int             `json:"answer_overrides,omitzero" jsonschema:"0-based positions of overridden facts"`
+	Released        tool.OptionalBool `json:"released,omitzero"         jsonschema:"frees a held asset this month"`
 }
 
 type contributionRuleIn struct {
-	InstrumentType  string            `json:"instrument_type,omitzero"   jsonschema:"type, such as fixed_income or stock"`
-	Subtypes        []string          `json:"subtypes,omitzero"          jsonschema:"subtypes of instrument_type, such as cdb or lci"`
-	QuoteCurrency   string            `json:"quote_currency,omitzero"    jsonschema:"quote currency, such as USD"`
+	InstrumentType  string            `json:"instrument_type,omitzero"   jsonschema:"fixed_income, stock"`
+	Subtypes        []string          `json:"subtypes,omitzero"          jsonschema:"subtypes, such as cdb or lci"`
+	QuoteCurrency   string            `json:"quote_currency,omitzero"    jsonschema:"quote currency"`
 	ReturnKind      string            `json:"return_kind,omitzero"       jsonschema:"rate, inflation or fixed"`
 	MaturesFromYear int               `json:"matures_from_year,omitzero" jsonschema:"first maturity year"`
 	MaturesToYear   int               `json:"matures_to_year,omitzero"   jsonschema:"last maturity year"`
-	DailyLiquidity  tool.OptionalBool `json:"daily_liquidity,omitzero"   jsonschema:"redeemable any business day near its accrued value"`
+	DailyLiquidity  tool.OptionalBool `json:"daily_liquidity,omitzero"   jsonschema:"redeemable any business day"`
 	Guarantee       string            `json:"guarantee,omitzero"         jsonschema:"covered, sovereign or uncovered"`
 }
 
 type contributionClassIn struct {
-	Name     string                 `json:"name"      jsonschema:"name of the class, 1 to 60 characters, unique in the plan"`
-	TargetBP int                    `json:"target_bp" jsonschema:"basis points of the portfolio: 4000 is 40%; they add up to 10000"`
+	Name     string                 `json:"name"      jsonschema:"unique name, 1 to 60 characters"`
+	TargetBP int                    `json:"target_bp" jsonschema:"basis points of the portfolio: 4000 is 40%; add up to 10000"`
 	Members  []contributionMemberIn `json:"members"   jsonschema:"a holding belongs to at most one class"`
 
-	Questions      []string             `json:"questions,omitzero"       jsonschema:"yes-or-no questions, at most 20 of 1 to 200 characters; members then carry answers and no target_bp"`
-	QuestionFacts  []string             `json:"question_facts,omitzero"  jsonschema:"fact key per question, empty for none: piotroski_p1 to piotroski_p9 or a limit key (guide contribution_plan)"`
+	Questions      []string             `json:"questions,omitzero"       jsonschema:"yes-or-no questions, at most 20 of 1 to 200 characters; members then carry answers"`
+	QuestionFacts  []string             `json:"question_facts,omitzero"  jsonschema:"fact key per question, empty for none: piotroski_p1 to piotroski_p9 or a limit key"`
 	QuestionLimits []string             `json:"question_limits,omitzero" jsonschema:"limit per question, empty for none; 0.12 is 12%"`
-	Rules          []contributionRuleIn `json:"rules,omitzero"           jsonschema:"conditions, at most 5, instead of members: a security that meets one joins"`
+	Rules          []contributionRuleIn `json:"rules,omitzero"           jsonschema:"at most 5, instead of members"`
+
+	QuestionEffects []string `json:"question_effects,omitzero" jsonschema:"warn, hold or weigh per question"`
+	QuestionReviews []int    `json:"question_reviews,omitzero" jsonschema:"reminder in months per question"`
 }
 
 type saveContributionPlanIn struct {
-	Amount  string                `json:"amount,omitzero" jsonschema:"monthly contribution as a positive decimal in the base currency; absent stores none"`
-	Classes []contributionClassIn `json:"classes"         jsonschema:"every class, at most 20; an empty list removes the plan"`
+	Amount  string                `json:"amount,omitzero" jsonschema:"monthly contribution, positive decimal; absent stores none"`
+	Classes []contributionClassIn `json:"classes"         jsonschema:"at most 20; an empty list removes the plan"`
 }
 
 func saveContributionPlan(svc *app.Service) tool.Tool {
 	return tool.NewWrite(tool.Spec{
 		Name: "save_contribution_plan",
-		Description: "Proposes the contribution plan of the book: the classes of the portfolio, the target share of each, the holdings of each class and the monthly amount. " +
-			"It replaces the whole plan: read the current one with get_portfolio view contribution and repeat what stays. " +
-			"Use it when the user defines or changes the target split or the monthly contribution. " +
-			"Do not use it to see where one contribution goes: get_portfolio view contribution with amount does, and stores nothing. " +
+		Description: "Proposes the contribution plan of the book: the classes, their target shares, their holdings and the monthly amount. " +
+			"It replaces the whole plan: read it with get_portfolio view contribution and repeat what stays. " +
+			"Use it when the user changes the target split or the monthly contribution. " +
+			"Do not use it to see where a contribution goes: get_portfolio view contribution with amount does, and stores nothing. " +
 			"The user confirms first.",
 		Effect: tool.Write,
 	}, func(ctx context.Context, booksID int64, in saveContributionPlanIn) (tool.Preview, error) {
@@ -147,7 +153,13 @@ func contributionClasses(in []contributionClassIn) ([]domain.PlanClass, error) {
 				AccountID:  id,
 				Instrument: money.Currency(m.Instrument),
 				Answers:    planAnswers(m.Answers, m.BlankAnswers),
+
+				AnswerOverrides: planOverrides(m.Answers, m.AnswerOverrides),
 			}
+			if m.Released.Set {
+				members[j].Released = &m.Released.B
+			}
+
 			if targeted {
 				members[j].TargetBP = &m.TargetBP
 			}
@@ -159,8 +171,12 @@ func contributionClasses(in []contributionClassIn) ([]domain.PlanClass, error) {
 			Questions:      c.Questions,
 			QuestionFacts:  c.QuestionFacts,
 			QuestionLimits: c.QuestionLimits,
-			Members:        members,
-			Rules:          contributionPlanRules(c.Rules),
+
+			QuestionEffects: c.QuestionEffects,
+			QuestionReviews: c.QuestionReviews,
+
+			Members: members,
+			Rules:   contributionPlanRules(c.Rules),
 		}
 	}
 
@@ -179,6 +195,24 @@ func planAnswers(answers []bool, blank []int) []*bool {
 	for i := range answers {
 		if !slices.Contains(blank, i) {
 			out[i] = &answers[i]
+		}
+	}
+
+	return out
+}
+
+// planOverrides marks each answer named by a position; a position outside the answers changes
+// nothing, and no position leaves the stored overrides.
+func planOverrides(answers []bool, positions []int) []bool {
+	if len(positions) == 0 {
+		return nil
+	}
+
+	out := make([]bool, len(answers))
+
+	for _, p := range positions {
+		if p >= 0 && p < len(out) {
+			out[p] = true
 		}
 	}
 
