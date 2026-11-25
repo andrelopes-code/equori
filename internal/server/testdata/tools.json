@@ -12484,11 +12484,11 @@
             "properties": {
               "name": {
                 "type": "string",
-                "description": "unique name, 1 to 60 characters"
+                "description": "unique, 1 to 60 characters"
               },
               "target_bp": {
                 "type": "integer",
-                "description": "basis points of the portfolio: 4000 is 40%; add up to 10000"
+                "description": "4000 is 40%; they add up to 10000"
               },
               "members": {
                 "type": "array",
@@ -12497,15 +12497,15 @@
                   "properties": {
                     "account_id": {
                       "type": "string",
-                      "description": "account counted whole, such as a reserve"
+                      "description": "account counted whole; instead of instrument"
                     },
                     "instrument": {
                       "type": "string",
-                      "description": "code such as BOVA11, in every Brokerage"
+                      "description": "code such as BOVA11; instead of account_id"
                     },
                     "target_bp": {
                       "type": "integer",
-                      "description": "basis points; add up to 10000, or none"
+                      "description": "members add up to 10000, or none has one"
                     },
                     "answers": {
                       "type": "array",
@@ -12526,11 +12526,11 @@
                       "items": {
                         "type": "integer"
                       },
-                      "description": "0-based positions of overridden facts"
+                      "description": "0-based overridden facts"
                     },
                     "released": {
                       "type": "boolean",
-                      "description": "frees a held asset this month"
+                      "description": "free a held asset this month"
                     }
                   },
                   "additionalProperties": false
@@ -12542,14 +12542,14 @@
                 "items": {
                   "type": "string"
                 },
-                "description": "yes-or-no questions, at most 20 of 1 to 200 characters; members then carry answers"
+                "description": "yes-or-no questions, at most 20 of 1 to 200 characters; members then carry answers, no target_bp with weigh"
               },
               "question_facts": {
                 "type": "array",
                 "items": {
                   "type": "string"
                 },
-                "description": "fact key per question, empty for none: piotroski_p1 to piotroski_p9 or a limit key"
+                "description": "fact key per question, empty for none: piotroski_p1 to p9 or a limit key (guide contribution_plan)"
               },
               "question_limits": {
                 "type": "array",
@@ -12601,7 +12601,7 @@
                   },
                   "additionalProperties": false
                 },
-                "description": "at most 5, instead of members"
+                "description": "at most 5, instead of members: a security that meets one joins"
               },
               "question_effects": {
                 "type": "array",
@@ -12615,7 +12615,7 @@
                 "items": {
                   "type": "integer"
                 },
-                "description": "reminder in months per question"
+                "description": "months per question"
               }
             },
             "required": [

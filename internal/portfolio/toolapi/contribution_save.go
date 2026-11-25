@@ -13,14 +13,14 @@ import (
 )
 
 type contributionMemberIn struct {
-	AccountID    string `json:"account_id,omitzero"    jsonschema:"account counted whole, such as a reserve"`
-	Instrument   string `json:"instrument,omitzero"    jsonschema:"code such as BOVA11, in every Brokerage"`
-	TargetBP     int    `json:"target_bp,omitzero"     jsonschema:"basis points; add up to 10000, or none"`
+	AccountID    string `json:"account_id,omitzero"    jsonschema:"account counted whole; instead of instrument"`
+	Instrument   string `json:"instrument,omitzero"    jsonschema:"code such as BOVA11; instead of account_id"`
+	TargetBP     int    `json:"target_bp,omitzero"     jsonschema:"members add up to 10000, or none has one"`
 	Answers      []bool `json:"answers,omitzero"       jsonschema:"per question of the group, true for yes"`
 	BlankAnswers []int  `json:"blank_answers,omitzero" jsonschema:"0-based blank positions"`
 
-	AnswerOverrides []int             `json:"answer_overrides,omitzero" jsonschema:"0-based positions of overridden facts"`
-	Released        tool.OptionalBool `json:"released,omitzero"         jsonschema:"frees a held asset this month"`
+	AnswerOverrides []int             `json:"answer_overrides,omitzero" jsonschema:"0-based overridden facts"`
+	Released        tool.OptionalBool `json:"released,omitzero"         jsonschema:"free a held asset this month"`
 }
 
 type contributionRuleIn struct {
@@ -35,17 +35,17 @@ type contributionRuleIn struct {
 }
 
 type contributionClassIn struct {
-	Name     string                 `json:"name"      jsonschema:"unique name, 1 to 60 characters"`
-	TargetBP int                    `json:"target_bp" jsonschema:"basis points of the portfolio: 4000 is 40%; add up to 10000"`
+	Name     string                 `json:"name"      jsonschema:"unique, 1 to 60 characters"`
+	TargetBP int                    `json:"target_bp" jsonschema:"4000 is 40%; they add up to 10000"`
 	Members  []contributionMemberIn `json:"members"   jsonschema:"a holding belongs to at most one class"`
 
-	Questions      []string             `json:"questions,omitzero"       jsonschema:"yes-or-no questions, at most 20 of 1 to 200 characters; members then carry answers"`
-	QuestionFacts  []string             `json:"question_facts,omitzero"  jsonschema:"fact key per question, empty for none: piotroski_p1 to piotroski_p9 or a limit key"`
+	Questions      []string             `json:"questions,omitzero"       jsonschema:"yes-or-no questions, at most 20 of 1 to 200 characters; members then carry answers, no target_bp with weigh"`
+	QuestionFacts  []string             `json:"question_facts,omitzero"  jsonschema:"fact key per question, empty for none: piotroski_p1 to p9 or a limit key (guide contribution_plan)"`
 	QuestionLimits []string             `json:"question_limits,omitzero" jsonschema:"limit per question, empty for none; 0.12 is 12%"`
-	Rules          []contributionRuleIn `json:"rules,omitzero"           jsonschema:"at most 5, instead of members"`
+	Rules          []contributionRuleIn `json:"rules,omitzero"           jsonschema:"at most 5, instead of members: a security that meets one joins"`
 
 	QuestionEffects []string `json:"question_effects,omitzero" jsonschema:"warn, hold or weigh per question"`
-	QuestionReviews []int    `json:"question_reviews,omitzero" jsonschema:"reminder in months per question"`
+	QuestionReviews []int    `json:"question_reviews,omitzero" jsonschema:"months per question"`
 }
 
 type saveContributionPlanIn struct {
