@@ -1,3 +1,5 @@
+import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
+
 import styles from "@/features/portfolio/projection/plan-section/plan.module.css";
 import { useT } from "@/i18n/i18n-provider";
 
@@ -10,18 +12,16 @@ export function AgeFact({ age }: AgeFactProps) {
   const t = useT();
 
   return (
-    <div className={styles.planFact}>
-      <span className={styles.planFactLabel}>
-        {t("portfolio.projection.plan.age")}
-      </span>
+    <Field necessity="none" className={styles.planFact}>
+      <FieldLabel>{t("portfolio.projection.plan.age")}</FieldLabel>
 
       <span className={styles.planFactValue}>
         {t("portfolio.projection.plan.ageValue", { years: String(age) })}
       </span>
 
-      <span className={styles.planFactHint}>
+      <FieldDescription>
         {t("portfolio.projection.plan.ageSource")}
-      </span>
-    </div>
+      </FieldDescription>
+    </Field>
   );
 }

@@ -1,3 +1,4 @@
+import { Field, FieldLabel } from "@slotted/react/field";
 import {
   Section,
   SectionBody,
@@ -44,13 +45,13 @@ export function ProjectionPending() {
       <SectionBody>
         <div className={styles.planStrip}>
           {labels.map((label) => (
-            <div key={label} className={styles.planFact}>
-              <span className={styles.planFactLabel}>{t(label)}</span>
+            <Field key={label} necessity="none" className={styles.planFact}>
+              <FieldLabel>{t(label)}</FieldLabel>
 
               <span className={styles.planFactValue}>
                 <PendingValue ch={8} />
               </span>
-            </div>
+            </Field>
           ))}
         </div>
       </SectionBody>

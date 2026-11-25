@@ -16,29 +16,20 @@
 
   /* The mode is a field like its neighbours: same label, same control height */
   .planMode {
-    inline-size: auto;
+    flex: none;
+    inline-size: 17rem; /* literal: two segments of the longest label, "Renda por mês", untruncated */
   }
 
+  /* The age is a field without a control: the label and the hint are the field's own */
   .planFact {
-    display: grid;
-    gap: var(--slotted-space-1);
-    min-inline-size: 7rem; /* literal: the width of the birth hint */
+    flex: none;
+    inline-size: 9rem; /* literal: the birth hint on one line */
     white-space: nowrap;
-  }
-
-  .planFactLabel {
-    color: var(--slotted-text-muted);
-    font-size: var(--slotted-font-size-sm);
   }
 
   .planFactValue {
     font-size: var(--slotted-font-size-lg);
     font-weight: var(--slotted-font-weight-semibold);
-    line-height: 2.25rem; /* literal: the height of a field, so facts and fields share a line */
-  }
-
-  .planFactHint {
-    color: var(--slotted-text-muted);
-    font-size: var(--slotted-font-size-xs);
+    line-height: 2rem; /* literal: the height of a field control, so the age and the fields share a line */
   }
 }

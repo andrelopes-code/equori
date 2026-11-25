@@ -37,6 +37,7 @@ export function WithdrawalFields({
         <FieldLabel>{t("portfolio.projection.plan.withdrawal")}</FieldLabel>
 
         <SegmentedControl
+          fullWidth
           aria-label={t("portfolio.projection.plan.withdrawal")}
           value={fields.mode}
           onValueChange={handleMode}
