@@ -16,6 +16,7 @@ const plan = {
 const figures: JourneyFigures = {
   ...plan,
   withdrawalFrom: "2050-01",
+  started: false,
   withdrawalAge: 60,
   lastAge: 90,
   today: 1,

@@ -327,6 +327,7 @@ export const portfolioEn = {
   "portfolio.projection.plan.rangeError": "From {min} to {max}",
   "portfolio.projection.plan.lastAge": "Until age",
   "portfolio.projection.plan.ageError": "Above age {age}",
+  "portfolio.projection.plan.started": "Already started.",
   "portfolio.projection.plan.birth": "Birth date",
   "portfolio.projection.plan.birthHint": "Kept in your profile.",
   "portfolio.projection.plan.cautious": "Cautious",
@@ -350,6 +351,7 @@ export const portfolioEn = {
   "portfolio.projection.cases.col.case": "Scenario",
   "portfolio.projection.cases.col.return": "Real return",
   "portfolio.projection.cases.col.value": "Value at {age}",
+  "portfolio.projection.cases.col.value.today": "Value today",
   "portfolio.projection.cases.col.share": "Of the needed",
   "portfolio.projection.cases.col.income": "Income sustained",
   "portfolio.projection.cases.col.lasts": "Income",
@@ -392,6 +394,7 @@ export const portfolioEn = {
     "The plan does not sustain the desired income",
   "portfolio.projection.journey.verdict.reach":
     "At age {age} the plan reaches ",
+  "portfolio.projection.journey.verdict.holds": "Today the plan holds ",
   "portfolio.projection.journey.verdict.today": " in today's money: ",
   "portfolio.projection.journey.verdict.todayEnd": " in today's money.",
   "portfolio.projection.journey.verdict.share": "{share} of the amount needed",
@@ -403,11 +406,16 @@ export const portfolioEn = {
   "portfolio.projection.journey.path.value": "{share} of the way",
   "portfolio.projection.journey.path.today": "{amount} today",
   "portfolio.projection.journey.path.needed": "{amount} needed at {age}",
+  "portfolio.projection.journey.path.needed.today": "{amount} needed today",
   "portfolio.projection.journey.facts.versus": "Against the plan today",
   "portfolio.projection.journey.facts.versusValue": "{amount} · {share}",
   "portfolio.projection.journey.facts.contributed": "Contributed to age {age}",
+  "portfolio.projection.journey.facts.contributed.today":
+    "Contributed until today",
   "portfolio.projection.journey.facts.return": "Return to age {age}",
+  "portfolio.projection.journey.facts.return.today": "Return until today",
   "portfolio.projection.journey.facts.needed": "Needed at age {age}",
+  "portfolio.projection.journey.facts.needed.today": "Needed today",
   "portfolio.projection.journey.facts.sustained": "Income the plan sustains",
   "portfolio.projection.journey.facts.perMonth": "{amount} a month",
   "portfolio.projection.versus": "Plan against recorded",
@@ -443,6 +451,8 @@ export const portfolioEn = {
   "portfolio.projection.contributions.add": "Add a contribution change",
   "portfolio.projection.contributions.add.full":
     "A plan holds up to 40 changes.",
+  "portfolio.projection.contributions.add.started":
+    "The withdrawals have started.",
   "portfolio.projection.contributions.dialog": "Contribution change",
   "portfolio.projection.contributions.dialog.description":
     "The amount holds from this date until the next change.",

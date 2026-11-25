@@ -17,7 +17,7 @@ describe("planLine", () => {
     // 100000 * 1.01 + 2000 = 103000; 103000 * 1.01 - 500 = 103530. November takes the
     // contribution of the plan, raised one month with inflation from its change:
     // 103530 * 1.01 + 1000 * 1.01 = 105575.3.
-    const line = planLine(points, "2026-10", changes, 0, 1268.25);
+    const line = planLine(points, "2026-10", changes, 0, 1268.25, "2099-01");
 
     expect(line).toHaveLength(4);
     expect(line[0]).toBe(100000);
@@ -34,7 +34,7 @@ describe("planLine", () => {
     }));
 
     // (1 + 0.05)(1 + 0.1) = 1.155 a year; 100000 * 1.155 over 12 months.
-    const line = planLine(points, "2026-11", [], 500, 1000);
+    const line = planLine(points, "2026-11", [], 500, 1000, "2099-01");
 
     expect(line[12]).toBeCloseTo(115500, 4);
   });
@@ -49,7 +49,7 @@ describe("planLine", () => {
     ];
 
     // Rate 0: the line is the running sum of the contributions in force.
-    expect(planLine(points, "2026-10", changes, 0, 0)).toEqual([
+    expect(planLine(points, "2026-10", changes, 0, 0, "2099-01")).toEqual([
       0, 1000, 1500, 2000,
     ]);
   });
@@ -67,7 +67,14 @@ describe("planLine", () => {
     // November 1000 * 1.01 (one month from the baseline month); December 500 (the month of its
     // change); January 500 * 1.01.
     const real = (1 / 1.1268250301319698 - 1) * 10000;
-    const line = planLine(points, "2026-10", changes, real, 1268.250301319698);
+    const line = planLine(
+      points,
+      "2026-10",
+      changes,
+      real,
+      1268.250301319698,
+      "2099-01",
+    );
 
     expect(line[1]).toBeCloseTo(1010, 6);
     expect(line[2]).toBeCloseTo(1510, 6);

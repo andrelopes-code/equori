@@ -123,7 +123,7 @@ The owner asked for a positive and a negative scenario and for a more realistic 
 
 Cross-cutting answers of the amendment: R1 no regional value, the tax is typed, the references come from the curve sources and expectation sources of `docs/contributing/regions.md`; R2 without a source or an index the reference or the correction is absent, stated by PX13; R3 and R4 none; R5 catalog keys `portfolio.projection.*`; R6 through `src/i18n/format.ts`; C1 basis points and minor units, floating point on the client only; C2 the curve and the index are used only in the plan's currency; C3, C4, T1, T2 unchanged; B1 no table; B2 and B3 unchanged; D1 the archive exports the plan by column, no format change; D2 one migration with four nullable columns; D3 to D5 do not apply; S1 no operation; S2 no; S3 the guide article and the help article change with the screen; S4 no; X1 S719; X2 S717 covers a plan in USD, and PX13 without an index has a client test.
 
-Left for a later amendment: other incomes with a start age, one-off events, a fall at the start of the withdrawals.
+Left for a later amendment: other incomes with a start age (Amendment 3), one-off events, a fall at the start of the withdrawals.
 
 ## Amendment 2: the withdrawals end at the last age (owner, 2026-11-25)
 
@@ -136,3 +136,24 @@ The projection held one withdrawal more than the amount needed counted, so a pla
 | PX6 | Amended: the plan sustains the income when the value at the withdrawal age reaches the amount needed; a value that pays the whole last withdrawal and ends on zero sustains it. |
 
 Cross-cutting answers of the amendment: no value, text, table, operation or setting changes; X1 none, client tests of PX4 to PX6.
+
+## Amendment 3: other incomes, and a plan whose withdrawals started (owner, 2026-11-25)
+
+| Approach to other incomes | Trade-off | Choice |
+|---|---|---|
+| A list of incomes, each with its own ages | One table and one block | Chosen |
+| One amount and one start age in the plan | Two columns; a rent and a pension that start at different ages do not fit | Rejected |
+| A pension computed from the rules of a country | A regional rule that changes and reads as a promise | Rejected |
+
+| ID | Rule |
+|---|---|
+| PJ8 | A plan holds 0 to 20 other incomes. Each has a name (1 to 60 characters, trimmed), a monthly amount above zero, net, in minor units of the plan's currency and in today's money, a start age (18 to 120) and an optional end age (above the start, at most 120). A save replaces the list; a list left out is empty. Out of range is `422 projection_invalid`. No income is suggested. |
+| PX2 | Amended: with no other income on the list the income is net of any other income of the member, as before; with one, it is the total, and the hint says so. A stored income is not converted. |
+| PX4 | Amended: in a withdrawal month the portfolio pays the income less the other incomes in force, never below zero. An other income is in force from the birth month of its start age to the month before the birth month of its end age. It counts in withdrawal months only, and what exceeds the income is not reinvested. In rate mode an other income does not change the withdrawals. |
+| PX5 | Amended: the amount needed is the present value of what the portfolio pays in each withdrawal month, under PX14 with a tax. |
+| PX18 | The share of the amount needed is written in whole percent rounded down, so 100% is written only for a plan that sustains the income. |
+| PX19 | A withdrawal age at or below the age of the member is a plan whose withdrawals started: there is no contribution, the withdrawals run from the next month, and the texts say today in place of the withdrawal age. A last age that leaves no month to project is refused under its field. A change cannot be added, and the reason is written. In PX7 a month from the withdrawal month on adds its recorded flows, and the average contribution and the planned one leave those months out. |
+| PX20 | With other incomes the income the plan sustains is the highest constant total income that lasts to the last age. It is solved over the withdrawal months, because it is not proportional to the value. The age the income ends is the first month with an amount due and a value of zero. When the other incomes cover the income the amount needed is zero, and the text says so in place of a share. |
+| PX21 | The block "Outras rendas" follows the scenarios: the list, ordered by start age, with a dialog to add, change and remove, and beside it the plan with and without the list. Income mode: the amount needed, its share, the income sustained and the age it lasts to. Rate mode: the total income per range of ages. The list edits the draft; "Salvar plano" stores it. With an empty list only the action is drawn. |
+
+Cross-cutting answers of the amendment: R1 no regional value, every amount and age is typed; R2 the same in every region; R3 and R4 none; R5 catalog keys `portfolio.projection.incomes.*` and the texts of PX19 and PX20; R6 through `src/i18n/format.ts` and `useMoneyFormat()`; C1 minor units; C2, C3 and C4 the plan's currency; T1 and T2 unchanged; B1 `portfolio_projection_income` holds `books_id`, every query filters by it, a schema test rejects a row without a book; B2 and B3 unchanged; D1 a fact of the book in the archive, beside the changes; D2 one migration; D3 to D5 do not apply; S1 no operation, `incomes` in the plan and its input; S2 no; S3 the guide and help articles change with the screen; S4 no; X1 one scenario, the next free id; X2 S717 covers USD.

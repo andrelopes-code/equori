@@ -31,7 +31,9 @@ interface PlanSectionProps {
   // The realized real return of the portfolio a year, a fraction; null under 12 months of history.
   annualReal: number | null;
   currency: string;
-  tooEarly: boolean;
+  // PX19: the withdrawals of the typed plan run already; its last age leaves no month.
+  started: boolean;
+  ended: boolean;
   canSave: boolean;
   saving: boolean;
   error: unknown;
@@ -45,7 +47,8 @@ export function PlanSection({
   age,
   annualReal,
   currency,
-  tooEarly,
+  started,
+  ended,
   canSave,
   saving,
   error,
@@ -84,7 +87,7 @@ export function PlanSection({
           <Button
             variant="outline"
             tone="secondary"
-            disabled={!canSave || saving}
+            disabled={!canSave || ended || saving}
             onClick={onSave}
           >
             {t("portfolio.projection.plan.save")}
@@ -106,12 +109,10 @@ export function PlanSection({
               unit={t("portfolio.projection.plan.years")}
               inputMode="numeric"
               value={fields.withdrawalAge}
-              error={
-                range(ranges.withdrawalAge) ??
-                (tooEarly
-                  ? t("portfolio.projection.plan.ageError", { age: age ?? 0 })
-                  : undefined)
+              hint={
+                started ? t("portfolio.projection.plan.started") : undefined
               }
+              error={range(ranges.withdrawalAge)}
               onChange={(withdrawalAge) => {
                 onChange({ withdrawalAge });
               }}
@@ -129,7 +130,14 @@ export function PlanSection({
               unit={t("portfolio.projection.plan.years")}
               inputMode="numeric"
               value={fields.lastAge}
-              error={range(ranges.lastAge)}
+              error={
+                range(ranges.lastAge) ??
+                (ended
+                  ? t("portfolio.projection.plan.ageError", {
+                      age: Math.max(age ?? 0, Number(fields.lastAge)),
+                    })
+                  : undefined)
+              }
               onChange={(lastAge) => {
                 onChange({ lastAge });
               }}

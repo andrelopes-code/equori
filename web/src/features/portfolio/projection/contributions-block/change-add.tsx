@@ -6,30 +6,36 @@ import { useT } from "@/i18n/i18n-provider";
 
 interface ChangeAddProps {
   full: boolean;
+  // PX19: no contribution is left to plan.
+  started: boolean;
   onAdd: () => void;
 }
 
 // PX8: the action that adds a change, fixed below the list; at the limit it is disabled and the
 // reason is written beside it.
-export function ChangeAdd({ full, onAdd }: ChangeAddProps) {
+export function ChangeAdd({ full, started, onAdd }: ChangeAddProps) {
   const t = useT();
   const reason = useId();
+
+  const blocked = full || started;
 
   return (
     <div className={styles.stepAdd}>
       <Button
         variant="outline"
         tone="secondary"
-        disabled={full}
-        aria-describedby={full ? reason : undefined}
+        disabled={blocked}
+        aria-describedby={blocked ? reason : undefined}
         onClick={onAdd}
       >
         {t("portfolio.projection.contributions.add")}
       </Button>
 
-      {full && (
+      {blocked && (
         <p id={reason} className={styles.stepReason}>
-          {t("portfolio.projection.contributions.add.full")}
+          {started
+            ? t("portfolio.projection.contributions.add.started")
+            : t("portfolio.projection.contributions.add.full")}
         </p>
       )}
     </div>

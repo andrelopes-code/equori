@@ -106,6 +106,7 @@ export function ContributionsBlock({
 
             <ChangeAdd
               full={draft.changes.length >= maxChanges}
+              started={base.withdrawalFrom <= current}
               onAdd={edit.add}
             />
           </div>

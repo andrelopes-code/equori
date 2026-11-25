@@ -213,17 +213,54 @@ describe("Portfolio projection page", () => {
     expect(await screen.findByRole("alert")).toBeInTheDocument();
   });
 
-  it("PX2: a withdrawal age at or below the current age shows its error", async () => {
-    const early = { ...projectionPlan, withdrawal_age: 32 };
+  it("PX19: a plan whose withdrawals started is read from today", async () => {
+    const started = {
+      ...projectionPlan,
+      withdrawal_age: 32,
+      cautious_return_bp: 200,
+    };
     await renderApp("/portfolio/projection", {
       fetch: portfolioApi({
         ...withBirth,
-        "GET /api/v1/portfolio-projection": () => json(200, early),
+        "GET /api/v1/portfolio-projection": () => json(200, started),
       }),
     });
+    const journey = within(await journeyRegion());
+
+    expect(screen.getByText("Already started.")).toBeInTheDocument();
+    expect(journey.getByText(/Today the plan holds/)).toBeInTheDocument();
+    expect(journey.getByText("Contributed until today")).toBeInTheDocument();
+    expect(journey.getByText("Needed today")).toBeInTheDocument();
+    expect(journey.queryByText(/age 32$/)).toBeNull();
+    expect(screen.getByText("Value today")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: catalogEn["portfolio.projection.contributions.add"],
+      }),
+    ).toBeDisabled();
+    expect(
+      screen.getByText("The withdrawals have started."),
+    ).toBeInTheDocument();
+  });
+
+  it("PX19: a last age that leaves no month shows its error and draws no projection", async () => {
+    const over = { ...projectionPlan, withdrawal_age: 30, last_age: 32 };
+    await renderApp("/portfolio/projection", {
+      fetch: portfolioApi({
+        ...withBirth,
+        "GET /api/v1/portfolio-projection": () => json(200, over),
+      }),
+    });
+    const region = within(await planRegion());
 
     // The member of the fixture is 32: the text names the age to pass, on one line of the field.
-    expect(await screen.findByText("Above age 32")).toBeInTheDocument();
+    expect(await region.findByText("Above age 32")).toBeInTheDocument();
+    expect(region.getByRole("button", { name: "Save plan" })).toBeDisabled();
+    expect(
+      screen.queryByRole("region", {
+        name: catalogEn["portfolio.projection.journey"],
+      }),
+    ).toBeNull();
   });
 
   it("PJ1: a field outside its range states the range and holds the save", async () => {

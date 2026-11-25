@@ -90,6 +90,22 @@ describe("journeyFigures", () => {
     expect(f.needed).toBe(5500);
   });
 
+  it("PX19: a plan whose withdrawals started counts from today, with no contribution", () => {
+    // Born 1994-03-10, withdrawals since 2025-03: 15 months are left until 2028-02.
+    const f = journeyFigures({
+      ...input,
+      draft: { ...input.draft, withdrawalAge: 31 },
+    });
+
+    expect(f.started).toBe(true);
+    expect(f.atWithdrawal).toBe(10000);
+    expect(f.contributed).toBe(10000);
+    expect(f.rows.map((r) => r.contribution)).toEqual(Array(15).fill(0));
+    expect(f.needed).toBe(7500);
+    expect(f.covered).toBeCloseTo(10000 / 7500, 10);
+    expect(journeyFigures(input).started).toBe(false);
+  });
+
   it("states the age the income ends when the value reaches zero", () => {
     const f = journeyFigures({
       ...input,

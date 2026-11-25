@@ -12,9 +12,7 @@ import { monthlyRate } from "@/features/portfolio/projection/model/monthly-rate"
 import type { ProjectionDraft } from "@/features/portfolio/projection/model/plan-fields";
 import { project } from "@/features/portfolio/projection/model/project";
 import type { ProjectionRow } from "@/features/portfolio/projection/model/project";
-
-// The share of the amount needed the floating point can lose.
-const rounding = 1e-9;
+import { shareRounding } from "@/features/portfolio/projection/model/whole-share";
 
 export interface PlanCaseInput {
   draft: ProjectionDraft;
@@ -91,7 +89,7 @@ export function planCase(input: PlanCaseInput, returnBp: number): PlanCase {
   const covered = shareOf(atWithdrawal, needed);
   // A value that pays the whole last withdrawal and ends on zero sustains the income.
   const sustains =
-    wanted === null ? null : covered === null || covered >= 1 - rounding;
+    wanted === null ? null : covered === null || covered >= 1 - shareRounding;
   const end = sustains === false ? incomeEnd(rows) : null;
 
   return {

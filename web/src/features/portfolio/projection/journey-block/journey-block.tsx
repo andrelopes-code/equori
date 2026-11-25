@@ -81,6 +81,7 @@ export function JourneyBlock({
   const described =
     view === "real" && realPast === null ? "realNominalPast" : view;
   const todayDate = history.points.at(-1)?.date;
+  const withdrawalDate = monthEnd(figures.withdrawalFrom);
   const from = formatYear(history.points[0]?.date ?? today, tag);
 
   function handleView(value: string) {
@@ -132,7 +133,11 @@ export function JourneyBlock({
               cases={cases}
               axes={axes}
               todayDate={todayDate}
-              withdrawalDate={monthEnd(figures.withdrawalFrom)}
+              withdrawalDate={
+                rows.some((r) => r.date === withdrawalDate)
+                  ? withdrawalDate
+                  : undefined
+              }
               withdrawalAge={draft.withdrawalAge}
             />
           </div>

@@ -6,6 +6,7 @@ import { useT } from "@/i18n/i18n-provider";
 interface CaseTableProps {
   rows: readonly CaseRowData[];
   withdrawalAge: number;
+  started: boolean;
   lastAge: number;
   // Income mode: the share of the amount needed and the age the value lasts to are drawn.
   income: boolean;
@@ -17,6 +18,7 @@ interface CaseTableProps {
 export function CaseTable({
   rows,
   withdrawalAge,
+  started,
   lastAge,
   income,
   currency,
@@ -33,7 +35,11 @@ export function CaseTable({
           </th>
           <th scope="col">{t("portfolio.projection.cases.col.return")}</th>
           <th scope="col">
-            {t("portfolio.projection.cases.col.value", { age: withdrawalAge })}
+            {started
+              ? t("portfolio.projection.cases.col.value.today")
+              : t("portfolio.projection.cases.col.value", {
+                  age: withdrawalAge,
+                })}
           </th>
           {income && (
             <th scope="col">{t("portfolio.projection.cases.col.share")}</th>

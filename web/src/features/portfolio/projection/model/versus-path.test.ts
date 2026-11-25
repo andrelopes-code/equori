@@ -18,7 +18,7 @@ describe("versusPath", () => {
     // recorded 800: 9800; November and December take the planned 1000: 10800, 11800. Difference
     // 10800 - 11800 = -1000; two of the three months after the first are above (10500 > 9800,
     // 11500 > 10800); the mean of the flows after the baseline month is (1200 + 500) / 2 = 850.
-    expect(versusPath(baseline, changes, 0, 0, points)).toEqual({
+    expect(versusPath(baseline, changes, 0, 0, points, "2099-01")).toEqual({
       points,
       line: [9000, 9800, 10800, 11800],
       figures: {
@@ -37,7 +37,9 @@ describe("versusPath", () => {
       { date: "2025-10-31", value: 10500, flows: 800 },
     ];
 
-    expect(versusPath(baseline, changes, 0, 0, points)?.figures).toEqual({
+    expect(
+      versusPath(baseline, changes, 0, 0, points, "2099-01")?.figures,
+    ).toEqual({
       difference: 700,
       differenceShare: 700 / 9800,
       monthsAbove: 1,
@@ -46,9 +48,25 @@ describe("versusPath", () => {
     });
   });
 
+  it("PX19: adds the recorded flows from the withdrawal month on and leaves them out of the mean", () => {
+    const points = [
+      { date: "2025-10-31", value: 9000, flows: 0 },
+      { date: "2025-11-30", value: 10200, flows: 1200 },
+      { date: "2025-12-31", value: 9700, flows: -500 },
+    ];
+    const path = versusPath(baseline, changes, 0, 0, points, "2025-12");
+
+    expect(path?.line).toEqual([9000, 10000, 9500]);
+    expect(path?.figures.averageContribution).toBe(1200);
+    expect(
+      versusPath(baseline, changes, 0, 0, points, "2025-11")?.figures
+        .averageContribution,
+    ).toBeNull();
+  });
+
   it("returns null under two recorded months", () => {
     const points = [{ date: "2025-10-31", value: 10500, flows: 0 }];
 
-    expect(versusPath(baseline, changes, 0, 0, points)).toBeNull();
+    expect(versusPath(baseline, changes, 0, 0, points, "2099-01")).toBeNull();
   });
 });

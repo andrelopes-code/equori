@@ -17,7 +17,7 @@ interface JourneyPlotProps {
   axes: JourneyAxes;
   // The dates of the rows the marks stand on; a mark with no row is not drawn.
   todayDate: string | undefined;
-  withdrawalDate: string;
+  withdrawalDate: string | undefined;
   withdrawalAge: number;
 }
 
@@ -101,7 +101,12 @@ export function JourneyPlot({
         age: withdrawalAge,
       }),
     },
-    { kind: "band", axis: "x", from: withdrawalDate, to: lastDate },
+    {
+      kind: "band",
+      axis: "x",
+      from: withdrawalDate ?? rows[0]?.date,
+      to: lastDate,
+    },
   ];
 
   return (

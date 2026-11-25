@@ -45,6 +45,7 @@ export function ProjectionBlocks({
       <VersusBlock
         draft={draft}
         history={history}
+        birthDate={birthDate}
         baseline={baseline}
         annualReal={annualReal}
       />

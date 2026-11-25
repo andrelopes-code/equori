@@ -59,6 +59,7 @@ export function CasesBlock({
         <CaseTable
           rows={caseRows(figures, draft.realReturnBp)}
           withdrawalAge={figures.withdrawalAge}
+          started={figures.started}
           lastAge={figures.lastAge}
           income={figures.income !== null}
           currency={draft.currency}

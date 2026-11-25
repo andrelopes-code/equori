@@ -30,6 +30,8 @@ export interface JourneyCase extends PlanCase {
 // Amounts in minor units of the plan currency, in today's money.
 export interface JourneyFigures extends PlanCase {
   withdrawalFrom: string;
+  // PX19: the withdrawals run from the next month on.
+  started: boolean;
   withdrawalAge: number;
   lastAge: number;
   today: number;
@@ -69,6 +71,7 @@ export function journeyFigures(input: JourneyInput): JourneyFigures {
   return {
     ...plan,
     withdrawalFrom,
+    started: withdrawalFrom <= input.today.slice(0, 7),
     withdrawalAge: draft.withdrawalAge,
     lastAge: draft.lastAge,
     today,
@@ -88,6 +91,7 @@ export function journeyFigures(input: JourneyInput): JourneyFigures {
             draft.realReturnBp,
             draft.inflationBp,
             history.points,
+            withdrawalFrom,
           )?.figures ?? null),
     cases: typedCases(draft).map(({ kind, returnBp }) => ({
       kind,

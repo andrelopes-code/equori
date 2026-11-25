@@ -8,13 +8,15 @@ type Change = components["schemas"]["ProjectionChange"];
 // nominal monthly rate, `((1 + real)(1 + inflation))^(1/12) - 1`. A month up to the baseline month
 // (`YYYY-MM`) adds its recorded flows: no intention existed then. A later month adds the
 // contribution in force, which is today's money: inflation raises it from the month of its change,
-// or from the baseline month when the change is older.
+// or from the baseline month when the change is older. PX19: a withdrawal month adds its recorded
+// flows.
 export function planLine(
   points: readonly { date: string; value: number; flows: number }[],
   baselineMonth: string,
   changes: readonly Change[],
   realBp: number,
   inflationBp: number,
+  withdrawalFrom: string,
 ): number[] {
   const nominalBp =
     ((1 + realBp / 10000) * (1 + inflationBp / 10000) - 1) * 10000;
@@ -25,7 +27,7 @@ export function planLine(
   return points.map((p, i) => {
     const month = p.date.slice(0, 7);
     const added =
-      month <= baselineMonth
+      month <= baselineMonth || month >= withdrawalFrom
         ? p.flows
         : contributionIn(changes, month) *
           (1 + inflation) ** monthsHeld(changes, baselineMonth, month);

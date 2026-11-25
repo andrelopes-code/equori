@@ -1,6 +1,7 @@
 import styles from "@/features/portfolio/projection/journey-block/journey-block.module.css";
 import type { JourneyFigures } from "@/features/portfolio/projection/journey-block/journey-figures";
 import { useJourneyMoney } from "@/features/portfolio/projection/journey-block/use-journey-money";
+import { wholeShare } from "@/features/portfolio/projection/model/whole-share";
 import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { Toned } from "@/ui/money/toned";
@@ -52,9 +53,11 @@ export function JourneyVerdict({
       )}
 
       <p className={styles.verdictText}>
-        {t("portfolio.projection.journey.verdict.reach", {
-          age: figures.withdrawalAge,
-        })}
+        {figures.started
+          ? t("portfolio.projection.journey.verdict.holds")
+          : t("portfolio.projection.journey.verdict.reach", {
+              age: figures.withdrawalAge,
+            })}
         <strong>{money.compact(figures.atWithdrawal)}</strong>
         {figures.sustains === null &&
           t("portfolio.projection.journey.verdict.todayEnd")}
@@ -63,7 +66,7 @@ export function JourneyVerdict({
             {t("portfolio.projection.journey.verdict.today")}
             <Toned value={tone}>
               {t("portfolio.projection.journey.verdict.share", {
-                share: percent.format(figures.covered ?? 0),
+                share: percent.format(wholeShare(figures.covered ?? 0)),
               })}
             </Toned>
             {sustains

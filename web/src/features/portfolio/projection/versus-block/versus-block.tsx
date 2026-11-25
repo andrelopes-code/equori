@@ -8,6 +8,7 @@ import {
 } from "@slotted/react/section";
 
 import type { components } from "@/api/schema.gen";
+import { journeyMonths } from "@/features/portfolio/projection/journey-block/journey-months";
 import { contributionIn } from "@/features/portfolio/projection/model/contribution-in";
 import type { ProjectionDraft } from "@/features/portfolio/projection/model/plan-fields";
 import { versusPath } from "@/features/portfolio/projection/model/versus-path";
@@ -24,6 +25,7 @@ import { useToday } from "@/i18n/today";
 interface VersusBlockProps {
   draft: ProjectionDraft;
   history: components["schemas"]["ReturnSeries"];
+  birthDate: string;
   baseline: components["schemas"]["ProjectionBaseline"] | undefined;
   annualReal: number | null;
 }
@@ -33,6 +35,7 @@ interface VersusBlockProps {
 export function VersusBlock({
   draft,
   history,
+  birthDate,
   baseline,
   annualReal,
 }: VersusBlockProps) {
@@ -43,6 +46,15 @@ export function VersusBlock({
 
   if (baseline === undefined) return null;
 
+  const { withdrawalFrom } = journeyMonths(
+    today,
+    birthDate,
+    draft.withdrawalAge,
+    draft.lastAge,
+  );
+  const month = today.slice(0, 7);
+  const planned =
+    month < withdrawalFrom ? contributionIn(draft.changes, month) : 0;
   const digits = scale?.(draft.currency) ?? 0;
   const compared = versusPath(
     baseline,
@@ -50,6 +62,7 @@ export function VersusBlock({
     draft.realReturnBp,
     draft.inflationBp,
     history.points,
+    withdrawalFrom,
   );
 
   return (
@@ -83,7 +96,7 @@ export function VersusBlock({
           <>
             <VersusTiles
               figures={compared.figures}
-              planned={contributionIn(draft.changes, today.slice(0, 7))}
+              planned={planned}
               annualReal={annualReal}
               expectedBp={draft.realReturnBp}
               currency={draft.currency}

@@ -328,6 +328,7 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.projection.plan.rangeError": "De {min} a {max}",
   "portfolio.projection.plan.lastAge": "Até os",
   "portfolio.projection.plan.ageError": "Acima de {age} anos",
+  "portfolio.projection.plan.started": "Já iniciadas.",
   "portfolio.projection.plan.birth": "Nascimento",
   "portfolio.projection.plan.birthHint": "Fica no seu perfil.",
   "portfolio.projection.plan.cautious": "Cauteloso",
@@ -351,6 +352,7 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.projection.cases.col.case": "Cenário",
   "portfolio.projection.cases.col.return": "Rentabilidade real",
   "portfolio.projection.cases.col.value": "Patrimônio aos {age}",
+  "portfolio.projection.cases.col.value.today": "Patrimônio hoje",
   "portfolio.projection.cases.col.share": "Do necessário",
   "portfolio.projection.cases.col.income": "Renda sustentada",
   "portfolio.projection.cases.col.lasts": "Renda",
@@ -393,6 +395,7 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
     "O plano não sustenta a renda desejada",
   "portfolio.projection.journey.verdict.reach":
     "Aos {age} anos o plano chega a ",
+  "portfolio.projection.journey.verdict.holds": "Hoje o plano tem ",
   "portfolio.projection.journey.verdict.today": " em dinheiro de hoje: ",
   "portfolio.projection.journey.verdict.todayEnd": " em dinheiro de hoje.",
   "portfolio.projection.journey.verdict.share": "{share} do necessário",
@@ -404,11 +407,15 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.projection.journey.path.value": "{share} do caminho",
   "portfolio.projection.journey.path.today": "{amount} hoje",
   "portfolio.projection.journey.path.needed": "{amount} necessários aos {age}",
+  "portfolio.projection.journey.path.needed.today": "{amount} necessários hoje",
   "portfolio.projection.journey.facts.versus": "Contra o plano hoje",
   "portfolio.projection.journey.facts.versusValue": "{amount} · {share}",
   "portfolio.projection.journey.facts.contributed": "Aportado até os {age}",
+  "portfolio.projection.journey.facts.contributed.today": "Aportado até hoje",
   "portfolio.projection.journey.facts.return": "Rendimento até os {age}",
+  "portfolio.projection.journey.facts.return.today": "Rendimento até hoje",
   "portfolio.projection.journey.facts.needed": "Necessário aos {age}",
+  "portfolio.projection.journey.facts.needed.today": "Necessário hoje",
   "portfolio.projection.journey.facts.sustained": "Renda que o plano sustenta",
   "portfolio.projection.journey.facts.perMonth": "{amount} por mês",
   "portfolio.projection.versus": "Plano contra realizado",
@@ -443,6 +450,8 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.projection.contributions.add": "Adicionar mudança de aporte",
   "portfolio.projection.contributions.add.full":
     "Um plano aceita até 40 mudanças.",
+  "portfolio.projection.contributions.add.started":
+    "As retiradas já começaram.",
   "portfolio.projection.contributions.dialog": "Mudança de aporte",
   "portfolio.projection.contributions.dialog.description":
     "O valor vale desta data até a mudança seguinte.",

@@ -45,10 +45,14 @@ export function JourneyPath({ figures, currency, scale }: JourneyPathProps) {
           })}
         </span>
         <span>
-          {t("portfolio.projection.journey.path.needed", {
-            amount: money.compact(figures.needed),
-            age: figures.withdrawalAge,
-          })}
+          {figures.started
+            ? t("portfolio.projection.journey.path.needed.today", {
+                amount: money.compact(figures.needed),
+              })
+            : t("portfolio.projection.journey.path.needed", {
+                amount: money.compact(figures.needed),
+                age: figures.withdrawalAge,
+              })}
         </span>
       </div>
     </div>

@@ -14,13 +14,13 @@ import {
   annualRate,
   realReturn,
 } from "@/features/portfolio/results/model/return-figures";
+import { journeyMonths } from "@/features/portfolio/projection/journey-block/journey-months";
 import { ageAt } from "@/features/portfolio/projection/model/age-at";
 import {
   draftFrom,
   fieldsFromPlan,
   planInput,
   restFields,
-  startsTooEarly,
 } from "@/features/portfolio/projection/model/plan-fields";
 import type {
   PlanFields,
@@ -69,6 +69,12 @@ export function useProjection() {
   const age = birthDate === undefined ? null : ageAt(birthDate, today);
   const draft: ProjectionDraft | null =
     currency === undefined ? null : draftFrom(fields, changes, currency);
+  const span =
+    draft === null || birthDate === undefined
+      ? null
+      : journeyMonths(today, birthDate, draft.withdrawalAge, draft.lastAge);
+  const started = span !== null && span.withdrawalFrom <= today.slice(0, 7);
+  const ended = span?.months.length === 0;
   const phase = phaseOf({
     failed: planRead.isError || me.isError,
     pending: planRead.isPending || me.isPending || base === undefined,
@@ -134,7 +140,8 @@ export function useProjection() {
     base,
     planCurrency: plan?.currency,
     baseline: plan?.baseline,
-    tooEarly: startsTooEarly(fields, age),
+    started,
+    ended,
     save: { run: saveDraft, pending: save.isPending, error: save.error },
     remove: { run: removePlan, pending: remove.isPending },
     build: () => {

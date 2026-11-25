@@ -13,7 +13,7 @@ export interface VersusPath {
   figures: VersusFigures;
 }
 
-// PX7: the whole recorded history against the plan line; null under two recorded months. The
+// PX7, PX19: the whole recorded history against the plan line; null under two recorded months. The
 // figures leave the first month out: there the line is the recorded value.
 export function versusPath(
   baseline: components["schemas"]["ProjectionBaseline"],
@@ -21,13 +21,25 @@ export function versusPath(
   realBp: number,
   inflationBp: number,
   points: readonly Point[],
+  withdrawalFrom: string,
 ): VersusPath | null {
   const baselineMonth = baseline.date.slice(0, 7);
-  const line = planLine(points, baselineMonth, changes, realBp, inflationBp);
+  const line = planLine(
+    points,
+    baselineMonth,
+    changes,
+    realBp,
+    inflationBp,
+    withdrawalFrom,
+  );
   const figures = versusFigures(
     points.slice(1),
     line.slice(1),
-    points.filter((p) => p.date.slice(0, 7) > baselineMonth),
+    points.filter((p) => {
+      const month = p.date.slice(0, 7);
+
+      return month > baselineMonth && month < withdrawalFrom;
+    }),
   );
 
   return figures === null ? null : { points: [...points], line, figures };

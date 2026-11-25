@@ -137,16 +137,6 @@ export function planInput(draft: ProjectionDraft): PlanInput {
   };
 }
 
-// The withdrawal age at or below the current age leaves nothing to project.
-export function startsTooEarly(
-  fields: PlanFields,
-  age: number | null,
-): boolean {
-  const withdrawalAge = parseAge(fields.withdrawalAge);
-
-  return withdrawalAge !== null && age !== null && withdrawalAge <= age;
-}
-
 // The range a typed field left, per field; a field at rest (empty) and a field in its range have
 // no entry. The section writes the range under the field, so a disabled save states its reason.
 export type FieldRanges = PremiseRanges &

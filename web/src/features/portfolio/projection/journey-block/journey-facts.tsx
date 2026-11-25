@@ -20,7 +20,12 @@ export function JourneyFacts({ figures, currency, scale }: JourneyFactsProps) {
   const money = useJourneyMoney(currency, scale);
 
   const { versus, income } = figures;
-  const age = figures.withdrawalAge;
+  const at = (fact: "contributed" | "return" | "needed") =>
+    figures.started
+      ? t(`portfolio.projection.journey.facts.${fact}.today`)
+      : t(`portfolio.projection.journey.facts.${fact}`, {
+          age: figures.withdrawalAge,
+        });
   const sustained = t("portfolio.projection.journey.facts.perMonth", {
     amount: money.exact(figures.sustained),
   });
@@ -41,22 +46,16 @@ export function JourneyFacts({ figures, currency, scale }: JourneyFactsProps) {
         </FactRow>
       )}
 
-      <FactRow
-        label={t("portfolio.projection.journey.facts.contributed", { age })}
-      >
+      <FactRow label={at("contributed")}>
         {money.exact(figures.contributed)}
       </FactRow>
 
-      <FactRow label={t("portfolio.projection.journey.facts.return", { age })}>
+      <FactRow label={at("return")}>
         <Toned value={figures.gain}>{money.signed(figures.gain)}</Toned>
       </FactRow>
 
       {figures.needed !== null && (
-        <FactRow
-          label={t("portfolio.projection.journey.facts.needed", { age })}
-        >
-          {money.exact(figures.needed)}
-        </FactRow>
+        <FactRow label={at("needed")}>{money.exact(figures.needed)}</FactRow>
       )}
 
       <FactRow label={t("portfolio.projection.journey.facts.sustained")}>

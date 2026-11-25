@@ -43,7 +43,8 @@ export function ProjectionBody({ projection: p }: ProjectionBodyProps) {
         age={p.age}
         annualReal={p.annualReal}
         currency={p.currency ?? ""}
-        tooEarly={p.tooEarly}
+        started={p.started}
+        ended={p.ended}
         canSave={p.draft !== null}
         saving={p.save.pending}
         error={p.save.error}
@@ -52,7 +53,7 @@ export function ProjectionBody({ projection: p }: ProjectionBodyProps) {
 
       {p.phase === "nobirth" && <ProjectionNobirth />}
 
-      {p.draft !== null && p.birthDate !== undefined && !p.tooEarly && (
+      {p.draft !== null && p.birthDate !== undefined && !p.ended && (
         <ProjectionBlocks
           draft={p.draft}
           history={p.history}

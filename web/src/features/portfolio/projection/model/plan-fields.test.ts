@@ -6,7 +6,6 @@ import {
   fieldsFromPlan,
   planInput,
   restFields,
-  startsTooEarly,
 } from "@/features/portfolio/projection/model/plan-fields";
 import type { PlanFields } from "@/features/portfolio/projection/model/plan-fields";
 import { projectionPlan } from "@/testing/portfolio-api";
@@ -147,18 +146,6 @@ describe("planInput", () => {
       favorable_return_bp: 600,
       gain_tax_bp: 1500,
     });
-  });
-});
-
-describe("startsTooEarly", () => {
-  it.each([
-    { start: "32", age: 32, early: true },
-    { start: "31", age: 32, early: true },
-    { start: "33", age: 32, early: false },
-    { start: "", age: 32, early: false },
-    { start: "20", age: null, early: false },
-  ])("$start at age $age is $early", ({ start, age, early }) => {
-    expect(startsTooEarly({ ...typed, withdrawalAge: start }, age)).toBe(early);
   });
 });
 
