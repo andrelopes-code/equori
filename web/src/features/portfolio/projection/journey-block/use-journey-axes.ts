@@ -5,12 +5,12 @@ import type {
 } from "@slotted/core/chart";
 
 import type { JourneyField } from "@/features/portfolio/projection/journey-block/journey-rows";
+import { useJourneyMoney } from "@/features/portfolio/projection/journey-block/use-journey-money";
 import { formatYear } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { useMoneyFormat } from "@/privacy/use-money-format";
 
-// The pixels the value labels take: the figures reach millions.
-const labelWidth = 112;
+// The pixels the value labels take in the compact form ("R$ 2,5 mi").
+const labelWidth = 72;
 
 export interface JourneyAxes {
   x: ChartXAxis<JourneyField>;
@@ -28,12 +28,12 @@ export function useJourneyAxes(
 ): JourneyAxes {
   const t = useT();
   const [tag] = useAppLocale();
-  const fmt = useMoneyFormat();
+  const money = useJourneyMoney(currency, scale);
 
-  const whole = (value: number) =>
-    fmt.money({ amount: Math.round(value), currency }, 0);
-  const exact = (value: number) =>
-    fmt.money({ amount: Math.round(value * 10 ** scale), currency }, scale);
+  const short = (value: number) => money.compact(value * 10 ** scale);
+  const exact = (value: number) => money.exact(value * 10 ** scale);
+  // Workaround for Slotted issue #197: a time axis takes no explicit ticks and no second label
+  // line, so the age stands beside the year of each tick in place of the decades of age of the mock.
   const year = (ms: number) => {
     const iso = new Date(ms).toISOString().slice(0, 10);
 
@@ -45,7 +45,7 @@ export function useJourneyAxes(
 
   return {
     x: { field: "date", type: "time", format: year },
-    y: { format: whole, labelWidth },
+    y: { format: short, labelWidth },
     exact,
   };
 }

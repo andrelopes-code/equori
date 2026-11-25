@@ -14,7 +14,8 @@ export interface ContributionRow extends Record<ContributionField, unknown> {
 
 const recordedMonths = 60;
 
-// PX8: the recorded flow of each of the last 60 months, then the contribution in force in each
+// PX8: the contribution of each of the last 60 months (the flow of the month, zero in a month of
+// net withdrawal), then the contribution in force in each
 // month from the current one to the withdrawal month.
 export function contributionRows(
   points: readonly components["schemas"]["ReturnSeriesPoint"][],
@@ -26,7 +27,7 @@ export function contributionRows(
   const divisor = 10 ** scale;
   const recorded = points.slice(-recordedMonths).map((p): ContributionRow => ({
     date: p.date,
-    recorded: p.flows / divisor,
+    recorded: Math.max(p.flows, 0) / divisor,
     planned: null,
   }));
   const planned: ContributionRow[] = [];
@@ -43,4 +44,14 @@ export function contributionRows(
     });
 
   return [...recorded, ...planned];
+}
+
+// The top of the money axis: a third above the largest intention, so one large recorded month
+// does not flatten the steps; its bar is cut at the top and the tooltip states its amount.
+export function plotCeiling(
+  rows: readonly ContributionRow[],
+): number | undefined {
+  const largest = Math.max(...rows.map((r) => r.planned ?? 0), 0);
+
+  return largest > 0 ? (largest * 4) / 3 : undefined;
 }

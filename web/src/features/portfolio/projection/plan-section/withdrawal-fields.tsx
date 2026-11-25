@@ -14,6 +14,8 @@ import { MoneyInput } from "@/ui/money/money-input";
 interface WithdrawalFieldsProps {
   fields: PlanFields;
   currency: string;
+  // The range the typed rate left, written under its field.
+  rateError: string | undefined;
   onChange: (patch: Partial<PlanFields>) => void;
 }
 
@@ -21,6 +23,7 @@ interface WithdrawalFieldsProps {
 export function WithdrawalFields({
   fields,
   currency,
+  rateError,
   onChange,
 }: WithdrawalFieldsProps) {
   const t = useT();
@@ -79,6 +82,7 @@ export function WithdrawalFields({
           inputMode="decimal"
           value={fields.rate}
           hint={t("portfolio.projection.plan.rateHint")}
+          error={rateError}
           onChange={(rate) => {
             onChange({ rate });
           }}

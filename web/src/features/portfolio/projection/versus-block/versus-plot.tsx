@@ -9,8 +9,8 @@ import type {
 } from "@/features/portfolio/projection/versus-block/versus-rows";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
-// The pixels the value labels take: the figures reach millions.
-const labelWidth = 112;
+// The pixels the value labels take in the compact form ("R$ 2,5 mi").
+const labelWidth = 72;
 
 interface VersusPlotProps {
   rows: VersusRow[];
@@ -26,7 +26,7 @@ export function VersusPlot({ rows, currency, scale }: VersusPlotProps) {
   const money = useJourneyMoney(currency, scale);
 
   const exact = (value: number) => money.exact(value * 10 ** scale);
-  const whole = (value: number) => money.whole(value * 10 ** scale);
+  const short = (value: number) => money.compact(value * 10 ** scale);
   const series: ChartSeries<VersusField>[] = [
     {
       id: "ahead",
@@ -59,6 +59,8 @@ export function VersusPlot({ rows, currency, scale }: VersusPlotProps) {
       field: "plan",
       label: t("portfolio.projection.versus.key.plan"),
       slot: 1,
+      // Workaround for Slotted issue #186: the chart has no dotted stroke, so the plan line of the
+      // mock takes the dash.
       stroke: "dashed",
       markers: "last",
       format: exact,
@@ -81,7 +83,7 @@ export function VersusPlot({ rows, currency, scale }: VersusPlotProps) {
           type: "time",
           format: { month: "short", year: "numeric" },
         }}
-        y={{ format: whole, labelWidth }}
+        y={{ format: short, labelWidth }}
       />
     </div>
   );

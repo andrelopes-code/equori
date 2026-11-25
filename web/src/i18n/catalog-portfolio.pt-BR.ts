@@ -324,11 +324,11 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.projection.plan.income": "Renda desejada",
   "portfolio.projection.plan.incomeHint": "Por mês, em dinheiro de hoje.",
   "portfolio.projection.plan.rate": "Taxa de retirada",
-  "portfolio.projection.plan.rateHint": "Do patrimônio, ao ano.",
+  "portfolio.projection.plan.rateHint": "Do patrimônio.",
+  "portfolio.projection.plan.rangeError": "De {min} a {max}",
   "portfolio.projection.plan.lastAge": "Até os",
-  "portfolio.projection.plan.ageError":
-    "As retiradas começam depois da idade de hoje.",
-  "portfolio.projection.plan.birth": "Data de nascimento",
+  "portfolio.projection.plan.ageError": "Acima de {age} anos",
+  "portfolio.projection.plan.birth": "Nascimento",
   "portfolio.projection.plan.birthHint": "Fica no seu perfil.",
   "portfolio.projection.empty.title": "Nenhuma projeção salva",
   "portfolio.projection.empty.description":

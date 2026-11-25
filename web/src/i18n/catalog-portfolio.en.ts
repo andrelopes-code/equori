@@ -323,10 +323,10 @@ export const portfolioEn = {
   "portfolio.projection.plan.income": "Desired income",
   "portfolio.projection.plan.incomeHint": "A month, in today's money.",
   "portfolio.projection.plan.rate": "Withdrawal rate",
-  "portfolio.projection.plan.rateHint": "Of the portfolio, a year.",
+  "portfolio.projection.plan.rateHint": "Of the portfolio.",
+  "portfolio.projection.plan.rangeError": "From {min} to {max}",
   "portfolio.projection.plan.lastAge": "Until age",
-  "portfolio.projection.plan.ageError":
-    "Withdrawals must start after the current age.",
+  "portfolio.projection.plan.ageError": "Above age {age}",
   "portfolio.projection.plan.birth": "Birth date",
   "portfolio.projection.plan.birthHint": "Kept in your profile.",
   "portfolio.projection.empty.title": "No projection saved",

@@ -46,7 +46,9 @@ export function UnitField({
         }}
       />
 
-      {hint !== undefined && <FieldDescription>{hint}</FieldDescription>}
+      {hint !== undefined && error === undefined && (
+        <FieldDescription>{hint}</FieldDescription>
+      )}
       {error !== undefined && <FieldError>{error}</FieldError>}
     </Field>
   );

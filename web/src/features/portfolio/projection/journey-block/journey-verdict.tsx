@@ -55,7 +55,7 @@ export function JourneyVerdict({
         {t("portfolio.projection.journey.verdict.reach", {
           age: figures.withdrawalAge,
         })}
-        <strong>{money.whole(figures.atWithdrawal)}</strong>
+        <strong>{money.compact(figures.atWithdrawal)}</strong>
         {figures.sustains === null &&
           t("portfolio.projection.journey.verdict.todayEnd")}
         {figures.sustains !== null && (

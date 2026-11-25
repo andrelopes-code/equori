@@ -33,7 +33,7 @@ export function JourneyPlot({
       id: "gain",
       kind: "range",
       lower: "contributed",
-      upper: "value",
+      upper: "top",
       of: "value",
       label: t("portfolio.projection.journey.key.gain"),
     },
@@ -52,6 +52,8 @@ export function JourneyPlot({
       field: "projected",
       label: t("portfolio.projection.journey.key.plan"),
       slot: 1,
+      // Workaround for Slotted issue #186: the chart has no dotted stroke, so the projection of
+      // the mock takes the dash; its colour tells it from the money contributed.
       stroke: "dashed",
       markers: "last",
       format: axes.exact,
@@ -90,7 +92,7 @@ export function JourneyPlot({
     <div className={styles.plotArea}>
       <Chart
         variant="plain"
-        size="md"
+        size="lg"
         legend={false}
         toolbar="hover"
         aria-label={t("portfolio.projection.journey.plot")}

@@ -1,6 +1,7 @@
 import type { ChartAnnotation, ChartSeries } from "@slotted/core/chart";
 import { Chart } from "@slotted/react/chart";
 
+import { plotCeiling } from "@/features/portfolio/projection/contributions-block/contributions-rows";
 import type {
   ContributionField,
   ContributionRow,
@@ -8,8 +9,8 @@ import type {
 import { useJourneyMoney } from "@/features/portfolio/projection/journey-block/use-journey-money";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
-// The pixels the value labels take: the figures reach millions.
-const labelWidth = 112;
+// The pixels the value labels take in the compact form ("R$ 2,5 mi").
+const labelWidth = 72;
 
 interface ContributionsPlotProps {
   rows: ContributionRow[];
@@ -31,7 +32,7 @@ export function ContributionsPlot({
   const money = useJourneyMoney(currency, scale);
 
   const exact = (value: number) => money.exact(value * 10 ** scale);
-  const whole = (value: number) => money.whole(value * 10 ** scale);
+  const short = (value: number) => money.compact(value * 10 ** scale);
   const series: ChartSeries<ContributionField>[] = [
     {
       id: "recorded",
@@ -79,7 +80,7 @@ export function ContributionsPlot({
         type: "time",
         format: { month: "short", year: "numeric" },
       }}
-      y={{ format: whole, labelWidth }}
+      y={{ format: short, labelWidth, min: 0, max: plotCeiling(rows) }}
     />
   );
 }

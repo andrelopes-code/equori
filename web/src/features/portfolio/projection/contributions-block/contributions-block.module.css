@@ -2,7 +2,7 @@
   /* Two columns: the list beside its plot */
   .hero {
     display: grid;
-    grid-template-columns: 21rem minmax(0, 1fr); /* literal: the column of figures, wide enough for the longest fact */
+    grid-template-columns: 25rem minmax(0, 1fr); /* literal: the column of the list, wide enough for the start, the amount and the action of a row on one line */
     gap: var(--slotted-space-8);
     align-items: start;
   }

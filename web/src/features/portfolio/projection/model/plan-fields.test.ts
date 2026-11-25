@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   draftFrom,
+  fieldRanges,
   fieldsFromPlan,
   planInput,
   restFields,
@@ -104,5 +105,62 @@ describe("startsTooEarly", () => {
     { start: "20", age: null, early: false },
   ])("$start at age $age is $early", ({ start, age, early }) => {
     expect(startsTooEarly({ ...typed, withdrawalAge: start }, age)).toBe(early);
+  });
+});
+
+describe("fieldRanges", () => {
+  const typed = {
+    withdrawalAge: "55",
+    lastAge: "90",
+    realReturn: "5,00",
+    inflation: "4,00",
+    mode: "rate" as const,
+    income: 0,
+    rate: "4,00",
+  };
+
+  it("names no range for fields in their ranges or at rest", () => {
+    expect(fieldRanges(typed)).toEqual({});
+    expect(
+      fieldRanges({
+        ...typed,
+        withdrawalAge: "",
+        lastAge: "",
+        realReturn: " ",
+        inflation: "",
+        rate: "",
+      }),
+    ).toEqual({});
+  });
+
+  it("PJ1: names the range of each field outside it", () => {
+    expect(
+      fieldRanges({
+        ...typed,
+        withdrawalAge: "17",
+        lastAge: "121",
+        realReturn: "30,01",
+        inflation: "-1",
+        rate: "0",
+      }),
+    ).toEqual({
+      withdrawalAge: [18, 100],
+      lastAge: [19, 120],
+      realReturn: [-10, 30],
+      inflation: [0, 50],
+      rate: [0.01, 20],
+    });
+  });
+
+  it("PJ1: the last age starts above the withdrawal age", () => {
+    expect(fieldRanges({ ...typed, lastAge: "55" })).toEqual({
+      lastAge: [56, 120],
+    });
+  });
+
+  it("names a text that is not a number, and no rate range in income mode", () => {
+    expect(
+      fieldRanges({ ...typed, mode: "income", rate: "x", inflation: "abc" }),
+    ).toEqual({ inflation: [0, 50] });
   });
 });

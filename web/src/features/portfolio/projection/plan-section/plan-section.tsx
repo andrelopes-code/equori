@@ -9,6 +9,7 @@ import {
   SectionTitle,
 } from "@slotted/react/section";
 
+import { fieldRanges } from "@/features/portfolio/projection/model/plan-fields";
 import type { PlanFields } from "@/features/portfolio/projection/model/plan-fields";
 import { AgeFact } from "@/features/portfolio/projection/plan-section/age-fact";
 import { BirthField } from "@/features/portfolio/projection/plan-section/birth-field";
@@ -60,6 +61,14 @@ export function PlanSection({
             maximumFractionDigits: 1,
           }).format(annualReal * 100),
         });
+  const ranges = fieldRanges(fields);
+  const plain = numberFormatter(locale);
+  const range = (limits: [number, number] | undefined) =>
+    limits &&
+    t("portfolio.projection.plan.rangeError", {
+      min: plain.format(limits[0]),
+      max: plain.format(limits[1]),
+    });
 
   return (
     <Section
@@ -104,7 +113,10 @@ export function PlanSection({
             inputMode="numeric"
             value={fields.withdrawalAge}
             error={
-              tooEarly ? t("portfolio.projection.plan.ageError") : undefined
+              range(ranges.withdrawalAge) ??
+              (tooEarly
+                ? t("portfolio.projection.plan.ageError", { age: age ?? 0 })
+                : undefined)
             }
             onChange={(withdrawalAge) => {
               onChange({ withdrawalAge });
@@ -117,6 +129,7 @@ export function PlanSection({
             inputMode="decimal"
             value={fields.realReturn}
             hint={portfolioReturn}
+            error={range(ranges.realReturn)}
             onChange={(realReturn) => {
               onChange({ realReturn });
             }}
@@ -127,6 +140,7 @@ export function PlanSection({
             unit={t("portfolio.projection.plan.perYear")}
             inputMode="decimal"
             value={fields.inflation}
+            error={range(ranges.inflation)}
             onChange={(inflation) => {
               onChange({ inflation });
             }}
@@ -135,6 +149,7 @@ export function PlanSection({
           <WithdrawalFields
             fields={fields}
             currency={currency}
+            rateError={range(ranges.rate)}
             onChange={onChange}
           />
 
@@ -143,6 +158,7 @@ export function PlanSection({
             unit={t("portfolio.projection.plan.years")}
             inputMode="numeric"
             value={fields.lastAge}
+            error={range(ranges.lastAge)}
             onChange={(lastAge) => {
               onChange({ lastAge });
             }}

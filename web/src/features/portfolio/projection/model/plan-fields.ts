@@ -114,6 +114,48 @@ export function startsTooEarly(
   return withdrawalAge !== null && age !== null && withdrawalAge <= age;
 }
 
+// The range a typed field left, per field; a field at rest (empty) and a field in its range have
+// no entry. The section writes the range under the field, so a disabled save states its reason.
+export type FieldRanges = Partial<
+  Record<
+    "withdrawalAge" | "lastAge" | "realReturn" | "inflation" | "rate",
+    [min: number, max: number]
+  >
+>;
+
+export function fieldRanges(fields: PlanFields): FieldRanges {
+  const withdrawalAge = parseAge(fields.withdrawalAge);
+  const firstLast = Math.min(Math.max(withdrawalAge ?? 18, 18), 100) + 1;
+  const ranges: FieldRanges = {};
+
+  if (outside(fields.withdrawalAge, withdrawalAge, 18, 100))
+    ranges.withdrawalAge = [18, 100];
+  if (outside(fields.lastAge, parseAge(fields.lastAge), firstLast, 120))
+    ranges.lastAge = [firstLast, 120];
+  if (
+    outside(fields.realReturn, parseBasisPoints(fields.realReturn), -1000, 3000)
+  )
+    ranges.realReturn = [-10, 30];
+  if (outside(fields.inflation, parseBasisPoints(fields.inflation), 0, 5000))
+    ranges.inflation = [0, 50];
+  if (
+    fields.mode === "rate" &&
+    outside(fields.rate, parseBasisPoints(fields.rate), 1, 2000)
+  )
+    ranges.rate = [0.01, 20];
+
+  return ranges;
+}
+
+function outside(
+  text: string,
+  value: number | null,
+  min: number,
+  max: number,
+): boolean {
+  return text.trim() !== "" && (value === null || value < min || value > max);
+}
+
 function withdrawalFrom(
   fields: PlanFields,
   rateBp: number | null,

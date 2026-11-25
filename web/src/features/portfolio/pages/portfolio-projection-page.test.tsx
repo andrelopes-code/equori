@@ -4,7 +4,11 @@ import { describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { json, problem } from "@/testing/fake-api";
-import { portfolioApi, projectionPlan } from "@/testing/portfolio-api";
+import {
+  historySeries,
+  portfolioApi,
+  projectionPlan,
+} from "@/testing/portfolio-api";
 import { renderApp } from "@/testing/render-app";
 
 const me = {
@@ -191,9 +195,37 @@ describe("Portfolio projection page", () => {
       }),
     });
 
+    // The member of the fixture is 32: the text names the age to pass, on one line of the field.
+    expect(await screen.findByText("Above age 32")).toBeInTheDocument();
+  });
+
+  it("PJ1: a field outside its range states the range and holds the save", async () => {
+    await renderApp("/portfolio/projection", {
+      fetch: portfolioApi(withBirth),
+    });
+    const region = within(await planRegion());
+    const inflation = region.getByLabelText("Inflation");
+
+    await userEvent.clear(inflation);
+    await userEvent.type(inflation, "51");
+
+    expect(region.getByText("From 0 to 50")).toBeInTheDocument();
+    expect(region.getByRole("button", { name: "Save plan" })).toBeDisabled();
+  });
+
+  it("offers the trade only when the history holds a portfolio", async () => {
+    await renderApp("/portfolio/projection", {
+      fetch: portfolioApi({
+        ...withBirth,
+        "GET /api/v1/reports/return/series": () =>
+          json(200, { ...historySeries, points: [] }),
+      }),
+    });
+    await planRegion();
+
     expect(
-      await screen.findByText(catalogEn["portfolio.projection.plan.ageError"]),
-    ).toBeInTheDocument();
+      screen.queryByRole("link", { name: catalogEn["holdings.trade"] }),
+    ).toBeNull();
   });
 
   it("PX11: offers to build a projection when the member has none", async () => {

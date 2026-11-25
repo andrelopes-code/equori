@@ -14,21 +14,26 @@ export function PortfolioProjectionPage() {
   const t = useT();
   const projection = useProjection();
 
+  // As on the other tabs: the action needs a portfolio to trade in.
+  const canTrade = (projection.history?.points.length ?? 0) > 0;
+
   return (
     <Page width="full">
       <PortfolioAreaHeader
         tab="projection"
         subheading={t("portfolio.projection.subtitle")}
         actions={
-          <ButtonLink
-            start={<Glyph name="plus" />}
-            render={routeTo({
-              to: "/transactions/new",
-              search: { kind: "trade" },
-            })}
-          >
-            {t("holdings.trade")}
-          </ButtonLink>
+          canTrade && (
+            <ButtonLink
+              start={<Glyph name="plus" />}
+              render={routeTo({
+                to: "/transactions/new",
+                search: { kind: "trade" },
+              })}
+            >
+              {t("holdings.trade")}
+            </ButtonLink>
+          )
         }
         help="portfolio"
       />
