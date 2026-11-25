@@ -1,8 +1,10 @@
 import type { components } from "@/api/schema.gen";
-import { effectiveAnswers } from "@/features/portfolio/contribution-plan/model/fact-answers";
 
 type Plan = components["schemas"]["ContributionPlan"];
 type Money = components["schemas"]["Money"];
+type Group = Plan["classes"][number];
+type Member = Group["members"][number];
+
 interface MemberRef {
   account_id?: string;
   instrument?: string;
@@ -27,8 +29,6 @@ export interface ShoppingEntry {
   splitToSee?: boolean;
   // The instrument of a member row: the key of its fund report.
   code?: string;
-  // The points of a member of a class with criteria.
-  criteria?: { yes: number; count: number };
   // The position of the entry's class in the plan: it picks the class colour.
   group: number;
 }
@@ -44,46 +44,64 @@ export function shoppingList(
   );
 }
 
-// The entries that receive money, in plan order: each member with a cost, or a class without
-// member targets.
+// The entries that receive money, in plan order: each member with a cost, or a class that does not
+// split among its members.
 export function receivingEntries(
   view: Plan,
   memberName: (ref: MemberRef) => string,
   scaleOf: (instrument: string) => number = () => 0,
 ): ShoppingEntry[] {
-  const entries: ShoppingEntry[] = [];
-  view.classes.forEach((cls, group) => {
-    const split = cls.members.some((m) => m.target_bp !== undefined);
-    if (!split) {
-      const cost = cls.cost ?? cls.amount;
-      if (!positive(cost)) return;
-      const entry: ShoppingEntry = { name: cls.name, cost, group };
-      if (unitsWaitForSplit(cls)) entry.splitToSee = true;
-      else entry.byValue = true;
-      entries.push(entry);
+  return view.classes.flatMap((cls, group) => {
+    const entries = splitsAmongMembers(cls)
+      ? cls.members.map((m) => memberEntry(m, group, memberName, scaleOf))
+      : [groupEntry(cls, group)];
 
-      return;
-    }
-    for (const member of cls.members) {
-      const cost = member.cost ?? member.amount;
-      if (!positive(cost)) continue;
-      const entry: ShoppingEntry = { name: memberName(member), cost, group };
-      if (member.quantity !== undefined)
-        Object.assign(
-          entry,
-          orderOf(member.quantity, member.unit_value, scaleOf),
-        );
-      if (member.instrument !== undefined) entry.code = member.instrument;
-      const points = pointsOf(member);
-      if (cls.questions.length > 0 && points !== undefined)
-        entry.criteria = points;
-      if (member.instrument === undefined) entry.byValue = true;
-      else if (member.unit_value === undefined) entry.unpriced = true;
-      entries.push(entry);
-    }
+    return entries.filter((entry) => entry !== undefined);
   });
+}
 
-  return entries;
+// Whether the members of the class have orders of their own: they carry targets, or there is one
+// (CO10).
+export function splitsAmongMembers(cls: Group): boolean {
+  return (
+    cls.members.length === 1 ||
+    cls.members.some((m) => m.target_bp !== undefined)
+  );
+}
+
+// The purchase of a class that does not split among its members; undefined without money.
+export function groupEntry(
+  cls: Group,
+  group: number,
+): ShoppingEntry | undefined {
+  const cost = cls.cost ?? cls.amount;
+  if (!positive(cost)) return undefined;
+
+  const entry: ShoppingEntry = { name: cls.name, cost, group };
+  if (unitsWaitForSplit(cls)) entry.splitToSee = true;
+  else entry.byValue = true;
+
+  return entry;
+}
+
+// The purchase of a member; undefined without money.
+export function memberEntry(
+  member: Member,
+  group: number,
+  memberName: (ref: MemberRef) => string,
+  scaleOf: (instrument: string) => number,
+): ShoppingEntry | undefined {
+  const cost = member.cost ?? member.amount;
+  if (!positive(cost)) return undefined;
+
+  const entry: ShoppingEntry = { name: memberName(member), cost, group };
+  if (member.quantity !== undefined)
+    Object.assign(entry, orderOf(member.quantity, member.unit_value, scaleOf));
+  if (member.instrument !== undefined) entry.code = member.instrument;
+  if (member.instrument === undefined) entry.byValue = true;
+  else if (member.unit_value === undefined) entry.unpriced = true;
+
+  return entry;
 }
 
 // The contribution the list spends: the costs plus the leftover, which CN18 makes the amount.
@@ -102,7 +120,7 @@ export function positive(money: Money | undefined): money is Money {
 }
 
 // Whether a class holds instruments but no member targets, so no order has units yet.
-export function unitsWaitForSplit(group: Plan["classes"][number]): boolean {
+export function unitsWaitForSplit(group: Group): boolean {
   return (
     group.members.every((m) => m.target_bp === undefined) &&
     group.members.some((m) => m.instrument !== undefined)
@@ -111,7 +129,7 @@ export function unitsWaitForSplit(group: Plan["classes"][number]): boolean {
 
 // What a group receives: the cost of its order, or the sum of the costs of its members when it
 // splits its target among them.
-export function groupCost(group: Plan["classes"][number]): Money | undefined {
+export function groupCost(group: Group): Money | undefined {
   if (group.cost !== undefined) return group.cost;
   const costs = group.members.map((m) => m.cost);
   if (costs.length === 0 || costs.some((c) => c === undefined))
@@ -122,18 +140,6 @@ export function groupCost(group: Plan["classes"][number]): Money | undefined {
     amount: costs.reduce((sum, c) => sum + (c?.amount ?? 0), 0),
     currency,
   };
-}
-
-// The answers "yes" of a member: the ones equori gives, else the investor's (FQ4); undefined with a
-// blank one, as the member takes an equal share (CQ3).
-function pointsOf(
-  member: Plan["classes"][number]["members"][number],
-): { yes: number; count: number } | undefined {
-  const answers = effectiveAnswers(member.answers ?? [], member.fact_answers);
-
-  if (answers.includes(null)) return undefined;
-
-  return { yes: answers.filter(Boolean).length, count: answers.length };
 }
 
 // The units of an order, its unit price, and the instrument when the units carry decimals.

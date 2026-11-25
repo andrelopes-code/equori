@@ -18,6 +18,11 @@ const cls = (
   target_bp: target,
   questions: [],
   question_ideals: false,
+  question_facts: [],
+  question_limits: [],
+  question_effects: [],
+  question_reviews: [],
+  held: false,
   rules: [],
   matched: [],
   value: brl(1000),
@@ -37,6 +42,8 @@ const plan = {
   ],
   outside: [],
   missing: [],
+  revision: 1,
+  holds_ignored: false,
 };
 
 const barOf = (bar: HTMLElement) =>

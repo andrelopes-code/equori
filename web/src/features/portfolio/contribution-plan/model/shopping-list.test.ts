@@ -71,48 +71,6 @@ const plan: Plan = {
 };
 
 describe("shoppingList", () => {
-  it("counts the points of a member of a class with criteria (FQ4)", () => {
-    const view: Plan = {
-      ...plan,
-      classes: plan.classes.map((cls) =>
-        cls.name === "Domestic stocks"
-          ? {
-              ...cls,
-              questions: ["P/L", "Entendo?", "ROE"],
-              members: cls.members.map((m) => ({
-                ...m,
-                answers: [false, true, true],
-                fact_answers: ["yes", "none", "no"],
-              })),
-            }
-          : cls,
-      ),
-    };
-
-    expect(shoppingList(view, names)[0]?.criteria).toEqual({
-      yes: 2,
-      count: 3,
-    });
-    expect(shoppingList(plan, names)[0]?.criteria).toBeUndefined();
-  });
-
-  it("counts no points of a member with a blank answer (CQ3)", () => {
-    const view: Plan = {
-      ...plan,
-      classes: plan.classes.map((cls) => ({
-        ...cls,
-        questions: ["P1"],
-        members: cls.members.map((m) => ({
-          ...m,
-          answers: [null],
-          fact_answers: ["none"],
-        })),
-      })),
-    };
-
-    expect(shoppingList(view, names)[0]?.criteria).toBeUndefined();
-  });
-
   it("lists the order of the member: its quantity and its cost (S408, CN17)", () => {
     const view = withPetr4({
       quantity: { amount: 25, currency: "PETR4" },
@@ -311,7 +269,10 @@ describe("shoppingList", () => {
           value: brl(0),
           amount: brl(100000),
           cost: brl(100000),
-          members: [{ instrument: "MXRF11", value: brl(0) }],
+          members: [
+            { instrument: "MXRF11", value: brl(0) },
+            { instrument: "HGLG11", value: brl(0) },
+          ],
         },
         {
           name: "Bonds",
@@ -358,7 +319,10 @@ describe("shoppingList", () => {
           matched: [],
           value: brl(0),
           amount: brl(100000),
-          members: [{ instrument: "MXRF11", value: brl(0) }],
+          members: [
+            { instrument: "MXRF11", value: brl(0) },
+            { instrument: "HGLG11", value: brl(0) },
+          ],
         },
         {
           name: "Bonds",
@@ -388,6 +352,51 @@ describe("shoppingList", () => {
       ["Real estate funds", 100000],
     ]);
     expect(got[0]?.quantity).toBeUndefined();
+  });
+
+  it("lists the asset of a class of one as a member (CO10)", () => {
+    const view: Plan = {
+      ...plan,
+      classes: [
+        {
+          name: "Crypto",
+          target_bp: 10000,
+          questions: [],
+          question_facts: [],
+          question_limits: [],
+          question_ideals: false,
+          question_effects: [],
+          question_reviews: [],
+          held: false,
+          rules: [],
+          matched: [],
+          value: brl(0),
+          amount: brl(10000),
+          cost: brl(8000),
+          members: [
+            {
+              instrument: "ABTC11",
+              value: brl(0),
+              unit_value: brl(4000),
+              amount: brl(10000),
+              cost: brl(8000),
+              quantity: { amount: 2, currency: "ABTC11" },
+            },
+          ],
+        },
+      ],
+    };
+
+    expect(shoppingList(view, names)).toEqual([
+      {
+        name: "ABTC11",
+        code: "ABTC11",
+        cost: brl(8000),
+        quantity: "2",
+        unit: brl(4000),
+        group: 0,
+      },
+    ]);
   });
 
   it("returns no entry without a contribution", () => {

@@ -10,21 +10,19 @@ interface GroupAssetsFooterProps {
   // A group without assets has no split to switch: the line replaces the switch.
   empty: boolean;
   split: boolean;
-  // The number of criteria that set the ideals; zero without criteria.
-  criteria: number;
+  // The criteria of the group set the ideals of its assets.
+  derived: boolean;
   onSplit: (on: boolean) => void;
-  onCriteria: () => void;
   onAdd: () => void;
 }
 
-// The end of the assets panel: the split of the group's target, the way to its criteria and the
-// way to add an asset. With criteria the split is theirs, so the switch leaves.
+// The end of the assets panel: the split of the group's target and the way to add an asset. Where the
+// criteria set the ideals the split is theirs, so the switch leaves.
 export function GroupAssetsFooter({
   empty,
   split,
-  criteria,
+  derived,
   onSplit,
-  onCriteria,
   onAdd,
 }: GroupAssetsFooterProps) {
   const t = useT();
@@ -37,13 +35,13 @@ export function GroupAssetsFooter({
         </Text>
       )}
 
-      {!empty && criteria > 0 && (
+      {!empty && derived && (
         <Text size="sm" tone="muted">
           {t("contributionPlan.criteria.byCriteria")}
         </Text>
       )}
 
-      {!empty && criteria === 0 && (
+      {!empty && !derived && (
         <Switch
           size="sm"
           checked={split}
@@ -55,21 +53,6 @@ export function GroupAssetsFooter({
       )}
 
       <div className={styles.footerActions}>
-        {!empty && (
-          <Button
-            size="sm"
-            variant="outline"
-            tone="secondary"
-            onClick={onCriteria}
-          >
-            {t(
-              criteria > 0
-                ? "contributionPlan.criteria.open"
-                : "contributionPlan.criteria.use",
-            )}
-          </Button>
-        )}
-
         <Button
           size="sm"
           variant="outline"

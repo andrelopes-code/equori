@@ -1,0 +1,196 @@
+@layer app {
+  .split {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* 28rem: the code, the order and the amount of a row on two lines. */
+  .withPanel {
+    grid-template-columns: 28rem minmax(0, 1fr);
+  }
+
+  .list {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+  }
+
+  /* One line with a small button. */
+  .head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    block-size: 2.5rem;
+    padding-inline-start: var(--slotted-space-4);
+  }
+
+  .rows {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .rows:not(:last-child) {
+    padding-block-end: var(--slotted-space-5);
+  }
+
+  .item + .item {
+    border-block-start: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+  }
+
+  /* One row in two shapes: one line across the page, two lines beside the panel. The columns are the
+     square, the code, the group, the share, the order, the total, the percentage and the chevron. */
+  .row {
+    display: grid;
+    grid-template-areas: "square code group share order total tail chevron";
+    grid-template-columns: 12px 6rem 10rem minmax(0, 1fr) 14rem 8rem 5rem 16px;
+    align-items: center;
+    column-gap: var(--slotted-space-4);
+    box-sizing: border-box;
+    inline-size: 100%;
+    block-size: 3.25rem;
+    padding: 0 var(--slotted-space-4);
+    border: 0;
+    border-radius: var(--slotted-radius-md);
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-variant-numeric: tabular-nums;
+    text-align: start;
+    white-space: nowrap;
+  }
+
+  button.row {
+    cursor: pointer;
+  }
+
+  button.row:hover {
+    background: color-mix(in srgb, var(--slotted-text) 4%, transparent);
+  }
+
+  .row:focus-visible {
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: -2px;
+  }
+
+  .square {
+    display: grid;
+    grid-area: square;
+  }
+
+  .code {
+    grid-area: code;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .group {
+    grid-area: group;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .order {
+    grid-area: order;
+    justify-self: end;
+    overflow: hidden;
+    max-inline-size: 100%;
+    text-overflow: ellipsis;
+  }
+
+  .total {
+    grid-area: total;
+    justify-self: end;
+  }
+
+  .tail {
+    grid-area: tail;
+    justify-self: end;
+  }
+
+  .flag {
+    color: var(--slotted-tone-accent-text, var(--slotted-text));
+  }
+
+  .chevron {
+    display: grid;
+    grid-area: chevron;
+    inline-size: 16px;
+    block-size: 16px;
+    color: var(--slotted-text-muted);
+  }
+
+  .share {
+    grid-area: share;
+    block-size: 8px;
+    border-radius: var(--slotted-radius-full);
+  }
+
+  .share::before {
+    display: block;
+    inline-size: calc(var(--share) * 1%);
+    block-size: 100%;
+    border-radius: inherit;
+    background: var(--ink);
+    content: "";
+  }
+
+  .withPanel .row {
+    grid-template-areas:
+      "square code total"
+      ". order tail";
+    grid-template-columns: 12px minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    align-content: center;
+    row-gap: var(--slotted-space-1);
+  }
+
+  .withPanel .order {
+    justify-self: start;
+  }
+
+  .withPanel .group,
+  .withPanel .share,
+  .withPanel .chevron {
+    display: none;
+  }
+
+  .withPanel .still .group {
+    display: block;
+    grid-area: order;
+  }
+
+  /* The chosen row and its panel share one ground, so the panel reads as the row opened. */
+  .withPanel .row[aria-expanded="true"] {
+    border-start-end-radius: 0;
+    border-end-end-radius: 0;
+    background: var(--slotted-surface-sunken);
+  }
+
+  .item:has(> [aria-expanded="true"]),
+  .item:has(> [aria-expanded="true"]) + .item {
+    border-block-start-color: transparent;
+  }
+
+  /* The narrow desktop of the plan, also beside the assistant. */
+  @container slotted-page (max-width: 62rem) {
+    .withPanel {
+      grid-template-columns: 18rem minmax(0, 1fr);
+    }
+
+    .row {
+      grid-template-columns: 12px 5rem 9rem minmax(0, 1fr) 11rem 6rem 5rem 16px;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .share::before {
+      forced-color-adjust: none;
+      background: CanvasText;
+    }
+  }
+}

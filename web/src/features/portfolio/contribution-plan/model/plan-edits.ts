@@ -125,20 +125,10 @@ export function setSplit(
   return updateClass(draft, index, (cls) => {
     const shares = equalShares(cls.members.length);
     const members = cls.members.map((m, at) =>
-      on ? { ...m, targetBp: shares[at] ?? 0 } : withoutTargetAndAnswers(m),
+      on ? { ...m, targetBp: shares[at] ?? 0 } : withoutTarget(m),
     );
 
-    return on
-      ? { ...cls, split: true, members }
-      : {
-          ...cls,
-          split: false,
-          byQuestions: false,
-          questions: [],
-          questionFacts: [],
-          questionLimits: [],
-          members,
-        };
+    return { ...cls, split: on, members };
   });
 }
 
@@ -178,8 +168,8 @@ export function setMemberLocked(
   }));
 }
 
-// A member of a split class joins with 0, or with 10000 when it is the only one; in question mode
-// it joins with every answer no and no target.
+// A member of a split class joins with 0, or with 10000 when it is the only one, and without a
+// target where the criteria set the ideals. It joins with no answer.
 export function addMember(
   draft: EditDraft,
   index: number,
@@ -251,8 +241,6 @@ export function overlayDraft(view: Plan, draft: EditDraft): Plan {
       return {
         value: zero,
         question_ideals: false,
-        question_effects: [],
-        question_reviews: [],
         held: false,
         ...row,
         name: cls.name,
@@ -260,6 +248,8 @@ export function overlayDraft(view: Plan, draft: EditDraft): Plan {
         questions: cls.questions,
         question_facts: cls.questionFacts,
         question_limits: cls.questionLimits,
+        question_effects: cls.questionEffects ?? [],
+        question_reviews: cls.questionReviews ?? [],
         rules: cls.rules,
         matched: row?.matched ?? [],
         members: cls.members.map((m) => {
@@ -269,9 +259,11 @@ export function overlayDraft(view: Plan, draft: EditDraft): Plan {
               (m.instrument !== undefined && v.instrument === m.instrument),
           );
           const figures = { ...(found ?? { value: zero }) };
-          // A class divided by questions has no typed target: the preview derived it.
+          // A class divided by its criteria has no typed target: the preview derived it.
           if (!cls.byQuestions) delete figures.target_bp;
           delete figures.answers;
+          delete figures.answer_dates;
+          delete figures.answer_overrides;
 
           return {
             ...figures,
@@ -279,6 +271,12 @@ export function overlayDraft(view: Plan, draft: EditDraft): Plan {
             ...(m.instrument === undefined ? {} : { instrument: m.instrument }),
             ...(m.targetBp === undefined ? {} : { target_bp: m.targetBp }),
             ...(m.answers === undefined ? {} : { answers: m.answers }),
+            ...(m.answerDates === undefined
+              ? {}
+              : { answer_dates: m.answerDates }),
+            ...(m.answerOverrides === undefined
+              ? {}
+              : { answer_overrides: m.answerOverrides }),
           };
         }),
       };
@@ -291,13 +289,17 @@ function newMember(
   ref: MemberRef,
   targetBp: number,
 ): MemberDraft {
-  if (cls.byQuestions)
-    return {
-      ...ref,
-      answers: cls.questionFacts.map((fact) => (fact === "" ? false : null)),
-    };
-
-  return cls.split ? { ...ref, targetBp } : { ...ref };
+  return {
+    ...ref,
+    ...(cls.split && !cls.byQuestions ? { targetBp } : {}),
+    ...(cls.questions.length > 0
+      ? {
+          answers: cls.questions.map(() => null),
+          answerDates: cls.questions.map(() => null),
+          answerOverrides: cls.questions.map(() => false),
+        }
+      : {}),
+  };
 }
 
 function spreadClasses(
@@ -313,10 +315,9 @@ function spreadClasses(
   );
 }
 
-function withoutTargetAndAnswers(member: MemberDraft): MemberDraft {
+function withoutTarget(member: MemberDraft): MemberDraft {
   const rest = { ...member };
   delete rest.targetBp;
-  delete rest.answers;
 
   return rest;
 }

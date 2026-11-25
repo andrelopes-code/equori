@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 
 import type { components } from "@/api/schema.gen";
 import { usePreviewContributionPlan } from "@/features/portfolio/api";
-import { withoutIncomplete } from "@/features/portfolio/contribution-plan/criteria/model/criterion-state";
 import {
   toDraft,
   toInput,
@@ -19,26 +18,20 @@ const debounceMs = 250;
 // zero and no group has rules or criteria (GR8: such a group sends the preview without the amount).
 // A change of either is sent after 250 ms, and a new answer of the filings in the saved plan at once
 // (a feed loaded while the screen is open); the figures keep the previous answer until the next one
-// arrives, and `pending` says so. A draft with a blank class name is not sent, and a criterion the
-// server would refuse leaves the draft that is.
+// arrives, and `pending` says so. A draft with a blank class name is not sent.
 export function useContributionPreview(
   plan: Plan | undefined,
   draft?: PlanDraft,
 ) {
   const [typed, setTyped] = useState<number | undefined>(undefined);
   const [settledKey, setSettledKey] = useState<string | undefined>(undefined);
+  const [last, setLast] = useState<Plan | undefined>(undefined);
   const preview = usePreviewContributionPlan();
   const { mutate } = preview;
 
   const amount = typed ?? plan?.amount?.amount ?? 0;
   const classes: Classes =
-    plan === undefined
-      ? []
-      : toInput(
-          draft === undefined
-            ? toDraft(plan)
-            : { ...draft, classes: draft.classes.map(withoutIncomplete) },
-        ).classes;
+    plan === undefined ? [] : toInput(draft ?? toDraft(plan)).classes;
   const key = JSON.stringify({ amount, classes });
   const askedKey = settledKey ?? key;
   const asked = JSON.parse(askedKey) as { amount: number; classes: Classes };
@@ -68,20 +61,34 @@ export function useContributionPreview(
     if (!ready || currency === undefined || !sends) return;
 
     // Without an amount the preview values the draft with no split (GR8).
-    mutate({
-      ...(asked.amount > 0
-        ? { amount: { amount: asked.amount, currency } }
-        : {}),
-      classes: asked.classes,
-    });
+    mutate(
+      {
+        ...(asked.amount > 0
+          ? { amount: { amount: asked.amount, currency } }
+          : {}),
+        classes: asked.classes,
+      },
+      { onSuccess: setLast },
+    );
     // askedKey stands for asked: the parsed copy changes identity on every render. factAnswers is
     // not the plan: a preview refetches it, and a moving quote would send previews without end.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [askedKey, factAnswers, ready, currency, mutate]);
 
-  const previewed = ready && sends && preview.data !== undefined;
-  const view = previewed ? preview.data : plan;
+  const previewed = ready && sends && last !== undefined && fits(last, classes);
+  const view = previewed ? last : plan;
   const pending = key !== askedKey || (sends && preview.isPending);
 
   return { amount, setAmount: setTyped, view, pending };
+}
+
+// Whether the answer holds the groups and the assets asked now: one of other groups is not drawn while
+// the next answer is on the way.
+function fits(view: Plan, classes: Classes): boolean {
+  return (
+    view.classes.length === classes.length &&
+    view.classes.every(
+      (cls, i) => cls.members.length === classes[i]?.members.length,
+    )
+  );
 }

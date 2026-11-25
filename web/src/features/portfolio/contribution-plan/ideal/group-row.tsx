@@ -66,6 +66,7 @@ export function GroupRow({
           amount={groupCost(group)}
           hasAmount={hasAmount}
           waiting={waiting}
+          held={group.held}
         />
       </div>
 

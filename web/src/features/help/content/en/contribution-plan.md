@@ -6,23 +6,31 @@ The [contribution plan](/portfolio/contribution-plan) says where each contributi
 
 ![The This month block, with the Contribution field marked](plan-month "The amount of the contribution and, beside it, the portfolio today and after the contribution.")
 
-Type the **Contribution** of the month. Beside it, the screen shows the portfolio today and after the contribution. A sentence below says how much goes to each purchase and which groups receive nothing this month.
+Type the **Contribution** of the month. Beside it, the screen shows the portfolio today and after the contribution.
 
-![The shopping list, with the first purchase marked](plan-list "Each row is a purchase: the asset or the group, the approximate order, the total and the share of the contribution.")
+![The list of purchases, with the first purchase marked](plan-list "Each row is an asset or a group: the approximate order, the total and the share of the contribution.")
 
-The **Shopping list** holds each purchase with its group, the approximate order in units and the total. **Copy list** copies the purchases.
+**Buy now** holds each purchase with the approximate order in units and the total. **Waiting** holds the asset a criterion keeps out, with the reason. **No purchase this month** holds the others. **Copy list** copies the purchases.
 
-In a list with stocks of companies, the column **Profit of the year** says whether the profit rose or fell. **see statements** opens the figures of the company.
+An open row shows the panel of the asset. The panel of a company says whether the **Profit of the year** rose or fell, and **see statements** opens its figures.
 
 ## Criteria of the assets
 
-![The section Criteria of the assets, with the button Use criteria marked](plan-criteria "Each group with assets has its row, and the button opens the criteria of the group.")
+![The panel of the open row, with the New criterion field marked](plan-criteria "The panel opens beside the list, and a new criterion is written in it.")
 
-The criteria are optional. A criterion is a yes-or-no question. Each yes adds one point to the asset, and the target of each asset is its part of the points of the group.
+The criteria are optional. A criterion is a yes-or-no question, which you answer in the panel. Each change is saved at once.
 
-**Use criteria** opens the board of the group, with the criteria in rows and the assets in columns. **Add criterion** offers two ways. In **Write a criterion**, you answer for each asset. In the automatic ones, equori computes the figure and answers.
+The **Effect** says what a no changes:
 
-An automatic criterion has a limit, and the limit is yours: equori suggests none. Without a figure to answer, the cell shows **no data** and your answer holds. **Remove criteria** goes back to the typed target.
+- **Only warns** marks the asset in the list, and the purchase goes on. Every new criterion starts this way.
+- **Holds the purchase** leaves the asset out of the purchase. The money goes to the other assets of the group and then to the other groups.
+- **Weighs in the division** adds one point per yes, and the points set the target of each asset of the group.
+
+Without an answer, a criterion does not hold the purchase. **Buy anyway** frees an asset that waits, this month only. With every asset waiting, the contribution is divided without the conditions.
+
+The **Reminder** tells when it is time to review an answer, for example every month or every 3 months. It only tells: the answer still holds.
+
+An automatic criterion is answered by equori, with the limit you choose: equori suggests none, and without a limit the criterion does not count. **Crypto Fear & Greed** is one of them. It measures the mood of the crypto market from 0 to 100, and its source is read only when some criterion uses it.
 
 ## Portfolio against the target
 

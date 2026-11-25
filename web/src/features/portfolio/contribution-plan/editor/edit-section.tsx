@@ -31,8 +31,6 @@ interface EditSectionProps {
   // The group whose assets panel opens first.
   initialPanel: number | null;
   memberName: (ref: { account_id?: string; instrument?: string }) => string;
-  // Opens the board of the criteria of a group.
-  onCriteria: (index: number) => void;
 }
 
 // The second section in edit mode: the composition editor, then the group list (spec, Screen,
@@ -45,7 +43,6 @@ export function EditSection({
   pending,
   initialPanel,
   memberName,
-  onCriteria,
 }: EditSectionProps) {
   const t = useT();
 
@@ -78,7 +75,6 @@ export function EditSection({
             editor={editor}
             memberName={memberName}
             initialPanel={initialPanel}
-            onCriteria={onCriteria}
           />
 
           <div>

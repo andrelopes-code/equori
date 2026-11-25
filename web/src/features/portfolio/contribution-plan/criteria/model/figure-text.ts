@@ -10,7 +10,8 @@ export function figureText(
 ): string {
   const number = Number(value);
 
-  if (unit === "years") return numberFormatter(locale).format(number);
+  if (unit === "years" || unit === "points")
+    return numberFormatter(locale).format(number);
 
   if (unit === "percent") {
     return numberFormatter(locale, {

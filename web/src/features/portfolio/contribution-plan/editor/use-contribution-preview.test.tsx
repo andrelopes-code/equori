@@ -160,7 +160,7 @@ describe("useContributionPreview", () => {
     expect(bodies.at(-1)).toEqual(bodies[0]);
   });
 
-  it("sends a draft with criteria without amount, less the incomplete ones", async () => {
+  it("sends a draft with criteria without amount, the one without a limit too (CO2)", async () => {
     const { bodies, mount } = setup();
     mount(
       plan([]),
@@ -170,10 +170,10 @@ describe("useContributionPreview", () => {
             name: "Ações",
             targetBp: 10000,
             byQuestions: true,
-            questions: ["Entendo?", "", "P/L de até"],
-            questionFacts: ["", "", "price_earnings_max"],
-            questionLimits: ["", "", ""],
-            members: [{ instrument: "WEGE3", answers: [true, false, false] }],
+            questions: ["Entendo?", "P/L de até"],
+            questionFacts: ["", "price_earnings_max"],
+            questionLimits: ["", ""],
+            members: [{ instrument: "WEGE3", answers: [true, null] }],
             rules: [],
           },
         ],
@@ -190,8 +190,9 @@ describe("useContributionPreview", () => {
           {
             name: "Ações",
             target_bp: 10000,
-            questions: ["Entendo?"],
-            members: [{ instrument: "WEGE3", answers: [true] }],
+            questions: ["Entendo?", "P/L de até"],
+            question_facts: ["", "price_earnings_max"],
+            members: [{ instrument: "WEGE3", answers: [true, null] }],
           },
         ],
       });

@@ -21,8 +21,6 @@ interface GroupAssetsPanelProps {
   editor: PlanEditor;
   memberName: (ref: { account_id?: string; instrument?: string }) => string;
   onAddAsset: () => void;
-  // Opens the board of the criteria of the group.
-  onCriteria: () => void;
 }
 
 // The assets of an open group, then the footer. Every row has a fixed height, so the rows below
@@ -35,7 +33,6 @@ export function GroupAssetsPanel({
   editor,
   memberName,
   onAddAsset,
-  onCriteria,
 }: GroupAssetsPanelProps) {
   const asked = edit.byQuestions && edit.split;
 
@@ -86,11 +83,10 @@ export function GroupAssetsPanel({
           <GroupAssetsFooter
             empty={group.members.length === 0}
             split={edit.split}
-            criteria={edit.byQuestions ? edit.questions.length : 0}
+            derived={edit.byQuestions}
             onSplit={(on) => {
               editor.setSplit(index, on);
             }}
-            onCriteria={onCriteria}
             onAdd={onAddAsset}
           />
         </>

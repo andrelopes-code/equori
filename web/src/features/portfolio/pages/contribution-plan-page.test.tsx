@@ -21,6 +21,11 @@ const cls = (
   target_bp: target,
   questions: [],
   question_ideals: false,
+  question_facts: [],
+  question_limits: [],
+  question_effects: [],
+  question_reviews: [],
+  held: false,
   rules: [],
   matched: [],
   value: brl(value),
@@ -44,6 +49,8 @@ const saved = {
   ],
   outside: [],
   missing: [],
+  revision: 1,
+  holds_ignored: false,
 };
 
 const preview = {
@@ -66,9 +73,6 @@ const api = () =>
 
 const text = (node: Element) =>
   node.textContent.replaceAll(String.fromCharCode(160), " ");
-
-const cells = (row: HTMLElement) =>
-  [...row.querySelectorAll("th, td")].map(text);
 
 const planList = () =>
   screen.findByRole("list", { name: catalogPtBR["contributionPlan.ideal"] });
@@ -159,22 +163,6 @@ describe("Contribution plan page", () => {
     );
   });
 
-  it("S400: says where the money goes, in list order, and which groups receive nothing", async () => {
-    await open();
-
-    await waitFor(() => {
-      expect(
-        screen.getByText(
-          (_, node) =>
-            node?.textContent.startsWith("Aplique") === true &&
-            node.children.length === 0 &&
-            text(node) ===
-              "Aplique R$ 1.000,00 em Ações Brasil e R$ 3.000,00 em Ações exterior. Os demais grupos não recebem neste mês.",
-        ),
-      ).toBeInTheDocument();
-    });
-  });
-
   it("names the three shares of a group on its bar", async () => {
     await open();
 
@@ -218,35 +206,33 @@ describe("Contribution plan page", () => {
     expect(
       await screen.findByText(catalogPtBR["contributionPlan.verdictNoAmount"]),
     ).toBeInTheDocument();
+    const list = screen.getByRole("list", {
+      name: catalogPtBR["contributionPlan.list.assets"],
+    });
+    expect(within(list).getAllByRole("listitem")).toHaveLength(4);
     expect(
-      screen.queryByRole("table", {
-        name: catalogPtBR["contributionPlan.shopping"],
-      }),
+      screen.queryByRole("button", { name: "Copiar lista" }),
     ).not.toBeInTheDocument();
   });
 
   it("lists the purchases by amount and masks them in privacy mode", async () => {
     await open();
-    const list = await screen.findByRole("table", {
-      name: catalogPtBR["contributionPlan.shopping"],
+    const list = await screen.findByRole("list", {
+      name: catalogPtBR["contributionPlan.list.buy"],
     });
 
-    await waitFor(() => {
-      expect(
-        within(list)
-          .getAllByRole("row")
-          .map((row) =>
-            cells(row)
-              .filter((c) => c !== "")
-              .join("|"),
-          ),
-      ).toEqual([
-        "Ativo|Grupo|Ordem|Total|Do aporte",
-        // Groups without assets are bought by value; 3.000 and 1.000 of a 4.000 contribution.
-        "Ações exterior|aplicação por valor|R$ 3.000,00|75%",
-        "Ações Brasil|aplicação por valor|R$ 1.000,00|25%",
-      ]);
+    expect(within(list).getAllByRole("listitem").map(text)).toEqual([
+      // Groups without assets are bought by value; 3.000 and 1.000 of a 4.000 contribution.
+      "Ações exterioraplicação por valorR$ 3.000,0075%",
+      "Ações Brasilaplicação por valorR$ 1.000,0025%",
+    ]);
+    const none = screen.getByRole("list", {
+      name: catalogPtBR["contributionPlan.list.none"],
     });
+    expect(within(none).getAllByRole("listitem").map(text)).toEqual([
+      "Renda fixajá no ideal",
+      "FIIsjá no ideal",
+    ]);
     expect(screen.getByRole("button", { name: "Copiar lista" })).toBeEnabled();
   });
 
@@ -259,8 +245,8 @@ describe("Contribution plan page", () => {
     expect(screen.getByRole("button", { name: "Copiar lista" })).toBeDisabled();
     expectNoAmounts(table, ["1.000,00", "3.000,00"]);
     expectNoAmounts(
-      await screen.findByRole("table", {
-        name: catalogPtBR["contributionPlan.shopping"],
+      await screen.findByRole("list", {
+        name: catalogPtBR["contributionPlan.list.buy"],
       }),
       ["1.000,00", "3.000,00"],
     );

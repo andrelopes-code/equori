@@ -20,22 +20,13 @@ export const contributionPlanEn = {
   "contributionPlan.orderSymbol": "≈ {count} {symbol} × {price}",
   "contributionPlan.byValue": "bought by value",
   "contributionPlan.unpriced": "no price · planned amount",
-  "contributionPlan.colAsset": "Asset",
-  "contributionPlan.colOrder": "Order",
-  "contributionPlan.colTotal": "Total",
-  "contributionPlan.colShare": "Of the contribution",
   "contributionPlan.leftoverName": "Left over",
   "contributionPlan.leftoverStays": "stays in the account",
-  "contributionPlan.purchaseBarLabel": "Split of the contribution: {parts}",
-  "contributionPlan.purchaseBarEnd": "contribution {amount}",
-  "contributionPlan.splitToSee": "split among assets to see the units",
-  "contributionPlan.shopping": "Shopping list",
   "contributionPlan.copy": "Copy list",
   "contributionPlan.copyFailed": "The list could not be copied.",
   "contributionPlan.loadFailed": "The contribution plan could not be loaded.",
   "contributionPlan.retry": "Try again",
   "contributionPlan.copied": "List copied",
-  "contributionPlan.shoppingEmpty": "No purchase for this amount",
   "contributionPlan.lock": "Keep {name} fixed",
   "contributionPlan.addClass": "Add group",
   "contributionPlan.className": "Group name",
@@ -82,12 +73,6 @@ export const contributionPlanEn = {
   "contributionPlan.portfolioToday": "Portfolio today {today}",
   "contributionPlan.portfolioAfter":
     "Portfolio today {today} · after this contribution {after}",
-  "contributionPlan.verdictApply": "Apply {list}.",
-  "contributionPlan.verdictMany":
-    "Put {amount} into {count} purchases, listed below.",
-  "contributionPlan.verdictItem": "{amount} to {name}",
-  "contributionPlan.verdictRest":
-    "The other groups receive nothing this month.",
   "contributionPlan.verdictNoAmount":
     "Enter the contribution amount to see where to apply it.",
   "contributionPlan.verdictMissingPrice":
@@ -159,30 +144,12 @@ export const contributionPlanEn = {
   "contributionPlan.removeMember": "Remove asset",
   "contributionPlan.compareIndexers": "compare indexers",
   "contributionPlan.compareIndexers.title": "Compare indexers",
-  "contributionPlan.criteria.title": "Criteria of the assets",
-  "contributionPlan.criteria.description":
-    "Optional: your criteria set the target of each asset. Nothing is sold.",
-  "contributionPlan.criteria.boardTitle": "Criteria of {name}",
-  "contributionPlan.criteria.back": "Groups and targets",
-  "contributionPlan.criteria.use": "Use criteria",
-  "contributionPlan.criteria.open": "Open criteria",
-  "contributionPlan.criteria.openOf": "Open criteria of {name}",
-  "contributionPlan.criteria.useIn": "Use criteria in {name}",
-  "contributionPlan.criteria.stateTyped": "target typed per asset",
-  "contributionPlan.criteria.stateWhole": "one target for the whole group",
-  "contributionPlan.criteria.stateOne":
-    "{count} criterion, {automatic} automatic",
-  "contributionPlan.criteria.stateMany":
-    "{count} criteria, {automatic} automatic",
   "contributionPlan.criteria.add": "Add criterion",
   "contributionPlan.criteria.addDescription":
     "equori answers the automatic ones. The limit of each is yours.",
   "contributionPlan.criteria.writeOwn": "Write a criterion",
   "contributionPlan.criteria.writeOwnMeaning":
     "A yes-or-no question you answer for each asset.",
-  "contributionPlan.criteria.pickAutomatic": "Choose automatic criteria",
-  "contributionPlan.criteria.pickAutomaticMeaning":
-    "equori computes them from the statements and the price and answers alone.",
   "contributionPlan.criteria.addOne": "Add",
   "contributionPlan.criteria.addNamed": "Add {name}",
   "contributionPlan.criteria.added": "in the group",
@@ -224,60 +191,7 @@ export const contributionPlanEn = {
     "Fiscal years with profit among the latest 5.",
   "contributionPlan.criteria.limitOf": "Limit: {name}",
   "contributionPlan.criteria.years": "years",
-  "contributionPlan.criteria.ownLabel": "Criterion {n}",
-  "contributionPlan.criteria.ownPlaceholder": "Write the question",
-  "contributionPlan.criteria.remove": "Remove {name}",
-  "contributionPlan.criteria.unnamed": "criterion {n}",
-  "contributionPlan.criteria.noteAutomatic": "automatic",
-  "contributionPlan.criteria.noteOwn": "no data",
-  "contributionPlan.criteria.noteOutside": "not applicable",
-  "contributionPlan.criteria.noteNoLimit": "set the limit",
-  "contributionPlan.criteria.noteBlank": "write the question",
-  "contributionPlan.criteria.noteRepeated": "repeated question",
-  "contributionPlan.criteria.yes": "yes",
-  "contributionPlan.criteria.no": "no",
-  "contributionPlan.criteria.blank": "no answer",
-  "contributionPlan.criteria.waiting": "computing",
-  "contributionPlan.criteria.points": "{yes} of {count}",
-  "contributionPlan.criteria.equalShare": "equal share",
-  "contributionPlan.criteria.boardLabel": "Criteria by asset of {name}",
-  "contributionPlan.criteria.criterionColumn": "Criterion",
-  "contributionPlan.criteria.idealOf":
-    "target of {name} in the group: {share}, {yes} of {count} criteria",
-  "contributionPlan.criteria.idealOfEqual":
-    "target of {name} in the group: {share}, equal share as an answer is missing",
-  "contributionPlan.criteria.cellAutomatic":
-    "{asset}, {criterion}: {answer}, {figure}, data of {date}, answered by equori",
-  "contributionPlan.criteria.cellSignal":
-    "{asset}, {criterion}: {answer}, answered by equori",
-  "contributionPlan.criteria.cellReason":
-    "{asset}, {criterion}: {answer}, {reason}, answered by equori",
-  "contributionPlan.criteria.cellOwn": "{asset}, {criterion}: {answer}",
-  "contributionPlan.criteria.cellOwnReason":
-    "{asset}, {criterion}: {answer}, your answer: {reason}",
-  "contributionPlan.criteria.cellBlank": "{asset}, {criterion}: no answer",
-  "contributionPlan.criteria.cellBlankReason":
-    "{asset}, {criterion}: no answer, {reason}",
-  "contributionPlan.criteria.cellWaiting": "{asset}, {criterion}: computing",
-  "contributionPlan.criteria.statementsOf": "See the data of {name}",
   "contributionPlan.criteria.byCriteria": "the targets come from the criteria",
-  "contributionPlan.criteria.clear": "Remove criteria",
-  "contributionPlan.criteria.clearTitle": "Remove the criteria of {name}?",
-  "contributionPlan.criteria.clearBody":
-    "The group goes back to the typed target, with the targets of now.",
-  "contributionPlan.criteria.clearKeep": "Keep the criteria",
-  "contributionPlan.criteria.emptyBody":
-    "The target of each asset is its part of the points of the group.",
-  "contributionPlan.criteria.noYes":
-    "No yes: the group receives the amount without a split among the assets.",
-  "contributionPlan.criteria.equalShares":
-    "Equal share of the group, an answer is missing: {names}.",
-  "contributionPlan.criteria.rules":
-    "A yes is a point. Without an answer, an equal share. Price of the end of last month.",
-  "contributionPlan.criteria.incompleteOne":
-    "Complete {count} criterion to save",
-  "contributionPlan.criteria.incompleteMany":
-    "Complete {count} criteria to save",
   "contributionPlan.criteria.helpLabel": "About the criteria",
   "contributionPlan.criteria.helpWhat":
     "A criterion is not a recommendation: equori computes the figure, compares it with the limit you chose and adds one point.",
@@ -290,7 +204,6 @@ export const contributionPlanEn = {
   "contributionPlan.criteria.helpMethods":
     "Piotroski, Graham and Greenblatt: Brazilian Business Review",
   "contributionPlan.colProfit": "Profit of the year",
-  "contributionPlan.criteriaCount": "{yes} of {count} criteria",
   "contributionPlan.companyReport": "see statements",
   "contributionPlan.companyReport.title": "Statements of {name}",
   "contributionPlan.fundReport": "see report",
@@ -390,4 +303,139 @@ export const contributionPlanEn = {
     "A group holds chosen assets or 1 to 5 rules, and each rule needs valid conditions.",
   "problem.contribution_plan_changed":
     "The plan changed since it was read. Reload and try again.",
+  "contributionPlan.criteria.group.market": "Market",
+  "contributionPlan.criteria.crypto_fear_greed_max":
+    "Crypto Fear & Greed at most",
+  "contributionPlan.criteria.crypto_fear_greed_max.meaning":
+    "fear in the crypto market, 0 to 100",
+  "contributionPlan.changedInEditor":
+    "The plan changed since the edit began. Saving again stores your version.",
+  "contributionPlan.list.buy": "Buy now",
+  "contributionPlan.list.assets": "Assets of the plan",
+  "contributionPlan.list.waiting": "Waiting",
+  "contributionPlan.list.none": "No purchase this month",
+  "contributionPlan.list.holdsIgnored":
+    "Every asset was waiting. This contribution was divided without the conditions.",
+  "contributionPlan.list.waits": "waits",
+  "contributionPlan.list.saidNo": "you answered no",
+  "contributionPlan.list.notMet": "{name}: no",
+  "contributionPlan.list.aboveLimit": "{name} {limit}: no",
+  "contributionPlan.list.without": "except {names}",
+  "contributionPlan.list.undivided": "amount of the group, undivided",
+  "contributionPlan.list.noIdeal": "no target",
+  "contributionPlan.list.atIdeal": "already at the target",
+  "contributionPlan.list.small": "less than one unit",
+  "contributionPlan.list.flagDue": "review",
+  "contributionPlan.list.flagReleased": "this month only",
+  "contributionPlan.list.flagWarned": "warning",
+  "contributionPlan.list.flagWouldWait": "would wait",
+  "contributionPlan.list.reviewOne": "Review 1 answer",
+  "contributionPlan.list.reviewMany": "Review {count} answers",
+  "contributionPlan.answer.auto": "Automatic",
+  "contributionPlan.answer.yes": "Yes",
+  "contributionPlan.answer.no": "No",
+  "contributionPlan.answer.na": "Not applicable",
+  "contributionPlan.effect.warn": "Only warns",
+  "contributionPlan.effect.hold": "Holds the purchase",
+  "contributionPlan.effect.weigh": "Weighs in the division",
+  "contributionPlan.effect.warnHint":
+    "With a no, the list warns and the purchase goes on.",
+  "contributionPlan.effect.holdHint":
+    "With a no, the money goes to the other assets.",
+  "contributionPlan.effect.weighHint":
+    "Each yes is a point. The criteria set the targets of the group.",
+  "contributionPlan.review.none": "No reminder",
+  "contributionPlan.review.month": "Every month",
+  "contributionPlan.review.quarter": "Every 3 months",
+  "contributionPlan.review.half": "Every 6 months",
+  "contributionPlan.review.year": "Once a year",
+  "contributionPlan.index.label":
+    "Crypto Fear & Greed: today {today}, limit {limit}",
+  "contributionPlan.index.limit": "Buy up to",
+  "contributionPlan.index.today": "today {value}",
+  "contributionPlan.index.unset": "no limit",
+  "contributionPlan.index.upTo": "buy up to {value}",
+  "contributionPlan.index.fear": "0 · extreme fear",
+  "contributionPlan.index.greed": "extreme greed · 100",
+  "contributionPlan.index.choose": "Choose the limit",
+  "contributionPlan.index.days": "{value} or less: {share} of the days",
+  "contributionPlan.panel.label": "Criteria of {name}",
+  "contributionPlan.panel.close": "Close",
+  "contributionPlan.panel.scope": "What to show",
+  "contributionPlan.panel.onlyAsset": "{name} only",
+  "contributionPlan.panel.allAssets": "All {count} assets",
+  "contributionPlan.panel.undo": "Undo",
+  "contributionPlan.panel.waits": "Waits this month",
+  "contributionPlan.panel.moved": "{amount} went to the other assets",
+  "contributionPlan.panel.groupHeld": "every asset of the group waits",
+  "contributionPlan.panel.buyAnyway": "Buy anyway",
+  "contributionPlan.panel.waitAgain": "Wait again",
+  "contributionPlan.panel.released": "Free this month only",
+  "contributionPlan.panel.releasedBody":
+    "The condition answered no and the purchase goes on",
+  "contributionPlan.panel.warned": "Regular purchase, with a warning",
+  "contributionPlan.panel.warnedBody":
+    "The answer is no and the effect is only to warn",
+  "contributionPlan.panel.free": "Free",
+  "contributionPlan.panel.freeAnswered": "The answers hold until they change",
+  "contributionPlan.panel.freeUnanswered":
+    "Without an answer or data, the purchase goes on",
+  "contributionPlan.panel.allWait": "Every asset was waiting",
+  "contributionPlan.panel.allWaitBody":
+    "This contribution was divided without the conditions",
+  "contributionPlan.panel.normal": "Regular purchase",
+  "contributionPlan.panel.normalBody": "No criterion holds the purchase",
+  "contributionPlan.panel.points":
+    "{yes} of {count} points · target {share} of the group",
+  "contributionPlan.panel.equalShare":
+    "no points: equal share · target {share} of the group",
+  "contributionPlan.panel.noCriteria": "No criterion",
+  "contributionPlan.panel.noCriteriaBody": "Receives by its target",
+  "contributionPlan.panel.byRule":
+    "The assets of this group come by rule and use no criteria.",
+  "contributionPlan.panel.noAssets": "This group has no assets yet.",
+  "contributionPlan.panel.split": "Divide among the assets",
+  "contributionPlan.panel.edit": "Edit",
+  "contributionPlan.panel.editNamed": "Edit {name}",
+  "contributionPlan.panel.done": "Done",
+  "contributionPlan.panel.remove": "Remove criterion",
+  "contributionPlan.panel.removed": "Criterion removed",
+  "contributionPlan.panel.effectChanged": "Effect changed",
+  "contributionPlan.panel.question": "Question",
+  "contributionPlan.panel.repeated": "This criterion is already in the group.",
+  "contributionPlan.panel.limit": "Limit",
+  "contributionPlan.panel.effect": "Effect",
+  "contributionPlan.panel.review": "Reminder",
+  "contributionPlan.panel.reviewHint":
+    "The reminder only tells: the answer still holds.",
+  "contributionPlan.panel.answer": "Answer",
+  "contributionPlan.panel.answerOf": "Answer: {name}",
+  "contributionPlan.panel.answerOfAsset": "{asset}: {name}",
+  "contributionPlan.panel.settings": "{effect} · {review}",
+  "contributionPlan.panel.answerFigure": "{answer} · {figure}",
+  "contributionPlan.panel.noLimit": "Without a limit, it does not count",
+  "contributionPlan.panel.noData": "No data today",
+  "contributionPlan.panel.noReport": "No statements of this asset",
+  "contributionPlan.panel.indexOff":
+    "Source off: an administrator turns it on in Settings",
+  "contributionPlan.panel.auto": "Answers by itself",
+  "contributionPlan.panel.autoIndex": "Answers by itself · alternative.me",
+  "contributionPlan.panel.autoDated": "{source} · {date}",
+  "contributionPlan.panel.unanswered": "No answer",
+  "contributionPlan.panel.answeredBefore": "Answered before",
+  "contributionPlan.panel.answeredOn": "Answered on {date}",
+  "contributionPlan.panel.due": "Time to review",
+  "contributionPlan.panel.renew": "Still holds",
+  "contributionPlan.panel.counts": "{yes} yes · {no} no · {none} unanswered",
+  "contributionPlan.panel.write": "Write a yes-or-no question",
+  "contributionPlan.panel.newCriterion": "New criterion",
+  "contributionPlan.panel.startsWarning":
+    "It starts by only warning. The effect changes in Edit.",
+  "contributionPlan.panel.startsWarningGroup":
+    "It joins the {count} assets of the group, only warning. The effect changes in Edit.",
+  "contributionPlan.panel.orAutomatic": "Or use one that answers by itself",
+  "contributionPlan.panel.noCompany": "Company figures do not apply here.",
+  "contributionPlan.panel.seeAll": "See all",
+  "contributionPlan.panel.planMoved":
+    "The plan changed elsewhere. This screen already shows the new version.",
 } as const;

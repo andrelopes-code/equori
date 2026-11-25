@@ -35,6 +35,11 @@ const cls = (name: string, target: number, members: unknown[] = []) => ({
   share_bp: 2500,
   questions: [],
   question_ideals: false,
+  question_facts: [],
+  question_limits: [],
+  question_effects: [],
+  question_reviews: [],
+  held: false,
   rules: [],
   matched: [],
   members,
@@ -54,6 +59,8 @@ const saved = {
   ],
   outside: [],
   missing: [],
+  revision: 1,
+  holds_ignored: false,
 };
 
 interface Body {
@@ -181,11 +188,8 @@ describe("Contribution plan edit mode", () => {
       await screen.findByRole("textbox", { name: "Aporte" }),
     ).toBeVisible();
     expect(
-      screen.queryByText(catalogPtBR["contributionPlan.shoppingEmpty"]),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("table", {
-        name: catalogPtBR["contributionPlan.shopping"],
+      screen.queryByRole("list", {
+        name: catalogPtBR["contributionPlan.list.buy"],
       }),
     ).not.toBeInTheDocument();
   });
@@ -447,6 +451,7 @@ describe("Contribution plan edit mode", () => {
             { name: "Ações exterior", target_bp: 1750, members: [] },
             { name: "FIIs", target_bp: 1750, members: [] },
           ],
+          revision: 1,
         },
       ]);
     });
@@ -465,6 +470,25 @@ describe("Contribution plan edit mode", () => {
         catalogPtBR["problem.contribution_class_name_duplicate"],
       ),
     ).toBeInTheDocument();
+  });
+
+  it("saves over a plan that changed only when asked again (CO15)", async () => {
+    await edit(api(() => problem(409, "contribution_plan_changed")));
+
+    fireEvent.change(await target("Ações Brasil"), { target: { value: "30" } });
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Salvar" }),
+    );
+    expect(
+      await screen.findByText(catalogPtBR["contributionPlan.changedInEditor"]),
+    ).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
+
+    await waitFor(() => {
+      expect(puts).toHaveLength(2);
+    });
+    expect(puts.map((p) => "revision" in (p as object))).toEqual([true, false]);
   });
 
   it("asks before leaving with a draft", async () => {

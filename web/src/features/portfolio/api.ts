@@ -1,10 +1,21 @@
-import { queryOptions, useMutation } from "@tanstack/react-query";
+import {
+  queryOptions,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import type { Client } from "openapi-fetch";
 
 import { useApi } from "@/api/api-context";
 import { unwrap } from "@/api/problem";
+import { ProblemError } from "@/api/problem-error";
 import type { components, paths } from "@/api/schema.gen";
 import type { AllocationBy } from "@/features/portfolio/model/portfolio-search";
+import type { PlanEdit } from "@/features/portfolio/contribution-plan/panel/criteria-edits";
+
+type Plan = components["schemas"]["ContributionPlan"];
+
+// The group, the criterion or the asset of a change is gone from the plan.
+export class PlanMovedError extends Error {}
 
 export function allocationQuery(
   api: Client<paths>,
@@ -167,6 +178,54 @@ export function useSaveContributionPlan() {
   });
 }
 
+// One change of the saved plan at a time, over the plan of the cache. A save refused because the plan
+// changed is read again and applied once more (CO15); PlanMovedError says the change has no place in
+// the plan read.
+export function useEditContributionPlan() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    scope: { id: "contribution-plan" },
+    mutationFn: async (edit: PlanEdit) => {
+      const query = contributionPlanQuery(api);
+      const before = await queryClient.query({ ...query, staleTime: "static" });
+      const put = async (plan: Plan) => {
+        const body = edit(plan);
+        if (body === undefined) throw new PlanMovedError();
+
+        return unwrap(await api.PUT("/contribution-plan", { body }));
+      };
+
+      const saved = await put(before).catch(async (error: unknown) => {
+        if (!planChanged(error)) throw error;
+
+        return put(await queryClient.query({ ...query, staleTime: 0 }));
+      });
+      queryClient.setQueryData(query.queryKey, saved);
+
+      return { before, saved };
+    },
+    onError: (error) => {
+      if (error instanceof PlanMovedError || planChanged(error)) {
+        void queryClient.invalidateQueries({
+          queryKey: contributionPlanQuery(api).queryKey,
+        });
+      }
+    },
+  });
+}
+
+export function sentimentQuery(api: Client<paths>, id: string) {
+  return queryOptions({
+    queryKey: ["sentiment-index", id] as const,
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/sentiment-indexes/{id}", { params: { path: { id } } }),
+      ),
+  });
+}
+
 export function usePreviewContributionPlan() {
   const api = useApi();
 
@@ -233,4 +292,12 @@ export function useDeleteProjection() {
       await unwrap(await api.DELETE("/portfolio-projection"));
     },
   });
+}
+
+// The save was refused because the plan changed since it was read (CO15).
+export function planChanged(error: unknown): boolean {
+  return (
+    error instanceof ProblemError &&
+    error.problem.code === "contribution_plan_changed"
+  );
 }

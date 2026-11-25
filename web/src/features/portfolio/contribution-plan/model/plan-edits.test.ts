@@ -12,11 +12,6 @@ import {
   setSplit,
   startEditing,
 } from "@/features/portfolio/contribution-plan/model/plan-edits";
-import {
-  addFactQuestions,
-  addQuestion,
-  setByQuestions,
-} from "@/features/portfolio/contribution-plan/model/question-edits";
 
 const plain = {
   byQuestions: false,
@@ -141,47 +136,46 @@ describe("plan edits by rule", () => {
   });
 });
 
-describe("plan edits in question mode", () => {
-  const questioned = () =>
-    addQuestion(addQuestion(setByQuestions(plan(), 1, true), 1), 1);
+describe("plan edits of a group whose criteria set the ideals", () => {
+  const derived = () => {
+    const draft = plan();
 
-  it("gives a new member one false answer per question and no target", () => {
-    const added = addMember(questioned(), 1, { instrument: "ITUB4" });
+    return {
+      ...draft,
+      classes: draft.classes.map((cls, i) =>
+        i === 1
+          ? {
+              ...cls,
+              byQuestions: true,
+              split: true,
+              questions: ["Q1"],
+              questionFacts: [""],
+              members: [
+                { instrument: "PETR4", answers: [true] },
+                { instrument: "VALE3", answers: [false] },
+              ],
+            }
+          : cls,
+      ),
+    };
+  };
+
+  it("gives a new member no answer and no target", () => {
+    const added = addMember(derived(), 1, { instrument: "ITUB4" });
 
     expect(added.classes[1]?.members[2]).toEqual({
       instrument: "ITUB4",
-      answers: [false, false],
-    });
-  });
-
-  it("leaves the answers of a new member to facts blank", () => {
-    const facts = addFactQuestions(questioned(), 1, [
-      { fact: "piotroski_p1", text: "P1" },
-    ]);
-    const added = addMember(facts, 1, { instrument: "ITUB4" });
-
-    expect(added.classes[1]?.members[2]).toEqual({
-      instrument: "ITUB4",
-      answers: [false, false, null],
+      answers: [null],
+      answerDates: [null],
+      answerOverrides: [false],
     });
   });
 
   it("removes a member without redistributing", () => {
-    const removed = removeMember(questioned(), 1, 0);
+    const removed = removeMember(derived(), 1, 0);
 
     expect(removed.classes[1]?.members).toEqual([
-      { instrument: "VALE3", answers: [false, false] },
-    ]);
-  });
-
-  it("leaves the question mode when the split goes off", () => {
-    const off = setSplit(questioned(), 1, false).classes[1];
-
-    expect(off?.byQuestions).toBe(false);
-    expect(off?.questions).toEqual([]);
-    expect(off?.members).toEqual([
-      { instrument: "PETR4" },
-      { instrument: "VALE3" },
+      { instrument: "VALE3", answers: [false] },
     ]);
   });
 });
@@ -303,24 +297,23 @@ describe("overlayDraft", () => {
     expect(got.map((c) => c.matched)).toEqual([matched, []]);
   });
 
-  it("keeps the target the preview derived for a class divided by questions", () => {
-    const draft = addQuestion(
-      setByQuestions(
-        startEditing({
-          classes: [
-            {
-              ...plain,
-              name: "Old A",
-              targetBp: 5000,
-              members: [{ instrument: "PETR4" }, { accountId: "a1" }],
-            },
+  it("keeps the target the preview derived for a class its criteria divide", () => {
+    const draft = startEditing({
+      classes: [
+        {
+          ...plain,
+          name: "Old A",
+          targetBp: 5000,
+          byQuestions: true,
+          questions: ["Q1"],
+          questionFacts: [""],
+          members: [
+            { instrument: "PETR4", answers: [true] },
+            { accountId: "a1", answers: [false] },
           ],
-        }),
-        0,
-        true,
-      ),
-      0,
-    );
+        },
+      ],
+    });
 
     expect(
       overlayDraft(view, draft).classes[0]?.members.map((m) => m.target_bp),

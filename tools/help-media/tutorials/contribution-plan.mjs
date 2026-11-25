@@ -5,18 +5,18 @@ const amount = (page, words) => [
   month(page, words).getByText(words("Aporte", "Contribution"), { exact: true }).first(),
   month(page, words).getByRole("textbox", { name: words("Aporte", "Contribution") }),
 ];
-const list = (page, words) => month(page, words).getByRole("table", { name: words("Lista de compras", "Shopping list") });
-// The first purchase of the list: its asset and its group, the start of a row wider than a figure.
-const purchase = (page, words) => list(page, words).getByRole("row").nth(1).getByRole("rowheader");
+const list = (page, words) => month(page, words).getByRole("list", { name: words("Comprar agora", "Buy now") });
+// The first purchase of the list: the row that opens the panel of its asset. With the panel open the
+// list narrows to a column, and the row fits in a figure.
+const purchase = (page, words) => list(page, words).getByRole("button").first();
 const ideal = (page, words) => page.getByRole("region", { name: words("Carteira frente ao ideal", "Portfolio against the target") });
 // The words of the first group: where it stands against its target and what it receives.
 const verdict = (page, words) =>
   ideal(page, words).locator("p, span").filter({ hasText: words(/ do ideal \(hoje/, / target \(today/) }).first();
-const criteria = (page, words) =>
-  page.getByRole("region", { name: words("Critérios dos ativos", "Criteria of the assets") });
-// The first group the criteria are offered for: its way in.
-const useCriteria = (page, words) =>
-  criteria(page, words).getByRole("button", { name: words(/^Usar critérios em/, /^Use criteria in/) }).first();
+const panel = (page, words) => page.getByRole("region", { name: words(/^Critérios de/, /^Criteria of/) });
+// The first criterion of an asset without one: the field that writes it.
+const newCriterion = (page, words) =>
+  panel(page, words).getByRole("textbox", { name: words("Novo critério", "New criterion") });
 const edit = (page, words) => page.getByRole("button", { name: words("Editar grupos e ideais", "Edit groups and targets") });
 
 export default {
@@ -29,6 +29,7 @@ export default {
     {
       figure: "plan-month",
       target: amount,
+      act: (page, words) => purchase(page, words).click(),
     },
     {
       figure: "plan-list",
@@ -36,7 +37,9 @@ export default {
     },
     {
       figure: "plan-criteria",
-      target: useCriteria,
+      target: newCriterion,
+      // The panel closes, and the figures after it show the page as it opens.
+      act: (page, words) => panel(page, words).getByRole("button", { name: words("Fechar", "Close") }).click(),
     },
     {
       figure: "plan-ideal",

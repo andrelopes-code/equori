@@ -30,7 +30,6 @@ interface GroupEditRowProps {
   onToggle: () => void;
   onRemove: () => void;
   onAddAsset: () => void;
-  onCriteria: () => void;
 }
 
 // A group of the draft and, below it, its assets.
@@ -45,7 +44,6 @@ export function GroupEditRow({
   onToggle,
   onRemove,
   onAddAsset,
-  onCriteria,
 }: GroupEditRowProps) {
   const panel = `group-assets-${String(index)}`;
 
@@ -111,7 +109,6 @@ export function GroupEditRow({
           editor={editor}
           memberName={memberName}
           onAddAsset={onAddAsset}
-          onCriteria={onCriteria}
         />
       )}
     </>

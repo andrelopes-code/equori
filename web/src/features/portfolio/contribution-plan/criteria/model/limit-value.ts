@@ -35,7 +35,7 @@ export function limitHolds(criterion: LimitCriterion, limit: string): boolean {
   if (limit === "") return false;
 
   const value = Number(limit);
-  const whole = criterion.unit !== "years" || Number.isInteger(value);
+  const whole = !isWhole(criterion) || Number.isInteger(value);
 
   return whole && value >= criterion.least && value <= criterion.greatest;
 }
@@ -48,6 +48,11 @@ export function limitBounds(criterion: LimitCriterion): {
   const factor = criterion.unit === "percent" ? percentBase : 1;
 
   return { min: criterion.least * factor, max: criterion.greatest * factor };
+}
+
+// A count of years and the points of an index are whole.
+export function isWhole(criterion: LimitCriterion): boolean {
+  return criterion.unit === "years" || criterion.unit === "points";
 }
 
 function round(value: number, decimals: number): number {

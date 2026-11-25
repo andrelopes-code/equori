@@ -67,8 +67,8 @@ describe("limit values", () => {
     expect(limitBounds(of("positive_years_min"))).toEqual({ min: 1, max: 5 });
   });
 
-  it("names nine criteria, each once", () => {
-    expect(new Set(limitCriteria.map((c) => c.key)).size).toBe(9);
+  it("names ten criteria, each once", () => {
+    expect(new Set(limitCriteria.map((c) => c.key)).size).toBe(10);
     expect(limitCriterion("piotroski_p1")).toBeUndefined();
     expect(limitCriterion("")).toBeUndefined();
   });

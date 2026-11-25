@@ -15,6 +15,8 @@ interface EntryOutcomeProps {
   hasAmount: boolean;
   // Whether a missing price stops the split (CN10).
   waiting: boolean;
+  // Whether a criterion holds the purchase this month (CO6).
+  held: boolean;
 }
 
 // The outcome column of a row: what it costs this month, that it receives nothing, or nothing
@@ -23,6 +25,7 @@ export function EntryOutcome({
   amount,
   hasAmount,
   waiting,
+  held,
 }: EntryOutcomeProps) {
   const t = useT();
   const fmt = useMoneyFormat();
@@ -46,7 +49,11 @@ export function EntryOutcome({
 
       {!waiting && hasAmount && !positive(amount) && (
         <Text size="sm" tone="muted">
-          {t("contributionPlan.outcomeNone")}
+          {t(
+            held
+              ? "contributionPlan.list.waits"
+              : "contributionPlan.outcomeNone",
+          )}
         </Text>
       )}
     </div>

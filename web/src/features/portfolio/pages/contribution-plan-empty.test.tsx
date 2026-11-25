@@ -14,6 +14,8 @@ const noPlan = {
   classes: [],
   outside: [],
   missing: [],
+  revision: 1,
+  holds_ignored: false,
 };
 
 // CN12: two positions of two types, 5 000 and 3 000 minor units.
@@ -37,6 +39,11 @@ const incomplete = {
       target_bp: 6000,
       questions: [],
       question_ideals: false,
+      question_facts: [],
+      question_limits: [],
+      question_effects: [],
+      question_reviews: [],
+      held: false,
       rules: [],
       matched: [],
       value: brl(0),
@@ -47,6 +54,11 @@ const incomplete = {
       target_bp: 4000,
       questions: [],
       question_ideals: false,
+      question_facts: [],
+      question_limits: [],
+      question_effects: [],
+      question_reviews: [],
+      held: false,
       rules: [],
       matched: [],
       value: brl(0),

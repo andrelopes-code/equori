@@ -570,34 +570,34 @@
     },
     "plan-month": {
       "pt": {
-        "spot": [3.33, 33.86, 29.74, 8.66]
+        "spot": [3.33, 36.57, 29.74, 8.66]
       },
       "en": {
-        "spot": [3.33, 33.86, 32.97, 8.66]
+        "spot": [3.33, 36.57, 32.97, 8.66]
       }
     },
     "plan-list": {
       "pt": {
-        "spot": [3.33, 45.03, 39.76, 9.83]
+        "spot": [4.27, 45.73, 41.46, 8.59]
       },
       "en": {
-        "spot": [3.33, 45.03, 37.09, 9.83]
+        "spot": [4.27, 45.73, 41.46, 8.59]
       }
     },
     "plan-ideal": {
       "pt": {
-        "spot": [48.91, 47.25, 33.12, 6.47]
+        "spot": [48.91, 48.82, 33.12, 6.47]
       },
       "en": {
-        "spot": [48.49, 47.25, 33.12, 6.47]
+        "spot": [48.49, 48.82, 33.12, 6.47]
       }
     },
     "plan-edit": {
       "pt": {
-        "spot": [79.74, 4.71, 17.71, 8.67]
+        "spot": [79.74, 1.5, 17.71, 8.67]
       },
       "en": {
-        "spot": [78.7, 4.71, 18.75, 8.67]
+        "spot": [78.7, 1.5, 18.75, 8.67]
       }
     },
     "portfolio-summary": {
@@ -642,10 +642,10 @@
     },
     "plan-criteria": {
       "pt": {
-        "spot": [43.65, 45.83, 12.6, 8.33]
+        "spot": [20.21, 46.54, 59.58, 7]
       },
       "en": {
-        "spot": [44.27, 45.83, 11.36, 8.33]
+        "spot": [18.54, 46.54, 62.92, 7]
       }
     }
   },
@@ -3186,16 +3186,16 @@
     "connect-bank/connect-credentials.pt.dark.png": "21ea17c42e4671f6e7541155f1cafef6e39ca07fe60874c385f677d65870d07c",
     "connect-bank/connect-settings.en.dark.png": "db2a233731932bab7019aedaf74e0db072569c592221060e139c44bf6ef770c8",
     "connect-bank/connect-settings.pt.dark.png": "9ac2a16cb3f4d99a695f72be3af81357ac74947c7c387a19b31800f4bb719611",
-    "contribution-plan/plan-criteria.en.dark.png": "2427ae59e5ae1cbacbee0c16b779dc46f260dec7219f7500baf04140cb16fea5",
-    "contribution-plan/plan-criteria.pt.dark.png": "3f508bfe222541479701f3e4ed978dd0b038708392b1dda6c48d2f08c9df9bcb",
-    "contribution-plan/plan-edit.en.dark.png": "c94a2784bccb3983943409fc1623fde461ebdcd1c27f2a1dd8114d589e6bab12",
-    "contribution-plan/plan-edit.pt.dark.png": "0438b4077ebadbeca96bd4d22401ae9b5ba47c25d39fd9eaa9d522facf4b97fe",
-    "contribution-plan/plan-ideal.en.dark.png": "eacebeefda7eebd51b0d208f6fdbbadf40e7b5680b579457ddd9791285b75641",
-    "contribution-plan/plan-ideal.pt.dark.png": "b1efddc4adb0c055250c0a963c720095b2363eceeb0f65a25e05ab0f698a1236",
-    "contribution-plan/plan-list.en.dark.png": "d3311bb3038b3dbf58820061e841bdf7c94016c590fc8a314f6cca6c92d10bfc",
-    "contribution-plan/plan-list.pt.dark.png": "439b2e839fc01039a4f5ce9a7637ef2e6ff0e1a1b0342f62c36ef1090710ef52",
-    "contribution-plan/plan-month.en.dark.png": "8ed10044910b5ffb31613770748f235e4fe1f0518aa12dff1d06fcbb7714dd4f",
-    "contribution-plan/plan-month.pt.dark.png": "81cdba2bfe37df3c22a80bfceaa62847fd0112c35b43f35c5572b8322ff5c317",
+    "contribution-plan/plan-criteria.en.dark.png": "2e9fd2b391638face4913086581291892a9fe3cf6c3a624f49f1ef3a698f68dc",
+    "contribution-plan/plan-criteria.pt.dark.png": "6ba74935a4f6e4590a4f3f54a7726aebda44f763c00824b5c8c51331d0ccdb73",
+    "contribution-plan/plan-edit.en.dark.png": "22210d8f435c1099e17e2371d328bebbefea03269fbd55768b323932c3e57708",
+    "contribution-plan/plan-edit.pt.dark.png": "c47032e6a4200f1de63ea37e38fbb992fb56d11c597ab84146c0a8b9b78343ba",
+    "contribution-plan/plan-ideal.en.dark.png": "0ff5f1b97997811bac9e2e9c5ff49e1034e0fc4b31e98a6de6211d71955453bd",
+    "contribution-plan/plan-ideal.pt.dark.png": "ea3e93d95c45272c2fc929716a29d2f158b4724555dd837c6af8e23a5d369036",
+    "contribution-plan/plan-list.en.dark.png": "168d40c6d512e9c1c53a0786177325f560dc13f6a4f290b528bf0eb05ba00ff1",
+    "contribution-plan/plan-list.pt.dark.png": "67ef9d5251e4d90963a68888f1e77c71e6a81fc94852061875b3cb1c1761bcb5",
+    "contribution-plan/plan-month.en.dark.png": "33bea80808dba3bf8faae22a00491d539729ed01b815b29adc9de18da0cf8197",
+    "contribution-plan/plan-month.pt.dark.png": "7df38e072805421aae56ad7540454bb0faa08029ac398fc60bb5677798504188",
     "correct-transaction/22129dda55be.png": "22129dda55bed994d860ce02bdb4ecb3c62232a751299e028efe36e37206d436",
     "correct-transaction/2cd9058cd61a.png": "2cd9058cd61a22c0647cc1d4d928b1ad55539da672eca677272fdd7271b55a8d",
     "correct-transaction/35d7a233d062.png": "35d7a233d06207e7171d4985a7e3f28c7823dbb80e5c4c6eb5f99ebde6d5d174",
@@ -3401,7 +3401,7 @@
     "create-budget": "d7d405d14d6e33227839f27c545e487869cf8465a8427dffb2a393a3b274a58c",
     "buy-investment": "03a118d0e63331521f1c962a19db2f5b7a20ec1fb8d78801579a3793ebccf64b",
     "reimbursement": "3bd1ffc2e3d1d48b3c92492cc4d0c3b12275cb12cdcee79637c79d460ff56a61",
-    "contribution-plan": "f638e935c512365caf3e27b9a23659688ff53ae050a6bc82fea18f76fff39b9e",
+    "contribution-plan": "f81dd2e9deb205415e79ba086e7730414ff5c3e1d33ba3d4fe511b6873e392e4",
     "portfolio": "3aa542bf7ebcf3d6f3ce00744c862ff353fa7a810c096e19998a2917f2b999ba",
     "budget-plan": "cab528ca8374c197a4fe0760b8c2f56af8f0cf1f29750f5c7eb70c8e80685617"
   }

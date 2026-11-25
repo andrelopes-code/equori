@@ -1,0 +1,69 @@
+@layer app {
+  /* The scale reads whole beside its ends. */
+  .scale {
+    display: grid;
+    gap: var(--slotted-space-3);
+    max-inline-size: 46rem;
+  }
+
+  /* The place of today and of the limit on the rail of the slider, whose thumb keeps half of its width
+     inside each end. */
+  .marks {
+    position: relative;
+    block-size: 1.25rem;
+    margin-inline: calc(var(--slotted-slider-thumb-size, 1.25rem) / 2);
+  }
+
+  .now {
+    position: absolute;
+    inset-inline-start: var(--now);
+    white-space: nowrap;
+    transform: translateX(-50%);
+  }
+
+  .ends {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--slotted-space-4);
+    white-space: nowrap;
+  }
+
+  .mini {
+    position: relative;
+    flex: 0 0 12rem;
+    block-size: 8px;
+    border-radius: var(--slotted-radius-full);
+    background: color-mix(in srgb, var(--slotted-text) 12%, transparent);
+  }
+
+  .zone {
+    display: block;
+    inline-size: var(--pct);
+    block-size: 100%;
+    border-radius: inherit;
+    background: var(--slotted-tone-accent-solid);
+  }
+
+  .today {
+    position: absolute;
+    inset-block-start: -4px;
+    inset-inline-start: var(--now);
+    inline-size: 2px;
+    block-size: 16px;
+    margin-inline-start: -1px;
+    background: var(--slotted-text);
+  }
+
+  @media (forced-colors: active) {
+    .mini {
+      border: 1px solid CanvasText;
+    }
+
+    .zone,
+    .today {
+      forced-color-adjust: none;
+      background: CanvasText;
+    }
+  }
+}

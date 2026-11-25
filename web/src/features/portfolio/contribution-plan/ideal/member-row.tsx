@@ -54,6 +54,7 @@ export function MemberRow({
         amount={member.cost ?? member.amount}
         hasAmount={hasAmount}
         waiting={waiting}
+        held={member.held === true}
       />
     </div>
   );

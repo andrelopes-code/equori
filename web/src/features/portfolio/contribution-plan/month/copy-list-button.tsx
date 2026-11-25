@@ -47,7 +47,7 @@ export function CopyListButton({ text, disabled }: CopyListButtonProps) {
 
         <Button
           size="sm"
-          variant="outline"
+          variant="ghost"
           tone="secondary"
           disabled={disabled}
           onClick={handleCopy}

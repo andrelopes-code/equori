@@ -40,7 +40,7 @@ Guide topic (`navigation-map.json`): `investments`.
 - `return-money/`: origin of the closing balance: its list, its bar (`origin-parts`) and the money figures.
 - `account-yield/`: account yield, its section, hook and measured tops.
 - `projection/`: the Projection tab (spec `docs/specs/2026-11-24-portfolio-projection-design.md`): the read and the plan hook (`use-projection.ts`), the body (`projection-body.tsx`, `projection-blocks.tsx`), `plan-section/`, `journey-block/`, `cases-block/` (the scenarios), `incomes-block/` (the other incomes), `versus-block/`, `contributions-block/`, `years-block/` (the year table and its rows), `model/` (the pure functions of the projection) and the states (`states/`).
-- `contribution-plan/`: the contribution plan: header, composer, criteria, editor, ideal, intro, model, month, outside, rules and states.
+- `contribution-plan/`: the contribution plan: header, composer, criteria (catalog, figures and the dialog of the automatic ones), editor, ideal, intro, list (the assets to buy, waiting and without a purchase), model, month, outside, panel (the criteria of the open row), rules and states.
 - `income-events/`: income events tab, table and charts.
 - `realized-results/`: realized results tab and sales table.
 - `year-totals/`: figure grid and totals table shared by the two tax year tabs.

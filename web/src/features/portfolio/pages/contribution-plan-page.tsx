@@ -5,15 +5,13 @@ import { useState } from "react";
 import { useApi } from "@/api/api-context";
 import { errorText } from "@/api/problem";
 import { accountsQuery } from "@/features/accounts";
-import { contributionPlanQuery } from "@/features/portfolio/api";
-import { CriteriaSection } from "@/features/portfolio/contribution-plan/criteria/board/criteria-section";
-import { CriteriaEntry } from "@/features/portfolio/contribution-plan/criteria/entry/criteria-entry";
-import { incompleteCriteria } from "@/features/portfolio/contribution-plan/criteria/model/criterion-state";
+import { contributionPlanQuery, planChanged } from "@/features/portfolio/api";
 import { EditSection } from "@/features/portfolio/contribution-plan/editor/edit-section";
 import { PlanHeader } from "@/features/portfolio/contribution-plan/header/plan-header";
 import { IdealSection } from "@/features/portfolio/contribution-plan/ideal/ideal-section";
 import { ContributionEmpty } from "@/features/portfolio/contribution-plan/states/contribution-empty";
 import { ContributionSaveBar } from "@/features/portfolio/contribution-plan/editor/contribution-save-bar";
+import { MonthList } from "@/features/portfolio/contribution-plan/month/month-list";
 import { MonthSection } from "@/features/portfolio/contribution-plan/month/month-section";
 import { PlanIntro } from "@/features/portfolio/contribution-plan/intro/plan-intro";
 import { LeaveDialog } from "@/features/portfolio/contribution-plan/editor/leave-dialog";
@@ -34,7 +32,6 @@ export function ContributionPlanPage() {
   const plan = useQuery(contributionPlanQuery(api));
   const accounts = useQuery(accountsQuery(api));
   const [initialPanel, setInitialPanel] = useState<number | null>(null);
-  const [board, setBoard] = useState<number | null>(null);
   const editor = usePlanEditor(plan.data);
   const guard = useLeaveGuard(editor.dirty);
   const { amount, setAmount, view, pending } = useContributionPreview(
@@ -50,24 +47,15 @@ export function ContributionPlanPage() {
       ? overlayDraft(view, editor.draft)
       : view;
   const empty = shown?.classes.length === 0 && editor.draft === undefined;
-  const boardClass = board === null ? undefined : editor.draft?.classes[board];
   const nameless = editor.draft?.classes.some((c) => c.name.trim() === "");
 
   function handleEdit() {
     setInitialPanel(null);
-    setBoard(null);
     editor.start();
   }
 
   function handleSplit(group: number) {
     setInitialPanel(group);
-    setBoard(null);
-    editor.start();
-  }
-
-  function handleCriteria(group: number) {
-    setInitialPanel(group);
-    setBoard(group);
     editor.start();
   }
 
@@ -87,7 +75,6 @@ export function ContributionPlanPage() {
           <ContributionSaveBar
             saving={editor.saving}
             disabled={!editor.dirty || nameless === true}
-            incomplete={incompleteCriteria(editor.draft.classes)}
             onDiscard={editor.discard}
             onSave={handleSave}
           />
@@ -113,32 +100,40 @@ export function ContributionPlanPage() {
           )}
 
           {editor.error !== null && (
-            <FormNotice>{errorText(editor.error, t)}</FormNotice>
+            <FormNotice>
+              {planChanged(editor.error)
+                ? t("contributionPlan.changedInEditor")
+                : errorText(editor.error, t)}
+            </FormNotice>
           )}
 
           {shown !== undefined && empty && (
             <ContributionEmpty view={shown} onStart={editor.startFrom} />
           )}
 
-          {shown !== undefined && !empty && (
+          {shown !== undefined && !empty && editor.draft !== undefined && (
             <MonthSection
               view={shown}
               amount={amount}
               pending={pending}
-              editing={editor.draft !== undefined}
-              memberName={memberName}
               onAmount={setAmount}
-              onSplit={handleSplit}
             />
           )}
 
-          {shown !== undefined && !empty && editor.draft === undefined && (
-            <CriteriaEntry
-              view={shown}
-              memberName={memberName}
-              onOpen={handleCriteria}
-            />
-          )}
+          {shown !== undefined &&
+            plan.data !== undefined &&
+            !empty &&
+            editor.draft === undefined && (
+              <MonthList
+                plan={plan.data}
+                view={shown}
+                amount={amount}
+                pending={pending}
+                memberName={memberName}
+                onAmount={setAmount}
+                onSplit={handleSplit}
+              />
+            )}
 
           {!plan.isError && !empty && editor.draft === undefined && (
             <IdealSection
@@ -148,34 +143,17 @@ export function ContributionPlanPage() {
             />
           )}
 
-          {board !== null && boardClass !== undefined && (
-            <CriteriaSection
-              index={board}
-              edit={boardClass}
-              answered={view?.classes[board]}
+          {shown !== undefined && editor.draft !== undefined && (
+            <EditSection
+              view={shown}
+              draft={editor.draft}
               editor={editor}
+              amount={amount}
               pending={pending}
+              initialPanel={initialPanel}
               memberName={memberName}
-              onBack={() => {
-                setBoard(null);
-              }}
             />
           )}
-
-          {shown !== undefined &&
-            editor.draft !== undefined &&
-            boardClass === undefined && (
-              <EditSection
-                view={shown}
-                draft={editor.draft}
-                editor={editor}
-                amount={amount}
-                pending={pending}
-                initialPanel={initialPanel}
-                memberName={memberName}
-                onCriteria={handleCriteria}
-              />
-            )}
 
           {shown !== undefined && !empty && (
             <OutsideSection

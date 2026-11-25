@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import type { components } from "@/api/schema.gen";
-import { useSaveContributionPlan } from "@/features/portfolio/api";
+import { planChanged, useSaveContributionPlan } from "@/features/portfolio/api";
 import {
   toDraft,
   toInput,
@@ -16,7 +16,6 @@ import type {
   MemberRef,
 } from "@/features/portfolio/contribution-plan/model/plan-edits";
 import * as rules from "@/features/portfolio/contribution-plan/model/rule-edits";
-import * as questions from "@/features/portfolio/contribution-plan/model/question-edits";
 
 type Plan = components["schemas"]["ContributionPlan"];
 type Money = components["schemas"]["Money"];
@@ -27,6 +26,8 @@ export type PlanEditor = ReturnType<typeof usePlanEditor>;
 // starts from the saved plan when no draft exists, so a first change opens edit mode.
 export function usePlanEditor(plan: Plan | undefined) {
   const [draft, setDraft] = useState<EditDraft | undefined>(undefined);
+  // The revision of the plan the draft started from.
+  const [read, setRead] = useState<number>();
   const save = useSaveContributionPlan();
 
   const dirty =
@@ -37,6 +38,7 @@ export function usePlanEditor(plan: Plan | undefined) {
 
   function change(next: (current: EditDraft) => EditDraft) {
     if (plan === undefined) return;
+    if (draft === undefined) setRead(plan.revision);
     setDraft((current) => next(current ?? edits.startEditing(toDraft(plan))));
   }
 
@@ -49,6 +51,7 @@ export function usePlanEditor(plan: Plan | undefined) {
       change((d) => d);
     },
     startFrom: (from: PlanDraft) => {
+      setRead(plan?.revision);
       setDraft(edits.startEditing(from));
     },
     discard: () => {
@@ -60,6 +63,10 @@ export function usePlanEditor(plan: Plan | undefined) {
       const body = {
         ...toInput(draft),
         ...(amount === undefined ? {} : { amount }),
+        // After a refusal the reader knows the plan changed and saves over it.
+        ...(read === undefined || planChanged(save.error)
+          ? {}
+          : { revision: read }),
       };
       save.mutate(body, {
         onSuccess: () => {
@@ -87,30 +94,6 @@ export function usePlanEditor(plan: Plan | undefined) {
     },
     setSplit: (index: number, on: boolean) => {
       change((d) => edits.setSplit(d, index, on));
-    },
-    setByQuestions: (index: number, on: boolean, targets?: number[]) => {
-      change((d) => questions.setByQuestions(d, index, on, targets));
-    },
-    addQuestion: (index: number) => {
-      change((d) => questions.addQuestion(d, index));
-    },
-    addFactQuestions: (
-      index: number,
-      facts: { fact: string; text: string }[],
-    ) => {
-      change((d) => questions.addFactQuestions(d, index, facts));
-    },
-    setQuestionText: (index: number, q: number, text: string) => {
-      change((d) => questions.setQuestionText(d, index, q, text));
-    },
-    setQuestionLimit: (index: number, q: number, limit: string) => {
-      change((d) => questions.setQuestionLimit(d, index, q, limit));
-    },
-    removeQuestion: (index: number, q: number) => {
-      change((d) => questions.removeQuestion(d, index, q));
-    },
-    setAnswer: (index: number, at: number, q: number, yes: boolean | null) => {
-      change((d) => questions.setAnswer(d, index, at, q, yes));
     },
     setMemberTarget: (index: number, at: number, bp: number) => {
       change((d) => edits.setMemberTarget(d, index, at, bp));

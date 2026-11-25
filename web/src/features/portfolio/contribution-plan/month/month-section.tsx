@@ -8,14 +8,13 @@ import {
 } from "@slotted/react/section";
 import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
+import type { ReactNode } from "react";
 
 import type { components } from "@/api/schema.gen";
 import { IncompleteVerdict } from "@/features/portfolio/contribution-plan/month/incomplete-verdict";
 import { MonthPlanHint } from "@/features/portfolio/contribution-plan/month/month-plan-hint";
-import { PurchaseList } from "@/features/portfolio/contribution-plan/month/purchase-list";
-import { monthVerdict } from "@/features/portfolio/contribution-plan/model/month-verdict";
 import { useScale } from "@/features/setup";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { MoneyInput } from "@/ui/money/money-input";
 
@@ -23,29 +22,26 @@ type Plan = components["schemas"]["ContributionPlan"];
 
 interface MonthSectionProps {
   view: Plan;
+  // The list of the month; nothing while the groups are edited.
+  board?: ReactNode;
+  // What the header of the section offers.
+  actions?: ReactNode;
   amount: number;
   pending: boolean;
-  // Edit mode: the card draws only its amount row.
-  editing: boolean;
-  memberName: (ref: { account_id?: string; instrument?: string }) => string;
   onAmount: (minor: number) => void;
-  // Enters edit mode with the assets of a group open.
-  onSplit: (group: number) => void;
 }
 
-// Where this month's money goes: the amount, the portfolio before and after it, the verdict
-// sentence and the purchase list (spec, Screen, This month).
+// Where this month's money goes: the amount, the portfolio before and after it and the list of the
+// assets (spec, Screen).
 export function MonthSection({
   view,
+  board,
+  actions,
   amount,
   pending,
-  editing,
-  memberName,
   onAmount,
-  onSplit,
 }: MonthSectionProps) {
   const t = useT();
-  const [tag] = useAppLocale();
   const fmt = useMoneyFormat();
   const scale = useScale();
 
@@ -59,13 +55,6 @@ export function MonthSection({
           today: money(view.total),
           after: money(view.total_after),
         });
-  const verdict = monthVerdict(view, {
-    t,
-    money,
-    list: (items) =>
-      new Intl.ListFormat(tag, { type: "conjunction" }).format(items),
-    memberName,
-  });
   const incomplete = view.status === "incomplete";
 
   return (
@@ -74,6 +63,8 @@ export function MonthSection({
         <SectionTitle>
           <SectionHeading>{t("contributionPlan.month")}</SectionHeading>
         </SectionTitle>
+
+        {actions}
       </SectionHeader>
 
       <SectionBody>
@@ -100,17 +91,15 @@ export function MonthSection({
 
           <MonthPlanHint currency={currency} money={money} onUse={onAmount} />
 
-          {!editing && incomplete && <IncompleteVerdict view={view} />}
-
-          {!editing && !incomplete && <Text>{verdict}</Text>}
-
-          {!editing && (
-            <PurchaseList
-              view={view}
-              memberName={memberName}
-              onSplit={onSplit}
-            />
+          {board !== undefined && incomplete && (
+            <IncompleteVerdict view={view} />
           )}
+
+          {board !== undefined && !incomplete && amount <= 0 && (
+            <Text>{t("contributionPlan.verdictNoAmount")}</Text>
+          )}
+
+          {board}
         </Stack>
       </SectionBody>
     </Section>

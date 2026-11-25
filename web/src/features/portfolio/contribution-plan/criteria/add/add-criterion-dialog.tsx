@@ -19,10 +19,10 @@ import { MethodHelp } from "@/features/portfolio/contribution-plan/criteria/add/
 import {
   criterionGroups,
   limitCriteria,
+  maxQuestions,
 } from "@/features/portfolio/contribution-plan/criteria/model/criteria-catalog";
 import { criterionText } from "@/features/portfolio/contribution-plan/criteria/model/criterion-text";
 import { piotroskiFacts } from "@/features/portfolio/contribution-plan/model/fact-answers";
-import { maxQuestions } from "@/features/portfolio/contribution-plan/model/question-edits";
 import { useT } from "@/i18n/i18n-provider";
 
 interface AddCriterionDialogProps {

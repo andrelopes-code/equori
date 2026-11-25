@@ -149,14 +149,15 @@ The approved mock is the contract of layout, sizes and states; this section hold
 
 ### Panel
 
+- The panel ends with its content; beside a longer list it does not stretch.
 - Head: asset, group, close. With two or more assets in the group, a choice "Só {asset}" or "Os {n} ativos".
 - Verdict: "Espera neste mês" with `forgone` and "Comprar mesmo assim"; "Liberado só neste mês" with "Voltar a esperar"; "Liberado"; "Compra normal, com aviso"; "Compra normal" with points and ideal; "Sem critério".
-- One asset: each criterion with its text at full length, the answer (Sim, Não, Não se aplica), the date, "Hora de revisar" when due, effect and reminder in one line. Pressing the chosen answer again, or "Continua valendo" beside "Hora de revisar", renews its date. An automatic criterion shows the answer, the figure and the date; the index shows its scale.
+- One asset: each criterion with its text at full length, the answer (Sim, Não, Não se aplica), the date, "Hora de revisar" when due, effect and reminder in one line. "Continua valendo" beside "Hora de revisar" renews its date and keeps the answer. An automatic criterion shows the answer, the figure and the date; the index shows its scale.
 - The group: one criterion open at a time, one row per asset with its ideal; the closed ones state the counts.
 - "Editar" opens the criterion in place: text, effect, reminder, limit, answer (with "Automático" for a fact), "Remover critério". A field saves when it loses focus or on Enter, a choice when chosen. Escape restores the field. A blank text returns to the stored one. A value out of range is marked and not sent; the rest is saved. Every removal and change of effect shows "Desfazer", which saves the plan of before.
-- "Adicionar critério": one text field and the automatic criteria that apply to an asset of the group, then "Ver todos"; with two or more assets, "Entra nos {n} ativos do grupo". Company criteria are named as not applicable when no member has a report.
+- "Adicionar critério": one text field with "Adicionar" (Enter adds too), at most 46rem wide, and the automatic criteria that apply to an asset of the group, then "Ver todos"; with two or more assets, "Entra nos {n} ativos do grupo". Company criteria are named as not applicable when no member has a report.
 - Adding the index as an admin with the feed off turns the feed on (`setMarketDataFeed`), then adds the criterion. For another member, the criterion is added and says that an administrator turns the source on in settings.
-- The limit of the index starts empty. The scale is a slider with keyboard (arrows 1, Page 10, Home, End) and a number field.
+- The limit of the index starts empty. The scale is a slider with keyboard (arrows 1, Page 10, Home, End); the field "Comprar até" sits among the settings of the criterion, where other criteria have "Limite".
 - Facts of the asset at the foot: "Lucro no ano" with "Ver demonstrações", "Ver informe", "Comparar indexadores", "Reservado para {goal}". They replace the column and the links of the purchase list.
 - A change to `weigh` on a group with typed ideals states that the criteria set the ideals from now on. Removing the last such criterion writes the derived ideals as typed.
 - A member without the `write` role reads the panel: no control, no "Editar". Privacy mode hides the amounts.

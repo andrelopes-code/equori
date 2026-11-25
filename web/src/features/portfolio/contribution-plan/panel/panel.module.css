@@ -1,0 +1,298 @@
+@layer app {
+  /* The panel ends with its content: beside a long list it does not stretch to the end of the list. */
+  .panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    align-self: start;
+    gap: var(--slotted-space-6);
+    padding: var(--slotted-space-5) var(--slotted-space-6)
+      var(--slotted-space-6);
+    border-radius: var(--slotted-radius-lg);
+    background: var(--slotted-surface-sunken);
+  }
+
+  .panelHead {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-4);
+    block-size: 2.25rem;
+    white-space: nowrap;
+  }
+
+  .panelTitle {
+    border-radius: var(--slotted-radius-sm);
+    outline: none;
+  }
+
+  .panelTitle:focus-visible {
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: 2px;
+  }
+
+  .panelGroup {
+    flex: 1 1 auto;
+    overflow: hidden;
+    min-inline-size: 0;
+    text-overflow: ellipsis;
+  }
+
+  .verdict {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--slotted-space-5);
+    white-space: nowrap;
+  }
+
+  .verdictText {
+    display: grid;
+    gap: var(--slotted-space-2);
+    min-inline-size: 0;
+  }
+
+  .conds {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .cond {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--slotted-space-4);
+    padding-block: var(--slotted-space-5);
+    border-block-start: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+  }
+
+  .shut {
+    padding-block: 0;
+  }
+
+  .condTop {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: first baseline;
+    gap: var(--slotted-space-5);
+  }
+
+  .condQuestion {
+    line-height: 1.4;
+    text-wrap: pretty;
+    overflow-wrap: anywhere;
+  }
+
+  .condAnswer {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-5);
+    min-block-size: 2.25rem;
+    white-space: nowrap;
+  }
+
+  .condMeta {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-4);
+    min-block-size: 1.25rem;
+    white-space: nowrap;
+  }
+
+  .grow {
+    flex: 1 1 auto;
+  }
+
+  .sets {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--slotted-space-3);
+  }
+
+  .set {
+    display: grid;
+    grid-template-columns: 6rem auto;
+    align-items: center;
+    justify-content: start;
+    gap: var(--slotted-space-4);
+    white-space: nowrap;
+  }
+
+  .setHint {
+    grid-column: 2;
+    padding-block-end: var(--slotted-space-3);
+  }
+
+  .editFoot {
+    display: flex;
+    align-items: center;
+  }
+
+  .shutHead {
+    display: grid;
+    grid-template-columns: 16px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--slotted-space-4);
+    inline-size: 100%;
+    min-block-size: 2.75rem;
+    padding: var(--slotted-space-3) 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .shutHead:focus-visible {
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: -2px;
+  }
+
+  /* The question is never cut: it takes the lines it needs. */
+  .shutQuestion {
+    line-height: 1.4;
+    text-wrap: pretty;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+
+  .chevron {
+    display: grid;
+    inline-size: 16px;
+    block-size: 16px;
+    color: var(--slotted-text-muted);
+  }
+
+  .answers {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--slotted-space-3);
+  }
+
+  .answer {
+    display: grid;
+    grid-template-columns: 6rem auto minmax(0, 1fr);
+    align-items: center;
+    gap: var(--slotted-space-4);
+    min-block-size: 2.25rem;
+    white-space: nowrap;
+  }
+
+  .answerName {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .answerEnd {
+    justify-self: end;
+    text-align: end;
+  }
+
+  .facts {
+    display: grid;
+    padding-block-start: var(--slotted-space-4);
+    border-block-start: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+  }
+
+  .fact {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-4);
+    block-size: 2.25rem;
+    white-space: nowrap;
+  }
+
+  .addRow {
+    padding-block-start: var(--slotted-space-4);
+    border-block-start: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+  }
+
+  .compose {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--slotted-space-5);
+    padding-block-start: var(--slotted-space-5);
+    border-block-start: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+  }
+
+  /* 46rem: a question of 200 characters on three lines, the width of the index scale. */
+  .composeField {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    max-inline-size: 46rem;
+    align-items: start;
+    gap: var(--slotted-space-4);
+  }
+
+  .picks {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .pick {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--slotted-space-4);
+    block-size: 2.75rem;
+    white-space: nowrap;
+  }
+
+  .pickMeaning {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .limit {
+    inline-size: 8rem;
+  }
+
+  /* The narrow desktop of the plan, also beside the assistant. */
+  @container slotted-page (max-width: 62rem) {
+    .panel {
+      padding-inline: var(--slotted-space-5);
+    }
+
+    .verdict {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      justify-items: start;
+    }
+
+    .set {
+      grid-template-columns: minmax(0, 1fr);
+      justify-items: start;
+    }
+
+    .setHint {
+      grid-column: 1;
+    }
+
+    .answer {
+      grid-template-columns: 4.5rem auto minmax(0, 1fr);
+      column-gap: var(--slotted-space-3);
+    }
+
+    /* What the criterion does goes under its day. */
+    .condMeta {
+      flex-wrap: wrap;
+      row-gap: 0;
+    }
+
+    .condMeta > .grow {
+      flex-basis: 100%;
+    }
+  }
+}

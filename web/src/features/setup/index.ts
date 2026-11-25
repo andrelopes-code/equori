@@ -9,6 +9,7 @@ export {
   usesQuery,
   setupKeys,
   useCreateInstitution,
+  useSetMarketDataFeed,
   useUpdateBooks,
   useCreatePayee,
 } from "@/features/setup/api";

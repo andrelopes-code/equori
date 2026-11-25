@@ -9,7 +9,7 @@ import { portfolioApi } from "@/testing/portfolio-api";
 import { renderApp } from "@/testing/render-app";
 
 // S409: PETR4 at R$ 30,01 a unit receives 33 units for R$ 990,33 out of R$ 1.000,00 and R$ 9,67
-// stay as the leftover; Tesouro is a class without member targets that holds an instrument.
+// stay as the leftover; FIIs is a class of two assets without member targets.
 const plan = {
   status: "complete",
   amount: brl(200000),
@@ -23,6 +23,11 @@ const plan = {
       target_bp: 5000,
       questions: [],
       question_ideals: false,
+      question_facts: [],
+      question_limits: [],
+      question_effects: [],
+      question_reviews: [],
+      held: false,
       rules: [],
       matched: [],
       value: brl(300000),
@@ -46,17 +51,27 @@ const plan = {
       target_bp: 5000,
       questions: [],
       question_ideals: false,
+      question_facts: [],
+      question_limits: [],
+      question_effects: [],
+      question_reviews: [],
+      held: false,
       rules: [],
       matched: [],
       value: brl(300000),
       share_bp: 5000,
       amount: brl(100000),
       cost: brl(100000),
-      members: [{ instrument: "MXRF11", value: brl(300000) }],
+      members: [
+        { instrument: "MXRF11", value: brl(150000) },
+        { instrument: "HGLG11", value: brl(150000) },
+      ],
     },
   ],
   outside: [],
   missing: [],
+  revision: 1,
+  holds_ignored: false,
 };
 
 const text = (node: Element) =>
@@ -74,7 +89,7 @@ async function open() {
     }),
   });
 
-  return screen.findByRole("table", { name: "Lista de compras" });
+  return screen.findByRole("list", { name: "Comprar agora" });
 }
 
 describe("Contribution plan, executable orders (CN17, CN18)", () => {
@@ -88,54 +103,12 @@ describe("Contribution plan, executable orders (CN17, CN18)", () => {
     const list = await open();
 
     await waitFor(() => {
-      expect(within(list).getAllByRole("row")).toHaveLength(4);
+      expect(within(list).getAllByRole("listitem").map(text)).toEqual([
+        "FIIsvalor do grupo, sem divisãoR$ 1.000,0050%",
+        "PETR4Ações Brasil≈ 33 cotas × R$ 30,01R$ 990,3350%",
+        "Sobrafica na contaR$ 9,670,5%",
+      ]);
     });
-    const [, fiis, petr4, leftover] = within(list).getAllByRole("row");
-
-    expect(text(fiis ?? list)).toContain("FIIs");
-    expect(within(fiis ?? list).getByRole("button")).toHaveTextContent(
-      "divida entre ativos para ver as cotas",
-    );
-    expect(within(fiis ?? list).getByText("R$ 1.000,00")).toBeInTheDocument();
-    expect(within(fiis ?? list).getByText("50%")).toBeInTheDocument();
-    expect(text(petr4 ?? list)).toContain("PETR4");
-    expect(within(petr4 ?? list).getByText("Ações Brasil")).toBeInTheDocument();
-    expect(text(petr4 ?? list)).toContain("≈ 33 cotas × R$ 30,01");
-    expect(within(petr4 ?? list).getByText("R$ 990,33")).toBeInTheDocument();
-    expect(within(petr4 ?? list).getByText("50%")).toBeInTheDocument();
-    expect(text(leftover ?? list)).toContain("Sobrafica na conta");
-    expect(within(leftover ?? list).getByText("R$ 9,67")).toBeInTheDocument();
-    expect(within(leftover ?? list).getByText("0,5%")).toBeInTheDocument();
-  });
-
-  it("draws the contribution as one bar named by its shares", async () => {
-    await open();
-
-    expect(
-      await screen.findByRole("img", {
-        name: "Divisão do aporte: FIIs 50%, PETR4 50% e Sobra 0,5%",
-      }),
-    ).toBeInTheDocument();
-    expect(text(document.body)).toContain("aporte R$ 2.000,00");
-  });
-
-  it("marks the segment of the row under the pointer", async () => {
-    const list = await open();
-    const user = userEvent.setup();
-    const bar = await screen.findByRole("img", { name: /Divisão do aporte/ });
-    const petr4 = within(list).getAllByRole("row")[2] ?? list;
-
-    await user.hover(petr4);
-
-    expect(bar).toHaveAttribute("data-active", "true");
-    const marked = Array.from(bar.children).map((s) =>
-      s.getAttribute("data-current"),
-    );
-    expect(marked).toEqual(["false", "true", "false"]);
-
-    await user.unhover(petr4);
-
-    expect(bar).toHaveAttribute("data-active", "false");
   });
 
   it("writes the cost of each row of the portfolio against the ideal", async () => {
@@ -162,10 +135,9 @@ describe("Contribution plan, executable orders (CN17, CN18)", () => {
 
     expect(
       within(ideal).queryByRole("button", {
-        name: "divida entre ativos para ver as cotas",
+        name: "Dividir entre os ativos",
       }),
     ).not.toBeInTheDocument();
-    expect(text(ideal)).not.toContain("divida entre ativos");
   });
 
   it.each([
@@ -173,12 +145,13 @@ describe("Contribution plan, executable orders (CN17, CN18)", () => {
     { how: "Enter", act: "{Enter}" },
     { how: "Space", act: " " },
   ])(
-    "opens the assets of the group from the purchase list action by $how",
+    "opens the assets of the group from the panel of the group by $how",
     async ({ act }) => {
       await open();
       const user = userEvent.setup();
+      await user.click(await screen.findByRole("button", { name: /^FIIs/ }));
       const action = await screen.findByRole("button", {
-        name: "divida entre ativos para ver as cotas",
+        name: "Dividir entre os ativos",
       });
 
       if (act === "{MouseLeft}") {
@@ -192,7 +165,7 @@ describe("Contribution plan, executable orders (CN17, CN18)", () => {
         await screen.findByRole("button", { name: "Salvar" }),
       ).toBeInTheDocument();
       expect(
-        screen.getByRole("button", { name: "Ativos (1)", expanded: true }),
+        screen.getByRole("button", { name: "Ativos (2)", expanded: true }),
       ).toBeInTheDocument();
       expect(
         screen.getByRole("button", { name: "Adicionar ativo" }),
@@ -210,6 +183,11 @@ const comparablePlan = {
       target_bp: 5000,
       questions: [],
       question_ideals: false,
+      question_facts: [],
+      question_limits: [],
+      question_effects: [],
+      question_reviews: [],
+      held: false,
       rules: [],
       matched: [],
       value: brl(300000),
@@ -260,7 +238,7 @@ async function openComparable(withExpected = true) {
       },
     }),
   });
-  const list = await screen.findByRole("table", { name: "Lista de compras" });
+  const list = await screen.findByRole("list", { name: "Comprar agora" });
 
   return { list, previews };
 }
@@ -270,33 +248,28 @@ describe("Contribution plan, indexer comparison (S409)", () => {
     localStorage.removeItem("equori.locale");
   });
 
-  it("offers the comparison on a row bought by value and not on a row with units", async () => {
-    const { list } = await openComparable();
+  it("offers the comparison of a row bought by value and not of a row with units", async () => {
+    await openComparable();
+    const user = userEvent.setup();
 
-    const buttons = await within(list).findAllByRole("button", {
-      name: "comparar indexadores",
-    });
-
-    expect(buttons).toHaveLength(1);
-    const rows = within(list).getAllByRole("row");
-    expect(text(rows[1] ?? list)).toContain("Reserva");
+    await user.click(await screen.findByRole("button", { name: /^Reserva/ }));
     expect(
-      within(rows[1] ?? list).getByRole("button", {
-        name: "comparar indexadores",
-      }),
+      await screen.findByRole("button", { name: "comparar indexadores" }),
     ).toBeInTheDocument();
-    expect(text(rows[2] ?? list)).toContain("PETR4");
+
+    await user.click(screen.getByRole("button", { name: /^PETR4/ }));
     expect(
-      within(rows[2] ?? list).queryByRole("button"),
+      screen.queryByRole("button", { name: "comparar indexadores" }),
     ).not.toBeInTheDocument();
   });
 
   it("opens a dialog with the amount of the row", async () => {
-    const { list } = await openComparable();
+    await openComparable();
     const user = userEvent.setup();
 
+    await user.click(await screen.findByRole("button", { name: /^Reserva/ }));
     await user.click(
-      await within(list).findByRole("button", { name: "comparar indexadores" }),
+      await screen.findByRole("button", { name: "comparar indexadores" }),
     );
 
     const dialog = await screen.findByRole("dialog", {
@@ -313,39 +286,39 @@ describe("Contribution plan, indexer comparison (S409)", () => {
     ).toBe("1.000,00");
   });
 
-  it("closes without changing the list or asking the preview again", async () => {
+  it("closes without changing the list, the panel or asking the preview again", async () => {
     const { list, previews } = await openComparable();
     const user = userEvent.setup();
-    const before = within(list)
-      .getAllByRole("row")
-      .map((r) => text(r));
-    const requests = previews.count;
 
-    await user.click(
-      await within(list).findByRole("button", { name: "comparar indexadores" }),
-    );
+    await user.click(await screen.findByRole("button", { name: /^Reserva/ }));
+    const before = within(list).getAllByRole("listitem").map(text);
+    const action = await screen.findByRole("button", {
+      name: "comparar indexadores",
+    });
+    const requests = previews.count;
+    await user.click(action);
     await screen.findByRole("dialog", { name: "Comparar indexadores" });
     await user.keyboard("{Escape}");
 
     await waitFor(() => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
+    expect(within(list).getAllByRole("listitem").map(text)).toEqual(before);
     expect(
-      within(list)
-        .getAllByRole("row")
-        .map((r) => text(r)),
-    ).toEqual(before);
+      await screen.findByRole("region", { name: "Critérios de Reserva" }),
+    ).toBeInTheDocument();
     expect(previews.count).toBe(requests);
   });
 
   it("draws no button when no index has an expected path", async () => {
-    const { list } = await openComparable(false);
+    await openComparable(false);
+    const user = userEvent.setup();
 
-    await waitFor(() => {
-      expect(within(list).getAllByRole("row")).toHaveLength(4);
-    });
+    await user.click(await screen.findByRole("button", { name: /^Reserva/ }));
+    await screen.findByRole("region", { name: "Critérios de Reserva" });
+
     expect(
-      within(list).queryByRole("button", { name: "comparar indexadores" }),
+      screen.queryByRole("button", { name: "comparar indexadores" }),
     ).not.toBeInTheDocument();
   });
 });
@@ -358,6 +331,11 @@ const fundPlan = {
       target_bp: 10000,
       questions: [],
       question_ideals: false,
+      question_facts: [],
+      question_limits: [],
+      question_effects: [],
+      question_reviews: [],
+      held: false,
       rules: [],
       matched: [],
       value: brl(300000),
@@ -427,7 +405,7 @@ async function openFunds(stored = true) {
     }),
   });
 
-  return screen.findByRole("table", { name: "Lista de compras" });
+  return screen.findByRole("list", { name: "Comprar agora" });
 }
 
 describe("Contribution plan, fund report", () => {
@@ -435,28 +413,34 @@ describe("Contribution plan, fund report", () => {
     localStorage.removeItem("equori.locale");
   });
 
-  it("offers the report on the row of a fund with a stored report only", async () => {
-    const list = await openFunds();
+  it("offers the report of a fund with a stored report only", async () => {
+    await openFunds();
+    const user = userEvent.setup();
 
-    const button = await within(list).findByRole("button", {
-      name: "ver informe",
-    });
-
+    await user.click(screen.getByRole("button", { name: /^HGLG11/ }));
     expect(
-      within(list).getAllByRole("button", { name: "ver informe" }),
-    ).toHaveLength(1);
-    expect(text(within(list).getAllByRole("row")[2] ?? list)).toContain(
-      "HGLG11",
-    );
-    expect(button.closest("tr")).toBe(within(list).getAllByRole("row")[2]);
+      await screen.findByRole("button", { name: "ver informe" }),
+    ).toBeInTheDocument();
+
+    const list = screen.getByRole("list", { name: "Comprar agora" });
+    const account = within(list)
+      .getAllByRole("button")
+      .find((b) => !text(b).startsWith("HGLG11"));
+    await user.click(account ?? list);
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("button", { name: "ver informe" }),
+      ).not.toBeInTheDocument();
+    });
   });
 
   it("opens the report in a dialog and removes the dialog on close", async () => {
-    const list = await openFunds();
+    await openFunds();
     const user = userEvent.setup();
 
+    await user.click(screen.getByRole("button", { name: /^HGLG11/ }));
     await user.click(
-      await within(list).findByRole("button", { name: "ver informe" }),
+      await screen.findByRole("button", { name: "ver informe" }),
     );
 
     const dialog = await screen.findByRole("dialog", {
@@ -473,13 +457,14 @@ describe("Contribution plan, fund report", () => {
   });
 
   it("draws no button when no code has a stored report", async () => {
-    const list = await openFunds(false);
+    await openFunds(false);
+    const user = userEvent.setup();
 
-    await waitFor(() => {
-      expect(within(list).getAllByRole("row").length).toBeGreaterThan(1);
-    });
+    await user.click(screen.getByRole("button", { name: /^HGLG11/ }));
+    await screen.findByRole("region", { name: "Critérios de HGLG11" });
+
     expect(
-      within(list).queryByRole("button", { name: "ver informe" }),
+      screen.queryByRole("button", { name: "ver informe" }),
     ).not.toBeInTheDocument();
   });
 });
@@ -494,6 +479,9 @@ const stockPlan = {
       question_facts: ["price_earnings_max", ""],
       question_limits: ["15", ""],
       question_ideals: true,
+      question_effects: [],
+      question_reviews: [],
+      held: false,
       rules: [],
       matched: [],
       value: brl(300000),
@@ -561,7 +549,7 @@ async function openStocks(stored = true) {
     }),
   });
 
-  return screen.findByRole("table", { name: "Lista de compras" });
+  return screen.findByRole("list", { name: "Comprar agora" });
 }
 
 describe("Contribution plan, company of a purchase", () => {
@@ -569,36 +557,35 @@ describe("Contribution plan, company of a purchase", () => {
     localStorage.removeItem("equori.locale");
   });
 
-  it("states the change of the profit on the row of a company, without a tone", async () => {
-    const list = await openStocks();
+  it("states the change of the profit of a company, without a tone", async () => {
+    await openStocks();
+    const user = userEvent.setup();
 
-    expect(
-      await within(list).findByRole("columnheader", { name: "Lucro no ano" }),
-    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /^WEGE3/ }));
+    expect(await screen.findByText("caiu 18%")).toBeInTheDocument();
+    expect(screen.getByText("Lucro no ano")).toBeInTheDocument();
 
-    const rows = within(list).getAllByRole("row");
-    expect(text(rows[1] ?? list)).toContain("WEGE3");
-    expect(text(rows[1] ?? list)).toContain("caiu 18%");
-    expect(text(rows[2] ?? list)).not.toContain("caiu");
-    expect(
-      within(list).getAllByRole("button", { name: "ver demonstrações" }),
-    ).toHaveLength(1);
+    await user.click(screen.getByRole("button", { name: /^BOVA11/ }));
+    expect(screen.queryByText("Lucro no ano")).not.toBeInTheDocument();
   });
 
-  it("states the points of a member of a group with criteria", async () => {
-    const list = await openStocks();
-    const rows = within(list).getAllByRole("row");
+  it("states the points and the ideal of an asset of a group with criteria", async () => {
+    await openStocks();
+    const user = userEvent.setup();
 
-    expect(text(rows[1] ?? list)).toContain("Ações · 1 de 2 critérios");
-    expect(text(rows[2] ?? list)).toContain("Ações · 0 de 2 critérios");
+    await user.click(screen.getByRole("button", { name: /^WEGE3/ }));
+    expect(
+      await screen.findByText("1 de 2 pontos · ideal 50% do grupo"),
+    ).toBeInTheDocument();
   });
 
   it("opens the statements in a dialog", async () => {
-    const list = await openStocks();
+    await openStocks();
     const user = userEvent.setup();
 
+    await user.click(screen.getByRole("button", { name: /^WEGE3/ }));
     await user.click(
-      await within(list).findByRole("button", { name: "ver demonstrações" }),
+      await screen.findByRole("button", { name: "ver demonstrações" }),
     );
 
     expect(
@@ -608,16 +595,5 @@ describe("Contribution plan, company of a purchase", () => {
     await waitFor(() => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
-  });
-
-  it("draws no column when no row is of a company with figures", async () => {
-    const list = await openStocks(false);
-
-    await waitFor(() => {
-      expect(within(list).getAllByRole("row").length).toBeGreaterThan(1);
-    });
-    expect(
-      within(list).queryByRole("columnheader", { name: "Lucro no ano" }),
-    ).not.toBeInTheDocument();
   });
 });
