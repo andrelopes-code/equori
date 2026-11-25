@@ -46,3 +46,13 @@ Below, **Return by holding** splits each year among the holdings with one method
 ## The year
 
 In [Income and sales](/portfolio/year), the **Gain or loss on sales** tab opens with the result of the year, the amount sold and the number of sales. The amount sold per month helps you check a monthly tax limit, which equori does not compute. The **Income** tab opens with what you received, the tax withheld and the gross amount, shows what came in by month and by investment, and splits the totals by type and tax treatment for your tax return. Every sale and payment is in the lists below.
+
+## The projection
+
+The **Projection** tab shows where the plan leads the portfolio, by age. It needs your birth date, which stays in the profile and in [Settings](/settings). Values are in today's money.
+
+- **Plan**: the age of the withdrawals (**Withdrawals at**), the last age (**Until age**), the **Real return** and the **Inflation**. The **Withdrawal** is an **Income a month** or a **Rate a year** of the portfolio. Values change the projection at once, and **Save plan** stores the plan with its date.
+- **Wealth journey**: the recorded value and the projection on one chart. Beside it, the amount needed at the withdrawal age, the share of the way done, the income the plan sustains and the age the income ends, if it does not last.
+- **Plan against recorded**: the recorded value beside the line of the plan, since the date the plan was saved.
+- **Planned contributions**: the monthly contribution since the start, with the changes you planned, up to 40. A contribution before the current month does not change.
+- **Year by year**: each year with the age at its end, the contributions, the return, the withdrawals, the money contributed and the value. The table opens with 12 years, and **Show the … years** opens all of them.

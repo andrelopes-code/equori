@@ -338,8 +338,9 @@ describe("Portfolio projection page", () => {
     expect(
       journey.getByRole("img", { name: "0.49% of the way" }),
     ).toBeInTheDocument();
-    expect(journey.getByText(/211,282 needed at 60/)).toBeInTheDocument();
-    expect(journey.getByText(/883,339/)).toBeInTheDocument();
+    // The approved mock writes the two amounts of the verdict in the compact form.
+    expect(journey.getByText(/211\.28K needed at 60/)).toBeInTheDocument();
+    expect(journey.getByText(/883\.34K/)).toBeInTheDocument();
     for (const key of ["Recorded", "Projection", "Contributed", "Return"])
       expect(journey.getByText(key)).toBeInTheDocument();
     expect(fact("Needed at age 60")).toMatch(/211,281\.71$/);
@@ -494,6 +495,41 @@ describe("Portfolio projection page", () => {
       }),
     ).toBeNull();
   });
+
+  it("PX10: draws twelve rows of the years and opens to all of them", async () => {
+    await renderApp("/portfolio/projection", {
+      fetch: portfolioApi(withBirth),
+    });
+    const years = within(await yearsRegion());
+
+    expect(years.getAllByRole("rowheader")).toHaveLength(12);
+    expect(
+      years.getAllByRole("columnheader").map((e) => e.textContent),
+    ).toEqual([
+      "Year",
+      "Age",
+      "Contributions",
+      "Return",
+      "Withdrawals",
+      "Contributed",
+      "Value",
+    ]);
+
+    const more = years.getByRole("button", { name: /^Show the \d+ years$/ });
+    const count = Number(/\d+/.exec(more.textContent)?.[0]);
+    await userEvent.click(more);
+
+    expect(years.getAllByRole("rowheader")).toHaveLength(count);
+    expect(count).toBeGreaterThan(12);
+
+    await userEvent.click(
+      years.getByRole("button", {
+        name: catalogEn["portfolio.projection.years.less"],
+      }),
+    );
+
+    expect(years.getAllByRole("rowheader")).toHaveLength(12);
+  });
 });
 
 async function journeyRegion() {
@@ -513,6 +549,12 @@ function fact(label: string) {
     within(journey).getByText(label).closest("div")?.querySelector("dd")
       ?.textContent ?? ""
   );
+}
+
+async function yearsRegion() {
+  return screen.findByRole("region", {
+    name: catalogEn["portfolio.projection.years"],
+  });
 }
 
 async function versusRegion() {

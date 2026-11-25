@@ -1,0 +1,60 @@
+@layer app {
+  .yearTable {
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-size: var(--slotted-font-size-sm);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .yearTable th,
+  .yearTable td {
+    block-size: 2.5rem; /* literal: fixed row size in rem, scales with the root */
+    padding: 0 var(--slotted-space-3);
+    border-block-end: 1px solid var(--slotted-border-subtle);
+    text-align: end;
+    white-space: nowrap;
+  }
+
+  .yearTable thead th {
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+    font-weight: var(--slotted-font-weight-medium);
+  }
+
+  .yearTable .yearCol,
+  .yearTable .ageCol {
+    inline-size: 5rem; /* literal: four digits and the cell padding */
+    text-align: start;
+  }
+
+  .yearTable strong {
+    font-weight: var(--slotted-font-weight-semibold);
+  }
+
+  .tableMore {
+    display: flex;
+    justify-content: center;
+    padding-block-start: var(--slotted-space-3);
+  }
+
+  /* The open table scrolls in place under its header */
+  .yearScroll {
+    max-block-size: 32.5rem; /* literal: the header and twelve rows */
+    overflow-y: auto;
+  }
+
+  .yearScroll thead th {
+    position: sticky;
+    inset-block-start: 0;
+    background: var(--slotted-section-surface, var(--slotted-surface-raised));
+  }
+
+  /* A result reads in its tone; the sign stays in the text */
+  .gain {
+    color: var(--slotted-tone-success-text);
+  }
+
+  .loss {
+    color: var(--slotted-tone-danger-text);
+  }
+}

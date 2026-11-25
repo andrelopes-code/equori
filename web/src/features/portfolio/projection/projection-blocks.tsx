@@ -3,6 +3,7 @@ import { ContributionsBlock } from "@/features/portfolio/projection/contribution
 import { JourneyBlock } from "@/features/portfolio/projection/journey-block/journey-block";
 import type { ProjectionDraft } from "@/features/portfolio/projection/model/plan-fields";
 import { VersusBlock } from "@/features/portfolio/projection/versus-block/versus-block";
+import { YearsBlock } from "@/features/portfolio/projection/years-block/years-block";
 
 interface ProjectionBlocksProps {
   draft: ProjectionDraft;
@@ -45,6 +46,13 @@ export function ProjectionBlocks({
         history={history}
         birthDate={birthDate}
         onChange={onChanges}
+      />
+
+      <YearsBlock
+        draft={draft}
+        history={history}
+        birthDate={birthDate}
+        baseline={baseline}
       />
     </>
   );
