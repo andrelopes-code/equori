@@ -2,6 +2,9 @@ package portfolio_test
 
 import (
 	"errors"
+	"maps"
+	"slices"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -240,5 +243,237 @@ func TestSchemaRejectsInvalidContributionRules(t *testing.T) {
 				t.Fatalf("want an integrity constraint violation, got %v", err)
 			}
 		})
+	}
+}
+
+// planInsert inserts a plan for a book and a member; override replaces the value of a column.
+func planInsert(books, member int64, override map[string]string) string {
+	values := map[string]string{
+		"books_id":           strconv.FormatInt(books, 10),
+		"member_id":          strconv.FormatInt(member, 10),
+		"withdrawal_age":     "60",
+		"last_age":           "95",
+		"real_return_bp":     "400",
+		"inflation_bp":       "300",
+		"withdrawal_mode":    "'income'",
+		"income":             "1000",
+		"withdrawal_rate_bp": "NULL",
+		"currency":           "'BRL'",
+		"baseline_date":      "'2026-11-01'",
+		"baseline_value":     "0",
+	}
+	maps.Copy(values, override)
+
+	columns := slices.Sorted(maps.Keys(values))
+	row := make([]string, len(columns))
+	for i, c := range columns {
+		row[i] = values[c]
+	}
+
+	return `INSERT INTO portfolio_projection_plan (` + strings.Join(columns, ", ") +
+		`) VALUES (` + strings.Join(row, ", ") + `)`
+}
+
+func TestSchemaRejectsInvalidProjectionPlans(t *testing.T) {
+	t.Parallel()
+	pool := pgtest.New(t)
+	ctx := t.Context()
+	member, user := pgtest.CreateMember(t, pool)
+	controlMember, control := pgtest.CreateMember(t, pool)
+
+	// The statements that the cases below break in one place accept the valid rows.
+	for name, override := range map[string]map[string]string{
+		"income mode": nil,
+		"rate mode": {
+			"withdrawal_mode": "'rate'", "income": "NULL", "withdrawal_rate_bp": "400",
+		},
+		"limits": {
+			"withdrawal_age": "18", "last_age": "120", "real_return_bp": "-1000", "inflation_bp": "5000",
+		},
+	} {
+		other, books := pgtest.CreateMember(t, pool)
+		if _, err := pool.Exec(ctx, planInsert(books, other, override)); err != nil {
+			t.Fatalf("valid %s: %v", name, err)
+		}
+	}
+
+	tests := map[string]map[string]string{
+		"withdrawal age 17":         {"withdrawal_age": "17"},
+		"withdrawal age 101":        {"withdrawal_age": "101"},
+		"last age 121":              {"last_age": "121"},
+		"last age equal to start":   {"last_age": "60"},
+		"last age below start":      {"last_age": "59"},
+		"real return -1001":         {"real_return_bp": "-1001"},
+		"real return 3001":          {"real_return_bp": "3001"},
+		"inflation -1":              {"inflation_bp": "-1"},
+		"inflation 5001":            {"inflation_bp": "5001"},
+		"unknown mode":              {"withdrawal_mode": "'amount'"},
+		"income mode without value": {"income": "NULL"},
+		"income mode with a rate":   {"withdrawal_rate_bp": "400"},
+		"income zero":               {"income": "0"},
+		"rate mode without value": {
+			"withdrawal_mode": "'rate'", "income": "NULL",
+		},
+		"rate mode with an income": {
+			"withdrawal_mode": "'rate'", "withdrawal_rate_bp": "400",
+		},
+		"rate zero": {
+			"withdrawal_mode": "'rate'", "income": "NULL", "withdrawal_rate_bp": "0",
+		},
+		"rate 2001": {
+			"withdrawal_mode": "'rate'", "income": "NULL", "withdrawal_rate_bp": "2001",
+		},
+		"unknown currency":    {"currency": "'ZZZ'"},
+		"missing currency":    {"currency": "NULL"},
+		"missing baseline":    {"baseline_date": "NULL"},
+		"missing base value":  {"baseline_value": "NULL"},
+		"row without a book":  {"books_id": "NULL"},
+		"book not existing":   {"books_id": "0"},
+		"row without member":  {"member_id": "NULL"},
+		"member not existing": {"member_id": "0"},
+	}
+	for name, override := range tests {
+		t.Run(name, func(t *testing.T) {
+			_, err := pool.Exec(ctx, planInsert(user, member, override))
+
+			var pgErr *pgconn.PgError
+			if !errors.As(err, &pgErr) || !strings.HasPrefix(pgErr.Code, "23") {
+				t.Fatalf("want an integrity constraint violation, got %v", err)
+			}
+		})
+	}
+
+	t.Run("second plan of one member", func(t *testing.T) {
+		if _, err := pool.Exec(ctx, planInsert(control, controlMember, nil)); err != nil {
+			t.Fatal(err)
+		}
+
+		_, err := pool.Exec(ctx, planInsert(control, controlMember, nil))
+
+		var pgErr *pgconn.PgError
+		if !errors.As(err, &pgErr) || pgErr.Code != "23505" {
+			t.Fatalf("want a unique violation, got %v", err)
+		}
+	})
+}
+
+func TestSchemaRejectsInvalidProjectionChanges(t *testing.T) {
+	t.Parallel()
+	pool := pgtest.New(t)
+	ctx := t.Context()
+	member, user := pgtest.CreateMember(t, pool)
+	stranger, _ := pgtest.CreateMember(t, pool)
+
+	if _, err := pool.Exec(ctx, planInsert(user, member, nil)); err != nil {
+		t.Fatal(err)
+	}
+
+	book, owner := strconv.FormatInt(user, 10), strconv.FormatInt(member, 10)
+	insert := `INSERT INTO portfolio_projection_change (books_id, member_id, month, amount) VALUES `
+	valid := insert + `(` + book + `, ` + owner + `, '2026-11-01', 0), (` +
+		book + `, ` + owner + `, '2026-12-01', 500)`
+	if _, err := pool.Exec(ctx, valid); err != nil {
+		t.Fatalf("valid rows: %v", err)
+	}
+
+	tests := map[string]string{
+		"month on day 2":     insert + `(` + book + `, ` + owner + `, '2027-01-02', 1)`,
+		"amount -1":          insert + `(` + book + `, ` + owner + `, '2027-01-01', -1)`,
+		"month twice":        insert + `(` + book + `, ` + owner + `, '2026-11-01', 1)`,
+		"month missing":      insert + `(` + book + `, ` + owner + `, NULL, 1)`,
+		"amount missing":     insert + `(` + book + `, ` + owner + `, '2027-01-01', NULL)`,
+		"row without a book": insert + `(NULL, ` + owner + `, '2027-01-01', 1)`,
+		"change without a plan": insert + `(` + book + `, ` + strconv.FormatInt(
+			stranger,
+			10,
+		) + `, '2027-01-01', 1)`,
+		"change of another book": insert + `(0, ` + owner + `, '2027-01-01', 1)`,
+	}
+	for name, sql := range tests {
+		t.Run(name, func(t *testing.T) {
+			_, err := pool.Exec(ctx, sql)
+
+			var pgErr *pgconn.PgError
+			if !errors.As(err, &pgErr) || !strings.HasPrefix(pgErr.Code, "23") {
+				t.Fatalf("want an integrity constraint violation, got %v", err)
+			}
+		})
+	}
+}
+
+func TestSchemaCascadesProjectionPlan(t *testing.T) {
+	t.Parallel()
+	pool := pgtest.New(t)
+	ctx := t.Context()
+	kept, keptBooks := pgtest.CreateMember(t, pool)
+	removed, removedBooks := pgtest.CreateMember(t, pool)
+
+	for _, p := range [][2]int64{{keptBooks, kept}, {removedBooks, removed}} {
+		if _, err := pool.Exec(ctx, planInsert(p[0], p[1], nil)); err != nil {
+			t.Fatal(err)
+		}
+
+		if _, err := pool.Exec(ctx, `INSERT INTO portfolio_projection_change
+			(books_id, member_id, month, amount) VALUES ($1, $2, '2026-11-01', 1)`, p[0], p[1]); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if _, err := pool.Exec(ctx, `DELETE FROM identity_member WHERE id = $1`, removed); err != nil {
+		t.Fatal(err)
+	}
+
+	for table, want := range map[string]int{
+		"portfolio_projection_plan":   1,
+		"portfolio_projection_change": 1,
+	} {
+		var got int
+		if err := pool.QueryRow(ctx, `SELECT count(*) FROM `+table).Scan(&got); err != nil {
+			t.Fatal(err)
+		}
+
+		if got != want {
+			t.Errorf("%s rows = %d, want %d", table, got, want)
+		}
+	}
+
+	if _, err := pool.Exec(ctx, `DELETE FROM portfolio_projection_plan`); err != nil {
+		t.Fatal(err)
+	}
+
+	var changes int
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM portfolio_projection_change`).
+		Scan(&changes); err != nil {
+		t.Fatal(err)
+	}
+
+	if changes != 0 {
+		t.Errorf("changes after the plan is deleted = %d, want 0", changes)
+	}
+}
+
+func TestSchemaRejectsBirthDateBefore1900(t *testing.T) {
+	t.Parallel()
+	pool := pgtest.New(t)
+	ctx := t.Context()
+	member, _ := pgtest.CreateMember(t, pool)
+
+	if _, err := pool.Exec(
+		ctx,
+		`UPDATE identity_member SET birth_date = '1900-01-01' WHERE id = $1`,
+		member,
+	); err != nil {
+		t.Fatalf("valid birth date: %v", err)
+	}
+
+	_, err := pool.Exec(
+		ctx,
+		`UPDATE identity_member SET birth_date = '1899-12-31' WHERE id = $1`,
+		member,
+	)
+
+	var pgErr *pgconn.PgError
+	if !errors.As(err, &pgErr) || pgErr.Code != "23514" {
+		t.Fatalf("want a check violation, got %v", err)
 	}
 }

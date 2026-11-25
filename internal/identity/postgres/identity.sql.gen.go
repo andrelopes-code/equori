@@ -111,7 +111,7 @@ INSERT INTO
 VALUES
     ($1, $2, $3, $4)
 RETURNING
-    id, email, password_hash, role, disabled_at, created_at, language, appearance, display_name
+    id, email, password_hash, role, disabled_at, created_at, language, appearance, display_name, birth_date
 `
 
 type CreateMemberParams struct {
@@ -139,6 +139,7 @@ func (q *Queries) CreateMember(ctx context.Context, arg CreateMemberParams) (Ide
 		&i.Language,
 		&i.Appearance,
 		&i.DisplayName,
+		&i.BirthDate,
 	)
 	return i, err
 }
@@ -352,7 +353,7 @@ func (q *Queries) GetLoginBooks(ctx context.Context, memberID int64) (int64, err
 
 const getMemberByEmail = `-- name: GetMemberByEmail :one
 SELECT
-    id, email, password_hash, role, disabled_at, created_at, language, appearance, display_name
+    id, email, password_hash, role, disabled_at, created_at, language, appearance, display_name, birth_date
 FROM
     identity_member
 WHERE
@@ -372,13 +373,14 @@ func (q *Queries) GetMemberByEmail(ctx context.Context, email string) (IdentityM
 		&i.Language,
 		&i.Appearance,
 		&i.DisplayName,
+		&i.BirthDate,
 	)
 	return i, err
 }
 
 const getMemberByID = `-- name: GetMemberByID :one
 SELECT
-    id, email, password_hash, role, disabled_at, created_at, language, appearance, display_name
+    id, email, password_hash, role, disabled_at, created_at, language, appearance, display_name, birth_date
 FROM
     identity_member
 WHERE
@@ -398,6 +400,7 @@ func (q *Queries) GetMemberByID(ctx context.Context, id int64) (IdentityMember, 
 		&i.Language,
 		&i.Appearance,
 		&i.DisplayName,
+		&i.BirthDate,
 	)
 	return i, err
 }

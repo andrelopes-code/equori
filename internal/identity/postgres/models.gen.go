@@ -42,6 +42,7 @@ type IdentityMember struct {
 	Language     string
 	Appearance   []byte
 	DisplayName  *string
+	BirthDate    *time.Time
 }
 
 type IdentityPasskey struct {
