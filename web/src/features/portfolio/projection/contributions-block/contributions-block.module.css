@@ -1,0 +1,149 @@
+@layer app {
+  /* Two columns: the list beside its plot */
+  .hero {
+    display: grid;
+    grid-template-columns: 21rem minmax(0, 1fr); /* literal: the column of figures, wide enough for the longest fact */
+    gap: var(--slotted-space-8);
+    align-items: start;
+  }
+
+  .heroSide {
+    display: grid;
+    gap: var(--slotted-space-6);
+    min-inline-size: 0;
+  }
+
+  .heroPlot {
+    min-inline-size: 0;
+  }
+
+  /* The contribution schedule: one row per change */
+  .stepList {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-block-start: 1px solid var(--slotted-border-subtle);
+  }
+
+  .stepList {
+    max-block-size: 15rem; /* literal: five rows; a longer schedule scrolls here and the add button stays in place */
+    overflow-y: auto;
+  }
+
+  .stepRow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: var(--slotted-space-3);
+    block-size: 3rem; /* literal: a row that holds a small button with its focus ring */
+    border-block-end: 1px solid var(--slotted-border-subtle);
+    font-size: var(--slotted-font-size-sm);
+    white-space: nowrap;
+  }
+
+  .stepWhen {
+    color: var(--slotted-text-muted);
+  }
+
+  .stepAmount {
+    font-weight: var(--slotted-font-weight-medium);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stepAdd {
+    margin-block-start: var(--slotted-space-4);
+  }
+
+  /* Added to the mock: the rows share the columns of the list, so a read-only row (no action)
+     keeps its amount on the line of the others */
+  .stepList {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+
+  .stepRow {
+    grid-template-columns: subgrid;
+    grid-column: 1 / -1;
+  }
+
+  /* Added to the mock: the written reason of a disabled add action */
+  .stepReason {
+    margin: var(--slotted-space-2) 0 0;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-sm);
+  }
+
+  /* A result reads in its tone; the sign and the word stay in the text */
+  .gain {
+    color: var(--slotted-tone-success-text);
+  }
+
+  .loss {
+    color: var(--slotted-tone-danger-text);
+  }
+
+  /* The dialog of one contribution change */
+  .stepForm {
+    display: grid;
+    gap: var(--slotted-space-5);
+  }
+
+  .stepEffect {
+    margin: 0;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-sm);
+  }
+
+  .stepEffect strong {
+    color: var(--slotted-text);
+    font-weight: var(--slotted-font-weight-semibold);
+  }
+
+  .stepFoot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--slotted-space-3);
+    inline-size: 100%;
+  }
+
+  .stepFootEnd {
+    display: flex;
+    gap: var(--slotted-space-3);
+  }
+
+  /* Key above the plot: the legend of the chart is off */
+  .keyList {
+    display: flex;
+    gap: var(--slotted-space-6);
+    margin: 0 0 var(--slotted-space-3);
+    padding: 0;
+    list-style: none;
+    font-size: var(--slotted-font-size-sm);
+  }
+
+  .keyList li {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-2);
+    white-space: nowrap;
+  }
+
+  .keySwatch {
+    inline-size: 0.75rem; /* literal: 10.5 px square beside 13 px text */
+    block-size: 0.75rem; /* literal: same */
+    border-radius: var(--slotted-radius-xs);
+  }
+
+  .barMark {
+    background: var(--slotted-data-1);
+  }
+
+  /* The mark repeats the stroke of its line */
+  .seriesMark {
+    display: block;
+    inline-size: 1.5rem; /* literal: fixed row or column size in rem, scales with the root */
+    block-size: 0;
+    border-block-start: 3px solid var(--slotted-data-1); /* literal: the subject's line is one step thicker */
+  }
+}

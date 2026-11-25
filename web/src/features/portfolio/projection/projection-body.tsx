@@ -59,6 +59,7 @@ export function ProjectionBody({ projection: p }: ProjectionBodyProps) {
           birthDate={p.birthDate}
           baseline={p.baseline}
           annualReal={p.annualReal}
+          onChanges={p.setChanges}
         />
       )}
     </>

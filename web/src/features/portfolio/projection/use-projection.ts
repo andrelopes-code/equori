@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { useApi } from "@/api/api-context";
+import type { components } from "@/api/schema.gen";
 import {
   projectionQuery,
   returnSeriesQuery,
@@ -56,12 +57,14 @@ export function useProjection() {
   );
 
   const [edited, setEdited] = useState<PlanFields | null>(null);
+  const [editedChanges, setEditedChanges] = useState<
+    components["schemas"]["ProjectionChange"][] | null
+  >(null);
   const [building, setBuilding] = useState(false);
 
   const fields = edited ?? (plan ? fieldsFromPlan(plan, locale) : restFields);
-  const changes = plan?.changes ?? [
-    { month: `${today.slice(0, 7)}-01`, amount: 0 },
-  ];
+  const changes = editedChanges ??
+    plan?.changes ?? [{ month: `${today.slice(0, 7)}-01`, amount: 0 }];
   const birthDate = me.data?.birth_date;
   const age = birthDate === undefined ? null : ageAt(birthDate, today);
   const draft: ProjectionDraft | null =
@@ -97,6 +100,7 @@ export function useProjection() {
       onSuccess: (saved) => {
         queryClient.setQueryData(projectionQuery(api).queryKey, saved);
         setEdited(null);
+        setEditedChanges(null);
       },
     });
   }
@@ -105,6 +109,7 @@ export function useProjection() {
     remove.mutate(undefined, {
       onSuccess: () => {
         setEdited(null);
+        setEditedChanges(null);
         setBuilding(false);
       },
     });
@@ -119,6 +124,7 @@ export function useProjection() {
     },
     fields,
     change,
+    setChanges: setEditedChanges,
     draft,
     birthDate,
     age,

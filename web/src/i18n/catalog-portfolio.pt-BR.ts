@@ -402,4 +402,36 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.projection.versus.return.value": "{rate} a.a.",
   "portfolio.projection.versus.return.short": "menos de 12 meses",
   "portfolio.projection.versus.return.plan": "plano: {rate} a.a.",
+  "portfolio.projection.contributions": "Aportes planejados",
+  "portfolio.projection.contributions.description":
+    "O passado é o aportado; a intenção vale de hoje em diante.",
+  "portfolio.projection.contributions.row.since": "desde {month}",
+  "portfolio.projection.contributions.row.from": "a partir de {month}",
+  "portfolio.projection.contributions.row.amount": "{amount} por mês",
+  "portfolio.projection.contributions.edit": "Alterar",
+  "portfolio.projection.contributions.edit.named": "Alterar aporte {when}",
+  "portfolio.projection.contributions.add": "Adicionar mudança de aporte",
+  "portfolio.projection.contributions.add.full":
+    "Um plano aceita até 40 mudanças.",
+  "portfolio.projection.contributions.dialog": "Mudança de aporte",
+  "portfolio.projection.contributions.dialog.description":
+    "O valor vale desta data até a mudança seguinte.",
+  "portfolio.projection.contributions.field.month": "A partir de",
+  "portfolio.projection.contributions.field.amount": "Aporte por mês",
+  "portfolio.projection.contributions.field.amountHint": "Em dinheiro de hoje.",
+  "portfolio.projection.contributions.error.taken":
+    "Outra mudança já ocupa este mês.",
+  "portfolio.projection.contributions.error.past":
+    "O mês não pode ser anterior ao mês atual.",
+  "portfolio.projection.contributions.effect.lead":
+    "Com esta mudança o plano chega a {value} aos {age},",
+  "portfolio.projection.contributions.effect.tail": "contra o plano sem ela.",
+  "portfolio.projection.contributions.remove": "Remover mudança",
+  "portfolio.projection.contributions.cancel": "Cancelar",
+  "portfolio.projection.contributions.save": "Salvar",
+  "portfolio.projection.contributions.plot":
+    "Aportes realizados por mês e a intenção do plano",
+  "portfolio.projection.contributions.key.recorded": "Aportado no mês",
+  "portfolio.projection.contributions.key.planned": "Intenção do plano",
+  "portfolio.projection.contributions.today": "Hoje",
 };
