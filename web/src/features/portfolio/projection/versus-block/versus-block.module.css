@@ -1,0 +1,96 @@
+@layer app {
+  .plotBox {
+    margin-block-start: var(--slotted-space-6);
+  }
+
+  /* The area between the lines, at the strength of the mock's areas */
+  .plotArea {
+    --slotted-chart-area-opacity: 0.22; /* literal: the strength of aheadArea and behindArea */
+  }
+
+  .tileRow {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--slotted-space-6);
+    margin: 0;
+  }
+
+  .shareBar {
+    inline-size: 3rem; /* literal: fixed row or column size in rem, scales with the root */
+    block-size: 4px; /* literal: a hairline meter beside 12 px text */
+    border-radius: var(--slotted-radius-full);
+    background: var(--slotted-border-subtle);
+    overflow: hidden;
+  }
+
+  .shareFill {
+    display: block;
+    block-size: 100%;
+    background: var(--slotted-tone-success-solid);
+  }
+
+  .young {
+    margin: 0;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-sm);
+  }
+
+  /* Key above the plot: the legend of the chart is off */
+  .keyList {
+    display: flex;
+    gap: var(--slotted-space-6);
+    margin: 0 0 var(--slotted-space-3);
+    padding: 0;
+    list-style: none;
+    font-size: var(--slotted-font-size-sm);
+  }
+
+  .keyList li {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-2);
+    white-space: nowrap;
+  }
+
+  .keySwatch {
+    inline-size: 0.75rem; /* literal: 10.5 px square beside 13 px text */
+    block-size: 0.75rem; /* literal: same */
+    border-radius: var(--slotted-radius-xs);
+  }
+
+  .aheadArea {
+    background: color-mix(
+      in oklab,
+      var(--slotted-tone-success-solid) 22%,
+      transparent
+    );
+  }
+
+  .behindArea {
+    background: color-mix(
+      in oklab,
+      var(--slotted-tone-danger-solid) 22%,
+      transparent
+    );
+  }
+
+  /* The mark repeats the stroke of its line: colour and dash */
+  .seriesMark {
+    display: block;
+    inline-size: 1.5rem; /* literal: fixed row or column size in rem, scales with the root */
+    block-size: 0;
+    border-block-start: 2px solid currentColor; /* literal: the stroke width of the plot's lines */
+  }
+
+  .mark-portfolio {
+    border-block-start-width: 3px; /* literal: the subject's line is one step thicker */
+    color: var(--slotted-data-1);
+  }
+
+  /* Departs from the mock (dotted): the chart draws a solid or a dashed stroke only */
+  .mark-plan {
+    color: var(--slotted-data-1);
+    border-block-start-width: 3px; /* literal: the subject's line is one step thicker */
+    border-block-start-style: dashed;
+  }
+}

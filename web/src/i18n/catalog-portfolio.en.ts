@@ -382,4 +382,24 @@ export const portfolioEn = {
   "portfolio.projection.journey.facts.needed": "Needed at age {age}",
   "portfolio.projection.journey.facts.sustained": "Income the plan sustains",
   "portfolio.projection.journey.facts.perMonth": "{amount} a month",
+  "portfolio.projection.versus": "Plan against recorded",
+  "portfolio.projection.versus.description":
+    "Since {month}, when the plan was saved. Nominal values.",
+  "portfolio.projection.versus.young":
+    "The comparison starts on {date}, the first day of the month after the plan was saved.",
+  "portfolio.projection.versus.plot":
+    "Plan and recorded portfolio value by month",
+  "portfolio.projection.versus.key.value": "Recorded",
+  "portfolio.projection.versus.key.plan": "Plan",
+  "portfolio.projection.versus.key.ahead": "Above the plan",
+  "portfolio.projection.versus.key.behind": "Below the plan",
+  "portfolio.projection.versus.today": "Against the plan today",
+  "portfolio.projection.versus.months": "Months above the plan",
+  "portfolio.projection.versus.months.value": "{above} of {total}",
+  "portfolio.projection.versus.contribution": "Average recorded contribution",
+  "portfolio.projection.versus.contribution.plan": "plan: {amount}",
+  "portfolio.projection.versus.return": "Realized real return",
+  "portfolio.projection.versus.return.value": "{rate} a year",
+  "portfolio.projection.versus.return.short": "under 12 months",
+  "portfolio.projection.versus.return.plan": "plan: {rate} a year",
 } as const;

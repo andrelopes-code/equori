@@ -383,4 +383,23 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.projection.journey.facts.needed": "Necessário aos {age}",
   "portfolio.projection.journey.facts.sustained": "Renda que o plano sustenta",
   "portfolio.projection.journey.facts.perMonth": "{amount} por mês",
+  "portfolio.projection.versus": "Plano contra realizado",
+  "portfolio.projection.versus.description":
+    "Desde {month}, quando o plano foi salvo. Valores nominais.",
+  "portfolio.projection.versus.young":
+    "A comparação começa em {date}, o primeiro dia do mês seguinte ao do plano salvo.",
+  "portfolio.projection.versus.plot": "Patrimônio do plano e realizado por mês",
+  "portfolio.projection.versus.key.value": "Realizado",
+  "portfolio.projection.versus.key.plan": "Plano",
+  "portfolio.projection.versus.key.ahead": "Acima do plano",
+  "portfolio.projection.versus.key.behind": "Abaixo do plano",
+  "portfolio.projection.versus.today": "Contra o plano hoje",
+  "portfolio.projection.versus.months": "Meses acima do plano",
+  "portfolio.projection.versus.months.value": "{above} de {total}",
+  "portfolio.projection.versus.contribution": "Aporte médio realizado",
+  "portfolio.projection.versus.contribution.plan": "plano: {amount}",
+  "portfolio.projection.versus.return": "Rentabilidade real realizada",
+  "portfolio.projection.versus.return.value": "{rate} a.a.",
+  "portfolio.projection.versus.return.short": "menos de 12 meses",
+  "portfolio.projection.versus.return.plan": "plano: {rate} a.a.",
 };

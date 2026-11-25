@@ -9,14 +9,13 @@ import { ageAt } from "@/features/portfolio/projection/model/age-at";
 import { incomeEnd } from "@/features/portfolio/projection/model/income-end";
 import { monthlyRate } from "@/features/portfolio/projection/model/monthly-rate";
 import type { ProjectionDraft } from "@/features/portfolio/projection/model/plan-fields";
-import { planLine } from "@/features/portfolio/projection/model/plan-line";
 import { project } from "@/features/portfolio/projection/model/project";
 import type {
   ProjectInput,
   ProjectionRow,
 } from "@/features/portfolio/projection/model/project";
-import { versusFigures } from "@/features/portfolio/projection/model/versus-figures";
 import type { VersusFigures } from "@/features/portfolio/projection/model/versus-figures";
+import { versusSince } from "@/features/portfolio/projection/model/versus-since";
 import { contributed } from "@/features/portfolio/results/model/wealth";
 
 type ReturnSeries = components["schemas"]["ReturnSeries"];
@@ -103,7 +102,16 @@ export function journeyFigures(input: JourneyInput): JourneyFigures {
     sustained: sustainedFor(draft, atWithdrawal, needed),
     sustains: income === null ? null : end === null,
     endAge: end === null ? null : ageAt(birthDate, `${end}-01`),
-    versus: versusSinceBaseline(input),
+    versus:
+      input.baseline === undefined
+        ? null
+        : (versusSince(
+            input.baseline,
+            draft.changes,
+            draft.realReturnBp,
+            draft.inflationBp,
+            history.points,
+          )?.figures ?? null),
   };
 }
 
@@ -140,23 +148,4 @@ function sustainedFor(
   return needed === null || needed === 0
     ? 0
     : ((withdrawal.income ?? 0) * value) / needed;
-}
-
-// PX7: the recorded points after the baseline month against the plan line of the same months.
-function versusSinceBaseline(input: JourneyInput): VersusFigures | null {
-  const { baseline, draft, history } = input;
-  if (baseline === undefined) return null;
-
-  const since = history.points.filter(
-    (p) => p.date.slice(0, 7) > baseline.date.slice(0, 7),
-  );
-  const line = planLine(
-    baseline,
-    draft.changes,
-    draft.realReturnBp,
-    draft.inflationBp,
-    since.map((p) => p.date.slice(0, 7)),
-  );
-
-  return versusFigures(since, line);
 }

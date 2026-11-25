@@ -37,6 +37,38 @@ const yearSeries = {
 
 const planName = catalogEn["portfolio.projection.plan.title"];
 
+// A plan with no return and no inflation: its line grows by the contribution alone.
+const noReturnPlan = {
+  ...projectionPlan,
+  real_return_bp: 0,
+  inflation_bp: 0,
+  changes: [{ month: "2025-11-01", amount: 100000 }],
+  baseline: { date: "2025-11-20", value: 1000000 },
+};
+
+// Two months after the baseline: 11,500.00 against a line of 11,000.00, then 11,800.00 against
+// 12,000.00; the real return is 1.13 over 1.05, in 457 days.
+const versusSeries = {
+  from: "2024-11-01",
+  to: "2026-01-31",
+  currency: "BRL",
+  opening: 1000000,
+  points: [
+    { date: "2025-12-31", value: 1150000, flows: 100000, return_bp: 1000 },
+    { date: "2026-01-31", value: 1180000, flows: 80000, return_bp: 1300 },
+  ],
+  indexes: [
+    {
+      index: "ipca",
+      period: "month",
+      points: [
+        { date: "2025-12-31", return_bp: 500 },
+        { date: "2026-01-31", return_bp: 500 },
+      ],
+    },
+  ],
+};
+
 // The plan section once its reads are done: the pending section shares its name.
 async function planRegion() {
   await waitFor(() => {
@@ -386,6 +418,84 @@ describe("Portfolio projection page", () => {
       journey.getByText("From 2025 to age 90, in nominal values."),
     ).toBeInTheDocument();
   });
+
+  it("PX7: draws the plan against the recorded value since the baseline", async () => {
+    await renderApp("/portfolio/projection", {
+      fetch: portfolioApi({
+        ...withBirth,
+        "GET /api/v1/portfolio-projection": () => json(200, noReturnPlan),
+        "GET /api/v1/reports/return/series": () => json(200, versusSeries),
+      }),
+    });
+    const region = await versusRegion();
+    const versus = within(region);
+
+    expect(
+      versus.getByText(
+        "Since Nov/2025, when the plan was saved. Nominal values.",
+      ),
+    ).toBeInTheDocument();
+    for (const key of ["Recorded", "Plan", "Above the plan", "Below the plan"])
+      expect(versus.getByText(key)).toBeInTheDocument();
+    // The line grows by 1,000.00 from 10,000.00: 12,000.00 in January, against 11,800.00 recorded.
+    expect(tile(region, "Against the plan today")).toEqual([
+      expect.stringMatching(/^\u2212.*200\.00$/),
+      expect.stringMatching(/^\u22121\.67%$/),
+    ]);
+    expect(tile(region, "Months above the plan")[0]).toBe("1 of 2");
+    expect(tile(region, "Average recorded contribution")).toEqual([
+      expect.stringMatching(/900\.00$/),
+      expect.stringMatching(/^plan: .*1,000\.00$/),
+    ]);
+    expect(tile(region, "Realized real return")).toEqual([
+      "6.04% a year",
+      "plan: 0.00% a year",
+    ]);
+  });
+
+  it("PX7: states the day the comparison starts for a plan saved today", async () => {
+    const saved = {
+      ...projectionPlan,
+      baseline: { date: "2026-10-17", value: 100000 },
+    };
+    await renderApp("/portfolio/projection", {
+      fetch: portfolioApi({
+        ...withBirth,
+        "GET /api/v1/portfolio-projection": () => json(200, saved),
+      }),
+    });
+    const versus = within(await versusRegion());
+
+    expect(
+      versus.getByText(
+        "The comparison starts on 11/01/2026, the first day of the month after the plan was saved.",
+      ),
+    ).toBeInTheDocument();
+    expect(versus.queryByText("Months above the plan")).toBeNull();
+  });
+
+  it("PX7: draws no comparison while the member has no plan", async () => {
+    await renderApp("/portfolio/projection", {
+      fetch: portfolioApi({
+        ...withBirth,
+        "GET /api/v1/portfolio-projection": () => problem(404, "not_found"),
+      }),
+    });
+
+    await screen.findByText(catalogEn["portfolio.projection.empty.title"]);
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: catalogEn["portfolio.projection.empty.build"],
+      }),
+    );
+    await planRegion();
+
+    expect(
+      screen.queryByRole("region", {
+        name: catalogEn["portfolio.projection.versus"],
+      }),
+    ).toBeNull();
+  });
 });
 
 async function journeyRegion() {
@@ -394,10 +504,31 @@ async function journeyRegion() {
   });
 }
 
-// The value of the row of a fact list that carries the label.
+// The value of the row of the journey's fact list that carries the label: the versus block
+// repeats some labels.
 function fact(label: string) {
+  const journey = screen.getByRole("region", {
+    name: catalogEn["portfolio.projection.journey"],
+  });
+
   return (
-    screen.getByText(label).closest("div")?.querySelector("dd")?.textContent ??
-    ""
+    within(journey).getByText(label).closest("div")?.querySelector("dd")
+      ?.textContent ?? ""
   );
+}
+
+async function versusRegion() {
+  return screen.findByRole("region", {
+    name: catalogEn["portfolio.projection.versus"],
+  });
+}
+
+// The texts of the value and of the note of a tile of the row.
+function tile(region: HTMLElement, label: string) {
+  const dds = within(region)
+    .getByText(label)
+    .closest("div")
+    ?.querySelectorAll("dd");
+
+  return [...(dds ?? [])].map((dd) => dd.textContent);
 }
