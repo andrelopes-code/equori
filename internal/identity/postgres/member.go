@@ -208,6 +208,7 @@ func toMember(row IdentityMember) domain.Member {
 		Role:         domain.Role(row.Role),
 		Language:     row.Language,
 		DisplayName:  deref(row.DisplayName),
+		BirthDate:    row.BirthDate,
 		Disabled:     row.DisabledAt != nil,
 	}
 }

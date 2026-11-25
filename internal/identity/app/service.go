@@ -2,11 +2,13 @@
 package app
 
 import (
+	"context"
 	"errors"
 	"runtime"
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/identity/password"
+	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
@@ -54,6 +56,7 @@ const (
 type Service struct {
 	repo            Repository
 	now             func() time.Time
+	today           func(ctx context.Context) time.Time
 	defaultTimeZone func(region string) string
 	throttle        *throttle
 	// hashSlots caps concurrent argon2id runs; each one allocates 19 MiB.
@@ -74,10 +77,16 @@ func NewService(
 	return &Service{
 		repo:            repo,
 		now:             now,
+		today:           todayFrom(now),
 		defaultTimeZone: defaultTimeZone,
 		throttle:        newThrottle(loginAttemptLimit, loginAttemptWindow),
 		hashSlots:       make(chan struct{}, runtime.NumCPU()),
 		dummyHash:       password.Hash("dummy password for timing equalization", cost),
 		cost:            cost,
 	}
+}
+
+// todayFrom reads the calendar date of now in the location of the context, as 00:00 UTC.
+func todayFrom(now func() time.Time) func(ctx context.Context) time.Time {
+	return func(ctx context.Context) time.Time { return clock.DateOf(now(), clock.Location(ctx)) }
 }

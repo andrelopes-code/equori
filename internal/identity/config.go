@@ -1,6 +1,7 @@
 package identity
 
 import (
+	"context"
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/platform/money"
@@ -16,6 +17,8 @@ type Config struct {
 	SecretKey, PreviousSecretKey string
 	// Now is the clock of sessions and second factors; nil is time.Now.
 	Now func() time.Time
+	// Today is the current date of the request as 00:00 UTC; nil reads Now.
+	Today func(ctx context.Context) time.Time
 	// PasswordCost lowers the argon2id cost of new hashes; production leaves it zero, the OWASP
 	// minimum, and the test harness sets it.
 	PasswordCost PasswordCost

@@ -37,6 +37,10 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*Module, error) {
 	)
 	svc.UseSetupHooks(app.SetupHooks{DefaultCurrency: cfg.DefaultCurrency, Done: cfg.SetupDone})
 
+	if cfg.Today != nil {
+		svc.UseToday(cfg.Today)
+	}
+
 	if cfg.SecretKey != "" {
 		var previous []byte
 		if cfg.PreviousSecretKey != "" {

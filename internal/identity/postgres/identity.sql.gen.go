@@ -415,6 +415,7 @@ SELECT
     m.created_at,
     m.language,
     m.display_name,
+    m.birth_date,
     s.books_id,
     ms.role AS book_role
 FROM
@@ -441,6 +442,7 @@ type GetMemberBySessionRow struct {
 	CreatedAt    time.Time
 	Language     string
 	DisplayName  *string
+	BirthDate    *time.Time
 	BooksID      int64
 	BookRole     string
 }
@@ -457,6 +459,7 @@ func (q *Queries) GetMemberBySession(ctx context.Context, arg GetMemberBySession
 		&i.CreatedAt,
 		&i.Language,
 		&i.DisplayName,
+		&i.BirthDate,
 		&i.BooksID,
 		&i.BookRole,
 	)
@@ -664,6 +667,24 @@ func (q *Queries) TouchMembership(ctx context.Context, arg TouchMembershipParams
 		return 0, err
 	}
 	return result.RowsAffected(), nil
+}
+
+const updateBirthDate = `-- name: UpdateBirthDate :exec
+UPDATE identity_member
+SET
+    birth_date = $2
+WHERE
+    id = $1
+`
+
+type UpdateBirthDateParams struct {
+	ID        int64
+	BirthDate *time.Time
+}
+
+func (q *Queries) UpdateBirthDate(ctx context.Context, arg UpdateBirthDateParams) error {
+	_, err := q.db.Exec(ctx, updateBirthDate, arg.ID, arg.BirthDate)
+	return err
 }
 
 const updateBooksSettings = `-- name: UpdateBooksSettings :one

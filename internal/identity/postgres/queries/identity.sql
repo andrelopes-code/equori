@@ -34,6 +34,13 @@ SET
 WHERE
     id = $1;
 
+-- name: UpdateBirthDate :exec
+UPDATE identity_member
+SET
+    birth_date = $2
+WHERE
+    id = $1;
+
 -- name: UpdateRegion :exec
 UPDATE identity_books
 SET
@@ -105,6 +112,7 @@ SELECT
     m.created_at,
     m.language,
     m.display_name,
+    m.birth_date,
     s.books_id,
     ms.role AS book_role
 FROM

@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 
@@ -47,6 +48,11 @@ func (r *Repository) Appearance(ctx context.Context, memberID int64) ([]byte, er
 
 func (r *Repository) SetAppearance(ctx context.Context, memberID int64, doc []byte) error {
 	return r.q.SetAppearance(ctx, SetAppearanceParams{ID: memberID, Appearance: doc})
+}
+
+// SetBirthDate stores the date; nil clears it.
+func (r *Repository) SetBirthDate(ctx context.Context, memberID int64, date *time.Time) error {
+	return r.q.UpdateBirthDate(ctx, UpdateBirthDateParams{ID: memberID, BirthDate: date})
 }
 
 // SetDisplayName stores the name; an empty name clears it.

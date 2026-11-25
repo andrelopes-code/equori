@@ -2,7 +2,11 @@ package httpapi
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
+	"time"
+
+	openapi_types "github.com/oapi-codegen/runtime/types"
 
 	"github.com/andrelopes-code/equori/internal/identity/app"
 	"github.com/andrelopes-code/equori/internal/identity/domain"
@@ -48,6 +52,14 @@ func (s *Server) updateCurrentUser(
 		user.DisplayName = name
 	}
 
+	if in.BirthDate.set {
+		if err := s.svc.SetBirthDate(ctx, user.ID, in.BirthDate.value); err != nil {
+			return User{}, err
+		}
+
+		user.BirthDate = in.BirthDate.value
+	}
+
 	l, err := s.svc.UpdateProfile(ctx, auth.MustBooksID(ctx), user.ID, deref(in.Language), "")
 	if err != nil {
 		return User{}, err
@@ -61,10 +73,48 @@ func toAPIUser(u domain.Member, l locale.Locale, booksID int64, role auth.BookRo
 		Id:          u.ID,
 		Email:       u.Email,
 		DisplayName: optional(u.DisplayName),
+		BirthDate:   birthDate(u.BirthDate),
 		Role:        UserRole(u.Role),
 		Language:    l.Language,
 		Region:      l.Region,
 		BooksId:     booksID,
 		BookRole:    BookRole(role),
 	}
+}
+
+func birthDate(t *time.Time) *openapi_types.Date {
+	if t == nil {
+		return nil
+	}
+
+	return &openapi_types.Date{Time: *t}
+}
+
+// birthDateChange is the birth_date of updateCurrentUser: set tells an absent field, which keeps
+// the stored value, from null, which clears it.
+type birthDateChange struct {
+	set   bool
+	value *time.Time
+}
+
+func (c *birthDateChange) UnmarshalJSON(b []byte) error {
+	c.set = true
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var raw string
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+
+	date, err := time.Parse(time.DateOnly, raw)
+	if err != nil {
+		return err
+	}
+
+	c.value = &date
+
+	return nil
 }

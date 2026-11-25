@@ -4,6 +4,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/andrelopes-code/equori/internal/identity/domain"
 	"github.com/andrelopes-code/equori/internal/identity/password"
@@ -55,6 +56,25 @@ func (s *Service) SetDisplayName(ctx context.Context, memberID int64, name strin
 	}
 
 	return name, nil
+}
+
+// UseToday replaces the source of the current date, which defaults to the clock of the service.
+func (s *Service) UseToday(f func(ctx context.Context) time.Time) { s.today = f }
+
+// SetBirthDate stores the birth date of the member; nil clears it. A date before 1900-01-01 or
+// after today returns domain.ErrBirthDateOutOfRange.
+func (s *Service) SetBirthDate(ctx context.Context, memberID int64, date *time.Time) error {
+	if date != nil {
+		if err := domain.ValidateBirthDate(*date, s.today(ctx)); err != nil {
+			return err
+		}
+	}
+
+	if err := s.repo.SetBirthDate(ctx, memberID, date); err != nil {
+		return fmt.Errorf("store birth date of member %d: %w", memberID, err)
+	}
+
+	return nil
 }
 
 // newMember validates a new member and hashes its password.

@@ -440,6 +440,10 @@ type TotpSetup struct {
 
 // UpdateUserInput defines model for UpdateUserInput.
 type UpdateUserInput struct {
+	// BirthDate A date from 1900-01-01 to today (400 invalid_request on birth_date). Absent keeps the
+	// stored value; null clears it.
+	BirthDate birthDateChange `json:"birth_date,omitempty"`
+
 	// DisplayName Trimmed; at most 60 characters, no control characters (422 validation_failed on
 	// display_name). An empty value clears it.
 	DisplayName *string `json:"display_name,omitempty"`
@@ -448,8 +452,10 @@ type UpdateUserInput struct {
 
 // User defines model for User.
 type User struct {
-	BookRole BookRole `json:"book_role"`
-	BooksId  int64    `json:"books_id"`
+	// BirthDate Absent until the member sets it.
+	BirthDate *openapi_types.Date `json:"birth_date,omitempty"`
+	BookRole  BookRole            `json:"book_role"`
+	BooksId   int64               `json:"books_id"`
 
 	// DisplayName Absent while the member has not chosen one.
 	DisplayName *string  `json:"display_name,omitempty"`

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/mail"
 	"strings"
+	"time"
 	"unicode"
 	"unicode/utf8"
 )
@@ -30,7 +31,9 @@ type Member struct {
 	Role         Role
 	Language     string
 	DisplayName  string
-	Disabled     bool
+	// BirthDate is a calendar date at 00:00 UTC; nil until the member sets it.
+	BirthDate *time.Time
+	Disabled  bool
 }
 
 // FieldError names the request field that failed validation, as in the API.
@@ -46,6 +49,9 @@ const (
 	// MaxPasswordLength bounds the argon2id input, so a login request cannot force an arbitrarily long hash.
 	MaxPasswordLength = 256
 )
+
+// ErrBirthDateOutOfRange is returned for a birth date before 1900-01-01 or after today (PJ6).
+var ErrBirthDateOutOfRange = errors.New("birth date must be from 1900-01-01 to today")
 
 var (
 	ErrInvalidEmail     = errors.New("invalid email")
@@ -82,6 +88,15 @@ func NormalizeDisplayName(s string) (string, error) {
 	}
 
 	return s, nil
+}
+
+// ValidateBirthDate accepts a date from 1900-01-01 to today, both at 00:00 UTC.
+func ValidateBirthDate(date, today time.Time) error {
+	if date.Before(time.Date(1900, time.January, 1, 0, 0, 0, 0, time.UTC)) || date.After(today) {
+		return ErrBirthDateOutOfRange
+	}
+
+	return nil
 }
 
 // DefaultBooksName is the name of a book created without one: the email cut to 80 characters (HA1).

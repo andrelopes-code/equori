@@ -766,7 +766,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Change the language or the display name of the authenticated member. */
+        /** Change the language, the display name or the birth date of the authenticated member. */
         patch: operations["updateCurrentUser"];
         trace?: never;
     };
@@ -5762,6 +5762,11 @@ export interface components {
             email: string;
             /** @description Absent while the member has not chosen one. */
             display_name?: string;
+            /**
+             * Format: date
+             * @description Absent until the member sets it.
+             */
+            birth_date?: string;
             /** @enum {string} */
             role: "admin" | "member";
             /** Format: int64 */
@@ -5777,6 +5782,12 @@ export interface components {
              *     display_name). An empty value clears it.
              */
             display_name?: string;
+            /**
+             * Format: date
+             * @description A date from 1900-01-01 to today (400 invalid_request on birth_date). Absent keeps the
+             *     stored value; null clears it.
+             */
+            birth_date?: string | null;
         };
         /** @description Appearance choices by name (scheme, accent, themes, ...); the web defines names and values. */
         Appearance: {

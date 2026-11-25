@@ -149,6 +149,13 @@ func ToProblem(err error) (problem.Details, bool) {
 	}
 
 	switch {
+	case errors.Is(err, domain.ErrBirthDateOutOfRange):
+		d := problem.New(http.StatusBadRequest, "invalid_request", err.Error())
+		d.Errors = []problem.FieldError{
+			{Field: "birth_date", Message: "must be from 1900-01-01 to today"},
+		}
+
+		return d, true
 	case errors.Is(err, errInvalidRequest):
 		return problem.New(http.StatusBadRequest, "invalid_request", "malformed request"), true
 	case errors.Is(err, app.ErrTimeZoneInvalid):

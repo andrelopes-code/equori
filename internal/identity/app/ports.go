@@ -210,6 +210,8 @@ type Repository interface {
 	Appearance(ctx context.Context, memberID int64) ([]byte, error)
 	// SetAppearance replaces the stored JSON object of the member.
 	SetAppearance(ctx context.Context, memberID int64, doc []byte) error
+	// SetBirthDate stores the birth date of the member; nil clears it.
+	SetBirthDate(ctx context.Context, memberID int64, date *time.Time) error
 	// SetDisplayName stores the name of the member; an empty name clears it.
 	SetDisplayName(ctx context.Context, memberID int64, name string) error
 	MemberByID(ctx context.Context, memberID int64) (domain.Member, error)

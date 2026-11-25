@@ -97,6 +97,7 @@ func (m *modules) addIdentity(pool *pgxpool.Pool, cfg Config, log *slog.Logger) 
 		SecretKey:         cfg.SecretKey,
 		PreviousSecretKey: cfg.PreviousSecretKey,
 		Now:               cfg.IdentityNow,
+		Today:             m.clock.Today,
 		PasswordCost:      cfg.PasswordCost,
 	}, log)
 	if err != nil {

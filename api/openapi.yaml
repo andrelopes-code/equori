@@ -1276,7 +1276,7 @@ paths:
       tags: [identity]
       operationId: updateCurrentUser
       x-book-role: read
-      summary: Change the language or the display name of the authenticated member.
+      summary: Change the language, the display name or the birth date of the authenticated member.
       requestBody:
         required: true
         content:
@@ -9904,6 +9904,10 @@ components:
         display_name:
           type: string
           description: Absent while the member has not chosen one.
+        birth_date:
+          type: string
+          format: date
+          description: Absent until the member sets it.
         role:
           type: string
           enum: [admin, member]
@@ -9930,6 +9934,15 @@ components:
           description: |
             Trimmed; at most 60 characters, no control characters (422 validation_failed on
             display_name). An empty value clears it.
+        birth_date:
+          type: string
+          format: date
+          nullable: true
+          x-go-type: birthDateChange
+          x-go-type-skip-optional-pointer: true
+          description: |
+            A date from 1900-01-01 to today (400 invalid_request on birth_date). Absent keeps the
+            stored value; null clears it.
     Appearance:
       type: object
       additionalProperties: true

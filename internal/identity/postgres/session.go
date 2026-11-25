@@ -87,6 +87,7 @@ func (r *Repository) MemberBySession(
 		CreatedAt:    row.CreatedAt,
 		Language:     row.Language,
 		DisplayName:  row.DisplayName,
+		BirthDate:    row.BirthDate,
 	})
 
 	return app.Access{Member: user, BooksID: row.BooksID, Role: auth.BookRole(row.BookRole)}, nil
