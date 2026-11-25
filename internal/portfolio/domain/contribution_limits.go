@@ -219,7 +219,7 @@ func cleanLimit(text, fact string) (string, error) {
 	rule, limited := limitCatalog[fact]
 
 	switch {
-	case !limited && text == "":
+	case text == "":
 		return "", nil
 	case !limited:
 		return "", fmt.Errorf("%w: the question takes no limit", ErrQuestionInvalid)

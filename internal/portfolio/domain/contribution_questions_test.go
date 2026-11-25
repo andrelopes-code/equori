@@ -42,6 +42,19 @@ func TestWithIdeals(t *testing.T) {
 			want:  []*int{nil, nil},
 			ideal: false,
 		},
+		"CQ2 a blank answer to an own question": {
+			class: PlanClass{
+				Name:      "Q",
+				TargetBP:  fullTargetBP,
+				Questions: []string{"Q1"},
+				Members: []PlanMember{
+					{Instrument: "AAAA3", Answers: []*bool{nil}},
+					{Instrument: "BBBB3", Answers: []*bool{nil}},
+				},
+			},
+			want:  []*int{nil, nil},
+			ideal: false,
+		},
 		"no questions keeps typed targets": {
 			class: PlanClass{
 				Name:     "Typed",
@@ -118,15 +131,6 @@ func TestWithIdealsRejects(t *testing.T) {
 				Members: []PlanMember{
 					{Instrument: "AAAA3", Answers: said(true), TargetBP: target(10000)},
 				},
-			},
-			want: ErrAnswersInvalid,
-		},
-		"CQ2 a blank answer to an own question": {
-			class: PlanClass{
-				Name:      "Q",
-				TargetBP:  fullTargetBP,
-				Questions: []string{"Q1"},
-				Members:   []PlanMember{{Instrument: "AAAA3", Answers: []*bool{nil}}},
 			},
 			want: ErrAnswersInvalid,
 		},

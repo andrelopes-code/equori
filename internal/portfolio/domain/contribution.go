@@ -49,7 +49,12 @@ type PlanClass struct {
 	// QuestionLimits holds the limit of each question, "" without one (AC11); empty in a class
 	// without questions.
 	QuestionLimits []string
-	Members        []PlanMember
+	// QuestionEffects holds the effect of each question (CO1); empty means weigh.
+	QuestionEffects []string
+	// QuestionReviews holds the reminder of each question in months, 0 for none (CO7); empty
+	// means none.
+	QuestionReviews []int
+	Members         []PlanMember
 	// Rules gather the securities of the class by their facts (GR1); empty for a class by members.
 	Rules []PlanRule
 }
@@ -68,6 +73,10 @@ type PlanMember struct {
 	// FactDetails holds what each answer of FactAnswers read (AC14).
 	FactDetails []FactDetail
 	FactsYear   *time.Time
+	// AnswerDates holds the day each answer was given (CO3); nil without one.
+	AnswerDates []*time.Time
+	// AnswerOverrides is true where the investor's answer replaces the fact's (CO3).
+	AnswerOverrides []bool
 }
 
 // Slot is one class or one member as the split reads it.

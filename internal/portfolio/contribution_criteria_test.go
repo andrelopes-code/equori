@@ -89,8 +89,6 @@ func TestS691InvalidLimits(t *testing.T) {
 	f := newQuestionFixture(t)
 
 	for name, tc := range map[string]struct{ facts, limits []string }{
-		"no limit":          {[]string{"price_earnings_max"}, nil},
-		"blank":             {[]string{"price_earnings_max"}, []string{""}},
 		"zero":              {[]string{"price_earnings_max"}, []string{"0"}},
 		"above the range":   {[]string{"price_earnings_max"}, []string{"1000.0001"}},
 		"half a year":       {[]string{"positive_years_min"}, []string{"2.5"}},

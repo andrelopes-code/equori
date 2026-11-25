@@ -35,7 +35,7 @@ func (p Plan) WithIdeals() (Plan, error) {
 // QuestionIdeals reports whether the class divides its target by questions with at least one
 // answer true (CQ5).
 func (c PlanClass) QuestionIdeals() bool {
-	return len(c.Questions) > 0 && slices.ContainsFunc(c.Members, func(m PlanMember) bool {
+	return c.Weighs() && slices.ContainsFunc(c.Members, func(m PlanMember) bool {
 		return m.TargetBP != nil
 	})
 }
@@ -77,60 +77,97 @@ func IdealsFromAnswers(yes []int) []int {
 	return out
 }
 
-// withIdeals returns the class with trimmed questions and derived member targets.
+// withIdeals returns the class with trimmed questions and, when it weighs, derived member
+// targets.
 func (c PlanClass) withIdeals() (PlanClass, error) {
 	if len(c.Questions) == 0 {
 		return c, c.checkNoAnswers()
 	}
+
+	out, err := c.cleaned()
+	if err != nil {
+		return PlanClass{}, err
+	}
+
+	if !out.Weighs() {
+		return out, nil
+	}
+
+	return out.withDerivedTargets()
+}
+
+// cleaned returns the class with every per-question list checked and complete (CQ1, CO1, CO3).
+func (c PlanClass) cleaned() (PlanClass, error) {
+	out := c
 
 	questions, err := cleanQuestions(c.Questions)
 	if err != nil {
 		return PlanClass{}, err
 	}
 
-	facts, err := cleanFacts(c.QuestionFacts, len(questions))
-	if err != nil {
-		return PlanClass{}, err
-	}
-
-	limits, err := cleanLimits(c.QuestionLimits, facts)
-	if err != nil {
-		return PlanClass{}, err
-	}
-
-	points, err := countPoints(c.Members, facts)
-	if err != nil {
-		return PlanClass{}, err
-	}
-
-	ideals := IdealsFromAnswers(idealWeights(points))
-	out := c
 	out.Questions = questions
-	out.QuestionFacts = facts
-	out.QuestionLimits = limits
-	out.Members = make([]PlanMember, len(c.Members))
 
-	for i, m := range c.Members {
-		m.Answers = slices.Clone(m.Answers)
-		m.TargetBP = nil
+	if out.QuestionFacts, err = cleanFacts(c.QuestionFacts, len(questions)); err != nil {
+		return PlanClass{}, err
+	}
 
-		if ideals != nil {
-			m.TargetBP = &ideals[i]
-		}
+	if out.QuestionLimits, err = cleanLimits(c.QuestionLimits, out.QuestionFacts); err != nil {
+		return PlanClass{}, err
+	}
 
-		out.Members[i] = m
+	if out.QuestionEffects, err = cleanEffects(c.QuestionEffects, len(questions)); err != nil {
+		return PlanClass{}, err
+	}
+
+	if out.QuestionReviews, err = cleanReviews(c.QuestionReviews, len(questions)); err != nil {
+		return PlanClass{}, err
+	}
+
+	if out.Members, err = cleanMembers(c.Members, out.QuestionFacts); err != nil {
+		return PlanClass{}, err
 	}
 
 	return out, nil
 }
 
+// withDerivedTargets sets the member targets from the points of the weighing criteria (CQ3); the
+// receiver holds members it owns.
+func (c PlanClass) withDerivedTargets() (PlanClass, error) {
+	points := make([]*int, len(c.Members))
+
+	for i, m := range c.Members {
+		if m.TargetBP != nil {
+			return PlanClass{}, fmt.Errorf(
+				"%w: a typed target in a class with a weighing criterion",
+				ErrAnswersInvalid,
+			)
+		}
+
+		points[i] = c.points(m)
+	}
+
+	ideals := IdealsFromAnswers(idealWeights(points))
+
+	for i := range c.Members {
+		if ideals != nil {
+			c.Members[i].TargetBP = &ideals[i]
+		}
+	}
+
+	return c, nil
+}
+
 func (c PlanClass) checkNoAnswers() error {
-	if len(c.QuestionFacts) > 0 || len(c.QuestionLimits) > 0 {
-		return fmt.Errorf("%w: facts or limits in a class without questions", ErrQuestionInvalid)
+	if len(c.QuestionFacts) > 0 || len(c.QuestionLimits) > 0 ||
+		len(c.QuestionEffects) > 0 || len(c.QuestionReviews) > 0 {
+		return fmt.Errorf(
+			"%w: facts, limits, effects or reminders without questions",
+			ErrQuestionInvalid,
+		)
 	}
 
 	for _, m := range c.Members {
-		if m.Answers != nil {
+		if m.Answers != nil || len(m.AnswerDates) > 0 || len(m.AnswerOverrides) > 0 {
 			return fmt.Errorf("%w: answers in a class without questions", ErrAnswersInvalid)
 		}
 	}
@@ -200,50 +237,22 @@ func cleanFacts(raw []string, questions int) ([]string, error) {
 	return slices.Clone(raw), nil
 }
 
-// countPoints returns the answers true of each member; nil for a member that lacks an answer (CQ3).
-func countPoints(members []PlanMember, facts []string) ([]*int, error) {
-	points := make([]*int, len(members))
-
-	for i, m := range members {
-		if m.TargetBP != nil {
-			return nil, fmt.Errorf(
-				"%w: a typed target in a class with questions",
-				ErrAnswersInvalid,
-			)
-		}
-
-		if len(m.Answers) != len(facts) {
-			return nil, fmt.Errorf(
-				"%w: %d answers for %d questions",
-				ErrAnswersInvalid,
-				len(m.Answers),
-				len(facts),
-			)
-		}
-
-		for q, a := range m.Answers {
-			if a == nil && facts[q] == "" {
-				return nil, fmt.Errorf("%w: no answer to question %d", ErrAnswersInvalid, q+1)
-			}
-		}
-
-		points[i] = m.points()
-	}
-
-	return points, nil
-}
-
-// points counts the effective answers true; nil when one is blank.
-func (m PlanMember) points() *int {
+// points counts the effective answers true of the counting weigh criteria (CO5); nil when a
+// question with a fact has no effective answer and no override.
+func (c PlanClass) points(m PlanMember) *int {
 	yes := 0
 
 	for q, a := range m.Answers {
+		if !c.weighs(q) {
+			continue
+		}
+
 		effective := effectiveAnswer(m, q, a)
-		if effective == nil {
+		if effective == nil && c.QuestionFacts[q] != "" && !m.AnswerOverrides[q] {
 			return nil
 		}
 
-		if *effective {
+		if effective != nil && *effective {
 			yes++
 		}
 	}
@@ -251,9 +260,13 @@ func (m PlanMember) points() *int {
 	return &yes
 }
 
-// effectiveAnswer applies FQ4: the fact answer when it is yes or no, else the stored answer, nil
-// when blank.
+// effectiveAnswer applies CO4: the override, else the fact answer when it is yes or no, else the
+// stored answer; nil when blank.
 func effectiveAnswer(m PlanMember, q int, stored *bool) *bool {
+	if q < len(m.AnswerOverrides) && m.AnswerOverrides[q] {
+		return stored
+	}
+
 	if len(m.FactAnswers) == len(m.Answers) && m.FactAnswers[q] != FactNone {
 		yes := m.FactAnswers[q] == FactYes
 

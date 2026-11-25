@@ -49,13 +49,14 @@ func (s *Service) withFacts(ctx context.Context, p domain.Plan) (domain.Plan, er
 	return out, nil
 }
 
-// withoutDerivedTargets clears the member targets of every class with questions (FQ5).
+// withoutDerivedTargets clears the member targets of every class that weighs its criteria (FQ5,
+// CO5).
 func withoutDerivedTargets(p domain.Plan) domain.Plan {
 	out := p
 	out.Classes = slices.Clone(p.Classes)
 
 	for i, c := range p.Classes {
-		if len(c.Questions) == 0 {
+		if !c.Weighs() {
 			continue
 		}
 
@@ -122,6 +123,8 @@ func setFacts(m *domain.PlanMember, c domain.PlanClass, facts *domain.CompanyFac
 
 		switch {
 		case key == "":
+		case domain.HasLimit(key) && (q >= len(c.QuestionLimits) || c.QuestionLimits[q] == ""):
+			m.FactDetails[q] = domain.FactDetail{Reason: domain.NoLimit}
 		case facts == nil:
 			m.FactDetails[q] = domain.FactDetail{Reason: domain.NoReport}
 		case domain.IsSignal(key):
