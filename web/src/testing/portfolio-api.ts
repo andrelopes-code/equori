@@ -1,3 +1,4 @@
+import type { components } from "@/api/schema.gen";
 import { fakeApi, json } from "@/testing/fake-api";
 import {
   accounts,
@@ -154,6 +155,22 @@ export const historySeries = {
   ],
 };
 
+// A saved plan: income of 5 000.00 from age 60 to 90, 4% real and 4.5% inflation a year, a
+// contribution of 1 000.00 from 2025-11 raised to 1 500.00 in 2026-06, baselined at 1 000.00.
+export const projectionPlan: components["schemas"]["ProjectionPlan"] = {
+  withdrawal_age: 60,
+  last_age: 90,
+  real_return_bp: 400,
+  inflation_bp: 450,
+  withdrawal: { mode: "income", income: 500000 },
+  changes: [
+    { month: "2025-11-01", amount: 100000 },
+    { month: "2026-06-01", amount: 150000 },
+  ],
+  currency: "BRL",
+  baseline: { date: "2025-11-20", value: 100000 },
+};
+
 type Route = Parameters<typeof fakeApi>[0][string];
 
 export function portfolioApi(routes: Record<string, Route> = {}) {
@@ -179,6 +196,10 @@ export function portfolioApi(routes: Record<string, Route> = {}) {
       json(200, { balance: brl(40000), value: brl(40000) }),
     "GET /api/v1/income-events": () =>
       json(200, { from: "2026-01-01", to: "2026-12-31", items: [] }),
+    "GET /api/v1/portfolio-projection": () => json(200, projectionPlan),
+    "PUT /api/v1/portfolio-projection": () => json(200, projectionPlan),
+    "DELETE /api/v1/portfolio-projection": () =>
+      new Response(null, { status: 204 }),
     ...routes,
   });
 }

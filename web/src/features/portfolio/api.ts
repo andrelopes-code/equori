@@ -202,3 +202,35 @@ export function fixedIncomeEventsQuery(
       ),
   });
 }
+
+// PJ5: a member without a plan answers 404, which is "no plan" and not an error.
+export function projectionQuery(api: Client<paths>) {
+  return queryOptions({
+    queryKey: ["portfolio-projection"] as const,
+    queryFn: async () => {
+      const result = await api.GET("/portfolio-projection");
+      if (result.response.status === 404) return null;
+
+      return unwrap(result);
+    },
+  });
+}
+
+export function useSaveProjection() {
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: async (body: components["schemas"]["ProjectionPlanInput"]) =>
+      unwrap(await api.PUT("/portfolio-projection", { body })),
+  });
+}
+
+export function useDeleteProjection() {
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: async () => {
+      await unwrap(await api.DELETE("/portfolio-projection"));
+    },
+  });
+}
