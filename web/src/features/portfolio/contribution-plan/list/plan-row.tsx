@@ -35,7 +35,8 @@ const flagKeys = {
 } as const satisfies Record<RowFlag, string>;
 
 // Build-own-element: an asset of the plan as one button that opens its panel. A table row is not one
-// control, and a list item of the library holds no aligned columns.
+// control, and DataList draws label-value pairs with one trailing figure; this row aligns the share
+// bar, the order, the cost and the share of the contribution across the rows.
 export function PlanRow({ row, view, base, open, onOpen }: PlanRowProps) {
   const t = useT();
   const [locale] = useAppLocale();
