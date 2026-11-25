@@ -127,6 +127,7 @@ export function useProjection() {
     currency,
     base,
     planCurrency: plan?.currency,
+    baseline: plan?.baseline,
     tooEarly: startsTooEarly(fields, age),
     save: { run: saveDraft, pending: save.isPending, error: save.error },
     remove: { run: removePlan, pending: remove.isPending },

@@ -341,4 +341,45 @@ export const portfolioEn = {
   "portfolio.projection.currency.description":
     "The plan is in {plan} and the portfolio is now valued in {base}. Delete the plan to start again in the new currency.",
   "portfolio.projection.currency.delete": "Delete plan",
+  "portfolio.projection.journey": "Wealth journey",
+  "portfolio.projection.journey.description.real":
+    "From {from} to age {last}, in today's money.",
+  "portfolio.projection.journey.description.nominal":
+    "From {from} to age {last}, in nominal values.",
+  "portfolio.projection.journey.view": "Values",
+  "portfolio.projection.journey.view.real": "Today's money",
+  "portfolio.projection.journey.view.nominal": "Nominal",
+  "portfolio.projection.journey.key.value": "Recorded",
+  "portfolio.projection.journey.key.plan": "Projection",
+  "portfolio.projection.journey.key.contributed": "Contributed",
+  "portfolio.projection.journey.key.gain": "Return",
+  "portfolio.projection.journey.plot": "Wealth journey chart",
+  "portfolio.projection.journey.axis": "{year} · age {age}",
+  "portfolio.projection.journey.today": "today",
+  "portfolio.projection.journey.withdrawals": "withdrawals · age {age}",
+  "portfolio.projection.journey.verdict.label": "Projection in today's money",
+  "portfolio.projection.journey.verdict.sustains":
+    "The plan sustains the desired income",
+  "portfolio.projection.journey.verdict.fails":
+    "The plan does not sustain the desired income",
+  "portfolio.projection.journey.verdict.reach":
+    "At age {age} the plan reaches ",
+  "portfolio.projection.journey.verdict.today": " in today's money: ",
+  "portfolio.projection.journey.verdict.todayEnd": " in today's money.",
+  "portfolio.projection.journey.verdict.share": "{share} of the amount needed",
+  "portfolio.projection.journey.verdict.forIncome":
+    " for {income} a month until age {last}.",
+  "portfolio.projection.journey.verdict.lasts":
+    ". The income of {income} a month lasts until age {end}, not until age {last}.",
+  "portfolio.projection.journey.path.label": "Where you are",
+  "portfolio.projection.journey.path.value": "{share} of the way",
+  "portfolio.projection.journey.path.today": "{amount} today",
+  "portfolio.projection.journey.path.needed": "{amount} needed at {age}",
+  "portfolio.projection.journey.facts.versus": "Against the plan today",
+  "portfolio.projection.journey.facts.versusValue": "{amount} · {share}",
+  "portfolio.projection.journey.facts.contributed": "Contributed to age {age}",
+  "portfolio.projection.journey.facts.return": "Return to age {age}",
+  "portfolio.projection.journey.facts.needed": "Needed at age {age}",
+  "portfolio.projection.journey.facts.sustained": "Income the plan sustains",
+  "portfolio.projection.journey.facts.perMonth": "{amount} a month",
 } as const;

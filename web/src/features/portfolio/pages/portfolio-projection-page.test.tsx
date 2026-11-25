@@ -285,4 +285,119 @@ describe("Portfolio projection page", () => {
       expect(bodies).toEqual([{ birth_date: "1994-03-10" }]);
     });
   });
+
+  it("PX6: states the plan that sustains the income, the way and the figures", async () => {
+    const plan = {
+      ...projectionPlan,
+      withdrawal: { mode: "income", income: 100000 },
+    };
+    await renderApp("/portfolio/projection", {
+      fetch: portfolioApi({
+        ...withBirth,
+        "GET /api/v1/portfolio-projection": () => json(200, plan),
+      }),
+    });
+    const journey = within(await journeyRegion());
+
+    expect(
+      journey.getByText(
+        catalogEn["portfolio.projection.journey.verdict.sustains"],
+      ),
+    ).toBeInTheDocument();
+    expect(journey.getByText("418% of the amount needed")).toBeInTheDocument();
+    expect(
+      journey.getByRole("img", { name: "0.49% of the way" }),
+    ).toBeInTheDocument();
+    expect(journey.getByText(/211,282 needed at 60/)).toBeInTheDocument();
+    expect(journey.getByText(/883,339/)).toBeInTheDocument();
+    for (const key of ["Recorded", "Projection", "Contributed", "Return"])
+      expect(journey.getByText(key)).toBeInTheDocument();
+    expect(fact("Needed at age 60")).toMatch(/211,281\.71$/);
+    expect(fact("Contributed to age 60")).toMatch(/493,000\.00$/);
+    expect(fact("Return to age 60")).toMatch(/^\+.*390,338\.51$/);
+    expect(fact("Income the plan sustains")).toMatch(/4,180\.86 a month$/);
+    expect(fact("Against the plan today")).toMatch(/^\u2212/);
+  });
+
+  it("PX6: states the age the income ends when the plan does not sustain it", async () => {
+    const plan = {
+      ...projectionPlan,
+      withdrawal: { mode: "income", income: 5000000 },
+    };
+    await renderApp("/portfolio/projection", {
+      fetch: portfolioApi({
+        ...withBirth,
+        "GET /api/v1/portfolio-projection": () => json(200, plan),
+      }),
+    });
+    const journey = within(await journeyRegion());
+
+    expect(
+      journey.getByText(
+        catalogEn["portfolio.projection.journey.verdict.fails"],
+      ),
+    ).toBeInTheDocument();
+    expect(
+      journey.getByText(/lasts until age 61, not until age 90\./),
+    ).toBeInTheDocument();
+  });
+
+  it("PX6: states the income of the rate and draws no amount needed", async () => {
+    const plan = {
+      ...projectionPlan,
+      withdrawal: { mode: "rate", rate_bp: 400 },
+    };
+    await renderApp("/portfolio/projection", {
+      fetch: portfolioApi({
+        ...withBirth,
+        "GET /api/v1/portfolio-projection": () => json(200, plan),
+      }),
+    });
+    const journey = within(await journeyRegion());
+
+    expect(fact("Income the plan sustains")).toMatch(/2,944\.46 a month$/);
+    expect(journey.queryByText("Needed at age 60")).toBeNull();
+    expect(journey.queryByRole("img", { name: /of the way/ })).toBeNull();
+    expect(
+      journey.queryByText(
+        catalogEn["portfolio.projection.journey.verdict.sustains"],
+      ),
+    ).toBeNull();
+    expect(
+      journey.queryByText(
+        catalogEn["portfolio.projection.journey.verdict.fails"],
+      ),
+    ).toBeNull();
+  });
+
+  it("PX6: the switch names the values the plot draws", async () => {
+    await renderApp("/portfolio/projection", {
+      fetch: portfolioApi(withBirth),
+    });
+    const journey = within(await journeyRegion());
+
+    expect(
+      journey.getByText("From 2025 to age 90, in today's money."),
+    ).toBeInTheDocument();
+
+    await userEvent.click(journey.getByRole("radio", { name: "Nominal" }));
+
+    expect(
+      journey.getByText("From 2025 to age 90, in nominal values."),
+    ).toBeInTheDocument();
+  });
 });
+
+async function journeyRegion() {
+  return screen.findByRole("region", {
+    name: catalogEn["portfolio.projection.journey"],
+  });
+}
+
+// The value of the row of a fact list that carries the label.
+function fact(label: string) {
+  return (
+    screen.getByText(label).closest("div")?.querySelector("dd")?.textContent ??
+    ""
+  );
+}

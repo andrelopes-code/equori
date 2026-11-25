@@ -57,6 +57,7 @@ export function ProjectionBody({ projection: p }: ProjectionBodyProps) {
           draft={p.draft}
           history={p.history}
           birthDate={p.birthDate}
+          baseline={p.baseline}
         />
       )}
     </>

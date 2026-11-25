@@ -342,4 +342,45 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.projection.currency.description":
     "O plano está em {plan} e a carteira passou a ser avaliada em {base}. Apague o plano para começar de novo na nova moeda.",
   "portfolio.projection.currency.delete": "Apagar plano",
+  "portfolio.projection.journey": "Jornada do patrimônio",
+  "portfolio.projection.journey.description.real":
+    "De {from} aos {last} anos, em dinheiro de hoje.",
+  "portfolio.projection.journey.description.nominal":
+    "De {from} aos {last} anos, em valores nominais.",
+  "portfolio.projection.journey.view": "Valores",
+  "portfolio.projection.journey.view.real": "Dinheiro de hoje",
+  "portfolio.projection.journey.view.nominal": "Nominal",
+  "portfolio.projection.journey.key.value": "Realizado",
+  "portfolio.projection.journey.key.plan": "Projeção",
+  "portfolio.projection.journey.key.contributed": "Aportado",
+  "portfolio.projection.journey.key.gain": "Rendimento",
+  "portfolio.projection.journey.plot": "Gráfico da jornada do patrimônio",
+  "portfolio.projection.journey.axis": "{year} · {age} anos",
+  "portfolio.projection.journey.today": "hoje",
+  "portfolio.projection.journey.withdrawals": "retiradas · {age} anos",
+  "portfolio.projection.journey.verdict.label": "Projeção em dinheiro de hoje",
+  "portfolio.projection.journey.verdict.sustains":
+    "O plano sustenta a renda desejada",
+  "portfolio.projection.journey.verdict.fails":
+    "O plano não sustenta a renda desejada",
+  "portfolio.projection.journey.verdict.reach":
+    "Aos {age} anos o plano chega a ",
+  "portfolio.projection.journey.verdict.today": " em dinheiro de hoje: ",
+  "portfolio.projection.journey.verdict.todayEnd": " em dinheiro de hoje.",
+  "portfolio.projection.journey.verdict.share": "{share} do necessário",
+  "portfolio.projection.journey.verdict.forIncome":
+    " para {income} por mês até os {last}.",
+  "portfolio.projection.journey.verdict.lasts":
+    ". A renda de {income} por mês dura até os {end} anos, não até os {last}.",
+  "portfolio.projection.journey.path.label": "Onde você está",
+  "portfolio.projection.journey.path.value": "{share} do caminho",
+  "portfolio.projection.journey.path.today": "{amount} hoje",
+  "portfolio.projection.journey.path.needed": "{amount} necessários aos {age}",
+  "portfolio.projection.journey.facts.versus": "Contra o plano hoje",
+  "portfolio.projection.journey.facts.versusValue": "{amount} · {share}",
+  "portfolio.projection.journey.facts.contributed": "Aportado até os {age}",
+  "portfolio.projection.journey.facts.return": "Rendimento até os {age}",
+  "portfolio.projection.journey.facts.needed": "Necessário aos {age}",
+  "portfolio.projection.journey.facts.sustained": "Renda que o plano sustenta",
+  "portfolio.projection.journey.facts.perMonth": "{amount} por mês",
 };
