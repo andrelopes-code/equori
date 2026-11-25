@@ -1,4 +1,15 @@
 import type { components } from "@/api/schema.gen";
+import { parseBasisPoints } from "@/features/portfolio/projection/model/parse-percent";
+import {
+  premiseRanges,
+  premisesFrom,
+} from "@/features/portfolio/projection/model/plan-premises";
+import type {
+  PremiseFields,
+  Premises,
+  PremiseRanges,
+} from "@/features/portfolio/projection/model/plan-premises";
+import { outsideRange } from "@/features/portfolio/projection/model/outside-range";
 import { numberFormatter } from "@/i18n/format";
 
 type Plan = components["schemas"]["ProjectionPlan"];
@@ -8,7 +19,7 @@ type PlanInput = components["schemas"]["ProjectionPlanInput"];
 export type WithdrawalMode = "income" | "rate";
 
 // The plan section as typed: ages and rates stay text until they validate; income is minor units.
-export interface PlanFields {
+export interface PlanFields extends PremiseFields {
   withdrawalAge: string;
   lastAge: string;
   realReturn: string;
@@ -19,7 +30,7 @@ export interface PlanFields {
 }
 
 // The fields as they validate: what every block below the plan section reads.
-export interface ProjectionDraft {
+export interface ProjectionDraft extends Premises {
   withdrawalAge: number;
   lastAge: number;
   realReturnBp: number;
@@ -38,6 +49,10 @@ export const restFields: PlanFields = {
   mode: "income",
   income: 0,
   rate: "",
+  withdrawalReturn: "",
+  cautious: "",
+  favorable: "",
+  gainTax: "",
 };
 
 export function fieldsFromPlan(plan: Plan, locale: string): PlanFields {
@@ -46,6 +61,8 @@ export function fieldsFromPlan(plan: Plan, locale: string): PlanFields {
     maximumFractionDigits: 2,
     useGrouping: false,
   });
+  const optional = (bp: number | undefined) =>
+    bp === undefined ? "" : percent.format(bp / 100);
 
   return {
     withdrawalAge: String(plan.withdrawal_age),
@@ -55,10 +72,14 @@ export function fieldsFromPlan(plan: Plan, locale: string): PlanFields {
     mode: plan.withdrawal.mode,
     income: plan.withdrawal.income ?? 0,
     rate: percent.format((plan.withdrawal.rate_bp ?? 0) / 100),
+    withdrawalReturn: optional(plan.withdrawal_return_bp),
+    cautious: optional(plan.cautious_return_bp),
+    favorable: optional(plan.favorable_return_bp),
+    gainTax: optional(plan.gain_tax_bp),
   };
 }
 
-// PJ1: null while a field is empty, not a number or outside its range.
+// PJ1, PJ7: null while a field of the plan is empty, or any field is not a number or outside its range.
 export function draftFrom(
   fields: PlanFields,
   changes: readonly Change[],
@@ -80,9 +101,11 @@ export function draftFrom(
     return null;
 
   const withdrawal = withdrawalFrom(fields, rateBp);
-  if (withdrawal === null) return null;
+  const premises = premisesFrom(fields, realReturnBp);
+  if (withdrawal === null || premises === null) return null;
 
   return {
+    ...premises,
     withdrawalAge,
     lastAge,
     realReturnBp,
@@ -99,6 +122,16 @@ export function planInput(draft: ProjectionDraft): PlanInput {
     last_age: draft.lastAge,
     real_return_bp: draft.realReturnBp,
     inflation_bp: draft.inflationBp,
+    ...(draft.withdrawalReturnBp !== undefined && {
+      withdrawal_return_bp: draft.withdrawalReturnBp,
+    }),
+    ...(draft.cautiousReturnBp !== undefined && {
+      cautious_return_bp: draft.cautiousReturnBp,
+    }),
+    ...(draft.favorableReturnBp !== undefined && {
+      favorable_return_bp: draft.favorableReturnBp,
+    }),
+    ...(draft.gainTaxBp !== undefined && { gain_tax_bp: draft.gainTaxBp }),
     withdrawal: draft.withdrawal,
     changes: draft.changes,
   };
@@ -116,44 +149,46 @@ export function startsTooEarly(
 
 // The range a typed field left, per field; a field at rest (empty) and a field in its range have
 // no entry. The section writes the range under the field, so a disabled save states its reason.
-export type FieldRanges = Partial<
-  Record<
-    "withdrawalAge" | "lastAge" | "realReturn" | "inflation" | "rate",
-    [min: number, max: number]
-  >
->;
+export type FieldRanges = PremiseRanges &
+  Partial<
+    Record<
+      "withdrawalAge" | "lastAge" | "realReturn" | "inflation" | "rate",
+      [min: number, max: number]
+    >
+  >;
 
 export function fieldRanges(fields: PlanFields): FieldRanges {
   const withdrawalAge = parseAge(fields.withdrawalAge);
   const firstLast = Math.min(Math.max(withdrawalAge ?? 18, 18), 100) + 1;
-  const ranges: FieldRanges = {};
+  const ranges: FieldRanges = premiseRanges(
+    fields,
+    parseBasisPoints(fields.realReturn),
+  );
 
-  if (outside(fields.withdrawalAge, withdrawalAge, 18, 100))
+  if (outsideRange(fields.withdrawalAge, withdrawalAge, 18, 100))
     ranges.withdrawalAge = [18, 100];
-  if (outside(fields.lastAge, parseAge(fields.lastAge), firstLast, 120))
+  if (outsideRange(fields.lastAge, parseAge(fields.lastAge), firstLast, 120))
     ranges.lastAge = [firstLast, 120];
   if (
-    outside(fields.realReturn, parseBasisPoints(fields.realReturn), -1000, 3000)
+    outsideRange(
+      fields.realReturn,
+      parseBasisPoints(fields.realReturn),
+      -1000,
+      3000,
+    )
   )
     ranges.realReturn = [-10, 30];
-  if (outside(fields.inflation, parseBasisPoints(fields.inflation), 0, 5000))
+  if (
+    outsideRange(fields.inflation, parseBasisPoints(fields.inflation), 0, 5000)
+  )
     ranges.inflation = [0, 50];
   if (
     fields.mode === "rate" &&
-    outside(fields.rate, parseBasisPoints(fields.rate), 1, 2000)
+    outsideRange(fields.rate, parseBasisPoints(fields.rate), 1, 2000)
   )
     ranges.rate = [0.01, 20];
 
   return ranges;
-}
-
-function outside(
-  text: string,
-  value: number | null,
-  min: number,
-  max: number,
-): boolean {
-  return text.trim() !== "" && (value === null || value < min || value > max);
 }
 
 function withdrawalFrom(
@@ -170,13 +205,4 @@ function withdrawalFrom(
 
 function parseAge(text: string): number | null {
   return /^\d{1,3}$/.test(text.trim()) ? Number(text) : null;
-}
-
-// A percent typed with a comma or a dot, in basis points.
-function parseBasisPoints(text: string): number | null {
-  const dotted = text.trim().replace("\u2212", "-").replace(",", ".");
-
-  return /^-?\d+(\.\d+)?$/.test(dotted)
-    ? Math.round(Number(dotted) * 100)
-    : null;
 }

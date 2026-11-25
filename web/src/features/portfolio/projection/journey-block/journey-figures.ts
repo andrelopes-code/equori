@@ -1,19 +1,9 @@
 import type { components } from "@/api/schema.gen";
 import { journeyMonths } from "@/features/portfolio/projection/journey-block/journey-months";
-import {
-  amountNeeded,
-  sustainedIncome,
-  wayShare,
-} from "@/features/portfolio/projection/model/amount-needed";
-import { ageAt } from "@/features/portfolio/projection/model/age-at";
-import { incomeEnd } from "@/features/portfolio/projection/model/income-end";
-import { monthlyRate } from "@/features/portfolio/projection/model/monthly-rate";
+import { wayShare } from "@/features/portfolio/projection/model/amount-needed";
+import { planCase } from "@/features/portfolio/projection/model/plan-case";
+import type { PlanCase } from "@/features/portfolio/projection/model/plan-case";
 import type { ProjectionDraft } from "@/features/portfolio/projection/model/plan-fields";
-import { project } from "@/features/portfolio/projection/model/project";
-import type {
-  ProjectInput,
-  ProjectionRow,
-} from "@/features/portfolio/projection/model/project";
 import { realHistory } from "@/features/portfolio/projection/model/real-history";
 import type { VersusFigures } from "@/features/portfolio/projection/model/versus-figures";
 import { versusPath } from "@/features/portfolio/projection/model/versus-path";
@@ -29,31 +19,31 @@ export interface JourneyInput {
   baseline: components["schemas"]["ProjectionBaseline"] | undefined;
 }
 
+export type CaseKind = "cautious" | "favorable";
+
+// PX15: the plan with the return of a typed case.
+export interface JourneyCase extends PlanCase {
+  kind: CaseKind;
+  returnBp: number;
+}
+
 // Amounts in minor units of the plan currency, in today's money.
-export interface JourneyFigures {
-  rows: ProjectionRow[];
+export interface JourneyFigures extends PlanCase {
   withdrawalFrom: string;
   withdrawalAge: number;
   lastAge: number;
   today: number;
-  atWithdrawal: number;
   // The money contributed up to the withdrawal age, and the return over it.
   contributed: number;
   gain: number;
-  // Income mode only: the amount needed, the share of it the plan reaches and the share of the way.
-  needed: number | null;
-  covered: number | null;
   way: number | null;
   income: number | null;
-  sustained: number;
-  // Income mode only: whether the value lasts to the last age, and the age it ends when not.
-  sustains: boolean | null;
-  endAge: number | null;
   versus: VersusFigures | null;
+  cases: JourneyCase[];
 }
 
-// PX4 to PX7: the projection of the draft from today's recorded value and the figures the side of
-// the journey states.
+// PX4 to PX7, PX13 to PX15: the projection of the draft from today's recorded value, the figures the
+// side of the journey states and the typed cases.
 export function journeyFigures(input: JourneyInput): JourneyFigures {
   const { draft, history, birthDate } = input;
   const { months, withdrawalFrom } = journeyMonths(
@@ -63,47 +53,32 @@ export function journeyFigures(input: JourneyInput): JourneyFigures {
     draft.lastAge,
   );
   const today = history.points.at(-1)?.value ?? history.opening;
-  const rate = monthlyRate(draft.realReturnBp);
-  const rows = projectRows(
-    {
-      start: today,
-      monthlyRate: rate,
-      months,
-      changes: draft.changes,
-      withdrawalFrom,
-    },
-    draft.withdrawal,
-  );
-  const before = rows.filter((r) => r.month < withdrawalFrom);
-  const atWithdrawal = before.at(-1)?.value ?? today;
-  const past = realHistory(history) ?? history;
+  const caseInput = {
+    draft,
+    start: today,
+    basis: contributedOf(history),
+    months,
+    withdrawalFrom,
+    birthDate,
+  };
+  const plan = planCase(caseInput, draft.realReturnBp);
   const total =
-    (contributed(past.opening, past.points).at(-1) ?? past.opening) +
-    before.reduce((sum, r) => sum + r.contribution, 0);
-  const income =
-    draft.withdrawal.mode === "income" ? (draft.withdrawal.income ?? 0) : null;
-  const needed =
-    income === null
-      ? null
-      : amountNeeded(income, (draft.lastAge - draft.withdrawalAge) * 12, rate);
-  const end = income === null ? null : incomeEnd(rows);
+    contributedOf(realHistory(history) ?? history) +
+    plan.rows.reduce((sum, r) => sum + r.contribution, 0);
 
   return {
-    rows,
+    ...plan,
     withdrawalFrom,
     withdrawalAge: draft.withdrawalAge,
     lastAge: draft.lastAge,
     today,
-    atWithdrawal,
     contributed: total,
-    gain: atWithdrawal - total,
-    needed,
-    covered: needed === null || needed === 0 ? null : atWithdrawal / needed,
-    way: wayShare(today, needed),
-    income,
-    sustained: sustainedFor(draft, atWithdrawal, needed),
-    sustains: income === null ? null : end === null,
-    endAge: end === null ? null : ageAt(birthDate, `${end}-01`),
+    gain: plan.atWithdrawal - total,
+    way: wayShare(today, plan.needed),
+    income:
+      draft.withdrawal.mode === "income"
+        ? (draft.withdrawal.income ?? 0)
+        : null,
     versus:
       input.baseline === undefined
         ? null
@@ -114,40 +89,24 @@ export function journeyFigures(input: JourneyInput): JourneyFigures {
             draft.inflationBp,
             history.points,
           )?.figures ?? null),
+    cases: typedCases(draft).map(({ kind, returnBp }) => ({
+      kind,
+      returnBp,
+      ...planCase(caseInput, returnBp),
+    })),
   };
 }
 
-// Rate mode withdraws what the value at the withdrawal age sustains (PX5), so it runs twice.
-function projectRows(
-  base: Omit<ProjectInput, "income">,
-  withdrawal: ProjectionDraft["withdrawal"],
-): ProjectionRow[] {
-  if (withdrawal.mode === "income")
-    return project({ ...base, income: withdrawal.income ?? 0 });
-
-  const saving = project({ ...base, income: 0 });
-  const value =
-    saving.filter((r) => r.month < base.withdrawalFrom).at(-1)?.value ??
-    base.start;
-
-  return project({
-    ...base,
-    income: sustainedIncome(value, withdrawal.rate_bp ?? 0),
-  });
+function contributedOf(history: ReturnSeries): number {
+  return contributed(history.opening, history.points).at(-1) ?? history.opening;
 }
 
-// PX5: the income a value sustains; in income mode the desired income scaled by the value over
-// the amount needed.
-function sustainedFor(
-  draft: ProjectionDraft,
-  value: number,
-  needed: number | null,
-): number {
-  const { withdrawal } = draft;
-  if (withdrawal.mode === "rate")
-    return sustainedIncome(value, withdrawal.rate_bp ?? 0);
+function typedCases(draft: ProjectionDraft) {
+  const cases: { kind: CaseKind; returnBp: number }[] = [];
+  if (draft.cautiousReturnBp !== undefined)
+    cases.push({ kind: "cautious", returnBp: draft.cautiousReturnBp });
+  if (draft.favorableReturnBp !== undefined)
+    cases.push({ kind: "favorable", returnBp: draft.favorableReturnBp });
 
-  return needed === null || needed === 0
-    ? 0
-    : ((withdrawal.income ?? 0) * value) / needed;
+  return cases;
 }

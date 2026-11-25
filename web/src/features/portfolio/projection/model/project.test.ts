@@ -62,4 +62,59 @@ describe("project", () => {
 
     expect(rows.map((r) => r.contribution)).toEqual([1000, 0, 0, 0, 0, 0]);
   });
+
+  it("PX4: grows at the return during the withdrawals from the withdrawal month on", () => {
+    const rows = project({
+      ...input,
+      changes: [],
+      withdrawalRate: 0,
+      withdrawalFrom: "2026-12",
+      income: 1000,
+    });
+
+    // 100000 * 1.01 = 101000, then 1000 out a month with no return.
+    expect(rows[0]?.value).toBeCloseTo(101000, 6);
+    expect(rows[1]?.value).toBeCloseTo(100000, 6);
+    expect(rows[2]).toMatchObject({ gain: 0, withdrawal: 1000 });
+  });
+
+  it("PX14: withdraws the gross whose net is the income, and the basis falls with it", () => {
+    const rows = project({
+      ...input,
+      monthlyRate: 0,
+      changes: [],
+      withdrawalFrom: "2026-11",
+      income: 900,
+      tax: { rate: 0.2, basis: 50000, inflation: 0 },
+    });
+
+    // Half of the value is gain: 900 / (1 - 0.2 * 0.5) = 1000, in each month.
+    expect(rows[0]?.withdrawal).toBeCloseTo(1000, 6);
+    expect(rows[1]?.withdrawal).toBeCloseTo(1000, 6);
+    expect(rows[1]?.value).toBeCloseTo(98000, 6);
+  });
+
+  it("PX14: inflation lowers the basis and a contribution raises it", () => {
+    const taxed = {
+      ...input,
+      monthlyRate: 0,
+      income: 900,
+      tax: { rate: 0.2, basis: 50000, inflation: 0.25 },
+    };
+
+    // 50000 / 1.25 = 40000: 900 / (1 - 0.2 * 0.6) = 1022.7273.
+    expect(
+      project({ ...taxed, changes: [], withdrawalFrom: "2026-11" })[0]
+        ?.withdrawal,
+    ).toBeCloseTo(1022.7273, 3);
+    // November: value 100000 + 25000, basis 40000 + 25000. December: basis 65000 / 1.25 = 52000 of
+    // 125000, a gain share of 0.584: 900 / (1 - 0.2 * 0.584) = 1019.0217.
+    expect(
+      project({
+        ...taxed,
+        changes: [{ month: "2026-11-01", amount: 25000 }],
+        withdrawalFrom: "2026-12",
+      })[1]?.withdrawal,
+    ).toBeCloseTo(1019.0217, 3);
+  });
 });

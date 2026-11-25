@@ -21,6 +21,10 @@ const typed: PlanFields = {
   mode: "income",
   income: 800000,
   rate: "",
+  withdrawalReturn: "",
+  cautious: "",
+  favorable: "",
+  gainTax: "",
 };
 
 describe("fieldsFromPlan", () => {
@@ -33,7 +37,30 @@ describe("fieldsFromPlan", () => {
       mode: "income",
       income: 500000,
       rate: "0,00",
+      withdrawalReturn: "",
+      cautious: "",
+      favorable: "",
+      gainTax: "",
     });
+  });
+
+  it("PJ7: writes the premises the plan holds", () => {
+    const plan = {
+      ...projectionPlan,
+      withdrawal_return_bp: -50,
+      cautious_return_bp: 250,
+      favorable_return_bp: 600,
+      gain_tax_bp: 1500,
+    };
+
+    expect(fieldsFromPlan(plan, "en")).toMatchObject({
+      cautious: "2.50",
+      favorable: "6.00",
+      gainTax: "15.00",
+    });
+    expect(draftFrom(fieldsFromPlan(plan, "en"), changes, "BRL")).toMatchObject(
+      { withdrawalReturnBp: -50, cautiousReturnBp: 250 },
+    );
   });
 });
 
@@ -51,6 +78,12 @@ describe("draftFrom", () => {
     expect(draftFrom({ ...typed, realReturn: "5.25" }, changes, "BRL")).toEqual(
       expect.objectContaining({ realReturnBp: 525 }),
     );
+  });
+
+  it("PJ7: is null for a premise outside its range", () => {
+    expect(
+      draftFrom({ ...typed, cautious: "5,25" }, changes, "BRL"),
+    ).toBeNull();
   });
 
   it("is null for the fields at rest", () => {
@@ -94,6 +127,27 @@ describe("planInput", () => {
       changes,
     });
   });
+
+  it("PJ7: holds the premises typed", () => {
+    const draft = draftFrom(
+      {
+        ...typed,
+        withdrawalReturn: "3",
+        cautious: "3",
+        favorable: "6",
+        gainTax: "15",
+      },
+      changes,
+      "BRL",
+    );
+
+    expect(draft && planInput(draft)).toMatchObject({
+      withdrawal_return_bp: 300,
+      cautious_return_bp: 300,
+      favorable_return_bp: 600,
+      gain_tax_bp: 1500,
+    });
+  });
 });
 
 describe("startsTooEarly", () => {
@@ -117,6 +171,10 @@ describe("fieldRanges", () => {
     mode: "rate" as const,
     income: 0,
     rate: "4,00",
+    withdrawalReturn: "",
+    cautious: "",
+    favorable: "",
+    gainTax: "",
   };
 
   it("names no range for fields in their ranges or at rest", () => {

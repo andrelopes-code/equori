@@ -115,4 +115,70 @@ describe("journeyFigures", () => {
   it("omits the comparison without a baseline", () => {
     expect(journeyFigures({ ...input, baseline: undefined }).versus).toBeNull();
   });
+
+  it("PX15: projects each typed case with its return, the same difference in the withdrawals", () => {
+    const f = journeyFigures({
+      ...input,
+      draft: {
+        ...input.draft,
+        realReturnBp: 100,
+        withdrawalReturnBp: 0,
+        cautiousReturnBp: 0,
+        favorableReturnBp: 300,
+      },
+    });
+    const rate = (bp: number) => (1 + bp / 10000) ** (1 / 12) - 1;
+    const grown = (r: number) =>
+      ((10000 * (1 + r) + 1000) * (1 + r) + 1000) * (1 + r) + 1000;
+    const needed = (r: number) => (500 * (1 - (1 + r) ** -12)) / r;
+
+    expect(f.cases.map((c) => [c.kind, c.returnBp])).toEqual([
+      ["cautious", 0],
+      ["favorable", 300],
+    ]);
+    // The cautious case saves at 0% and withdraws at 0% - 1%; the favorable at 3% and at 0% + 2%.
+    expect(f.atWithdrawal).toBeCloseTo(grown(rate(100)), 6);
+    expect(f.needed).toBe(6000);
+    expect(f.cases[0]?.atWithdrawal).toBe(13000);
+    expect(f.cases[0]?.needed).toBeCloseTo(needed(rate(-100)), 6);
+    expect(f.cases[1]?.atWithdrawal).toBeCloseTo(grown(rate(300)), 6);
+    expect(f.cases[1]?.needed).toBeCloseTo(needed(rate(200)), 6);
+  });
+
+  it("PX15: holds no case without a typed return", () => {
+    expect(journeyFigures(input).cases).toEqual([]);
+  });
+
+  it("PX14: states the amount needed and the income net of the tax on the gain", () => {
+    const taxed = {
+      ...input,
+      draft: { ...input.draft, gainTaxBp: 2000 },
+      history: {
+        ...input.history,
+        opening: 3500,
+        points: [{ date: "2026-11-25", value: 10000, flows: 0 }],
+      },
+    };
+    const f = journeyFigures(taxed);
+
+    // 3500 contributed and 3000 more until the withdrawals: half of the 13000 is gain, so 500 net
+    // is 500 / 0.9 gross, 12 times.
+    expect(f.needed).toBeCloseTo((500 / 0.9) * 12, 6);
+    expect(f.sustained).toBeCloseTo((13000 / 12) * 0.9, 6);
+    expect(f.rows.find((r) => r.withdrawal > 0)?.withdrawal).toBeCloseTo(
+      500 / 0.9,
+      6,
+    );
+
+    // The rate gives the gross: 13000 * 6% / 12 = 65, of which half is gain: 65 * 0.9.
+    const rate = journeyFigures({
+      ...taxed,
+      draft: { ...taxed.draft, withdrawal: { mode: "rate", rate_bp: 600 } },
+    });
+    expect(rate.sustained).toBeCloseTo(58.5, 6);
+    expect(rate.rows.find((r) => r.withdrawal > 0)?.withdrawal).toBeCloseTo(
+      65,
+      6,
+    );
+  });
 });
