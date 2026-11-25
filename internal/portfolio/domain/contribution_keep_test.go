@@ -50,11 +50,11 @@ func TestKeepFrom(t *testing.T) {
 			effect: EffectWeigh, review: 0, date: dayOn("2026-11-25"), release: nil,
 		},
 		"CO8 released true sets the month of today": {
-			stored: Plan{}, input: released2(keepInput("Cripto", "Medo?", no()), true),
+			stored: Plan{}, input: releasing(keepInput("Cripto", "Medo?", no()), true),
 			effect: EffectWeigh, review: 0, date: dayOn("2026-11-25"), release: todayMonth,
 		},
 		"CO8 released false clears the release": {
-			stored: keepStored(), input: released2(keepInput("Cripto", "Medo?", no()), false),
+			stored: keepStored(), input: releasing(keepInput("Cripto", "Medo?", no()), false),
 			effect: EffectHold, review: 1, date: dayOn("2026-10-12"), release: nil,
 		},
 		"CO16 a date after today is today": {
@@ -78,9 +78,19 @@ func TestKeepFrom(t *testing.T) {
 
 			if got.QuestionEffects[0] != tc.effect || got.QuestionReviews[0] != tc.review ||
 				!sameDay(m.AnswerDates[0], tc.date) || !sameDay(m.ReleaseMonth, tc.release) {
-				t.Errorf("kept effect %v review %v date %v release %v, want %v %v %v %v",
-					got.QuestionEffects, got.QuestionReviews, show2(m.AnswerDates[0]),
-					show2(m.ReleaseMonth), tc.effect, tc.review, show2(tc.date), show2(tc.release))
+				t.Errorf(
+					"kept effect %v review %v date %v release %v, want %v %v %v %v",
+					got.QuestionEffects,
+					got.QuestionReviews,
+					dayText(m.AnswerDates[0]),
+					dayText(
+						m.ReleaseMonth,
+					),
+					tc.effect,
+					tc.review,
+					dayText(tc.date),
+					dayText(tc.release),
+				)
 			}
 		})
 	}
@@ -146,7 +156,7 @@ func TestKeepFromGroupsKeepTheirOwn(t *testing.T) {
 		c := got.Classes[i]
 		if c.QuestionEffects[0] != want.effect || !sameDay(c.Members[0].AnswerDates[0], want.date) {
 			t.Errorf("class %d kept %v %v, want %v %v", i, c.QuestionEffects,
-				show2(c.Members[0].AnswerDates[0]), want.effect, show2(want.date))
+				dayText(c.Members[0].AnswerDates[0]), want.effect, dayText(want.date))
 		}
 	}
 }
@@ -208,11 +218,11 @@ func keepStored() Plan {
 	}}}
 }
 
-// keepStoredNA is keepStored with the answer "não se aplica" dated 2026-11-01.
 func keptPair() (Plan, Plan) {
 	return Plan{Classes: []PlanClass{keepInput("cripto", "medo?", yes())}}, keepStored()
 }
 
+// keepStoredNA is keepStored with the answer "não se aplica" dated 2026-11-01.
 func keepStoredNA() Plan {
 	p := keepStored()
 	p.Classes[0].Members[0].Answers = []*bool{nil}
@@ -232,7 +242,7 @@ func keepInput(name, question string, answer *bool) PlanClass {
 	}
 }
 
-func released2(c PlanClass, release bool) PlanClass {
+func releasing(c PlanClass, release bool) PlanClass {
 	c.Members[0].Released = &release
 
 	return c
@@ -290,7 +300,7 @@ func sameDay(a, b *time.Time) bool {
 	return a.Equal(*b)
 }
 
-func show2(t *time.Time) string {
+func dayText(t *time.Time) string {
 	if t == nil {
 		return "nil"
 	}
