@@ -126,3 +126,45 @@ func TestContributionRevisionRejectsStaleSave(t *testing.T) {
 		})
 	}
 }
+
+// A member that leaves with its instrument or account leaves a gap in the positions; the answers of
+// the others stay with them.
+func TestContributionPlanReadsAroundRemovedMember(t *testing.T) {
+	t.Parallel()
+	pool := pgtest.New(t)
+	ctx := t.Context()
+	booksID := pgtest.CreateBooks(t, pool)
+	repo := postgres.NewRepository(pool)
+
+	yes, no := true, false
+	plan := domain.Plan{Classes: []domain.PlanClass{{
+		Name:      "Stocks",
+		TargetBP:  10000,
+		Questions: []string{"Own"},
+		Members: []domain.PlanMember{
+			{Instrument: money.Currency("BRL"), Answers: []*bool{&no}},
+			{Instrument: money.Currency("USD"), Answers: []*bool{&yes}},
+		},
+	}}}
+
+	if _, err := repo.SaveContributionPlan(ctx, booksID, plan); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := pool.Exec(
+		ctx,
+		`DELETE FROM portfolio_contribution_member WHERE instrument = 'BRL'`,
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	got, _, err := repo.ContributionPlan(ctx, booksID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	members := got.Classes[0].Members
+	if len(members) != 1 || members[0].Instrument != "USD" || !*members[0].Answers[0] {
+		t.Fatalf("members = %+v", members)
+	}
+}

@@ -13,6 +13,15 @@ import (
 	"github.com/andrelopes-code/equori/internal/portfolio/domain"
 )
 
+type memberKey struct {
+	class    uuid.UUID
+	position int32
+}
+
+// memberSlots is the place of each stored member in its class: the positions have gaps after a
+// member leaves with its account or instrument.
+type memberSlots map[memberKey]int
+
 // ContributionPlan returns the plan of the book; false means the book has none.
 func (r *Repository) ContributionPlan(
 	ctx context.Context,
@@ -51,12 +60,14 @@ func (r *Repository) ContributionPlan(
 		plan.Classes[i] = domain.PlanClass{Name: c.Name, TargetBP: int(c.TargetBp)}
 	}
 
+	slots := make(memberSlots, len(members))
 	for _, m := range members {
 		i := index[m.ClassID]
+		slots[memberKey{m.ClassID, m.Position}] = len(plan.Classes[i].Members)
 		plan.Classes[i].Members = append(plan.Classes[i].Members, toPlanMember(m))
 	}
 
-	if err := r.attachQuestions(ctx, booksID, plan, index); err != nil {
+	if err := r.attachQuestions(ctx, booksID, plan, index, slots); err != nil {
 		return domain.Plan{}, false, err
 	}
 
@@ -86,6 +97,7 @@ func (r *Repository) attachQuestions(
 	booksID int64,
 	plan domain.Plan,
 	index map[uuid.UUID]int,
+	slots memberSlots,
 ) error {
 	questions, err := r.q.ListContributionQuestions(ctx, booksID)
 	if err != nil {
@@ -106,7 +118,7 @@ func (r *Repository) attachQuestions(
 		c.QuestionReviews = append(c.QuestionReviews, int(q.ReviewMonths))
 	}
 
-	attachAnswers(plan, index, answers)
+	attachAnswers(plan, index, slots, answers)
 
 	return nil
 }
@@ -116,6 +128,7 @@ func (r *Repository) attachQuestions(
 func attachAnswers(
 	plan domain.Plan,
 	index map[uuid.UUID]int,
+	slots memberSlots,
 	answers []ListContributionAnswersRow,
 ) {
 	for _, c := range plan.Classes {
@@ -131,7 +144,8 @@ func attachAnswers(
 	}
 
 	for _, a := range answers {
-		m := &plan.Classes[index[a.ClassID]].Members[a.MemberPosition]
+		slot := slots[memberKey{a.ClassID, a.MemberPosition}]
+		m := &plan.Classes[index[a.ClassID]].Members[slot]
 		m.Answers[a.QuestionPosition] = a.Yes
 		m.AnswerDates[a.QuestionPosition] = a.AnsweredOn
 		m.AnswerOverrides[a.QuestionPosition] = a.Overrides
