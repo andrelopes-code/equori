@@ -1,3 +1,4 @@
+import { shiftDate } from "@/i18n/format";
 import type { MonthReturn } from "@/ui/month-heat/month-figures";
 
 export type { MonthReturn };
@@ -27,6 +28,20 @@ export function monthReturns(
 
     return { month, value };
   });
+}
+
+// The months that lie whole inside [from, to]: a history that starts or ends within a month holds
+// part of it only.
+export function wholeMonths(
+  months: readonly MonthReturn[],
+  from: string,
+  to: string,
+): MonthReturn[] {
+  const firstOpen = shiftDate(to, 1).slice(0, 7);
+
+  return months.filter(
+    ({ month }) => `${month}-01` >= from && month < firstOpen,
+  );
 }
 
 // One row per calendar year, newest first.

@@ -5,6 +5,14 @@ export interface Window {
   value: number;
 }
 
+export interface Share {
+  count: number;
+  // The windows the count is taken from.
+  total: number;
+  // A fraction from 0 to 1.
+  share: number;
+}
+
 const defaultSize = 12;
 
 // A window is the product of `size` consecutive month factors, minus 1 (PR7).
@@ -25,20 +33,25 @@ export function rollingWindows(
   return windows;
 }
 
-// The share of the windows strictly above a number or above the window of the same end.
+// The windows strictly above a number, or above the window of the same end; a window whose end the
+// reference lacks leaves the total (PR7).
 export function shareAbove(
   windows: readonly Window[],
   reference: readonly Window[] | number,
-): number {
-  if (windows.length === 0) return 0;
+): Share {
+  const compared = windows.flatMap((w) => {
+    const other =
+      typeof reference === "number"
+        ? reference
+        : reference.find((r) => r.end === w.end)?.value;
 
-  const above = windows.filter((w) => {
-    if (typeof reference === "number") return w.value > reference;
-
-    const other = reference.find((r) => r.end === w.end);
-
-    return other !== undefined && w.value > other.value;
+    return other === undefined ? [] : [w.value > other];
   });
+  const count = compared.filter(Boolean).length;
 
-  return above.length / windows.length;
+  return shareOf(count, compared.length);
+}
+
+export function shareOf(count: number, total: number): Share {
+  return { count, total, share: total === 0 ? 0 : count / total };
 }

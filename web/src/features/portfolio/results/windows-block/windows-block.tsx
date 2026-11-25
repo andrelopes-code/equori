@@ -21,11 +21,13 @@ type ReturnSeries = components["schemas"]["ReturnSeries"];
 interface WindowsBlockProps {
   // The history read: the whole history by month, whatever the period.
   history: ReturnSeries | undefined;
+  // The read of the 12 months to today.
+  trailing: { isPending: boolean; data: ReturnSeries | undefined };
 }
 
-// PR7: the return of the 12 months that end on each month, over the whole history; under 12 months
-// the block states the date its first window closes.
-export function WindowsBlock({ history }: WindowsBlockProps) {
+// PR7: the return of 12 whole months to the end of each month, over the whole history; under 12
+// whole months the block states the date its first window closes.
+export function WindowsBlock({ history, trailing }: WindowsBlockProps) {
   const t = useT();
   const [tag] = useAppLocale();
 
@@ -64,7 +66,11 @@ export function WindowsBlock({ history }: WindowsBlockProps) {
 
         {figures.extremes !== null && (
           <>
-            <WindowTiles figures={figures} to={history.to} />
+            <WindowTiles
+              figures={figures}
+              trailing={trailing}
+              to={history.to}
+            />
 
             <div className={styles.plotBox}>
               <WindowsPlot figures={figures} />

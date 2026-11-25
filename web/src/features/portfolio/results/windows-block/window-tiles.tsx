@@ -1,31 +1,31 @@
-import { toBasisPoints } from "@/features/portfolio/results/return-block/block-figures";
+import type { components } from "@/api/schema.gen";
 import { AboveTile } from "@/features/portfolio/results/windows-block/above-tile";
 import { ExtremeTile } from "@/features/portfolio/results/windows-block/extreme-tile";
 import { ShareNote } from "@/features/portfolio/results/windows-block/share-note";
+import { TodayTile } from "@/features/portfolio/results/windows-block/today-tile";
 import { WindowTile } from "@/features/portfolio/results/windows-block/window-tile";
 import styles from "@/features/portfolio/results/windows-block/windows-block.module.css";
 import type { WindowFigures } from "@/features/portfolio/results/windows-block/windows-figures";
-import {
-  formatDate,
-  formatSignedBasisPoints,
-  numberFormatter,
-} from "@/i18n/format";
+import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { Toned } from "@/ui/money/toned";
+
+type ReturnSeries = components["schemas"]["ReturnSeries"];
 
 interface WindowTilesProps {
   figures: WindowFigures;
+  // The read of the 12 months to today.
+  trailing: { isPending: boolean; data: ReturnSeries | undefined };
   // The last date of the history.
   to: string;
 }
 
 // PR7: today's window, the best and the worst, the share below zero and the share above each of
 // the first two indexes; a tile of an index exists only when the series holds the index.
-export function WindowTiles({ figures, to }: WindowTilesProps) {
+export function WindowTiles({ figures, trailing, to }: WindowTilesProps) {
   const t = useT();
   const [tag] = useAppLocale();
 
-  const { extremes, negative, windows } = figures;
+  const { extremes, negative } = figures;
   if (extremes === null) return null;
 
   const percent = numberFormatter(tag, {
@@ -36,17 +36,7 @@ export function WindowTiles({ figures, to }: WindowTilesProps) {
 
   return (
     <dl className={styles.tileRow}>
-      <WindowTile
-        label={t("portfolio.results.windows.today")}
-        value={
-          <Toned value={extremes.last.value}>
-            {formatSignedBasisPoints(toBasisPoints(extremes.last.value), tag)}
-          </Toned>
-        }
-        note={t("portfolio.results.windows.today.note", {
-          date: formatDate(to, tag),
-        })}
-      />
+      <TodayTile trailing={trailing} to={to} />
 
       <ExtremeTile
         label={t("portfolio.results.windows.best")}
@@ -64,14 +54,14 @@ export function WindowTiles({ figures, to }: WindowTilesProps) {
         note={
           <ShareNote
             count={negative.count}
-            total={windows.length}
+            total={negative.total}
             tone="danger"
           />
         }
       />
 
       {figures.indexes.map((index) => (
-        <AboveTile key={index.id} index={index} total={windows.length} />
+        <AboveTile key={index.id} index={index} />
       ))}
     </dl>
   );

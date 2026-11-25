@@ -15,7 +15,7 @@ interface ResultsLoadedProps {
 // PR3, PR11: the four blocks and "Rendimento por ativo"; a period read that fails draws the failure
 // in the place of the return block only.
 export function ResultsLoaded({ results }: ResultsLoadedProps) {
-  const { history, period, report, whole } = results;
+  const { history, period, trailing, report, whole } = results;
 
   function handleRetry() {
     void period.refetch();
@@ -33,7 +33,7 @@ export function ResultsLoaded({ results }: ResultsLoadedProps) {
         <ReturnBlock series={period.data} report={report.data} whole={whole} />
       )}
 
-      <WindowsBlock history={history.data} />
+      <WindowsBlock history={history.data} trailing={trailing} />
 
       <MonthsBlock history={history.data} />
 

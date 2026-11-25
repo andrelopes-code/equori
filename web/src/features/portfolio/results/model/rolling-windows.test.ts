@@ -40,7 +40,7 @@ describe("rollingWindows", () => {
 
 describe("shareAbove", () => {
   it.each([
-    ["zero", 0, 2 / 3],
+    ["zero", 0, { count: 2, total: 3, share: 2 / 3 }],
     [
       "reference windows with the same ends",
       [
@@ -48,7 +48,7 @@ describe("shareAbove", () => {
         { end: "2026-11", value: 0.01 },
         { end: "2026-12", value: 0.05 },
       ],
-      1 / 3,
+      { count: 1, total: 3, share: 1 / 3 },
     ],
     [
       "reference windows that the windows lead",
@@ -57,13 +57,21 @@ describe("shareAbove", () => {
         { end: "2026-11", value: -0.05 },
         { end: "2026-12", value: 0.05 },
       ],
-      2 / 3,
+      { count: 2, total: 3, share: 2 / 3 },
+    ],
+    [
+      "a reference that lacks an end, which leaves the total",
+      [
+        { end: "2026-10", value: 0.08 },
+        { end: "2026-11", value: -0.05 },
+      ],
+      { count: 2, total: 2, share: 1 },
     ],
   ] as const)("counts the windows above %s", (_, reference, want) => {
-    expect(shareAbove(windows, reference)).toBeCloseTo(want, 6);
+    expect(shareAbove(windows, reference)).toEqual(want);
   });
 
   it("is zero without windows", () => {
-    expect(shareAbove([], 0)).toBe(0);
+    expect(shareAbove([], 0)).toEqual({ count: 0, total: 0, share: 0 });
   });
 });

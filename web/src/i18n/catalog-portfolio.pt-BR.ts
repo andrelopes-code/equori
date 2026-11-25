@@ -263,7 +263,7 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
     "Rentabilidade acumulada da carteira e dos índices",
   "portfolio.results.windows": "Janelas móveis de 12 meses",
   "portfolio.results.windows.description":
-    "Retorno dos 12 meses que terminam em cada mês, sobre a história toda.",
+    "Retorno de 12 meses inteiros até o fim de cada mês, sobre a história toda.",
   "portfolio.results.windows.today": "Hoje",
   "portfolio.results.windows.today.note": "12 meses até {date}",
   "portfolio.results.windows.best": "Melhor janela",
@@ -273,7 +273,7 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.results.windows.above": "Acima de {index}",
   "portfolio.results.windows.count": "{count} de {total}",
   "portfolio.results.windows.short":
-    "A primeira janela fecha em {date}: a carteira tem {months} meses de história e uma janela pede 12.",
+    "A primeira janela fecha em {date}: a carteira tem {months} meses inteiros de história e uma janela pede 12.",
   "portfolio.results.plot.windows": "Retorno de cada janela de 12 meses",
   "portfolio.results.months": "Mês a mês",
   "portfolio.results.months.description": "Rentabilidade de cada mês, em %.",

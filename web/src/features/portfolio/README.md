@@ -19,7 +19,7 @@ Guide topic (`navigation-map.json`): `investments`.
 - `GET /reports/allocation`
 - `GET /accounts/{id}/balance`
 - `GET /reports/return`
-- `GET /reports/return/series` (the history by month and the period at its step, read by `results/use-results.ts`)
+- `GET /reports/return/series` (the history by month and the period at its step, read by `results/use-results.ts`; the 12 months to today, read by `results/use-trailing-year.ts`)
 - `GET /reports/attribution`
 - `GET /realized-results`
 - `GET /income-events`

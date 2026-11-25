@@ -168,24 +168,42 @@ describe("Portfolio results tab: the return block", () => {
 });
 
 describe("Portfolio results tab: the rolling windows block", () => {
-  // PR7: the windows read the history, with no index the block draws four tiles.
-  it("draws the tiles of the windows of a history of 13 months", async () => {
+  // PR7: the windows read the whole months of the history, and Today reads the year to today.
+  it("draws the tiles of the windows of 13 whole months", async () => {
+    const urls: string[] = [];
     const fetch = portfolioApi({
-      "GET /api/v1/reports/return/series": () =>
-        json(200, monthlyHistory(13, "2025-11-01", "2026-11-24")),
+      "GET /api/v1/reports/return/series": (req) => {
+        urls.push(req.url);
+        return json(
+          200,
+          req.url.includes("from=2025-11-25")
+            ? yearToToday(1050)
+            : monthlyHistory(14, "2025-10-01", "2026-11-24"),
+        );
+      },
     });
     await renderApp("/portfolio", { fetch, today: "2026-11-24" });
 
     const section = await loadedSection(catalogEn["portfolio.results.windows"]);
     const today = await within(section).findByText("Today");
-    expect(tileOf(today)).toHaveTextContent(
-      /\+12\.68%12 months to 11\/24\/2026/,
-    );
+    await waitFor(() => {
+      expect(tileOf(today)).toHaveTextContent(
+        /\+10\.50%12 months to 11\/24\/2026/,
+      );
+    });
+    expect(
+      urls.some(
+        (u) =>
+          u.includes("from=2025-11-25") &&
+          u.includes("to=2026-11-24") &&
+          u.includes("step=month"),
+      ),
+    ).toBe(true);
     expect(tileOf(within(section).getByText("Best window"))).toHaveTextContent(
-      /\+12\.68%to Nov\/2026/,
+      /\+12\.68%to Oct\/2026/,
     );
     expect(tileOf(within(section).getByText("Worst window"))).toHaveTextContent(
-      /\+12\.68%to Oct\/2026/,
+      /\+12\.68%to Sep\/2026/,
     );
     expect(
       tileOf(within(section).getByText("Windows below zero")),
@@ -194,9 +212,29 @@ describe("Portfolio results tab: the rolling windows block", () => {
     expect(within(section).queryByText(/^Above /)).not.toBeInTheDocument();
   });
 
+  // PR7: an undefined return is absent, never zero.
+  it("draws a dash for today's window without a return", async () => {
+    const fetch = portfolioApi({
+      "GET /api/v1/reports/return/series": (req) =>
+        json(
+          200,
+          req.url.includes("from=2025-11-25")
+            ? yearToToday(undefined)
+            : monthlyHistory(14, "2025-10-01", "2026-11-24"),
+        ),
+    });
+    await renderApp("/portfolio", { fetch, today: "2026-11-24" });
+
+    const section = await loadedSection(catalogEn["portfolio.results.windows"]);
+    const today = await within(section).findByText("Today");
+    await waitFor(() => {
+      expect(tileOf(today)).toHaveTextContent(/–12 months to 11\/24\/2026/);
+    });
+  });
+
   // PR7: with an index the block adds the tile of the windows above it.
   it("draws the share of the windows above the first index", async () => {
-    const history = monthlyHistory(13, "2025-11-01", "2026-11-24");
+    const history = monthlyHistory(14, "2025-10-01", "2026-11-24");
     const fetch = portfolioApi({
       "GET /api/v1/reports/return/series": () =>
         json(200, {
@@ -233,7 +271,7 @@ describe("Portfolio results tab: the rolling windows block", () => {
 
     expect(
       await within(section).findByText(
-        "The first window closes on 07/06/2027: the portfolio has 5 months of history and a window takes 12.",
+        "The first window closes on 07/31/2027: the portfolio has 3 whole months of history and a window takes 12.",
       ),
     ).toBeInTheDocument();
     expect(within(section).queryByText("Today")).not.toBeInTheDocument();
@@ -317,6 +355,28 @@ function monthlyHistory(count: number, from: string, to: string) {
   });
 
   return { from, to, currency: "BRL", opening: 100000, points, indexes: [] };
+}
+
+// The answer of the year to 24 November 2026, whose last point holds the return of the year.
+function yearToToday(returnBP: number | undefined) {
+  const points = [
+    { date: "2025-11-30", value: 100000, flows: 0, return_bp: 20 },
+    {
+      date: "2026-11-24",
+      value: 100000,
+      flows: 0,
+      ...(returnBP === undefined ? {} : { return_bp: returnBP }),
+    },
+  ];
+
+  return {
+    from: "2025-11-25",
+    to: "2026-11-24",
+    currency: "BRL",
+    opening: 100000,
+    points,
+    indexes: [],
+  };
 }
 
 function tileOf(label: HTMLElement): HTMLElement {

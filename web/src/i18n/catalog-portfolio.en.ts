@@ -261,7 +261,7 @@ export const portfolioEn = {
     "Cumulative return of the portfolio and the indexes",
   "portfolio.results.windows": "Rolling 12-month windows",
   "portfolio.results.windows.description":
-    "Return of the 12 months ending on each month, over the whole history.",
+    "Return of 12 whole months to the end of each month, over the whole history.",
   "portfolio.results.windows.today": "Today",
   "portfolio.results.windows.today.note": "12 months to {date}",
   "portfolio.results.windows.best": "Best window",
@@ -271,7 +271,7 @@ export const portfolioEn = {
   "portfolio.results.windows.above": "Above {index}",
   "portfolio.results.windows.count": "{count} of {total}",
   "portfolio.results.windows.short":
-    "The first window closes on {date}: the portfolio has {months} months of history and a window takes 12.",
+    "The first window closes on {date}: the portfolio has {months} whole months of history and a window takes 12.",
   "portfolio.results.plot.windows": "Return of each 12-month window",
   "portfolio.results.months": "Month by month",
   "portfolio.results.months.description": "Return of each month, in %.",

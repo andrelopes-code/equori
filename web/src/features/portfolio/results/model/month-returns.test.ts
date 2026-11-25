@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   monthReturns,
   monthRows,
+  wholeMonths,
 } from "@/features/portfolio/results/model/month-returns";
 
 const points = [
@@ -48,6 +49,31 @@ describe("monthReturns", () => {
     ],
   ])("ends the list before %s", (_, input, want) => {
     expect(monthReturns(input)).toHaveLength(want);
+  });
+});
+
+describe("wholeMonths", () => {
+  const months = ["2025-11", "2025-12", "2026-01"].map((month) => ({
+    month,
+    value: 0.01,
+  }));
+
+  it.each([
+    [
+      "a partial first month and a partial last month",
+      "2025-11-02",
+      "2026-01-30",
+      ["2025-12"],
+    ],
+    [
+      "the months of a range that starts and ends with them",
+      "2025-11-01",
+      "2026-01-31",
+      ["2025-11", "2025-12", "2026-01"],
+    ],
+    ["a range inside one month", "2025-12-05", "2025-12-20", []],
+  ])("keeps the whole months of %s", (_, from, to, want) => {
+    expect(wholeMonths(months, from, to).map((m) => m.month)).toEqual(want);
   });
 });
 
