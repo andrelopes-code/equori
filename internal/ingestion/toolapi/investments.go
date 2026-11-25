@@ -7,6 +7,7 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/ingestion/app"
 	"github.com/andrelopes-code/equori/internal/ingestion/domain"
+	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
@@ -41,11 +42,12 @@ type reviewAction string
 func (reviewAction) Values() []string { return []string{"confirm", "dismiss", "undo"} }
 
 type reviewInvestmentMovementIn struct {
-	Action        reviewAction `json:"action"                   jsonschema:"confirm records what the movement proposes; dismiss records nothing; undo voids what a confirmation recorded or reopens a dismissed movement"`
+	Action        reviewAction `json:"action"                   jsonschema:"what to do with the movement"`
 	MovementID    string       `json:"movement_id"              jsonschema:"movement from get_imports with view investments"`
 	BrokerageID   string       `json:"brokerage_id,omitzero"    jsonschema:"for confirm of an application: Brokerage that will hold the contract, from list_accounts"`
 	CashAccountID string       `json:"cash_account_id,omitzero" jsonschema:"for confirm: Cash of the Brokerage or an open account of its institution; the single candidate when absent"`
 	CategoryID    string       `json:"category_id,omitzero"     jsonschema:"for confirm of an income: income category, from list_accounts"`
+	Withheld      string       `json:"withheld,omitzero"        jsonschema:"for confirm of an income: tax withheld; 0 when absent"`
 }
 
 func reviewInvestmentMovement(svc *app.Service) tool.Tool {
@@ -100,6 +102,18 @@ func planMovementReview(
 		{Field: "date", After: tool.DateValue(v.Movement.Date)},
 	}
 
+	withheld, err := movementWithheld(in, v)
+	if err != nil {
+		return pv, nil, err
+	}
+
+	if withheld != nil {
+		pv.Changes = append(
+			pv.Changes,
+			tool.Change{Field: "withheld", After: tool.MoneyValue(*withheld)},
+		)
+	}
+
 	return pv, func() (app.MovementView, error) {
 		switch in.Action {
 		case "dismiss":
@@ -108,8 +122,34 @@ func planMovementReview(
 			return svc.UndoMovement(ctx, booksID, ids[0])
 		}
 
-		return svc.ConfirmMovement(ctx, booksID, ids[0], ids[1], ids[2], ids[3])
+		return svc.ConfirmMovement(ctx, booksID, ids[0], app.Confirmation{
+			BrokerageID:   ids[1],
+			CashAccountID: ids[2],
+			CategoryID:    ids[3],
+			Withheld:      withheld,
+		})
 	}, nil
+}
+
+// movementWithheld returns the tax in names, 0 for an income without one, nil for any other
+// movement without one.
+func movementWithheld(in reviewInvestmentMovementIn, v app.MovementView) (*money.Money, error) {
+	if in.Action != "confirm" {
+		return nil, nil
+	}
+
+	text := in.Withheld
+	if text == "" {
+		if v.Proposal.Kind != domain.ProposalIncome {
+			return nil, nil
+		}
+
+		text = "0"
+	}
+
+	withheld, err := tool.ParseAmount("withheld", text, v.Movement.Amount)
+
+	return &withheld, err
 }
 
 // movementReviewIDs returns the movement, the brokerage, the cash and the category of in.
@@ -121,6 +161,7 @@ func movementReviewIDs(in reviewInvestmentMovementIn) ([4]uuid.UUID, error) {
 		{"brokerage_id", in.BrokerageID != ""},
 		{"cash_account_id", in.CashAccountID != ""},
 		{"category_id", in.CategoryID != ""},
+		{"withheld", in.Withheld != ""},
 	}
 
 	if in.Action != "confirm" {

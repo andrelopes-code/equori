@@ -12244,7 +12244,7 @@
       "properties": {
         "action": {
           "type": "string",
-          "description": "confirm records what the movement proposes; dismiss records nothing; undo voids what a confirmation recorded or reopens a dismissed movement",
+          "description": "what to do with the movement",
           "enum": [
             "confirm",
             "dismiss",
@@ -12266,6 +12266,10 @@
         "category_id": {
           "type": "string",
           "description": "for confirm of an income: income category, from list_accounts"
+        },
+        "withheld": {
+          "type": "string",
+          "description": "for confirm of an income: tax withheld; 0 when absent"
         }
       },
       "required": [

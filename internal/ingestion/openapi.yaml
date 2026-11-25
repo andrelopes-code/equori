@@ -1037,6 +1037,10 @@ schemas:
         type: string
         format: uuid
         description: The income category of an income movement; required for it.
+      withheld:
+        description: For an income movement, the tax withheld from its amount, which is the gross. Default 0.
+        allOf:
+          - $ref: "#/components/schemas/Money"
   InvestmentList:
     type: object
     required: [investments]

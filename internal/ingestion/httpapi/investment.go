@@ -12,6 +12,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/ingestion/domain"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
+	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
 func (s *Server) listConnectionInvestments(
@@ -43,14 +44,24 @@ func (s *Server) confirmInvestmentMovement(
 		return InvestmentMovement{}, err
 	}
 
-	v, err := s.svc.ConfirmMovement(
-		ctx,
-		auth.MustBooksID(ctx),
-		id,
-		optionalID(b.BrokerageId),
-		optionalID(b.CashAccountId),
-		optionalID(b.CategoryId),
-	)
+	c := app.Confirmation{
+		BrokerageID:   optionalID(b.BrokerageId),
+		CashAccountID: optionalID(b.CashAccountId),
+		CategoryID:    optionalID(b.CategoryId),
+	}
+
+	if b.Withheld != nil {
+		withheld, err := money.New(b.Withheld.Amount, money.Currency(b.Withheld.Currency))
+		if err != nil {
+			return InvestmentMovement{}, &domain.FieldError{
+				Field: "withheld", Message: err.Error(),
+			}
+		}
+
+		c.Withheld = &withheld
+	}
+
+	v, err := s.svc.ConfirmMovement(ctx, auth.MustBooksID(ctx), id, c)
 
 	return movementOf(v, err)
 }

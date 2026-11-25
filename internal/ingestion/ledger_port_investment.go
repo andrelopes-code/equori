@@ -113,18 +113,13 @@ func (p ledgerPort) InvestmentIncome(
 	booksID int64,
 	i app.InvestmentIncome,
 ) (uuid.UUID, error) {
-	none, err := money.New(0, i.Gross.Currency())
-	if err != nil {
-		return uuid.Nil, err
-	}
-
 	t, err := p.l.RecordIncome(ctx, booksID, ledger.IncomeOrder{
 		AccountID:  i.AccountID,
 		CategoryID: i.CategoryID,
 		Type:       ledger.IncomeInterest,
 		Date:       i.On,
 		Gross:      i.Gross,
-		Withheld:   &none,
+		Withheld:   &i.Withheld,
 	})
 	if err != nil {
 		return uuid.Nil, p.refusal(err)

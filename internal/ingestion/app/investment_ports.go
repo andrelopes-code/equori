@@ -55,7 +55,14 @@ type InvestmentSale struct {
 type InvestmentIncome struct {
 	AccountID, CategoryID uuid.UUID
 	On                    time.Time
-	Gross                 money.Money
+	Gross, Withheld       money.Money
+}
+
+// Confirmation holds what the user adds to a movement; an id is uuid.Nil and Withheld nil when
+// not given.
+type Confirmation struct {
+	BrokerageID, CashAccountID, CategoryID uuid.UUID
+	Withheld                               *money.Money
 }
 
 // LedgerRefusal is a refusal of the ledger that keeps its Problem.code and field.

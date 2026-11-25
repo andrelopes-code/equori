@@ -98,6 +98,18 @@ async function rowAt(index: number) {
   return row;
 }
 
+async function chooseDividends(dialog: HTMLElement) {
+  const input = within(dialog).getByRole("combobox", {
+    name: catalogEn["connection.investments.category"],
+  });
+  await userEvent.click(input);
+  await userEvent.type(input, "Dividends");
+  await waitFor(() => {
+    expect(screen.getAllByRole("option").length).toBeGreaterThan(0);
+  });
+  await userEvent.keyboard("{ArrowDown}{Enter}");
+}
+
 const confirm = catalogEn["connection.investments.confirm"];
 
 describe("ConnectionInvestments", () => {
@@ -146,15 +158,7 @@ describe("ConnectionInvestments", () => {
     const dialog = await screen.findByRole("dialog", {
       name: catalogEn["connection.investments.incomeTitle"],
     });
-    const input = within(dialog).getByRole("combobox", {
-      name: catalogEn["connection.investments.category"],
-    });
-    await userEvent.click(input);
-    await userEvent.type(input, "Dividends");
-    await waitFor(() => {
-      expect(screen.getAllByRole("option").length).toBeGreaterThan(0);
-    });
-    await userEvent.keyboard("{ArrowDown}{Enter}");
+    await chooseDividends(dialog);
     await userEvent.click(
       within(dialog).getByRole("button", { name: confirm }),
     );
@@ -164,6 +168,44 @@ describe("ConnectionInvestments", () => {
         {
           path: "/api/v1/investment-movements/m2/confirm",
           body: { category_id: dividendsID },
+        },
+      ]);
+    });
+  });
+
+  it("S718: confirms an income with the tax withheld, and not above its gross", async () => {
+    const sent = show([application, income]);
+
+    const row = await rowAt(1);
+    await userEvent.click(within(row).getByRole("button", { name: confirm }));
+    const dialog = await screen.findByRole("dialog", {
+      name: catalogEn["connection.investments.incomeTitle"],
+    });
+    await chooseDividends(dialog);
+    const withheld = within(dialog).getByRole("textbox", {
+      name: new RegExp(`^${catalogEn["income.withheld"]}`),
+    });
+    expect(withheld).toHaveValue("0.00");
+    const submit = within(dialog).getByRole("button", { name: confirm });
+
+    await userEvent.type(withheld, "1234");
+    expect(
+      within(dialog).getByText(catalogEn["income.withheldTooHigh"]),
+    ).toBeInTheDocument();
+    expect(submit).toBeDisabled();
+
+    await userEvent.clear(withheld);
+    await userEvent.type(withheld, "185");
+    await userEvent.click(submit);
+
+    await waitFor(() => {
+      expect(sent).toEqual([
+        {
+          path: "/api/v1/investment-movements/m2/confirm",
+          body: {
+            category_id: dividendsID,
+            withheld: { amount: 185, currency: "BRL" },
+          },
         },
       ]);
     });

@@ -6091,6 +6091,8 @@ export interface components {
              * @description The income category of an income movement; required for it.
              */
             category_id?: string;
+            /** @description For an income movement, the tax withheld from its amount, which is the gross. Default 0. */
+            withheld?: components["schemas"]["Money"];
         };
         InvestmentList: {
             investments: components["schemas"]["ExternalInvestment"][];

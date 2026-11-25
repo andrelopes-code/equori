@@ -94,8 +94,19 @@ export function ConnectionInvestments({
         >
           {({ movement }) => (
             <ConfirmIncomeDialog
-              onConfirm={(categoryId) => {
-                review.handleSubmit(movement, { category_id: categoryId });
+              movement={movement}
+              onConfirm={(categoryId, withheld) => {
+                review.handleSubmit(movement, {
+                  category_id: categoryId,
+                  ...(withheld === 0
+                    ? {}
+                    : {
+                        withheld: {
+                          amount: withheld,
+                          currency: movement.amount.currency,
+                        },
+                      }),
+                });
               }}
               onCancel={review.handleCloseDialog}
             />

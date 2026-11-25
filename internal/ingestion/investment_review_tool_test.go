@@ -134,3 +134,50 @@ func TestReviewInvestmentMovementToolS548(t *testing.T) {
 		"",
 	)
 }
+
+// TestReviewInvestmentMovementToolS718 states the tax withheld of an interest before it is
+// recorded: what the call names, 0.00 otherwise.
+func TestReviewInvestmentMovementToolS718(t *testing.T) {
+	t.Parallel()
+	f := newReviewFixture(t)
+	inv := f.serve(
+		"1000.00", "2026-02-10",
+		pluggyMove("m-buy", "BUY", "2026-01-10", "1000.00"),
+		pluggyMove("m-income", "INTEREST", "2026-02-10", "12.34"),
+	)
+	f.must(inv.movement(t, "buy", "2026-01-10").ID, "confirm", f.applyBody())
+
+	args := f.incomeBody()
+	args["action"] = "confirm"
+	args["movement_id"] = inv.movement(t, "income", "2026-02-10").ID
+
+	for _, tc := range []struct{ given, stated string }{{"", "0.00"}, {"1.85", "1.85"}} {
+		if tc.given != "" {
+			args["withheld"] = tc.given
+		}
+
+		p, r := preview(t, f.h, "review_investment_movement", args)
+		last := p.Changes[len(p.Changes)-1]
+
+		if r.IsError || last.Field != "withheld" || last.After.Amount != tc.stated {
+			t.Fatalf("withheld %q: preview = %+v %s", tc.given, p, r.Content)
+		}
+	}
+
+	var got toolMovement
+	toolOutput(t, f.h, "review_investment_movement", args, &got)
+
+	rows := f.h.Rows(`SELECT gross, withheld FROM ledger_investment_income`)
+	if len(rows) != 1 || rows[0] != "1234 185" {
+		t.Fatalf("incomes = %v", rows)
+	}
+
+	dismiss := map[string]any{
+		"action": "dismiss", "movement_id": args["movement_id"], "withheld": "1.85",
+	}
+	f.h.ExpectToolError(
+		f.h.Tool("review_investment_movement", dismiss),
+		"invalid_arguments",
+		"withheld",
+	)
+}

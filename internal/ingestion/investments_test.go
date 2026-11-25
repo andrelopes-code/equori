@@ -430,6 +430,50 @@ func TestMovementsBeforeApplication_S546(t *testing.T) {
 	}
 }
 
+// S718: the bank amount of an interest is its gross; the tax withheld is what the confirmation
+// names.
+func TestConfirmIncomeWithheld_S718(t *testing.T) {
+	t.Parallel()
+	f := newReviewFixture(t)
+	inv := f.serve(
+		"1000.00", "2026-02-10",
+		pluggyMove("m-buy", "BUY", "2026-01-10", "1000.00"),
+		pluggyMove("m-income", "INTEREST", "2026-02-10", "12.34"),
+	)
+	buy := inv.movement(t, "buy", "2026-01-10")
+	income := inv.movement(t, "income", "2026-02-10")
+	withheld := func(body map[string]any, amount int64) map[string]any {
+		body["withheld"] = map[string]any{"amount": amount, "currency": "BRL"}
+
+		return body
+	}
+
+	f.h.ExpectProblem(
+		f.act(f.client, buy.ID, "confirm", withheld(f.applyBody(), 100)),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"withheld",
+	)
+	f.must(buy.ID, "confirm", f.applyBody())
+
+	body := f.incomeBody()
+	for _, amount := range []int64{-1, 1234} {
+		f.h.ExpectProblem(
+			f.act(f.client, income.ID, "confirm", withheld(body, amount)),
+			http.StatusUnprocessableEntity,
+			"validation_failed",
+			"withheld",
+		)
+	}
+
+	f.must(income.ID, "confirm", withheld(body, 185))
+
+	rows := f.h.Rows(`SELECT income_type, gross, withheld FROM ledger_investment_income`)
+	if len(rows) != 1 || rows[0] != "interest 1234 185" {
+		t.Fatalf("incomes = %v", rows)
+	}
+}
+
 func TestConfirmSaleWithTax_S547(t *testing.T) {
 	t.Parallel()
 	f := newReviewFixture(t)

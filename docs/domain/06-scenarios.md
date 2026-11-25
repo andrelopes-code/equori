@@ -1353,6 +1353,10 @@ Rules CQ2, CQ3 and FQ4 as amended on 2026-11-24 (`docs/specs/2026-11-18-contribu
 
 Rules IE1 and IE3, through the HTTP API and the tools, on a Brazilian book. `GET /investment-income/withholding` of a JCP of 45.00 answers 1750 bp and 7.88 for 2026-10-26, 1500 bp and 6.75 for 2025-12-31, and 0 for a dividend; nothing is recorded (S699). The proposal of `record_investment` for the JCP of 45.00 without `withheld` states 7.88 and records it; `withheld` "0" states and records 0.00; "6.75" states and records 6.75 (S700).
 
+### S718 Tax withheld on an interest of a connection
+
+Rule IE7, through the HTTP API and the tool. The amount of the bank is the gross. Confirming an income of 12.34 with `withheld` 1.85 records the gross 12.34 and the tax 1.85; -0.01 or 12.34 is 422 `withheld`, and so is `withheld` on the confirmation of an application. The proposal of `review_investment_movement` states the tax, 0.00 when the call names none.
+
 ### S712 Activity of a feed
 
 The scenario of `docs/specs/2026-11-24-feed-activity-design.md`. S712: while the run of `bcb_ptax` waits for its source, enabling `br_cdi` stores its rates and leaves it idle, with `bcb_ptax` still running; in a tick the indexes run first, the feeds behind the running one are queued and a disabled feed is idle.

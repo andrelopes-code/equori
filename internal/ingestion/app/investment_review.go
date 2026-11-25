@@ -17,15 +17,15 @@ var (
 	ErrLaterMovementConfirmed = errors.New("undo the later movements of this investment first")
 )
 
-// ConfirmMovement records what the movement proposes in the ledger; brokerageID,
-// cashAccountID and categoryID are uuid.Nil when not given.
+// ConfirmMovement records what the movement proposes in the ledger.
 func (s *Service) ConfirmMovement(
 	ctx context.Context,
 	booksID int64,
-	movementID, brokerageID, cashAccountID, categoryID uuid.UUID,
+	movementID uuid.UUID,
+	c Confirmation,
 ) (MovementView, error) {
 	return s.review(ctx, booksID, movementID, func(r reviewed) (resolution, error) {
-		return s.confirm(ctx, booksID, r, brokerageID, cashAccountID, categoryID)
+		return s.confirm(ctx, booksID, r, c)
 	})
 }
 
@@ -132,7 +132,7 @@ func (s *Service) confirm(
 	ctx context.Context,
 	booksID int64,
 	r reviewed,
-	brokerageID, cashAccountID, categoryID uuid.UUID,
+	c Confirmation,
 ) (resolution, error) {
 	kind := r.proposal().Kind
 	if kind == domain.ProposalNone || kind == domain.ProposalTaxOfSale {
@@ -143,15 +143,21 @@ func (s *Service) confirm(
 		return resolution{}, ErrMovementResolved
 	}
 
+	if c.Withheld != nil && kind != domain.ProposalIncome {
+		return resolution{}, &domain.FieldError{
+			Field: "withheld", Message: "is used by an income only",
+		}
+	}
+
 	switch kind {
 	case domain.ProposalApplication:
-		return s.confirmApplication(ctx, booksID, r, brokerageID, cashAccountID)
+		return s.confirmApplication(ctx, booksID, r, c.BrokerageID, c.CashAccountID)
 	case domain.ProposalContribution, domain.ProposalSale, domain.ProposalIncome:
 		if r.inv.Instrument == nil || r.inv.AccountID == nil || r.inv.BrokerageID == nil {
 			return resolution{}, ErrInvestmentNotApplied
 		}
 
-		return s.confirmFollowing(ctx, booksID, r, categoryID)
+		return s.confirmFollowing(ctx, booksID, r, c)
 	}
 
 	return resolution{}, noProposal()
@@ -190,11 +196,11 @@ func (s *Service) confirmFollowing(
 	ctx context.Context,
 	booksID int64,
 	r reviewed,
-	categoryID uuid.UUID,
+	c Confirmation,
 ) (resolution, error) {
 	m, p := r.movement(), r.proposal()
 
-	txID, err := s.record(ctx, booksID, r, categoryID)
+	txID, err := s.record(ctx, booksID, r, c)
 	if err != nil {
 		return resolution{}, err
 	}
@@ -212,7 +218,7 @@ func (s *Service) record(
 	ctx context.Context,
 	booksID int64,
 	r reviewed,
-	categoryID uuid.UUID,
+	c Confirmation,
 ) (uuid.UUID, error) {
 	m, inv, p := r.movement(), r.inv, r.proposal()
 	amount := absolute(m.Amount)
@@ -247,18 +253,43 @@ func (s *Service) record(
 			})
 		}
 	default:
-		if categoryID == uuid.Nil {
-			return uuid.Nil, &domain.FieldError{
-				Field: "category_id", Message: "is required to confirm an income",
-			}
-		}
-
-		txID, err = s.ledger.InvestmentIncome(ctx, booksID, InvestmentIncome{
-			AccountID: *inv.AccountID, CategoryID: categoryID, On: m.Date, Gross: amount,
-		})
+		txID, err = s.recordIncome(ctx, booksID, r, c)
 	}
 
 	return txID, err
+}
+
+func (s *Service) recordIncome(
+	ctx context.Context,
+	booksID int64,
+	r reviewed,
+	c Confirmation,
+) (uuid.UUID, error) {
+	if c.CategoryID == uuid.Nil {
+		return uuid.Nil, &domain.FieldError{
+			Field: "category_id", Message: "is required to confirm an income",
+		}
+	}
+
+	m := r.movement()
+	gross := absolute(m.Amount)
+
+	withheld, err := money.New(0, gross.Currency())
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	if c.Withheld != nil {
+		withheld = *c.Withheld
+	}
+
+	return s.ledger.InvestmentIncome(ctx, booksID, InvestmentIncome{
+		AccountID:  *r.inv.AccountID,
+		CategoryID: c.CategoryID,
+		On:         m.Date,
+		Gross:      gross,
+		Withheld:   withheld,
+	})
 }
 
 // newApplication builds the first application of an investment from its source facts.

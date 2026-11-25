@@ -843,6 +843,9 @@ type InvestmentConfirmation struct {
 
 	// CategoryId The income category of an income movement; required for it.
 	CategoryId *openapi_types.UUID `json:"category_id,omitempty"`
+
+	// Withheld For an income movement, the tax withheld from its amount, which is the gross. Default 0.
+	Withheld *Money `json:"withheld,omitempty"`
 }
 
 // InvestmentList defines model for InvestmentList.
