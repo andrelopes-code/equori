@@ -1,4 +1,5 @@
 import { Link } from "@slotted/react/link";
+import type { MouseEventHandler } from "react";
 
 import { AssistantIcon } from "@/features/assistant/panel/assistant-icon";
 import { linkHref } from "@/features/assistant/view/link-href";
@@ -18,7 +19,7 @@ interface ViewFootProps {
   switchable: boolean;
   mode: ViewMode;
   onMode: (mode: ViewMode) => void;
-  onCopy: () => void;
+  onCopy: MouseEventHandler<HTMLButtonElement>;
 }
 
 // The foot of a view: the screen of its records, the chart/table switch and copy.

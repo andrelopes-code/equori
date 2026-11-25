@@ -20,6 +20,7 @@ import type {
   PresetName,
 } from "@/features/planning/income-split/bucket-draft";
 import { useT } from "@/i18n/i18n-provider";
+import { newId } from "@/ui/runtime/new-id";
 
 type Bucket = components["schemas"]["BudgetBucket"];
 
@@ -49,7 +50,7 @@ export function useBucketDraft(
   const addBucket = () => {
     if (draft.buckets.length >= maxBuckets) return;
     const bucket = {
-      key: crypto.randomUUID(),
+      key: newId(),
       name: "",
       share: "0",
       measure: "ceiling" as const,
@@ -62,14 +63,7 @@ export function useBucketDraft(
   };
 
   const preset = (name: PresetName) => {
-    setDraft(
-      applyPreset(
-        draft,
-        name,
-        (key) => t(key),
-        () => crypto.randomUUID(),
-      ),
-    );
+    setDraft(applyPreset(draft, name, (key) => t(key), newId));
   };
 
   const write = (

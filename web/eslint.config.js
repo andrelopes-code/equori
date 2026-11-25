@@ -104,6 +104,20 @@ const bareHelpMark = {
     "Draw a help mark with HelpTip or HelpPopover (@/ui/display), or FieldTitle's help in a form (O20).",
 };
 
+// A page opened by its address over plain http is no secure context, and these are undefined there.
+const secureContextOnly = [
+  {
+    object: "crypto",
+    property: "randomUUID",
+    message: "Create an id with newId (@/ui/runtime/new-id).",
+  },
+  {
+    object: "navigator",
+    property: "clipboard",
+    message: "Copy with copyText (@/ui/runtime/copy-text).",
+  },
+];
+
 // Flat-config rule options replace instead of merging: every block below
 // restates the full option list for its files.
 const restrict = ({ patterns, paths = [] }) => ["error", { patterns, paths }];
@@ -215,6 +229,11 @@ export default defineConfig(
         { paths: unmaskedMoney },
       ],
     },
+  },
+  {
+    files: ["src/**"],
+    ignores: ["src/ui/runtime/**", "**/*.test.ts", "**/*.test.tsx"],
+    rules: { "no-restricted-properties": ["error", ...secureContextOnly] },
   },
   {
     files: ["src/app/providers.tsx", "src/api/**", "src/testing/**"],

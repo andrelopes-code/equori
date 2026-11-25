@@ -52,6 +52,7 @@ function renderView(ask?: (text: string) => void) {
 
 afterEach(() => {
   delete FORMS.ranking_test;
+  vi.unstubAllGlobals();
 });
 
 describe("AnswerView", () => {
@@ -140,6 +141,7 @@ describe("AnswerView", () => {
 
   it("copies the view as text", async () => {
     const user = userEvent.setup();
+    vi.stubGlobal("isSecureContext", true);
     const write = vi.spyOn(navigator.clipboard, "writeText");
     renderView();
 
@@ -151,5 +153,23 @@ describe("AnswerView", () => {
     expect(write).toHaveBeenCalledWith(
       expect.stringContaining("Category\tTotal\nMoradia\t39%"),
     );
+  });
+
+  it("copies without a clipboard, as on a page served over plain http", async () => {
+    const user = userEvent.setup();
+    Reflect.deleteProperty(navigator, "clipboard");
+    let copied = "";
+    Object.defineProperty(document, "execCommand", {
+      configurable: true,
+      value: () => {
+        copied = document.querySelector("textarea")?.value ?? "";
+        return true;
+      },
+    });
+    renderView();
+
+    await user.click(screen.getByRole("button", { name: "Copy as text" }));
+
+    expect(copied).toContain("Moradia takes 39% of the");
   });
 });

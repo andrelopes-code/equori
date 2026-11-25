@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { fakeApi, json, problem } from "@/testing/fake-api";
@@ -91,7 +91,23 @@ beforeEach(() => {
   sessionStorage.clear();
 });
 
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
 describe("fixed income entry", () => {
+  it("opens in a page without randomUUID, as over plain http", async () => {
+    vi.stubGlobal("crypto", {
+      getRandomValues: crypto.getRandomValues.bind(crypto),
+    });
+
+    await renderApp(path, { fetch: api([]) });
+
+    expect(
+      await screen.findByRole("button", { name: catalogEn["entry.save"] }),
+    ).toBeInTheDocument();
+  });
+
   // S479
   it("sends the contract and the amount of the form and opens the transaction", async () => {
     const sent: unknown[] = [];

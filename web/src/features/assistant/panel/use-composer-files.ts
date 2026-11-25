@@ -8,6 +8,7 @@ import {
 import type { AssistantFile } from "@/features/assistant/api";
 import { fileFailure } from "@/features/assistant/panel/file-failure";
 import type { MessageKey } from "@/i18n/catalog.en";
+import { newId } from "@/ui/runtime/new-id";
 
 // One file of the composer: uploading with its progress, stored with its server record, or
 // failed with its cause (FU2, FU3).
@@ -97,12 +98,12 @@ export function useComposerFiles({ upload, remove }: ComposerFilesPorts) {
   const add = useCallback(
     (added: File[], rejected: ComposerFileRejection[]) => {
       const fresh = added.map((file) => ({
-        key: crypto.randomUUID(),
+        key: newId(),
         file,
         progress: 0,
       }));
       const refused = rejected.map((r) => ({
-        key: crypto.randomUUID(),
+        key: newId(),
         file: r.file ?? new File([], r.name, { type: r.type }),
         progress: null,
         failure: fileFailure(r.reason),

@@ -17,6 +17,7 @@ import {
 import type { FixedIncomeDraft } from "@/features/transactions/fixed-income-entry/fixed-income-draft";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
+import { newId } from "@/ui/runtime/new-id";
 
 interface Index {
   id: string;
@@ -58,7 +59,7 @@ export function useFixedIncomeEntry(
   const subtypes = useQuery(subtypesQuery(api, "fixed_income")).data;
 
   const [draft, setDraft] = useState<FixedIncomeDraft>(() => ({
-    ...emptyFixedIncomeDraft(crypto.randomUUID(), brokerageId, today),
+    ...emptyFixedIncomeDraft(newId(), brokerageId, today),
     instrument: contract,
   }));
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -131,7 +132,7 @@ export function useFixedIncomeEntry(
   const reset = () => {
     setDraft({
       ...emptyFixedIncomeDraft(
-        crypto.randomUUID(),
+        newId(),
         state.brokerage?.id ?? null,
         draft.appliedOn,
       ),

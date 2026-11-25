@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type MouseEvent } from "react";
 
 import { AssistantIcon } from "@/features/assistant/panel/assistant-icon";
 import { currencySymbol } from "@/features/assistant/view/currency-symbol";
@@ -17,6 +17,7 @@ import type { AssistantView as View } from "@/features/assistant/view/view-types
 import { ViewVerdict } from "@/features/assistant/view/view-verdict";
 import styles from "@/features/assistant/view/answer-view.module.css";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { copyText } from "@/ui/runtime/copy-text";
 
 interface AnswerViewProps {
   view: View;
@@ -38,8 +39,15 @@ export function AnswerView({ view }: AnswerViewProps) {
   const Body = mode === "chart" && plot === undefined ? form?.Body : undefined;
   const verdict = texts.verdict.map((p) => p.text).join("");
 
-  function handleCopy() {
-    void navigator.clipboard.writeText(viewCopy({ ...texts, verdict }));
+  function handleCopy(event: MouseEvent<HTMLButtonElement>) {
+    const button = event.currentTarget;
+
+    copyText(
+      viewCopy({ ...texts, verdict }),
+      button.parentElement ?? button,
+    ).catch(() => {
+      // A refused write changes nothing on the screen.
+    });
   }
 
   return (
