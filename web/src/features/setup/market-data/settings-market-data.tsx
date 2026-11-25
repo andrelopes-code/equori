@@ -13,6 +13,7 @@ import { MarketDataToolbar } from "@/features/setup/market-data/market-data-tool
 import { meQuery } from "@/features/session";
 import {
   marketDataFeedsQuery,
+  useAskedMarketDataFeeds,
   useRefreshMarketData,
   useSetMarketDataFeed,
 } from "@/features/setup/api";
@@ -34,6 +35,7 @@ export function SettingsMarketData() {
   const feeds = useQuery(marketDataFeedsQuery(api, runsBefore));
   const me = useQuery(meQuery(api)).data;
   const set = useSetMarketDataFeed();
+  const asked = useAskedMarketDataFeeds();
   const refresh = useRefreshMarketData();
 
   const items = feeds.data ?? [];
@@ -114,7 +116,7 @@ export function SettingsMarketData() {
             home={me?.region}
             controls={{
               admin,
-              loadingId: set.isPending ? set.variables.id : null,
+              asked,
               onSet: handleSet,
             }}
           />

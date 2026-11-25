@@ -119,9 +119,8 @@ export function MarketDataFeedRow({ feed, controls }: MarketDataFeedRowProps) {
         className={styles.toggle}
         aria-label={fullName}
         aria-describedby={describedBy}
-        checked={feed.enabled}
+        checked={controls.asked.get(feed.id) ?? feed.enabled}
         readOnly={!controls.admin}
-        loading={controls.loadingId === feed.id}
         invalid={feedHasProblem(feed)}
         onCheckedChange={handleCheckedChange}
       />

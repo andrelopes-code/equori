@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { accountRoutes } from "@/testing/account-api";
-import { fakeApi, json } from "@/testing/fake-api";
+import { fakeApi, json, problem } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
 
 beforeEach(() => {
@@ -140,6 +140,50 @@ describe("Market data section (ADR 025 F10)", () => {
     );
     await waitFor(() => {
       expect(a.puts).toEqual([{ id: "br_ipca", enabled: true }]);
+    });
+  });
+
+  it("moves the switch at the press and returns it when the request fails", async () => {
+    const a = api(feeds({ br_cdi: { enabled: true, last: "2026-10-26" } }));
+    const answers: (() => void)[] = [];
+    const held = (...args: Parameters<typeof globalThis.fetch>) => {
+      if (new Request(...args).method !== "PUT") return a.fetch(...args);
+
+      return new Promise<Response>((resolve) => {
+        answers.push(() => {
+          resolve(problem(500, "internal"));
+        });
+      });
+    };
+    await open(Object.assign(held, { calls: a.fetch.calls }));
+    const ipca = await within(section()).findByRole("switch", {
+      name: catalogEn["marketData.feed.br_ipca"],
+    });
+    const cdi = within(section()).getByRole("switch", {
+      name: catalogEn["marketData.feed.br_cdi"],
+    });
+
+    await userEvent.click(ipca);
+    await userEvent.click(cdi);
+
+    await waitFor(() => {
+      expect(ipca).toBeChecked();
+      expect(cdi).not.toBeChecked();
+    });
+    expect(ipca).not.toHaveAttribute("aria-busy");
+    // One request at a time: the second waits for the answer of the first.
+    expect(answers).toHaveLength(1);
+
+    answers[0]?.();
+    await waitFor(() => {
+      expect(answers).toHaveLength(2);
+    });
+    expect(ipca).not.toBeChecked();
+    expect(cdi).not.toBeChecked();
+
+    answers[1]?.();
+    await waitFor(() => {
+      expect(cdi).toBeChecked();
     });
   });
 

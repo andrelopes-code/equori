@@ -1,6 +1,7 @@
 import {
   queryOptions,
   useMutation,
+  useMutationState,
   useQueryClient,
 } from "@tanstack/react-query";
 import type { Client } from "openapi-fetch";
@@ -668,9 +669,16 @@ export function useDeleteAccessToken() {
 
 const marketDataKeys = {
   feeds: ["setup", "market-data-feeds"] as const,
+  setFeed: ["setup", "set-market-data-feed"] as const,
 };
 
 type MarketDataFeed = components["schemas"]["MarketDataFeed"];
+
+interface SetMarketDataFeedInput {
+  id: string;
+  enabled: boolean;
+  acceptUnofficial?: boolean;
+}
 
 // ADR 025 F5. runsBefore holds the last_run of each enabled feed when an update was requested;
 // the list is read every 5 seconds until each of them ran again.
@@ -708,15 +716,14 @@ export function useSetMarketDataFeed() {
   const api = useApi();
   const queryClient = useQueryClient();
   return useMutation({
+    mutationKey: marketDataKeys.setFeed,
+    // One request at a time, in the order of the presses: the last press decides the stored value.
+    scope: { id: marketDataKeys.setFeed.join("/") },
     mutationFn: async ({
       id,
       enabled,
       acceptUnofficial,
-    }: {
-      id: string;
-      enabled: boolean;
-      acceptUnofficial?: boolean;
-    }) =>
+    }: SetMarketDataFeedInput) =>
       unwrap(
         await api.PUT("/market-data/feeds/{id}", {
           params: { path: { id } },
@@ -729,6 +736,16 @@ export function useSetMarketDataFeed() {
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: marketDataKeys.feeds }),
   });
+}
+
+// The value each feed was asked to take and the server has not answered yet, by feed.
+export function useAskedMarketDataFeeds(): ReadonlyMap<string, boolean> {
+  const asked = useMutationState({
+    filters: { mutationKey: marketDataKeys.setFeed, status: "pending" },
+    select: (mutation) => mutation.state.variables as SetMarketDataFeedInput,
+  });
+
+  return new Map(asked.map((input) => [input.id, input.enabled]));
 }
 
 export function useRefreshMarketData() {
