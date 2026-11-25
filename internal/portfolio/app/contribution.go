@@ -169,7 +169,7 @@ func (s *Service) SaveContributionPlan(
 		return ContributionView{}, err
 	}
 
-	if err := s.repo.SaveContributionPlan(ctx, booksID, p); err != nil {
+	if _, err := s.repo.SaveContributionPlan(ctx, booksID, p); err != nil {
 		return ContributionView{}, fmt.Errorf("store the contribution plan: %w", err)
 	}
 

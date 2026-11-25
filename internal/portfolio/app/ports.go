@@ -170,7 +170,7 @@ type Repository interface {
 	// ForgetRebuildVersion clears the stored version, so the next start rebuilds again.
 	ForgetRebuildVersion(ctx context.Context) error
 	ContributionPlan(ctx context.Context, booksID int64) (domain.Plan, bool, error)
-	SaveContributionPlan(ctx context.Context, booksID int64, p domain.Plan) error
+	SaveContributionPlan(ctx context.Context, booksID int64, p domain.Plan) (int64, error)
 	ProjectionPlan(ctx context.Context, booksID, memberID int64) (ProjectionView, bool, error)
 	// SaveProjectionPlan stores the plan of the member in one transaction. It keeps the currency
 	// and the baseline of a stored plan and replaces its changes dated on or after from.

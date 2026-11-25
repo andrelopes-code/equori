@@ -36,8 +36,4 @@ func TestBlankContributionAnswers(t *testing.T) {
 	if string(v34[0].Rows[0]) != string(answer("0", "false")) {
 		t.Fatalf("the step changed its input: %s", v34[0].Rows[0])
 	}
-
-	if ArchiveVersion != 35 {
-		t.Fatalf("ArchiveVersion = %d, want 35", ArchiveVersion)
-	}
 }

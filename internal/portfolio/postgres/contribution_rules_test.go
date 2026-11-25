@@ -44,7 +44,7 @@ func TestContributionRulesRoundTrip(t *testing.T) {
 		},
 	}}
 
-	if err := repo.SaveContributionPlan(ctx, booksID, want); err != nil {
+	if _, err := repo.SaveContributionPlan(ctx, booksID, want); err != nil {
 		t.Fatalf("save: %v", err)
 	}
 
@@ -53,6 +53,7 @@ func TestContributionRulesRoundTrip(t *testing.T) {
 		t.Fatalf("read: ok %v, err %v", ok, err)
 	}
 
+	want.Revision = 1
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("plan read back\n got %+v\nwant %+v", got, want)
 	}

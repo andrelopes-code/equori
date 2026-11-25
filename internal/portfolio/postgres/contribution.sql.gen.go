@@ -7,25 +7,27 @@ package postgres
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 )
 
-const deleteContributionPlan = `-- name: DeleteContributionPlan :exec
-DELETE FROM portfolio_contribution_plan
+const deleteContributionClasses = `-- name: DeleteContributionClasses :exec
+DELETE FROM portfolio_contribution_class
 WHERE
     books_id = $1
 `
 
-func (q *Queries) DeleteContributionPlan(ctx context.Context, booksID int64) error {
-	_, err := q.db.Exec(ctx, deleteContributionPlan, booksID)
+func (q *Queries) DeleteContributionClasses(ctx context.Context, booksID int64) error {
+	_, err := q.db.Exec(ctx, deleteContributionClasses, booksID)
 	return err
 }
 
 const getContributionPlan = `-- name: GetContributionPlan :one
 SELECT
     amount,
-    currency
+    currency,
+    revision
 FROM
     portfolio_contribution_plan
 WHERE
@@ -35,20 +37,37 @@ WHERE
 type GetContributionPlanRow struct {
 	Amount   *int64
 	Currency *string
+	Revision int64
 }
 
 func (q *Queries) GetContributionPlan(ctx context.Context, booksID int64) (GetContributionPlanRow, error) {
 	row := q.db.QueryRow(ctx, getContributionPlan, booksID)
 	var i GetContributionPlanRow
-	err := row.Scan(&i.Amount, &i.Currency)
+	err := row.Scan(&i.Amount, &i.Currency, &i.Revision)
 	return i, err
 }
 
 const insertContributionAnswer = `-- name: InsertContributionAnswer :exec
 INSERT INTO
-    portfolio_contribution_answer (books_id, class_id, question_position, member_position, yes)
+    portfolio_contribution_answer (
+        books_id,
+        class_id,
+        question_position,
+        member_position,
+        yes,
+        answered_on,
+        overrides
+    )
 VALUES
-    ($1, $2, $3, $4, $5)
+    (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7
+    )
 `
 
 type InsertContributionAnswerParams struct {
@@ -57,6 +76,8 @@ type InsertContributionAnswerParams struct {
 	QuestionPosition int32
 	MemberPosition   int32
 	Yes              *bool
+	AnsweredOn       *time.Time
+	Overrides        bool
 }
 
 func (q *Queries) InsertContributionAnswer(ctx context.Context, arg InsertContributionAnswerParams) error {
@@ -66,6 +87,8 @@ func (q *Queries) InsertContributionAnswer(ctx context.Context, arg InsertContri
 		arg.QuestionPosition,
 		arg.MemberPosition,
 		arg.Yes,
+		arg.AnsweredOn,
+		arg.Overrides,
 	)
 	return err
 }
@@ -100,7 +123,7 @@ func (q *Queries) InsertContributionClass(ctx context.Context, arg InsertContrib
 
 const insertContributionMember = `-- name: InsertContributionMember :exec
 INSERT INTO
-    portfolio_contribution_member (books_id, class_id, position, account_id, instrument, target_bp)
+    portfolio_contribution_member (books_id, class_id, position, account_id, instrument, target_bp, release_month)
 VALUES
     (
         $1,
@@ -108,17 +131,19 @@ VALUES
         $3,
         $4,
         $5,
-        $6
+        $6,
+        $7
     )
 `
 
 type InsertContributionMemberParams struct {
-	BooksID    int64
-	ClassID    uuid.UUID
-	Position   int32
-	AccountID  uuid.NullUUID
-	Instrument *string
-	TargetBp   *int32
+	BooksID      int64
+	ClassID      uuid.UUID
+	Position     int32
+	AccountID    uuid.NullUUID
+	Instrument   *string
+	TargetBp     *int32
+	ReleaseMonth *time.Time
 }
 
 func (q *Queries) InsertContributionMember(ctx context.Context, arg InsertContributionMemberParams) error {
@@ -129,31 +154,14 @@ func (q *Queries) InsertContributionMember(ctx context.Context, arg InsertContri
 		arg.AccountID,
 		arg.Instrument,
 		arg.TargetBp,
+		arg.ReleaseMonth,
 	)
-	return err
-}
-
-const insertContributionPlan = `-- name: InsertContributionPlan :exec
-INSERT INTO
-    portfolio_contribution_plan (books_id, amount, currency)
-VALUES
-    ($1, $2, $3)
-`
-
-type InsertContributionPlanParams struct {
-	BooksID  int64
-	Amount   *int64
-	Currency *string
-}
-
-func (q *Queries) InsertContributionPlan(ctx context.Context, arg InsertContributionPlanParams) error {
-	_, err := q.db.Exec(ctx, insertContributionPlan, arg.BooksID, arg.Amount, arg.Currency)
 	return err
 }
 
 const insertContributionQuestion = `-- name: InsertContributionQuestion :exec
 INSERT INTO
-    portfolio_contribution_question (books_id, class_id, position, text, fact, limit_value)
+    portfolio_contribution_question (books_id, class_id, position, text, fact, limit_value, effect, review_months)
 VALUES
     (
         $1,
@@ -161,17 +169,21 @@ VALUES
         $3,
         $4,
         $5,
-        nullif($6::text, '')::numeric
+        nullif($6::text, '')::numeric,
+        $7,
+        $8
     )
 `
 
 type InsertContributionQuestionParams struct {
-	BooksID    int64
-	ClassID    uuid.UUID
-	Position   int32
-	Text       string
-	Fact       *string
-	LimitValue string
+	BooksID      int64
+	ClassID      uuid.UUID
+	Position     int32
+	Text         string
+	Fact         *string
+	LimitValue   string
+	Effect       string
+	ReviewMonths int16
 }
 
 func (q *Queries) InsertContributionQuestion(ctx context.Context, arg InsertContributionQuestionParams) error {
@@ -182,6 +194,8 @@ func (q *Queries) InsertContributionQuestion(ctx context.Context, arg InsertCont
 		arg.Text,
 		arg.Fact,
 		arg.LimitValue,
+		arg.Effect,
+		arg.ReviewMonths,
 	)
 	return err
 }
@@ -253,7 +267,9 @@ SELECT
     class_id,
     question_position,
     member_position,
-    yes
+    yes,
+    answered_on,
+    overrides
 FROM
     portfolio_contribution_answer
 WHERE
@@ -265,6 +281,8 @@ type ListContributionAnswersRow struct {
 	QuestionPosition int32
 	MemberPosition   int32
 	Yes              *bool
+	AnsweredOn       *time.Time
+	Overrides        bool
 }
 
 func (q *Queries) ListContributionAnswers(ctx context.Context, booksID int64) ([]ListContributionAnswersRow, error) {
@@ -281,6 +299,8 @@ func (q *Queries) ListContributionAnswers(ctx context.Context, booksID int64) ([
 			&i.QuestionPosition,
 			&i.MemberPosition,
 			&i.Yes,
+			&i.AnsweredOn,
+			&i.Overrides,
 		); err != nil {
 			return nil, err
 		}
@@ -344,7 +364,8 @@ SELECT
     m.position,
     m.account_id,
     m.instrument,
-    m.target_bp
+    m.target_bp,
+    m.release_month
 FROM
     portfolio_contribution_member AS m
     JOIN portfolio_contribution_class AS c ON c.books_id = m.books_id
@@ -357,11 +378,12 @@ ORDER BY
 `
 
 type ListContributionMembersRow struct {
-	ClassID    uuid.UUID
-	Position   int32
-	AccountID  uuid.NullUUID
-	Instrument *string
-	TargetBp   *int32
+	ClassID      uuid.UUID
+	Position     int32
+	AccountID    uuid.NullUUID
+	Instrument   *string
+	TargetBp     *int32
+	ReleaseMonth *time.Time
 }
 
 func (q *Queries) ListContributionMembers(ctx context.Context, booksID int64) ([]ListContributionMembersRow, error) {
@@ -379,6 +401,7 @@ func (q *Queries) ListContributionMembers(ctx context.Context, booksID int64) ([
 			&i.AccountID,
 			&i.Instrument,
 			&i.TargetBp,
+			&i.ReleaseMonth,
 		); err != nil {
 			return nil, err
 		}
@@ -396,6 +419,8 @@ SELECT
     q.position,
     q.text,
     q.fact,
+    q.effect,
+    q.review_months,
     coalesce(q.limit_value::text, '')::text AS limit_value
 FROM
     portfolio_contribution_question AS q
@@ -409,11 +434,13 @@ ORDER BY
 `
 
 type ListContributionQuestionsRow struct {
-	ClassID    uuid.UUID
-	Position   int32
-	Text       string
-	Fact       *string
-	LimitValue string
+	ClassID      uuid.UUID
+	Position     int32
+	Text         string
+	Fact         *string
+	Effect       string
+	ReviewMonths int16
+	LimitValue   string
 }
 
 func (q *Queries) ListContributionQuestions(ctx context.Context, booksID int64) ([]ListContributionQuestionsRow, error) {
@@ -430,6 +457,8 @@ func (q *Queries) ListContributionQuestions(ctx context.Context, booksID int64) 
 			&i.Position,
 			&i.Text,
 			&i.Fact,
+			&i.Effect,
+			&i.ReviewMonths,
 			&i.LimitValue,
 		); err != nil {
 			return nil, err
@@ -507,4 +536,31 @@ func (q *Queries) ListContributionRules(ctx context.Context, booksID int64) ([]L
 		return nil, err
 	}
 	return items, nil
+}
+
+const upsertContributionPlan = `-- name: UpsertContributionPlan :one
+INSERT INTO
+    portfolio_contribution_plan (books_id, amount, currency)
+VALUES
+    ($1, $2, $3)
+ON CONFLICT (books_id) DO UPDATE
+SET
+    amount = excluded.amount,
+    currency = excluded.currency,
+    revision = portfolio_contribution_plan.revision + 1
+RETURNING
+    revision
+`
+
+type UpsertContributionPlanParams struct {
+	BooksID  int64
+	Amount   *int64
+	Currency *string
+}
+
+func (q *Queries) UpsertContributionPlan(ctx context.Context, arg UpsertContributionPlanParams) (int64, error) {
+	row := q.db.QueryRow(ctx, upsertContributionPlan, arg.BooksID, arg.Amount, arg.Currency)
+	var revision int64
+	err := row.Scan(&revision)
+	return revision, err
 }
