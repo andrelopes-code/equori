@@ -31,7 +31,7 @@ export function IncomeAside({ view, baseScale, onWithheld }: IncomeAsideProps) {
 
       {estimate !== null && (
         <FigureCard
-          label={t("income.estimate")}
+          label={t("entry.estimate")}
           value={figure(estimate.withheld)}
           note={t("income.estimateNote", {
             rate: formatBasisPoints(estimate.rateBp, tag),

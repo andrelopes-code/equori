@@ -1244,7 +1244,7 @@ export const catalogEn = {
   "income.withheldCategoryPlaceholder": "Default tax account",
   "income.category": "Income category",
   "income.net": "Net amount",
-  "income.estimate": "Estimate",
+  "entry.estimate": "Estimate",
   "income.estimateNote": "Withheld: {rate} of the gross amount",
   "income.noneWithheld": "Nothing withheld",
   "income.required.type": "Choose the income type.",

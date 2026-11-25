@@ -1252,7 +1252,7 @@ export const catalogPtBR: Catalog = {
   "income.withheldCategoryPlaceholder": "Conta de impostos padrão",
   "income.category": "Categoria do provento",
   "income.net": "Valor líquido",
-  "income.estimate": "Estimativa",
+  "entry.estimate": "Estimativa",
   "income.estimateNote": "Retido: {rate} do valor bruto",
   "income.noneWithheld": "Nada retido",
   "income.required.type": "Escolha o tipo de provento.",

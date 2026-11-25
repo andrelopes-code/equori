@@ -77,9 +77,9 @@ export function TradeAside({
           />
           {view.withheld !== null && (
             <FigureCard
-              label={t("trade.estimatedTax")}
+              label={t("entry.estimate")}
               value={figure(view.withheld)}
-              note={null}
+              note={t("trade.estimatedTax")}
               action={
                 <Button
                   size="sm"
