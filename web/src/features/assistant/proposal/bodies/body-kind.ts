@@ -4,14 +4,12 @@ export type BodyKind =
   | "void"
   | "record"
   | "schedule"
-  | "investment"
+  | "ticket"
   | "limit"
   | "payment"
   | "file"
   | "goal"
   | "budget"
-  | "application"
-  | "move"
   | "fields";
 
 const BODY_KINDS = new Map<string, BodyKind>(
@@ -24,8 +22,9 @@ const BODY_KINDS = new Map<string, BodyKind>(
     record_transaction: "record",
     "manage_schedule.create": "schedule",
     "manage_schedule.change_terms": "schedule",
-    "record_investment.buy": "investment",
-    "record_investment.sell": "investment",
+    record_brokerage_note: "ticket",
+    record_fixed_income: "ticket",
+    transfer_custody: "ticket",
     "manage_card.set_credit_limit": "limit",
     "settle_statement.pay": "payment",
     import_statement_file: "file",
@@ -34,11 +33,14 @@ const BODY_KINDS = new Map<string, BodyKind>(
     "manage_budget_or_goal.create_goal": "goal",
     "manage_budget_or_goal.set_budget_amount": "budget",
     "manage_budget_or_goal.create_budget": "budget",
-    record_fixed_income: "application",
-    transfer_custody: "move",
   } satisfies Record<string, BodyKind>),
 );
 
+// Every kind of these tools is an investment operation.
+const TICKETS = ["record_investment.", "record_corporate_action."];
+
 export function bodyKind(action: string): BodyKind {
+  if (TICKETS.some((prefix) => action.startsWith(prefix))) return "ticket";
+
   return BODY_KINDS.get(action) ?? "fields";
 }

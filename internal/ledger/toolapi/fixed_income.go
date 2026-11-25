@@ -120,6 +120,10 @@ func planFixedIncome(
 	appendMoneyChange(&pv, "amount", &a.Amount)
 	appendMoneyChange(&pv, "fees", a.Fees)
 	appendMoneyChange(&pv, "net", &net)
+	pv.Changes = append(
+		pv.Changes,
+		tool.Change{Field: "institution", After: tool.TextValue(cash.name)},
+	)
 
 	if cash.cashName != "" {
 		pv.Changes = append(
@@ -200,9 +204,12 @@ func fixedIncomeApplication(
 		return app.FixedIncomeApplication{}, err
 	}
 
-	if _, err = svc.Account(ctx, booksID, brokerageID); err != nil {
+	brokerage, err := svc.Account(ctx, booksID, brokerageID)
+	if err != nil {
 		return app.FixedIncomeApplication{}, err
 	}
+
+	cash.name = brokerage.Name
 
 	currency, err := resolveTargetCash(
 		ctx,

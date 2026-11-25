@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { initials } from "@/features/assistant/proposal/initials";
+import { initials } from "@/features/assistant/proposal/bodies/initials";
 
 describe("initials", () => {
   it.each([

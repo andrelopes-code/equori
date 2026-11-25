@@ -44,19 +44,4 @@ describe("write bodies", () => {
 
     expect(screen.getByText(/= 8 × R\$\s?1,875\.00/)).toBeInTheDocument();
   });
-
-  it("draws a custody transfer from the holding to the brokerage", () => {
-    draw({
-      action: "transfer_custody",
-      target: "ITSA4 · Clear",
-      changes: [
-        { field: "account", after: { text: "XP" } },
-        { field: "quantity", after: { text: "200" } },
-      ],
-    });
-
-    expect(screen.getByText("ITSA4 · Clear")).toBeInTheDocument();
-    expect(screen.getByText("XP")).toBeInTheDocument();
-    expect(screen.getByText("200")).toBeInTheDocument();
-  });
 });

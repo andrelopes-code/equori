@@ -239,41 +239,6 @@
       color-mix(in oklab, var(--slotted-tone-accent-solid) 18%, transparent);
   }
 
-  /* Investment: quantity times price equals total. */
-  .eq {
-    display: grid;
-    grid-template-columns: auto 18px auto 18px minmax(0, 1fr);
-    align-items: end;
-    column-gap: 6px;
-  }
-
-  .eqCell {
-    display: grid;
-    gap: 2px;
-    min-inline-size: 0;
-  }
-
-  .eqValue {
-    font-size: 1.125rem;
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-  }
-
-  .eqOp {
-    padding-block-end: 20px;
-    text-align: center;
-    color: var(--slotted-text-muted);
-  }
-
-  .eqTotal {
-    justify-items: end;
-  }
-
-  .eqTotal .eqValue {
-    font-size: 1.25rem;
-    color: var(--slotted-tone-accent-text);
-  }
-
   /* Credit limit: current fill and the hatched change. */
   .gauge {
     display: grid;
@@ -416,8 +381,8 @@
   }
 }
 
-/* Before → after rows, the one-line plan of a write, and units moving between accounts (answer
-   views design, write bodies). */
+/* Before → after rows, and the one-line plan of a write (answer views design, write
+   bodies). */
 @layer app {
   .diff {
     display: grid;
@@ -493,40 +458,5 @@
     font-size: var(--slotted-font-size-lg);
     font-weight: var(--slotted-font-weight-semibold);
     font-variant-numeric: tabular-nums;
-  }
-
-  .moveFlow {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 14px minmax(0, 1fr) 14px minmax(
-        0,
-        1fr
-      );
-    align-items: center;
-    gap: 6px;
-  }
-
-  .moveNode,
-  .moveNodeHot {
-    display: flex;
-    flex-direction: column;
-    min-inline-size: 0;
-    padding: 6px 10px;
-    overflow: hidden;
-    border-radius: 8px;
-    background: color-mix(in oklab, var(--slotted-text) 5%, transparent);
-    font-size: var(--slotted-font-size-sm);
-    font-weight: var(--slotted-font-weight-semibold);
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .moveNodeHot {
-    background: var(--slotted-tone-accent-surface);
-  }
-
-  .moveNode small {
-    color: var(--slotted-text-muted);
-    font-size: var(--slotted-font-size-xs);
-    font-weight: var(--slotted-font-weight-regular);
   }
 }

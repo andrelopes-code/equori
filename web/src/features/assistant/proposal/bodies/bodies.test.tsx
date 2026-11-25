@@ -177,46 +177,6 @@ describe("OperationBody", () => {
     ).toBeVisible();
   });
 
-  it("draws a purchase as quantity times price equals total", () => {
-    drawBody({
-      action: "record_investment.buy",
-      changes: [
-        { field: "instrument", after: { text: "PETR4" } },
-        { field: "quantity", after: { text: "100" } },
-        { field: "price", after: { text: "$34.20" } },
-        { field: "amount", after: usd("3420.00") },
-        { field: "account", after: { text: "XP" } },
-      ],
-    });
-
-    expect(screen.getByText("100")).toBeVisible();
-    expect(screen.getByText("PETR4")).toBeVisible();
-    expect(screen.getByText("$34.20")).toBeVisible();
-    expect(screen.getByText(catalogEn["assistant.body.price"])).toBeVisible();
-    expect(screen.getByText("$3,420.00")).toBeVisible();
-    expect(screen.getByText(catalogEn["assistant.body.total"])).toBeVisible();
-    expect(screen.getByText("Paid from XP")).toBeVisible();
-  });
-
-  it("draws a sale with the account it pays into and its fees", () => {
-    drawBody({
-      action: "record_investment.sell",
-      changes: [
-        { field: "instrument", after: { text: "WRLD11" } },
-        { field: "quantity", after: { text: "1" } },
-        { field: "price", after: { text: "157.71" } },
-        { field: "fees", after: usd("2.10") },
-        { field: "amount", after: usd("157.71") },
-        { field: "account", after: { text: "Inter" } },
-      ],
-    });
-
-    expect(screen.getByText("Received in Inter")).toBeVisible();
-    expect(screen.queryByText("Paid from Inter")).toBeNull();
-    expect(screen.getByText(catalogEn["assistant.field.fees"])).toBeVisible();
-    expect(screen.getByText("$2.10")).toBeVisible();
-  });
-
   it("draws a credit limit as a gauge named by both amounts", () => {
     drawBody({
       action: "manage_card.set_credit_limit",

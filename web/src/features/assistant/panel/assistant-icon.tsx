@@ -28,6 +28,14 @@ export type AssistantIconName =
   | "pie"
   | "chevron"
   | "target"
+  | "buy"
+  | "sell"
+  | "coins"
+  | "bank"
+  | "minus"
+  | "split"
+  | "swap"
+  | "pencil"
   | "dot";
 
 // Lucide geometry (ISC licence) on its 24-unit grid: square-pen, history, sparkles, and the marks
@@ -87,6 +95,33 @@ const PATHS: Record<AssistantIconName, readonly string[]> = {
     "m14 7 3 3",
   ],
   ban: ["M2 12a10 10 0 1 0 20 0a10 10 0 1 0-20 0", "m4.9 4.9 14.2 14.2"],
+  buy: ["M17 7 7 17", "M17 17H7V7"],
+  sell: ["M7 7h10v10", "M7 17 17 7"],
+  coins: [
+    "M11 15h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 17",
+    "m7 21 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9",
+    "m2 16 6 6",
+    "M13.1 9a2.9 2.9 0 1 0 5.8 0a2.9 2.9 0 1 0-5.8 0",
+  ],
+  bank: [
+    "M3 22h18",
+    "M6 18v-7",
+    "M10 18v-7",
+    "M14 18v-7",
+    "M18 18v-7",
+    "m12 2 8 5H4Z",
+  ],
+  minus: ["M5 12h14"],
+  split: [
+    "M16 3h5v5",
+    "M8 3H3v5",
+    "M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3",
+    "m15 9 6-6",
+  ],
+  swap: ["M8 3 4 7l4 4", "M4 7h16", "m16 21 4-4-4-4", "M20 17H4"],
+  pencil: [
+    "M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z",
+  ],
   repeat: [
     "m17 2 4 4-4 4",
     "M3 11v-1a4 4 0 0 1 4-4h14",

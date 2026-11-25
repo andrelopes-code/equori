@@ -2,10 +2,10 @@ import { Checkbox } from "@slotted/react/checkbox";
 import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
-import { actionIcon } from "@/features/assistant/message/source-icon";
 import { AssistantIcon } from "@/features/assistant/panel/assistant-icon";
 import styles from "@/features/assistant/proposal/decision-sheet.module.css";
-import { actionTitle } from "@/features/assistant/proposal/proposal-card-state";
+import { operationIcon } from "@/features/assistant/proposal/ticket/operation-icon";
+import { operationTitle } from "@/features/assistant/proposal/ticket/operation-title";
 import { useT } from "@/i18n/i18n-provider";
 
 type Proposal = components["schemas"]["AssistantProposal"];
@@ -20,7 +20,7 @@ interface DependentRowProps {
 // follows the parent's and it executes as its own row once the server promotes it.
 export function DependentRow({ proposal, marked }: DependentRowProps) {
   const t = useT();
-  const title = actionTitle(proposal.preview.action, t);
+  const title = operationTitle(proposal.preview, t);
 
   return (
     <div className={styles.dep}>
@@ -34,7 +34,7 @@ export function DependentRow({ proposal, marked }: DependentRowProps) {
 
       <span className={styles.depTitle}>
         <span className={styles.icon16}>
-          <AssistantIcon name={actionIcon(proposal.tool)} />
+          <AssistantIcon name={operationIcon(proposal)} />
         </span>
         <Text className={styles.titleText} size="sm" weight="medium">
           {title}

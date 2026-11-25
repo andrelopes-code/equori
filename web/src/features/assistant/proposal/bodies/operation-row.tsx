@@ -4,18 +4,18 @@ import { Text } from "@slotted/react/typography";
 
 import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
-import { actionIcon } from "@/features/assistant/message/source-icon";
 import { AssistantIcon } from "@/features/assistant/panel/assistant-icon";
 import styles from "@/features/assistant/proposal/decision-sheet.module.css";
-import {
-  actionTitle,
-  proposalCardState,
-} from "@/features/assistant/proposal/proposal-card-state";
+import { proposalCardState } from "@/features/assistant/proposal/proposal-card-state";
+import { bodyKind } from "@/features/assistant/proposal/bodies/body-kind";
 import { OperationBody } from "@/features/assistant/proposal/bodies/operation-body";
+import { OperationHeading } from "@/features/assistant/proposal/bodies/operation-heading";
 import { ProposalWaiting } from "@/features/assistant/proposal/proposal-waiting";
 import { RowEnd } from "@/features/assistant/proposal/bodies/row-end";
 import { targetShownElsewhere } from "@/features/assistant/proposal/target-shown";
 import { useValueText } from "@/features/assistant/proposal/use-value-text";
+import { operationIcon } from "@/features/assistant/proposal/ticket/operation-icon";
+import { operationTitle } from "@/features/assistant/proposal/ticket/operation-title";
 import { UndoAction } from "@/features/assistant/undo/undo-action";
 import { useT } from "@/i18n/i18n-provider";
 
@@ -52,7 +52,8 @@ export function OperationRow({
   const t = useT();
   const valueText = useValueText();
   const { preview } = proposal;
-  const title = actionTitle(preview.action, t);
+  const title = operationTitle(preview, t);
+  const ticket = bodyKind(preview.action) === "ticket";
   const repeated = targetShownElsewhere(preview);
   const destructive = preview.destructive === true;
   const running = executing || proposal.status === "executing";
@@ -95,26 +96,12 @@ export function OperationRow({
         ) : (
           <span className={destructive ? styles.tileDanger : styles.tile}>
             <span className={styles.icon16}>
-              <AssistantIcon name={actionIcon(proposal.tool)} />
+              <AssistantIcon name={operationIcon(proposal)} />
             </span>
           </span>
         )}
 
-        <span className={styles.opTitle}>
-          <Text className={styles.titleText} size="md" weight="semibold">
-            {title}
-          </Text>
-          {proposal.suggested && (
-            <span className={styles.tag}>
-              {t("assistant.proposal.suggested")}
-            </span>
-          )}
-          {destructive && (
-            <span className={styles.tagDanger}>
-              {t("assistant.sheet.irreversible_tag")}
-            </span>
-          )}
-        </span>
+        <OperationHeading proposal={proposal} ticket={ticket} />
 
         <RowEnd
           status={proposal.undone_by === undefined ? state.status : "undone"}
@@ -136,8 +123,8 @@ export function OperationRow({
       )}
 
       {!decided && (
-        <div className={styles.opBody}>
-          {preview.target !== undefined && !repeated && (
+        <div className={ticket ? styles.opBodyWide : styles.opBody}>
+          {preview.target !== undefined && !repeated && !ticket && (
             <Text size="sm" tone="muted">
               {valueText({ text: preview.target })}
             </Text>

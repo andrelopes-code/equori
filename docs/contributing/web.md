@@ -82,7 +82,9 @@ The owner review of 2026-11-15 set these rules for everything the assistant draw
 | Dependent operation     | Under the operation it waits for, marked with it                                                         |
 | Void                    | The record struck through, outside the sheet until marked                                                |
 | Schedule                | Amount per period and the next occurrences                                                               |
-| Asset purchase          | Quantity times price equals total, and the paying account                                                |
+| Investment operation    | The operation, the parts of the money down to the net with its account, the dates                        |
+| Brokerage note          | Its orders, then the same; a note with one order is drawn as that order                                  |
+| Corrected operation     | The same, each previous value struck before the new one                                                  |
 | Recorded transaction    | Receipt with the amount first                                                                            |
 | Credit limit            | One gauge with the current limit and the requested one                                                   |
 | Payment                 | Source account, amount and destination                                                                   |

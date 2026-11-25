@@ -1,5 +1,6 @@
 import type { components } from "@/api/schema.gen";
 import { maskAmountText } from "@/features/assistant/model/mask-amounts";
+import { minorUnits } from "@/features/assistant/proposal/ticket/ticket-money";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
@@ -26,12 +27,4 @@ export function useValueText() {
 
     return money.hidden ? maskAmountText(text) : text;
   };
-}
-
-// The decimal string of the API ("1234.56") becomes an integer and its scale by string
-// manipulation (O7).
-function minorUnits(amount: string): { minor: number; scale: number } {
-  const [, fraction = ""] = amount.split(".");
-
-  return { minor: Number(amount.replace(".", "")), scale: fraction.length };
 }

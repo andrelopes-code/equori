@@ -4,15 +4,14 @@ import { bodyKind } from "@/features/assistant/proposal/bodies/body-kind";
 import { ChangeBody } from "@/features/assistant/proposal/bodies/change-body";
 import { FileBody } from "@/features/assistant/proposal/bodies/file-body";
 import { GoalBody } from "@/features/assistant/proposal/bodies/goal-body";
-import { InvestmentBody } from "@/features/assistant/proposal/bodies/investment-body";
 import { LimitBody } from "@/features/assistant/proposal/bodies/limit-body";
-import { MoveBody } from "@/features/assistant/proposal/bodies/move-body";
 import { PaymentBody } from "@/features/assistant/proposal/bodies/payment-body";
 import { PlanBody } from "@/features/assistant/proposal/bodies/plan-body";
 import { RecordBody } from "@/features/assistant/proposal/bodies/record-body";
 import { RuleBody } from "@/features/assistant/proposal/bodies/rule-body";
 import { ScheduleBody } from "@/features/assistant/proposal/bodies/schedule-body";
 import { VoidBody } from "@/features/assistant/proposal/bodies/void-body";
+import { TicketBody } from "@/features/assistant/proposal/ticket/ticket-body";
 
 type Preview = components["schemas"]["AssistantPreview"];
 
@@ -34,8 +33,8 @@ export function OperationBody({ preview }: OperationBodyProps) {
       return <RecordBody preview={preview} />;
     case "schedule":
       return <ScheduleBody preview={preview} />;
-    case "investment":
-      return <InvestmentBody preview={preview} />;
+    case "ticket":
+      return <TicketBody preview={preview} />;
     case "limit":
       return <LimitBody preview={preview} />;
     case "payment":
@@ -45,11 +44,7 @@ export function OperationBody({ preview }: OperationBodyProps) {
     case "goal":
       return <GoalBody preview={preview} />;
     case "budget":
-      return <PlanBody preview={preview} kind="budget" />;
-    case "application":
-      return <PlanBody preview={preview} kind="application" />;
-    case "move":
-      return <MoveBody preview={preview} />;
+      return <PlanBody preview={preview} />;
     case "fields":
       return <ChangeBody preview={preview} />;
   }

@@ -12,6 +12,7 @@ import {
 import { withHandled } from "@/features/assistant/preview/scenario-handled";
 import { builtScenarios } from "@/features/assistant/preview/scenarios-built";
 import { chartScenarios } from "@/features/assistant/preview/scenarios-charts";
+import { writeInvestments } from "@/features/assistant/preview/scenarios-investments";
 import { viewScenarios } from "@/features/assistant/preview/scenarios-views";
 
 export const scenarioGroups: ScenarioGroup[] = [
@@ -33,7 +34,7 @@ export const scenarioGroups: ScenarioGroup[] = [
   {
     title: "assistantPreview.write",
     description: "assistantPreview.write_description",
-    scenarios: writeHandled,
+    scenarios: [...writeHandled, ...withHandled(writeInvestments)],
   },
   {
     title: "assistantPreview.write_fallback",

@@ -25,7 +25,7 @@ func TestRecordFixedIncomeS479(t *testing.T) {
 
 	expectFields(t, p, map[string]string{
 		"amount": "10000.00", "net": "-10000.00", "account": "XP cash", "date": "2026-03-02",
-		"rate": "110", "index": "cdi", "maturity": "2028-03-02",
+		"rate": "110", "index": "cdi", "maturity": "2028-03-02", "institution": "XP",
 	})
 
 	var out fixedIncomeToolOut

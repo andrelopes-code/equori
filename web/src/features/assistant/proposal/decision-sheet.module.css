@@ -177,6 +177,20 @@
     padding: 0 16px 16px 58px;
   }
 
+  /* A ticket takes the sheet's full width: 318 px leave no room for the title's indent. */
+  .opBodyWide {
+    display: grid;
+    gap: 12px;
+    padding: 0 16px 16px;
+  }
+
+  /* An investment operation over what holds it. */
+  .opHeading {
+    display: grid;
+    min-inline-size: 0;
+    line-height: 1.3;
+  }
+
   .opUndo {
     padding: 0 16px 12px 58px;
   }
@@ -199,6 +213,10 @@
     color: var(--slotted-text-muted);
   }
 
+  .footer > button {
+    flex: none;
+  }
+
   .footer {
     display: flex;
     align-items: center;
@@ -212,9 +230,15 @@
 
   .summary {
     display: grid;
+    min-inline-size: 0;
     margin-inline-end: auto;
     line-height: 1.3;
     white-space: nowrap;
+  }
+
+  .summary > * {
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   /* On a phone the sheet also takes the rail's 38 px column, as the mock does, so a row's title

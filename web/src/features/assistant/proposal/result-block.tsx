@@ -2,17 +2,15 @@ import { Link } from "@slotted/react/link";
 import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
-import { actionIcon } from "@/features/assistant/message/source-icon";
 import { AssistantIcon } from "@/features/assistant/panel/assistant-icon";
-import {
-  actionTitle,
-  proposalCardState,
-} from "@/features/assistant/proposal/proposal-card-state";
+import { proposalCardState } from "@/features/assistant/proposal/proposal-card-state";
 import { OperationBody } from "@/features/assistant/proposal/bodies/operation-body";
 import { ResultLabel } from "@/features/assistant/proposal/result-label";
 import styles from "@/features/assistant/proposal/results.module.css";
 import { useExpired } from "@/features/assistant/proposal/use-expired";
 import { useValueText } from "@/features/assistant/proposal/use-value-text";
+import { operationIcon } from "@/features/assistant/proposal/ticket/operation-icon";
+import { operationTitle } from "@/features/assistant/proposal/ticket/operation-title";
 import { UndoAction } from "@/features/assistant/undo/undo-action";
 import { useT } from "@/i18n/i18n-provider";
 import { routeTo } from "@/ui/navigation/route-to";
@@ -50,13 +48,13 @@ export function ResultBlock({ proposal }: ResultBlockProps) {
       <div className={styles.head}>
         <span className={styles.tile}>
           <span className={styles.icon16}>
-            <AssistantIcon name={actionIcon(proposal.tool)} />
+            <AssistantIcon name={operationIcon(proposal)} />
           </span>
         </span>
 
         <span className={styles.title}>
           <Text size="sm" weight="semibold" tone={hint ? "muted" : "inherit"}>
-            {actionTitle(preview.action, t)}
+            {operationTitle(preview, t)}
           </Text>
           {preview.target !== undefined && (
             <Text size="xs" tone="muted">

@@ -153,27 +153,6 @@ export const writeHandled: Scenario[] = [
     ],
   },
   {
-    id: "investment",
-    form: "Compra de ativo",
-    note: "record_investment.buy",
-    handled: true,
-    question: "Comprei 100 PETR4 a 34,20 na XP",
-    steps: ["get_portfolio", "record_investment"],
-    answer: "Confirme a compra:",
-    proposals: [
-      proposal("inv", "record_investment", {
-        action: "record_investment.buy",
-        changes: [
-          { field: "instrument", after: text("PETR4") },
-          { field: "quantity", after: text("100") },
-          { field: "price", after: text("R$ 34,20") },
-          { field: "amount", after: brl("3420.00") },
-          { field: "account", after: text("XP Investimentos") },
-        ],
-      }),
-    ],
-  },
-  {
     id: "limit",
     form: "Limite de crédito",
     note: "manage_card.set_credit_limit",
@@ -331,47 +310,6 @@ export const writeFallback: Scenario[] = [
           { field: "category", after: text("Restaurantes") },
           { field: "amount", after: brl("600.00") },
           { field: "from", after: day("2026-12-01") },
-        ],
-      }),
-    ],
-  },
-  {
-    id: "fixed-income",
-    form: "Aplicação em renda fixa",
-    note: "record_fixed_income",
-    handled: false,
-    question: "Apliquei 10 mil num CDB do Inter a 110% do CDI até 2028",
-    steps: ["get_portfolio", "record_fixed_income"],
-    answer: "Confirme a aplicação:",
-    proposals: [
-      proposal("fi", "record_fixed_income", {
-        action: "record_fixed_income",
-        changes: [
-          { field: "instrument", after: text("CDB Banco Inter") },
-          { field: "amount", after: brl("10000.00") },
-          { field: "rate", after: text("110% do CDI") },
-          { field: "maturity", after: day("2028-11-19") },
-          { field: "account", after: text("Inter") },
-        ],
-      }),
-    ],
-  },
-  {
-    id: "transfer",
-    form: "Transferência de custódia",
-    note: "transfer_custody",
-    handled: false,
-    question: "Transferi minhas 200 ITSA4 da Clear para a XP",
-    steps: ["get_holding_lots", "transfer_custody"],
-    answer: "O preço médio de R$ 9,84 segue com as ações.",
-    proposals: [
-      proposal("tc", "transfer_custody", {
-        action: "transfer_custody",
-        changes: [
-          { field: "instrument", after: text("ITSA4") },
-          { field: "quantity", after: text("200") },
-          { field: "account", before: text("Clear"), after: text("XP") },
-          { field: "date", after: day("2026-11-19") },
         ],
       }),
     ],

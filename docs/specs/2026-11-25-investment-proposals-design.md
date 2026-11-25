@@ -32,7 +32,7 @@ IP5. `account` names the cash account the service picks when the call gives none
 
 IP6. An income carries `income_type`.
 
-IP7. The target of a fixed income application is the name of the contract, or the code of the contract that receives more money. A new contract carries `rate` (percent of the index), `index`, `spread` and `maturity`. Fees are carried when given.
+IP7. The target of a fixed income application is the name of the contract, or the code of the contract that receives more money. A new contract carries `rate` (percent of the index), `index`, `spread` and `maturity`. Fees are carried when given. `institution` is the brokerage.
 
 IP8. A correction carries `kind`, and each change it alters carries `before`: quantity, price, fees, taxes, withheld, amount, net, income type, date and settlement.
 
@@ -44,7 +44,7 @@ IP10. The row head holds the operation and, under it, the target. The titles are
 
 IP11. The body takes the width of the sheet and draws, in order: the operation (figure, code, price), the parts of the sum, the net with its account, the dates. A note draws its orders in place of the figure, five and a button that shows the rest.
 
-IP12. The gross is drawn only when it differs from the net. The parts that reduce the net carry a minus sign.
+IP12. The gross is left out when it is the net and no cost is stated. The parts above zero that reduce a net that enters carry a minus sign.
 
 IP13. Two different dates are drawn as two stops from edge to edge of the card; one date is a row.
 

@@ -1,7 +1,7 @@
 import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
-import { actionTitle } from "@/features/assistant/proposal/proposal-card-state";
+import { operationTitle } from "@/features/assistant/proposal/ticket/operation-title";
 import { useT } from "@/i18n/i18n-provider";
 
 type Proposal = components["schemas"]["AssistantProposal"];
@@ -18,7 +18,7 @@ export function ProposalWaiting({ proposal, siblings }: ProposalWaitingProps) {
   const actions = proposal.waiting_for
     .map((id) => siblings.find((p) => p.id === id))
     .filter((p) => p !== undefined)
-    .map((p) => actionTitle(p.preview.action, t))
+    .map((p) => operationTitle(p.preview, t))
     .join(", ");
 
   return (

@@ -1,0 +1,277 @@
+/* The ticket of an investment proposal (investment proposals design). The measures are the mock's:
+   rows of 32 and 44 px, the sheet's 16 px edge, 12 px between a name and its value, whole-pixel
+   dots of 8 px joined by the dashed line of the payment body. */
+@layer app {
+  .oneLine {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .muted {
+    overflow: hidden;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ticket {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* 1. The operation: what and how much, at what price. */
+  .hero {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    block-size: 40px;
+    line-height: 40px;
+    white-space: nowrap;
+  }
+
+  .heroWhat {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    min-inline-size: 0;
+  }
+
+  .heroQty {
+    font-size: 1.5rem;
+    font-weight: var(--slotted-font-weight-semibold);
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .heroCode {
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: var(--slotted-font-size-lg);
+    font-weight: var(--slotted-font-weight-semibold);
+  }
+
+  .heroPrice,
+  .heroName {
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-sm);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .heroPrice {
+    flex: none;
+  }
+
+  /* The name of a contract gives way before its rate. */
+  .heroName {
+    flex: 0 1 auto;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .heroWhat:has(+ .heroName) {
+    flex: none;
+  }
+
+  .was {
+    color: var(--slotted-text-muted);
+    text-decoration: line-through;
+  }
+
+  /* 2. The money: the sum that ends in what the account pays or receives. */
+  .sum {
+    display: grid;
+    margin: 0;
+  }
+
+  /* A card that ends on a row keeps the row's own 8 px as part of its edge. */
+  .sum:last-child {
+    margin-block-end: -8px;
+  }
+
+  .sumRow,
+  .netRow {
+    display: grid;
+    box-sizing: border-box;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 12px;
+    white-space: nowrap;
+  }
+
+  .sumRow {
+    block-size: 32px;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-sm);
+  }
+
+  .netRow {
+    block-size: 44px;
+  }
+
+  /* The rule of a sum: drawn only under the parts it adds. */
+  .sumRow + .netRow {
+    border-block-start: 1px solid
+      color-mix(in oklab, var(--slotted-text) 14%, transparent);
+  }
+
+  .netRow + .sumRow {
+    border-block-start: 1px solid
+      color-mix(in oklab, var(--slotted-text) 7%, transparent);
+  }
+
+  .netLabel {
+    font-size: var(--slotted-font-size-sm);
+  }
+
+  .num {
+    margin: 0;
+    color: var(--slotted-text);
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+  }
+
+  .net {
+    color: var(--slotted-tone-accent-text);
+    font-size: 1.25rem;
+    font-weight: var(--slotted-font-weight-semibold);
+  }
+
+  /* The orders of a note. */
+  .orderList {
+    display: grid;
+  }
+
+  .orders {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .order {
+    display: grid;
+    box-sizing: border-box;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 12px;
+    block-size: 44px;
+    border-block-end: 1px solid
+      color-mix(in oklab, var(--slotted-text) 7%, transparent);
+    font-size: var(--slotted-font-size-sm);
+    white-space: nowrap;
+  }
+
+  .orderWhat {
+    display: grid;
+    min-inline-size: 0;
+    line-height: 1.3;
+  }
+
+  .orderName {
+    font-weight: var(--slotted-font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .more {
+    justify-self: start;
+    block-size: 32px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--slotted-tone-accent-text);
+    font: inherit;
+    font-size: var(--slotted-font-size-sm);
+    cursor: pointer;
+  }
+
+  /* The touch target of a phone. */
+  @media (max-width: 599px) {
+    .more {
+      block-size: var(--slotted-target-comfortable);
+    }
+  }
+
+  .more:focus-visible {
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: var(--slotted-focus-ring-offset);
+  }
+
+  /* 3. The dates: each with what moves on it, from edge to edge of the card. */
+  .dates {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    margin: 0;
+    padding: 8px 0 0;
+    list-style: none;
+  }
+
+  .date {
+    position: relative;
+    display: grid;
+    padding-block-start: 16px;
+    line-height: 1.3;
+    white-space: nowrap;
+  }
+
+  .date:last-child {
+    justify-items: end;
+    text-align: end;
+  }
+
+  .date::before {
+    content: "";
+    position: absolute;
+    inset-block-start: 2px;
+    inset-inline-start: 0;
+    box-sizing: border-box;
+    inline-size: 8px;
+    block-size: 8px;
+    border: 2px solid var(--slotted-tone-accent-solid);
+    border-radius: 50%;
+    background: var(--slotted-tone-accent-solid);
+  }
+
+  .date:last-child::before {
+    inset-inline: auto 0;
+    background: transparent;
+  }
+
+  .dates::before {
+    content: "";
+    grid-column: 1 / -1;
+    grid-row: 1;
+    block-size: 2px;
+    margin: 5px 12px 0;
+    background: repeating-linear-gradient(
+      90deg,
+      var(--slotted-border-strong) 0 4px,
+      transparent 4px 8px
+    );
+  }
+
+  .date:first-child {
+    grid-area: 1 / 1;
+  }
+
+  .date:last-child {
+    grid-area: 1 / 2;
+  }
+
+  .dateDay {
+    font-size: var(--slotted-font-size-sm);
+    font-weight: var(--slotted-font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .reason {
+    margin: 12px 0 0;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-sm);
+  }
+}
