@@ -3,32 +3,11 @@ import { TextField } from "@slotted/react/text-field";
 import { useEffect } from "react";
 import type { KeyboardEvent, ReactNode } from "react";
 
-import { minorFromTyped } from "@/ui/money/money-entry";
-import styles from "@/ui/money/money-input.module.css";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import styles from "@/ui/money/money-input.module.css";
+import { useMoneyEntry } from "@/ui/money/use-money-entry";
 
-// The integer part of a safe integer: fifteen digits stay exact in a double.
-const maxDigits = 15;
-
-// Families read: currency-field, number-field. The currency field draws a plain input; money is
-// what this application is about, so its entry is the app's own: the
-// amount is the page's largest figure, signed and coloured by the kind of entry, typed like a
-// till (money-entry.ts) and held as an integer of minor units (O7).
-export function MoneyInput({
-  value,
-  onChange,
-  currency,
-  scale,
-  sign,
-  autoFocus = false,
-  size = "panel",
-  "aria-label": ariaLabel,
-  invalid,
-  readOnly,
-  onKeyDown,
-  className,
-  end,
-}: {
+interface MoneyInputProps {
   // Minor units, at least zero; the sign belongs to the entry's kind.
   value: number;
   onChange: (minor: number) => void;
@@ -48,26 +27,47 @@ export function MoneyInput({
   className?: string | undefined;
   // Shortcuts that set the amount, as TextFieldActions inside a field-sized frame (F14.3).
   end?: ReactNode;
-}) {
+}
+
+// Families read: currency-field, number-field. The currency field draws a plain input; money is
+// what this application is about, so its entry is the app's own: the
+// amount is the page's largest figure, signed and coloured by the kind of entry, typed like a
+// till (money-entry.ts) and held as an integer of minor units (O7).
+export function MoneyInput({
+  value,
+  onChange,
+  currency,
+  scale,
+  sign,
+  autoFocus = false,
+  size = "panel",
+  "aria-label": ariaLabel,
+  invalid,
+  readOnly,
+  onKeyDown,
+  className,
+  end,
+}: MoneyInputProps) {
   const fmt = useMoneyFormat();
   const field = useField();
+  const { text, handlers } = useMoneyEntry({
+    value,
+    onChange,
+    currency,
+    scale,
+  });
+
   const register = field?.registerControl;
   const inField = size === "field";
+
   useEffect(() => {
     // The text field registers itself with the field around it.
     if (!inField) register?.();
   }, [register, inField]);
-  const parts = fmt.entry({ amount: value, currency }, scale);
+
+  const { symbol } = fmt.entry({ amount: 0, currency }, scale);
   const marks = { expense: "−", income: "+", neutral: "" };
-  const typed = (text: string) => {
-    onChange(minorFromTyped(text, maxDigits));
-  };
-  const caretAtEnd = (input: HTMLInputElement) => {
-    // Digits enter at the right: the caret waits at the end.
-    requestAnimationFrame(() => {
-      input.setSelectionRange(input.value.length, input.value.length);
-    });
-  };
+
   if (inField)
     return (
       <TextField
@@ -78,17 +78,13 @@ export function MoneyInput({
         {...(invalid === undefined ? {} : { invalid })}
         {...(readOnly === undefined ? {} : { readOnly })}
         {...(onKeyDown === undefined ? {} : { onKeyDown })}
-        value={parts.integer + parts.fraction}
-        start={marks[sign] + parts.symbol}
+        value={text}
+        start={marks[sign] + symbol}
         end={end}
-        onChange={(event) => {
-          typed(event.target.value);
-        }}
-        onFocus={(event) => {
-          caretAtEnd(event.currentTarget);
-        }}
+        {...handlers}
       />
     );
+
   return (
     // A label around the input: a press anywhere on the panel focuses it, as the platform
     // does for a label; the field's own label still names it through aria-labelledby.
@@ -103,9 +99,7 @@ export function MoneyInput({
           <span className={styles.sign}>{marks[sign]}</span>
         )}
         {/* An instrument with no symbol of its own is named by the code on the right. */}
-        {parts.symbol !== currency && (
-          <span className={styles.symbol}>{parts.symbol}</span>
-        )}
+        {symbol !== currency && <span className={styles.symbol}>{symbol}</span>}
       </span>
       <input
         id={field?.ids.control}
@@ -117,13 +111,8 @@ export function MoneyInput({
         autoComplete="off"
         // A new transaction starts at its amount; the page asks for it on purpose.
         autoFocus={autoFocus}
-        value={parts.integer + parts.fraction}
-        onChange={(event) => {
-          typed(event.target.value);
-        }}
-        onFocus={(event) => {
-          caretAtEnd(event.currentTarget);
-        }}
+        value={text}
+        {...handlers}
       />
       <span className={styles.code} aria-hidden="true">
         {currency}

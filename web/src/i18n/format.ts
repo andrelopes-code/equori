@@ -82,16 +82,20 @@ function currencyPartList(
   scale: number,
   locale: string,
   mode: SummaryMode = "full",
+  integerDigits = 1,
 ): { parts: Intl.NumberFormatPart[]; iso: boolean } {
   // O7: Intl reads the decimal string, never a float divided by the scale.
   const plain = formatPlain(m.amount, scale) as `${number}`;
-  const fraction = fractionOptions(scale, mode);
+  const digits = {
+    ...fractionOptions(scale, mode),
+    minimumIntegerDigits: integerDigits,
+  };
   try {
     return {
       parts: numberFormat(locale, {
         style: "currency",
         currency: m.currency,
-        ...fraction,
+        ...digits,
       }).formatToParts(plain),
       iso: true,
     };
@@ -101,7 +105,7 @@ function currencyPartList(
     return {
       parts: numberFormat(locale, {
         style: "decimal",
-        ...fraction,
+        ...digits,
       }).formatToParts(plain),
       iso: false,
     };
@@ -122,8 +126,9 @@ export function formatMoneyParts(
   m: Money,
   scale: number,
   locale: string,
+  integerDigits = 1,
 ): MoneyParts {
-  const { parts } = currencyPartList(m, scale, locale);
+  const { parts } = currencyPartList(m, scale, locale, "full", integerDigits);
   const out: MoneyParts = {
     sign: "",
     symbol: m.currency,
