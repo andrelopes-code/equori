@@ -22,6 +22,7 @@ import { monthEnd } from "@/features/portfolio/projection/journey-block/journey-
 import styles from "@/features/portfolio/projection/journey-block/journey-block.module.css";
 import { useJourneyAxes } from "@/features/portfolio/projection/journey-block/use-journey-axes";
 import type { ProjectionDraft } from "@/features/portfolio/projection/model/plan-fields";
+import { realHistory } from "@/features/portfolio/projection/model/real-history";
 import { toNominal } from "@/features/portfolio/projection/model/to-nominal";
 import { useScale } from "@/features/setup";
 import { formatYear } from "@/i18n/format";
@@ -62,11 +63,15 @@ export function JourneyBlock({
     () => journeyFigures({ draft, history, birthDate, today, baseline }),
     [draft, history, birthDate, today, baseline],
   );
+  const realPast = useMemo(() => realHistory(history), [history]);
   const shown =
     view === "nominal"
       ? toNominal(figures.rows, draft.inflationBp)
       : figures.rows;
-  const rows = journeyRows(history, shown, figures.withdrawalFrom, digits);
+  const past = view === "nominal" ? history : (realPast ?? history);
+  const rows = journeyRows(past, shown, figures.withdrawalFrom, digits);
+  const described =
+    view === "real" && realPast === null ? "realNominalPast" : view;
   const todayDate = history.points.at(-1)?.date;
   const from = formatYear(history.points[0]?.date ?? today, tag);
 
@@ -85,7 +90,7 @@ export function JourneyBlock({
         <SectionTitle>
           <SectionHeading>{t("portfolio.projection.journey")}</SectionHeading>
           <SectionDescription>
-            {t(`portfolio.projection.journey.description.${view}`, {
+            {t(`portfolio.projection.journey.description.${described}`, {
               from,
               last: draft.lastAge,
             })}

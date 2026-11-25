@@ -345,6 +345,8 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.projection.journey": "Jornada do patrimônio",
   "portfolio.projection.journey.description.real":
     "De {from} aos {last} anos, em dinheiro de hoje.",
+  "portfolio.projection.journey.description.realNominalPast":
+    "De {from} aos {last} anos, em dinheiro de hoje; o passado em valores nominais.",
   "portfolio.projection.journey.description.nominal":
     "De {from} aos {last} anos, em valores nominais.",
   "portfolio.projection.journey.view": "Valores",

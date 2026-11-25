@@ -35,6 +35,26 @@ describe("yearTableRows", () => {
     expect(rows.map((r) => r.contributions)).toEqual([2000, 1000]);
   });
 
+  it("PX13: corrects the recorded total with the inflation index", () => {
+    const rows = yearTableRows(projection, "1994-03-10", {
+      ...history,
+      indexes: [
+        {
+          index: "ipca",
+          period: "month",
+          points: [
+            { date: "2026-09-30", return_bp: 0 },
+            { date: "2026-10-31", return_bp: 1000 },
+          ],
+        },
+      ],
+    });
+
+    // 9000 * 1.1 + 500 = 10400, then + 2000 and + 1000.
+    expect(rows[0]?.contributed).toBeCloseTo(12400, 6);
+    expect(rows[1]?.contributed).toBeCloseTo(13400, 6);
+  });
+
   it("starts the total on the opening value when the history holds no point", () => {
     const rows = yearTableRows(projection, "1994-03-10", {
       ...history,

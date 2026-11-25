@@ -14,6 +14,7 @@ import type {
   ProjectInput,
   ProjectionRow,
 } from "@/features/portfolio/projection/model/project";
+import { realHistory } from "@/features/portfolio/projection/model/real-history";
 import type { VersusFigures } from "@/features/portfolio/projection/model/versus-figures";
 import { versusPath } from "@/features/portfolio/projection/model/versus-path";
 import { contributed } from "@/features/portfolio/results/model/wealth";
@@ -75,8 +76,9 @@ export function journeyFigures(input: JourneyInput): JourneyFigures {
   );
   const before = rows.filter((r) => r.month < withdrawalFrom);
   const atWithdrawal = before.at(-1)?.value ?? today;
+  const past = realHistory(history) ?? history;
   const total =
-    (contributed(history.opening, history.points).at(-1) ?? history.opening) +
+    (contributed(past.opening, past.points).at(-1) ?? past.opening) +
     before.reduce((sum, r) => sum + r.contribution, 0);
   const income =
     draft.withdrawal.mode === "income" ? (draft.withdrawal.income ?? 0) : null;

@@ -440,9 +440,25 @@ describe("Portfolio projection page", () => {
     ).toBeNull();
   });
 
-  it("PX6: the switch names the values the plot draws", async () => {
+  it("PX13: the description states a past without an inflation index", async () => {
     await renderApp("/portfolio/projection", {
       fetch: portfolioApi(withBirth),
+    });
+    const journey = within(await journeyRegion());
+
+    expect(
+      journey.getByText(
+        "From 2025 to age 90, in today's money; the past in nominal values.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("PX6: the switch names the values the plot draws", async () => {
+    await renderApp("/portfolio/projection", {
+      fetch: portfolioApi({
+        ...withBirth,
+        "GET /api/v1/reports/return/series": () => json(200, versusSeries),
+      }),
     });
     const journey = within(await journeyRegion());
 

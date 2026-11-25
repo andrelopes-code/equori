@@ -344,6 +344,8 @@ export const portfolioEn = {
   "portfolio.projection.journey": "Wealth journey",
   "portfolio.projection.journey.description.real":
     "From {from} to age {last}, in today's money.",
+  "portfolio.projection.journey.description.realNominalPast":
+    "From {from} to age {last}, in today's money; the past in nominal values.",
   "portfolio.projection.journey.description.nominal":
     "From {from} to age {last}, in nominal values.",
   "portfolio.projection.journey.view": "Values",

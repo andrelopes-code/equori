@@ -71,6 +71,29 @@ describe("journeyFigures", () => {
     expect(f.rows.filter((r) => r.withdrawal > 0)).toHaveLength(13);
   });
 
+  it("PX13: states the money contributed and the return in today's money", () => {
+    const f = journeyFigures({
+      ...input,
+      history: {
+        ...input.history,
+        indexes: [
+          {
+            index: "ipca",
+            period: "month",
+            points: [{ date: "2026-10-31", return_bp: 1000 }],
+          },
+        ],
+      },
+    });
+
+    // The opening 10000 is 11000 of today, then three contributions of 1000; the value at the
+    // withdrawal age stays 13000.
+    expect(f.contributed).toBeCloseTo(14000, 6);
+    expect(f.gain).toBeCloseTo(-1000, 6);
+    expect(f.today).toBe(10000);
+    expect(f.atWithdrawal).toBe(13000);
+  });
+
   it("compares today with the plan line of the recorded history", () => {
     // PX7: the line starts on the 8000 of October, the baseline month, and November adds the
     // planned 1000: 9000 against 10000 recorded.
