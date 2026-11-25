@@ -4,18 +4,18 @@ import { versusRows } from "@/features/portfolio/projection/versus-block/versus-
 
 describe("versusRows", () => {
   it("fills between the lines in the ahead range above and the behind range below", () => {
-    const baseline = { date: "2025-10-15", value: 10000 };
-    const since = [
+    const points = [
+      { date: "2025-10-31", value: 10000, flows: 0 },
       { date: "2025-11-30", value: 11000, flows: 0 },
       { date: "2025-12-31", value: 10800, flows: 0 },
     ];
 
-    // The first row starts both lines on the baseline value with empty ranges. November is above
-    // the line (110 over 105): ahead 105 to 110, behind 105 to 105. December is below (108 under
-    // 112): ahead 112 to 112, behind 108 to 112.
-    expect(versusRows(baseline, since, [10500, 11200], 2)).toEqual([
+    // The first row holds both lines on the first recorded value with empty ranges. November is
+    // above the line (110 over 105): ahead 105 to 110, behind 105 to 105. December is below (108
+    // under 112): ahead 112 to 112, behind 108 to 112.
+    expect(versusRows(points, [10000, 10500, 11200], 2)).toEqual([
       {
-        date: "2025-10-15",
+        date: "2025-10-31",
         value: 100,
         plan: 100,
         aheadLower: 100,

@@ -385,9 +385,10 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.projection.journey.facts.perMonth": "{amount} por mês",
   "portfolio.projection.versus": "Plano contra realizado",
   "portfolio.projection.versus.description":
-    "Desde {month}, quando o plano foi salvo. Valores nominais.",
+    "Aportes registrados à taxa do plano até {month}, o plano depois. Valores nominais.",
   "portfolio.projection.versus.young":
-    "A comparação começa em {date}, o primeiro dia do mês seguinte ao do plano salvo.",
+    "A comparação precisa de dois meses de histórico da carteira.",
+  "portfolio.projection.versus.saved": "Plano salvo",
   "portfolio.projection.versus.plot": "Patrimônio do plano e realizado por mês",
   "portfolio.projection.versus.key.value": "Realizado",
   "portfolio.projection.versus.key.plan": "Plano",
@@ -398,6 +399,7 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.projection.versus.months.value": "{above} de {total}",
   "portfolio.projection.versus.contribution": "Aporte médio realizado",
   "portfolio.projection.versus.contribution.plan": "plano: {amount}",
+  "portfolio.projection.versus.contribution.none": "nenhum mês ainda",
   "portfolio.projection.versus.return": "Rentabilidade real realizada",
   "portfolio.projection.versus.return.value": "{rate} a.a.",
   "portfolio.projection.versus.return.short": "menos de 12 meses",

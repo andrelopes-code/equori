@@ -10,15 +10,14 @@ import {
 import type { components } from "@/api/schema.gen";
 import { contributionIn } from "@/features/portfolio/projection/model/contribution-in";
 import type { ProjectionDraft } from "@/features/portfolio/projection/model/plan-fields";
-import { versusSince } from "@/features/portfolio/projection/model/versus-since";
+import { versusPath } from "@/features/portfolio/projection/model/versus-path";
 import styles from "@/features/portfolio/projection/versus-block/versus-block.module.css";
 import { VersusKey } from "@/features/portfolio/projection/versus-block/versus-key";
 import { VersusPlot } from "@/features/portfolio/projection/versus-block/versus-plot";
 import { versusRows } from "@/features/portfolio/projection/versus-block/versus-rows";
-import { comparisonStart } from "@/features/portfolio/projection/versus-block/versus-start";
 import { VersusTiles } from "@/features/portfolio/projection/versus-block/versus-tiles";
 import { useScale } from "@/features/setup";
-import { formatDate, formatMonthSlashYear } from "@/i18n/format";
+import { formatMonthSlashYear } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 
@@ -29,8 +28,8 @@ interface VersusBlockProps {
   annualReal: number | null;
 }
 
-// PX7: the plan line against the recorded value since the baseline, drawn only for a stored plan.
-// A baseline younger than one month states the day the comparison starts.
+// PX7: the plan line against the whole recorded history, drawn only for a stored plan. A history
+// under two months states what the comparison needs.
 export function VersusBlock({
   draft,
   history,
@@ -45,7 +44,7 @@ export function VersusBlock({
   if (baseline === undefined) return null;
 
   const digits = scale?.(draft.currency) ?? 0;
-  const compared = versusSince(
+  const compared = versusPath(
     baseline,
     draft.changes,
     draft.realReturnBp,
@@ -76,9 +75,7 @@ export function VersusBlock({
       <SectionBody>
         {compared === null && (
           <p className={styles.young}>
-            {t("portfolio.projection.versus.young", {
-              date: formatDate(comparisonStart(baseline.date), tag),
-            })}
+            {t("portfolio.projection.versus.young")}
           </p>
         )}
 
@@ -97,12 +94,8 @@ export function VersusBlock({
               <VersusKey />
 
               <VersusPlot
-                rows={versusRows(
-                  baseline,
-                  compared.since,
-                  compared.line,
-                  digits,
-                )}
+                rows={versusRows(compared.points, compared.line, digits)}
+                savedOn={baseline.date}
                 currency={draft.currency}
                 scale={digits}
               />

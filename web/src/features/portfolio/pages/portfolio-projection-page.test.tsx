@@ -50,15 +50,18 @@ const noReturnPlan = {
   baseline: { date: "2025-11-20", value: 1000000 },
 };
 
-// Two months after the baseline: 11,500.00 against a line of 11,000.00, then 11,800.00 against
-// 12,000.00; the real return is 1.13 over 1.05, in 457 days.
+// The line starts on 10,000.00 in October and takes the recorded 500.00 of November, the baseline
+// month: 10,500.00. After it the plan adds 1,000.00 a month: 11,500.00 against 11,600.00 recorded,
+// then 12,500.00 against 11,800.00. The real return is 1.13 over 1.05, in 457 days.
 const versusSeries = {
   from: "2024-11-01",
   to: "2026-01-31",
   currency: "BRL",
   opening: 1000000,
   points: [
-    { date: "2025-12-31", value: 1150000, flows: 100000, return_bp: 1000 },
+    { date: "2025-10-31", value: 1000000, flows: 0, return_bp: 0 },
+    { date: "2025-11-30", value: 1050000, flows: 50000, return_bp: 0 },
+    { date: "2025-12-31", value: 1160000, flows: 100000, return_bp: 1000 },
     { date: "2026-01-31", value: 1180000, flows: 80000, return_bp: 1300 },
   ],
   indexes: [
@@ -450,7 +453,7 @@ describe("Portfolio projection page", () => {
     ).toBeInTheDocument();
   });
 
-  it("PX7: draws the plan against the recorded value since the baseline", async () => {
+  it("PX7: draws the plan against the whole recorded history", async () => {
     await renderApp("/portfolio/projection", {
       fetch: portfolioApi({
         ...withBirth,
@@ -463,17 +466,18 @@ describe("Portfolio projection page", () => {
 
     expect(
       versus.getByText(
-        "Since Nov/2025, when the plan was saved. Nominal values.",
+        "Recorded contributions at the plan's rate until Nov/2025, the plan after. Nominal values.",
       ),
     ).toBeInTheDocument();
     for (const key of ["Recorded", "Plan", "Above the plan", "Below the plan"])
       expect(versus.getByText(key)).toBeInTheDocument();
-    // The line grows by 1,000.00 from 10,000.00: 12,000.00 in January, against 11,800.00 recorded.
+    // 11,800.00 recorded against 12,500.00 in January: 700.00 under, 5.60% of the line. Of the
+    // three months after the first, only December is above.
     expect(tile(region, "Against the plan today")).toEqual([
-      expect.stringMatching(/^\u2212.*200\.00$/),
-      expect.stringMatching(/^\u22121\.67%$/),
+      expect.stringMatching(/^\u2212.*700\.00$/),
+      expect.stringMatching(/^\u22125\.60%$/),
     ]);
-    expect(tile(region, "Months above the plan")[0]).toBe("1 of 2");
+    expect(tile(region, "Months above the plan")[0]).toBe("1 of 3");
     expect(tile(region, "Average recorded contribution")).toEqual([
       expect.stringMatching(/900\.00$/),
       expect.stringMatching(/^plan: .*1,000\.00$/),
@@ -484,23 +488,44 @@ describe("Portfolio projection page", () => {
     ]);
   });
 
-  it("PX7: states the day the comparison starts for a plan saved today", async () => {
+  it("PX7: compares a plan saved this month over the history before it", async () => {
     const saved = {
-      ...projectionPlan,
-      baseline: { date: "2026-10-17", value: 100000 },
+      ...noReturnPlan,
+      baseline: { date: "2026-01-17", value: 1180000 },
     };
     await renderApp("/portfolio/projection", {
       fetch: portfolioApi({
         ...withBirth,
         "GET /api/v1/portfolio-projection": () => json(200, saved),
+        "GET /api/v1/reports/return/series": () => json(200, versusSeries),
+      }),
+    });
+    const region = await versusRegion();
+
+    // Every month takes its recorded flows: 10,000.00, 10,500.00, 11,500.00, 12,300.00 against
+    // 11,800.00 recorded. No month runs under the plan yet.
+    expect(tile(region, "Against the plan today")[0]).toMatch(
+      /^\u2212.*500\.00$/,
+    );
+    expect(tile(region, "Months above the plan")[0]).toBe("1 of 3");
+    expect(tile(region, "Average recorded contribution")[0]).toBe(
+      "no month yet",
+    );
+  });
+
+  it("PX7: states what the comparison needs under two recorded months", async () => {
+    const short = { ...versusSeries, points: versusSeries.points.slice(0, 1) };
+    await renderApp("/portfolio/projection", {
+      fetch: portfolioApi({
+        ...withBirth,
+        "GET /api/v1/portfolio-projection": () => json(200, noReturnPlan),
+        "GET /api/v1/reports/return/series": () => json(200, short),
       }),
     });
     const versus = within(await versusRegion());
 
     expect(
-      versus.getByText(
-        "The comparison starts on 11/01/2026, the first day of the month after the plan was saved.",
-      ),
+      versus.getByText("The comparison needs two months of portfolio history."),
     ).toBeInTheDocument();
     expect(versus.queryByText("Months above the plan")).toBeNull();
   });

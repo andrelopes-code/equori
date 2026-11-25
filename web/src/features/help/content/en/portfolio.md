@@ -37,7 +37,7 @@ Record buys, sales and income with the buttons above the list. The **+** button 
 The **Results** tab opens with the figures at the top and a period bar: 1 month, 3 months, 6 months, This year, 12 months, 2 years, 5 years, From the start, or a range of two dates. The **What to see** select picks all brokerages or one account, and the currency select values the figures in another currency. Four blocks follow:
 
 - **Return**: the return of the period and how many points it stands above or below each index over the same days. Each index is a switch that shows or hides its line. The button **View details and method** opens the reconciliation, the rates, the yield credits, the time-weighted return and the flows by month.
-- **Rolling 12-month windows**: the return of the 12 months that end on each month, with today's window, the best, the worst and the share of windows below zero and above each index.
+- **Rolling 12-month windows**: the return of 12 whole months to the end of each month, with that of the 12 months to today, the best window, the worst and the share of windows below zero and above each index. The first month and the current month count only when whole.
 - **Month by month**: the return of each month by year, with the sum of the year and the accumulated return.
 - **Evolution of the portfolio**: the value beside the money contributed, with the opening value, the net contributions, the return and the closing value of the period.
 
@@ -53,6 +53,6 @@ The **Projection** tab shows where the plan leads the portfolio, by age. It need
 
 - **Plan**: the age of the withdrawals (**Withdrawals at**), the last age (**Until age**), the **Real return** and the **Inflation**. The **Withdrawal** is an **Income a month** or a **Rate a year** of the portfolio. Values change the projection at once, and **Save plan** stores the plan with its date.
 - **Wealth journey**: the recorded value and the projection on one chart. Beside it, the amount needed at the withdrawal age, the share of the way done, the income the plan sustains and the age the income ends, if it does not last.
-- **Plan against recorded**: the recorded value beside the line of the plan, since the date the plan was saved.
+- **Plan against recorded**: the recorded value beside the line of the plan, since the first month of the portfolio. Until the month the plan was saved, the line adds the recorded contributions at the rate of the plan; after it, the planned contribution.
 - **Planned contributions**: the monthly contribution since the start, with the changes you planned, up to 40. A contribution before the current month does not change.
 - **Year by year**: each year with the age at its end, the contributions, the return, the withdrawals, the money contributed and the value. The table opens with 12 years, and **Show the … years** opens all of them.

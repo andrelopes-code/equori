@@ -15,7 +15,7 @@ import type {
   ProjectionRow,
 } from "@/features/portfolio/projection/model/project";
 import type { VersusFigures } from "@/features/portfolio/projection/model/versus-figures";
-import { versusSince } from "@/features/portfolio/projection/model/versus-since";
+import { versusPath } from "@/features/portfolio/projection/model/versus-path";
 import { contributed } from "@/features/portfolio/results/model/wealth";
 
 type ReturnSeries = components["schemas"]["ReturnSeries"];
@@ -105,7 +105,7 @@ export function journeyFigures(input: JourneyInput): JourneyFigures {
     versus:
       input.baseline === undefined
         ? null
-        : (versusSince(
+        : (versusPath(
             input.baseline,
             draft.changes,
             draft.realReturnBp,

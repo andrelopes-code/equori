@@ -384,9 +384,10 @@ export const portfolioEn = {
   "portfolio.projection.journey.facts.perMonth": "{amount} a month",
   "portfolio.projection.versus": "Plan against recorded",
   "portfolio.projection.versus.description":
-    "Since {month}, when the plan was saved. Nominal values.",
+    "Recorded contributions at the plan's rate until {month}, the plan after. Nominal values.",
   "portfolio.projection.versus.young":
-    "The comparison starts on {date}, the first day of the month after the plan was saved.",
+    "The comparison needs two months of portfolio history.",
+  "portfolio.projection.versus.saved": "Plan saved",
   "portfolio.projection.versus.plot":
     "Plan and recorded portfolio value by month",
   "portfolio.projection.versus.key.value": "Recorded",
@@ -398,6 +399,7 @@ export const portfolioEn = {
   "portfolio.projection.versus.months.value": "{above} of {total}",
   "portfolio.projection.versus.contribution": "Average recorded contribution",
   "portfolio.projection.versus.contribution.plan": "plan: {amount}",
+  "portfolio.projection.versus.contribution.none": "no month yet",
   "portfolio.projection.versus.return": "Realized real return",
   "portfolio.projection.versus.return.value": "{rate} a year",
   "portfolio.projection.versus.return.short": "under 12 months",

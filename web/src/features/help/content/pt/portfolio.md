@@ -37,7 +37,7 @@ Registre compras, vendas e proventos pelos botões acima da lista. O botão **+*
 A aba **Resultados** abre com os números do topo e uma barra de período: 1 mês, 3 meses, 6 meses, Este ano, 12 meses, 2 anos, 5 anos, Desde o início ou um intervalo de duas datas. O seletor **O que ver** escolhe todas as corretoras ou uma conta, e o seletor de moeda mostra os valores em outra moeda. Quatro blocos seguem:
 
 - **Rentabilidade**: o retorno do período e quantos pontos ele fica acima ou abaixo de cada índice nos mesmos dias. Cada índice é uma chave que mostra ou esconde a sua linha. O botão **Ver detalhes e método** abre a conciliação, as taxas, os créditos de rendimento, o retorno ponderado pelo tempo e os fluxos por mês.
-- **Janelas móveis de 12 meses**: o retorno dos 12 meses que terminam em cada mês, com a janela de hoje, a melhor, a pior e a parte das janelas abaixo de zero e acima de cada índice.
+- **Janelas móveis de 12 meses**: o retorno de 12 meses inteiros até o fim de cada mês, com o dos 12 meses até hoje, a melhor janela, a pior e a parte das janelas abaixo de zero e acima de cada índice. O primeiro mês e o mês atual entram só quando inteiros.
 - **Mês a mês**: o retorno de cada mês por ano, com a soma do ano e o retorno acumulado.
 - **Evolução do patrimônio**: o valor ao lado do dinheiro aportado, com o valor inicial, os aportes líquidos, o rendimento e o valor final do período.
 
@@ -53,6 +53,6 @@ A aba **Projeção** mostra aonde o plano leva a carteira, por idade. Ela precis
 
 - **Plano**: a idade das retiradas (**Retiradas aos**), a idade final (**Até os**), a **Rentabilidade real** e a **Inflação**. A **Retirada** é uma **Renda por mês** ou uma **Taxa ao ano** da carteira. Os valores mudam a projeção na hora, e **Salvar plano** guarda o plano com a sua data.
 - **Jornada do patrimônio**: o valor registrado e a projeção no mesmo gráfico. Ao lado, o valor necessário na idade das retiradas, a parte do caminho já feita, a renda que o plano sustenta e a idade em que a renda acaba, se ela não durar.
-- **Plano contra realizado**: o valor registrado ao lado da linha do plano, desde a data em que o plano foi salvo.
+- **Plano contra realizado**: o valor registrado ao lado da linha do plano, desde o primeiro mês da carteira. Até o mês em que o plano foi salvo, a linha soma os aportes registrados à taxa do plano; depois, o aporte planejado.
 - **Aportes planejados**: o aporte mensal desde o início, com as mudanças que você planejou, até 40. Um aporte antes do mês atual não muda.
 - **Ano a ano**: cada ano com a idade no fim dele, os aportes, o rendimento, as retiradas, o aportado e o patrimônio. A tabela abre com 12 anos, e **Mostrar os … anos** abre todos.

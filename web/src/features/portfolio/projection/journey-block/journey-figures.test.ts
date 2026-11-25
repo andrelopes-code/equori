@@ -71,8 +71,19 @@ describe("journeyFigures", () => {
     expect(f.rows.filter((r) => r.withdrawal > 0)).toHaveLength(13);
   });
 
-  it("compares today with the plan line since the baseline", () => {
-    const f = journeyFigures(input);
+  it("compares today with the plan line of the recorded history", () => {
+    // PX7: the line starts on the 8000 of October, the baseline month, and November adds the
+    // planned 1000: 9000 against 10000 recorded.
+    const f = journeyFigures({
+      ...input,
+      history: {
+        ...input.history,
+        points: [
+          { date: "2026-10-31", value: 8000, flows: 0 },
+          ...input.history.points,
+        ],
+      },
+    });
 
     expect(f.versus?.difference).toBe(1000);
     expect(f.versus?.differenceShare).toBeCloseTo(1000 / 9000, 10);

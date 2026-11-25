@@ -33,7 +33,10 @@ export function VersusTiles({
 
   const share = Math.round(figures.differenceShare * 10000);
   const above = (figures.monthsAbove / figures.months) * 100;
-  const average = Math.round(figures.averageContribution);
+  const average =
+    figures.averageContribution === null
+      ? null
+      : Math.round(figures.averageContribution);
   const realBp = annualReal === null ? 0 : Math.round(annualReal * 10000);
 
   return (
@@ -66,7 +69,13 @@ export function VersusTiles({
 
       <WindowTile
         label={t("portfolio.projection.versus.contribution")}
-        value={<Toned value={average - planned}>{money.exact(average)}</Toned>}
+        value={
+          average === null ? (
+            t("portfolio.projection.versus.contribution.none")
+          ) : (
+            <Toned value={average - planned}>{money.exact(average)}</Toned>
+          )
+        }
         note={t("portfolio.projection.versus.contribution.plan", {
           amount: money.exact(planned),
         })}

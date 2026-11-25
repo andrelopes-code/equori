@@ -1,4 +1,4 @@
-import type { ChartSeries } from "@slotted/core/chart";
+import type { ChartAnnotation, ChartSeries } from "@slotted/core/chart";
 import { Chart } from "@slotted/react/chart";
 
 import { useJourneyMoney } from "@/features/portfolio/projection/journey-block/use-journey-money";
@@ -14,13 +14,21 @@ const labelWidth = 72;
 
 interface VersusPlotProps {
   rows: VersusRow[];
+  // The day the plan was first saved, `YYYY-MM-DD`.
+  savedOn: string;
   currency: string;
   scale: number;
 }
 
 // PX7: the recorded value (solid) and the plan line (dashed), with the area between them in the
-// success tone where the value is above the line and in the danger tone where it is below.
-export function VersusPlot({ rows, currency, scale }: VersusPlotProps) {
+// success tone where the value is above the line and in the danger tone where it is below, and a
+// mark on the day the plan was saved when the history starts before it.
+export function VersusPlot({
+  rows,
+  savedOn,
+  currency,
+  scale,
+}: VersusPlotProps) {
   const t = useT();
   const [tag] = useAppLocale();
   const money = useJourneyMoney(currency, scale);
@@ -66,6 +74,17 @@ export function VersusPlot({ rows, currency, scale }: VersusPlotProps) {
       format: exact,
     },
   ];
+  const annotations: ChartAnnotation[] =
+    savedOn > (rows[0]?.date ?? savedOn)
+      ? [
+          {
+            kind: "line",
+            axis: "x",
+            value: savedOn,
+            label: t("portfolio.projection.versus.saved"),
+          },
+        ]
+      : [];
 
   return (
     <div className={styles.plotArea}>
@@ -78,6 +97,7 @@ export function VersusPlot({ rows, currency, scale }: VersusPlotProps) {
         locale={tag}
         data={rows}
         series={series}
+        annotations={annotations}
         x={{
           field: "date",
           type: "time",
