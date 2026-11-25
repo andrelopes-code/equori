@@ -1,4 +1,5 @@
 import type { components } from "@/api/schema.gen";
+import { CasesBlock } from "@/features/portfolio/projection/cases-block/cases-block";
 import { ContributionsBlock } from "@/features/portfolio/projection/contributions-block/contributions-block";
 import { JourneyBlock } from "@/features/portfolio/projection/journey-block/journey-block";
 import type { ProjectionDraft } from "@/features/portfolio/projection/model/plan-fields";
@@ -28,6 +29,13 @@ export function ProjectionBlocks({
   return (
     <>
       <JourneyBlock
+        draft={draft}
+        history={history}
+        birthDate={birthDate}
+        baseline={baseline}
+      />
+
+      <CasesBlock
         draft={draft}
         history={history}
         birthDate={birthDate}

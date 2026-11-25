@@ -76,6 +76,30 @@ const versusSeries = {
   ],
 };
 
+const realCurve = {
+  id: "br_tesouro_ipca",
+  kind: "real",
+  index: "ipca",
+  currency: "BRL",
+  base_date: "2026-11-19",
+  source: "br_tesouro",
+  points: [{ maturity: "2040-08-15", rate: "0.075400000000" }],
+};
+
+const expectedIndex = {
+  id: "ipca",
+  period: "month",
+  kind: "rate",
+  first: "2000-07-01",
+  last: "2026-10-01",
+  expected: true,
+};
+
+const survey = {
+  survey_date: "2026-11-19",
+  items: [{ date: "2030-12-31", rate: "0.039500000000" }],
+};
+
 // The plan section once its reads are done: the pending section shares its name.
 async function planRegion() {
   await waitFor(() => {
@@ -471,6 +495,118 @@ describe("Portfolio projection page", () => {
     expect(
       journey.getByText("From 2025 to age 90, in nominal values."),
     ).toBeInTheDocument();
+  });
+
+  it("PX17: names the stored references and fills no field", async () => {
+    await renderApp("/portfolio/projection", {
+      fetch: portfolioApi({
+        ...withBirth,
+        "GET /api/v1/curves": () => json(200, { items: [realCurve] }),
+        "GET /api/v1/indexes": () => json(200, { items: [expectedIndex] }),
+        "GET /api/v1/indexes/ipca/expectations": () => json(200, survey),
+      }),
+    });
+    const region = within(await planRegion());
+
+    expect(
+      await region.findByText(
+        "References: IPCA + 7.54% a year to 2040 · IPCA expected in 2030: 3.95% a year",
+      ),
+    ).toBeInTheDocument();
+    expect(region.getByLabelText("Cautious")).toHaveValue("");
+    expect(region.getByLabelText("During withdrawals")).toHaveValue("");
+  });
+
+  it("PX17: draws no reference without a curve", async () => {
+    await renderApp("/portfolio/projection", {
+      fetch: portfolioApi(withBirth),
+    });
+    const region = within(await planRegion());
+
+    expect(region.queryByText(/^References/)).toBeNull();
+  });
+
+  it("PX15, PX16: states each typed case beside the plan", async () => {
+    await renderApp("/portfolio/projection", {
+      fetch: portfolioApi({
+        ...withBirth,
+        "GET /api/v1/portfolio-projection": () =>
+          json(200, {
+            ...projectionPlan,
+            cautious_return_bp: 200,
+            favorable_return_bp: 600,
+          }),
+      }),
+    });
+    const block = within(
+      await screen.findByRole("region", {
+        name: catalogEn["portfolio.projection.cases"],
+      }),
+    );
+    const rows = block.getAllByRole("row").slice(1);
+
+    expect(
+      rows.map((r) => within(r).getByRole("rowheader").textContent),
+    ).toEqual(["Cautious", "Plan", "Favorable"]);
+    expect(
+      rows.map((r) => within(r).getAllByRole("cell")[0]?.textContent),
+    ).toEqual(["2.00% a year", "4.00% a year", "6.00% a year"]);
+    // Only the favorable value reaches the last age, 90.
+    expect(
+      rows.map((r) => within(r).getAllByRole("cell").at(-1)?.textContent),
+    ).toEqual([
+      expect.stringMatching(/^ends at \d\d$/),
+      expect.stringMatching(/^ends at \d\d$/),
+      "lasts to 90",
+    ]);
+
+    const journey = within(await journeyRegion());
+    expect(journey.getByText("Cautious")).toBeInTheDocument();
+    expect(journey.getByText("Favorable")).toBeInTheDocument();
+  });
+
+  it("PX16: draws no cases block without a typed case", async () => {
+    await renderApp("/portfolio/projection", {
+      fetch: portfolioApi(withBirth),
+    });
+    await journeyRegion();
+
+    expect(
+      screen.queryByRole("region", {
+        name: catalogEn["portfolio.projection.cases"],
+      }),
+    ).toBeNull();
+  });
+
+  it("PJ7: saves the premises typed", async () => {
+    const bodies: unknown[] = [];
+    await renderApp("/portfolio/projection", {
+      fetch: portfolioApi({
+        ...withBirth,
+        "PUT /api/v1/portfolio-projection": async (req) => {
+          bodies.push(await req.json());
+          return json(200, projectionPlan);
+        },
+      }),
+    });
+    const region = within(await planRegion());
+
+    await userEvent.type(region.getByLabelText("Cautious"), "2");
+    await userEvent.type(region.getByLabelText("Favorable"), "6");
+    await userEvent.type(region.getByLabelText("During withdrawals"), "3");
+    await userEvent.type(region.getByLabelText("Tax on gain"), "15");
+    await userEvent.click(region.getByRole("button", { name: "Save plan" }));
+
+    await waitFor(() => {
+      expect(bodies).toEqual([
+        expect.objectContaining({
+          withdrawal_return_bp: 300,
+          cautious_return_bp: 200,
+          favorable_return_bp: 600,
+          gain_tax_bp: 1500,
+        }),
+      ]);
+    });
   });
 
   it("PX7: draws the plan against the whole recorded history", async () => {

@@ -2,13 +2,18 @@ import type { ChartAnnotation, ChartSeries } from "@slotted/core/chart";
 import { Chart } from "@slotted/react/chart";
 
 import styles from "@/features/portfolio/projection/journey-block/journey-block.module.css";
+import type { CaseKind } from "@/features/portfolio/projection/journey-block/journey-figures";
 import type { JourneyRow } from "@/features/portfolio/projection/journey-block/journey-rows";
 import type { JourneyField } from "@/features/portfolio/projection/journey-block/journey-rows";
 import type { JourneyAxes } from "@/features/portfolio/projection/journey-block/use-journey-axes";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
+const caseTones = { cautious: "danger", favorable: "info" } as const;
+
 interface JourneyPlotProps {
   rows: JourneyRow[];
+  // PX15: the typed cases, each drawn in its tone.
+  cases: readonly CaseKind[];
   axes: JourneyAxes;
   // The dates of the rows the marks stand on; a mark with no row is not drawn.
   todayDate: string | undefined;
@@ -21,6 +26,7 @@ interface JourneyPlotProps {
 // the withdrawal age.
 export function JourneyPlot({
   rows,
+  cases,
   axes,
   todayDate,
   withdrawalDate,
@@ -69,6 +75,15 @@ export function JourneyPlot({
       curve: "step",
       format: axes.exact,
     },
+    ...cases.map((kind): ChartSeries<JourneyField> => ({
+      id: kind,
+      kind: "line",
+      field: kind,
+      label: t(`portfolio.projection.case.${kind}`),
+      tone: caseTones[kind],
+      stroke: "dashed",
+      format: axes.exact,
+    })),
   ];
   const lastDate = rows.at(-1)?.date;
   const annotations: ChartAnnotation[] = [

@@ -1,8 +1,13 @@
 import styles from "@/features/portfolio/projection/journey-block/journey-block.module.css";
+import type { CaseKind } from "@/features/portfolio/projection/journey-block/journey-figures";
 import { useT } from "@/i18n/i18n-provider";
 
-// The legend of the plot is off, so its four marks are written here.
-export function JourneyKey() {
+interface JourneyKeyProps {
+  cases: readonly CaseKind[];
+}
+
+// The legend of the plot is off, so its four marks and the typed cases are written here.
+export function JourneyKey({ cases }: JourneyKeyProps) {
   const t = useT();
 
   return (
@@ -35,6 +40,16 @@ export function JourneyKey() {
         <span className={styles.keySwatch} aria-hidden="true" />
         {t("portfolio.projection.journey.key.gain")}
       </li>
+
+      {cases.map((kind) => (
+        <li key={kind}>
+          <span
+            className={[styles.seriesMark, styles[`mark-${kind}`]].join(" ")}
+            aria-hidden="true"
+          />
+          {t(`portfolio.projection.case.${kind}`)}
+        </li>
+      ))}
     </ul>
   );
 }

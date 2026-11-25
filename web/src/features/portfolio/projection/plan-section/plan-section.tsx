@@ -14,6 +14,8 @@ import type { PlanFields } from "@/features/portfolio/projection/model/plan-fiel
 import { AgeFact } from "@/features/portfolio/projection/plan-section/age-fact";
 import { BirthField } from "@/features/portfolio/projection/plan-section/birth-field";
 import styles from "@/features/portfolio/projection/plan-section/plan.module.css";
+import { PremiseFields } from "@/features/portfolio/projection/plan-section/premise-fields";
+import { ReferencesLine } from "@/features/portfolio/projection/plan-section/references-line";
 import { UnitField } from "@/features/portfolio/projection/plan-section/unit-field";
 import { WithdrawalFields } from "@/features/portfolio/projection/plan-section/withdrawal-fields";
 import { errorText } from "@/api/problem";
@@ -36,7 +38,7 @@ interface PlanSectionProps {
   onSave: () => void;
 }
 
-// PX2, PX3: the plan as one row of fields; every block below follows them as they are typed.
+// PX2, PX3, PX17: the plan as a row of the goal and a row of the premises; every block below follows them as they are typed.
 export function PlanSection({
   fields,
   onChange,
@@ -52,15 +54,6 @@ export function PlanSection({
   const t = useT();
   const [locale] = useAppLocale();
 
-  const portfolioReturn =
-    annualReal === null
-      ? undefined
-      : t("portfolio.projection.plan.portfolioReturn", {
-          rate: numberFormatter(locale, {
-            minimumFractionDigits: 1,
-            maximumFractionDigits: 1,
-          }).format(annualReal * 100),
-        });
   const ranges = fieldRanges(fields);
   const plain = numberFormatter(locale);
   const range = (limits: [number, number] | undefined) =>
@@ -104,65 +97,54 @@ export function PlanSection({
           <FormNotice>{errorText(error, t)}</FormNotice>
         )}
 
-        <div className={styles.planStrip}>
-          {age === null ? <BirthField /> : <AgeFact age={age} />}
+        <div className={styles.planRows}>
+          <div className={styles.planStrip}>
+            {age === null ? <BirthField /> : <AgeFact age={age} />}
 
-          <UnitField
-            label={t("portfolio.projection.plan.withdrawalAge")}
-            unit={t("portfolio.projection.plan.years")}
-            inputMode="numeric"
-            value={fields.withdrawalAge}
-            error={
-              range(ranges.withdrawalAge) ??
-              (tooEarly
-                ? t("portfolio.projection.plan.ageError", { age: age ?? 0 })
-                : undefined)
-            }
-            onChange={(withdrawalAge) => {
-              onChange({ withdrawalAge });
-            }}
-          />
+            <UnitField
+              label={t("portfolio.projection.plan.withdrawalAge")}
+              unit={t("portfolio.projection.plan.years")}
+              inputMode="numeric"
+              value={fields.withdrawalAge}
+              error={
+                range(ranges.withdrawalAge) ??
+                (tooEarly
+                  ? t("portfolio.projection.plan.ageError", { age: age ?? 0 })
+                  : undefined)
+              }
+              onChange={(withdrawalAge) => {
+                onChange({ withdrawalAge });
+              }}
+            />
 
-          <UnitField
-            label={t("portfolio.projection.plan.realReturn")}
-            unit={t("portfolio.projection.plan.perYear")}
-            inputMode="decimal"
-            value={fields.realReturn}
-            hint={portfolioReturn}
-            error={range(ranges.realReturn)}
-            onChange={(realReturn) => {
-              onChange({ realReturn });
-            }}
-          />
+            <WithdrawalFields
+              fields={fields}
+              currency={currency}
+              rateError={range(ranges.rate)}
+              onChange={onChange}
+            />
 
-          <UnitField
-            label={t("portfolio.projection.plan.inflation")}
-            unit={t("portfolio.projection.plan.perYear")}
-            inputMode="decimal"
-            value={fields.inflation}
-            error={range(ranges.inflation)}
-            onChange={(inflation) => {
-              onChange({ inflation });
-            }}
-          />
+            <UnitField
+              label={t("portfolio.projection.plan.lastAge")}
+              unit={t("portfolio.projection.plan.years")}
+              inputMode="numeric"
+              value={fields.lastAge}
+              error={range(ranges.lastAge)}
+              onChange={(lastAge) => {
+                onChange({ lastAge });
+              }}
+            />
+          </div>
 
-          <WithdrawalFields
+          <PremiseFields
             fields={fields}
-            currency={currency}
-            rateError={range(ranges.rate)}
+            ranges={ranges}
+            range={range}
+            annualReal={annualReal}
             onChange={onChange}
           />
 
-          <UnitField
-            label={t("portfolio.projection.plan.lastAge")}
-            unit={t("portfolio.projection.plan.years")}
-            inputMode="numeric"
-            value={fields.lastAge}
-            error={range(ranges.lastAge)}
-            onChange={(lastAge) => {
-              onChange({ lastAge });
-            }}
-          />
+          <ReferencesLine currency={currency} />
         </div>
       </SectionBody>
     </Section>

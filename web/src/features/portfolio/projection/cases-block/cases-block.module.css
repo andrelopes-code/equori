@@ -1,0 +1,39 @@
+@layer app {
+  .caseTable {
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-size: var(--slotted-font-size-sm);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .caseTable th,
+  .caseTable td {
+    block-size: 2.5rem; /* literal: fixed row size in rem, the row of the year table */
+    padding: 0 var(--slotted-space-3);
+    border-block-end: 1px solid var(--slotted-border-subtle);
+    text-align: end;
+    white-space: nowrap;
+  }
+
+  .caseTable thead th {
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+    font-weight: var(--slotted-font-weight-medium);
+  }
+
+  .caseTable tbody th {
+    font-weight: var(--slotted-font-weight-regular);
+  }
+
+  .caseTable .caseCol {
+    text-align: start;
+  }
+
+  .caseTable tbody tr:last-child > * {
+    border-block-end-color: transparent;
+  }
+
+  .caseTable .planRow > * {
+    font-weight: var(--slotted-font-weight-semibold);
+  }
+}

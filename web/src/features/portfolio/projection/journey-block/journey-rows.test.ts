@@ -97,4 +97,12 @@ describe("journeyRows", () => {
       ["2027-01-31", null, 125],
     ]);
   });
+
+  it("PX15: draws each typed case from today's value", () => {
+    const cautious = projection.map((r) => ({ ...r, value: r.value - 1000 }));
+    const rows = journeyRows(history, projection, "2054-03", 2, { cautious });
+
+    expect(rows.map((r) => r.cautious)).toEqual([null, 110, 110, 115]);
+    expect(rows.map((r) => r.favorable)).toEqual(Array(4).fill(undefined));
+  });
 });

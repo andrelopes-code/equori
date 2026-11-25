@@ -22,6 +22,7 @@ import { monthEnd } from "@/features/portfolio/projection/journey-block/journey-
 import styles from "@/features/portfolio/projection/journey-block/journey-block.module.css";
 import { useJourneyAxes } from "@/features/portfolio/projection/journey-block/use-journey-axes";
 import type { ProjectionDraft } from "@/features/portfolio/projection/model/plan-fields";
+import type { ProjectionRow } from "@/features/portfolio/projection/model/project";
 import { realHistory } from "@/features/portfolio/projection/model/real-history";
 import { toNominal } from "@/features/portfolio/projection/model/to-nominal";
 import { useScale } from "@/features/setup";
@@ -64,12 +65,19 @@ export function JourneyBlock({
     [draft, history, birthDate, today, baseline],
   );
   const realPast = useMemo(() => realHistory(history), [history]);
-  const shown =
+  const inView = (projected: readonly ProjectionRow[]) =>
     view === "nominal"
-      ? toNominal(figures.rows, draft.inflationBp)
-      : figures.rows;
+      ? toNominal(projected, draft.inflationBp)
+      : [...projected];
+  const cases = figures.cases.map((c) => c.kind);
   const past = view === "nominal" ? history : (realPast ?? history);
-  const rows = journeyRows(past, shown, figures.withdrawalFrom, digits);
+  const rows = journeyRows(
+    past,
+    inView(figures.rows),
+    figures.withdrawalFrom,
+    digits,
+    Object.fromEntries(figures.cases.map((c) => [c.kind, inView(c.rows)])),
+  );
   const described =
     view === "real" && realPast === null ? "realNominalPast" : view;
   const todayDate = history.points.at(-1)?.date;
@@ -117,10 +125,11 @@ export function JourneyBlock({
       <SectionBody>
         <div className={[styles.hero, styles.heroEnd].join(" ")}>
           <div className={styles.heroPlot}>
-            <JourneyKey />
+            <JourneyKey cases={cases} />
 
             <JourneyPlot
               rows={rows}
+              cases={cases}
               axes={axes}
               todayDate={todayDate}
               withdrawalDate={monthEnd(figures.withdrawalFrom)}

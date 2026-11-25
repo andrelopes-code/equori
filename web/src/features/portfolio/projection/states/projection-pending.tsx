@@ -15,11 +15,18 @@ import { useT } from "@/i18n/i18n-provider";
 const labels: readonly MessageKey[] = [
   "portfolio.projection.plan.age",
   "portfolio.projection.plan.withdrawalAge",
-  "portfolio.projection.plan.realReturn",
-  "portfolio.projection.plan.inflation",
   "portfolio.projection.plan.withdrawal",
   "portfolio.projection.plan.income",
   "portfolio.projection.plan.lastAge",
+];
+
+const premiseLabels: readonly MessageKey[] = [
+  "portfolio.projection.plan.realReturn",
+  "portfolio.projection.plan.cautious",
+  "portfolio.projection.plan.favorable",
+  "portfolio.projection.plan.withdrawalReturn",
+  "portfolio.projection.plan.inflation",
+  "portfolio.projection.plan.gainTax",
 ];
 
 // PX11: the plan section while its reads are pending; every static text stays, values wait.
@@ -43,15 +50,19 @@ export function ProjectionPending() {
       </SectionHeader>
 
       <SectionBody>
-        <div className={styles.planStrip}>
-          {labels.map((label) => (
-            <Field key={label} necessity="none" className={styles.planFact}>
-              <FieldLabel>{t(label)}</FieldLabel>
+        <div className={styles.planRows}>
+          {[labels, premiseLabels].map((row) => (
+            <div key={row[0]} className={styles.planStrip}>
+              {row.map((label) => (
+                <Field key={label} necessity="none" className={styles.planFact}>
+                  <FieldLabel>{t(label)}</FieldLabel>
 
-              <span className={styles.planFactValue}>
-                <PendingValue ch={8} />
-              </span>
-            </Field>
+                  <span className={styles.planFactValue}>
+                    <PendingValue ch={8} />
+                  </span>
+                </Field>
+              ))}
+            </div>
           ))}
         </div>
       </SectionBody>

@@ -100,6 +100,17 @@
     border-block-start-style: dashed;
   }
 
+  .mark-cautious {
+    color: var(--slotted-tone-danger-text);
+    border-block-start-style: dashed;
+  }
+
+  /* Apart from the green of the projection beside it */
+  .mark-favorable {
+    color: var(--slotted-tone-info-text);
+    border-block-start-style: dashed;
+  }
+
   /* Where the portfolio stands on the way to the amount needed */
   .pathBlock {
     display: grid;

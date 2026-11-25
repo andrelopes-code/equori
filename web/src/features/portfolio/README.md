@@ -6,7 +6,7 @@
 - `/portfolio/positions`: `PortfolioPositionsPage` (`pages/portfolio-positions-page.tsx`), search validated by `validatePortfolioSearch` (`model/portfolio-search.ts`); "Onde está o dinheiro", fixed income and the positions grid.
 - `/portfolio/year`: `PortfolioYearPage` (`pages/portfolio-year-page.tsx`), search validated by `validateYearSearch` (`pages/year-search.ts`).
 - `/portfolio/contribution-plan`: `ContributionPlanPage` (`pages/contribution-plan-page.tsx`), no search.
-- `/portfolio/projection`: `PortfolioProjectionPage` (`pages/portfolio-projection-page.tsx`), no search; the plan, the journey, the plan against the recorded value, the planned contributions and the years (`projection/`).
+- `/portfolio/projection`: `PortfolioProjectionPage` (`pages/portfolio-projection-page.tsx`), no search; the plan, the journey, the scenarios, the plan against the recorded value, the planned contributions and the years (`projection/`).
 
 The five routes draw `PortfolioAreaHeader` (`area-header/`): the heading "Portfolio", the controls of the tab, the help link and the tabs Results, Positions, Income and tax, Contributions, Projection (PT1). The tax year page draws its three views as a second `Tabs` at the top of its body; `PlanHeader` (`contribution-plan/header/`) is the header of the contribution plan.
 
@@ -39,7 +39,7 @@ Guide topic (`navigation-map.json`): `investments`.
 - `attribution/`: result of each holding in a year ("Rendimento por ativo"): section, year view, rows, totals and their pure functions.
 - `return-money/`: origin of the closing balance: its list, its bar (`origin-parts`) and the money figures.
 - `account-yield/`: account yield, its section, hook and measured tops.
-- `projection/`: the Projection tab (spec `docs/specs/2026-11-24-portfolio-projection-design.md`): the read and the plan hook (`use-projection.ts`), the body (`projection-body.tsx`, `projection-blocks.tsx`), `plan-section/`, `journey-block/`, `versus-block/`, `contributions-block/`, `years-block/` (the year table and its rows), `model/` (the pure functions of the projection) and the states (`states/`).
+- `projection/`: the Projection tab (spec `docs/specs/2026-11-24-portfolio-projection-design.md`): the read and the plan hook (`use-projection.ts`), the body (`projection-body.tsx`, `projection-blocks.tsx`), `plan-section/`, `journey-block/`, `cases-block/` (the scenarios), `versus-block/`, `contributions-block/`, `years-block/` (the year table and its rows), `model/` (the pure functions of the projection) and the states (`states/`).
 - `contribution-plan/`: the contribution plan: header, composer, criteria, editor, ideal, intro, model, month, outside, rules and states.
 - `income-events/`: income events tab, table and charts.
 - `realized-results/`: realized results tab and sales table.

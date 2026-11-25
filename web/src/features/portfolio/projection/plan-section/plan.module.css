@@ -1,4 +1,10 @@
 @layer app {
+  /* The goal, the premises and the references of the plan */
+  .planRows {
+    display: grid;
+    gap: var(--slotted-space-5);
+  }
+
   .planStrip {
     display: flex;
     flex-wrap: wrap;
