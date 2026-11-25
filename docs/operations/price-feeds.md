@@ -65,7 +65,9 @@ A currency the BCB does not quote returns an empty answer and stores nothing.
 The feeds run at start and every 6 hours, 30 minutes after a run in which one failed, and one feed at once when it is enabled. A run takes the indexes first and the histories last. Each run fetches from the day after the latest
 price of the source (per currency for `bcb_ptax`) to today, never earlier than today − 30
 days. A day or currency without data (404, or 400 for `b3_consolidated`) is skipped. A
-`b3_consolidated` file whose status is not `Final` ends the run without a failure. Any other
+`b3_consolidated` file whose status is not `Final` ends the run without a failure. `b3_consolidated`
+and `br_ifdata` repeat a request answered with 500, 502, 503 or 504 up to four times, after 1, 2, 4
+and 8 seconds. Any other
 failure writes one `price feed` log line with the source and the day or currency; for
 `b3_cotahist` and `b3_consolidated` it ends the run, for `bcb_ptax` it ends that currency only. The next run fetches the same days
 again.

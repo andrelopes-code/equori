@@ -61,7 +61,7 @@ func sourceEntries() []sourceEntry {
 			yearsOf:      "b3_cotahist",
 			build: func(hc *http.Client, urls map[string]string, _ func() time.Time) feed.Source {
 				return b3consolidated.New(
-					hc,
+					feed.Retrying(hc),
 					urls["b3_consolidated"],
 					b3cotahist.New(hc, urls["b3_cotahist"]),
 				)

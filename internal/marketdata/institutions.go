@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/andrelopes-code/equori/internal/marketdata/domain"
+	"github.com/andrelopes-code/equori/internal/marketdata/feed"
 	"github.com/andrelopes-code/equori/internal/marketdata/institution"
 	"github.com/andrelopes-code/equori/internal/marketdata/institution/brifdata"
 	"github.com/andrelopes-code/equori/internal/marketdata/postgres"
@@ -35,7 +36,9 @@ func institutionEntries() []institutionEntry {
 			"br_ifdata",
 			"https://olinda.bcb.gov.br/olinda/servico/IFDATA/versao/v1/odata",
 			120,
-			func(hc *http.Client, url string) institution.Source { return brifdata.New(hc, url) },
+			func(hc *http.Client, url string) institution.Source {
+				return brifdata.New(feed.Retrying(hc), url)
+			},
 		},
 	}
 }
