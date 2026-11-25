@@ -44,6 +44,55 @@ func TestSplitGuarantee(t *testing.T) {
 	}
 }
 
+// AC16 amended: with one slot held (ideal 0, its ideal moved to the next slot) the held slot
+// receives nothing, the parts add up to the amount and the guarantee holds over the others.
+func TestSplitGuaranteeHeld(t *testing.T) {
+	t.Parallel()
+
+	const cases = 20000
+
+	r := rand.New(rand.NewPCG(68, 17)) //nolint:gosec // G404: a fixed seed keeps the cases
+
+	for n := range cases {
+		slots, amount := drawPlan(r)
+		held := r.IntN(len(slots))
+		next := (held + 1) % len(slots)
+
+		slots[next].TargetBP += slots[held].TargetBP
+		slots[held].TargetBP = 0
+
+		parts := Split(slots, amount)
+		if parts[held] != 0 {
+			t.Fatalf("case %d: the held slot %d received %d", n, held, parts[held])
+		}
+
+		var sum int64
+
+		total := amount
+		rest, restParts := make([]Slot, 0, len(slots)-1), make([]int64, 0, len(slots)-1)
+
+		for i, p := range parts {
+			sum += p
+
+			if i != held {
+				rest = append(rest, slots[i])
+				restParts = append(restParts, p)
+				total += slots[i].Value
+			}
+		}
+
+		if sum != amount {
+			t.Fatalf("case %d: the parts %v add up to %d, want %d", n, parts, sum, amount)
+		}
+
+		excess := new(big.Int).Sub(distance(rest, restParts, total), leastDistance(rest, total))
+		if excess.Cmp(big.NewInt(int64(2*fullTargetBP*len(rest)))) > 0 {
+			t.Fatalf("case %d: %v for %d into %v is %s above the least distance", n, parts,
+				amount, slots, excess)
+		}
+	}
+}
+
 // distance is the sum of |value + part - ideal * total| over the slots, times 10000.
 func distance(slots []Slot, parts []int64, total int64) *big.Int {
 	sum := new(big.Int)

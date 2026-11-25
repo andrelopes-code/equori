@@ -30,12 +30,15 @@ var (
 	ErrPlanInvalid        = errors.New("invalid contribution plan")
 	ErrQuestionInvalid    = errors.New("invalid contribution question")
 	ErrAnswersInvalid     = errors.New("invalid contribution answers")
+	ErrPlanChanged        = errors.New("the contribution plan changed")
 )
 
 // Plan is the target split of a book (CN1 to CN4); Amount is nil without a stored amount.
 type Plan struct {
-	Classes []PlanClass
-	Amount  *money.Money
+	Classes  []PlanClass
+	Amount   *money.Money
+	Revision int64  // revision of the stored plan, 0 without one (CO15)
+	Expected *int64 // revision the writer read; nil skips the check (CO15)
 }
 
 type PlanClass struct {
@@ -77,6 +80,9 @@ type PlanMember struct {
 	AnswerDates []*time.Time
 	// AnswerOverrides is true where the investor's answer replaces the fact's (CO3).
 	AnswerOverrides []bool
+
+	Released     *bool      // input: nil keeps the stored release (CO16)
+	ReleaseMonth *time.Time // first day of the month of the release (CO8)
 }
 
 // Slot is one class or one member as the split reads it.
