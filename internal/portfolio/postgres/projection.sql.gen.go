@@ -58,6 +58,10 @@ SELECT
     withdrawal_mode,
     income,
     withdrawal_rate_bp,
+    withdrawal_return_bp,
+    cautious_return_bp,
+    favorable_return_bp,
+    gain_tax_bp,
     currency,
     baseline_date,
     baseline_value
@@ -74,16 +78,20 @@ type GetProjectionPlanParams struct {
 }
 
 type GetProjectionPlanRow struct {
-	WithdrawalAge    int16
-	LastAge          int16
-	RealReturnBp     int32
-	InflationBp      int32
-	WithdrawalMode   string
-	Income           *int64
-	WithdrawalRateBp *int32
-	Currency         string
-	BaselineDate     time.Time
-	BaselineValue    int64
+	WithdrawalAge      int16
+	LastAge            int16
+	RealReturnBp       int32
+	InflationBp        int32
+	WithdrawalMode     string
+	Income             *int64
+	WithdrawalRateBp   *int32
+	WithdrawalReturnBp *int32
+	CautiousReturnBp   *int32
+	FavorableReturnBp  *int32
+	GainTaxBp          *int32
+	Currency           string
+	BaselineDate       time.Time
+	BaselineValue      int64
 }
 
 func (q *Queries) GetProjectionPlan(ctx context.Context, arg GetProjectionPlanParams) (GetProjectionPlanRow, error) {
@@ -97,6 +105,10 @@ func (q *Queries) GetProjectionPlan(ctx context.Context, arg GetProjectionPlanPa
 		&i.WithdrawalMode,
 		&i.Income,
 		&i.WithdrawalRateBp,
+		&i.WithdrawalReturnBp,
+		&i.CautiousReturnBp,
+		&i.FavorableReturnBp,
+		&i.GainTaxBp,
 		&i.Currency,
 		&i.BaselineDate,
 		&i.BaselineValue,
@@ -183,6 +195,10 @@ INSERT INTO
         withdrawal_mode,
         income,
         withdrawal_rate_bp,
+        withdrawal_return_bp,
+        cautious_return_bp,
+        favorable_return_bp,
+        gain_tax_bp,
         currency,
         baseline_date,
         baseline_value
@@ -200,7 +216,11 @@ VALUES
         $9,
         $10,
         $11,
-        $12
+        $12,
+        $13,
+        $14,
+        $15,
+        $16
     )
 ON CONFLICT (books_id, member_id) DO UPDATE
 SET
@@ -210,22 +230,30 @@ SET
     inflation_bp = excluded.inflation_bp,
     withdrawal_mode = excluded.withdrawal_mode,
     income = excluded.income,
-    withdrawal_rate_bp = excluded.withdrawal_rate_bp
+    withdrawal_rate_bp = excluded.withdrawal_rate_bp,
+    withdrawal_return_bp = excluded.withdrawal_return_bp,
+    cautious_return_bp = excluded.cautious_return_bp,
+    favorable_return_bp = excluded.favorable_return_bp,
+    gain_tax_bp = excluded.gain_tax_bp
 `
 
 type UpsertProjectionPlanParams struct {
-	BooksID          int64
-	MemberID         int64
-	WithdrawalAge    int16
-	LastAge          int16
-	RealReturnBp     int32
-	InflationBp      int32
-	WithdrawalMode   string
-	Income           *int64
-	WithdrawalRateBp *int32
-	Currency         string
-	BaselineDate     time.Time
-	BaselineValue    int64
+	BooksID            int64
+	MemberID           int64
+	WithdrawalAge      int16
+	LastAge            int16
+	RealReturnBp       int32
+	InflationBp        int32
+	WithdrawalMode     string
+	Income             *int64
+	WithdrawalRateBp   *int32
+	WithdrawalReturnBp *int32
+	CautiousReturnBp   *int32
+	FavorableReturnBp  *int32
+	GainTaxBp          *int32
+	Currency           string
+	BaselineDate       time.Time
+	BaselineValue      int64
 }
 
 func (q *Queries) UpsertProjectionPlan(ctx context.Context, arg UpsertProjectionPlanParams) error {
@@ -239,6 +267,10 @@ func (q *Queries) UpsertProjectionPlan(ctx context.Context, arg UpsertProjection
 		arg.WithdrawalMode,
 		arg.Income,
 		arg.WithdrawalRateBp,
+		arg.WithdrawalReturnBp,
+		arg.CautiousReturnBp,
+		arg.FavorableReturnBp,
+		arg.GainTaxBp,
 		arg.Currency,
 		arg.BaselineDate,
 		arg.BaselineValue,

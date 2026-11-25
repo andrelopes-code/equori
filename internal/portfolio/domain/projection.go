@@ -15,8 +15,8 @@ const (
 
 var ErrProjectionInvalid = errors.New("invalid projection plan")
 
-// Projection is the plan of a member: ages, rates, the withdrawal and the contribution changes
-// (PJ1, PJ2).
+// Projection is the plan of a member: ages, rates, the withdrawal, the contribution changes and the
+// optional premises (PJ1, PJ2, PJ7).
 type Projection struct {
 	WithdrawalAge int
 	LastAge       int
@@ -26,6 +26,12 @@ type Projection struct {
 	Income        int64 // minor units; set with ModeIncome only
 	RateBP        int   // set with ModeRate only
 	Changes       []ProjectionChange
+
+	// PJ7: nil means the plan does not hold the value.
+	WithdrawalReturnBP *int
+	CautiousReturnBP   *int
+	FavorableReturnBP  *int
+	GainTaxBP          *int
 }
 
 // ProjectionChange is the monthly contribution from the first day of Month on (PJ2).
@@ -34,7 +40,7 @@ type ProjectionChange struct {
 	Amount int64
 }
 
-// Validate checks the ranges of PJ1 and the changes of PJ2.
+// Validate checks the ranges of PJ1, the changes of PJ2 and the premises of PJ7.
 func (p Projection) Validate() error {
 	switch {
 	case p.WithdrawalAge < 18 || p.WithdrawalAge > 100:
@@ -48,6 +54,10 @@ func (p Projection) Validate() error {
 	}
 
 	if err := p.validateWithdrawal(); err != nil {
+		return err
+	}
+
+	if err := p.validatePremises(); err != nil {
 		return err
 	}
 
@@ -100,6 +110,26 @@ func (p Projection) validateWithdrawal() error {
 	}
 
 	return nil
+}
+
+func (p Projection) validatePremises() error {
+	switch {
+	case outside(p.WithdrawalReturnBP, -1000, 3000):
+		return invalidProjection("withdrawal return must be -1000 to 3000 basis points")
+	case outside(p.CautiousReturnBP, -1000, p.RealReturnBP-1):
+		return invalidProjection("cautious return must be -1000 to below the real return")
+	case outside(p.FavorableReturnBP, p.RealReturnBP+1, 3000):
+		return invalidProjection("favorable return must be above the real return to 3000")
+	case outside(p.GainTaxBP, 1, 5000):
+		return invalidProjection("gain tax must be 1 to 5000 basis points")
+	}
+
+	return nil
+}
+
+// outside reports whether a value the plan holds leaves [low, high].
+func outside(v *int, low, high int) bool {
+	return v != nil && (*v < low || *v > high)
 }
 
 func (p Projection) validateChanges() error {

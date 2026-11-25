@@ -16984,6 +16984,18 @@ components:
         inflation_bp:
           type: integer
           description: 0 to 5000.
+        withdrawal_return_bp:
+          type: integer
+          description: Real return a year during the withdrawals, -1000 to 3000; absent, real_return_bp holds.
+        cautious_return_bp:
+          type: integer
+          description: Real return a year of the cautious case, -1000 to below real_return_bp.
+        favorable_return_bp:
+          type: integer
+          description: Real return a year of the favorable case, above real_return_bp to 3000.
+        gain_tax_bp:
+          type: integer
+          description: Tax on the gain of a withdrawal, 1 to 5000 basis points; absent, no tax.
         withdrawal:
           $ref: "#/components/schemas/ProjectionWithdrawal"
         changes:
@@ -17040,6 +17052,18 @@ components:
           type: integer
         inflation_bp:
           type: integer
+        withdrawal_return_bp:
+          type: integer
+          description: Real return a year during the withdrawals, -1000 to 3000; absent, real_return_bp holds.
+        cautious_return_bp:
+          type: integer
+          description: Real return a year of the cautious case, -1000 to below real_return_bp.
+        favorable_return_bp:
+          type: integer
+          description: Real return a year of the favorable case, above real_return_bp to 3000.
+        gain_tax_bp:
+          type: integer
+          description: Tax on the gain of a withdrawal, 1 to 5000 basis points; absent, no tax.
         withdrawal:
           $ref: "#/components/schemas/ProjectionWithdrawal"
         changes:

@@ -9494,6 +9494,14 @@ export interface components {
             real_return_bp: number;
             /** @description 0 to 5000. */
             inflation_bp: number;
+            /** @description Real return a year during the withdrawals, -1000 to 3000; absent, real_return_bp holds. */
+            withdrawal_return_bp?: number;
+            /** @description Real return a year of the cautious case, -1000 to below real_return_bp. */
+            cautious_return_bp?: number;
+            /** @description Real return a year of the favorable case, above real_return_bp to 3000. */
+            favorable_return_bp?: number;
+            /** @description Tax on the gain of a withdrawal, 1 to 5000 basis points; absent, no tax. */
+            gain_tax_bp?: number;
             withdrawal: components["schemas"]["ProjectionWithdrawal"];
             /** @description 1 to 40 changes with distinct months. */
             changes: components["schemas"]["ProjectionChange"][];
@@ -9535,6 +9543,14 @@ export interface components {
             last_age: number;
             real_return_bp: number;
             inflation_bp: number;
+            /** @description Real return a year during the withdrawals, -1000 to 3000; absent, real_return_bp holds. */
+            withdrawal_return_bp?: number;
+            /** @description Real return a year of the cautious case, -1000 to below real_return_bp. */
+            cautious_return_bp?: number;
+            /** @description Real return a year of the favorable case, above real_return_bp to 3000. */
+            favorable_return_bp?: number;
+            /** @description Tax on the gain of a withdrawal, 1 to 5000 basis points; absent, no tax. */
+            gain_tax_bp?: number;
             withdrawal: components["schemas"]["ProjectionWithdrawal"];
             /** @description Ordered by month. */
             changes: components["schemas"]["ProjectionChange"][];

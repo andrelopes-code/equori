@@ -7,6 +7,10 @@ SELECT
     withdrawal_mode,
     income,
     withdrawal_rate_bp,
+    withdrawal_return_bp,
+    cautious_return_bp,
+    favorable_return_bp,
+    gain_tax_bp,
     currency,
     baseline_date,
     baseline_value
@@ -40,6 +44,10 @@ INSERT INTO
         withdrawal_mode,
         income,
         withdrawal_rate_bp,
+        withdrawal_return_bp,
+        cautious_return_bp,
+        favorable_return_bp,
+        gain_tax_bp,
         currency,
         baseline_date,
         baseline_value
@@ -55,6 +63,10 @@ VALUES
         @withdrawal_mode,
         @income,
         @withdrawal_rate_bp,
+        @withdrawal_return_bp,
+        @cautious_return_bp,
+        @favorable_return_bp,
+        @gain_tax_bp,
         @currency,
         @baseline_date,
         @baseline_value
@@ -67,7 +79,11 @@ SET
     inflation_bp = excluded.inflation_bp,
     withdrawal_mode = excluded.withdrawal_mode,
     income = excluded.income,
-    withdrawal_rate_bp = excluded.withdrawal_rate_bp;
+    withdrawal_rate_bp = excluded.withdrawal_rate_bp,
+    withdrawal_return_bp = excluded.withdrawal_return_bp,
+    cautious_return_bp = excluded.cautious_return_bp,
+    favorable_return_bp = excluded.favorable_return_bp,
+    gain_tax_bp = excluded.gain_tax_bp;
 
 -- name: DeleteProjectionChangesFrom :exec
 DELETE FROM portfolio_projection_change

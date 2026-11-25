@@ -15,7 +15,13 @@ type projectionOut struct {
 	LastAge       int `json:"last_age"`
 	RealReturnBP  int `json:"real_return_bp"`
 	InflationBP   int `json:"inflation_bp"`
-	Withdrawal    struct {
+
+	WithdrawalReturnBP *int `json:"withdrawal_return_bp"`
+	CautiousReturnBP   *int `json:"cautious_return_bp"`
+	FavorableReturnBP  *int `json:"favorable_return_bp"`
+	GainTaxBP          *int `json:"gain_tax_bp"`
+
+	Withdrawal struct {
 		Mode   string `json:"mode"`
 		Income int64  `json:"income"`
 		RateBP int    `json:"rate_bp"`
@@ -233,6 +239,38 @@ func TestS717PlanInBaseCurrency(t *testing.T) {
 	}
 }
 
+// S719: a save stores the four premises (PJ7), and a later save without them leaves the plan
+// without them.
+func TestS719PremisesOfPlan(t *testing.T) {
+	t.Parallel()
+	f := fundedFixture(t)
+
+	body := projectionBody(change("2026-11-01", 100000))
+	body["withdrawal_return_bp"] = -100
+	body["cautious_return_bp"] = 250
+	body["favorable_return_bp"] = 550
+	body["gain_tax_bp"] = 1500
+	got := saveProjection(t, f.h, body)
+
+	want := got
+	want.WithdrawalReturnBP, want.CautiousReturnBP = new(-100), new(250)
+	want.FavorableReturnBP, want.GainTaxBP = new(550), new(1500)
+
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("save = %+v, want the four premises", got)
+	}
+
+	if read := readProjection(t, f.h); !reflect.DeepEqual(read, want) {
+		t.Fatalf("read = %+v, want %+v", read, want)
+	}
+
+	got = saveProjection(t, f.h, projectionBody(change("2026-11-01", 100000)))
+	if got.WithdrawalReturnBP != nil || got.CautiousReturnBP != nil ||
+		got.FavorableReturnBP != nil || got.GainTaxBP != nil {
+		t.Fatalf("save without premises = %+v, want none", got)
+	}
+}
+
 func TestProjectionInvalid(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-11-01"))
@@ -251,6 +289,10 @@ func TestProjectionInvalid(t *testing.T) {
 		{"last age 121", map[string]any{"last_age": 121}},
 		{"real return 3001", map[string]any{"real_return_bp": 3001}},
 		{"inflation -1", map[string]any{"inflation_bp": -1}},
+		{"withdrawal return 3001", map[string]any{"withdrawal_return_bp": 3001}},
+		{"cautious equals the plan", map[string]any{"cautious_return_bp": 400}},
+		{"favorable equals the plan", map[string]any{"favorable_return_bp": 400}},
+		{"gain tax 0", map[string]any{"gain_tax_bp": 0}},
 		{
 			"income mode without income",
 			map[string]any{"withdrawal": map[string]any{"mode": "income"}},

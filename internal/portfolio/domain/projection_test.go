@@ -41,6 +41,32 @@ func TestProjectionValidate(t *testing.T) {
 		{"inflation 0", func(p *Projection) { p.InflationBP = 0 }, true},
 		{"inflation -1", func(p *Projection) { p.InflationBP = -1 }, false},
 		{"inflation 5001", func(p *Projection) { p.InflationBP = 5001 }, false},
+		{"premises at their lower limits", func(p *Projection) {
+			p.RealReturnBP = -999
+			p.WithdrawalReturnBP, p.CautiousReturnBP = new(-1000), new(-1000)
+			p.GainTaxBP = new(1)
+		}, true},
+		{"premises at their upper limits", func(p *Projection) {
+			p.RealReturnBP = 2999
+			p.WithdrawalReturnBP, p.FavorableReturnBP = new(3000), new(3000)
+			p.GainTaxBP = new(5000)
+		}, true},
+		{
+			"withdrawal return -1001",
+			func(p *Projection) { p.WithdrawalReturnBP = new(-1001) },
+			false,
+		},
+		{"withdrawal return 3001", func(p *Projection) { p.WithdrawalReturnBP = new(3001) }, false},
+		{"cautious equals the plan", func(p *Projection) { p.CautiousReturnBP = new(400) }, false},
+		{"cautious -1001", func(p *Projection) { p.CautiousReturnBP = new(-1001) }, false},
+		{
+			"favorable equals the plan",
+			func(p *Projection) { p.FavorableReturnBP = new(400) },
+			false,
+		},
+		{"favorable 3001", func(p *Projection) { p.FavorableReturnBP = new(3001) }, false},
+		{"gain tax 0", func(p *Projection) { p.GainTaxBP = new(0) }, false},
+		{"gain tax 5001", func(p *Projection) { p.GainTaxBP = new(5001) }, false},
 		{"income 0", func(p *Projection) { p.Income = 0 }, false},
 		{"income with a rate", func(p *Projection) { p.RateBP = 400 }, false},
 		{"unknown mode", func(p *Projection) { p.Mode = "other" }, false},

@@ -48,6 +48,11 @@ func (r *Repository) ProjectionPlan(
 			Income:        orZero(head.Income),
 			RateBP:        int(orZero(head.WithdrawalRateBp)),
 			Changes:       make([]domain.ProjectionChange, len(changes)),
+
+			WithdrawalReturnBP: convertPtr[int](head.WithdrawalReturnBp),
+			CautiousReturnBP:   convertPtr[int](head.CautiousReturnBp),
+			FavorableReturnBP:  convertPtr[int](head.FavorableReturnBp),
+			GainTaxBP:          convertPtr[int](head.GainTaxBp),
 		},
 		Currency:      money.Currency(head.Currency),
 		BaselineDate:  head.BaselineDate,
@@ -145,6 +150,11 @@ func projectionHead(booksID, memberID int64, v app.ProjectionView) UpsertProject
 		Currency:       string(v.Currency),
 		BaselineDate:   v.BaselineDate,
 		BaselineValue:  v.BaselineValue,
+
+		WithdrawalReturnBp: convertPtr[int32](v.WithdrawalReturnBP),
+		CautiousReturnBp:   convertPtr[int32](v.CautiousReturnBP),
+		FavorableReturnBp:  convertPtr[int32](v.FavorableReturnBP),
+		GainTaxBp:          convertPtr[int32](v.GainTaxBP),
 	}
 
 	if v.Mode == domain.ModeIncome {
@@ -158,6 +168,18 @@ func projectionHead(booksID, memberID int64, v app.ProjectionView) UpsertProject
 	head.WithdrawalRateBp = &rate
 
 	return head
+}
+
+// convertPtr converts between the widths of a nullable integer.
+func convertPtr[T, F ~int | ~int32](v *F) *T {
+	if v == nil {
+		return nil
+	}
+
+	//nolint:gosec // G115: the database and Projection.Validate bound every value to int32
+	out := T(*v)
+
+	return &out
 }
 
 func orZero[T any](p *T) T {

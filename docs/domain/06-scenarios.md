@@ -1372,3 +1372,7 @@ The scenarios of `docs/specs/2026-11-24-reference-indexes-design.md`. S701: with
 ### S713–S717 Projection plan
 
 The scenarios of `docs/specs/2026-11-24-portfolio-projection-design.md`, rules PJ1 to PJ5, through the HTTP API. S713: the first save of `PUT /portfolio-projection` sets the currency to the base currency of the book and the baseline to the save day and the value of every brokerage tree; `GET` returns the same plan. S714: a later save keeps the currency and the baseline. S715: a save that alters, drops or adds a change dated before the current month is `422 projection_past_change` and stores nothing; a save that replaces the current month and later is stored, ordered by month. S716: the plan of one member is not read, replaced or deleted by another member of the book or by a member of another book. S717: a book with base currency `USD` saves and reads a plan in `USD`. Tests `TestS713FirstSaveSetsBaseline` to `TestS717PlanInBaseCurrency` in `internal/portfolio`.
+
+### S719 Premises of the projection plan
+
+The scenario of Amendment 1 of `docs/specs/2026-11-24-portfolio-projection-design.md`, rule PJ7, through the HTTP API. S719: a save with the real return during the withdrawals, the cautious and favorable returns and the tax on the gain stores and returns them; a later save without them leaves the plan without them.

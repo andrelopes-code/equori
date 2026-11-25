@@ -905,20 +905,41 @@ type ProjectionChange struct {
 type ProjectionPlan struct {
 	Baseline ProjectionBaseline `json:"baseline"`
 
+	// CautiousReturnBp Real return a year of the cautious case, -1000 to below real_return_bp.
+	CautiousReturnBp *int `json:"cautious_return_bp,omitempty"`
+
 	// Changes Ordered by month.
-	Changes       []ProjectionChange   `json:"changes"`
-	Currency      string               `json:"currency"`
+	Changes  []ProjectionChange `json:"changes"`
+	Currency string             `json:"currency"`
+
+	// FavorableReturnBp Real return a year of the favorable case, above real_return_bp to 3000.
+	FavorableReturnBp *int `json:"favorable_return_bp,omitempty"`
+
+	// GainTaxBp Tax on the gain of a withdrawal, 1 to 5000 basis points; absent, no tax.
+	GainTaxBp     *int                 `json:"gain_tax_bp,omitempty"`
 	InflationBp   int                  `json:"inflation_bp"`
 	LastAge       int                  `json:"last_age"`
 	RealReturnBp  int                  `json:"real_return_bp"`
 	Withdrawal    ProjectionWithdrawal `json:"withdrawal"`
 	WithdrawalAge int                  `json:"withdrawal_age"`
+
+	// WithdrawalReturnBp Real return a year during the withdrawals, -1000 to 3000; absent, real_return_bp holds.
+	WithdrawalReturnBp *int `json:"withdrawal_return_bp,omitempty"`
 }
 
 // ProjectionPlanInput defines model for ProjectionPlanInput.
 type ProjectionPlanInput struct {
+	// CautiousReturnBp Real return a year of the cautious case, -1000 to below real_return_bp.
+	CautiousReturnBp *int `json:"cautious_return_bp,omitempty"`
+
 	// Changes 1 to 40 changes with distinct months.
 	Changes []ProjectionChange `json:"changes"`
+
+	// FavorableReturnBp Real return a year of the favorable case, above real_return_bp to 3000.
+	FavorableReturnBp *int `json:"favorable_return_bp,omitempty"`
+
+	// GainTaxBp Tax on the gain of a withdrawal, 1 to 5000 basis points; absent, no tax.
+	GainTaxBp *int `json:"gain_tax_bp,omitempty"`
 
 	// InflationBp 0 to 5000.
 	InflationBp int `json:"inflation_bp"`
@@ -932,6 +953,9 @@ type ProjectionPlanInput struct {
 
 	// WithdrawalAge 18 to 100.
 	WithdrawalAge int `json:"withdrawal_age"`
+
+	// WithdrawalReturnBp Real return a year during the withdrawals, -1000 to 3000; absent, real_return_bp holds.
+	WithdrawalReturnBp *int `json:"withdrawal_return_bp,omitempty"`
 }
 
 // ProjectionWithdrawal defines model for ProjectionWithdrawal.

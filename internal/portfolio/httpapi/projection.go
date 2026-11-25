@@ -61,6 +61,11 @@ func projection(in ProjectionPlanInput) domain.Projection {
 		InflationBP:   in.InflationBp,
 		Mode:          string(in.Withdrawal.Mode),
 		Changes:       make([]domain.ProjectionChange, len(in.Changes)),
+
+		WithdrawalReturnBP: in.WithdrawalReturnBp,
+		CautiousReturnBP:   in.CautiousReturnBp,
+		FavorableReturnBP:  in.FavorableReturnBp,
+		GainTaxBP:          in.GainTaxBp,
 	}
 
 	if in.Withdrawal.Income != nil {
@@ -98,6 +103,11 @@ func projectionPlan(v app.ProjectionView) ProjectionPlan {
 			Date:  openapi_types.Date{Time: v.BaselineDate},
 			Value: v.BaselineValue,
 		},
+
+		WithdrawalReturnBp: v.WithdrawalReturnBP,
+		CautiousReturnBp:   v.CautiousReturnBP,
+		FavorableReturnBp:  v.FavorableReturnBP,
+		GainTaxBp:          v.GainTaxBP,
 	}
 
 	for i, c := range v.Changes {

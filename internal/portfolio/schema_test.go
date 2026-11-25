@@ -290,6 +290,10 @@ func TestSchemaRejectsInvalidProjectionPlans(t *testing.T) {
 		"limits": {
 			"withdrawal_age": "18", "last_age": "120", "real_return_bp": "-1000", "inflation_bp": "5000",
 		},
+		"premises": {
+			"withdrawal_return_bp": "-1000", "cautious_return_bp": "399",
+			"favorable_return_bp": "401", "gain_tax_bp": "5000",
+		},
 	} {
 		other, books := pgtest.CreateMember(t, pool)
 		if _, err := pool.Exec(ctx, planInsert(books, other, override)); err != nil {
@@ -307,6 +311,14 @@ func TestSchemaRejectsInvalidProjectionPlans(t *testing.T) {
 		"real return 3001":          {"real_return_bp": "3001"},
 		"inflation -1":              {"inflation_bp": "-1"},
 		"inflation 5001":            {"inflation_bp": "5001"},
+		"withdrawal return -1001":   {"withdrawal_return_bp": "-1001"},
+		"withdrawal return 3001":    {"withdrawal_return_bp": "3001"},
+		"cautious -1001":            {"cautious_return_bp": "-1001"},
+		"cautious equal to plan":    {"cautious_return_bp": "400"},
+		"favorable equal to plan":   {"favorable_return_bp": "400"},
+		"favorable 3001":            {"favorable_return_bp": "3001"},
+		"gain tax 0":                {"gain_tax_bp": "0"},
+		"gain tax 5001":             {"gain_tax_bp": "5001"},
 		"unknown mode":              {"withdrawal_mode": "'amount'"},
 		"income mode without value": {"income": "NULL"},
 		"income mode with a rate":   {"withdrawal_rate_bp": "400"},
