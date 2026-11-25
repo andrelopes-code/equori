@@ -22,6 +22,7 @@ import {
   planInput,
   restFields,
 } from "@/features/portfolio/projection/model/plan-fields";
+import type { OtherIncome } from "@/features/portfolio/projection/model/other-income";
 import type {
   PlanFields,
   ProjectionDraft,
@@ -60,15 +61,21 @@ export function useProjection() {
   const [editedChanges, setEditedChanges] = useState<
     components["schemas"]["ProjectionChange"][] | null
   >(null);
+  const [editedIncomes, setEditedIncomes] = useState<OtherIncome[] | null>(
+    null,
+  );
   const [building, setBuilding] = useState(false);
 
   const fields = edited ?? (plan ? fieldsFromPlan(plan, locale) : restFields);
   const changes = editedChanges ??
     plan?.changes ?? [{ month: `${today.slice(0, 7)}-01`, amount: 0 }];
+  const incomes = editedIncomes ?? plan?.incomes ?? [];
   const birthDate = me.data?.birth_date;
   const age = birthDate === undefined ? null : ageAt(birthDate, today);
   const draft: ProjectionDraft | null =
-    currency === undefined ? null : draftFrom(fields, changes, currency);
+    currency === undefined
+      ? null
+      : draftFrom(fields, changes, incomes, currency);
   const span =
     draft === null || birthDate === undefined
       ? null
@@ -107,6 +114,7 @@ export function useProjection() {
         queryClient.setQueryData(projectionQuery(api).queryKey, saved);
         setEdited(null);
         setEditedChanges(null);
+        setEditedIncomes(null);
       },
     });
   }
@@ -116,6 +124,7 @@ export function useProjection() {
       onSuccess: () => {
         setEdited(null);
         setEditedChanges(null);
+        setEditedIncomes(null);
         setBuilding(false);
       },
     });
@@ -131,6 +140,7 @@ export function useProjection() {
     fields,
     change,
     setChanges: setEditedChanges,
+    setIncomes: setEditedIncomes,
     draft,
     birthDate,
     age,

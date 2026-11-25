@@ -1,4 +1,5 @@
 import type { components } from "@/api/schema.gen";
+import type { OtherIncome } from "@/features/portfolio/projection/model/other-income";
 import { parseBasisPoints } from "@/features/portfolio/projection/model/parse-percent";
 import {
   premiseRanges,
@@ -37,6 +38,7 @@ export interface ProjectionDraft extends Premises {
   inflationBp: number;
   withdrawal: Plan["withdrawal"];
   changes: Change[];
+  incomes: OtherIncome[];
   currency: string;
 }
 
@@ -83,6 +85,7 @@ export function fieldsFromPlan(plan: Plan, locale: string): PlanFields {
 export function draftFrom(
   fields: PlanFields,
   changes: readonly Change[],
+  incomes: readonly OtherIncome[],
   currency: string,
 ): ProjectionDraft | null {
   const withdrawalAge = parseAge(fields.withdrawalAge);
@@ -112,6 +115,7 @@ export function draftFrom(
     inflationBp,
     withdrawal,
     changes: [...changes],
+    incomes: [...incomes],
     currency,
   };
 }
@@ -134,6 +138,7 @@ export function planInput(draft: ProjectionDraft): PlanInput {
     ...(draft.gainTaxBp !== undefined && { gain_tax_bp: draft.gainTaxBp }),
     withdrawal: draft.withdrawal,
     changes: draft.changes,
+    incomes: draft.incomes,
   };
 }
 

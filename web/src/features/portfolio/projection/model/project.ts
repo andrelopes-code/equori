@@ -24,6 +24,8 @@ export interface ProjectInput {
   changes: readonly components["schemas"]["ProjectionChange"][];
   withdrawalFrom: string;
   income: number;
+  // PX4: the other incomes of a month; the portfolio pays the rest of the income.
+  others?: ((month: string) => number) | undefined;
   tax?: GainTax | undefined;
 }
 
@@ -42,7 +44,7 @@ export function project(input: ProjectInput): ProjectionRow[] {
     basis = basis / (1 + (tax?.inflation ?? 0)) + contribution;
 
     const gross = grossOf(
-      input.income,
+      Math.max(input.income - (input.others?.(month) ?? 0), 0),
       tax === undefined ? 0 : gainShare(available, basis),
       tax?.rate ?? 0,
     );

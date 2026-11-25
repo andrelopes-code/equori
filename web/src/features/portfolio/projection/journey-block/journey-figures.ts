@@ -42,6 +42,8 @@ export interface JourneyFigures extends PlanCase {
   income: number | null;
   versus: VersusFigures | null;
   cases: JourneyCase[];
+  // PX21: the plan without its other incomes; null while it has none.
+  without: PlanCase | null;
 }
 
 // PX4 to PX7, PX13 to PX15: the projection of the draft from today's recorded value, the figures the
@@ -98,6 +100,13 @@ export function journeyFigures(input: JourneyInput): JourneyFigures {
       returnBp,
       ...planCase(caseInput, returnBp),
     })),
+    without:
+      draft.incomes.length === 0
+        ? null
+        : planCase(
+            { ...caseInput, draft: { ...draft, incomes: [] } },
+            draft.realReturnBp,
+          ),
   };
 }
 

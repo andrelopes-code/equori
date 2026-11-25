@@ -57,36 +57,37 @@ describe("fieldsFromPlan", () => {
       favorable: "6.00",
       gainTax: "15.00",
     });
-    expect(draftFrom(fieldsFromPlan(plan, "en"), changes, "BRL")).toMatchObject(
-      { withdrawalReturnBp: -50, cautiousReturnBp: 250 },
-    );
+    expect(
+      draftFrom(fieldsFromPlan(plan, "en"), changes, [], "BRL"),
+    ).toMatchObject({ withdrawalReturnBp: -50, cautiousReturnBp: 250 });
   });
 });
 
 describe("draftFrom", () => {
   it("reads percents typed with a comma or a dot into basis points", () => {
-    expect(draftFrom(typed, changes, "BRL")).toEqual({
+    expect(draftFrom(typed, changes, [], "BRL")).toEqual({
       withdrawalAge: 55,
       lastAge: 90,
       realReturnBp: 525,
       inflationBp: 400,
       withdrawal: { mode: "income", income: 800000 },
       changes,
+      incomes: [],
       currency: "BRL",
     });
-    expect(draftFrom({ ...typed, realReturn: "5.25" }, changes, "BRL")).toEqual(
-      expect.objectContaining({ realReturnBp: 525 }),
-    );
+    expect(
+      draftFrom({ ...typed, realReturn: "5.25" }, changes, [], "BRL"),
+    ).toEqual(expect.objectContaining({ realReturnBp: 525 }));
   });
 
   it("PJ7: is null for a premise outside its range", () => {
     expect(
-      draftFrom({ ...typed, cautious: "5,25" }, changes, "BRL"),
+      draftFrom({ ...typed, cautious: "5,25" }, changes, [], "BRL"),
     ).toBeNull();
   });
 
   it("is null for the fields at rest", () => {
-    expect(draftFrom(restFields, changes, "BRL")).toBeNull();
+    expect(draftFrom(restFields, changes, [], "BRL")).toBeNull();
   });
 
   it.each([
@@ -99,13 +100,14 @@ describe("draftFrom", () => {
     { name: "rate of zero", patch: { mode: "rate", rate: "0" } },
     { name: "rate above 20", patch: { mode: "rate", rate: "20.01" } },
   ] as const)("is null for $name", ({ patch }) => {
-    expect(draftFrom({ ...typed, ...patch }, changes, "BRL")).toBeNull();
+    expect(draftFrom({ ...typed, ...patch }, changes, [], "BRL")).toBeNull();
   });
 
   it("holds the rate in rate mode", () => {
     const draft = draftFrom(
       { ...typed, mode: "rate", rate: "4" },
       changes,
+      [],
       "BRL",
     );
 
@@ -115,7 +117,7 @@ describe("draftFrom", () => {
 
 describe("planInput", () => {
   it("is the body of the save request", () => {
-    const draft = draftFrom(typed, changes, "BRL");
+    const draft = draftFrom(typed, changes, [], "BRL");
 
     expect(draft && planInput(draft)).toEqual({
       withdrawal_age: 55,
@@ -124,7 +126,15 @@ describe("planInput", () => {
       inflation_bp: 400,
       withdrawal: { mode: "income", income: 800000 },
       changes,
+      incomes: [],
     });
+  });
+
+  it("PJ8: holds the other incomes", () => {
+    const incomes = [{ name: "Rent", amount: 100, start_age: 60, end_age: 70 }];
+    const draft = draftFrom(typed, changes, incomes, "BRL");
+
+    expect(draft && planInput(draft).incomes).toEqual(incomes);
   });
 
   it("PJ7: holds the premises typed", () => {
@@ -137,6 +147,7 @@ describe("planInput", () => {
         gainTax: "15",
       },
       changes,
+      [],
       "BRL",
     );
 

@@ -13,6 +13,7 @@ const input: JourneyInput = {
     inflationBp: 0,
     withdrawal: { mode: "income", income: 500 },
     changes: [{ month: "2026-11-01", amount: 1000 }],
+    incomes: [],
     currency: "BRL",
   },
   history: {
@@ -264,5 +265,108 @@ describe("journeyFigures", () => {
       6,
     );
     expect(f.needed).toBeCloseTo(625 * 12, 6);
+  });
+
+  // Three years of withdrawals, 36 months, from 13000.
+  const years = { ...input, draft: { ...input.draft, lastAge: 36 } };
+
+  it("PX4, PX5, PX20: an other income takes the place of the portfolio in its months", () => {
+    const f = journeyFigures({
+      ...years,
+      draft: {
+        ...years.draft,
+        incomes: [{ name: "Rent", amount: 200, start_age: 34, end_age: 35 }],
+      },
+    });
+
+    // 12 * 500 + 12 * 300 + 12 * 500 = 15600; 36 X - 2400 = 13000. After two years 3400 is left:
+    // it pays six of the last twelve months and ends in the seventh, 2029-09, at age 35.
+    expect(f.needed).toBe(15600);
+    expect(f.covered).toBeCloseTo(13000 / 15600, 10);
+    expect(f.sustained).toBeCloseTo(15400 / 36, 6);
+    expect(f.sustains).toBe(false);
+    expect(f.endAge).toBe(35);
+    expect(
+      f.rows
+        .slice(3, 39)
+        .map((r) => r.withdrawal)
+        .slice(11, 13),
+    ).toEqual([500, 300]);
+    expect(f.without?.needed).toBe(18000);
+    expect(f.without?.sustained).toBeCloseTo(13000 / 36, 6);
+  });
+
+  it("PX20: other incomes that cover the income leave nothing to need", () => {
+    const f = journeyFigures({
+      ...years,
+      draft: {
+        ...years.draft,
+        incomes: [{ name: "Pension", amount: 600, start_age: 33 }],
+      },
+    });
+
+    expect(f.needed).toBe(0);
+    expect(f.covered).toBeNull();
+    expect(f.sustains).toBe(true);
+    expect(f.atWithdrawal).toBe(13000);
+    expect(f.rows.at(-1)?.value).toBe(13000);
+    expect(f.sustained).toBeCloseTo(600 + 13000 / 36, 6);
+    expect(f.without?.sustains).toBe(false);
+  });
+
+  it("PX5, PX14: the tax is on the part the portfolio pays", () => {
+    const f = journeyFigures({
+      ...input,
+      draft: {
+        ...input.draft,
+        gainTaxBp: 2000,
+        changes: [{ month: "2026-11-01", amount: 0 }],
+        incomes: [{ name: "Pension", amount: 100, start_age: 33 }],
+      },
+      history: {
+        ...input.history,
+        opening: 0,
+        points: [{ date: "2026-11-25", value: 10000, flows: -5000 }],
+      },
+    });
+
+    // All of it is gain: (500 - 100) / 0.8 = 500 gross, 12 times; 10000 * 0.8 / 12 + 100.
+    expect(f.needed).toBeCloseTo(6000, 6);
+    expect(f.sustained).toBeCloseTo(8000 / 12 + 100, 6);
+  });
+
+  it("PX4: in rate mode an other income leaves the withdrawals as they are", () => {
+    const rate = {
+      ...years.draft,
+      withdrawal: { mode: "rate" as const, rate_bp: 600 },
+    };
+    const f = journeyFigures({
+      ...years,
+      draft: {
+        ...rate,
+        incomes: [{ name: "Pension", amount: 100, start_age: 33 }],
+      },
+    });
+
+    expect(f.rows).toEqual(journeyFigures({ ...years, draft: rate }).rows);
+    expect(f.sustained).toBe(65);
+  });
+
+  it("PX20: a plan with no value ends at the first withdrawal", () => {
+    const f = journeyFigures({
+      ...input,
+      draft: {
+        ...input.draft,
+        changes: [{ month: "2026-11-01", amount: 0 }],
+      },
+      history: {
+        ...input.history,
+        points: [{ date: "2026-11-25", value: 0, flows: 0 }],
+      },
+    });
+
+    expect(f.sustains).toBe(false);
+    expect(f.endAge).toBe(32);
+    expect(f.without).toBeNull();
   });
 });

@@ -78,6 +78,20 @@ describe("project", () => {
     expect(rows[2]).toMatchObject({ gain: 0, withdrawal: 1000 });
   });
 
+  it("PX4: withdraws the income less the other incomes of the month, never below zero", () => {
+    const others: Record<string, number> = { "2027-03": 100, "2027-04": 1500 };
+    const rows = project({
+      ...input,
+      monthlyRate: 0,
+      changes: [],
+      income: 1000,
+      others: (month) => others[month] ?? 0,
+    });
+
+    expect(rows.map((r) => r.withdrawal)).toEqual([0, 0, 0, 1000, 900, 0]);
+    expect(rows.at(-1)?.value).toBe(98100);
+  });
+
   it("PX14: withdraws the gross whose net is the income, and the basis falls with it", () => {
     const rows = project({
       ...input,

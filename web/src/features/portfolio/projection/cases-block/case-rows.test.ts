@@ -25,6 +25,7 @@ const figures: JourneyFigures = {
   way: null,
   income: 10,
   versus: null,
+  without: null,
   cases: [
     { ...plan, kind: "cautious", returnBp: 200 },
     { ...plan, kind: "favorable", returnBp: 600 },
