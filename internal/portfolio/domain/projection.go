@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"time"
+	"unicode/utf8"
 )
 
 const (
@@ -11,12 +12,14 @@ const (
 	ModeRate   = "rate"
 
 	maxProjectionChanges = 40
+	maxProjectionIncomes = 20
+	maxIncomeName        = 60
 )
 
 var ErrProjectionInvalid = errors.New("invalid projection plan")
 
-// Projection is the plan of a member: ages, rates, the withdrawal, the contribution changes and the
-// optional premises (PJ1, PJ2, PJ7).
+// Projection is the plan of a member: ages, rates, the withdrawal, the contribution changes, the
+// optional premises and the other incomes (PJ1, PJ2, PJ7, PJ8).
 type Projection struct {
 	WithdrawalAge int
 	LastAge       int
@@ -26,6 +29,7 @@ type Projection struct {
 	Income        int64 // minor units; set with ModeIncome only
 	RateBP        int   // set with ModeRate only
 	Changes       []ProjectionChange
+	Incomes       []ProjectionIncome
 
 	// PJ7: nil means the plan does not hold the value.
 	WithdrawalReturnBP *int
@@ -40,7 +44,15 @@ type ProjectionChange struct {
 	Amount int64
 }
 
-// Validate checks the ranges of PJ1, the changes of PJ2 and the premises of PJ7.
+// ProjectionIncome is a monthly income beside the portfolio, net and in today's money (PJ8).
+type ProjectionIncome struct {
+	Name     string
+	Amount   int64
+	StartAge int
+	EndAge   *int // nil means the income does not end
+}
+
+// Validate checks the ranges of PJ1, the changes of PJ2, the premises of PJ7 and the incomes of PJ8.
 func (p Projection) Validate() error {
 	switch {
 	case p.WithdrawalAge < 18 || p.WithdrawalAge > 100:
@@ -58,6 +70,10 @@ func (p Projection) Validate() error {
 	}
 
 	if err := p.validatePremises(); err != nil {
+		return err
+	}
+
+	if err := p.validateIncomes(); err != nil {
 		return err
 	}
 
@@ -130,6 +146,29 @@ func (p Projection) validatePremises() error {
 // outside reports whether a value the plan holds leaves [low, high].
 func outside(v *int, low, high int) bool {
 	return v != nil && (*v < low || *v > high)
+}
+
+func (p Projection) validateIncomes() error {
+	if len(p.Incomes) > maxProjectionIncomes {
+		return invalidProjection("a plan holds at most 20 other incomes")
+	}
+
+	for _, i := range p.Incomes {
+		name := utf8.RuneCountInString(i.Name)
+
+		switch {
+		case name < 1 || name > maxIncomeName:
+			return invalidProjection("an income name has 1 to 60 characters")
+		case i.Amount <= 0:
+			return invalidProjection("an income amount is above zero")
+		case i.StartAge < 18 || i.StartAge > 120:
+			return invalidProjection("an income starts at 18 to 120")
+		case outside(i.EndAge, i.StartAge+1, 120):
+			return invalidProjection("an income ends above its start age and at most at 120")
+		}
+	}
+
+	return nil
 }
 
 func (p Projection) validateChanges() error {

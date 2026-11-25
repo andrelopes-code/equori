@@ -62,11 +62,16 @@ func (r *Repository) ProjectionPlan(
 		v.Changes[i] = domain.ProjectionChange{Month: c.Month, Amount: c.Amount}
 	}
 
+	v.Incomes, err = r.projectionIncomes(ctx, booksID, memberID)
+	if err != nil {
+		return app.ProjectionView{}, false, err
+	}
+
 	return v, true, nil
 }
 
-// SaveProjectionPlan stores the plan and replaces its changes dated on or after from; on a pool
-// it runs in one transaction.
+// SaveProjectionPlan stores the plan and replaces its incomes and its changes dated on or after
+// from; on a pool it runs in one transaction.
 func (r *Repository) SaveProjectionPlan(
 	ctx context.Context,
 	booksID, memberID int64,
@@ -82,7 +87,7 @@ func (r *Repository) SaveProjectionPlan(
 	})
 }
 
-// DeleteProjectionPlan removes the plan; its changes go with it by cascade.
+// DeleteProjectionPlan removes the plan; its changes and incomes go with it by cascade.
 func (r *Repository) DeleteProjectionPlan(
 	ctx context.Context,
 	booksID, memberID int64,
@@ -96,6 +101,31 @@ func (r *Repository) DeleteProjectionPlan(
 	}
 
 	return n > 0, nil
+}
+
+func (r *Repository) projectionIncomes(
+	ctx context.Context,
+	booksID, memberID int64,
+) ([]domain.ProjectionIncome, error) {
+	rows, err := r.q.ListProjectionIncomes(
+		ctx,
+		ListProjectionIncomesParams{BooksID: booksID, MemberID: memberID},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list projection incomes: %w", err)
+	}
+
+	incomes := make([]domain.ProjectionIncome, len(rows))
+	for i, row := range rows {
+		incomes[i] = domain.ProjectionIncome{
+			Name:     row.Name,
+			Amount:   row.Amount,
+			StartAge: int(row.StartAge),
+			EndAge:   convertPtr[int](row.EndAge),
+		}
+	}
+
+	return incomes, nil
 }
 
 func saveProjectionPlan(
@@ -131,6 +161,39 @@ func saveProjectionPlan(
 		})
 		if err != nil {
 			return fmt.Errorf("insert projection change: %w", err)
+		}
+	}
+
+	return saveProjectionIncomes(ctx, q, booksID, memberID, v.Incomes)
+}
+
+func saveProjectionIncomes(
+	ctx context.Context,
+	q *Queries,
+	booksID, memberID int64,
+	incomes []domain.ProjectionIncome,
+) error {
+	err := q.DeleteProjectionIncomes(
+		ctx,
+		DeleteProjectionIncomesParams{BooksID: booksID, MemberID: memberID},
+	)
+	if err != nil {
+		return fmt.Errorf("delete projection incomes: %w", err)
+	}
+
+	for i, income := range incomes {
+		//nolint:gosec // G115: Projection.Validate bounds the ages and the count to int16
+		err := q.InsertProjectionIncome(ctx, InsertProjectionIncomeParams{
+			BooksID:  booksID,
+			MemberID: memberID,
+			Position: int16(i + 1),
+			Name:     income.Name,
+			Amount:   income.Amount,
+			StartAge: int16(income.StartAge),
+			EndAge:   convertPtr[int16](income.EndAge),
+		})
+		if err != nil {
+			return fmt.Errorf("insert projection income: %w", err)
 		}
 	}
 
@@ -171,7 +234,7 @@ func projectionHead(booksID, memberID int64, v app.ProjectionView) UpsertProject
 }
 
 // convertPtr converts between the widths of a nullable integer.
-func convertPtr[T, F ~int | ~int32](v *F) *T {
+func convertPtr[T, F ~int | ~int16 | ~int32](v *F) *T {
 	if v == nil {
 		return nil
 	}

@@ -36,6 +36,7 @@ var notExported = []string{
 	"portfolio_position_day",
 	// Keyed by member, which the archive does not carry.
 	"portfolio_projection_change",
+	"portfolio_projection_income",
 	"portfolio_projection_plan",
 	"portfolio_realized_result",
 	"reporting_account_day",

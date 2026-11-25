@@ -36,6 +36,7 @@ func TestEveryTableIsClassified(t *testing.T) {
 		"assistant_provider": true, "assistant_chain_target": true, "assistant_usage_limit": true, "assistant_usage": false,
 		// The projection plan is keyed by member, which the archive does not carry.
 		"portfolio_projection_plan": false, "portfolio_projection_change": false,
+		"portfolio_projection_income": false,
 	} {
 		if slices.Contains(facts, table) != want {
 			t.Errorf("%s in the fact tables = %t, want %t", table, !want, want)

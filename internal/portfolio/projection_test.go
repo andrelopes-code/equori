@@ -3,6 +3,8 @@ package portfolio_test
 import (
 	"net/http"
 	"reflect"
+	"slices"
+	"strings"
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
@@ -27,6 +29,7 @@ type projectionOut struct {
 		RateBP int    `json:"rate_bp"`
 	} `json:"withdrawal"`
 	Changes  []changeOut `json:"changes"`
+	Incomes  []incomeOut `json:"incomes"`
 	Currency string      `json:"currency"`
 	Baseline struct {
 		Date  string `json:"date"`
@@ -39,8 +42,24 @@ type changeOut struct {
 	Amount int64  `json:"amount"`
 }
 
+type incomeOut struct {
+	Name     string `json:"name"`
+	Amount   int64  `json:"amount"`
+	StartAge int    `json:"start_age"`
+	EndAge   *int   `json:"end_age"`
+}
+
 func change(month string, amount int64) map[string]any {
 	return map[string]any{"month": month, "amount": amount}
+}
+
+func income(name string, amount int64, start int, end *int) map[string]any {
+	out := map[string]any{"name": name, "amount": amount, "start_age": start}
+	if end != nil {
+		out["end_age"] = *end
+	}
+
+	return out
 }
 
 func projectionBody(changes ...map[string]any) map[string]any {
@@ -98,6 +117,7 @@ func TestS713FirstSaveSetsBaseline(t *testing.T) {
 	want := projectionOut{WithdrawalAge: 65, LastAge: 95, RealReturnBP: 400, InflationBP: 300}
 	want.Withdrawal.Mode, want.Withdrawal.Income = "income", 500000
 	want.Changes = []changeOut{{"2026-11-01", 100000}}
+	want.Incomes = []incomeOut{}
 	want.Currency, want.Baseline = "BRL", got.Baseline
 
 	if !reflect.DeepEqual(got, want) {
@@ -271,6 +291,47 @@ func TestS719PremisesOfPlan(t *testing.T) {
 	}
 }
 
+// S737: a save stores the other incomes by start age (PJ8); a later save replaces them, and one
+// without the list leaves none.
+func TestS737OtherIncomesOfPlan(t *testing.T) {
+	t.Parallel()
+	f := fundedFixture(t)
+
+	body := projectionBody(change("2026-11-01", 100000))
+	body["incomes"] = []map[string]any{
+		{"name": " Pension ", "amount": 200000, "start_age": 67},
+		{"name": "Rent", "amount": 150000, "start_age": 65, "end_age": 80},
+		{"name": "Annuity", "amount": 1, "start_age": 67, "end_age": 68},
+	}
+	got := saveProjection(t, f.h, body)
+
+	want := []incomeOut{
+		{Name: "Rent", Amount: 150000, StartAge: 65, EndAge: new(80)},
+		{Name: "Pension", Amount: 200000, StartAge: 67},
+		{Name: "Annuity", Amount: 1, StartAge: 67, EndAge: new(68)},
+	}
+	if !reflect.DeepEqual(got.Incomes, want) {
+		t.Fatalf("incomes = %+v, want %+v", got.Incomes, want)
+	}
+
+	if read := readProjection(t, f.h); !reflect.DeepEqual(read, got) {
+		t.Fatalf("read = %+v, want %+v", read, got)
+	}
+
+	body["incomes"] = []map[string]any{{"name": "Rent", "amount": 5, "start_age": 18}}
+	if got = saveProjection(t, f.h, body); !reflect.DeepEqual(
+		got.Incomes,
+		[]incomeOut{{Name: "Rent", Amount: 5, StartAge: 18}},
+	) {
+		t.Fatalf("incomes = %+v, want the second list", got.Incomes)
+	}
+
+	got = saveProjection(t, f.h, projectionBody(change("2026-11-01", 100000)))
+	if len(got.Incomes) != 0 {
+		t.Fatalf("incomes = %+v, want none", got.Incomes)
+	}
+}
+
 func TestProjectionInvalid(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-11-01"))
@@ -303,6 +364,30 @@ func TestProjectionInvalid(t *testing.T) {
 		{"change on day 2", map[string]any{"changes": []map[string]any{change("2026-11-02", 1)}}},
 		{"one month twice", map[string]any{"changes": []map[string]any{
 			change("2026-11-01", 1), change("2026-11-01", 2),
+		}}},
+		{"21 incomes", map[string]any{"incomes": slices.Repeat(
+			[]map[string]any{income("Rent", 1, 65, nil)}, 21,
+		)}},
+		{"income without a name", map[string]any{"incomes": []map[string]any{
+			income("  ", 1, 65, nil),
+		}}},
+		{"income name of 61", map[string]any{"incomes": []map[string]any{
+			income(strings.Repeat("é", 61), 1, 65, nil),
+		}}},
+		{"income amount 0", map[string]any{"incomes": []map[string]any{
+			income("Rent", 0, 65, nil),
+		}}},
+		{"income start 17", map[string]any{"incomes": []map[string]any{
+			income("Rent", 1, 17, nil),
+		}}},
+		{"income start 121", map[string]any{"incomes": []map[string]any{
+			income("Rent", 1, 121, nil),
+		}}},
+		{"income end equals start", map[string]any{"incomes": []map[string]any{
+			income("Rent", 1, 65, new(65)),
+		}}},
+		{"income end 121", map[string]any{"incomes": []map[string]any{
+			income("Rent", 1, 65, new(121)),
 		}}},
 		{"amount -1", map[string]any{"changes": []map[string]any{change("2026-11-01", -1)}}},
 	}

@@ -167,6 +167,7 @@ export const projectionPlan: components["schemas"]["ProjectionPlan"] = {
     { month: "2025-11-01", amount: 100000 },
     { month: "2026-06-01", amount: 150000 },
   ],
+  incomes: [],
   currency: "BRL",
   baseline: { date: "2025-11-20", value: 100000 },
 };

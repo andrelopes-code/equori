@@ -80,6 +80,19 @@ func projection(in ProjectionPlanInput) domain.Projection {
 		p.Changes[i] = domain.ProjectionChange{Month: c.Month.Time, Amount: c.Amount}
 	}
 
+	if in.Incomes == nil {
+		return p
+	}
+
+	for _, i := range *in.Incomes {
+		p.Incomes = append(p.Incomes, domain.ProjectionIncome{
+			Name:     i.Name,
+			Amount:   i.Amount,
+			StartAge: i.StartAge,
+			EndAge:   i.EndAge,
+		})
+	}
+
 	return p
 }
 
@@ -98,6 +111,7 @@ func projectionPlan(v app.ProjectionView) ProjectionPlan {
 		InflationBp:   v.InflationBP,
 		Withdrawal:    w,
 		Changes:       make([]ProjectionChange, len(v.Changes)),
+		Incomes:       make([]ProjectionIncome, len(v.Incomes)),
 		Currency:      string(v.Currency),
 		Baseline: ProjectionBaseline{
 			Date:  openapi_types.Date{Time: v.BaselineDate},
@@ -114,6 +128,15 @@ func projectionPlan(v app.ProjectionView) ProjectionPlan {
 		out.Changes[i] = ProjectionChange{
 			Month:  openapi_types.Date{Time: c.Month},
 			Amount: c.Amount,
+		}
+	}
+
+	for i, income := range v.Incomes {
+		out.Incomes[i] = ProjectionIncome{
+			Name:     income.Name,
+			Amount:   income.Amount,
+			StartAge: income.StartAge,
+			EndAge:   income.EndAge,
 		}
 	}
 

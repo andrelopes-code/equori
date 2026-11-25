@@ -29,6 +29,23 @@ func (q *Queries) DeleteProjectionChangesFrom(ctx context.Context, arg DeletePro
 	return err
 }
 
+const deleteProjectionIncomes = `-- name: DeleteProjectionIncomes :exec
+DELETE FROM portfolio_projection_income
+WHERE
+    books_id = $1
+    AND member_id = $2
+`
+
+type DeleteProjectionIncomesParams struct {
+	BooksID  int64
+	MemberID int64
+}
+
+func (q *Queries) DeleteProjectionIncomes(ctx context.Context, arg DeleteProjectionIncomesParams) error {
+	_, err := q.db.Exec(ctx, deleteProjectionIncomes, arg.BooksID, arg.MemberID)
+	return err
+}
+
 const deleteProjectionPlan = `-- name: DeleteProjectionPlan :execrows
 DELETE FROM portfolio_projection_plan
 WHERE
@@ -140,6 +157,36 @@ func (q *Queries) InsertProjectionChange(ctx context.Context, arg InsertProjecti
 	return err
 }
 
+const insertProjectionIncome = `-- name: InsertProjectionIncome :exec
+INSERT INTO
+    portfolio_projection_income (books_id, member_id, position, name, amount, start_age, end_age)
+VALUES
+    ($1, $2, $3, $4, $5, $6, $7)
+`
+
+type InsertProjectionIncomeParams struct {
+	BooksID  int64
+	MemberID int64
+	Position int16
+	Name     string
+	Amount   int64
+	StartAge int16
+	EndAge   *int16
+}
+
+func (q *Queries) InsertProjectionIncome(ctx context.Context, arg InsertProjectionIncomeParams) error {
+	_, err := q.db.Exec(ctx, insertProjectionIncome,
+		arg.BooksID,
+		arg.MemberID,
+		arg.Position,
+		arg.Name,
+		arg.Amount,
+		arg.StartAge,
+		arg.EndAge,
+	)
+	return err
+}
+
 const listProjectionChanges = `-- name: ListProjectionChanges :many
 SELECT
     MONTH,
@@ -173,6 +220,58 @@ func (q *Queries) ListProjectionChanges(ctx context.Context, arg ListProjectionC
 	for rows.Next() {
 		var i ListProjectionChangesRow
 		if err := rows.Scan(&i.Month, &i.Amount); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listProjectionIncomes = `-- name: ListProjectionIncomes :many
+SELECT
+    name,
+    amount,
+    start_age,
+    end_age
+FROM
+    portfolio_projection_income
+WHERE
+    books_id = $1
+    AND member_id = $2
+ORDER BY
+    position
+`
+
+type ListProjectionIncomesParams struct {
+	BooksID  int64
+	MemberID int64
+}
+
+type ListProjectionIncomesRow struct {
+	Name     string
+	Amount   int64
+	StartAge int16
+	EndAge   *int16
+}
+
+func (q *Queries) ListProjectionIncomes(ctx context.Context, arg ListProjectionIncomesParams) ([]ListProjectionIncomesRow, error) {
+	rows, err := q.db.Query(ctx, listProjectionIncomes, arg.BooksID, arg.MemberID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListProjectionIncomesRow
+	for rows.Next() {
+		var i ListProjectionIncomesRow
+		if err := rows.Scan(
+			&i.Name,
+			&i.Amount,
+			&i.StartAge,
+			&i.EndAge,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

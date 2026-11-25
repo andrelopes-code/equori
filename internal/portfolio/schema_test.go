@@ -413,6 +413,71 @@ func TestSchemaRejectsInvalidProjectionChanges(t *testing.T) {
 	}
 }
 
+func TestSchemaRejectsInvalidProjectionIncomes(t *testing.T) {
+	t.Parallel()
+	pool := pgtest.New(t)
+	ctx := t.Context()
+	member, user := pgtest.CreateMember(t, pool)
+	stranger, _ := pgtest.CreateMember(t, pool)
+
+	if _, err := pool.Exec(ctx, planInsert(user, member, nil)); err != nil {
+		t.Fatal(err)
+	}
+
+	book, owner := strconv.FormatInt(user, 10), strconv.FormatInt(member, 10)
+	insert := `INSERT INTO portfolio_projection_income
+		(books_id, member_id, position, name, amount, start_age, end_age) VALUES `
+	key := book + `, ` + owner + `, `
+	valid := insert + `(` + key + `1, 'a', 1, 18, 19), (` + key + `20, 'b', 1, 120, NULL)`
+
+	if _, err := pool.Exec(ctx, valid); err != nil {
+		t.Fatalf("valid rows: %v", err)
+	}
+
+	tests := map[string]string{
+		"position 0":         insert + `(` + key + `0, 'a', 1, 65, NULL)`,
+		"position 21":        insert + `(` + key + `21, 'a', 1, 65, NULL)`,
+		"position twice":     insert + `(` + key + `1, 'a', 1, 65, NULL)`,
+		"name empty":         insert + `(` + key + `2, '', 1, 65, NULL)`,
+		"name of 61":         insert + `(` + key + `2, repeat('a', 61), 1, 65, NULL)`,
+		"amount 0":           insert + `(` + key + `2, 'a', 0, 65, NULL)`,
+		"start 17":           insert + `(` + key + `2, 'a', 1, 17, NULL)`,
+		"start 121":          insert + `(` + key + `2, 'a', 1, 121, NULL)`,
+		"end equal to start": insert + `(` + key + `2, 'a', 1, 65, 65)`,
+		"end 121":            insert + `(` + key + `2, 'a', 1, 65, 121)`,
+		"row without a book": insert + `(NULL, ` + owner + `, 2, 'a', 1, 65, NULL)`,
+		"income without a plan": insert + `(` + book + `, ` + strconv.FormatInt(
+			stranger,
+			10,
+		) + `, 2, 'a', 1, 65, NULL)`,
+		"income of another book": insert + `(0, ` + owner + `, 2, 'a', 1, 65, NULL)`,
+	}
+	for name, sql := range tests {
+		t.Run(name, func(t *testing.T) {
+			_, err := pool.Exec(ctx, sql)
+
+			var pgErr *pgconn.PgError
+			if !errors.As(err, &pgErr) || !strings.HasPrefix(pgErr.Code, "23") {
+				t.Fatalf("want an integrity constraint violation, got %v", err)
+			}
+		})
+	}
+
+	if _, err := pool.Exec(ctx, `DELETE FROM portfolio_projection_plan`); err != nil {
+		t.Fatal(err)
+	}
+
+	var left int
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM portfolio_projection_income`).
+		Scan(&left); err != nil {
+		t.Fatal(err)
+	}
+
+	if left != 0 {
+		t.Errorf("incomes after the plan is deleted = %d, want 0", left)
+	}
+}
+
 func TestSchemaCascadesProjectionPlan(t *testing.T) {
 	t.Parallel()
 	pool := pgtest.New(t)

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/platform/money"
@@ -49,6 +50,8 @@ func (s *Service) SaveProjection(
 	booksID, memberID int64,
 	p domain.Projection,
 ) (ProjectionView, error) {
+	p.Incomes = orderedIncomes(p.Incomes)
+
 	if err := p.Validate(); err != nil {
 		return ProjectionView{}, err
 	}
@@ -83,6 +86,20 @@ func (s *Service) SaveProjection(
 
 	// The stored plan is the answer: of two first saves at once, the baseline of the first holds.
 	return s.Projection(ctx, booksID, memberID)
+}
+
+// orderedIncomes returns the incomes by start age with their names trimmed (PJ8).
+func orderedIncomes(incomes []domain.ProjectionIncome) []domain.ProjectionIncome {
+	out := slices.Clone(incomes)
+	for i := range out {
+		out[i].Name = strings.TrimSpace(out[i].Name)
+	}
+
+	slices.SortStableFunc(out, func(a, b domain.ProjectionIncome) int {
+		return a.StartAge - b.StartAge
+	})
+
+	return out
 }
 
 // DeleteProjection removes the plan of the member with its changes; ErrNotFound without one.

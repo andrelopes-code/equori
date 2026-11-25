@@ -1376,3 +1376,7 @@ The scenarios of `docs/specs/2026-11-24-portfolio-projection-design.md`, rules P
 ### S719 Premises of the projection plan
 
 The scenario of Amendment 1 of `docs/specs/2026-11-24-portfolio-projection-design.md`, rule PJ7, through the HTTP API. S719: a save with the real return during the withdrawals, the cautious and favorable returns and the tax on the gain stores and returns them; a later save without them leaves the plan without them.
+
+### S737 Other incomes of the projection plan
+
+The scenario of Amendment 3 of `docs/specs/2026-11-24-portfolio-projection-design.md`, rule PJ8, through the HTTP API. S737: a save with other incomes stores and returns them by start age, the names trimmed; a later save replaces the list, and a save without it leaves the plan with none. Test `TestS737OtherIncomesOfPlan` in `internal/portfolio`.

@@ -9505,6 +9505,8 @@ export interface components {
             withdrawal: components["schemas"]["ProjectionWithdrawal"];
             /** @description 1 to 40 changes with distinct months. */
             changes: components["schemas"]["ProjectionChange"][];
+            /** @description 0 to 20 other incomes; absent, none. */
+            incomes?: components["schemas"]["ProjectionIncome"][];
         };
         ProjectionWithdrawal: {
             /** @enum {string} */
@@ -9528,6 +9530,19 @@ export interface components {
              * @description Monthly contribution in minor units, 0 or more.
              */
             amount: number;
+        };
+        ProjectionIncome: {
+            /** @description 1 to 60 characters, trimmed. */
+            name: string;
+            /**
+             * Format: int64
+             * @description Net monthly amount in minor units of today's money, above 0.
+             */
+            amount: number;
+            /** @description 18 to 120. */
+            start_age: number;
+            /** @description Above start_age, at most 120; absent, the income does not end. */
+            end_age?: number;
         };
         ProjectionBaseline: {
             /** Format: date */
@@ -9554,6 +9569,8 @@ export interface components {
             withdrawal: components["schemas"]["ProjectionWithdrawal"];
             /** @description Ordered by month. */
             changes: components["schemas"]["ProjectionChange"][];
+            /** @description The other incomes, ordered by start age. */
+            incomes: components["schemas"]["ProjectionIncome"][];
             currency: string;
             baseline: components["schemas"]["ProjectionBaseline"];
         };

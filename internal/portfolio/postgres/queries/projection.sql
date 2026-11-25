@@ -98,6 +98,32 @@ INSERT INTO
 VALUES
     (@books_id, @member_id, @month, @amount);
 
+-- name: ListProjectionIncomes :many
+SELECT
+    name,
+    amount,
+    start_age,
+    end_age
+FROM
+    portfolio_projection_income
+WHERE
+    books_id = @books_id
+    AND member_id = @member_id
+ORDER BY
+    position;
+
+-- name: DeleteProjectionIncomes :exec
+DELETE FROM portfolio_projection_income
+WHERE
+    books_id = @books_id
+    AND member_id = @member_id;
+
+-- name: InsertProjectionIncome :exec
+INSERT INTO
+    portfolio_projection_income (books_id, member_id, position, name, amount, start_age, end_age)
+VALUES
+    (@books_id, @member_id, @position, @name, @amount, @start_age, @end_age);
+
 -- name: DeleteProjectionPlan :execrows
 DELETE FROM portfolio_projection_plan
 WHERE

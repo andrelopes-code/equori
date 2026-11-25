@@ -17003,6 +17003,11 @@ components:
           description: 1 to 40 changes with distinct months.
           items:
             $ref: "#/components/schemas/ProjectionChange"
+        incomes:
+          type: array
+          description: 0 to 20 other incomes; absent, none.
+          items:
+            $ref: "#/components/schemas/ProjectionIncome"
     ProjectionWithdrawal:
       type: object
       required: [mode]
@@ -17029,6 +17034,23 @@ components:
           type: integer
           format: int64
           description: Monthly contribution in minor units, 0 or more.
+    ProjectionIncome:
+      type: object
+      required: [name, amount, start_age]
+      properties:
+        name:
+          type: string
+          description: 1 to 60 characters, trimmed.
+        amount:
+          type: integer
+          format: int64
+          description: Net monthly amount in minor units of today's money, above 0.
+        start_age:
+          type: integer
+          description: 18 to 120.
+        end_age:
+          type: integer
+          description: Above start_age, at most 120; absent, the income does not end.
     ProjectionBaseline:
       type: object
       required: [date, value]
@@ -17042,7 +17064,7 @@ components:
           description: Value of every brokerage tree on date, in minor units of the plan currency.
     ProjectionPlan:
       type: object
-      required: [withdrawal_age, last_age, real_return_bp, inflation_bp, withdrawal, changes, currency, baseline]
+      required: [withdrawal_age, last_age, real_return_bp, inflation_bp, withdrawal, changes, incomes, currency, baseline]
       properties:
         withdrawal_age:
           type: integer
@@ -17071,6 +17093,11 @@ components:
           description: Ordered by month.
           items:
             $ref: "#/components/schemas/ProjectionChange"
+        incomes:
+          type: array
+          description: The other incomes, ordered by start age.
+          items:
+            $ref: "#/components/schemas/ProjectionIncome"
         currency:
           type: string
           pattern: "^[A-Z]{3}$"

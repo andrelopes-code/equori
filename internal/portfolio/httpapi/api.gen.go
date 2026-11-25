@@ -901,6 +901,21 @@ type ProjectionChange struct {
 	Month openapi_types.Date `json:"month"`
 }
 
+// ProjectionIncome defines model for ProjectionIncome.
+type ProjectionIncome struct {
+	// Amount Net monthly amount in minor units of today's money, above 0.
+	Amount int64 `json:"amount"`
+
+	// EndAge Above start_age, at most 120; absent, the income does not end.
+	EndAge *int `json:"end_age,omitempty"`
+
+	// Name 1 to 60 characters, trimmed.
+	Name string `json:"name"`
+
+	// StartAge 18 to 120.
+	StartAge int `json:"start_age"`
+}
+
 // ProjectionPlan defines model for ProjectionPlan.
 type ProjectionPlan struct {
 	Baseline ProjectionBaseline `json:"baseline"`
@@ -916,7 +931,10 @@ type ProjectionPlan struct {
 	FavorableReturnBp *int `json:"favorable_return_bp,omitempty"`
 
 	// GainTaxBp Tax on the gain of a withdrawal, 1 to 5000 basis points; absent, no tax.
-	GainTaxBp     *int                 `json:"gain_tax_bp,omitempty"`
+	GainTaxBp *int `json:"gain_tax_bp,omitempty"`
+
+	// Incomes The other incomes, ordered by start age.
+	Incomes       []ProjectionIncome   `json:"incomes"`
 	InflationBp   int                  `json:"inflation_bp"`
 	LastAge       int                  `json:"last_age"`
 	RealReturnBp  int                  `json:"real_return_bp"`
@@ -940,6 +958,9 @@ type ProjectionPlanInput struct {
 
 	// GainTaxBp Tax on the gain of a withdrawal, 1 to 5000 basis points; absent, no tax.
 	GainTaxBp *int `json:"gain_tax_bp,omitempty"`
+
+	// Incomes 0 to 20 other incomes; absent, none.
+	Incomes *[]ProjectionIncome `json:"incomes,omitempty"`
 
 	// InflationBp 0 to 5000.
 	InflationBp int `json:"inflation_bp"`
