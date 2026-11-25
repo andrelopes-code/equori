@@ -45,6 +45,51 @@ describe("journeyFigures", () => {
     expect(f.sustained).toBeCloseTo((500 * 13000) / 6000, 8);
   });
 
+  it("PX4: the sustained income, typed as the income, lasts to the last age", () => {
+    const { sustained } = journeyFigures(input);
+    const f = journeyFigures({
+      ...input,
+      draft: {
+        ...input.draft,
+        withdrawal: { mode: "income", income: Math.floor(sustained) },
+      },
+    });
+
+    expect(f.sustains).toBe(true);
+    expect(f.rows.filter((r) => r.withdrawal > 0)).toHaveLength(12);
+  });
+
+  it("PX4: the value that pays every withdrawal and ends on zero sustains the income", () => {
+    const f = journeyFigures({
+      ...input,
+      history: {
+        ...input.history,
+        points: [{ date: "2026-11-25", value: 3000, flows: 0 }],
+      },
+    });
+
+    expect(f.atWithdrawal).toBe(6000);
+    expect(f.covered).toBe(1);
+    expect(f.rows.at(-1)).toMatchObject({ withdrawal: 500, value: 0 });
+    expect(f.sustains).toBe(true);
+    expect(f.endAge).toBeNull();
+  });
+
+  it("PX5: needs only the withdrawals the projection holds", () => {
+    // The birthday is later in the current month, so the withdrawals run from the next month: 11.
+    const f = journeyFigures({
+      ...input,
+      today: "2027-03-05",
+      history: {
+        ...input.history,
+        points: [{ date: "2027-03-05", value: 10000, flows: 0 }],
+      },
+    });
+
+    expect(f.rows.filter((r) => r.withdrawal > 0)).toHaveLength(11);
+    expect(f.needed).toBe(5500);
+  });
+
   it("states the age the income ends when the value reaches zero", () => {
     const f = journeyFigures({
       ...input,
@@ -68,7 +113,7 @@ describe("journeyFigures", () => {
     expect(f.covered).toBeNull();
     expect(f.sustains).toBeNull();
     expect(f.sustained).toBe(65);
-    expect(f.rows.filter((r) => r.withdrawal > 0)).toHaveLength(13);
+    expect(f.rows.filter((r) => r.withdrawal > 0)).toHaveLength(12);
   });
 
   it("PX13: states the money contributed and the return in today's money", () => {

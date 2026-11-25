@@ -13,6 +13,9 @@ import type { ProjectionDraft } from "@/features/portfolio/projection/model/plan
 import { project } from "@/features/portfolio/projection/model/project";
 import type { ProjectionRow } from "@/features/portfolio/projection/model/project";
 
+// The share of the amount needed the floating point can lose.
+const rounding = 1e-9;
+
 export interface PlanCaseInput {
   draft: ProjectionDraft;
   // Today's recorded value and the money contributed so far, the basis of the tax; it is negative
@@ -77,7 +80,7 @@ export function planCase(input: PlanCaseInput, returnBp: number): PlanCase {
       ? null
       : amountNeeded(
           wanted,
-          (draft.lastAge - draft.withdrawalAge) * 12,
+          input.months.filter((m) => m >= withdrawalFrom).length,
           withdrawalRate,
           tax && { rate: taxRate, basisShare: 1 - share, inflation },
         );
@@ -85,16 +88,19 @@ export function planCase(input: PlanCaseInput, returnBp: number): PlanCase {
     sustainedIncome(atWithdrawal, draft.withdrawal.rate_bp ?? 0) *
     (1 - taxRate * share);
   const rows = project({ ...base, income: wanted ?? ofRate });
-  const end = wanted === null ? null : incomeEnd(rows);
+  const covered = shareOf(atWithdrawal, needed);
+  // A value that pays the whole last withdrawal and ends on zero sustains the income.
+  const sustains =
+    wanted === null ? null : covered === null || covered >= 1 - rounding;
+  const end = sustains === false ? incomeEnd(rows) : null;
 
   return {
     rows,
     atWithdrawal,
     needed,
-    covered: shareOf(atWithdrawal, needed),
-    sustained:
-      wanted === null ? ofRate : wanted * (shareOf(atWithdrawal, needed) ?? 0),
-    sustains: wanted === null ? null : end === null,
+    covered,
+    sustained: wanted === null ? ofRate : wanted * (covered ?? 0),
+    sustains,
     endAge: end === null ? null : ageAt(input.birthDate, `${end}-01`),
   };
 }

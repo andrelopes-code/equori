@@ -124,3 +124,15 @@ The owner asked for a positive and a negative scenario and for a more realistic 
 Cross-cutting answers of the amendment: R1 no regional value, the tax is typed, the references come from the curve sources and expectation sources of `docs/contributing/regions.md`; R2 without a source or an index the reference or the correction is absent, stated by PX13; R3 and R4 none; R5 catalog keys `portfolio.projection.*`; R6 through `src/i18n/format.ts`; C1 basis points and minor units, floating point on the client only; C2 the curve and the index are used only in the plan's currency; C3, C4, T1, T2 unchanged; B1 no table; B2 and B3 unchanged; D1 the archive exports the plan by column, no format change; D2 one migration with four nullable columns; D3 to D5 do not apply; S1 no operation; S2 no; S3 the guide article and the help article change with the screen; S4 no; X1 S719; X2 S717 covers a plan in USD, and PX13 without an index has a client test.
 
 Left for a later amendment: other incomes with a start age, one-off events, a fall at the start of the withdrawals.
+
+## Amendment 2: the withdrawals end at the last age (owner, 2026-11-25)
+
+The projection held one withdrawal more than the amount needed counted, so a plan at 100% of the amount needed could read as not sustaining the income.
+
+| ID | Rule |
+|---|---|
+| PX4 | Amended: the last withdrawal is in the month before the birthday of the last age. |
+| PX5 | Amended: the amount needed counts the withdrawals the projection holds, no other count. |
+| PX6 | Amended: the plan sustains the income when the value at the withdrawal age reaches the amount needed; a value that pays the whole last withdrawal and ends on zero sustains it. |
+
+Cross-cutting answers of the amendment: no value, text, table, operation or setting changes; X1 none, client tests of PX4 to PX6.

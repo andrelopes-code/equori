@@ -1,5 +1,5 @@
-// PX4, PX6: the months the projection runs: from the month after today to the birth month of the
-// last age, and the month withdrawals start (the birth month of the withdrawal age).
+// PX4, PX6: the months the projection runs: from the month after today to the month before the
+// birthday of the last age, and the month withdrawals start (the birth month of the withdrawal age).
 export interface JourneyMonths {
   months: string[];
   withdrawalFrom: string;
@@ -14,8 +14,8 @@ export function journeyMonths(
   const [ty = 0, tm = 0] = today.split("-").map(Number);
   const [by = 0, bm = 0] = birthDate.split("-").map(Number);
   const first = ty * 12 + tm;
-  const last = (by + lastAge) * 12 + bm - 1;
-  const count = Math.max(last - first + 1, 0);
+  const end = (by + lastAge) * 12 + bm - 1;
+  const count = Math.max(end - first, 0);
 
   return {
     months: Array.from({ length: count }, (_, i) => labelOf(first + i)),

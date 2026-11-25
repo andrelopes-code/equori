@@ -6,7 +6,7 @@ import {
 } from "@/features/portfolio/projection/journey-block/journey-months";
 
 describe("journeyMonths", () => {
-  it("runs from the month after today to the birth month of the last age", () => {
+  it("runs from the month after today to the month before the birthday of the last age", () => {
     const { months, withdrawalFrom } = journeyMonths(
       "2026-11-25",
       "1994-03-10",
@@ -15,10 +15,10 @@ describe("journeyMonths", () => {
     );
 
     expect(withdrawalFrom).toBe("2027-03");
-    expect(months).toHaveLength(16);
+    expect(months).toHaveLength(15);
     expect(months[0]).toBe("2026-12");
     expect(months[3]).toBe("2027-03");
-    expect(months.at(-1)).toBe("2028-03");
+    expect(months.at(-1)).toBe("2028-02");
   });
 });
 
