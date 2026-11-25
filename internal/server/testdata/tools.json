@@ -11476,16 +11476,16 @@
         },
         "settlement_date": {
           "type": "string",
-          "description": "date the money moves; derived from the trade date when empty",
+          "description": "day the cash moves; derived when empty",
           "format": "date"
         },
         "fees": {
           "type": "string",
-          "description": "every cost of the whole note, positive; split among the orders in proportion to their gross value"
+          "description": "every cost of the whole note, positive; split by gross value"
         },
         "taxes": {
           "type": "string",
-          "description": "income tax withheld on the whole note, positive; split among the sales in proportion to their gross value"
+          "description": "income tax withheld on the whole note, positive; split among the sales"
         },
         "taxes_category_id": {
           "type": "string",
@@ -11514,7 +11514,7 @@
               },
               "quantity": {
                 "type": "string",
-                "description": "positive quantity of the security"
+                "description": "positive quantity"
               },
               "unit_price": {
                 "type": "string",
@@ -11857,19 +11857,24 @@
         },
         "quantity": {
           "type": "string",
-          "description": "for buy and sell: positive quantity of the security"
+          "description": "for buy and sell: positive quantity"
         },
         "unit_price": {
           "type": "string",
-          "description": "for buy and sell: decimal price of one unit in the cash account's currency"
+          "description": "for buy and sell: price of one unit in the cash currency"
         },
         "fees": {
           "type": "string",
-          "description": "for buy and sell: positive fees charged"
+          "description": "for buy and sell: positive fees"
         },
         "taxes": {
           "type": "string",
-          "description": "for buy and sell: positive taxes charged"
+          "description": "for buy and sell: positive taxes"
+        },
+        "settlement_date": {
+          "type": "string",
+          "description": "for buy and sell: day the cash moves; derived when empty",
+          "format": "date"
         },
         "gross": {
           "type": "string",

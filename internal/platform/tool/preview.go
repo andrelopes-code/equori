@@ -36,13 +36,16 @@ type Change struct {
 	After  Value  `json:"after,omitzero"`
 }
 
-// Item is a record an operation reads or moves.
+// Item is a record an operation reads, moves or writes; Side, Quantity and Price describe an order.
 type Item struct {
 	Description string `json:"description"`
 	Date        string `json:"date,omitzero"`
 	Amount      Value  `json:"amount,omitzero"`
 	Account     string `json:"account,omitzero"`
 	Category    string `json:"category,omitzero"`
+	Side        string `json:"side,omitzero"`
+	Quantity    Value  `json:"quantity,omitzero"`
+	Price       Value  `json:"price,omitzero"`
 }
 
 // Recurrence is the rule of a schedule the operation creates or changes.

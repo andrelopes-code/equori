@@ -2,9 +2,6 @@ package toolapi
 
 import (
 	"context"
-	"fmt"
-
-	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/ledger/app"
 	"github.com/andrelopes-code/equori/internal/ledger/domain"
@@ -25,10 +22,11 @@ type recordInvestmentIn struct {
 	AccountID     string               `json:"account_id,omitzero"      jsonschema:"Investment line inside a Brokerage, from list_accounts; instead of brokerage_id and instrument"`
 	CashAccountID string               `json:"cash_account_id,omitzero" jsonschema:"Cash of the Brokerage or an open account of its institution; the single candidate when absent"`
 	Date          tool.Date            `json:"date"                     jsonschema:"trade or payment date"`
-	Quantity      string               `json:"quantity,omitzero"        jsonschema:"for buy and sell: positive quantity of the security"`
-	UnitPrice     string               `json:"unit_price,omitzero"      jsonschema:"for buy and sell: decimal price of one unit in the cash account's currency"`
-	Fees          string               `json:"fees,omitzero"            jsonschema:"for buy and sell: positive fees charged"`
-	Taxes         string               `json:"taxes,omitzero"           jsonschema:"for buy and sell: positive taxes charged"`
+	Quantity      string               `json:"quantity,omitzero"        jsonschema:"for buy and sell: positive quantity"`
+	UnitPrice     string               `json:"unit_price,omitzero"      jsonschema:"for buy and sell: price of one unit in the cash currency"`
+	Fees          string               `json:"fees,omitzero"            jsonschema:"for buy and sell: positive fees"`
+	Taxes         string               `json:"taxes,omitzero"           jsonschema:"for buy and sell: positive taxes"`
+	SettledOn     tool.Date            `json:"settlement_date,omitzero" jsonschema:"for buy and sell: day the cash moves; derived when empty"`
 	Gross         string               `json:"gross,omitzero"           jsonschema:"for income: positive gross amount paid"`
 	Withheld      string               `json:"withheld,omitzero"        jsonschema:"for income: tax withheld; region rate when absent"`
 	IncomeType    string               `json:"income_type,omitzero"     jsonschema:"for income: type from get_portfolio with view income_types"`
@@ -102,7 +100,7 @@ func planInvestment(
 	pv.Changes = []tool.Change{
 		{Field: "instrument", After: tool.TextValue(string(target.instrument))},
 	}
-	fix.describe(&pv)
+	fix.describe(&pv, in.Kind)
 
 	step := investmentStep{svc: svc, booksID: booksID, in: in, ids: ids, target: target, fix: fix}
 	if in.Kind == "income" {
@@ -110,76 +108,6 @@ func planInvestment(
 	}
 
 	return step.trade(ctx, pv)
-}
-
-type investmentIDs struct {
-	account, brokerage, cash, category, taxesCategory, withheldCategory uuid.UUID
-}
-
-func parseInvestmentIDs(in recordInvestmentIn) (investmentIDs, error) {
-	var ids investmentIDs
-
-	var err error
-	if ids.account, err = optionalID(in.AccountID, "account_id"); err != nil {
-		return ids, err
-	}
-
-	if ids.brokerage, err = optionalID(in.BrokerageID, "brokerage_id"); err != nil {
-		return ids, err
-	}
-
-	if ids.cash, err = optionalID(in.CashAccountID, "cash_account_id"); err != nil {
-		return ids, err
-	}
-
-	if ids.category, err = optionalID(in.CategoryID, "category_id"); err != nil {
-		return ids, err
-	}
-
-	if ids.taxesCategory, err = optionalID(in.TaxesCategoryID, "taxes_category_id"); err != nil {
-		return ids, err
-	}
-
-	ids.withheldCategory, err = optionalID(in.WithheldCategoryID, "withheld_category_id")
-
-	return ids, err
-}
-
-func checkInvestmentFields(in recordInvestmentIn) error {
-	action := string(in.Kind)
-	given := map[string]bool{
-		"account_id":           in.AccountID != "",
-		"brokerage_id":         in.BrokerageID != "",
-		"instrument":           in.Instrument != "",
-		"cash_account_id":      in.CashAccountID != "",
-		"date":                 !in.Date.IsZero(),
-		"quantity":             in.Quantity != "",
-		"unit_price":           in.UnitPrice != "",
-		"fees":                 in.Fees != "",
-		"taxes":                in.Taxes != "",
-		"gross":                in.Gross != "",
-		"withheld":             in.Withheld != "",
-		"income_type":          in.IncomeType != "",
-		"category_id":          in.CategoryID != "",
-		"description":          in.Description != "",
-		"taxes_category_id":    in.TaxesCategoryID != "",
-		"withheld_category_id": in.WithheldCategoryID != "",
-	}
-	// transaction_id and reason serve every kind; loadCorrection checks them.
-	target := []string{"account_id", "brokerage_id", "instrument", "cash_account_id"}
-
-	if in.Kind == "income" {
-		return checkFields(action, given, []string{"date", "gross", "income_type", "category_id"},
-			append(target, "withheld", "description", "withheld_category_id")...)
-	}
-
-	if in.Kind == "write_off" {
-		return checkFields(action, given, []string{"date", "quantity"},
-			"account_id", "brokerage_id", "instrument", "description")
-	}
-
-	return checkFields(action, given, []string{"date", "quantity", "unit_price"},
-		append(target, "fees", "taxes", "description", "taxes_category_id")...)
 }
 
 // investmentStep holds the resolved inputs that the income and trade steps share.
@@ -221,10 +149,22 @@ func (s investmentStep) income(
 		WithheldCategoryID: s.ids.withheldCategory,
 		Description:        in.Description,
 	}
+
+	net, err := subtract(gross, withheld)
+	if err != nil {
+		return pv, nil, err
+	}
+
 	appendMoneyChange(&pv, "amount", &gross)
 	appendMoneyChange(&pv, "withheld", withheld)
+	appendMoneyChange(&pv, "net", &net)
+	pv.Changes = append(
+		pv.Changes,
+		tool.Change{Field: "income_type", After: tool.TextValue(in.IncomeType)},
+	)
 
 	s.appendCashAndDate(&pv)
+	s.fix.compareIncome(&pv)
 
 	return pv, func() (recordInvestmentOut, error) {
 		t, err := s.fix.income(s.svc)(ctx, s.booksID, o)
@@ -287,11 +227,17 @@ func (s investmentStep) trade(
 	appendMoneyChange(&pv, "fees", o.Fees)
 	appendMoneyChange(&pv, "taxes", o.Taxes)
 
-	if err = appendGross(&pv, o, s.target.cashUnit.Currency()); err != nil {
+	if err = appendTradeMoney(&pv, o, s.target.cashUnit.Currency()); err != nil {
 		return pv, nil, err
 	}
 
 	s.appendCashAndDate(&pv)
+
+	if err = s.appendSettlement(ctx, &pv, o); err != nil {
+		return pv, nil, err
+	}
+
+	s.fix.compareTrade(&pv)
 
 	return pv, func() (recordInvestmentOut, error) {
 		t, err := s.fix.trade(s.svc)(ctx, s.booksID, o)
@@ -333,7 +279,7 @@ func (s investmentStep) tradeOrder(ctx context.Context) (domain.TradeOrder, erro
 		return domain.TradeOrder{}, err
 	}
 
-	return domain.TradeOrder{
+	o := domain.TradeOrder{
 		AccountID:       s.ids.account,
 		CashAccountID:   s.ids.cash,
 		BrokerageID:     s.ids.brokerage,
@@ -346,7 +292,12 @@ func (s investmentStep) tradeOrder(ctx context.Context) (domain.TradeOrder, erro
 		Taxes:           taxes,
 		TaxesCategoryID: s.ids.taxesCategory,
 		Description:     in.Description,
-	}, nil
+	}
+	if !in.SettledOn.IsZero() {
+		o.SettlementDate = &in.SettledOn.Time
+	}
+
+	return o, nil
 }
 
 func (s investmentStep) appendCashAndDate(pv *tool.Preview) {
@@ -373,25 +324,53 @@ func (s investmentStep) optional(field, text string) (*money.Money, error) {
 	return &m, err
 }
 
-// appendGross adds quantity × price as amount: the card draws that equation (assistant
-// conversation design, section 7). A write-off has no price.
-func appendGross(pv *tool.Preview, o domain.TradeOrder, cash money.Currency) error {
+// appendSettlement states the day the cash of o moves; a write-off moves none.
+func (s investmentStep) appendSettlement(
+	ctx context.Context,
+	pv *tool.Preview,
+	o domain.TradeOrder,
+) error {
 	if o.Side == domain.SideWriteOff {
 		return nil
 	}
 
-	gross, err := money.Convert(o.Quantity, cash, money.Leg{Rate: o.UnitPrice})
+	settled, err := s.svc.SettlementDate(ctx, s.target.instrument, o.Date, o.SettlementDate)
 	if err != nil {
-		return fmt.Errorf("convert gross amount: %w", err)
+		return err
 	}
 
-	appendMoneyChange(pv, "amount", &gross)
+	pv.Changes = append(
+		pv.Changes,
+		tool.Change{Field: "settlement", After: tool.DateValue(settled)},
+	)
 
 	return nil
 }
 
-func appendMoneyChange(pv *tool.Preview, field string, m *money.Money) {
-	if m != nil {
-		pv.Changes = append(pv.Changes, tool.Change{Field: field, After: tool.MoneyValue(*m)})
+// appendTradeMoney adds the gross (quantity × price) as amount and the signed change of the cash as
+// net (investment proposals design, IP1). A write-off has neither.
+func appendTradeMoney(pv *tool.Preview, o domain.TradeOrder, cash money.Currency) error {
+	if o.Side == domain.SideWriteOff {
+		return nil
 	}
+
+	gross, err := grossOf(o.Quantity, o.UnitPrice, cash)
+	if err != nil {
+		return err
+	}
+
+	signed := gross
+	if o.Side == domain.SideBuy {
+		signed = gross.Neg()
+	}
+
+	net, err := subtract(signed, o.Fees, o.Taxes)
+	if err != nil {
+		return err
+	}
+
+	appendMoneyChange(pv, "amount", &gross)
+	appendMoneyChange(pv, "net", &net)
+
+	return nil
 }

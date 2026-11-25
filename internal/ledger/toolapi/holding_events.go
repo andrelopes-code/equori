@@ -2,7 +2,6 @@ package toolapi
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/google/uuid"
 
@@ -101,9 +100,14 @@ func planCorporateAction(
 		err = planRatio(in, &o, &pv)
 	}
 
+	if err != nil {
+		return pv, o, err
+	}
+
+	appendHeldCode(&pv, holding.instrument)
 	pv.Changes = append(pv.Changes, tool.Change{Field: "date", After: tool.DateValue(o.Date)})
 
-	return pv, o, err
+	return pv, o, nil
 }
 
 func checkCorporateActionFields(in recordCorporateActionIn) error {
@@ -224,76 +228,6 @@ func corporateActionTarget(
 	return o, h, nil
 }
 
-func planRatio(in recordCorporateActionIn, o *domain.ActionOrder, pv *tool.Preview) error {
-	o.RatioFrom, o.RatioTo = in.RatioFrom, in.RatioTo
-	ratio := strconv.FormatInt(in.RatioFrom, 10) + " : " + strconv.FormatInt(in.RatioTo, 10)
-	pv.Changes = append(pv.Changes, tool.Change{Field: "ratio", After: tool.TextValue(ratio)})
-
-	if in.UnitCost == "" {
-		return nil
-	}
-
-	cost, err := money.ParseRate(in.UnitCost)
-	if err != nil {
-		return tool.InvalidArgument(
-			"unit_cost",
-			"must be a positive decimal with at most 12 decimals",
-		)
-	}
-
-	o.UnitCost = &cost
-	pv.Changes = append(
-		pv.Changes,
-		tool.Change{Field: "price", After: tool.TextValue(cost.String())},
-	)
-
-	return nil
-}
-
-func planUnitTax(
-	ctx context.Context,
-	svc *app.Service,
-	booksID int64,
-	in recordCorporateActionIn,
-	instrument money.Currency,
-	o *domain.ActionOrder,
-	pv *tool.Preview,
-) error {
-	// The operation takes a ratio for every kind; a unit tax does not read it.
-	o.RatioFrom, o.RatioTo = 1, 1
-
-	unit, err := svc.AmountOf(ctx, 0, instrument)
-	if err != nil {
-		return err
-	}
-
-	if o.Quantity, err = tool.ParsePositive("quantity", in.Quantity, unit); err != nil {
-		return err
-	}
-
-	settings, err := svc.Settings(ctx, booksID)
-	if err != nil {
-		return err
-	}
-
-	base, err := svc.AmountOf(ctx, 0, settings.BaseCurrency)
-	if err != nil {
-		return err
-	}
-
-	if o.Amount, err = tool.ParsePositive("amount", in.Amount, base); err != nil {
-		return err
-	}
-
-	pv.Changes = append(
-		pv.Changes,
-		tool.Change{Field: "quantity", After: tool.TextValue(o.Quantity.Decimal())},
-		tool.Change{Field: "amount", After: tool.MoneyValue(o.Amount)},
-	)
-
-	return nil
-}
-
 type transferCustodyIn struct {
 	AccountID   string    `json:"account_id"           jsonschema:"Investment line that gives the units, from list_accounts"`
 	BrokerageID string    `json:"brokerage_id"         jsonschema:"Brokerage that receives the units, from list_accounts; not the one that holds account_id"`
@@ -350,10 +284,20 @@ func planCustodyTransfer(
 		return pv, domain.CustodyOrder{}, err
 	}
 
+	giving, err := svc.Account(ctx, booksID, holding.ParentID)
+	if err != nil {
+		return pv, domain.CustodyOrder{}, err
+	}
+
 	pv.Target = holding.Name
 	pv.Changes = []tool.Change{
-		{Field: "account", After: tool.TextValue(brokerage.Name)},
+		{
+			Field:  "account",
+			Before: tool.TextValue(giving.Name),
+			After:  tool.TextValue(brokerage.Name),
+		},
 		{Field: "quantity", After: tool.TextValue(quantity.Decimal())},
+		{Field: "instrument", After: tool.TextValue(string(holding.Instrument))},
 		{Field: "date", After: tool.DateValue(in.Date.Time)},
 	}
 

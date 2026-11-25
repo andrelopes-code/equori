@@ -5414,6 +5414,9 @@ export interface components {
             amount?: components["schemas"]["AssistantValue"];
             account?: string;
             category?: string;
+            side?: string;
+            quantity?: components["schemas"]["AssistantValue"];
+            price?: components["schemas"]["AssistantValue"];
         };
         AssistantRecurrence: {
             frequency: string;

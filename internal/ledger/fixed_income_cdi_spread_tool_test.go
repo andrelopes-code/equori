@@ -16,9 +16,11 @@ func TestRecordFixedIncomeCDIPlusSpread(t *testing.T) {
 	args["spread"] = "1.5"
 
 	p := previewTool(t, f.h, "record_fixed_income", args)
-	if p.Target != "DEBENTURE Banco X 2028-03-02 · CDI + 1.5% · matures 2028-03-02" {
+	if p.Target != "DEBENTURE Banco X 2028-03-02" {
 		t.Fatalf("target = %q", p.Target)
 	}
+
+	expectFields(t, p, map[string]string{"rate": "", "index": "cdi", "spread": "1.5"})
 
 	var out fixedIncomeToolOut
 	toolOutput(t, f.h, "record_fixed_income", args, &out)

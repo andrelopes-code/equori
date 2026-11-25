@@ -78,4 +78,10 @@ var ChangeFields = []string{
 	"visual",
 	"accent",
 	"network",
+	"net",
+	"settlement",
+	"income_type",
+	"index",
+	"spread",
+	"maturity",
 }

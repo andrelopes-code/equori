@@ -2,6 +2,8 @@ package toolapi
 
 import (
 	"context"
+	"fmt"
+	"slices"
 	"strconv"
 
 	"github.com/andrelopes-code/equori/internal/ledger/app"
@@ -17,7 +19,7 @@ func (noteSide) Values() []string { return []string{"buy", "sell"} }
 type brokerageNoteOrder struct {
 	Side       noteSide `json:"side"       jsonschema:"buy or sell"`
 	Instrument string   `json:"instrument" jsonschema:"code of the security, such as PETR4; an odd-lot code such as PETR4F is the same security"`
-	Quantity   string   `json:"quantity"   jsonschema:"positive quantity of the security"`
+	Quantity   string   `json:"quantity"   jsonschema:"positive quantity"`
 	UnitPrice  string   `json:"unit_price" jsonschema:"decimal price of one unit, without costs"`
 }
 
@@ -25,9 +27,9 @@ type recordBrokerageNoteIn struct {
 	BrokerageID     string               `json:"brokerage_id"               jsonschema:"Brokerage of the note, from list_accounts"`
 	CashAccountID   string               `json:"cash_account_id,omitzero"   jsonschema:"Cash of the Brokerage or an open account of its institution; the single candidate when absent"`
 	Date            tool.Date            `json:"date"                       jsonschema:"trade date of the note"`
-	SettlementDate  tool.Date            `json:"settlement_date,omitzero"   jsonschema:"date the money moves; derived from the trade date when empty"`
-	Fees            string               `json:"fees,omitzero"              jsonschema:"every cost of the whole note, positive; split among the orders in proportion to their gross value"`
-	Taxes           string               `json:"taxes,omitzero"             jsonschema:"income tax withheld on the whole note, positive; split among the sales in proportion to their gross value"`
+	SettlementDate  tool.Date            `json:"settlement_date,omitzero"   jsonschema:"day the cash moves; derived when empty"`
+	Fees            string               `json:"fees,omitzero"              jsonschema:"every cost of the whole note, positive; split by gross value"`
+	Taxes           string               `json:"taxes,omitzero"             jsonschema:"income tax withheld on the whole note, positive; split among the sales"`
 	TaxesCategoryID string               `json:"taxes_category_id,omitzero" jsonschema:"expense category of the taxes; the taxes account when absent"`
 	Description     string               `json:"description,omitzero"       jsonschema:"description of each transaction; a title derived from the order when empty"`
 	Orders          []brokerageNoteOrder `json:"orders"                     jsonschema:"the orders of the note, 1 to 50"`
@@ -84,9 +86,6 @@ func planBrokerageNote(
 	}
 
 	pv.Target = target.name
-	pv.Changes = []tool.Change{
-		{Field: "count", After: tool.TextValue(strconv.Itoa(len(in.Orders)))},
-	}
 
 	if n.Fees, err = optionalAmount("fees", in.Fees, target.cashUnit); err != nil {
 		return pv, n, err
@@ -96,8 +95,13 @@ func planBrokerageNote(
 		return pv, n, err
 	}
 
-	appendMoneyChange(&pv, "fees", n.Fees)
-	appendMoneyChange(&pv, "taxes", n.Taxes)
+	if n.Orders, err = brokerageNoteOrders(ctx, svc, in.Orders); err != nil {
+		return pv, n, err
+	}
+
+	if err = appendNoteMoney(&pv, n, target.cashUnit); err != nil {
+		return pv, n, err
+	}
 
 	if target.cashName != "" {
 		pv.Changes = append(
@@ -108,9 +112,7 @@ func planBrokerageNote(
 
 	pv.Changes = append(pv.Changes, tool.Change{Field: "date", After: tool.DateValue(n.Date)})
 
-	n.Orders, err = brokerageNoteOrders(ctx, svc, in.Orders)
-
-	return pv, n, err
+	return pv, n, appendNoteSettlement(ctx, svc, &pv, n)
 }
 
 // brokerageNoteHeader resolves the brokerage and the cash of the note; the service picks the
@@ -140,7 +142,7 @@ func brokerageNoteHeader(
 		return n, target, err
 	}
 
-	n.CashAccountID = ids.cash
+	n.CashAccountID, ids.brokerage = ids.cash, n.BrokerageID
 	if !in.SettlementDate.IsZero() {
 		n.SettlementDate = &in.SettlementDate.Time
 	}
@@ -204,6 +206,78 @@ func brokerageNoteOrders(
 	}
 
 	return orders, nil
+}
+
+// appendNoteMoney adds one item per order, the costs and the signed change of the cash
+// (investment proposals design, IP1 and IP3).
+func appendNoteMoney(pv *tool.Preview, n app.BrokerageNote, cash money.Money) error {
+	total := cash
+
+	for _, o := range n.Orders {
+		gross, err := grossOf(o.Quantity, o.UnitPrice, cash.Currency())
+		if err != nil {
+			return err
+		}
+
+		signed := gross
+		if o.Side == domain.SideBuy {
+			signed = gross.Neg()
+		}
+
+		if total, err = total.Add(signed); err != nil {
+			return fmt.Errorf("add orders of the note: %w", err)
+		}
+
+		pv.Items = append(pv.Items, tool.Item{
+			Description: string(o.Instrument),
+			Side:        string(o.Side),
+			Quantity:    tool.TextValue(o.Quantity.Decimal()),
+			Price:       tool.TextValue(o.UnitPrice.String()),
+			Amount:      tool.MoneyValue(gross),
+		})
+	}
+
+	net, err := subtract(total, n.Fees, n.Taxes)
+	if err != nil {
+		return err
+	}
+
+	appendMoneyChange(pv, "fees", n.Fees)
+	appendMoneyChange(pv, "taxes", n.Taxes)
+	appendMoneyChange(pv, "net", &net)
+
+	return nil
+}
+
+// appendNoteSettlement states the day every order settles, or the day of each one on its item.
+func appendNoteSettlement(
+	ctx context.Context,
+	svc *app.Service,
+	pv *tool.Preview,
+	n app.BrokerageNote,
+) error {
+	days := make([]tool.Value, len(n.Orders))
+
+	for i, o := range n.Orders {
+		day, err := svc.SettlementDate(ctx, o.Instrument, n.Date, n.SettlementDate)
+		if err != nil {
+			return err
+		}
+
+		days[i] = tool.DateValue(day)
+	}
+
+	if distinct := slices.Compact(slices.Clone(days)); len(distinct) == 1 {
+		pv.Changes = append(pv.Changes, tool.Change{Field: "settlement", After: distinct[0]})
+
+		return nil
+	}
+
+	for i, day := range days {
+		pv.Items[i].Date = day.Date
+	}
+
+	return nil
 }
 
 func optionalAmount(field, text string, unit money.Money) (*money.Money, error) {

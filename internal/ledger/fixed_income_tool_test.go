@@ -1,6 +1,7 @@
 package ledger_test
 
 import (
+	"maps"
 	"strings"
 	"testing"
 )
@@ -18,16 +19,14 @@ func TestRecordFixedIncomeS479(t *testing.T) {
 	args := f.fixedIncomeToolArgs()
 
 	p := previewTool(t, f.h, "record_fixed_income", args)
-	if p.Target != "CDB Banco X 2028-03-02 · 110% of CDI · matures 2028-03-02" {
-		t.Fatalf("line 1 = %q", p.Target)
+	if p.Target != "CDB Banco X 2028-03-02" {
+		t.Fatalf("target = %q", p.Target)
 	}
 
-	if len(p.Changes) != 3 || p.Changes[0].Field != "amount" ||
-		p.Changes[0].After.Amount != "10000.00" || p.Changes[1].Field != "account" ||
-		p.Changes[1].After.Text != "XP cash" || p.Changes[2].Field != "date" ||
-		p.Changes[2].After.Date != "2026-03-02" {
-		t.Fatalf("line 2 = %+v", p.Changes)
-	}
+	expectFields(t, p, map[string]string{
+		"amount": "10000.00", "net": "-10000.00", "account": "XP cash", "date": "2026-03-02",
+		"rate": "110", "index": "cdi", "maturity": "2028-03-02",
+	})
 
 	var out fixedIncomeToolOut
 	toolOutput(t, f.h, "record_fixed_income", args, &out)
@@ -50,27 +49,23 @@ func TestRecordFixedIncomeRates(t *testing.T) {
 	tests := []struct {
 		name  string
 		extra map[string]any
-		want  string
+		want  map[string]string
 	}{
 		{"percent in basis points", map[string]any{"percent_of_index": "110.5"},
-			"CDB Banco X 2028-03-02 · 110.5% of CDI · matures 2028-03-02"},
+			map[string]string{"rate": "110.5", "index": "cdi", "spread": ""}},
+		{"whole index", nil,
+			map[string]string{"rate": "", "index": "cdi", "spread": ""}},
 		{"index plus spread", map[string]any{"index_id": "ipca", "spread": "6.5"},
-			"CDB Banco X 2028-03-02 · IPCA + 6.5% · matures 2028-03-02"},
+			map[string]string{"rate": "", "index": "ipca", "spread": "6.5"}},
 		{"pre-fixed", map[string]any{"index_id": "", "spread": "12"},
-			"CDB Banco X 2028-03-02 · 12% a year · matures 2028-03-02"},
+			map[string]string{"rate": "", "index": "", "spread": "12"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			args := f.fixedIncomeToolArgs()
 			delete(args, "percent_of_index")
-
-			for k, v := range tt.extra {
-				args[k] = v
-			}
-
-			if p := previewTool(t, f.h, "record_fixed_income", args); p.Target != tt.want {
-				t.Fatalf("line 1 = %q, want %q", p.Target, tt.want)
-			}
+			maps.Copy(args, tt.extra)
+			expectFields(t, previewTool(t, f.h, "record_fixed_income", args), tt.want)
 		})
 	}
 }

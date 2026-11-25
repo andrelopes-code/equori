@@ -36,6 +36,37 @@ type target struct {
 	Create                                bool
 }
 
+// DefaultCash names the cash an order of a holding or brokerage takes when it names none; empty
+// without a single candidate, which the record refuses (investment proposals design, IP5).
+func (s *Service) DefaultCash(ctx context.Context, booksID int64, id uuid.UUID) (string, error) {
+	brokerage, err := s.repo.Account(ctx, booksID, id)
+	if err == nil && brokerage.HoldsSecurity() {
+		brokerage, err = parentOf(ctx, s.repo, booksID, id)
+	}
+
+	if err != nil {
+		return "", err
+	}
+
+	base, err := baseCurrency(ctx, s.repo, booksID)
+	if err != nil {
+		return "", err
+	}
+
+	cashID, err := defaultCash(ctx, s.repo, brokerage, base)
+	if errors.Is(err, ErrBrokerageCashMissing) || errors.Is(err, ErrBrokerageCashAmbiguous) {
+		return "", nil
+	}
+
+	if err != nil {
+		return "", err
+	}
+
+	cash, err := s.repo.Account(ctx, booksID, cashID)
+
+	return cash.Name, err
+}
+
 // resolveTarget returns the holding and the cash account of a trade. With the pair form it
 // locks the brokerage row, so two first purchases of one instrument create one holding.
 func (s *Service) resolveTarget(

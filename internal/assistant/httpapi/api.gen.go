@@ -410,6 +410,9 @@ type AssistantPreviewItem struct {
 	Category    *string             `json:"category,omitempty"`
 	Date        *openapi_types.Date `json:"date,omitempty"`
 	Description string              `json:"description"`
+	Price       *AssistantValue     `json:"price,omitempty"`
+	Quantity    *AssistantValue     `json:"quantity,omitempty"`
+	Side        *string             `json:"side,omitempty"`
 }
 
 // AssistantProposal defines model for AssistantProposal.

@@ -14,6 +14,9 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
+// wholeIndexBP is a contract that pays its index, no more and no less.
+const wholeIndexBP = 10000
+
 var percentPattern = regexp.MustCompile(`^(-?)(\d{1,4})(?:\.(\d+))?$`)
 
 type recordFixedIncomeIn struct {
@@ -108,9 +111,16 @@ func planFixedIncome(
 		return pv, a, err
 	}
 
-	pv.Target = fixedIncomeTitle(a)
+	net, err := subtract(a.Amount.Neg(), a.Fees)
+	if err != nil {
+		return pv, a, err
+	}
 
-	pv.Changes = []tool.Change{{Field: "amount", After: tool.MoneyValue(a.Amount)}}
+	pv.Target = string(a.Instrument)
+	appendMoneyChange(&pv, "amount", &a.Amount)
+	appendMoneyChange(&pv, "fees", a.Fees)
+	appendMoneyChange(&pv, "net", &net)
+
 	if cash.cashName != "" {
 		pv.Changes = append(
 			pv.Changes,
@@ -119,6 +129,10 @@ func planFixedIncome(
 	}
 
 	pv.Changes = append(pv.Changes, tool.Change{Field: "date", After: tool.DateValue(a.AppliedOn)})
+
+	if a.Contract != nil {
+		describeContract(&pv, *a.Contract)
+	}
 
 	return pv, a, nil
 }
@@ -190,7 +204,13 @@ func fixedIncomeApplication(
 		return app.FixedIncomeApplication{}, err
 	}
 
-	currency, err := resolveTargetCash(ctx, svc, booksID, investmentIDs{cash: cashID}, cash)
+	currency, err := resolveTargetCash(
+		ctx,
+		svc,
+		booksID,
+		investmentIDs{cash: cashID, brokerage: brokerageID},
+		cash,
+	)
 	if err != nil {
 		return app.FixedIncomeApplication{}, err
 	}
@@ -324,34 +344,36 @@ func percentToBP(field, s string) (int, error) {
 	return bp, nil
 }
 
-func fixedIncomeTitle(a app.FixedIncomeApplication) string {
-	if a.Contract == nil {
-		return string(a.Instrument)
+// describeContract names a new contract and states its rate as values: the client writes the
+// words (investment proposals design, IP7).
+func describeContract(pv *tool.Preview, c app.Contract) {
+	pv.Target = c.Name
+
+	if c.PercentOfIndexBP != 0 && c.PercentOfIndexBP != wholeIndexBP {
+		pv.Changes = append(
+			pv.Changes,
+			tool.Change{Field: "rate", After: tool.TextValue(percentText(c.PercentOfIndexBP))},
+		)
 	}
 
-	c := a.Contract
-
-	return fmt.Sprintf(
-		"%s · %s · matures %s", c.Name, rateInWords(*c), c.MaturesOn.Format("2006-01-02"),
-	)
-}
-
-// rateInWords states a contract's rate: "110% of CDI", "IPCA + 6.5%", "12% a year".
-func rateInWords(c app.Contract) string {
-	if c.IndexID == "" {
-		return percentText(c.SpreadBP) + "% a year"
-	}
-
-	index := strings.ToUpper(c.IndexID)
-	if c.PercentOfIndexBP != 0 && c.PercentOfIndexBP != 10000 {
-		index = percentText(c.PercentOfIndexBP) + "% of " + index
+	if c.IndexID != "" {
+		pv.Changes = append(
+			pv.Changes,
+			tool.Change{Field: "index", After: tool.TextValue(c.IndexID)},
+		)
 	}
 
 	if c.SpreadBP != 0 {
-		index += " + " + percentText(c.SpreadBP) + "%"
+		pv.Changes = append(
+			pv.Changes,
+			tool.Change{Field: "spread", After: tool.TextValue(percentText(c.SpreadBP))},
+		)
 	}
 
-	return index
+	pv.Changes = append(
+		pv.Changes,
+		tool.Change{Field: "maturity", After: tool.DateValue(c.MaturesOn)},
+	)
 }
 
 func percentText(bp int) string {

@@ -29,7 +29,7 @@ func TestRecordBrokerageNoteToolS427(t *testing.T) {
 
 	p := previewTool(t, f.h, "record_brokerage_note", args)
 
-	if p.Target != "XP" || p.Changes[0].After.Text != "2" || p.Changes[1].After.Amount != "2.51" {
+	if p.Target != "XP" || len(p.Items) != 2 || fieldsOf(p)["fees"] != "2.51" {
 		t.Fatalf("preview = %+v", p)
 	}
 

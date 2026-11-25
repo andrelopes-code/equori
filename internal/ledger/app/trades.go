@@ -38,6 +38,22 @@ func (s *Service) RecordTrade(
 	return created, err
 }
 
+// SettlementDate is the day the cash of a trade of instrument on date settles: the day given, or
+// the one of the exchange's cycle.
+func (s *Service) SettlementDate(
+	ctx context.Context,
+	instrument money.Currency,
+	date time.Time,
+	given *time.Time,
+) (time.Time, error) {
+	o := domain.TradeOrder{Date: date, SettlementDate: given}
+	if err := s.settlementOf(ctx, &o, domain.Account{Instrument: instrument}); err != nil {
+		return time.Time{}, err
+	}
+
+	return *o.SettlementDate, nil
+}
+
 // recordTrade resolves, builds and inserts the transaction of o inside the transaction of r.
 func (s *Service) recordTrade(
 	ctx context.Context,

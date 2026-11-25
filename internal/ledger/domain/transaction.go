@@ -255,6 +255,18 @@ func (t Transaction) correctTo(
 	return NewTransaction(next, accounts)
 }
 
+// SettlementDate is the day the cash of a trade settles: the SettledOn of its posting, else the
+// transaction date (A228 IO9).
+func (t Transaction) SettlementDate() time.Time {
+	for _, p := range t.Postings {
+		if t.Trade != nil && p.AccountID == t.Trade.CashAccountID && p.SettledOn != nil {
+			return *p.SettledOn
+		}
+	}
+
+	return t.Date
+}
+
 // HasInstallments reports whether a posting of t belongs to an installment plan.
 func (t Transaction) HasInstallments() bool {
 	return slices.ContainsFunc(t.Postings, func(p Posting) bool { return p.Installment != nil })

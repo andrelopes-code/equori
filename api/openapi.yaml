@@ -9213,6 +9213,9 @@ components:
         amount: {$ref: "#/components/schemas/AssistantValue"}
         account: {type: string}
         category: {type: string}
+        side: {type: string, pattern: "^[a-z_]{2,40}$"}
+        quantity: {$ref: "#/components/schemas/AssistantValue"}
+        price: {$ref: "#/components/schemas/AssistantValue"}
     AssistantRecurrence:
       type: object
       additionalProperties: false

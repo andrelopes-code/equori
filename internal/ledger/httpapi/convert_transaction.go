@@ -3,7 +3,6 @@ package httpapi
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/andrelopes-code/equori/internal/ledger/domain"
 	"github.com/andrelopes-code/equori/internal/platform/money"
@@ -189,25 +188,13 @@ func setInvestment(out *Transaction, t domain.Transaction) {
 			DayTradeQuantity: toMoneyAPI(tr.DayTradeQuantity),
 			DayTradeCost:     toMoneyAPI(tr.DayTradeCost),
 
-			SettlementDate: apiDate(settlementDate(t, tr)),
+			SettlementDate: apiDate(t.SettlementDate()),
 		}
 		if tr.Cost != nil {
 			cost := toMoneyAPI(*tr.Cost)
 			out.Trade.Cost = &cost
 		}
 	}
-}
-
-// settlementDate is the SettledOn of the cash posting of trade tr, else the transaction date
-// (A228 IO9).
-func settlementDate(t domain.Transaction, tr *domain.Trade) time.Time {
-	for _, p := range t.Postings {
-		if p.AccountID == tr.CashAccountID && p.SettledOn != nil {
-			return *p.SettledOn
-		}
-	}
-
-	return t.Date
 }
 
 func toPostingAPI(p domain.Posting) Posting {
