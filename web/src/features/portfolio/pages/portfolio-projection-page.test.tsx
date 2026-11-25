@@ -146,11 +146,11 @@ describe("Portfolio projection page", () => {
     const region = within(await planRegion());
 
     expect(await region.findByText("32 years")).toBeInTheDocument();
-    expect(region.getByLabelText("Withdrawals at")).toHaveValue("60");
-    expect(region.getByLabelText("Real return")).toHaveValue("4.00");
+    expect(region.getByLabelText("Withdrawals start")).toHaveValue("60");
+    expect(region.getByLabelText("Expected")).toHaveValue("4.00");
     expect(region.getByLabelText("Inflation")).toHaveValue("4.50");
-    expect(region.getByLabelText("Until age")).toHaveValue("90");
-    expect(region.queryByText(/^Portfolio: /)).toBeNull();
+    expect(region.getByLabelText("Withdrawals end")).toHaveValue("90");
+    expect(region.queryByText(/^Your portfolio returned/)).toBeNull();
   });
 
   it("PX2: states the realized real return when the history holds 12 months", async () => {
@@ -162,7 +162,7 @@ describe("Portfolio projection page", () => {
     });
 
     expect(
-      await screen.findByText("Portfolio: 4.1% a year"),
+      await screen.findByText("Your portfolio returned 4.1% a year."),
     ).toBeInTheDocument();
   });
 
@@ -177,7 +177,7 @@ describe("Portfolio projection page", () => {
     });
     await renderApp("/portfolio/projection", { fetch });
     const region = within(await planRegion());
-    const field = await region.findByLabelText("Real return");
+    const field = await region.findByLabelText("Expected");
 
     await userEvent.clear(field);
     await userEvent.type(field, "5,5");
@@ -312,7 +312,7 @@ describe("Portfolio projection page", () => {
     );
     const region = within(await planRegion());
 
-    expect(region.getByLabelText("Withdrawals at")).toHaveValue("");
+    expect(region.getByLabelText("Withdrawals start")).toHaveValue("");
     expect(region.getByRole("button", { name: "Save plan" })).toBeDisabled();
   });
 
@@ -346,7 +346,7 @@ describe("Portfolio projection page", () => {
     const region = await screen.findByRole("region", { name: planName });
 
     expect(region).toHaveAttribute("aria-busy", "true");
-    expect(within(region).getByText("Withdrawals at")).toBeInTheDocument();
+    expect(within(region).getByText("Withdrawals start")).toBeInTheDocument();
   });
 
   it("PX3: asks for the birth date and draws nothing below", async () => {
@@ -357,7 +357,7 @@ describe("Portfolio projection page", () => {
       await screen.findByText(catalogEn["portfolio.projection.nobirth.title"]),
     ).toBeInTheDocument();
     expect(region.getByText("Birth date")).toBeInTheDocument();
-    expect(region.queryByText("Age")).toBeNull();
+    expect(region.queryByText("Today")).toBeNull();
   });
 
   it("PX12: states the currency change and deletes the plan", async () => {
@@ -547,12 +547,13 @@ describe("Portfolio projection page", () => {
     const region = within(await planRegion());
 
     expect(
-      await region.findByText(
-        "References: IPCA + 7.54% a year to 2040 · IPCA expected in 2030: 3.95% a year",
-      ),
+      await region.findByText("IPCA expected in 2030: 3.95%."),
     ).toBeInTheDocument();
-    expect(region.getByLabelText("Cautious")).toHaveValue("");
-    expect(region.getByLabelText("During withdrawals")).toHaveValue("");
+    expect(
+      region.getByRole("img", { name: /IPCA\+ 2040 7\.54%/ }),
+    ).toBeInTheDocument();
+    expect(region.getByLabelText(/^Cautious/)).toHaveValue("");
+    expect(region.getByLabelText(/^During withdrawals/)).toHaveValue("");
   });
 
   it("PX17: draws no reference without a curve", async () => {
@@ -561,7 +562,7 @@ describe("Portfolio projection page", () => {
     });
     const region = within(await planRegion());
 
-    expect(region.queryByText(/^References/)).toBeNull();
+    expect(region.queryByText("References")).toBeNull();
   });
 
   it("PX15, PX16: states each typed case beside the plan", async () => {
@@ -629,10 +630,10 @@ describe("Portfolio projection page", () => {
     });
     const region = within(await planRegion());
 
-    await userEvent.type(region.getByLabelText("Cautious"), "2");
-    await userEvent.type(region.getByLabelText("Favorable"), "6");
-    await userEvent.type(region.getByLabelText("During withdrawals"), "3");
-    await userEvent.type(region.getByLabelText("Tax on gain"), "15");
+    await userEvent.type(region.getByLabelText(/^Cautious/), "2");
+    await userEvent.type(region.getByLabelText(/^Favorable/), "6");
+    await userEvent.type(region.getByLabelText(/^During withdrawals/), "3");
+    await userEvent.type(region.getByLabelText(/^Tax on gain/), "15");
     await userEvent.click(region.getByRole("button", { name: "Save plan" }));
 
     await waitFor(() => {

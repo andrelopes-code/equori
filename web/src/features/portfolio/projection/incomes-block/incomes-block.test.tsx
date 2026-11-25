@@ -74,7 +74,9 @@ describe("Incomes block", () => {
     expect(region.getByRole("button", { name: add })).toBeEnabled();
     expect(region.queryByRole("table")).toBeNull();
     expect(region.queryByRole("list")).toBeNull();
-    expect(screen.getByText("Net of other income.")).toBeInTheDocument();
+    expect(
+      screen.getByText("A month, net of other income."),
+    ).toBeInTheDocument();
   });
 
   it("PX21: states the plan with and without its other incomes", async () => {

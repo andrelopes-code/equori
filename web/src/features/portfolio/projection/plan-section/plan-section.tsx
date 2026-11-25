@@ -11,15 +11,11 @@ import {
 
 import { fieldRanges } from "@/features/portfolio/projection/model/plan-fields";
 import type { PlanFields } from "@/features/portfolio/projection/model/plan-fields";
-import { AgeFact } from "@/features/portfolio/projection/plan-section/age-fact";
-import { BirthField } from "@/features/portfolio/projection/plan-section/birth-field";
+import { LifeLine } from "@/features/portfolio/projection/plan-section/life-line";
 import styles from "@/features/portfolio/projection/plan-section/plan.module.css";
-import { PremiseFields } from "@/features/portfolio/projection/plan-section/premise-fields";
-import { ReferencesLine } from "@/features/portfolio/projection/plan-section/references-line";
-import { UnitField } from "@/features/portfolio/projection/plan-section/unit-field";
-import { WithdrawalFields } from "@/features/portfolio/projection/plan-section/withdrawal-fields";
+import { PremiseGroups } from "@/features/portfolio/projection/plan-section/premise-groups";
 import { errorText } from "@/api/problem";
-import { numberFormatter } from "@/i18n/format";
+import { formatDate, numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { FormNotice } from "@/ui/form-layout/form-notice";
 
@@ -31,6 +27,8 @@ interface PlanSectionProps {
   // The realized real return of the portfolio a year, a fraction; null under 12 months of history.
   annualReal: number | null;
   currency: string;
+  // PX23: the day the plan was first saved; absent before the first save.
+  since: string | undefined;
   // PX19: the withdrawals of the typed plan run already; its last age leaves no month.
   started: boolean;
   ended: boolean;
@@ -41,13 +39,15 @@ interface PlanSectionProps {
   onSave: () => void;
 }
 
-// PX2, PX3, PX17: the plan as a row of the goal and a row of the premises; every block below follows them as they are typed.
+// PX2, PX3, PX17: the goal on the line of the member's life and the premises under it; every
+// block below follows them as they are typed.
 export function PlanSection({
   fields,
   onChange,
   age,
   annualReal,
   currency,
+  since,
   started,
   ended,
   otherIncomes,
@@ -67,6 +67,13 @@ export function PlanSection({
       min: plain.format(limits[0]),
       max: plain.format(limits[1]),
     });
+  const lastAgeError =
+    range(ranges.lastAge) ??
+    (ended
+      ? t("portfolio.projection.plan.ageError", {
+          age: Math.max(age ?? 0, Number(fields.lastAge)),
+        })
+      : undefined);
 
   return (
     <Section
@@ -86,6 +93,14 @@ export function PlanSection({
         </SectionTitle>
 
         <SectionActions>
+          {since !== undefined && (
+            <span className={styles.planSaved}>
+              {t("portfolio.projection.plan.since", {
+                date: formatDate(since, locale),
+              })}
+            </span>
+          )}
+
           <Button
             variant="outline"
             tone="secondary"
@@ -99,64 +114,33 @@ export function PlanSection({
 
       <SectionBody>
         {error !== null && error !== undefined && (
-          <FormNotice>{errorText(error, t)}</FormNotice>
+          <FormNotice className={styles.planNotice}>
+            {errorText(error, t)}
+          </FormNotice>
         )}
 
-        <div className={styles.planRows}>
-          <div className={styles.planStrip}>
-            {age === null ? <BirthField /> : <AgeFact age={age} />}
+        <LifeLine
+          fields={fields}
+          onChange={onChange}
+          age={age}
+          currency={currency}
+          otherIncomes={otherIncomes}
+          started={started}
+          errors={{
+            withdrawalAge: range(ranges.withdrawalAge),
+            lastAge: lastAgeError,
+            rate: range(ranges.rate),
+          }}
+        />
 
-            <UnitField
-              label={t("portfolio.projection.plan.withdrawalAge")}
-              unit={t("portfolio.projection.plan.years")}
-              inputMode="numeric"
-              value={fields.withdrawalAge}
-              hint={
-                started ? t("portfolio.projection.plan.started") : undefined
-              }
-              error={range(ranges.withdrawalAge)}
-              onChange={(withdrawalAge) => {
-                onChange({ withdrawalAge });
-              }}
-            />
-
-            <WithdrawalFields
-              fields={fields}
-              currency={currency}
-              rateError={range(ranges.rate)}
-              otherIncomes={otherIncomes}
-              onChange={onChange}
-            />
-
-            <UnitField
-              label={t("portfolio.projection.plan.lastAge")}
-              unit={t("portfolio.projection.plan.years")}
-              inputMode="numeric"
-              value={fields.lastAge}
-              error={
-                range(ranges.lastAge) ??
-                (ended
-                  ? t("portfolio.projection.plan.ageError", {
-                      age: Math.max(age ?? 0, Number(fields.lastAge)),
-                    })
-                  : undefined)
-              }
-              onChange={(lastAge) => {
-                onChange({ lastAge });
-              }}
-            />
-          </div>
-
-          <PremiseFields
-            fields={fields}
-            ranges={ranges}
-            range={range}
-            annualReal={annualReal}
-            onChange={onChange}
-          />
-
-          <ReferencesLine currency={currency} />
-        </div>
+        <PremiseGroups
+          fields={fields}
+          ranges={ranges}
+          range={range}
+          annualReal={annualReal}
+          currency={currency}
+          onChange={onChange}
+        />
       </SectionBody>
     </Section>
   );

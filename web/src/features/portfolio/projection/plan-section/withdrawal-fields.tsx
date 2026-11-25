@@ -1,12 +1,11 @@
-import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
 import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
 
 import type {
   PlanFields,
   WithdrawalMode,
 } from "@/features/portfolio/projection/model/plan-fields";
-import styles from "@/features/portfolio/projection/plan-section/plan.module.css";
-import { UnitField } from "@/features/portfolio/projection/plan-section/unit-field";
+import { LifeField } from "@/features/portfolio/projection/plan-section/life-field";
+import { UnitInput } from "@/features/portfolio/projection/plan-section/unit-input";
 import { useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { MoneyInput } from "@/ui/money/money-input";
@@ -21,7 +20,7 @@ interface WithdrawalFieldsProps {
   onChange: (patch: Partial<PlanFields>) => void;
 }
 
-// PX2: the withdrawal mode and its figure, an income in the plan currency or a rate a year.
+// PX2, PX17: the withdrawal mode and its figure, an income in the plan currency or a rate a year.
 export function WithdrawalFields({
   fields,
   currency,
@@ -39,9 +38,10 @@ export function WithdrawalFields({
 
   return (
     <>
-      <Field necessity="none" className={styles.planMode}>
-        <FieldLabel>{t("portfolio.projection.plan.withdrawal")}</FieldLabel>
-
+      <LifeField
+        label={t("portfolio.projection.plan.withdrawal")}
+        help={t("portfolio.projection.plan.modeHelp")}
+      >
         <SegmentedControl
           fullWidth
           aria-label={t("portfolio.projection.plan.withdrawal")}
@@ -55,12 +55,17 @@ export function WithdrawalFields({
             {t("portfolio.projection.plan.modeRate")}
           </Segment>
         </SegmentedControl>
-      </Field>
+      </LifeField>
 
       {fields.mode === "income" && (
-        <Field necessity="none" width="medium" className={styles.planField}>
-          <FieldLabel>{t("portfolio.projection.plan.income")}</FieldLabel>
-
+        <LifeField
+          label={t("portfolio.projection.plan.income")}
+          note={
+            otherIncomes
+              ? t("portfolio.projection.plan.incomeTotal")
+              : t("portfolio.projection.plan.incomeHint")
+          }
+        >
           <MoneyInput
             size="field"
             value={fields.income}
@@ -71,27 +76,24 @@ export function WithdrawalFields({
             scale={scale?.(currency) ?? 0}
             sign="neutral"
           />
-
-          <FieldDescription>
-            {otherIncomes
-              ? t("portfolio.projection.plan.incomeTotal")
-              : t("portfolio.projection.plan.incomeHint")}
-          </FieldDescription>
-        </Field>
+        </LifeField>
       )}
 
       {fields.mode === "rate" && (
-        <UnitField
+        <LifeField
           label={t("portfolio.projection.plan.rate")}
-          unit={t("portfolio.projection.plan.perYear")}
-          inputMode="decimal"
-          value={fields.rate}
-          hint={t("portfolio.projection.plan.rateHint")}
+          note={t("portfolio.projection.plan.rateHint")}
           error={rateError}
-          onChange={(rate) => {
-            onChange({ rate });
-          }}
-        />
+        >
+          <UnitInput
+            unit={t("portfolio.projection.plan.perYear")}
+            inputMode="decimal"
+            value={fields.rate}
+            onChange={(rate) => {
+              onChange({ rate });
+            }}
+          />
+        </LifeField>
       )}
     </>
   );

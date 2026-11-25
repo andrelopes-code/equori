@@ -43,6 +43,7 @@ export function ProjectionBody({ projection: p }: ProjectionBodyProps) {
         age={p.age}
         annualReal={p.annualReal}
         currency={p.currency ?? ""}
+        since={p.baseline?.date}
         started={p.started}
         otherIncomes={p.otherIncomes}
         ended={p.ended}

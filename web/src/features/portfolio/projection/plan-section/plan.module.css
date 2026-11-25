@@ -1,41 +1,369 @@
 @layer app {
-  /* The goal, the premises and the references of the plan */
-  .planRows {
-    display: grid;
-    gap: var(--slotted-space-5);
-  }
-
-  .planStrip {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    gap: var(--slotted-space-5) var(--slotted-space-6);
-  }
-
+  /* A number field of the other incomes dialog: four digits and its unit */
   .planField {
-    inline-size: 8.5rem; /* literal: a field of four digits and its unit; seven fields share one line at 1440 px */
+    inline-size: 8.5rem; /* literal: a field of four digits and its unit */
   }
 
-  .planField[data-width="medium"] {
-    inline-size: 12rem; /* literal: a money field of seven digits */
+  /* The goal on the line of the member's life: today, the start and the end of the withdrawals */
+  .life {
+    display: grid;
+    grid-template-columns: 10rem minmax(0, 1fr) 9rem; /* literal: today, the withdrawals, the last age */
+    padding-block-end: var(--slotted-space-8);
+    border-block-end: 1px solid var(--slotted-border-subtle);
   }
 
-  /* The mode is a field like its neighbours: same label, same control height */
-  .planMode {
+  /* Without a birth date the first stop holds the date picker */
+  .lifeAsk {
+    grid-template-columns: 11rem minmax(0, 1fr) 9rem; /* literal: the date picker's own width */
+  }
+
+  .lifeStop {
+    display: grid;
+    grid-template-rows: 2rem auto; /* literal: the line with its caption above */
+    row-gap: var(--slotted-space-6);
+    min-inline-size: 0;
+  }
+
+  .lifeHead {
+    display: flex;
+    align-items: end;
+  }
+
+  .lifeDot {
     flex: none;
-    inline-size: 17rem; /* literal: two segments of the longest label, "Renda por mês", untruncated */
+    box-sizing: border-box;
+    inline-size: 12px; /* literal: a whole-pixel circle at any root */
+    block-size: 12px; /* literal: same */
+    border: 3px solid var(--slotted-data-1); /* literal: the stroke of the plan line in the journey */
+    border-radius: var(--slotted-radius-full);
   }
 
-  /* The age is a field without a control: the label and the hint are the field's own */
-  .planFact {
-    flex: none;
-    inline-size: 8rem; /* literal: the birth hint on one line */
+  .lifeLine {
+    position: relative;
+    flex: 1;
+    block-size: 3px; /* literal: the stroke of the plan line in the journey */
+    margin-block-end: 4.5px; /* literal: centres the 3 px line on the 12 px dot */
+  }
+
+  .lifeLineBefore {
+    background: var(--slotted-data-1);
+  }
+
+  .lifeLineAfter {
+    background: repeating-linear-gradient(
+      90deg,
+      var(--slotted-data-1) 0 6px,
+      transparent 6px 10px
+    ); /* literal: the dash of the projection */
+  }
+
+  .lifeSpan {
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: var(--slotted-space-4);
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+    line-height: var(--slotted-line-height-xs);
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .lifeControls {
+    display: grid;
+    grid-template-columns: 9rem 10rem 11rem; /* literal: the age, the two segments, an income of seven digits */
+    column-gap: var(--slotted-space-6);
+  }
+
+  /* A field of the line: label, control and note on three fixed lines */
+  .lifeField,
+  .lifeFact {
+    display: grid;
+    grid-template-rows: auto 2.4286rem auto; /* literal: 34 px, the control height */
+    row-gap: var(--slotted-space-3);
+    align-content: start;
+    min-inline-size: 0;
+    margin: 0;
+  }
+
+  .lifeLabel {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-2);
+    margin: 0;
+    color: var(--slotted-text);
+    font-size: var(--slotted-control-font-size-md);
+    font-weight: var(--slotted-font-weight-medium);
+    line-height: var(--slotted-line-height-sm);
+    white-space: nowrap;
+  }
+
+  .lifeAge {
+    margin: 0;
+    font-size: var(--slotted-font-size-lg);
+    font-weight: var(--slotted-font-weight-semibold);
+    line-height: 2.4286rem; /* literal: 34 px, the control height, so the age shares the line of the fields */
+  }
+
+  .lifeNote {
+    min-block-size: calc(
+      var(--slotted-font-size-xs) * var(--slotted-line-height-xs)
+    );
+  }
+
+  /* The premises and the references side by side, one rule between them */
+  .planGroups {
+    display: grid;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    padding-block-start: var(--slotted-space-8);
+  }
+
+  .planGroup {
+    display: grid;
+    align-content: start;
+    min-inline-size: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .planGroup + .planGroup {
+    margin-inline-start: var(--slotted-space-8);
+    padding-inline-start: var(--slotted-space-8);
+    border-inline-start: 1px solid var(--slotted-border-subtle);
+  }
+
+  .planGroupLegend {
+    float: inline-start; /* keeps the legend in the flow of the group's grid */
+    inline-size: 100%;
+    margin: 0;
+    padding: 0;
+    color: var(--slotted-text);
+    font-size: var(--slotted-font-size-md);
+    font-weight: var(--slotted-font-weight-semibold);
+    line-height: var(--slotted-line-height-sm);
+  }
+
+  .planGroupDescription {
+    margin: var(--slotted-space-1) 0 var(--slotted-space-3);
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+    line-height: var(--slotted-line-height-xs);
+    white-space: nowrap;
+  }
+
+  .planGroupRows {
+    display: grid;
+  }
+
+  /* One answer per row: label and note at the start, the control at the end */
+  .planRow {
+    grid-template-columns: minmax(0, 1fr) 9rem; /* literal: four digits and "% a.a." */
+    grid-template-areas: "label control" "hint control";
+    grid-template-rows: auto auto;
+    align-content: center;
+    align-items: center;
+    column-gap: var(--slotted-space-6);
+    row-gap: var(--slotted-space-1);
+    block-size: 4rem; /* literal: 56 px, a 34 px control with 11 px above and below */
+    border-block-end: 1px solid var(--slotted-border-subtle);
+  }
+
+  .planRow:last-child,
+  .planRowPending:last-child {
+    border-block-end-color: transparent;
+  }
+
+  .planRowLabel {
+    grid-area: label;
+    min-inline-size: 0;
+    white-space: nowrap;
+  }
+
+  .planRowControl {
+    grid-area: control;
+  }
+
+  .planRow > .planHint,
+  .planRow > .planError {
+    grid-area: hint;
+  }
+
+  .planHint {
+    margin: 0;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+    line-height: var(--slotted-line-height-xs);
+    white-space: nowrap;
+  }
+
+  .planError {
+    margin: 0;
+    font-size: var(--slotted-font-size-xs);
+    line-height: var(--slotted-line-height-xs);
+    white-space: nowrap;
+  }
+
+  .planRowPending {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 9rem; /* literal: the control column of .planRow */
+    align-items: center;
+    column-gap: var(--slotted-space-6);
+    block-size: 4rem; /* literal: the row height of .planRow */
+    border-block-end: 1px solid var(--slotted-border-subtle);
+    font-size: var(--slotted-control-font-size-md);
+    font-weight: var(--slotted-font-weight-medium);
+  }
+
+  .planPending {
+    display: block;
+    inline-size: 100%;
+    block-size: 2.4286rem; /* literal: 34 px, the control height */
+    border-radius: var(--slotted-radius-sm);
+    background: var(--slotted-surface-sunken);
+  }
+
+  .planSaved {
+    align-self: center;
+    margin-inline-end: var(--slotted-space-5);
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+  }
+
+  .planNotice {
+    margin-block-end: var(--slotted-space-8);
+  }
+
+  /* The plan's range of real returns against the stored rate and the realized one, one row per field row */
+  .scaleRow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "name value" "track track";
+    align-content: center;
+    row-gap: var(--slotted-space-3);
+    column-gap: var(--slotted-space-5);
+    block-size: 4rem; /* literal: the row height of .planRow, so each bar faces a field */
+  }
+
+  .scaleRow > .planFactLabel {
+    grid-area: name;
+  }
+
+  .scaleRow > .planFactValue {
+    grid-area: value;
+  }
+
+  .scaleRow > .scaleTrack,
+  .scaleRow > .scaleTicks {
+    grid-area: track;
+  }
+
+  .scaleAxis {
+    block-size: auto;
+    margin-inline: var(
+      --slotted-space-4
+    ); /* the first and last tick stay inside the column */
+  }
+
+  .planFactLabel {
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-sm);
     white-space: nowrap;
   }
 
   .planFactValue {
-    font-size: var(--slotted-font-size-lg);
-    font-weight: var(--slotted-font-weight-semibold);
-    line-height: 2rem; /* literal: the height of a field control, so the age and the fields share a line */
+    color: var(--slotted-text);
+    font-size: var(--slotted-font-size-sm);
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+    white-space: nowrap;
+  }
+
+  .scaleTrack {
+    position: relative;
+    block-size: 8px; /* literal: the bar thickness */
+    border-radius: var(--slotted-radius-full);
+    background: var(--slotted-surface-sunken);
+  }
+
+  .scaleRange,
+  .scaleBar {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: calc(var(--from, 0) * 100%);
+    inline-size: calc((var(--to, 0) - var(--from, 0)) * 100%);
+    border-radius: var(--slotted-radius-full);
+  }
+
+  .scaleRange {
+    background: color-mix(in oklab, var(--slotted-data-1) 40%, transparent);
+  }
+
+  .scaleBar {
+    background: var(--slotted-border-strong);
+  }
+
+  .scaleDot {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: calc(var(--at, 0) * 100%);
+    box-sizing: border-box;
+    inline-size: 16px; /* literal: a whole-pixel circle at any root */
+    block-size: 16px; /* literal: same */
+    border: 3px solid var(--slotted-surface-raised); /* literal: separates the dot from the range */
+    border-radius: var(--slotted-radius-full);
+    background: var(--slotted-data-1);
+    translate: -50% -50%;
+  }
+
+  .scaleTicks {
+    position: relative;
+    block-size: calc(
+      var(--slotted-font-size-xs) * var(--slotted-line-height-xs)
+    );
+  }
+
+  .scaleTick {
+    position: absolute;
+    inset-inline-start: calc(var(--at, 0) * 100%);
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+    line-height: var(--slotted-line-height-xs);
+    font-variant-numeric: tabular-nums;
+    translate: -50% 0;
+  }
+
+  /* Below 62rem of the page the references take their own line */
+  @container slotted-page (width < 62rem) {
+    .life {
+      grid-template-columns: 6rem minmax(0, 1fr) 7.5rem; /* literal: narrower stops */
+    }
+
+    .lifeAsk {
+      grid-template-columns: 9.5rem minmax(0, 1fr) 7.5rem; /* literal: the date picker, narrower */
+    }
+
+    .lifeControls {
+      grid-template-columns: 8.5rem 9rem minmax(0, 1fr); /* literal: same three, narrower */
+      column-gap: var(--slotted-space-5);
+    }
+
+    .planGroups {
+      grid-auto-flow: row;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .planScale {
+      grid-column: 1 / -1;
+      margin-block-start: var(--slotted-space-8);
+      padding-block-start: var(--slotted-space-8);
+      border-block-start: 1px solid var(--slotted-border-subtle);
+    }
+
+    .planGroup + .planScale {
+      margin-inline-start: 0;
+      padding-inline-start: 0;
+      border-inline-start: 0;
+    }
   }
 }

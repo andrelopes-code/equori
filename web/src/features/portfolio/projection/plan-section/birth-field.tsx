@@ -1,6 +1,4 @@
-import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
-
-import styles from "@/features/portfolio/projection/plan-section/plan.module.css";
+import { LifeField } from "@/features/portfolio/projection/plan-section/life-field";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useSetBirthDate } from "@/features/session";
@@ -17,9 +15,10 @@ export function BirthField() {
   }
 
   return (
-    <Field necessity="none" className={styles.planField}>
-      <FieldLabel>{t("portfolio.projection.plan.birth")}</FieldLabel>
-
+    <LifeField
+      label={t("portfolio.projection.plan.birth")}
+      note={t("portfolio.projection.plan.birthHint")}
+    >
       <DateInput
         name="birth_date"
         value={save.variables ?? ""}
@@ -28,10 +27,6 @@ export function BirthField() {
         min="1900-01-01"
         max={today}
       />
-
-      <FieldDescription>
-        {t("portfolio.projection.plan.birthHint")}
-      </FieldDescription>
-    </Field>
+    </LifeField>
   );
 }

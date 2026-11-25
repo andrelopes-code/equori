@@ -1,4 +1,3 @@
-import { Field, FieldLabel } from "@slotted/react/field";
 import {
   Section,
   SectionBody,
@@ -7,27 +6,12 @@ import {
   SectionTitle,
 } from "@slotted/react/section";
 
+import { LifeHead } from "@/features/portfolio/projection/plan-section/life-head";
+import { PlanGroup } from "@/features/portfolio/projection/plan-section/plan-group";
 import styles from "@/features/portfolio/projection/plan-section/plan.module.css";
-import { PendingValue } from "@/features/portfolio/results/states/pending-value";
-import type { MessageKey } from "@/i18n/catalog.en";
+import { PendingRow } from "@/features/portfolio/projection/states/pending-row";
+import { PendingStop } from "@/features/portfolio/projection/states/pending-stop";
 import { useT } from "@/i18n/i18n-provider";
-
-const labels: readonly MessageKey[] = [
-  "portfolio.projection.plan.age",
-  "portfolio.projection.plan.withdrawalAge",
-  "portfolio.projection.plan.withdrawal",
-  "portfolio.projection.plan.income",
-  "portfolio.projection.plan.lastAge",
-];
-
-const premiseLabels: readonly MessageKey[] = [
-  "portfolio.projection.plan.realReturn",
-  "portfolio.projection.plan.cautious",
-  "portfolio.projection.plan.favorable",
-  "portfolio.projection.plan.withdrawalReturn",
-  "portfolio.projection.plan.inflation",
-  "portfolio.projection.plan.gainTax",
-];
 
 // PX11: the plan section while its reads are pending; every static text stays, values wait.
 export function ProjectionPending() {
@@ -50,20 +34,50 @@ export function ProjectionPending() {
       </SectionHeader>
 
       <SectionBody>
-        <div className={styles.planRows}>
-          {[labels, premiseLabels].map((row) => (
-            <div key={row[0]} className={styles.planStrip}>
-              {row.map((label) => (
-                <Field key={label} necessity="none" className={styles.planFact}>
-                  <FieldLabel>{t(label)}</FieldLabel>
+        <div className={styles.life}>
+          <div className={styles.lifeStop}>
+            <LifeHead line="before" />
+            <PendingStop label={t("portfolio.projection.plan.today")} />
+          </div>
 
-                  <span className={styles.planFactValue}>
-                    <PendingValue ch={8} />
-                  </span>
-                </Field>
-              ))}
+          <div className={styles.lifeStop}>
+            <LifeHead line="after" />
+
+            <div className={styles.lifeControls}>
+              <PendingStop
+                label={t("portfolio.projection.plan.withdrawalAge")}
+              />
+              <PendingStop label={t("portfolio.projection.plan.withdrawal")} />
+              <PendingStop label={t("portfolio.projection.plan.income")} />
             </div>
-          ))}
+          </div>
+
+          <div className={styles.lifeStop}>
+            <LifeHead line={null} />
+            <PendingStop label={t("portfolio.projection.plan.lastAge")} />
+          </div>
+        </div>
+
+        <div className={styles.planGroups}>
+          <PlanGroup
+            legend={t("portfolio.projection.plan.returns")}
+            description={t("portfolio.projection.plan.returnsDescription")}
+          >
+            <PendingRow label={t("portfolio.projection.plan.realReturn")} />
+            <PendingRow label={t("portfolio.projection.plan.cautious")} />
+            <PendingRow label={t("portfolio.projection.plan.favorable")} />
+          </PlanGroup>
+
+          <PlanGroup
+            legend={t("portfolio.projection.plan.costs")}
+            description={t("portfolio.projection.plan.costsDescription")}
+          >
+            <PendingRow
+              label={t("portfolio.projection.plan.withdrawalReturn")}
+            />
+            <PendingRow label={t("portfolio.projection.plan.inflation")} />
+            <PendingRow label={t("portfolio.projection.plan.gainTax")} />
+          </PlanGroup>
         </div>
       </SectionBody>
     </Section>
