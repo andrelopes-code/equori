@@ -61,12 +61,18 @@ export function JourneyVerdict({
         <strong>{money.compact(figures.atWithdrawal)}</strong>
         {figures.sustains === null &&
           t("portfolio.projection.journey.verdict.todayEnd")}
-        {figures.sustains !== null && (
+        {figures.sustains !== null && figures.covered === null && (
+          <>
+            {t("portfolio.projection.journey.verdict.todayEnd")}
+            {t("portfolio.projection.journey.verdict.covered", vars)}
+          </>
+        )}
+        {figures.covered !== null && (
           <>
             {t("portfolio.projection.journey.verdict.today")}
             <Toned value={tone}>
               {t("portfolio.projection.journey.verdict.share", {
-                share: percent.format(wholeShare(figures.covered ?? 0)),
+                share: percent.format(wholeShare(figures.covered)),
               })}
             </Toned>
             {sustains

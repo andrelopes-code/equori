@@ -192,6 +192,7 @@ describe("Portfolio projection page", () => {
           inflation_bp: 450,
           withdrawal: { mode: "income", income: 500000 },
           changes: projectionPlan.changes,
+          incomes: [],
         },
       ]);
     });

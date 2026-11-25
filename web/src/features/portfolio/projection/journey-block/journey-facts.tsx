@@ -64,6 +64,16 @@ export function JourneyFacts({ figures, currency, scale }: JourneyFactsProps) {
           <Toned value={figures.sustained - income}>{sustained}</Toned>
         )}
       </FactRow>
+
+      {income !== null && figures.without !== null && (
+        <FactRow label={t("portfolio.projection.journey.facts.without")}>
+          <Toned value={figures.without.sustained - income}>
+            {t("portfolio.projection.journey.facts.perMonth", {
+              amount: money.exact(figures.without.sustained),
+            })}
+          </Toned>
+        </FactRow>
+      )}
     </dl>
   );
 }

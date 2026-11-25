@@ -44,6 +44,7 @@ export function ProjectionBody({ projection: p }: ProjectionBodyProps) {
         annualReal={p.annualReal}
         currency={p.currency ?? ""}
         started={p.started}
+        otherIncomes={p.otherIncomes}
         ended={p.ended}
         canSave={p.draft !== null}
         saving={p.save.pending}
@@ -61,6 +62,7 @@ export function ProjectionBody({ projection: p }: ProjectionBodyProps) {
           baseline={p.baseline}
           annualReal={p.annualReal}
           onChanges={p.setChanges}
+          onIncomes={p.setIncomes}
         />
       )}
     </>

@@ -16,6 +16,8 @@ interface WithdrawalFieldsProps {
   currency: string;
   // The range the typed rate left, written under its field.
   rateError: string | undefined;
+  // PX2: with other incomes on the list the income is the total.
+  otherIncomes: boolean;
   onChange: (patch: Partial<PlanFields>) => void;
 }
 
@@ -24,6 +26,7 @@ export function WithdrawalFields({
   fields,
   currency,
   rateError,
+  otherIncomes,
   onChange,
 }: WithdrawalFieldsProps) {
   const t = useT();
@@ -70,7 +73,9 @@ export function WithdrawalFields({
           />
 
           <FieldDescription>
-            {t("portfolio.projection.plan.incomeHint")}
+            {otherIncomes
+              ? t("portfolio.projection.plan.incomeTotal")
+              : t("portfolio.projection.plan.incomeHint")}
           </FieldDescription>
         </Field>
       )}

@@ -34,6 +34,7 @@ interface PlanSectionProps {
   // PX19: the withdrawals of the typed plan run already; its last age leaves no month.
   started: boolean;
   ended: boolean;
+  otherIncomes: boolean;
   canSave: boolean;
   saving: boolean;
   error: unknown;
@@ -49,6 +50,7 @@ export function PlanSection({
   currency,
   started,
   ended,
+  otherIncomes,
   canSave,
   saving,
   error,
@@ -122,6 +124,7 @@ export function PlanSection({
               fields={fields}
               currency={currency}
               rateError={range(ranges.rate)}
+              otherIncomes={otherIncomes}
               onChange={onChange}
             />
 

@@ -323,6 +323,7 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.projection.plan.modeRate": "Taxa ao ano",
   "portfolio.projection.plan.income": "Renda desejada",
   "portfolio.projection.plan.incomeHint": "Líquida de outras rendas.",
+  "portfolio.projection.plan.incomeTotal": "Total, com outras rendas.",
   "portfolio.projection.plan.rate": "Taxa de retirada",
   "portfolio.projection.plan.rateHint": "Do patrimônio.",
   "portfolio.projection.plan.rangeError": "De {min} a {max}",
@@ -358,6 +359,7 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.projection.cases.col.lasts": "Renda",
   "portfolio.projection.cases.lasts": "dura até os {age}",
   "portfolio.projection.cases.ends": "acaba aos {age}",
+  "portfolio.projection.cases.covered": "coberto",
   "portfolio.projection.empty.title": "Nenhuma projeção salva",
   "portfolio.projection.empty.description":
     "Informe a idade das retiradas, a renda desejada e os aportes pretendidos.",
@@ -403,6 +405,8 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
     " para {income} por mês até os {last}.",
   "portfolio.projection.journey.verdict.lasts":
     ". A renda de {income} por mês dura até os {end} anos, não até os {last}.",
+  "portfolio.projection.journey.verdict.covered":
+    " As outras rendas cobrem {income} por mês até os {last}.",
   "portfolio.projection.journey.path.label": "Onde você está",
   "portfolio.projection.journey.path.value": "{share} do caminho",
   "portfolio.projection.journey.path.today": "{amount} hoje",
@@ -417,7 +421,38 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.projection.journey.facts.needed": "Necessário aos {age}",
   "portfolio.projection.journey.facts.needed.today": "Necessário hoje",
   "portfolio.projection.journey.facts.sustained": "Renda que o plano sustenta",
+  "portfolio.projection.journey.facts.without": "Sem outras rendas",
   "portfolio.projection.journey.facts.perMonth": "{amount} por mês",
+  "portfolio.projection.incomes": "Outras rendas",
+  "portfolio.projection.incomes.description.income":
+    "Em dinheiro de hoje, nas retiradas. O que passa da renda desejada não é reinvestido.",
+  "portfolio.projection.incomes.description.rate":
+    "Em dinheiro de hoje. Somam à renda e não mudam as retiradas da carteira.",
+  "portfolio.projection.incomes.add": "Adicionar renda",
+  "portfolio.projection.incomes.add.full": "Um plano aceita até 20 rendas.",
+  "portfolio.projection.incomes.edit.named": "Alterar {name}",
+  "portfolio.projection.incomes.row.from": "a partir dos {from}",
+  "portfolio.projection.incomes.row.range": "dos {from} aos {to}",
+  "portfolio.projection.incomes.dialog": "Outra renda",
+  "portfolio.projection.incomes.dialog.description":
+    "Uma renda que não vem da carteira, como aposentadoria ou aluguel.",
+  "portfolio.projection.incomes.field.name": "Nome",
+  "portfolio.projection.incomes.field.amount": "Valor por mês",
+  "portfolio.projection.incomes.field.amountHint":
+    "Líquido, em dinheiro de hoje.",
+  "portfolio.projection.incomes.field.start": "A partir dos",
+  "portfolio.projection.incomes.field.end": "Até os",
+  "portfolio.projection.incomes.field.endHint": "Vazio: não acaba.",
+  "portfolio.projection.incomes.error.name": "Informe o nome.",
+  "portfolio.projection.incomes.error.amount":
+    "Informe um valor acima de zero.",
+  "portfolio.projection.incomes.remove": "Remover renda",
+  "portfolio.projection.incomes.with": "Com outras rendas",
+  "portfolio.projection.incomes.without": "Sem outras rendas",
+  "portfolio.projection.incomes.col.plan": "Plano",
+  "portfolio.projection.incomes.col.needed": "Necessário",
+  "portfolio.projection.incomes.col.ages": "Idade",
+  "portfolio.projection.incomes.col.total": "Renda total",
   "portfolio.projection.versus": "Plano contra realizado",
   "portfolio.projection.versus.description":
     "Aportes registrados à taxa do plano até {month}, o plano depois. Valores nominais.",

@@ -1,0 +1,82 @@
+@layer app {
+  .body {
+    display: grid;
+    gap: var(--slotted-space-5);
+  }
+
+  /* One row per income; the rows share the columns of the list */
+  .list {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto auto;
+    column-gap: var(--slotted-space-6);
+    max-block-size: 15rem; /* literal: five rows; a longer list scrolls here and the add button stays in place */
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    list-style: none;
+    border-block-start: 1px solid var(--slotted-border-subtle);
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: subgrid;
+    grid-column: 1 / -1;
+    align-items: center;
+    block-size: 3rem; /* literal: a row that holds a small button with its focus ring */
+    border-block-end: 1px solid var(--slotted-border-subtle);
+    font-size: var(--slotted-font-size-sm);
+    white-space: nowrap;
+  }
+
+  .name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .when {
+    color: var(--slotted-text-muted);
+  }
+
+  .amount {
+    font-weight: var(--slotted-font-weight-medium);
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+  }
+
+  .reason {
+    margin: var(--slotted-space-2) 0 0;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-sm);
+  }
+
+  .scroll {
+    min-inline-size: 0;
+    overflow-x: auto;
+  }
+
+  /* The dialog of one income */
+  .form {
+    display: grid;
+    gap: var(--slotted-space-5);
+  }
+
+  .ages {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--slotted-space-5) var(--slotted-space-6);
+  }
+
+  .foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--slotted-space-3);
+    inline-size: 100%;
+  }
+
+  .footEnd {
+    display: flex;
+    gap: var(--slotted-space-3);
+  }
+}

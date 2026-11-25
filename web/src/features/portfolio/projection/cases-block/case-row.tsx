@@ -1,10 +1,10 @@
 import type { CaseRowData } from "@/features/portfolio/projection/cases-block/case-rows";
 import styles from "@/features/portfolio/projection/cases-block/cases-block.module.css";
+import { LastsText } from "@/features/portfolio/projection/cases-block/lasts-text";
+import { ShareText } from "@/features/portfolio/projection/cases-block/share-text";
 import { useJourneyMoney } from "@/features/portfolio/projection/journey-block/use-journey-money";
-import { wholeShare } from "@/features/portfolio/projection/model/whole-share";
-import { formatBasisPoints, numberFormatter } from "@/i18n/format";
+import { formatBasisPoints } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { Toned } from "@/ui/money/toned";
 
 interface CaseRowProps {
   row: CaseRowData;
@@ -18,15 +18,6 @@ export function CaseRow({ row, lastAge, currency, scale }: CaseRowProps) {
   const t = useT();
   const [tag] = useAppLocale();
   const money = useJourneyMoney(currency, scale);
-
-  const percent = numberFormatter(tag, {
-    style: "percent",
-    maximumFractionDigits: 0,
-  });
-  const lasts =
-    row.endAge === null
-      ? t("portfolio.projection.cases.lasts", { age: lastAge })
-      : t("portfolio.projection.cases.ends", { age: row.endAge });
 
   return (
     <tr className={row.kind === "plan" ? styles.planRow : undefined}>
@@ -42,8 +33,10 @@ export function CaseRow({ row, lastAge, currency, scale }: CaseRowProps) {
 
       <td>{money.exact(row.atWithdrawal)}</td>
 
-      {row.covered !== null && (
-        <td>{percent.format(wholeShare(row.covered))}</td>
+      {row.sustains !== null && (
+        <td>
+          <ShareText covered={row.covered} />
+        </td>
       )}
 
       <td>
@@ -54,7 +47,7 @@ export function CaseRow({ row, lastAge, currency, scale }: CaseRowProps) {
 
       {row.sustains !== null && (
         <td>
-          <Toned value={row.sustains ? 1 : -1}>{lasts}</Toned>
+          <LastsText figures={row} lastAge={lastAge} />
         </td>
       )}
     </tr>

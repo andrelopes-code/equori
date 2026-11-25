@@ -198,6 +198,6 @@ function withdrawalFrom(
     : null;
 }
 
-function parseAge(text: string): number | null {
+export function parseAge(text: string): number | null {
   return /^\d{1,3}$/.test(text.trim()) ? Number(text) : null;
 }

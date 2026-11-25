@@ -152,6 +152,7 @@ export function useProjection() {
     baseline: plan?.baseline,
     started,
     ended,
+    otherIncomes: incomes.length > 0,
     save: { run: saveDraft, pending: save.isPending, error: save.error },
     remove: { run: removePlan, pending: remove.isPending },
     build: () => {
