@@ -15,7 +15,7 @@ The owner wants to plan the building of wealth with the real portfolio as the st
 
 ## Non-goals
 
-- Scenarios beside the plan, taxes on withdrawals, more than one plan per member, the assistant reading the plan.
+- More than one plan per member, the assistant reading the plan. Scenarios and the tax on withdrawals, excluded on 2026-11-24, entered by Amendment 1.
 - A phone form (ADR 027).
 
 ## Anti-goals
@@ -99,3 +99,28 @@ Each is a pure function with a test of hand-computed values: the monthly project
 ## Left to the builder
 
 File names under `web/src/features/portfolio/projection/`, the reuse of `features/calculators/compound-calculator/simulation.ts` where its contract fits PX4, the chart options.
+
+## Amendment 1: premises and scenarios (owner, 2026-11-25)
+
+The owner asked for a positive and a negative scenario and for a more realistic plan. One expected return hides that the return decides the result: the same plan covers 290% of the amount needed at 7% a year and 66% at 3%.
+
+| Approach | Trade-off | Choice |
+|---|---|---|
+| Two typed returns beside the plan's, each projected like the plan | One reading of the range per typed premise; no probability | Chosen |
+| One spread above and below the plan's return | One field; forces a symmetric range around a premise that can be optimistic | Rejected |
+| Simulation of random paths | Asks for a volatility and a correlation per class; the mean return is the larger uncertainty | Rejected |
+
+| ID | Rule |
+|---|---|
+| PJ7 | A plan also holds four optional values, in basis points: the real return during the withdrawals (−1000 to 3000), the cautious real return (−1000 to 3000, below the plan's real return), the favorable real return (−1000 to 3000, above it) and the tax on the gain (1 to 5000). A value left out of a save is absent from the plan. Out of range or order is `422 projection_invalid`. No value is suggested. |
+| PX13 | In today's money the recorded past is corrected: a recorded value or flow is multiplied by the growth of the inflation index of the series (`period: month`) from its date to the last point of the index; a date after the last point is not corrected. It applies to the plot of the journey in "Dinheiro de hoje", to the money contributed and the return of its side, and to the money contributed of PX10. The nominal view keeps the recorded amounts. Without an inflation index in the plan's currency the past stays nominal and the description says so. |
+| PX7 | Amended: after the baseline month the plan line adds the contribution in force times the inflation compounded since the month of its change, or since the baseline month when the change is older. A contribution is today's money, so the plan raises it with prices. |
+| PX4 | Amended: from the withdrawal month on the projection grows at the real return during the withdrawals; absent, at the plan's real return. PX5 uses the same return. |
+| PX14 | With a tax, a withdrawal takes out the gross amount whose net is the income. The taxed part is the gain share of the value, `1 − basis / value` and never below zero; the basis is the money contributed (nominal), it falls with inflation each month in today's money, rises with each contribution and falls in the proportion each withdrawal takes of the value. `gross = income / (1 − tax × gain share)`. The withdrawals of PX10 are gross. The amount needed is the smallest value at the withdrawal age, at the plan's gain share there, that sustains the income to the last age. In rate mode the rate gives the gross of the first withdrawal, and the net of that withdrawal is the income, constant in today's money. |
+| PX15 | Each typed scenario projects the plan with its return in place of the plan's, and during the withdrawals with the same difference: plan's withdrawal return + scenario return − plan return. The journey plots it as a dashed line in its tone (danger the cautious, success the favorable) from today, named in the key. |
+| PX16 | The block "Cenários", below the journey and drawn only with a typed scenario, is a table of one line per case (cautious, plan, favorable): the return, the value at the withdrawal age, the share of the amount needed (income mode), the income sustained and the age it lasts to, in today's money. |
+| PX17 | The plan section holds two rows: the goal (age, withdrawals at, until, withdrawal, income or rate) and the premises (real return, cautious, favorable, during the withdrawals, inflation, tax on the gain). Under the premises one line names what is stored and can be compared: the longest point of the first real curve in the plan's currency and the last point of the expectation of that curve's index. It fills no field; without a curve or a survey the part is absent. |
+
+Cross-cutting answers of the amendment: R1 no regional value, the tax is typed, the references come from the curve sources and expectation sources of `docs/contributing/regions.md`; R2 without a source or an index the reference or the correction is absent, stated by PX13; R3 and R4 none; R5 catalog keys `portfolio.projection.*`; R6 through `src/i18n/format.ts`; C1 basis points and minor units, floating point on the client only; C2 the curve and the index are used only in the plan's currency; C3, C4, T1, T2 unchanged; B1 no table; B2 and B3 unchanged; D1 the archive exports the plan by column, no format change; D2 one migration with four nullable columns; D3 to D5 do not apply; S1 no operation; S2 no; S3 the guide article and the help article change with the screen; S4 no; X1 S719; X2 S717 covers a plan in USD, and PX13 without an index has a client test.
+
+Left for a later amendment: other incomes with a start age, one-off events, a fall at the start of the withdrawals.
