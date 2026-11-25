@@ -92,3 +92,22 @@
     --equori-slot-8: #db703b;
   }
 }
+
+/* Workaround for Slotted issue #198: the box of a chart tooltip stops at 18rem while its values keep
+   one line, so a wide value crosses the edge. The box takes the width of its rows up to the plot, and
+   the prose in it wraps at 18rem. */
+@layer app {
+  [data-ui-chart] [data-part-tooltip] {
+    max-inline-size: 100%;
+  }
+
+  [data-ui-chart]
+    [data-part-tooltip]
+    > :is(
+      [data-part-tooltip-title],
+      [data-part-tooltip-note],
+      :not([data-part^="tooltip-"])
+    ) {
+    max-inline-size: 18rem;
+  }
+}
