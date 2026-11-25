@@ -192,6 +192,19 @@ test("a popover, such as the calendar of a date field, keeps the height its cont
   );
 });
 
+// Workaround for Slotted issue #201: the test goes with the rule it checks.
+test("the panel of a date picker draws no Clear of its own", () => {
+  assert.match(
+    css,
+    /\[data-ui="picker-panel"\] \[data-part="clear"\] \{\s*display: none;/,
+  );
+  // With no hint, the footer of a phone would stay as an empty band.
+  assert.match(
+    css,
+    /\[data-ui="picker-panel"\] \[data-part="footer"\]:has\(> \[data-part="hint"\]:empty\):not\(:has\(> \[data-part="apply"\]\)\) \{\s*display: none;/,
+  );
+});
+
 test("the choices of a question stand clear of the message above them", () => {
   // The description and the error of a group are inline messages, not parts of their own.
   assert.match(

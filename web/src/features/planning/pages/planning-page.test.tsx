@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { json, problem } from "@/testing/fake-api";
@@ -29,6 +29,10 @@ async function openAction(row: string, index: number, action: string) {
 }
 
 describe("PlanningPage agenda", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("steps the agenda's month from the page header", async () => {
     const { container, router } = await renderApp("/planning", {
       fetch: api(),
@@ -340,6 +344,8 @@ describe("PlanningPage agenda", () => {
   });
 
   it("moves an occurrence to another date", async () => {
+    // Workaround for Slotted issue #204: the Today of the picker reads the clock of the browser.
+    vi.useFakeTimers({ toFake: ["Date"], now: new Date(2026, 9, 17, 12) });
     const sent: unknown[] = [];
     await renderApp("/planning", {
       fetch: api({
@@ -354,14 +360,14 @@ describe("PlanningPage agenda", () => {
       0,
       catalogEn["occurrence.move"],
     );
-    // The shortcuts sit in the calendar's presets column, portalled out of the dialog.
+    // The shortcuts sit in the picker's panel, portalled out of the dialog.
     await user.click(
       within(dialog).getByRole("button", { name: /^(choose|change) date/i }),
     );
     // PC4 of docs/specs/2026-11-17-period-controls-design.md: the header's month control also
     // holds a button named Today; the date shortcut is the one outside the page header.
     const shortcuts = await screen.findAllByRole("button", {
-      name: catalogEn["day.today"],
+      name: new RegExp(`^${catalogEn["day.today"]}`),
     });
     const shortcut = shortcuts.find((b) => b.closest("header") === null);
     if (shortcut === undefined) throw new Error("no date shortcut");

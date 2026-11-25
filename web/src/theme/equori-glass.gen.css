@@ -2222,6 +2222,14 @@
       --slotted-drawer-slide-exit-duration: 260ms;
     }
 
+    [data-ui="picker-panel"] [data-part="clear"] {
+      display: none;
+    }
+
+    [data-ui="picker-panel"] [data-part="footer"]:has(> [data-part="hint"]:empty):not(:has(> [data-part="apply"])) {
+      display: none;
+    }
+
     [data-ui="tag"] {
       --slotted-tag-inset-inline: calc(var(--slotted-space-4) + var(--slotted-space-1));
     }
@@ -2314,7 +2322,7 @@
     &[data-slotted-scheme="dark"] [data-ui="select"],
     &[data-slotted-scheme="dark"] [data-ui="combobox"],
     &[data-slotted-scheme="dark"] [data-ui="entity-picker"],
-    &[data-slotted-scheme="dark"] [data-ui="date-picker"],
+    &[data-slotted-scheme="dark"] [data-ui="picker-panel"],
     &[data-slotted-scheme="dark"] [data-ui="toast"],
     &[data-slotted-scheme="dark"] [data-ui="floating-panel"],
     &[data-slotted-scheme="dark"] [data-ui="dialog"],
@@ -2481,10 +2489,11 @@
       --slotted-entity-picker-content-shadow: var(--glass-shadow-2);
     }
 
-    &[data-slotted-scheme="dark"] [data-ui="date-picker"] {
-      --slotted-date-picker-surface: var(--glass-fill-overlay);
-      --slotted-date-picker-content-border-color: var(--glass-ring);
-      --slotted-date-picker-content-shadow: var(--glass-shadow-2);
+    &[data-slotted-scheme="dark"] [data-ui="picker-panel"] {
+      --slotted-picker-panel-surface: var(--glass-fill-overlay);
+      --slotted-picker-panel-sunken-surface: transparent;
+      --slotted-picker-panel-border-color: var(--glass-ring);
+      --slotted-picker-panel-shadow: var(--glass-shadow-2);
     }
 
     &[data-slotted-scheme="dark"] [data-ui="toast"] {
@@ -2605,8 +2614,8 @@
       --slotted-entity-picker-content-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
     }
 
-    &[data-slotted-scheme="dark"] [data-ui="date-picker"] {
-      --slotted-date-picker-content-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    &[data-slotted-scheme="dark"] [data-ui="picker-panel"] {
+      --slotted-picker-panel-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
     }
 
     &[data-slotted-scheme="dark"] [data-ui="floating-panel"] {
@@ -2649,7 +2658,7 @@
     &[data-slotted-scheme="dark"] [data-ui="select"],
     &[data-slotted-scheme="dark"] [data-ui="combobox"],
     &[data-slotted-scheme="dark"] [data-ui="entity-picker"],
-    &[data-slotted-scheme="dark"] [data-ui="date-picker"],
+    &[data-slotted-scheme="dark"] [data-ui="picker-panel"],
     &[data-slotted-scheme="dark"] [data-ui="toast"],
     &[data-slotted-scheme="dark"] [data-ui="floating-panel"],
     &[data-slotted-scheme="dark"] [data-ui="dialog"],
@@ -2825,7 +2834,7 @@
       &[data-slotted-scheme="dark"] [data-ui="select"],
       &[data-slotted-scheme="dark"] [data-ui="combobox"],
       &[data-slotted-scheme="dark"] [data-ui="entity-picker"],
-      &[data-slotted-scheme="dark"] [data-ui="date-picker"],
+      &[data-slotted-scheme="dark"] [data-ui="picker-panel"],
       &[data-slotted-scheme="dark"] [data-ui="toast"],
       &[data-slotted-scheme="dark"] [data-ui="floating-panel"],
       &[data-slotted-scheme="dark"] [data-ui="dialog"],
@@ -2864,7 +2873,7 @@
       &[data-slotted-scheme="dark"] [data-ui="select"],
       &[data-slotted-scheme="dark"] [data-ui="combobox"],
       &[data-slotted-scheme="dark"] [data-ui="entity-picker"],
-      &[data-slotted-scheme="dark"] [data-ui="date-picker"],
+      &[data-slotted-scheme="dark"] [data-ui="picker-panel"],
       &[data-slotted-scheme="dark"] [data-ui="toast"],
       &[data-slotted-scheme="dark"] [data-ui="floating-panel"],
       &[data-slotted-scheme="dark"] [data-ui="dialog"],
@@ -2931,8 +2940,8 @@
         --slotted-entity-picker-content-backdrop-filter: none;
       }
 
-      &[data-slotted-scheme="dark"] [data-ui="date-picker"] {
-        --slotted-date-picker-content-backdrop-filter: none;
+      &[data-slotted-scheme="dark"] [data-ui="picker-panel"] {
+        --slotted-picker-panel-backdrop-filter: none;
       }
 
       &[data-slotted-scheme="dark"] [data-ui="floating-panel"] {

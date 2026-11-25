@@ -47,6 +47,7 @@ test("an overlay's content blurs what is behind it", () => {
     ["popover", "--slotted-popover-backdrop-filter"],
     ["tooltip", "--slotted-tooltip-backdrop-filter"],
     ["select", "--slotted-select-content-backdrop-filter"],
+    ["picker-panel", "--slotted-picker-panel-backdrop-filter"],
   ] as const) {
     assert.ok(
       css.includes(
@@ -175,6 +176,21 @@ test("a section and a detail panel publish no page ground of their own", () => {
     css,
     /\[data-ui="section"\],\s*&\[data-slotted-scheme="dark"\] \[data-ui="detail-panel"\] \{[^}]*--slotted-page-ground: transparent/,
   );
+});
+
+// No module is imported under the name picker-panel: the date picker draws its panel.
+test("the panel of a date picker is glass", () => {
+  for (const [token, value] of [
+    ["surface", "var(--glass-fill-overlay)"],
+    ["border-color", "var(--glass-ring)"],
+    ["shadow", "var(--glass-shadow-2)"],
+    ["sunken-surface", "transparent"],
+  ] as const) {
+    assert.ok(
+      glassOnly.includes(`--slotted-picker-panel-${token}: ${value};`),
+      `${token} of the panel is not glass`,
+    );
+  }
 });
 
 // The washes of states.ts replace the secondary surface inside the glass; a key cap keeps the

@@ -134,13 +134,14 @@ export const surfaces: readonly Surface[] = [
   picker("combobox"),
   picker("entity-picker"),
   {
-    family: "date-picker",
-    tokens: {
-      "--slotted-date-picker-surface": fill("overlay"),
-      "--slotted-date-picker-content-border-color": ring,
-      "--slotted-date-picker-content-shadow": elevation(2),
-    },
-    blurToken: "--slotted-date-picker-content-backdrop-filter",
+    // The rail and the footer of the panel stand on its one sheet of glass, held by their hairline.
+    ...byToken("picker-panel", {
+      surface: fill("overlay"),
+      "sunken-surface": "transparent",
+      "border-color": ring,
+      shadow: elevation(2),
+    }),
+    blurToken: "--slotted-picker-panel-backdrop-filter",
   },
   {
     family: "toast",
