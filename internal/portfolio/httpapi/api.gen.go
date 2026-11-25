@@ -192,6 +192,24 @@ func (e InstrumentType) Valid() bool {
 	}
 }
 
+// Defines values for ProjectionWithdrawalMode.
+const (
+	ProjectionWithdrawalModeIncome ProjectionWithdrawalMode = "income"
+	ProjectionWithdrawalModeRate   ProjectionWithdrawalMode = "rate"
+)
+
+// Valid indicates whether the value is a known member of the ProjectionWithdrawalMode enum.
+func (e ProjectionWithdrawalMode) Valid() bool {
+	switch e {
+	case ProjectionWithdrawalModeIncome:
+		return true
+	case ProjectionWithdrawalModeRate:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for RealizedResultKind.
 const (
 	DayTrade RealizedResultKind = "day_trade"
@@ -866,6 +884,69 @@ type Problem struct {
 	Type    string     `json:"type"`
 }
 
+// ProjectionBaseline defines model for ProjectionBaseline.
+type ProjectionBaseline struct {
+	Date openapi_types.Date `json:"date"`
+
+	// Value Value of every brokerage tree on date, in minor units of the plan currency.
+	Value int64 `json:"value"`
+}
+
+// ProjectionChange defines model for ProjectionChange.
+type ProjectionChange struct {
+	// Amount Monthly contribution in minor units, 0 or more.
+	Amount int64 `json:"amount"`
+
+	// Month The first day of a month.
+	Month openapi_types.Date `json:"month"`
+}
+
+// ProjectionPlan defines model for ProjectionPlan.
+type ProjectionPlan struct {
+	Baseline ProjectionBaseline `json:"baseline"`
+
+	// Changes Ordered by month.
+	Changes       []ProjectionChange   `json:"changes"`
+	Currency      string               `json:"currency"`
+	InflationBp   int                  `json:"inflation_bp"`
+	LastAge       int                  `json:"last_age"`
+	RealReturnBp  int                  `json:"real_return_bp"`
+	Withdrawal    ProjectionWithdrawal `json:"withdrawal"`
+	WithdrawalAge int                  `json:"withdrawal_age"`
+}
+
+// ProjectionPlanInput defines model for ProjectionPlanInput.
+type ProjectionPlanInput struct {
+	// Changes 1 to 40 changes with distinct months.
+	Changes []ProjectionChange `json:"changes"`
+
+	// InflationBp 0 to 5000.
+	InflationBp int `json:"inflation_bp"`
+
+	// LastAge Above withdrawal_age, at most 120.
+	LastAge int `json:"last_age"`
+
+	// RealReturnBp -1000 to 3000.
+	RealReturnBp int                  `json:"real_return_bp"`
+	Withdrawal   ProjectionWithdrawal `json:"withdrawal"`
+
+	// WithdrawalAge 18 to 100.
+	WithdrawalAge int `json:"withdrawal_age"`
+}
+
+// ProjectionWithdrawal defines model for ProjectionWithdrawal.
+type ProjectionWithdrawal struct {
+	// Income Monthly income in minor units of today's money, above 0; with mode income only.
+	Income *int64                   `json:"income,omitempty"`
+	Mode   ProjectionWithdrawalMode `json:"mode"`
+
+	// RateBp Rate per year, 1 to 2000 basis points; with mode rate only.
+	RateBp *int `json:"rate_bp,omitempty"`
+}
+
+// ProjectionWithdrawalMode defines model for ProjectionWithdrawal.Mode.
+type ProjectionWithdrawalMode string
+
 // Rate Positive exact decimal with at most 12 decimals (ADR 005).
 //
 // Example: 5.4830
@@ -1138,3 +1219,6 @@ type SaveContributionPlanJSONRequestBody = ContributionPlanInput
 
 // PreviewContributionPlanJSONRequestBody defines body for PreviewContributionPlan for application/json ContentType.
 type PreviewContributionPlanJSONRequestBody = ContributionPreviewInput
+
+// SavePortfolioProjectionJSONRequestBody defines body for SavePortfolioProjection for application/json ContentType.
+type SavePortfolioProjectionJSONRequestBody = ProjectionPlanInput

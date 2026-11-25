@@ -537,6 +537,61 @@ paths:
           $ref: "#/components/responses/Problem"
         "401":
           $ref: "#/components/responses/Problem"
+  /portfolio-projection:
+    get:
+      tags: [portfolio]
+      operationId: getPortfolioProjection
+      x-book-role: read
+      summary: The projection plan of the current member in the book (projection design PJ5).
+      description: 404 not_found when the member has none.
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectionPlan"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+    put:
+      tags: [portfolio]
+      operationId: savePortfolioProjection
+      x-book-role: read
+      summary: Creates or replaces the projection plan of the current member and returns it (PJ3, PJ4).
+      description: The first save sets the currency to the base currency of the book and the baseline to the save day and the value of every brokerage tree. A later save keeps both and every change dated before the current month. 422 projection_invalid when a field is out of its range, projection_past_change when a change dated before the current month is altered, dropped or added, price_missing when the baseline lacks a price or a rate.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectionPlanInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectionPlan"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [portfolio]
+      operationId: deletePortfolioProjection
+      x-book-role: read
+      summary: Deletes the projection plan of the current member with its changes (PJ5).
+      responses:
+        "204":
+          description: Deleted.
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
 parameters:
   Year:
     name: year
@@ -1566,3 +1621,87 @@ schemas:
         maxItems: 20
         items:
           $ref: "#/components/schemas/ContributionClassInput"
+  ProjectionPlanInput:
+    type: object
+    required: [withdrawal_age, last_age, real_return_bp, inflation_bp, withdrawal, changes]
+    properties:
+      withdrawal_age:
+        type: integer
+        description: 18 to 100.
+      last_age:
+        type: integer
+        description: Above withdrawal_age, at most 120.
+      real_return_bp:
+        type: integer
+        description: -1000 to 3000.
+      inflation_bp:
+        type: integer
+        description: 0 to 5000.
+      withdrawal:
+        $ref: "#/components/schemas/ProjectionWithdrawal"
+      changes:
+        type: array
+        description: 1 to 40 changes with distinct months.
+        items:
+          $ref: "#/components/schemas/ProjectionChange"
+  ProjectionWithdrawal:
+    type: object
+    required: [mode]
+    properties:
+      mode:
+        type: string
+        enum: [income, rate]
+      income:
+        type: integer
+        format: int64
+        description: Monthly income in minor units of today's money, above 0; with mode income only.
+      rate_bp:
+        type: integer
+        description: Rate per year, 1 to 2000 basis points; with mode rate only.
+  ProjectionChange:
+    type: object
+    required: [month, amount]
+    properties:
+      month:
+        type: string
+        format: date
+        description: The first day of a month.
+      amount:
+        type: integer
+        format: int64
+        description: Monthly contribution in minor units, 0 or more.
+  ProjectionBaseline:
+    type: object
+    required: [date, value]
+    properties:
+      date:
+        type: string
+        format: date
+      value:
+        type: integer
+        format: int64
+        description: Value of every brokerage tree on date, in minor units of the plan currency.
+  ProjectionPlan:
+    type: object
+    required: [withdrawal_age, last_age, real_return_bp, inflation_bp, withdrawal, changes, currency, baseline]
+    properties:
+      withdrawal_age:
+        type: integer
+      last_age:
+        type: integer
+      real_return_bp:
+        type: integer
+      inflation_bp:
+        type: integer
+      withdrawal:
+        $ref: "#/components/schemas/ProjectionWithdrawal"
+      changes:
+        type: array
+        description: Ordered by month.
+        items:
+          $ref: "#/components/schemas/ProjectionChange"
+      currency:
+        type: string
+        pattern: "^[A-Z]{3}$"
+      baseline:
+        $ref: "#/components/schemas/ProjectionBaseline"

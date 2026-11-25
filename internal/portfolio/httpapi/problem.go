@@ -108,6 +108,15 @@ var contributionProblems = []struct {
 		"contribution_amount_invalid", "the amount must be positive and in the base currency",
 	},
 	{
+		app.ErrProjectionInvalid, http.StatusUnprocessableEntity,
+		"projection_invalid", "a field of the plan is out of its range",
+	},
+	{
+		app.ErrProjectionPastChange, http.StatusUnprocessableEntity,
+		"projection_past_change",
+		"a contribution change dated before the current month cannot be altered",
+	},
+	{
 		app.ErrContributionPlanInvalid, http.StatusBadRequest,
 		"invalid_request", "the plan breaks a limit of the contribution plan",
 	},

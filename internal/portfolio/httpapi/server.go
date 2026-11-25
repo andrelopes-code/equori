@@ -60,6 +60,12 @@ func (s *Server) Register(mux *http.ServeMux) {
 		httpserver.Handle(s.errs, http.StatusOK, s.saveContributionPlan))
 	mux.HandleFunc("POST "+BaseURL+"/contribution-plan/preview",
 		httpserver.Handle(s.errs, http.StatusOK, s.previewContributionPlan))
+	mux.HandleFunc("GET "+BaseURL+"/portfolio-projection",
+		httpserver.Handle(s.errs, http.StatusOK, s.getPortfolioProjection))
+	mux.HandleFunc("PUT "+BaseURL+"/portfolio-projection",
+		httpserver.Handle(s.errs, http.StatusOK, s.savePortfolioProjection))
+	mux.HandleFunc("DELETE "+BaseURL+"/portfolio-projection",
+		httpserver.Handle(s.errs, http.StatusNoContent, s.deletePortfolioProjection))
 	mux.HandleFunc("GET "+BaseURL+"/instrument-subtypes",
 		httpserver.Handle(s.errs, http.StatusOK, s.listInstrumentSubtypes))
 }

@@ -4586,6 +4586,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/portfolio-projection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The projection plan of the current member in the book (projection design PJ5).
+         * @description 404 not_found when the member has none.
+         */
+        get: operations["getPortfolioProjection"];
+        /**
+         * Creates or replaces the projection plan of the current member and returns it (PJ3, PJ4).
+         * @description The first save sets the currency to the base currency of the book and the baseline to the save day and the value of every brokerage tree. A later save keeps both and every change dated before the current month. 422 projection_invalid when a field is out of its range, projection_past_change when a change dated before the current month is altered, dropped or added, price_missing when the baseline lacks a price or a rate.
+         */
+        put: operations["savePortfolioProjection"];
+        post?: never;
+        /** Deletes the projection plan of the current member with its changes (PJ5). */
+        delete: operations["deletePortfolioProjection"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/exports": {
         parameters: {
             query?: never;
@@ -9443,6 +9468,62 @@ export interface components {
         ContributionPreviewInput: {
             amount?: components["schemas"]["Money"];
             classes: components["schemas"]["ContributionClassInput"][];
+        };
+        ProjectionPlanInput: {
+            /** @description 18 to 100. */
+            withdrawal_age: number;
+            /** @description Above withdrawal_age, at most 120. */
+            last_age: number;
+            /** @description -1000 to 3000. */
+            real_return_bp: number;
+            /** @description 0 to 5000. */
+            inflation_bp: number;
+            withdrawal: components["schemas"]["ProjectionWithdrawal"];
+            /** @description 1 to 40 changes with distinct months. */
+            changes: components["schemas"]["ProjectionChange"][];
+        };
+        ProjectionWithdrawal: {
+            /** @enum {string} */
+            mode: "income" | "rate";
+            /**
+             * Format: int64
+             * @description Monthly income in minor units of today's money, above 0; with mode income only.
+             */
+            income?: number;
+            /** @description Rate per year, 1 to 2000 basis points; with mode rate only. */
+            rate_bp?: number;
+        };
+        ProjectionChange: {
+            /**
+             * Format: date
+             * @description The first day of a month.
+             */
+            month: string;
+            /**
+             * Format: int64
+             * @description Monthly contribution in minor units, 0 or more.
+             */
+            amount: number;
+        };
+        ProjectionBaseline: {
+            /** Format: date */
+            date: string;
+            /**
+             * Format: int64
+             * @description Value of every brokerage tree on date, in minor units of the plan currency.
+             */
+            value: number;
+        };
+        ProjectionPlan: {
+            withdrawal_age: number;
+            last_age: number;
+            real_return_bp: number;
+            inflation_bp: number;
+            withdrawal: components["schemas"]["ProjectionWithdrawal"];
+            /** @description Ordered by month. */
+            changes: components["schemas"]["ProjectionChange"][];
+            currency: string;
+            baseline: components["schemas"]["ProjectionBaseline"];
         };
         BalanceSeries: {
             items: components["schemas"]["BalancePoint"][];
@@ -17602,6 +17683,75 @@ export interface operations {
             };
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
+        };
+    };
+    getPortfolioProjection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectionPlan"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    savePortfolioProjection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectionPlanInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectionPlan"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    deletePortfolioProjection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
         };
     };
     requestExport: {

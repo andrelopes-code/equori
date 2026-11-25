@@ -171,4 +171,15 @@ type Repository interface {
 	ForgetRebuildVersion(ctx context.Context) error
 	ContributionPlan(ctx context.Context, booksID int64) (domain.Plan, bool, error)
 	SaveContributionPlan(ctx context.Context, booksID int64, p domain.Plan) error
+	ProjectionPlan(ctx context.Context, booksID, memberID int64) (ProjectionView, bool, error)
+	// SaveProjectionPlan stores the plan of the member in one transaction. It keeps the currency
+	// and the baseline of a stored plan and replaces its changes dated on or after from.
+	SaveProjectionPlan(
+		ctx context.Context,
+		booksID, memberID int64,
+		v ProjectionView,
+		from time.Time,
+	) error
+	// DeleteProjectionPlan removes the plan with its changes; false when the member had none.
+	DeleteProjectionPlan(ctx context.Context, booksID, memberID int64) (bool, error)
 }
