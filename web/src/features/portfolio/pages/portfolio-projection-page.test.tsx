@@ -115,7 +115,7 @@ describe("Portfolio projection page", () => {
     const region = within(await planRegion());
 
     expect(await region.findByText("32 years")).toBeInTheDocument();
-    expect(region.getByLabelText("Withdrawals from age")).toHaveValue("60");
+    expect(region.getByLabelText("Withdrawals at")).toHaveValue("60");
     expect(region.getByLabelText("Real return")).toHaveValue("4.00");
     expect(region.getByLabelText("Inflation")).toHaveValue("4.50");
     expect(region.getByLabelText("Until age")).toHaveValue("90");
@@ -215,7 +215,7 @@ describe("Portfolio projection page", () => {
     );
     const region = within(await planRegion());
 
-    expect(region.getByLabelText("Withdrawals from age")).toHaveValue("");
+    expect(region.getByLabelText("Withdrawals at")).toHaveValue("");
     expect(region.getByRole("button", { name: "Save plan" })).toBeDisabled();
   });
 
@@ -249,9 +249,7 @@ describe("Portfolio projection page", () => {
     const region = await screen.findByRole("region", { name: planName });
 
     expect(region).toHaveAttribute("aria-busy", "true");
-    expect(
-      within(region).getByText("Withdrawals from age"),
-    ).toBeInTheDocument();
+    expect(within(region).getByText("Withdrawals at")).toBeInTheDocument();
   });
 
   it("PX3: asks for the birth date and draws nothing below", async () => {

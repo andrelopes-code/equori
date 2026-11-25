@@ -311,7 +311,7 @@ export const portfolioEn = {
   "portfolio.projection.plan.age": "Age",
   "portfolio.projection.plan.ageValue": "{years} years",
   "portfolio.projection.plan.ageSource": "birth date from the profile",
-  "portfolio.projection.plan.withdrawalAge": "Withdrawals from age",
+  "portfolio.projection.plan.withdrawalAge": "Withdrawals at",
   "portfolio.projection.plan.years": "years",
   "portfolio.projection.plan.realReturn": "Real return",
   "portfolio.projection.plan.inflation": "Inflation",

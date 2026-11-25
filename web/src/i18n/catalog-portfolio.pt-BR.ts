@@ -312,7 +312,7 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.projection.plan.age": "Idade",
   "portfolio.projection.plan.ageValue": "{years} anos",
   "portfolio.projection.plan.ageSource": "nascimento no perfil",
-  "portfolio.projection.plan.withdrawalAge": "Retiradas a partir dos",
+  "portfolio.projection.plan.withdrawalAge": "Retiradas aos",
   "portfolio.projection.plan.years": "anos",
   "portfolio.projection.plan.realReturn": "Rentabilidade real",
   "portfolio.projection.plan.inflation": "Inflação",

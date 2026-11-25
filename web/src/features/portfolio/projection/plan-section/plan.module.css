@@ -7,7 +7,7 @@
   }
 
   .planField {
-    inline-size: 9.5rem; /* literal: a field of four digits and its unit */
+    inline-size: 8.5rem; /* literal: a field of four digits and its unit; seven fields share one line at 1440 px */
   }
 
   .planField[data-width="medium"] {
@@ -23,7 +23,7 @@
   /* The age is a field without a control: the label and the hint are the field's own */
   .planFact {
     flex: none;
-    inline-size: 9rem; /* literal: the birth hint on one line */
+    inline-size: 8rem; /* literal: the birth hint on one line */
     white-space: nowrap;
   }
 
