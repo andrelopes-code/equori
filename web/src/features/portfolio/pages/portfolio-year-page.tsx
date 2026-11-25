@@ -1,7 +1,7 @@
 import { Field } from "@slotted/react/field";
 import { NumberField } from "@slotted/react/number-field";
 import { Page, PageBody } from "@slotted/react/page";
-import { Tab, TabList, Tabs } from "@slotted/react/tabs";
+import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 
@@ -102,7 +102,8 @@ export function PortfolioYearPage() {
 
       <PageBody>
         <PageStack>
-          <Tabs
+          <SegmentedControl
+            aria-label={t("taxYear.tabs")}
             value={tab}
             onValueChange={(value) => {
               const entry = tabs.find((e) => e.tab === value);
@@ -112,14 +113,12 @@ export function PortfolioYearPage() {
                 });
             }}
           >
-            <TabList aria-label={t("taxYear.tabs")}>
-              {tabs.map((entry) => (
-                <Tab key={entry.tab} value={entry.tab}>
-                  {entry.label}
-                </Tab>
-              ))}
-            </TabList>
-          </Tabs>
+            {tabs.map((entry) => (
+              <Segment key={entry.tab} value={entry.tab}>
+                {entry.label}
+              </Segment>
+            ))}
+          </SegmentedControl>
 
           {tab === "realized" && <RealizedResultsTab year={year} />}
           {tab === "income" && <IncomeEventsTab year={year} />}

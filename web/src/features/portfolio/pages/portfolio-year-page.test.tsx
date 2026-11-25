@@ -207,6 +207,42 @@ describe("Tax year of investments", () => {
     ).toHaveAttribute("href", "/portfolio");
   });
 
+  it("PT6: chooses the view with a segmented control beside one tablist", async () => {
+    const { router } = await renderApp("/portfolio/year?year=2025", {
+      fetch: taxYearApi([]),
+      today: "2026-10-24",
+    });
+    await results();
+
+    expect(screen.getAllByRole("tablist")).toHaveLength(1);
+    const group = screen.getByRole("radiogroup", {
+      name: catalogEn["taxYear.tabs"],
+    });
+    expect(
+      within(group)
+        .getAllByRole("radio")
+        .map((radio) => radio.closest("label")?.textContent),
+    ).toEqual([
+      catalogEn["taxYear.tab.realized"],
+      catalogEn["taxYear.tab.income"],
+      catalogEn["taxYear.tab.gainTax"],
+    ]);
+
+    const user = userEvent.setup();
+    await user.click(
+      within(group).getByRole("radio", {
+        name: catalogEn["taxYear.tab.gainTax"],
+      }),
+    );
+
+    await waitFor(() => {
+      expect(router.state.location.search).toEqual({
+        year: 2025,
+        tab: "gain_tax",
+      });
+    });
+  });
+
   it("opens the year of the address and steps it with the selector", async () => {
     const years: string[] = [];
     const { router } = await renderApp("/portfolio/year?year=2025", {

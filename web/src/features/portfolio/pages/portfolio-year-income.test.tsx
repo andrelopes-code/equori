@@ -128,12 +128,12 @@ describe("Tax year income events", () => {
     });
     const user = userEvent.setup();
     await user.click(
-      screen.getByRole("tab", { name: catalogEn["taxYear.tab.income"] }),
+      screen.getByRole("radio", { name: catalogEn["taxYear.tab.income"] }),
     );
     await income();
     expect(router.state.location.search).toEqual({ tab: "income" });
     await user.click(
-      screen.getByRole("tab", { name: catalogEn["taxYear.tab.realized"] }),
+      screen.getByRole("radio", { name: catalogEn["taxYear.tab.realized"] }),
     );
     await waitFor(() => {
       expect(router.state.location.search).toEqual({});
