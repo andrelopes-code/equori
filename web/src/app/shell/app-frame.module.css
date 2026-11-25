@@ -1,4 +1,10 @@
 @layer app {
+  /* Workaround for Slotted issue #196: the main region scrolls but is not positioned, so absolute
+     content with no positioned ancestor escapes it and the document scrolls. */
+  .scroller {
+    position: relative;
+  }
+
   /* On a phone the content scrolls under the two bars, so their material has something to blur:
      the content takes every row of the shell and keeps clear of the bars by the padding the
      frame measures. */

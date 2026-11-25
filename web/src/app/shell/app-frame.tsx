@@ -44,6 +44,7 @@ import { useCaptureQueueNotice } from "@/features/transactions";
 import { useT } from "@/i18n/i18n-provider";
 import { ProfileLocale } from "@/i18n/profile-locale";
 import { applyDensity, readDensity } from "@/theme/density";
+import { cx } from "@/ui/cx";
 
 const stickyFooter = "var(--slotted-page-sticky-bottom, 0px)";
 
@@ -149,7 +150,7 @@ export function AppFrame() {
       )}
       <AppShellMain
         ref={main}
-        className={wide ? undefined : styles.main}
+        className={cx(styles.scroller, !wide && styles.main)}
         // The page sets --slotted-page-sticky-bottom on this scroller to the height of its sticky
         // footer. A field the browser scrolls into view above the keyboard stops at the scroller's
         // edge, under that footer, unless the scroll padding holds the footer too.
