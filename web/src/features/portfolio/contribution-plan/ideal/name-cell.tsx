@@ -1,12 +1,12 @@
 import { IconButton } from "@slotted/react/button";
 import { Glyph, Icon } from "@slotted/react/icon";
-import { Tag } from "@slotted/react/tag";
 import { Text } from "@slotted/react/typography";
 import { VisuallyHidden } from "@slotted/react/visually-hidden";
 
 import styles from "@/features/portfolio/contribution-plan/ideal/name-cell.module.css";
 import { GroupDot } from "@/features/portfolio/contribution-plan/month/group-dot";
 import { useT } from "@/i18n/i18n-provider";
+import { TitleTag } from "@/ui/display/title-tag";
 
 interface NameCellProps {
   name: string;
@@ -55,15 +55,14 @@ export function NameCell({
       </Text>
 
       {reserved !== undefined && (
-        <Tag
-          size="sm"
+        <TitleTag
           className={styles.tag}
           title={t("contributionPlan.reservedFor", { goal: reserved })}
           start={<Glyph name="lock" />}
         >
           <VisuallyHidden>{prefix}</VisuallyHidden>
           {reserved}
-        </Tag>
+        </TitleTag>
       )}
     </div>
   );

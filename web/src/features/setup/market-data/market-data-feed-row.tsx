@@ -1,5 +1,4 @@
 import { Switch } from "@slotted/react/switch";
-import { Tag } from "@slotted/react/tag";
 import { Text } from "@slotted/react/typography";
 import { useId, useState } from "react";
 
@@ -19,6 +18,7 @@ import styles from "@/features/setup/market-data/market-data.module.css";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { ConfirmDialog } from "@/ui/dialogs/confirm-dialog";
+import { TitleTag } from "@/ui/display/title-tag";
 
 interface MarketDataFeedRowProps {
   feed: components["schemas"]["MarketDataFeed"];
@@ -72,7 +72,7 @@ export function MarketDataFeedRow({ feed, controls }: MarketDataFeedRowProps) {
             {name}
           </Text>
           {!feed.official && (
-            <Tag size="sm">{t("settings.feeds.unofficial.tag")}</Tag>
+            <TitleTag>{t("settings.feeds.unofficial.tag")}</TitleTag>
           )}
         </div>
 

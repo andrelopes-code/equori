@@ -17,7 +17,6 @@ import {
   TableRow,
   TableRowHeader,
 } from "@slotted/react/table";
-import { Tag } from "@slotted/react/tag";
 import { Text } from "@slotted/react/typography";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -45,6 +44,7 @@ import type { MessageKey } from "@/i18n/catalog.en";
 import { formatDayHeader, shiftDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
+import { TitleTag } from "@/ui/display/title-tag";
 import { PeriodControl } from "@/ui/navigation/period-control";
 import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
 import { routeTo } from "@/ui/navigation/route-to";
@@ -302,9 +302,9 @@ export function AccountLedger({
                                     </span>
                                   </Link>
                                   {row.voided && (
-                                    <Tag size="sm" tone="secondary">
+                                    <TitleTag tone="secondary">
                                       {t("ledger.voided")}
-                                    </Tag>
+                                    </TitleTag>
                                   )}
                                 </Inline>
                                 {tx.payee_id !== undefined &&

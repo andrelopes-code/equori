@@ -11,6 +11,7 @@ import { formatDate, formatDayMonthNumeric } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import { TitleTag } from "@/ui/display/title-tag";
 
 type Account = components["schemas"]["Account"];
 
@@ -50,11 +51,16 @@ export function AccountRowStatus({
   const onKey = property ? "property.valuedTag" : "reconciliation.tag.on";
   const open = status.data.open_difference;
   if (open !== undefined) {
-    return (
+    const text = t("reconciliation.tag.open", {
+      amount: fmt.money(open.difference, scale(open.difference.currency)),
+    });
+
+    // The header of the account draws it among tags of its own size (O22).
+    return quiet ? (
+      <TitleTag tone="warning">{text}</TitleTag>
+    ) : (
       <Tag size="sm" tone="warning">
-        {t("reconciliation.tag.open", {
-          amount: fmt.money(open.difference, scale(open.difference.currency)),
-        })}
+        {text}
       </Tag>
     );
   }

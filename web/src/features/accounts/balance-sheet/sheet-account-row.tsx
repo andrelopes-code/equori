@@ -7,7 +7,6 @@ import {
   TableRow,
   TableRowHeader,
 } from "@slotted/react/table";
-import { Tag } from "@slotted/react/tag";
 import { Text } from "@slotted/react/typography";
 
 import { AccountAvatar } from "@/features/accounts/account-mark/account-avatar";
@@ -23,6 +22,7 @@ import { kindTitle } from "@/features/accounts/model/account-kinds";
 import { shapeOf } from "@/features/accounts/model/account-shape";
 import { AccountYield } from "@/features/portfolio";
 import { useT } from "@/i18n/i18n-provider";
+import { TitleTag } from "@/ui/display/title-tag";
 import { MoneyFigure } from "@/ui/money/money-figure";
 
 type AccountLine = Extract<SheetLine, { type: "account" }>;
@@ -91,9 +91,7 @@ export function SheetAccountRow({
               <AccountLink account={account}>{account.name}</AccountLink>
             </Text>
             {account.closed_on !== undefined && (
-              <Tag size="sm" tone="secondary">
-                {t("balanceSheet.closed")}
-              </Tag>
+              <TitleTag tone="secondary">{t("balanceSheet.closed")}</TitleTag>
             )}
             {parent && (
               <Text size="xs" tone="muted" wrap="nowrap">

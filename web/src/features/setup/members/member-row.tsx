@@ -8,11 +8,11 @@ import {
   ListItemDescription,
   ListItemLabel,
 } from "@slotted/react/list-item";
-import { Tag } from "@slotted/react/tag";
 
 import type { BookRole, BooksMember } from "@/features/setup/api";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { TitleTag } from "@/ui/display/title-tag";
 import { ChoiceSelect } from "@/ui/form-fields/choice-select";
 
 interface MemberRowProps {
@@ -46,7 +46,7 @@ export function MemberRow({
           <ListItemLabel>
             <Inline gap={3}>
               {member.display_name ?? member.email}
-              {own && <Tag size="sm">{t("members.you")}</Tag>}
+              {own && <TitleTag>{t("members.you")}</TitleTag>}
             </Inline>
           </ListItemLabel>
           <ListItemDescription className="mt-2">

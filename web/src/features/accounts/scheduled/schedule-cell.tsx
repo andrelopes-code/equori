@@ -1,5 +1,4 @@
 import { Inline } from "@slotted/react/inline";
-import { Tag } from "@slotted/react/tag";
 import { Text } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
 
@@ -7,6 +6,7 @@ import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
 import { kindLabel, scheduleQuery } from "@/features/planning";
 import { useT } from "@/i18n/i18n-provider";
+import { TitleTag } from "@/ui/display/title-tag";
 
 type ProjectionPoint = components["schemas"]["ProjectionPoint"];
 
@@ -23,9 +23,7 @@ export function ScheduleCell({ point }: { point: ProjectionPoint }) {
           ? t("ledger.untitled")
           : schedule.data.description}
       </Text>
-      <Tag size="sm" tone="secondary">
-        {t(kindLabel[schedule.data.kind])}
-      </Tag>
+      <TitleTag tone="secondary">{t(kindLabel[schedule.data.kind])}</TitleTag>
     </Inline>
   );
 }

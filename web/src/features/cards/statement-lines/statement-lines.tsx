@@ -30,6 +30,7 @@ import { formatDayHeader } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import { TitleTag } from "@/ui/display/title-tag";
 import { useAmountTone } from "@/ui/money/amount-tone";
 
 type StatementPosting = components["schemas"]["StatementPosting"];
@@ -137,14 +138,14 @@ export function StatementLines({
                             <DisputeTag transactionId={line.transaction_id} />
                           )}
                           {line.provisional && (
-                            <Tag size="sm" tone="info" variant="dashed">
+                            <TitleTag tone="info" variant="dashed">
                               {t("statement.provisional")}
-                            </Tag>
+                            </TitleTag>
                           )}
                           {unconfirmed?.has(line.transaction_id) === true && (
-                            <Tag size="sm" tone="warning">
+                            <TitleTag tone="warning">
                               {t("statement.unconfirmed")}
-                            </Tag>
+                            </TitleTag>
                           )}
                         </Inline>
                       </TableRowHeader>

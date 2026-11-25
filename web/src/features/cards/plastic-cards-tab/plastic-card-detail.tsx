@@ -1,4 +1,3 @@
-import { Tag } from "@slotted/react/tag";
 import { Text } from "@slotted/react/typography";
 import type { ReactNode } from "react";
 
@@ -7,6 +6,7 @@ import styles from "@/features/cards/plastic-cards-tab/plastic-cards-tab.module.
 import { formatBasisPoints } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { networkName } from "@/ui/card-face/network/network-name";
+import { TitleTag } from "@/ui/display/title-tag";
 
 type Card = components["schemas"]["Card"];
 
@@ -60,9 +60,9 @@ export function PlasticCardDetail({
           <Text size="sm" tone="muted" className={styles.label}>
             {t("card.type")}
           </Text>
-          <Tag size="sm" tone="secondary">
+          <TitleTag tone="secondary">
             {card.virtual === true ? t("card.virtual") : t("card.physical")}
-          </Tag>
+          </TitleTag>
         </div>
 
         <div className={styles.row}>

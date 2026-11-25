@@ -32,6 +32,7 @@ import {
   formatMonthTitle,
 } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { TitleTag } from "@/ui/display/title-tag";
 import { PhoneList } from "@/ui/form-fields/phone-list";
 import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
 import { routeTo } from "@/ui/navigation/route-to";
@@ -82,9 +83,9 @@ export function StatementsTab({
                 due: formatDayMonthNumeric(s.due_date, locale),
               }),
               [t("card.unpaid"), money(statementUnpaid(s))].join(": "),
-              <Tag key="status" size="sm" tone={statementStatusTone[s.status]}>
+              <TitleTag key="status" tone={statementStatusTone[s.status]}>
                 {t(statementStatusWords[s.status])}
-              </Tag>,
+              </TitleTag>,
               s.amount_difference !== undefined &&
               s.amount_difference.amount !== 0 ? (
                 <Text key="difference" size="xs" tone="warning">

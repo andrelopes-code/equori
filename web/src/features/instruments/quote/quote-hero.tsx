@@ -8,13 +8,13 @@ import {
   StatCardMessage,
   StatCardValue,
 } from "@slotted/react/stat-card";
-import { Tag } from "@slotted/react/tag";
 
 import { sourceLabel } from "@/features/instruments/model/instrument-labels";
 import type { QuoteReading } from "@/features/instruments/quote/quote-reading";
 import { usePriceFormat } from "@/features/instruments/model/use-price-format";
 import { formatDate, formatSignedBasisPoints } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { TitleTag } from "@/ui/display/title-tag";
 
 interface QuoteHeroProps {
   reading: QuoteReading | null;
@@ -49,9 +49,9 @@ export function QuoteHero({ reading, quote, loading, stale }: QuoteHeroProps) {
                 source: sourceLabel(t, reading.price.source),
               })}
           {stale && (
-            <Tag size="sm" tone="warning" className="ms-4">
+            <TitleTag tone="warning" className="ms-4">
               {t("instrument.quote.stale")}
-            </Tag>
+            </TitleTag>
           )}
         </StatCardLabel>
       </StatCardHeader>

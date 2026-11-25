@@ -52,6 +52,18 @@ const bareRouterLink = {
     "Draw a link with AppLink (@/ui/navigation/app-link) or the Slotted Link with useAppLink (O13).",
 };
 
+// O22: a tag is taller than the line it stands in and pushes the text below it away.
+const besideText = "JSXElement[openingElement.name.name=/^(Text|Heading)$/]";
+const bareTitleTag = {
+  selector: [
+    `${besideText} ~ JSXElement[openingElement.name.name="Tag"]`,
+    `${besideText} ~ JSXExpressionContainer > :matches(LogicalExpression, ConditionalExpression) > JSXElement[openingElement.name.name="Tag"]`,
+    'JSXElement[openingElement.name.name=/(Label|Heading|Trigger|Switch)$/] JSXElement[openingElement.name.name="Tag"]',
+  ].join(", "),
+  message:
+    "Draw a tag beside a title or a text with TitleTag (@/ui/display/title-tag), which keeps the height of the line (O22).",
+};
+
 // Below 1024 px the shell's top app bar carries a page's way back; PageBack draws it only above.
 const pageHeaderBack = {
   selector: 'JSXOpeningElement[name.name="PageHeaderBack"]',
@@ -260,6 +272,7 @@ export default defineConfig(
       "no-restricted-syntax": [
         "error",
         bareRouterLink,
+        bareTitleTag,
         pageHeaderBack,
         bareInlineMessage,
         bareHelpMark,
@@ -283,6 +296,7 @@ export default defineConfig(
       "no-restricted-syntax": [
         "error",
         bareRouterLink,
+        bareTitleTag,
         pageHeaderBack,
         bareInlineMessage,
         bareHelpMark,
@@ -304,6 +318,7 @@ export default defineConfig(
       "no-restricted-syntax": [
         "error",
         bareRouterLink,
+        bareTitleTag,
         pageHeaderBack,
         bareInlineMessage,
         bareHelpMark,
@@ -317,6 +332,7 @@ export default defineConfig(
       "no-restricted-syntax": [
         "error",
         bareRouterLink,
+        bareTitleTag,
         bareInlineMessage,
         bareHelpMark,
       ],
@@ -333,6 +349,7 @@ export default defineConfig(
       "no-restricted-syntax": [
         "error",
         bareRouterLink,
+        bareTitleTag,
         pageHeaderBack,
         bareInlineMessage,
         stackedHeading,

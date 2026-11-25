@@ -10,7 +10,6 @@ import {
   TableRow,
 } from "@slotted/react/table";
 import { Inline } from "@slotted/react/inline";
-import { Tag } from "@slotted/react/tag";
 import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
@@ -21,6 +20,7 @@ import { catalogLabel, useScale } from "@/features/setup";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import { TitleTag } from "@/ui/display/title-tag";
 import { directionOf, useAmountTone } from "@/ui/money/amount-tone";
 import { AppLink } from "@/ui/navigation/app-link";
 
@@ -98,9 +98,9 @@ export function SalesTable({ items, pending }: SalesTableProps) {
                       />
 
                       {r.kind === "day_trade" && (
-                        <Tag size="sm" variant="outline">
+                        <TitleTag variant="outline">
                           {t("taxYear.dayTrade")}
-                        </Tag>
+                        </TitleTag>
                       )}
                     </Inline>
                   </TableCell>

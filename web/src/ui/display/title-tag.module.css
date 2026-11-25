@@ -1,0 +1,10 @@
+@layer app {
+  /* Workaround for Slotted issue #192: a sm tag takes 20.5 px and no line of a title holds it. This
+     one is drawn in the line: the xs text and no block inset, 15.1 px. The margin takes the fraction
+     of a pixel it passes the line of a sm text by out of the height of the row. */
+  .tag {
+    --slotted-control-font-size-sm: var(--slotted-font-size-xs);
+    --slotted-tag-inset-block: 0px;
+    margin-block: calc(var(--slotted-space-1) * -1);
+  }
+}

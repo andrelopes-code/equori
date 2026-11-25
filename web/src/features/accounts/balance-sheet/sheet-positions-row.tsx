@@ -5,12 +5,12 @@ import {
   TableRow,
   TableRowHeader,
 } from "@slotted/react/table";
-import { Tag } from "@slotted/react/tag";
 import { Text } from "@slotted/react/typography";
 
 import type { SheetLine } from "@/features/accounts/balance-sheet/sheet-lines";
 import { lineKey } from "@/features/accounts/balance-sheet/sheet-lines";
 import { useT } from "@/i18n/i18n-provider";
+import { TitleTag } from "@/ui/display/title-tag";
 
 type PositionsLine = Extract<SheetLine, { type: "positions" }>;
 
@@ -54,9 +54,9 @@ export function SheetPositionsRow({
           </Text>
           {!line.open &&
             line.codes.map((code) => (
-              <Tag key={code} size="sm" tone="secondary">
+              <TitleTag key={code} tone="secondary">
                 {code}
-              </Tag>
+              </TitleTag>
             ))}
           {!line.open && more > 0 && (
             <Text size="xs" tone="muted" wrap="nowrap">

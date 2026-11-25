@@ -1,11 +1,11 @@
 import { Inline } from "@slotted/react/inline";
 import { Switch } from "@slotted/react/switch";
-import { Tag } from "@slotted/react/tag";
 
 import { StudioSection } from "@/features/setup/studio/studio-section";
 import { useT } from "@/i18n/i18n-provider";
 import { useMotion } from "@/theme/motion";
 import { glassAvailable, useVisual } from "@/theme/visual";
+import { TitleTag } from "@/ui/display/title-tag";
 
 export function AppearanceEffects() {
   const t = useT();
@@ -39,9 +39,9 @@ export function AppearanceEffects() {
         >
           <Inline align="center" gap={4}>
             {glassLabel}
-            <Tag size="sm" tone="accent" variant="solid">
+            <TitleTag tone="accent" variant="solid">
               {t("settings.experimental.tag")}
-            </Tag>
+            </TitleTag>
           </Inline>
         </Switch>
       )}

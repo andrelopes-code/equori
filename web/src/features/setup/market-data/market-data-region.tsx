@@ -1,5 +1,3 @@
-import { Tag } from "@slotted/react/tag";
-
 import type { components } from "@/api/schema.gen";
 import type { FeedControls } from "@/features/setup/market-data/feed-controls";
 import { summarizeFeeds } from "@/features/setup/market-data/feed-status";
@@ -12,6 +10,7 @@ import {
 } from "@/features/setup/market-data/region-verdict";
 import { useOpenedOnce } from "@/features/setup/market-data/use-opened-once";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { TitleTag } from "@/ui/display/title-tag";
 import { regionName } from "@/ui/region/region-name";
 
 interface MarketDataRegionProps {
@@ -43,13 +42,7 @@ export function MarketDataRegion({
     <RegionBand
       region={region}
       title={regionName(region, t, tag)}
-      tag={
-        home && (
-          <Tag size="sm" tone="accent">
-            {t("region.yours")}
-          </Tag>
-        )
-      }
+      tag={home && <TitleTag tone="accent">{t("region.yours")}</TitleTag>}
       line={region === "global" ? `${line} · ${t("region.globalHint")}` : line}
       verdict={regionVerdict(summary, t)}
       busy={folded && summary.loading > 0}

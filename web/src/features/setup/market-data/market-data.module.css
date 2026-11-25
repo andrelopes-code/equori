@@ -47,6 +47,7 @@
     display: flex;
     min-inline-size: 0;
     flex-direction: column;
+    gap: var(--slotted-space-1);
   }
 
   .bandName {
@@ -151,16 +152,14 @@
     display: flex;
     min-inline-size: 0;
     flex-direction: column;
+    gap: var(--slotted-space-1);
   }
 
-  /* The line of the name holds a tag, 1.5rem with no token, whether the row has one or not: the names
-     and the lines under them stand alike in every row. */
   .name {
     display: flex;
     min-inline-size: 0;
     align-items: center;
     gap: var(--slotted-space-4);
-    block-size: 1.5rem;
   }
 
   .nameText {

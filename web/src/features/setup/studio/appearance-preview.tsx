@@ -1,7 +1,6 @@
 import { Button } from "@slotted/react/button";
 import { Field, FieldLabel } from "@slotted/react/field";
 import { ProgressBar } from "@slotted/react/progress-indicator";
-import { Tag } from "@slotted/react/tag";
 import { TextField } from "@slotted/react/text-field";
 import { Text } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
@@ -11,6 +10,7 @@ import styles from "@/features/setup/studio/appearance-preview.module.css";
 import { settingsQuery } from "@/features/setup/api";
 import { useScale } from "@/features/setup/instruments/instruments";
 import { useT } from "@/i18n/i18n-provider";
+import { TitleTag } from "@/ui/display/title-tag";
 import { MoneyFigure } from "@/ui/money/money-figure";
 
 // Minor units of the sample: a balance, money in, money out and a budget spent to its limit.
@@ -53,7 +53,7 @@ export function AppearancePreview() {
         <div className={styles.row}>
           <span className={styles.name}>
             <Text size="sm">{t("appearance.preview.income")}</Text>
-            <Tag size="sm">{t("appearance.preview.tag")}</Tag>
+            <TitleTag>{t("appearance.preview.tag")}</TitleTag>
           </span>
           {money !== null && (
             <Text size="sm" weight="semibold" numeric="tabular" tone="success">

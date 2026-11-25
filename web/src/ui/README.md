@@ -12,7 +12,7 @@ Import with the alias, for example `@/ui/money/money-input`. A folder has no `in
 | `page-layout/` | `PageStack`, the column of a page's blocks at the gaps of `app.css` (O19)                                                           |
 | `dialogs/`     | `ConfirmDialog`, `Presence` and the overlay-open context                                                                            |
 | `feedback/`    | Query error, refresh button and hook, bulk outcome notice and its pure rules                                                        |
-| `display/`     | Figures, avatars, brand mark, instrument name, QR code and `withValue`                                                              |
+| `display/`     | Figures, avatars, brand mark, instrument name, title tag, QR code, `withValue`                                                      |
 | `month-heat/`  | The month table shaded by the size of each change: head, cells, steps and month figures (PR8, IM13)                                 |
 | `navigation/`  | Links, back button, header actions, speed dial, month and period controls, `useServed`                                              |
 | `runtime/`     | Browser hooks and helpers: debounce, media query, stable callback, copy text, new id                                                |

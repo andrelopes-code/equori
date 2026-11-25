@@ -2,7 +2,6 @@ import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { Button } from "@slotted/react/button";
 import { Inline } from "@slotted/react/inline";
 import { Stack } from "@slotted/react/stack";
-import { Tag } from "@slotted/react/tag";
 import { Heading } from "@slotted/react/typography";
 import { useState } from "react";
 
@@ -21,6 +20,7 @@ import { ConnectionTimesList } from "@/features/accounts/connections/connection-
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useT } from "@/i18n/i18n-provider";
 import { Presence } from "@/ui/dialogs/presence";
+import { TitleTag } from "@/ui/display/title-tag";
 
 type Account = components["schemas"]["Account"];
 type Connection = components["schemas"]["Connection"];
@@ -77,14 +77,14 @@ export function ConnectionLinks({
             <Heading level={2} size="md">
               {connection.name}
             </Heading>
-            <Tag size="sm" tone={stateTones[connection.state]}>
+            <TitleTag tone={stateTones[connection.state]}>
               {t(`links.connectionState.${connection.state}`)}
-            </Tag>
-            <Tag size="sm" tone="secondary">
+            </TitleTag>
+            <TitleTag tone="secondary">
               {provider === undefined
                 ? connection.provider_status
                 : t(provider, { portal })}
-            </Tag>
+            </TitleTag>
           </Inline>
         </Stack>
         <Inline gap={2}>

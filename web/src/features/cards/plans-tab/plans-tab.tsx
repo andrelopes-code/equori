@@ -30,6 +30,7 @@ import {
 } from "@/features/cards/plans-tab/plan-words";
 import { formatMonthTitle } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { TitleTag } from "@/ui/display/title-tag";
 import { PhoneList } from "@/ui/form-fields/phone-list";
 import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
 import { Presence } from "@/ui/dialogs/presence";
@@ -134,13 +135,9 @@ export function PlansTab({
                       ": ",
                     ),
                 plan === undefined ? null : (
-                  <Tag
-                    key="status"
-                    size="sm"
-                    tone={planStatusTone[plan.status]}
-                  >
+                  <TitleTag key="status" tone={planStatusTone[plan.status]}>
                     {t(planStatusWords[plan.status])}
-                  </Tag>
+                  </TitleTag>
                 ),
               ].filter((line) => line !== null),
               end:

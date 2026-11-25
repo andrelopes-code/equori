@@ -1,7 +1,6 @@
 import { Card, CardBody } from "@slotted/react/card";
 import { Inline } from "@slotted/react/inline";
 import { Stack } from "@slotted/react/stack";
-import { Tag } from "@slotted/react/tag";
 import { Text } from "@slotted/react/typography";
 
 import type { Indicators } from "@/features/overview";
@@ -14,6 +13,7 @@ import { verdictText } from "@/features/reports/indicator-verdict/indicator-verd
 import { MonthLedger } from "@/features/reports/indicator-verdict/month-ledger";
 import { useIndicatorFormat } from "@/features/reports/model/use-indicator-format";
 import { useT } from "@/i18n/i18n-provider";
+import { TitleTag } from "@/ui/display/title-tag";
 
 export interface IndicatorVerdictCardProps {
   report: Indicators;
@@ -52,11 +52,11 @@ export function IndicatorVerdictCard({
                 </Text>
 
                 {incomplete && (
-                  <Tag>
+                  <TitleTag>
                     {t("report.indicators.progress", {
                       date: format.day(today),
                     })}
-                  </Tag>
+                  </TitleTag>
                 )}
               </Inline>
 

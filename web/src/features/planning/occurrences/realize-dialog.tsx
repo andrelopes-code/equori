@@ -24,7 +24,6 @@ import {
   TableRowHeader,
   TableSelect,
 } from "@slotted/react/table";
-import { Tag } from "@slotted/react/tag";
 import { Text } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -47,6 +46,7 @@ import { useScale } from "@/features/setup";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import { TitleTag } from "@/ui/display/title-tag";
 import { FormNotice } from "@/ui/form-layout/form-notice";
 import { useOverlayOpen } from "@/ui/dialogs/use-overlay-open";
 import { useStableCallback } from "@/ui/runtime/use-stable-callback";
@@ -170,13 +170,9 @@ export function RealizeDialog({
                                 : c.transaction.description}
                             </Text>
                             {!c.withinTolerance && (
-                              <Tag
-                                size="sm"
-                                tone="warning"
-                                className={styles.flag}
-                              >
+                              <TitleTag tone="warning" className={styles.flag}>
                                 {t("occurrence.outsideTolerance")}
-                              </Tag>
+                              </TitleTag>
                             )}
                           </Inline>
                         </TableCell>
