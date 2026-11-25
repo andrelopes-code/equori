@@ -29,6 +29,7 @@ import { registerCharts } from "@/features/spreadsheets/charts/register-charts";
 import { adoptRefusedStyles } from "@/features/spreadsheets/editor/adopt-styles";
 import { changesWorkbook } from "@/features/spreadsheets/editor/changes-workbook";
 import { numfmtLocale } from "@/features/spreadsheets/editor/numfmt-locale";
+import { provideClipboard } from "@/features/spreadsheets/editor/provide-clipboard";
 import { sheetRows } from "@/features/spreadsheets/files/sheet-rows";
 import { loadUniverLocale } from "@/features/spreadsheets/editor/univer-locale";
 import { univerTheme } from "@/features/spreadsheets/editor/univer-theme";
@@ -65,6 +66,8 @@ export async function createEditor(options: EditorOptions): Promise<Editor> {
   // Univer unmounts by container: an abandoned editor, once created, would on its disposal erase
   // the editor that took its place.
   options.signal.throwIfAborted();
+
+  provideClipboard();
 
   const releaseStyles = adoptRefusedStyles();
   const { univer, univerAPI } = createUniver({
