@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useApi } from "@/api/api-context";
 import { errorText } from "@/api/problem";
 import { meQuery, useSetDisplayName } from "@/features/session";
+import { SettingsBirthDate } from "@/features/setup/account/settings-birth-date";
 import { SettingsGroup } from "@/features/setup/settings-layout/settings-group";
 import { SettingsRow } from "@/features/setup/settings-layout/settings-row";
 import { useT } from "@/i18n/i18n-provider";
@@ -49,6 +50,8 @@ export function SettingsDisplayName() {
           )}
         </Field>
       </SettingsRow>
+
+      <SettingsBirthDate />
     </SettingsGroup>
   );
 }

@@ -14,9 +14,8 @@
     inline-size: 12rem; /* literal: a money field of seven digits */
   }
 
+  /* The mode is a field like its neighbours: same label, same control height */
   .planMode {
-    display: grid;
-    gap: var(--slotted-space-2);
     inline-size: auto;
   }
 

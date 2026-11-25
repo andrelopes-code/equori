@@ -49,6 +49,9 @@ export const settingsEn = {
   "settings.summary.data": "Export and import of your records.",
   "settings.browserOnly.tag": "This browser",
   "settings.account.profile": "Profile",
+  "settings.account.birthDate": "Birth date",
+  "settings.account.birthDate.help":
+    "Used by the portfolio projection to show values by age.",
   "settings.account.displayName": "Display name",
   "settings.account.displayName.help":
     "Shown to the other members of the book. The email shows while this is empty.",

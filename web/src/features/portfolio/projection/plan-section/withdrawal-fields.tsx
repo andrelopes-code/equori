@@ -33,13 +33,10 @@ export function WithdrawalFields({
 
   return (
     <>
-      <div className={styles.planMode}>
-        <span className={styles.planFactLabel}>
-          {t("portfolio.projection.plan.withdrawal")}
-        </span>
+      <Field necessity="none" className={styles.planMode}>
+        <FieldLabel>{t("portfolio.projection.plan.withdrawal")}</FieldLabel>
 
         <SegmentedControl
-          size="sm"
           aria-label={t("portfolio.projection.plan.withdrawal")}
           value={fields.mode}
           onValueChange={handleMode}
@@ -51,7 +48,7 @@ export function WithdrawalFields({
             {t("portfolio.projection.plan.modeRate")}
           </Segment>
         </SegmentedControl>
-      </div>
+      </Field>
 
       {fields.mode === "income" && (
         <Field necessity="none" width="medium" className={styles.planField}>

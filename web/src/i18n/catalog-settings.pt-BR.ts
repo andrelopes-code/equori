@@ -51,6 +51,9 @@ export const settingsPtBR: Record<keyof typeof settingsEn, string> = {
   "settings.summary.data": "Exportação e importação dos seus registros.",
   "settings.browserOnly.tag": "Este dispositivo",
   "settings.account.profile": "Perfil",
+  "settings.account.birthDate": "Data de nascimento",
+  "settings.account.birthDate.help":
+    "Usada na projeção da carteira para mostrar os valores por idade.",
   "settings.account.displayName": "Nome de exibição",
   "settings.account.displayName.help":
     "Exibido aos outros membros do book. Enquanto estiver vazio, aparece o email.",
