@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -28,7 +29,13 @@ func TestCookieSecureFollowsOrigin(t *testing.T) {
 			t.Parallel()
 
 			s := &Server{secureCookies: tc.secureCookies}
-			r := httptest.NewRequest("POST", "/api/v1/session", nil)
+
+			r := httptest.NewRequestWithContext(
+				t.Context(),
+				http.MethodPost,
+				"/api/v1/session",
+				nil,
+			)
 			if tc.origin != "" {
 				r.Header.Set("Origin", tc.origin)
 			}
