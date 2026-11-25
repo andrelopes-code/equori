@@ -189,92 +189,90 @@ import f186 from "./pay-statement/statement-total.en.dark.png?url";
 import f187 from "./pay-statement/statement-total.pt.dark.png?url";
 import f188 from "./portfolio/portfolio-columns.en.dark.png?url";
 import f189 from "./portfolio/portfolio-columns.pt.dark.png?url";
-import f190 from "./portfolio/portfolio-return.en.dark.png?url";
-import f191 from "./portfolio/portfolio-return.pt.dark.png?url";
-import f192 from "./portfolio/portfolio-summary.en.dark.png?url";
-import f193 from "./portfolio/portfolio-summary.pt.dark.png?url";
-import f194 from "./record-transaction/23857cd69019.png?url";
-import f195 from "./record-transaction/26f8417d29b7.png?url";
-import f196 from "./record-transaction/29a9a18e4f20.png?url";
-import f197 from "./record-transaction/2c1f056d7725.png?url";
-import f198 from "./record-transaction/5559a6c3b771.png?url";
-import f199 from "./record-transaction/6f883593fe5a.png?url";
-import f200 from "./record-transaction/a99b26a09781.png?url";
-import f201 from "./record-transaction/ada0f9ea82d6.png?url";
-import f202 from "./record-transaction/beadf63e3bca.png?url";
-import f203 from "./record-transaction/dd266dd55898.png?url";
-import f204 from "./record-transaction/entry-account.en.dark.png?url";
-import f205 from "./record-transaction/entry-account.pt.dark.png?url";
-import f206 from "./record-transaction/entry-amount.en.dark.png?url";
-import f207 from "./record-transaction/entry-amount.pt.dark.png?url";
-import f208 from "./record-transaction/entry-category.en.dark.png?url";
-import f209 from "./record-transaction/entry-category.pt.dark.png?url";
-import f210 from "./record-transaction/entry-kind.en.dark.png?url";
-import f211 from "./record-transaction/entry-kind.pt.dark.png?url";
-import f212 from "./record-transaction/entry-save.en.dark.png?url";
-import f213 from "./record-transaction/entry-save.pt.dark.png?url";
-import f214 from "./record-transaction/entry-sheet.en.dark.png?url";
-import f215 from "./record-transaction/entry-sheet.pt.dark.png?url";
-import f216 from "./reimbursement/193669fe3a41.png?url";
-import f217 from "./reimbursement/359775d135e2.png?url";
-import f218 from "./reimbursement/5bb2bea88c0f.png?url";
-import f219 from "./reimbursement/5c94a0ccf282.png?url";
-import f220 from "./reimbursement/6b6230b22378.png?url";
-import f221 from "./reimbursement/74936d908a0d.png?url";
-import f222 from "./reimbursement/8f6f2da547e8.png?url";
-import f223 from "./reimbursement/9cb0295d21a0.png?url";
-import f224 from "./reimbursement/a4a601ec8649.png?url";
-import f225 from "./reimbursement/d417fba7c0de.png?url";
-import f226 from "./reimbursement/reimbursement-choose.en.dark.png?url";
-import f227 from "./reimbursement/reimbursement-choose.pt.dark.png?url";
-import f228 from "./reimbursement/reimbursement-expenses.en.dark.png?url";
-import f229 from "./reimbursement/reimbursement-expenses.pt.dark.png?url";
-import f230 from "./reimbursement/reimbursement-menu.en.dark.png?url";
-import f231 from "./reimbursement/reimbursement-menu.pt.dark.png?url";
-import f232 from "./reimbursement/reimbursement-open.en.dark.png?url";
-import f233 from "./reimbursement/reimbursement-open.pt.dark.png?url";
-import f234 from "./reimbursement/reimbursement-submit.en.dark.png?url";
-import f235 from "./reimbursement/reimbursement-submit.pt.dark.png?url";
-import f236 from "./schedule/4050b4b0fffa.png?url";
-import f237 from "./schedule/530ffe5b8add.png?url";
-import f238 from "./schedule/57df711a2268.png?url";
-import f239 from "./schedule/6a3ad26a9858.png?url";
-import f240 from "./schedule/80bcb5e47bca.png?url";
-import f241 from "./schedule/a6a76b4a7029.png?url";
-import f242 from "./schedule/c52babd5f4de.png?url";
-import f243 from "./schedule/c7b4cf18f2ca.png?url";
-import f244 from "./schedule/d90f6d0ca91d.png?url";
-import f245 from "./schedule/fd68b296f082.png?url";
-import f246 from "./schedule/schedule-account.en.dark.png?url";
-import f247 from "./schedule/schedule-account.pt.dark.png?url";
-import f248 from "./schedule/schedule-amount.en.dark.png?url";
-import f249 from "./schedule/schedule-amount.pt.dark.png?url";
-import f250 from "./schedule/schedule-create.en.dark.png?url";
-import f251 from "./schedule/schedule-create.pt.dark.png?url";
-import f252 from "./schedule/schedule-ends.en.dark.png?url";
-import f253 from "./schedule/schedule-ends.pt.dark.png?url";
-import f254 from "./schedule/schedule-kind.en.dark.png?url";
-import f255 from "./schedule/schedule-kind.pt.dark.png?url";
-import f256 from "./schedule/schedule-recurrence.en.dark.png?url";
-import f257 from "./schedule/schedule-recurrence.pt.dark.png?url";
-import f258 from "./text-capture/4b45764d62d3.png?url";
-import f259 from "./text-capture/4ec121301cab.png?url";
-import f260 from "./text-capture/55d591eb0509.png?url";
-import f261 from "./text-capture/684807b29521.png?url";
-import f262 from "./text-capture/728c21cca70e.png?url";
-import f263 from "./text-capture/77562a58b855.png?url";
-import f264 from "./text-capture/bfcb94ace8c9.png?url";
-import f265 from "./text-capture/c6b85643cf72.png?url";
-import f266 from "./text-capture/capture-category.en.dark.png?url";
-import f267 from "./text-capture/capture-category.pt.dark.png?url";
-import f268 from "./text-capture/capture-drafts.en.dark.png?url";
-import f269 from "./text-capture/capture-drafts.pt.dark.png?url";
-import f270 from "./text-capture/capture-record.en.dark.png?url";
-import f271 from "./text-capture/capture-record.pt.dark.png?url";
-import f272 from "./text-capture/capture-text.en.dark.png?url";
-import f273 from "./text-capture/capture-text.pt.dark.png?url";
-import f274 from "./text-capture/fdcf87fe621c.png?url";
-import f275 from "./text-capture/ff19392a8b04.png?url";
+import f190 from "./portfolio/portfolio-summary.en.dark.png?url";
+import f191 from "./portfolio/portfolio-summary.pt.dark.png?url";
+import f192 from "./record-transaction/23857cd69019.png?url";
+import f193 from "./record-transaction/26f8417d29b7.png?url";
+import f194 from "./record-transaction/29a9a18e4f20.png?url";
+import f195 from "./record-transaction/2c1f056d7725.png?url";
+import f196 from "./record-transaction/5559a6c3b771.png?url";
+import f197 from "./record-transaction/6f883593fe5a.png?url";
+import f198 from "./record-transaction/a99b26a09781.png?url";
+import f199 from "./record-transaction/ada0f9ea82d6.png?url";
+import f200 from "./record-transaction/beadf63e3bca.png?url";
+import f201 from "./record-transaction/dd266dd55898.png?url";
+import f202 from "./record-transaction/entry-account.en.dark.png?url";
+import f203 from "./record-transaction/entry-account.pt.dark.png?url";
+import f204 from "./record-transaction/entry-amount.en.dark.png?url";
+import f205 from "./record-transaction/entry-amount.pt.dark.png?url";
+import f206 from "./record-transaction/entry-category.en.dark.png?url";
+import f207 from "./record-transaction/entry-category.pt.dark.png?url";
+import f208 from "./record-transaction/entry-kind.en.dark.png?url";
+import f209 from "./record-transaction/entry-kind.pt.dark.png?url";
+import f210 from "./record-transaction/entry-save.en.dark.png?url";
+import f211 from "./record-transaction/entry-save.pt.dark.png?url";
+import f212 from "./record-transaction/entry-sheet.en.dark.png?url";
+import f213 from "./record-transaction/entry-sheet.pt.dark.png?url";
+import f214 from "./reimbursement/193669fe3a41.png?url";
+import f215 from "./reimbursement/359775d135e2.png?url";
+import f216 from "./reimbursement/5bb2bea88c0f.png?url";
+import f217 from "./reimbursement/5c94a0ccf282.png?url";
+import f218 from "./reimbursement/6b6230b22378.png?url";
+import f219 from "./reimbursement/74936d908a0d.png?url";
+import f220 from "./reimbursement/8f6f2da547e8.png?url";
+import f221 from "./reimbursement/9cb0295d21a0.png?url";
+import f222 from "./reimbursement/a4a601ec8649.png?url";
+import f223 from "./reimbursement/d417fba7c0de.png?url";
+import f224 from "./reimbursement/reimbursement-choose.en.dark.png?url";
+import f225 from "./reimbursement/reimbursement-choose.pt.dark.png?url";
+import f226 from "./reimbursement/reimbursement-expenses.en.dark.png?url";
+import f227 from "./reimbursement/reimbursement-expenses.pt.dark.png?url";
+import f228 from "./reimbursement/reimbursement-menu.en.dark.png?url";
+import f229 from "./reimbursement/reimbursement-menu.pt.dark.png?url";
+import f230 from "./reimbursement/reimbursement-open.en.dark.png?url";
+import f231 from "./reimbursement/reimbursement-open.pt.dark.png?url";
+import f232 from "./reimbursement/reimbursement-submit.en.dark.png?url";
+import f233 from "./reimbursement/reimbursement-submit.pt.dark.png?url";
+import f234 from "./schedule/4050b4b0fffa.png?url";
+import f235 from "./schedule/530ffe5b8add.png?url";
+import f236 from "./schedule/57df711a2268.png?url";
+import f237 from "./schedule/6a3ad26a9858.png?url";
+import f238 from "./schedule/80bcb5e47bca.png?url";
+import f239 from "./schedule/a6a76b4a7029.png?url";
+import f240 from "./schedule/c52babd5f4de.png?url";
+import f241 from "./schedule/c7b4cf18f2ca.png?url";
+import f242 from "./schedule/d90f6d0ca91d.png?url";
+import f243 from "./schedule/fd68b296f082.png?url";
+import f244 from "./schedule/schedule-account.en.dark.png?url";
+import f245 from "./schedule/schedule-account.pt.dark.png?url";
+import f246 from "./schedule/schedule-amount.en.dark.png?url";
+import f247 from "./schedule/schedule-amount.pt.dark.png?url";
+import f248 from "./schedule/schedule-create.en.dark.png?url";
+import f249 from "./schedule/schedule-create.pt.dark.png?url";
+import f250 from "./schedule/schedule-ends.en.dark.png?url";
+import f251 from "./schedule/schedule-ends.pt.dark.png?url";
+import f252 from "./schedule/schedule-kind.en.dark.png?url";
+import f253 from "./schedule/schedule-kind.pt.dark.png?url";
+import f254 from "./schedule/schedule-recurrence.en.dark.png?url";
+import f255 from "./schedule/schedule-recurrence.pt.dark.png?url";
+import f256 from "./text-capture/4b45764d62d3.png?url";
+import f257 from "./text-capture/4ec121301cab.png?url";
+import f258 from "./text-capture/55d591eb0509.png?url";
+import f259 from "./text-capture/684807b29521.png?url";
+import f260 from "./text-capture/728c21cca70e.png?url";
+import f261 from "./text-capture/77562a58b855.png?url";
+import f262 from "./text-capture/bfcb94ace8c9.png?url";
+import f263 from "./text-capture/c6b85643cf72.png?url";
+import f264 from "./text-capture/capture-category.en.dark.png?url";
+import f265 from "./text-capture/capture-category.pt.dark.png?url";
+import f266 from "./text-capture/capture-drafts.en.dark.png?url";
+import f267 from "./text-capture/capture-drafts.pt.dark.png?url";
+import f268 from "./text-capture/capture-record.en.dark.png?url";
+import f269 from "./text-capture/capture-record.pt.dark.png?url";
+import f270 from "./text-capture/capture-text.en.dark.png?url";
+import f271 from "./text-capture/capture-text.pt.dark.png?url";
+import f272 from "./text-capture/fdcf87fe621c.png?url";
+import f273 from "./text-capture/ff19392a8b04.png?url";
 
 export const helpMediaFiles: Partial<Record<string, string>> = {
   "budget-plan-source.en.dark.png": f0,
@@ -467,90 +465,88 @@ export const helpMediaFiles: Partial<Record<string, string>> = {
   "statement-total.pt.dark.png": f187,
   "portfolio-columns.en.dark.png": f188,
   "portfolio-columns.pt.dark.png": f189,
-  "portfolio-return.en.dark.png": f190,
-  "portfolio-return.pt.dark.png": f191,
-  "portfolio-summary.en.dark.png": f192,
-  "portfolio-summary.pt.dark.png": f193,
-  "record-transaction/23857cd69019.png": f194,
-  "record-transaction/26f8417d29b7.png": f195,
-  "record-transaction/29a9a18e4f20.png": f196,
-  "record-transaction/2c1f056d7725.png": f197,
-  "record-transaction/5559a6c3b771.png": f198,
-  "record-transaction/6f883593fe5a.png": f199,
-  "record-transaction/a99b26a09781.png": f200,
-  "record-transaction/ada0f9ea82d6.png": f201,
-  "record-transaction/beadf63e3bca.png": f202,
-  "record-transaction/dd266dd55898.png": f203,
-  "entry-account.en.dark.png": f204,
-  "entry-account.pt.dark.png": f205,
-  "entry-amount.en.dark.png": f206,
-  "entry-amount.pt.dark.png": f207,
-  "entry-category.en.dark.png": f208,
-  "entry-category.pt.dark.png": f209,
-  "entry-kind.en.dark.png": f210,
-  "entry-kind.pt.dark.png": f211,
-  "entry-save.en.dark.png": f212,
-  "entry-save.pt.dark.png": f213,
-  "entry-sheet.en.dark.png": f214,
-  "entry-sheet.pt.dark.png": f215,
-  "reimbursement/193669fe3a41.png": f216,
-  "reimbursement/359775d135e2.png": f217,
-  "reimbursement/5bb2bea88c0f.png": f218,
-  "reimbursement/5c94a0ccf282.png": f219,
-  "reimbursement/6b6230b22378.png": f220,
-  "reimbursement/74936d908a0d.png": f221,
-  "reimbursement/8f6f2da547e8.png": f222,
-  "reimbursement/9cb0295d21a0.png": f223,
-  "reimbursement/a4a601ec8649.png": f224,
-  "reimbursement/d417fba7c0de.png": f225,
-  "reimbursement-choose.en.dark.png": f226,
-  "reimbursement-choose.pt.dark.png": f227,
-  "reimbursement-expenses.en.dark.png": f228,
-  "reimbursement-expenses.pt.dark.png": f229,
-  "reimbursement-menu.en.dark.png": f230,
-  "reimbursement-menu.pt.dark.png": f231,
-  "reimbursement-open.en.dark.png": f232,
-  "reimbursement-open.pt.dark.png": f233,
-  "reimbursement-submit.en.dark.png": f234,
-  "reimbursement-submit.pt.dark.png": f235,
-  "schedule/4050b4b0fffa.png": f236,
-  "schedule/530ffe5b8add.png": f237,
-  "schedule/57df711a2268.png": f238,
-  "schedule/6a3ad26a9858.png": f239,
-  "schedule/80bcb5e47bca.png": f240,
-  "schedule/a6a76b4a7029.png": f241,
-  "schedule/c52babd5f4de.png": f242,
-  "schedule/c7b4cf18f2ca.png": f243,
-  "schedule/d90f6d0ca91d.png": f244,
-  "schedule/fd68b296f082.png": f245,
-  "schedule-account.en.dark.png": f246,
-  "schedule-account.pt.dark.png": f247,
-  "schedule-amount.en.dark.png": f248,
-  "schedule-amount.pt.dark.png": f249,
-  "schedule-create.en.dark.png": f250,
-  "schedule-create.pt.dark.png": f251,
-  "schedule-ends.en.dark.png": f252,
-  "schedule-ends.pt.dark.png": f253,
-  "schedule-kind.en.dark.png": f254,
-  "schedule-kind.pt.dark.png": f255,
-  "schedule-recurrence.en.dark.png": f256,
-  "schedule-recurrence.pt.dark.png": f257,
-  "text-capture/4b45764d62d3.png": f258,
-  "text-capture/4ec121301cab.png": f259,
-  "text-capture/55d591eb0509.png": f260,
-  "text-capture/684807b29521.png": f261,
-  "text-capture/728c21cca70e.png": f262,
-  "text-capture/77562a58b855.png": f263,
-  "text-capture/bfcb94ace8c9.png": f264,
-  "text-capture/c6b85643cf72.png": f265,
-  "capture-category.en.dark.png": f266,
-  "capture-category.pt.dark.png": f267,
-  "capture-drafts.en.dark.png": f268,
-  "capture-drafts.pt.dark.png": f269,
-  "capture-record.en.dark.png": f270,
-  "capture-record.pt.dark.png": f271,
-  "capture-text.en.dark.png": f272,
-  "capture-text.pt.dark.png": f273,
-  "text-capture/fdcf87fe621c.png": f274,
-  "text-capture/ff19392a8b04.png": f275,
+  "portfolio-summary.en.dark.png": f190,
+  "portfolio-summary.pt.dark.png": f191,
+  "record-transaction/23857cd69019.png": f192,
+  "record-transaction/26f8417d29b7.png": f193,
+  "record-transaction/29a9a18e4f20.png": f194,
+  "record-transaction/2c1f056d7725.png": f195,
+  "record-transaction/5559a6c3b771.png": f196,
+  "record-transaction/6f883593fe5a.png": f197,
+  "record-transaction/a99b26a09781.png": f198,
+  "record-transaction/ada0f9ea82d6.png": f199,
+  "record-transaction/beadf63e3bca.png": f200,
+  "record-transaction/dd266dd55898.png": f201,
+  "entry-account.en.dark.png": f202,
+  "entry-account.pt.dark.png": f203,
+  "entry-amount.en.dark.png": f204,
+  "entry-amount.pt.dark.png": f205,
+  "entry-category.en.dark.png": f206,
+  "entry-category.pt.dark.png": f207,
+  "entry-kind.en.dark.png": f208,
+  "entry-kind.pt.dark.png": f209,
+  "entry-save.en.dark.png": f210,
+  "entry-save.pt.dark.png": f211,
+  "entry-sheet.en.dark.png": f212,
+  "entry-sheet.pt.dark.png": f213,
+  "reimbursement/193669fe3a41.png": f214,
+  "reimbursement/359775d135e2.png": f215,
+  "reimbursement/5bb2bea88c0f.png": f216,
+  "reimbursement/5c94a0ccf282.png": f217,
+  "reimbursement/6b6230b22378.png": f218,
+  "reimbursement/74936d908a0d.png": f219,
+  "reimbursement/8f6f2da547e8.png": f220,
+  "reimbursement/9cb0295d21a0.png": f221,
+  "reimbursement/a4a601ec8649.png": f222,
+  "reimbursement/d417fba7c0de.png": f223,
+  "reimbursement-choose.en.dark.png": f224,
+  "reimbursement-choose.pt.dark.png": f225,
+  "reimbursement-expenses.en.dark.png": f226,
+  "reimbursement-expenses.pt.dark.png": f227,
+  "reimbursement-menu.en.dark.png": f228,
+  "reimbursement-menu.pt.dark.png": f229,
+  "reimbursement-open.en.dark.png": f230,
+  "reimbursement-open.pt.dark.png": f231,
+  "reimbursement-submit.en.dark.png": f232,
+  "reimbursement-submit.pt.dark.png": f233,
+  "schedule/4050b4b0fffa.png": f234,
+  "schedule/530ffe5b8add.png": f235,
+  "schedule/57df711a2268.png": f236,
+  "schedule/6a3ad26a9858.png": f237,
+  "schedule/80bcb5e47bca.png": f238,
+  "schedule/a6a76b4a7029.png": f239,
+  "schedule/c52babd5f4de.png": f240,
+  "schedule/c7b4cf18f2ca.png": f241,
+  "schedule/d90f6d0ca91d.png": f242,
+  "schedule/fd68b296f082.png": f243,
+  "schedule-account.en.dark.png": f244,
+  "schedule-account.pt.dark.png": f245,
+  "schedule-amount.en.dark.png": f246,
+  "schedule-amount.pt.dark.png": f247,
+  "schedule-create.en.dark.png": f248,
+  "schedule-create.pt.dark.png": f249,
+  "schedule-ends.en.dark.png": f250,
+  "schedule-ends.pt.dark.png": f251,
+  "schedule-kind.en.dark.png": f252,
+  "schedule-kind.pt.dark.png": f253,
+  "schedule-recurrence.en.dark.png": f254,
+  "schedule-recurrence.pt.dark.png": f255,
+  "text-capture/4b45764d62d3.png": f256,
+  "text-capture/4ec121301cab.png": f257,
+  "text-capture/55d591eb0509.png": f258,
+  "text-capture/684807b29521.png": f259,
+  "text-capture/728c21cca70e.png": f260,
+  "text-capture/77562a58b855.png": f261,
+  "text-capture/bfcb94ace8c9.png": f262,
+  "text-capture/c6b85643cf72.png": f263,
+  "capture-category.en.dark.png": f264,
+  "capture-category.pt.dark.png": f265,
+  "capture-drafts.en.dark.png": f266,
+  "capture-drafts.pt.dark.png": f267,
+  "capture-record.en.dark.png": f268,
+  "capture-record.pt.dark.png": f269,
+  "capture-text.en.dark.png": f270,
+  "capture-text.pt.dark.png": f271,
+  "text-capture/fdcf87fe621c.png": f272,
+  "text-capture/ff19392a8b04.png": f273,
 };
