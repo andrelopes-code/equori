@@ -4,11 +4,9 @@ import { useMemo } from "react";
 
 import type { components } from "@/api/schema.gen";
 import { periodDays } from "@/features/portfolio/return/portfolio-period";
-import { withEndLabels } from "@/features/portfolio/results/return-block/end-labels";
 import type { BlockFigures } from "@/features/portfolio/results/return-block/block-figures";
 import { toBasisPoints } from "@/features/portfolio/results/return-block/block-figures";
 import {
-  lastText,
   plotRows,
   portfolioField,
   timeFormat,
@@ -25,7 +23,7 @@ interface ReturnPlotProps {
 }
 
 // PR4, PR12: the cumulative return of the portfolio and of the indexes switched on; the largest
-// fall is a band on the time axis and each line carries its name and value at the right end.
+// fall is a band on the time axis; the list beside the plot names each line and its value.
 export function ReturnPlot({ series, figures, on }: ReturnPlotProps) {
   const t = useT();
   const [tag] = useAppLocale();
@@ -45,6 +43,8 @@ export function ReturnPlot({ series, figures, on }: ReturnPlotProps) {
       field: portfolioField,
       label: t("portfolio.results.series.portfolio"),
       slot: 1,
+      // An index of another step adds dates the portfolio holds no point on.
+      connectNulls: true,
       format: exact,
     },
     ...figures.indexes.map((index): ChartSeries => ({
@@ -70,18 +70,9 @@ export function ReturnPlot({ series, figures, on }: ReturnPlotProps) {
             axis: "x",
             from: figures.fall.from,
             to: figures.fall.to,
-            label: `${t("portfolio.results.fact.fall")} ${exact(figures.fall.value)}`,
             tone: "danger",
           },
         ];
-  const labels = Object.fromEntries(
-    lines
-      .filter((line) => !hidden.includes(line.id ?? ""))
-      .map((line) => [
-        line.id ?? "",
-        `${line.label ?? ""} ${lastText(data, line.id ?? "", percent.format)}`,
-      ]),
-  );
 
   return (
     <Chart
@@ -101,7 +92,6 @@ export function ReturnPlot({ series, figures, on }: ReturnPlotProps) {
         format: timeFormat(periodDays(series.from, series.to)),
       }}
       y={{ format: (value: number) => percent.format(value) }}
-      extendOption={(option) => withEndLabels(option, labels)}
     />
   );
 }

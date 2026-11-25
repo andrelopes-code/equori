@@ -453,6 +453,8 @@ const portfolioResultsRoute = createRoute({
   getParentRoute: () => authedRoute,
   path: "portfolio/results",
   validateSearch: validateResultsSearch,
+  // A failed chunk load falls to the Chart error state instead of the route error screen.
+  loader: () => preloadChartEngine(["line", "bar"]).catch(() => undefined),
   component: PortfolioResultsPage,
 });
 

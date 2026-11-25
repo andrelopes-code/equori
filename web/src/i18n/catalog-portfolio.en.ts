@@ -294,11 +294,14 @@ export const portfolioEn = {
   "portfolio.results.months.accumulated": "Accumulated",
   "portfolio.results.evolution": "Evolution of the portfolio",
   "portfolio.results.evolution.description":
-    "What was contributed and what the return added.",
+    "Line: value of the portfolio. Dashed: money contributed. Area between them: return.",
   "portfolio.results.evolution.value": "Value",
   "portfolio.results.evolution.contributed": "Contributed",
   "portfolio.results.evolution.gain": "Accumulated return",
-  "portfolio.results.evolution.flows": "Contributions",
+  "portfolio.results.evolution.flows":
+    "Contributions and withdrawals of each month",
+  "portfolio.results.evolution.flows.in": "Contribution",
+  "portfolio.results.evolution.flows.out": "Withdrawal",
   "portfolio.results.evolution.opening": "Opening value",
   "portfolio.results.evolution.net": "Net contributions",
   "portfolio.results.evolution.return": "Return",

@@ -3,6 +3,7 @@ import type { BlockFigures } from "@/features/portfolio/results/return-block/blo
 import { toBasisPoints } from "@/features/portfolio/results/return-block/block-figures";
 import { FactList } from "@/features/portfolio/results/shared/fact-list";
 import { FactRow } from "@/features/portfolio/results/shared/fact-row";
+import styles from "@/features/portfolio/results/shared/shared.module.css";
 import {
   formatBasisPoints,
   formatMonthSlashYear,
@@ -65,7 +66,10 @@ export function ReturnFacts({ series, figures }: ReturnFactsProps) {
       </FactRow>
 
       {fall !== null && (
-        <FactRow label={t("portfolio.results.fact.fall")}>
+        <FactRow
+          label={t("portfolio.results.fact.fall")}
+          mark={<span className={styles.fallMark} aria-hidden="true" />}
+        >
           <Toned value={fall.value}>{signed(fall.value)}</Toned>
           {separator}
           {t("portfolio.results.fact.fall.dates", {

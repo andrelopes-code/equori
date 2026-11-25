@@ -1,4 +1,3 @@
-import { Divider } from "@slotted/react/divider";
 import { Inline } from "@slotted/react/inline";
 import {
   PageHeader,
@@ -22,7 +21,7 @@ import { useT } from "@/i18n/i18n-provider";
 interface PortfolioAreaHeaderProps {
   tab: PortfolioTab;
   subheading: ReactNode;
-  // The value controls of the tab (currency, date, year, account); drawn before the rule.
+  // The value controls of the tab (currency, date, year, account); drawn first.
   controls?: ReactNode;
   // The actions of the tab, lightest first; drawn after the help link.
   actions?: ReactNode;
@@ -33,7 +32,7 @@ interface PortfolioAreaHeaderProps {
 }
 
 // PT1, PT3, PT4: one header on the five routes of the portfolio area. A tab is a link that carries
-// the valuation currency; the controls come first, a rule, the help link, then the actions.
+// the valuation currency; the controls come first, the help link, then the actions, at one gap.
 export function PortfolioAreaHeader({
   tab,
   subheading,
@@ -69,9 +68,6 @@ export function PortfolioAreaHeader({
           <PageHeaderActions>
             <Inline gap={3} wrap="nowrap">
               {controls}
-              {controls !== undefined && (
-                <Divider orientation="vertical" className="mx-2" />
-              )}
               <HelpLink page={help} />
               {actions}
             </Inline>

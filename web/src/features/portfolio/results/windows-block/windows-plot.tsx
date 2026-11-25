@@ -1,13 +1,9 @@
 import type { ChartAnnotation, ChartSeries } from "@slotted/core/chart";
 import { Chart } from "@slotted/react/chart";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
-import { withEndLabels } from "@/features/portfolio/results/return-block/end-labels";
 import { toBasisPoints } from "@/features/portfolio/results/return-block/block-figures";
-import {
-  lastText,
-  portfolioField,
-} from "@/features/portfolio/results/return-block/plot-rows";
+import { portfolioField } from "@/features/portfolio/results/return-block/plot-rows";
 import {
   windowRows,
   type WindowFigures,
@@ -29,6 +25,10 @@ const zeroLine: ChartAnnotation[] = [{ kind: "line", axis: "start", value: 0 }];
 export function WindowsPlot({ figures }: WindowsPlotProps) {
   const t = useT();
   const [tag] = useAppLocale();
+  // The portfolio and the first index at first; the legend switches the others on.
+  const [hidden, setHidden] = useState<readonly string[]>(() =>
+    figures.indexes.slice(1).map((index) => index.id),
+  );
 
   const percent = numberFormatter(tag, {
     style: "percent",
@@ -68,20 +68,17 @@ export function WindowsPlot({ figures }: WindowsPlotProps) {
       format: exact,
     })),
   ];
-  const labels = Object.fromEntries(
-    series
-      .filter((line) => line.kind === "line")
-      .map((line) => [
-        line.id ?? "",
-        `${line.label ?? ""} ${lastText(data, line.id ?? "", percent.format)}`,
-      ]),
-  );
 
   return (
     <Chart
       variant="plain"
       size="md"
-      legend={false}
+      legendValues
+      hidden={hidden}
+      onHiddenChange={setHidden}
+      renderLegendItem={(entry, _props, fallback) =>
+        entry.key === belowZero ? null : fallback
+      }
       toolbar="hover"
       aria-label={t("portfolio.results.plot.windows")}
       locale={tag}
@@ -94,7 +91,6 @@ export function WindowsPlot({ figures }: WindowsPlotProps) {
         format: { year: "numeric" },
       }}
       y={{ format: (value: number) => percent.format(value) }}
-      extendOption={(option) => withEndLabels(option, labels)}
     />
   );
 }

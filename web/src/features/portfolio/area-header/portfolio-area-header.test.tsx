@@ -68,8 +68,10 @@ describe("PortfolioAreaHeader", () => {
     },
   );
 
-  it("draws one separator only when the tab has controls", async () => {
-    const view = renderWithRouter(
+  // Owner review of 2026-11-25: the rule beside a ghost button reads off-centre, so the header
+  // separates its controls from its actions by the gap alone.
+  it("draws no separator between the controls and the actions", async () => {
+    renderWithRouter(
       <PortfolioAreaHeader
         tab="summary"
         subheading="Sub"
@@ -78,15 +80,7 @@ describe("PortfolioAreaHeader", () => {
       />,
       { path: "/portfolio", fetch: portfolioApi() },
     );
-
-    expect(await screen.findAllByRole("separator")).toHaveLength(1);
-
-    view.unmount();
-    renderWithRouter(
-      <PortfolioAreaHeader tab="summary" subheading="Sub" help="portfolio" />,
-      { path: "/portfolio", fetch: portfolioApi() },
-    );
-    await screen.findByRole("heading", { level: 1 });
+    await screen.findByText("control");
 
     expect(screen.queryByRole("separator")).not.toBeInTheDocument();
   });

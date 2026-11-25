@@ -43,6 +43,37 @@
     white-space: nowrap;
   }
 
+  /* The strip of flows names itself and its two bars */
+  .flowHead {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--slotted-space-4);
+    margin-block-start: var(--slotted-space-5);
+    font-size: var(--slotted-font-size-sm);
+    white-space: nowrap;
+  }
+
+  .flowHead .keyList {
+    margin: 0;
+  }
+
+  .flowTitle {
+    font-weight: var(--slotted-font-weight-medium);
+  }
+
+  .flowIn,
+  .flowOut {
+    inline-size: 0.75rem; /* literal: 10.5 px square beside 13 px text */
+    block-size: 0.75rem; /* literal: same */
+    border-radius: var(--slotted-radius-xs);
+    background: var(--slotted-data-1);
+  }
+
+  .flowOut {
+    background: var(--slotted-tone-danger-solid);
+  }
+
   .keySwatch {
     inline-size: 0.75rem; /* literal: 10.5 px square beside 13 px text */
     block-size: 0.75rem; /* literal: same */

@@ -19,6 +19,24 @@
     color: var(--slotted-text-muted);
   }
 
+  .fact dt {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-2);
+  }
+
+  /* Repeats the band the plot draws over the largest fall */
+  .fallMark {
+    inline-size: 0.75rem; /* literal: 10.5 px square beside 13 px text */
+    block-size: 0.75rem; /* literal: same */
+    border-radius: var(--slotted-radius-xs);
+    background: color-mix(
+      in oklab,
+      var(--slotted-tone-danger-solid) 30%,
+      transparent
+    );
+  }
+
   .fact dd {
     margin: 0;
     font-variant-numeric: tabular-nums;

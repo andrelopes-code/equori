@@ -6,6 +6,7 @@ import type {
   EvolutionRow,
 } from "@/features/portfolio/results/evolution-block/evolution-rows";
 import { withoutAxisLabels } from "@/features/portfolio/results/evolution-block/hide-axis-labels";
+import styles from "@/features/portfolio/results/evolution-block/evolution-block.module.css";
 import type { EvolutionAxes } from "@/features/portfolio/results/evolution-block/use-evolution-axes";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
@@ -26,7 +27,7 @@ export function FlowStrip({ rows, axes }: FlowStripProps) {
       id: "flowIn",
       kind: "bar",
       field: "flowIn",
-      label,
+      label: t("portfolio.results.evolution.flows.in"),
       slot: 1,
       stack: "flows",
       format: axes.exact,
@@ -35,7 +36,7 @@ export function FlowStrip({ rows, axes }: FlowStripProps) {
       id: "flowOut",
       kind: "bar",
       field: "flowOut",
-      label,
+      label: t("portfolio.results.evolution.flows.out"),
       tone: "danger",
       stack: "flows",
       format: axes.exact,
@@ -43,18 +44,36 @@ export function FlowStrip({ rows, axes }: FlowStripProps) {
   ];
 
   return (
-    <Chart
-      variant="plain"
-      size="sm"
-      legend={false}
-      toolbar="hover"
-      aria-label={label}
-      locale={tag}
-      data={rows}
-      series={series}
-      x={axes.x}
-      y={axes.y}
-      extendOption={withoutAxisLabels}
-    />
+    <>
+      <div className={styles.flowHead}>
+        <span className={styles.flowTitle}>{label}</span>
+
+        <ul className={styles.keyList}>
+          <li>
+            <span className={styles.flowIn} aria-hidden="true" />
+            {t("portfolio.results.evolution.flows.in")}
+          </li>
+
+          <li>
+            <span className={styles.flowOut} aria-hidden="true" />
+            {t("portfolio.results.evolution.flows.out")}
+          </li>
+        </ul>
+      </div>
+
+      <Chart
+        variant="plain"
+        size="sm"
+        legend={false}
+        toolbar="hover"
+        aria-label={label}
+        locale={tag}
+        data={rows}
+        series={series}
+        x={axes.x}
+        y={axes.y}
+        extendOption={withoutAxisLabels}
+      />
+    </>
   );
 }
