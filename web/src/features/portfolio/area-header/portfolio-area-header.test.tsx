@@ -11,10 +11,11 @@ const tabNames = [
   catalogEn["portfolio.tabs.positions"],
   catalogEn["portfolio.tabs.year"],
   catalogEn["portfolio.tabs.contributions"],
+  catalogEn["portfolio.tabs.projection"],
 ];
 
 describe("PortfolioAreaHeader", () => {
-  it("draws the heading and the four tabs with the chosen one selected", async () => {
+  it("draws the heading and the five tabs with the chosen one selected", async () => {
     renderWithRouter(
       <PortfolioAreaHeader tab="results" subheading="Sub" help="portfolio" />,
       { path: "/portfolio", fetch: portfolioApi() },

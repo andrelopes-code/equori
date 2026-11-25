@@ -44,6 +44,7 @@ import { InstrumentPage, InstrumentsPage } from "@/features/instruments/routes";
 import {
   ContributionPlanPage,
   PortfolioPositionsPage,
+  PortfolioProjectionPage,
   PortfolioResultsPage,
   PortfolioYearPage,
   validatePortfolioSearch,
@@ -481,6 +482,14 @@ const contributionPlanRoute = createRoute({
   component: ContributionPlanPage,
 });
 
+const portfolioProjectionRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "portfolio/projection",
+  // A failed chunk load falls to the Chart error state instead of the route error screen.
+  loader: () => preloadChartEngine(["line", "bar"]).catch(() => undefined),
+  component: PortfolioProjectionPage,
+});
+
 const reportsRoute = createRoute({
   getParentRoute: () => authedRoute,
   path: "reports",
@@ -684,6 +693,7 @@ export const routeTree = rootRoute.addChildren([
     portfolioPositionsRoute,
     portfolioYearRoute,
     contributionPlanRoute,
+    portfolioProjectionRoute,
     reportsRoute,
     calculatorsRoute,
     calculatorRoute,

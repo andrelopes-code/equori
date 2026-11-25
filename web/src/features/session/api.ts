@@ -146,6 +146,19 @@ export function useSetDisplayName() {
   });
 }
 
+// Stores the birth date; the answer replaces the cached profile.
+export function useSetBirthDate() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (birthDate: string) =>
+      unwrap(await api.PATCH("/me", { body: { birth_date: birthDate } })),
+    onSuccess: (me) => {
+      queryClient.setQueryData(meQuery(api).queryKey, me);
+    },
+  });
+}
+
 export const appearanceSaveKey = ["me", "appearance", "save"] as const;
 
 export type AppearanceInput =

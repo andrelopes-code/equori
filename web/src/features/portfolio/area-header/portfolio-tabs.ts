@@ -1,6 +1,7 @@
 import type { MessageKey } from "@/i18n/catalog.en";
 
-export type PortfolioTab = "results" | "positions" | "year" | "contributions";
+export type PortfolioTab =
+  "results" | "positions" | "year" | "contributions" | "projection";
 
 export const portfolioTabs: readonly {
   tab: PortfolioTab;
@@ -18,5 +19,10 @@ export const portfolioTabs: readonly {
     tab: "contributions",
     to: "/portfolio/contribution-plan",
     label: "portfolio.tabs.contributions",
+  },
+  {
+    tab: "projection",
+    to: "/portfolio/projection",
+    label: "portfolio.tabs.projection",
   },
 ];

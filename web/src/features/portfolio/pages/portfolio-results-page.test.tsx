@@ -462,7 +462,7 @@ describe("Portfolio results page: the figures", () => {
     localStorage.removeItem("equori.privacy");
   });
 
-  it("PT1: lists four tabs, none of them the summary", async () => {
+  it("PT1: lists five tabs, none of them the summary", async () => {
     await renderApp("/portfolio", { fetch: portfolioApi() });
     const list = await screen.findByRole("tablist", {
       name: catalogEn["portfolio.tabs.label"],
@@ -477,6 +477,7 @@ describe("Portfolio results page: the figures", () => {
       catalogEn["portfolio.tabs.positions"],
       catalogEn["portfolio.tabs.year"],
       catalogEn["portfolio.tabs.contributions"],
+      catalogEn["portfolio.tabs.projection"],
     ]);
     expect(
       within(list).getByRole("tab", {

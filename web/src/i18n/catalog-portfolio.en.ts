@@ -223,6 +223,7 @@ export const portfolioEn = {
   "portfolio.tabs.positions": "Positions",
   "portfolio.tabs.year": "Income and tax",
   "portfolio.tabs.contributions": "Contributions",
+  "portfolio.tabs.projection": "Projection",
   "portfolio.positions.subtitle": "What you hold, by account and by asset.",
   "portfolio.results.subtitle":
     "How it performed, month by month and against the indexes.",
@@ -301,4 +302,43 @@ export const portfolioEn = {
   "portfolio.results.evolution.irr": "Annual rate (IRR)",
   "portfolio.results.plot.evolution": "Value and contributions by month",
   "portfolio.results.failed": "The results were not computed",
+  "portfolio.projection.subtitle":
+    "Where the plan leads and how the record stands.",
+  "portfolio.projection.plan.title": "Plan",
+  "portfolio.projection.plan.description":
+    "Values change the projection at once; saving stores the plan and its date.",
+  "portfolio.projection.plan.save": "Save plan",
+  "portfolio.projection.plan.age": "Age",
+  "portfolio.projection.plan.ageValue": "{years} years",
+  "portfolio.projection.plan.ageSource": "birth date from the profile",
+  "portfolio.projection.plan.withdrawalAge": "Withdrawals from age",
+  "portfolio.projection.plan.years": "years",
+  "portfolio.projection.plan.realReturn": "Real return",
+  "portfolio.projection.plan.inflation": "Inflation",
+  "portfolio.projection.plan.perYear": "% a year",
+  "portfolio.projection.plan.portfolioReturn": "Portfolio: {rate}% a year",
+  "portfolio.projection.plan.withdrawal": "Withdrawal",
+  "portfolio.projection.plan.modeIncome": "Income a month",
+  "portfolio.projection.plan.modeRate": "Rate a year",
+  "portfolio.projection.plan.income": "Desired income",
+  "portfolio.projection.plan.incomeHint": "A month, in today's money.",
+  "portfolio.projection.plan.rate": "Withdrawal rate",
+  "portfolio.projection.plan.rateHint": "Of the portfolio, a year.",
+  "portfolio.projection.plan.lastAge": "Until age",
+  "portfolio.projection.plan.ageError":
+    "Withdrawals must start after the current age.",
+  "portfolio.projection.plan.birth": "Birth date",
+  "portfolio.projection.plan.birthHint": "Kept in your profile.",
+  "portfolio.projection.empty.title": "No projection saved",
+  "portfolio.projection.empty.description":
+    "Enter the age withdrawals start, the income wanted and the planned contributions.",
+  "portfolio.projection.empty.build": "Build projection",
+  "portfolio.projection.failed": "The projection was not computed",
+  "portfolio.projection.nobirth.title": "The birth date is missing",
+  "portfolio.projection.nobirth.description":
+    "The projection is drawn by age. The date stays in your profile and applies to every screen.",
+  "portfolio.projection.currency.title": "The portfolio currency changed",
+  "portfolio.projection.currency.description":
+    "The plan is in {plan} and the portfolio is now valued in {base}. Delete the plan to start again in the new currency.",
+  "portfolio.projection.currency.delete": "Delete plan",
 } as const;

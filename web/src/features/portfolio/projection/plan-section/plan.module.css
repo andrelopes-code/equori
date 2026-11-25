@@ -1,0 +1,45 @@
+@layer app {
+  .planStrip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--slotted-space-5) var(--slotted-space-6);
+  }
+
+  .planField {
+    inline-size: 9.5rem; /* literal: a field of four digits and its unit */
+  }
+
+  .planField[data-width="medium"] {
+    inline-size: 12rem; /* literal: a money field of seven digits */
+  }
+
+  .planMode {
+    display: grid;
+    gap: var(--slotted-space-2);
+    inline-size: auto;
+  }
+
+  .planFact {
+    display: grid;
+    gap: var(--slotted-space-1);
+    min-inline-size: 7rem; /* literal: the width of the birth hint */
+    white-space: nowrap;
+  }
+
+  .planFactLabel {
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-sm);
+  }
+
+  .planFactValue {
+    font-size: var(--slotted-font-size-lg);
+    font-weight: var(--slotted-font-weight-semibold);
+    line-height: 2.25rem; /* literal: the height of a field, so facts and fields share a line */
+  }
+
+  .planFactHint {
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+  }
+}

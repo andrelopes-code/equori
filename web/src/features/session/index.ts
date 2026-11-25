@@ -4,6 +4,7 @@ export {
   myBooksQuery,
   useChooseLanguage,
   useSaveAppearance,
+  useSetBirthDate,
   useSetDisplayName,
   useSwitchBooks,
 } from "@/features/session/api";

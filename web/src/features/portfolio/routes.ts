@@ -14,6 +14,11 @@ export const PortfolioPositionsPage = lazyRouteComponent(
   "PortfolioPositionsPage",
 );
 
+export const PortfolioProjectionPage = lazyRouteComponent(
+  () => import("@/features/portfolio/pages/portfolio-projection-page"),
+  "PortfolioProjectionPage",
+);
+
 export const PortfolioResultsPage = lazyRouteComponent(
   () => import("@/features/portfolio/pages/portfolio-results-page"),
   "PortfolioResultsPage",
