@@ -207,6 +207,7 @@
   .planRowPending {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 9rem; /* literal: the control column of .planRow */
+    grid-template-areas: "label control";
     align-items: center;
     column-gap: var(--slotted-space-6);
     block-size: 4rem; /* literal: the row height of .planRow */
