@@ -5,7 +5,7 @@ Goal: a second local user, `demo@equori.local`, holding 24 months of coherent pe
 ## Decisions
 
 - Tool: `cmd/demoseed`, a separate `main` package that drives the running application through `/api/v1` with one authenticated session. No SQL, no direct service calls: every invariant of the ledger applies.
-- User creation: `equori user create --language pt --region BR` (existing command). `make demo` runs the command when the user is absent, then the seeder.
+- User creation: `equori user create --language pt --region BR --admin` (existing command): the demo user is an administrator of the instance, so it manages the market data and the other settings of the instance. `make demo` runs the command when the user is absent, then the seeder.
 - Determinism: a fixed `math/rand/v2` PCG seed. The same inputs produce the same data. `--today` defaults to the current date; history starts 24 months earlier.
 - Idempotency: the seeder aborts when the user already owns an account that is not a system account. Reset is `DROP`ping the user with SQL on the dev database; the seeder does not delete.
 - Test: `cmd/demoseed/demoseed_test.go` runs the seeder against `apitest.New(t)` and asserts invariants (no negative checking balance, card statements settled, positions positive, every module non-empty).

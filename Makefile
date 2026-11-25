@@ -160,7 +160,7 @@ DEMO_EMAIL ?= demo@equori.local
 export EQUORI_DEMO_PASSWORD ?= equori-demo-account
 
 demo-user: db-up
-	-$(LOAD_ENV) && printf '%s\n' "$(EQUORI_DEMO_PASSWORD)" | go run ./cmd/equori user create --email $(DEMO_EMAIL) --language pt --region BR
+	-$(LOAD_ENV) && printf '%s\n' "$(EQUORI_DEMO_PASSWORD)" | go run ./cmd/equori user create --email $(DEMO_EMAIL) --language pt --region BR --admin
 
 # Deletes the demo user and every row it owns (cmd/demoseed/reset.sql); make demo then seeds it again.
 demo-reset: db-up
