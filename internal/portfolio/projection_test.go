@@ -127,6 +127,32 @@ func TestS714LaterSaveKeepsBaseline(t *testing.T) {
 	}
 }
 
+// PJ3: a base currency changed after the first save leaves the currency and the baseline of the
+// plan. The ledger locks the base currency once it holds a posting, so the book holds none.
+func TestProjectionKeepsCurrencyAfterBaseChange(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t)
+	first := saveProjection(t, f.h, projectionBody(change("2026-11-01", 100000)))
+
+	f.h.MustDo(
+		http.MethodPut,
+		"/api/v1/settings",
+		map[string]string{"base_currency": "USD"},
+		http.StatusOK,
+		nil,
+	)
+
+	second := saveProjection(t, f.h, projectionBody(change("2026-11-01", 120000)))
+
+	if first.Currency != "BRL" || second.Currency != "BRL" || second.Baseline != first.Baseline {
+		t.Fatalf("second save = %+v, want the currency and baseline of %+v", second, first)
+	}
+
+	if read := readProjection(t, f.h); read.Currency != "BRL" || read.Changes[0].Amount != 120000 {
+		t.Fatalf("read = %+v, want BRL and the new amount", read)
+	}
+}
+
 // S715: a save that alters or drops a change before the current month is 422; one that replaces
 // the current month and later is stored, ordered by month.
 func TestS715PastChangeIsKept(t *testing.T) {

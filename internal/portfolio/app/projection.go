@@ -81,7 +81,8 @@ func (s *Service) SaveProjection(
 		return ProjectionView{}, fmt.Errorf("save the projection plan: %w", err)
 	}
 
-	return v, nil
+	// The stored plan is the answer: of two first saves at once, the baseline of the first holds.
+	return s.Projection(ctx, booksID, memberID)
 }
 
 // DeleteProjection removes the plan of the member with its changes; ErrNotFound without one.
