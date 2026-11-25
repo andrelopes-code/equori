@@ -202,7 +202,7 @@ describe("Tax year of investments", () => {
     ).toHaveAttribute("aria-selected", "true");
     expect(
       within(list).getByRole("tab", {
-        name: catalogEn["portfolio.tabs.summary"],
+        name: catalogEn["portfolio.tabs.results"],
       }),
     ).toHaveAttribute("href", "/portfolio");
   });

@@ -43,7 +43,6 @@ import {
 import { InstrumentPage, InstrumentsPage } from "@/features/instruments/routes";
 import {
   ContributionPlanPage,
-  PortfolioPage,
   PortfolioPositionsPage,
   PortfolioResultsPage,
   PortfolioYearPage,
@@ -445,17 +444,21 @@ const instrumentRoute = createRoute({
 const portfolioRoute = createRoute({
   getParentRoute: () => authedRoute,
   path: "portfolio",
-  validateSearch: validatePortfolioSearch,
-  component: PortfolioPage,
-});
-
-const portfolioResultsRoute = createRoute({
-  getParentRoute: () => authedRoute,
-  path: "portfolio/results",
   validateSearch: validateResultsSearch,
   // A failed chunk load falls to the Chart error state instead of the route error screen.
   loader: () => preloadChartEngine(["line", "bar"]).catch(() => undefined),
   component: PortfolioResultsPage,
+});
+
+// PT1: the former address of the results tab keeps working with its search.
+const portfolioResultsRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "portfolio/results",
+  validateSearch: validateResultsSearch,
+  beforeLoad: ({ search }) => {
+    // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router redirects are thrown objects.
+    throw redirect({ to: "/portfolio", search });
+  },
 });
 
 const portfolioPositionsRoute = createRoute({

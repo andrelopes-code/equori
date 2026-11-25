@@ -287,7 +287,7 @@ describe("Contribution plan page", () => {
     ).toHaveAttribute("aria-selected", "true");
     expect(
       within(list).getByRole("tab", {
-        name: catalogPtBR["portfolio.tabs.summary"],
+        name: catalogPtBR["portfolio.tabs.results"],
       }),
     ).toHaveAttribute("href", "/portfolio");
   });

@@ -300,6 +300,20 @@ describe("Fixed income panel", () => {
     expect(localStorage.getItem(collapsedKey)).toBe("false");
   });
 
+  it("PT2: draws where the money is above the fixed income", async () => {
+    await renderApp("/portfolio/positions", { fetch: fixedIncomeApi() });
+    const where = await screen.findByRole("table", {
+      name: catalogEn["holdings.where"],
+    });
+    const panel = await screen.findByRole("region", {
+      name: catalogEn["fixedIncome.panel"],
+    });
+
+    expect(
+      where.compareDocumentPosition(panel) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
   it("FC36: draws no panel for a book without fixed income", async () => {
     const fetch = fixedIncomeApi({}, false);
     await renderApp("/portfolio/positions", { fetch });

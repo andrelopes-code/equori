@@ -1,15 +1,13 @@
 import type { MessageKey } from "@/i18n/catalog.en";
 
-export type PortfolioTab =
-  "summary" | "results" | "positions" | "year" | "contributions";
+export type PortfolioTab = "results" | "positions" | "year" | "contributions";
 
 export const portfolioTabs: readonly {
   tab: PortfolioTab;
   to: string;
   label: MessageKey;
 }[] = [
-  { tab: "summary", to: "/portfolio", label: "portfolio.tabs.summary" },
-  { tab: "results", to: "/portfolio/results", label: "portfolio.tabs.results" },
+  { tab: "results", to: "/portfolio", label: "portfolio.tabs.results" },
   {
     tab: "positions",
     to: "/portfolio/positions",

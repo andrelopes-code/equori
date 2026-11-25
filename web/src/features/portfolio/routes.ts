@@ -9,11 +9,6 @@ export const ContributionPlanPage = lazyRouteComponent(
   "ContributionPlanPage",
 );
 
-export const PortfolioPage = lazyRouteComponent(
-  () => import("@/features/portfolio/pages/portfolio-page"),
-  "PortfolioPage",
-);
-
 export const PortfolioPositionsPage = lazyRouteComponent(
   () => import("@/features/portfolio/pages/portfolio-positions-page"),
   "PortfolioPositionsPage",

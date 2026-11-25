@@ -11,14 +11,14 @@ import type {
 import { institutionsQuery, settingsQuery } from "@/features/setup";
 import { useToday } from "@/i18n/today";
 
-type PortfolioViewRoute = "/portfolio" | "/portfolio/positions";
-
-// What the summary and the positions page read the same way: the search of the route, the holdings
-// at its date and currency, the institution names and the empty and trade conditions.
-export function usePortfolioView(route: PortfolioViewRoute) {
+// What the positions page reads: the search of its route, the holdings at its date and currency,
+// the institution names and the empty and trade conditions.
+export function usePortfolioView() {
   const today = useToday();
   const api = useApi();
-  const search: PortfolioSearch = useSearch({ from: `/_authed${route}` });
+  const search: PortfolioSearch = useSearch({
+    from: "/_authed/portfolio/positions",
+  });
   const navigate = useNavigate();
   const base = useQuery(settingsQuery(api)).data?.base_currency;
   const institutions = useQuery(institutionsQuery(api));
@@ -43,7 +43,7 @@ export function usePortfolioView(route: PortfolioViewRoute) {
       ),
     );
 
-    void navigate({ to: route, search: next, replace: true });
+    void navigate({ to: "/portfolio/positions", search: next, replace: true });
   }
 
   return {

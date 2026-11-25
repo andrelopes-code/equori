@@ -2,6 +2,7 @@ import { ButtonLink } from "@slotted/react/button";
 import { Glyph } from "@slotted/react/icon";
 import { Page, PageBody } from "@slotted/react/page";
 
+import { WhereMoneySection } from "@/features/portfolio/allocation/where-money-section";
 import { PortfolioAreaHeader } from "@/features/portfolio/area-header/portfolio-area-header";
 import { ValuationDateInput } from "@/features/portfolio/area-header/valuation-date-input";
 import { ValueInSelect } from "@/features/portfolio/area-header/value-in-select";
@@ -14,7 +15,7 @@ import { useT } from "@/i18n/i18n-provider";
 import { routeTo } from "@/ui/navigation/route-to";
 import { PageStack } from "@/ui/page-layout/page-stack";
 
-// PT2: "Renda fixa" and the positions grid, each under its condition of the former page.
+// PT2: "Onde está o dinheiro", "Renda fixa" and the positions grid, each under its condition of the former page.
 export function PortfolioPositionsPage() {
   const t = useT();
   const {
@@ -33,7 +34,7 @@ export function PortfolioPositionsPage() {
     empty,
     hasBrokerage,
     change,
-  } = usePortfolioView("/portfolio/positions");
+  } = usePortfolioView();
 
   const canTrade = hasBrokerage && !empty && !positions.isError;
 
@@ -92,6 +93,20 @@ export function PortfolioPositionsPage() {
 
           {empty && !positions.isError && (
             <PortfolioEmpty hasBrokerage={hasBrokerage} />
+          )}
+
+          {!empty && !positions.isError && (
+            <WhereMoneySection
+              holdings={holdings}
+              institutions={names}
+              by={by}
+              total={summary.total}
+              valueIn={valueIn}
+              pending={pending}
+              onBy={(next) => {
+                change({ by: next === "type" ? undefined : next });
+              }}
+            />
           )}
 
           {!empty && !positions.isError && (

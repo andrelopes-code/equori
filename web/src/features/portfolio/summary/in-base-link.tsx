@@ -14,7 +14,7 @@ export function InBaseLink({ base }: InBaseLinkProps) {
   return (
     <Link
       render={routeTo({
-        to: "/portfolio",
+        to: "/portfolio/positions",
         search: (previous) => ({ ...previous, value_in: undefined }),
       })}
     >

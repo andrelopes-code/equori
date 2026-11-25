@@ -5,8 +5,13 @@ import { afterEach, describe, expect, it } from "vitest";
 import { catalogEn } from "@/i18n/catalog.en";
 import { catalogPtBR } from "@/i18n/catalog.pt-BR";
 import { json, problem } from "@/testing/fake-api";
-import { brl, cashID } from "@/testing/investment-api";
-import { instruments, portfolioApi, positions } from "@/testing/portfolio-api";
+import { accounts, brl, brokerID, cashID } from "@/testing/investment-api";
+import {
+  instruments,
+  portfolioApi,
+  positions,
+  xpInstitutionID,
+} from "@/testing/portfolio-api";
 import { hideAmounts } from "@/testing/privacy";
 import { renderApp } from "@/testing/render-app";
 
@@ -22,6 +27,16 @@ const gridRows = (grid: HTMLElement) =>
         .map((cell) => cell.textContent)
         .join("|"),
     );
+
+const tableRows = (table: HTMLElement) =>
+  within(table)
+    .getAllByRole("row")
+    .map((row) =>
+      [...row.querySelectorAll("th, td")].map((c) => c.textContent).join("|"),
+    );
+
+const where = () =>
+  screen.findByRole("table", { name: catalogEn["holdings.where"] });
 
 const list = () =>
   screen.findByRole("grid", { name: catalogEn["holdings.list"] });
@@ -545,5 +560,73 @@ describe("Portfolio positions page", () => {
 
     expect(asked).not.toHaveLength(0);
     expect(asked).not.toContain(null);
+  });
+
+  it("PC6: draws the groups of every row, with shares of the same total", async () => {
+    await renderApp("/portfolio/positions", { fetch: portfolioApi() });
+    const table = await where();
+
+    await within(table).findByText(catalogEn["instruments.type.cash"]);
+    expect(tableRows(table).slice(1)).toEqual([
+      `${catalogEn["instruments.type.cash"]}||R$400.00|73.93%`,
+      "REITs||R$105.00|19.40%",
+      "Stocks||R$36.00|6.67%",
+      "Total|R$541.00|100.00%",
+    ]);
+  });
+
+  it("PC6: a cash balance below zero has no share and leaves the base of the others", async () => {
+    const fetch = portfolioApi({
+      [`GET /api/v1/accounts/${cashID}/balance`]: () =>
+        json(200, { balance: brl(-5000), value: brl(-5000) }),
+    });
+    await renderApp("/portfolio/positions", { fetch });
+    const table = await where();
+
+    await within(table).findByText(catalogEn["instruments.type.cash"]);
+    expect(tableRows(table).slice(1)).toEqual([
+      "REITs||R$105.00|74.46%",
+      "Stocks||R$36.00|25.54%",
+      `${catalogEn["instruments.type.cash"]}||−R$50.00|—`,
+      "Total|R$91.00|100.00%",
+    ]);
+  });
+
+  it("PC5: one control groups the bars and the list, from the address", async () => {
+    const fetch = portfolioApi({
+      "GET /api/v1/accounts": () =>
+        json(200, {
+          items: accounts.map((a) =>
+            a.id === brokerID ? { ...a, institution_id: xpInstitutionID } : a,
+          ),
+        }),
+    });
+    await renderApp("/portfolio/positions?by=institution", { fetch });
+    const table = await where();
+
+    await within(table).findByText("XP");
+    expect(document.body.textContent).not.toContain(xpInstitutionID);
+
+    await userEvent
+      .setup()
+      .click(
+        screen.getByRole("radio", { name: catalogEn["portfolio.by.currency"] }),
+      );
+    await within(await where()).findByText("BRL");
+  });
+
+  it("PP6: runs the where table edge to edge, with no frame of its own", async () => {
+    await renderApp("/portfolio/positions", { fetch: portfolioApi() });
+
+    expect((await where()).closest("[data-ui='table']")).toHaveAttribute(
+      "data-variant",
+      "ruled",
+    );
+  });
+
+  it("PP1: draws the where section as a surface", async () => {
+    await renderApp("/portfolio/positions", { fetch: portfolioApi() });
+
+    expect(region(await where())).toHaveAttribute("data-ground", "surface");
   });
 });

@@ -2,8 +2,6 @@ import type { holdingsEn } from "@/i18n/catalog-holdings.en";
 
 export const holdingsPtBR: Record<keyof typeof holdingsEn, string> = {
   "holdings.bar": "Proporção",
-  "holdings.subtitle":
-    "Quanto você tem investido, quanto ganhou e como rendeu.",
   "holdings.summary": "Resumo da carteira",
   "holdings.value": "Valor da carteira",
   "holdings.value.note":
@@ -21,11 +19,6 @@ export const holdingsPtBR: Record<keyof typeof holdingsEn, string> = {
   "holdings.income.open": "Ver",
   "holdings.income.record": "Registrar provento",
   "holdings.income.recordOf": "Registrar provento de {name}",
-  "holdings.return": "Como rendeu",
-  "holdings.period.year": "Últimos 12 meses",
-  "holdings.period.years3": "\u00daltimos 3 anos",
-  "holdings.period.years5": "\u00daltimos 5 anos",
-  "holdings.period.years10": "\u00daltimos 10 anos",
   "holdings.method": "Detalhes e método",
   "holdings.method.period": "Retorno do período",
   "holdings.method.personal": "Sua taxa pessoal ao ano",

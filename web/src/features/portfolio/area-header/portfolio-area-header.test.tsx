@@ -7,7 +7,6 @@ import { portfolioApi } from "@/testing/portfolio-api";
 import { renderWithRouter } from "@/testing/render-app";
 
 const tabNames = [
-  catalogEn["portfolio.tabs.summary"],
   catalogEn["portfolio.tabs.results"],
   catalogEn["portfolio.tabs.positions"],
   catalogEn["portfolio.tabs.year"],
@@ -15,10 +14,10 @@ const tabNames = [
 ];
 
 describe("PortfolioAreaHeader", () => {
-  it("draws the heading and the five tabs with the chosen one selected", async () => {
+  it("draws the heading and the four tabs with the chosen one selected", async () => {
     renderWithRouter(
       <PortfolioAreaHeader tab="results" subheading="Sub" help="portfolio" />,
-      { path: "/portfolio/results", fetch: portfolioApi() },
+      { path: "/portfolio", fetch: portfolioApi() },
     );
 
     expect(
@@ -52,7 +51,7 @@ describe("PortfolioAreaHeader", () => {
     async ({ valueIn, href }) => {
       renderWithRouter(
         <PortfolioAreaHeader
-          tab="summary"
+          tab="results"
           subheading="Sub"
           help="portfolio"
           valueIn={valueIn}
@@ -73,7 +72,7 @@ describe("PortfolioAreaHeader", () => {
   it("draws no separator between the controls and the actions", async () => {
     renderWithRouter(
       <PortfolioAreaHeader
-        tab="summary"
+        tab="results"
         subheading="Sub"
         help="portfolio"
         controls={<span>control</span>}

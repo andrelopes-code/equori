@@ -96,7 +96,7 @@ const section = () =>
   });
 
 async function renderReport(body: unknown) {
-  await renderApp("/portfolio/results", {
+  await renderApp("/portfolio", {
     fetch: portfolioApi({
       "GET /api/v1/reports/attribution": () => json(200, body),
     }),
@@ -219,7 +219,7 @@ describe("Attribution section", () => {
   });
 
   it("draws nothing for a book with no measured year", async () => {
-    await renderApp("/portfolio/results", { fetch: portfolioApi() });
+    await renderApp("/portfolio", { fetch: portfolioApi() });
 
     await screen.findByRole("tab", {
       name: catalogEn["portfolio.tabs.results"],

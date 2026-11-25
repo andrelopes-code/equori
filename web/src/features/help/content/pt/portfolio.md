@@ -1,8 +1,10 @@
 # A carteira
 
-A [carteira](/portfolio) responde a três perguntas: quanto você tem investido, quanto ganhou e como rendeu. Ela soma os investimentos e o saldo das suas contas de corretora numa data. Poupança e reservas ficam em [Contas](/accounts). Mude a data para ver a carteira de um dia do passado.
+A [carteira](/portfolio) responde a três perguntas: quanto você tem investido, quanto ganhou e como rendeu. Ela soma os investimentos e o saldo das suas contas de corretora numa data. Poupança e reservas ficam em [Contas](/accounts). Na aba **Posições**, mude a data para ver a carteira de um dia do passado.
 
 ## O resumo
+
+No topo da aba **Resultados**, a data é sempre hoje:
 
 - **Valor da carteira**: os investimentos com preço mais o saldo das corretoras.
 - **Lucro ou prejuízo**: valor de mercado menos custo, sem contar proventos. Só vira lucro ou prejuízo de fato quando você vende.
@@ -12,11 +14,11 @@ A [carteira](/portfolio) responde a três perguntas: quanto você tem investido,
 
 ## Onde está o dinheiro
 
-Divide a carteira por tipo, moeda ou instituição. A mesma escolha agrupa a lista de investimentos. O saldo de corretora fica negativo quando uma compra ou aplicação foi registrada sem a transferência do dinheiro para a corretora: essa linha mostra um traço no lugar da participação, as demais somam 100%, e registrar a transferência corrige o saldo. O patrimônio inteiro, com bancos e poupança, fica em [Relatórios](/reports).
+Na aba **Posições**, divide a carteira por tipo, moeda ou instituição. A mesma escolha agrupa a lista de investimentos. O saldo de corretora fica negativo quando uma compra ou aplicação foi registrada sem a transferência do dinheiro para a corretora: essa linha mostra um traço no lugar da participação, as demais somam 100%, e registrar a transferência corrige o saldo. O patrimônio inteiro, com bancos e poupança, fica em [Relatórios](/reports).
 
 ## Os investimentos
 
-A lista mostra o nome, o valor de mercado, o lucro ou prejuízo em dinheiro e em porcentagem do custo, e a parte da carteira. Em **Colunas**, acrescente quando quiser:
+Abaixo, a lista mostra o nome, o valor de mercado, o lucro ou prejuízo em dinheiro e em porcentagem do custo, e a parte da carteira. Em **Colunas**, acrescente quando quiser:
 
 - **Quantidade**: quantas unidades a conta tem na data.
 - **Custo médio**: o preço médio pago por unidade, somando todas as compras.
@@ -30,16 +32,16 @@ Um preço com mais de 7 dias aparece ao lado do valor. Um investimento sem preç
 
 Registre compras, vendas e proventos pelos botões acima da lista. O botão **+** na linha de um investimento abre o registro do provento desse investimento.
 
-## Como rendeu
+## Resultados
 
-![A seção Como rendeu, com o período marcado](portfolio-return "As setas do período mudam o intervalo comparado.")
+A aba **Resultados** abre com os números do topo e uma barra de período: 1 mês, 3 meses, 6 meses, Este ano, 12 meses, 2 anos, 5 anos, Desde o início ou um intervalo de duas datas. O seletor **O que ver** escolhe todas as corretoras ou uma conta, e o seletor de moeda mostra os valores em outra moeda. Quatro blocos seguem:
 
-Em **Como rendeu**, escolha a carteira inteira ou uma conta e um período de até 366 dias. A seção abre com o **Rendimento no período** em dinheiro, ao lado de uma frase que diz o resultado, como "No período, a carteira rendeu 4,20%.". Duas comparações vêm em seguida, cada uma com um par de barras no mesmo eixo e uma etiqueta:
+- **Rentabilidade**: o retorno do período e quantos pontos ele fica acima ou abaixo de cada índice nos mesmos dias. Cada índice é uma chave que mostra ou esconde a sua linha. O botão **Ver detalhes e método** abre a conciliação, as taxas, os créditos de rendimento, o retorno ponderado pelo tempo e os fluxos por mês.
+- **Janelas móveis de 12 meses**: o retorno dos 12 meses que terminam em cada mês, com a janela de hoje, a melhor, a pior e a parte das janelas abaixo de zero e acima de cada índice.
+- **Mês a mês**: o retorno de cada mês por ano, com a soma do ano e o retorno acumulado.
+- **Evolução do patrimônio**: o valor ao lado do dinheiro aportado, com o valor inicial, os aportes líquidos, o rendimento e o valor final do período.
 
-- **Contra o …**: o retorno do período ao lado da taxa de referência da sua região nos mesmos dias. A etiqueta mostra a porcentagem dessa taxa, ou a diferença em pontos percentuais.
-- **Contra a inflação**: o retorno ao lado do índice de inflação. A etiqueta mostra o retorno real.
-
-Uma região sem esses índices mostra só o retorno do período. O bloco **De onde veio o saldo final** lista o **Saldo inicial**, os **Aportes líquidos** (quando o período tem aportes ou retiradas), o **Rendimento** e o **Saldo final**. Quando o rendimento é positivo e nenhuma parte é negativa, uma barra divide o saldo final nessas partes. Notas no rodapé dizem o que os números deixam de fora, ao lado da taxa anual. O botão **Ver detalhes e método** abre a porcentagem do índice, o índice, os créditos de rendimento, os valores inicial e final, o retorno ponderado pelo tempo, a taxa pessoal e a lista de aportes e retiradas.
+Abaixo, **Rendimento por ativo** divide cada ano entre os investimentos com um único método.
 
 ## O ano
 

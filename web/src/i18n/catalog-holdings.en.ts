@@ -1,7 +1,5 @@
 export const holdingsEn = {
   "holdings.bar": "Proportion",
-  "holdings.subtitle":
-    "How much you have invested, how much you made and how it performed.",
   "holdings.summary": "Portfolio summary",
   "holdings.value": "Portfolio value",
   "holdings.value.note":
@@ -19,11 +17,6 @@ export const holdingsEn = {
   "holdings.income.open": "View",
   "holdings.income.record": "Record income",
   "holdings.income.recordOf": "Record income from {name}",
-  "holdings.return": "How it performed",
-  "holdings.period.year": "Last 12 months",
-  "holdings.period.years3": "Last 3 years",
-  "holdings.period.years5": "Last 5 years",
-  "holdings.period.years10": "Last 10 years",
   "holdings.method": "Details and method",
   "holdings.method.period": "Return of the period",
   "holdings.method.personal": "Your personal rate a year",

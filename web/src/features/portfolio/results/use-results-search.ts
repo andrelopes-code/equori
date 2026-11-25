@@ -12,7 +12,7 @@ export function useResultsSearch(): [
   ResultsSearch,
   (patch: SearchPatch) => void,
 ] {
-  const search = useSearch({ from: "/_authed/portfolio/results" });
+  const search = useSearch({ from: "/_authed/portfolio" });
   const navigate = useNavigate();
 
   function patch(next: SearchPatch) {
@@ -22,7 +22,7 @@ export function useResultsSearch(): [
       ),
     );
 
-    void navigate({ to: "/portfolio/results", search: kept, replace: true });
+    void navigate({ to: "/portfolio", search: kept, replace: true });
   }
 
   return [search, patch];

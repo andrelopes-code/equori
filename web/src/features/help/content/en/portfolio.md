@@ -1,8 +1,10 @@
 # The portfolio
 
-The [portfolio](/portfolio) answers three questions: how much you have invested, how much you made and how it performed. It adds the investments and the cash of your brokerage accounts on a date. Savings and reserves are on [Accounts](/accounts). Change the valuation date to see the portfolio of a past day.
+The [portfolio](/portfolio) answers three questions: how much you have invested, how much you made and how it performed. It adds the investments and the cash of your brokerage accounts on a date. Savings and reserves are on [Accounts](/accounts). On the **Positions** tab, change the valuation date to see the portfolio of a past day.
 
 ## The summary
+
+At the top of the **Results** tab, the date is always today:
 
 - **Portfolio value**: the priced investments plus the brokerage cash.
 - **Gain or loss**: market value minus cost, without income. It only becomes a real gain or loss when you sell.
@@ -12,11 +14,11 @@ The [portfolio](/portfolio) answers three questions: how much you have invested,
 
 ## Where the money is
 
-Splits the portfolio by type, currency or institution. The same choice groups the list of investments. The brokerage cash goes below zero when a purchase was recorded without the transfer of the money to the brokerage: that row shows a dash in place of the share, the others add up to 100%, and recording the transfer corrects the balance. Your whole net worth, with banks and savings, is on [Reports](/reports).
+On the **Positions** tab, it splits the portfolio by type, currency or institution. The same choice groups the list of investments. The brokerage cash goes below zero when a purchase was recorded without the transfer of the money to the brokerage: that row shows a dash in place of the share, the others add up to 100%, and recording the transfer corrects the balance. Your whole net worth, with banks and savings, is on [Reports](/reports).
 
 ## The investments
 
-The list shows the name, the market value, the gain or loss in money and in percent of cost, and the share of the portfolio. Under **Columns**, add what you need:
+Below, the list shows the name, the market value, the gain or loss in money and in percent of cost, and the share of the portfolio. Under **Columns**, add what you need:
 
 - **Quantity**: how many units the account holds on the date.
 - **Average cost**: the average price paid per unit, across all purchases.
@@ -30,16 +32,16 @@ A price older than 7 days shows beside the value. An investment without a price 
 
 Record buys, sales and income with the buttons above the list. The **+** button on the row of an investment opens the income form of that investment.
 
-## How it performed
+## Results
 
-![The How it performed section, with the period marked](portfolio-return "The arrows of the period change the span compared.")
+The **Results** tab opens with the figures at the top and a period bar: 1 month, 3 months, 6 months, This year, 12 months, 2 years, 5 years, From the start, or a range of two dates. The **What to see** select picks all brokerages or one account, and the currency select values the figures in another currency. Four blocks follow:
 
-Under **How it performed**, choose the whole portfolio or one account and a period of up to 366 days. The section opens with the **Gain in the period** in money, beside one sentence that states the result, such as "In the period, the portfolio returned 4.20%.". Two comparisons follow, each a pair of bars on one axis with a chip:
+- **Return**: the return of the period and how many points it stands above or below each index over the same days. Each index is a switch that shows or hides its line. The button **View details and method** opens the reconciliation, the rates, the yield credits, the time-weighted return and the flows by month.
+- **Rolling 12-month windows**: the return of the 12 months that end on each month, with today's window, the best, the worst and the share of windows below zero and above each index.
+- **Month by month**: the return of each month by year, with the sum of the year and the accumulated return.
+- **Evolution of the portfolio**: the value beside the money contributed, with the opening value, the net contributions, the return and the closing value of the period.
 
-- **Against the …**: the return of the period beside the reference rate of your region over the same days. The chip shows the percent of that rate, or the difference in percentage points.
-- **Against inflation**: the return beside the inflation index. The chip shows the real return.
-
-A region without these indexes shows the return of the period alone. The block **Where the closing balance came from** lists the **Opening balance**, the **Net deposits** (when the period has deposits or withdrawals), the **Gain** and the **Closing balance**. When the gain is positive and no part is negative, a bar splits the closing balance into these parts. Notes at the foot say what the figures leave out, beside the annual rate. The button **View details and method** opens the percent of the index, the index, the yield credits, the opening and closing values, the time-weighted return, the personal rate and the list of deposits and withdrawals.
+Below, **Return by holding** splits each year among the holdings with one method.
 
 ## The year
 
