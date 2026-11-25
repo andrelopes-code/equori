@@ -148,6 +148,18 @@ VALUES
         @overrides
     );
 
+-- name: ContributionFactInUse :one
+-- Reads every book: a tick asks a source only when one of them names its fact (CO17).
+SELECT
+    EXISTS (
+        SELECT
+            1
+        FROM
+            portfolio_contribution_question
+        WHERE
+            fact = @fact::text
+    );
+
 -- name: ListContributionRules :many
 SELECT
     r.class_id,

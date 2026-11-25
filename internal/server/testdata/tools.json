@@ -4025,7 +4025,7 @@
   },
   {
     "name": "get_market_data",
-    "description": "Returns market data of the instance: instruments with their type and scale, one instrument with its fixed income terms, its prices in a period, business-day calendars, the holidays of a year, the stored economic indexes, the rates of one, or the annual rates a market survey expects for one (where the indexes view says expected). The catalog view searches, by code or name, what the price sources can quote, for manage_instrument. The fund_reports view returns the monthly reports of a listed fund, or the funds that share its code; manage_instrument links one by the symbol of the source set to its identifier. The company_reports view returns the accounts of a listed company by fiscal year and quarter; company_figures its ratios and price multiples (a rate is a fraction), each with its date or the reason it has none. Use it for prices, securities and indexes. Do not use it for the book's holdings: get_portfolio does.",
+    "description": "Returns market data: instruments with their type and scale, one instrument with its fixed income terms, its prices in a period, business-day calendars, the holidays of a year, the stored economic indexes, the rates of one, or the annual rates a market survey expects for one (where the indexes view says expected). The catalog view searches, by code or name, what the price sources can quote, for manage_instrument. The fund_reports view returns the monthly reports of a listed fund, or the funds that share its code; manage_instrument links one by the symbol of the source set to its identifier. The company_reports view returns the accounts of a company by year and quarter; company_figures its ratios and price multiples (a rate is a fraction), each with its date or the reason it has none; sentiment the crypto fear and greed index. Use it for prices, securities and indexes. Do not use it for the book's holdings: get_portfolio does.",
     "effect": "read_only",
     "idempotent": true,
     "input_schema": {
@@ -4045,6 +4045,7 @@
             "index_rates",
             "index_expectations",
             "curves",
+            "sentiment",
             "fund_reports",
             "company_reports",
             "company_figures"
@@ -4697,6 +4698,42 @@
             ],
             "additionalProperties": false
           }
+        },
+        "sentiment": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "enabled": {
+              "type": "boolean"
+            },
+            "value": {
+              "type": "integer"
+            },
+            "date": {
+              "type": "string",
+              "format": "date"
+            },
+            "since": {
+              "type": "string",
+              "format": "date"
+            },
+            "days": {
+              "type": "integer"
+            },
+            "days_to_value": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "id",
+            "enabled",
+            "value",
+            "days",
+            "days_to_value"
+          ],
+          "additionalProperties": false
         },
         "fund_reports": {
           "type": "array",
@@ -12625,7 +12662,7 @@
             ],
             "additionalProperties": false
           },
-          "description": "at most 20; an empty list removes the plan"
+          "description": "at most 20 classes"
         }
       },
       "required": [

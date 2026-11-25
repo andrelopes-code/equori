@@ -43,6 +43,7 @@ export const marketDataEn = {
   "marketData.feed.br_focus": "Focus market survey (Banco Central do Brasil)",
   "marketData.feed.br_focus_ipca":
     "Focus market survey, inflation (Banco Central do Brasil)",
+  "marketData.feed.alternative_me": "Crypto Fear & Greed (alternative.me)",
   "marketData.feed.br_tesouro":
     "Tesouro Direto rates by maturity (Tesouro Nacional)",
   "marketData.feed.br_ifdata":
@@ -75,6 +76,7 @@ export const marketDataEn = {
   "marketData.kind.index": "Index",
   "marketData.kind.expectation": "Expectation",
   "marketData.kind.curve": "Curve",
+  "marketData.kind.sentiment": "Sentiment",
   "marketData.kind.institution": "Institution",
   "marketData.kind.fund_report": "Fund report",
   "marketData.kind.company_report": "Company report",
@@ -143,6 +145,8 @@ export const marketDataEn = {
   "marketData.feedSource.br_focus": "Banco Central do Brasil",
   "marketData.feedName.br_focus_ipca": "Focus market survey, inflation",
   "marketData.feedSource.br_focus_ipca": "Banco Central do Brasil",
+  "marketData.feedName.alternative_me": "Crypto Fear & Greed",
+  "marketData.feedSource.alternative_me": "alternative.me",
   "marketData.feedName.br_tesouro": "Tesouro Direto rates by maturity",
   "marketData.feedSource.br_tesouro": "Tesouro Nacional",
   "marketData.feedName.br_ifdata": "IF.data institution indicators",

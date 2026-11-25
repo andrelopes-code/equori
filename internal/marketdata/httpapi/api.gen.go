@@ -228,6 +228,7 @@ const (
 	MarketDataFeedKindIndex         MarketDataFeedKind = "index"
 	MarketDataFeedKindInstitution   MarketDataFeedKind = "institution"
 	MarketDataFeedKindPrice         MarketDataFeedKind = "price"
+	MarketDataFeedKindSentiment     MarketDataFeedKind = "sentiment"
 )
 
 // Valid indicates whether the value is a known member of the MarketDataFeedKind enum.
@@ -246,6 +247,8 @@ func (e MarketDataFeedKind) Valid() bool {
 	case MarketDataFeedKindInstitution:
 		return true
 	case MarketDataFeedKindPrice:
+		return true
+	case MarketDataFeedKindSentiment:
 		return true
 	default:
 		return false
@@ -1215,6 +1218,28 @@ type QuoteReferences struct {
 //
 // Example: 5.4830
 type Rate = string
+
+// SentimentIndex defines model for SentimentIndex.
+type SentimentIndex struct {
+	// Counts Stored days of each value, 101 items from value 0 to value 100.
+	Counts []int `json:"counts"`
+
+	// Date Day of the latest value, in UTC; absent without one.
+	Date *openapi_types.Date `json:"date,omitempty"`
+
+	// Days Number of stored days.
+	Days int `json:"days"`
+
+	// Enabled True when the source of the index is enabled.
+	Enabled bool   `json:"enabled"`
+	Id      string `json:"id"`
+
+	// Since First stored day; absent without one.
+	Since *openapi_types.Date `json:"since,omitempty"`
+
+	// Value Latest value; absent without one.
+	Value *int `json:"value,omitempty"`
+}
 
 // TermsDayCount defines model for TermsDayCount.
 type TermsDayCount string

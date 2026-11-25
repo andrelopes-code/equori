@@ -146,6 +146,10 @@ type MarketData interface {
 		code money.Currency,
 		priceDate time.Time,
 	) (domain.CompanyFacts, bool, error)
+	// Sentiment returns the latest value of a sentiment index.
+	Sentiment(ctx context.Context, index string) (domain.SentimentReading, error)
+	// WantSentiment asks for the value of today of a sentiment index.
+	WantSentiment(ctx context.Context, index string) error
 	// Adjust moves d to a business day of the calendar: the preceding one, else the following.
 	Adjust(ctx context.Context, calendar string, d time.Time, preceding bool) (time.Time, error)
 }
@@ -171,6 +175,8 @@ type Repository interface {
 	ForgetRebuildVersion(ctx context.Context) error
 	ContributionPlan(ctx context.Context, booksID int64) (domain.Plan, bool, error)
 	SaveContributionPlan(ctx context.Context, booksID int64, p domain.Plan) (int64, error)
+	// FactInUse reports whether a question of any book names the fact.
+	FactInUse(ctx context.Context, fact string) (bool, error)
 	ProjectionPlan(ctx context.Context, booksID, memberID int64) (ProjectionView, bool, error)
 	// SaveProjectionPlan stores the plan of the member in one transaction. It keeps the currency
 	// and the baseline of a stored plan and replaces its changes dated on or after from.

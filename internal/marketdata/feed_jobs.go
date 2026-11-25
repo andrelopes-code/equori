@@ -42,6 +42,12 @@ func (m *Module) jobsOf(on map[string]bool) []feedJob {
 		}})
 	}
 
+	for _, src := range m.feeds.Sentiments {
+		jobs = append(jobs, feedJob{id: src.ID(), run: func(ctx context.Context) error {
+			return m.tickSentiment(ctx, src)
+		}})
+	}
+
 	for _, src := range m.feeds.Sources {
 		jobs = append(
 			jobs,

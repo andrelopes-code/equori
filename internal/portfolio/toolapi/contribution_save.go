@@ -50,7 +50,7 @@ type contributionClassIn struct {
 
 type saveContributionPlanIn struct {
 	Amount  string                `json:"amount,omitzero" jsonschema:"monthly contribution, positive decimal; absent stores none"`
-	Classes []contributionClassIn `json:"classes"         jsonschema:"at most 20; an empty list removes the plan"`
+	Classes []contributionClassIn `json:"classes"         jsonschema:"at most 20 classes"`
 }
 
 func saveContributionPlan(svc *app.Service) tool.Tool {

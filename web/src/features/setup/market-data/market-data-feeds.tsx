@@ -12,12 +12,14 @@ const kindOrder = {
   index: 1,
   expectation: 2,
   curve: 3,
-  institution: 4,
-  fund_report: 5,
-  company_report: 6,
+  sentiment: 4,
+  institution: 5,
+  fund_report: 6,
+  company_report: 7,
 } as const;
 
-// The rows of a region: prices, then indexes, expectations, curves, institutions, fund reports and company reports.
+// The rows of a region: prices, then indexes, expectations, curves, sentiments, institutions, fund reports
+// and company reports.
 export function MarketDataFeeds({ feeds, controls }: MarketDataFeedsProps) {
   const ordered = [...feeds].sort(
     (a, b) => kindOrder[a.kind] - kindOrder[b.kind],

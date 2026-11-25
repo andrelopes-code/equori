@@ -81,7 +81,13 @@ var (
 		"net_margin_min":          atLeast(big.NewRat(-1, 1), greatestRate),
 		"gross_profit_assets_min": atLeast(big.NewRat(-1, 1), greatestRate),
 		"current_ratio_min":       atLeast(leastMultiple, greatestRatio),
-		growthFact:                atLeast(big.NewRat(-1, 1), greatestRate),
+		fearGreedFact: {
+			least:    new(big.Rat),
+			greatest: big.NewRat(greatestSentiment, 1),
+			atMost:   true,
+			whole:    true,
+		},
+		growthFact: atLeast(big.NewRat(-1, 1), greatestRate),
 		yearsFact: {
 			least: big.NewRat(1, 1), greatest: big.NewRat(yearsCounted, 1), whole: true,
 		},

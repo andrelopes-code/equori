@@ -33,12 +33,17 @@ func (s *Service) withFacts(ctx context.Context, p domain.Plan) (domain.Plan, er
 	out.Classes = slices.Clone(p.Classes)
 	cache := factsCache{}
 
+	mood, err := s.sentiments(ctx, p)
+	if err != nil {
+		return domain.Plan{}, err
+	}
+
 	for i, c := range p.Classes {
 		if !namesFact(c) {
 			continue
 		}
 
-		members, err := s.memberFacts(ctx, c, cache)
+		members, err := s.memberFacts(ctx, c, cache, mood)
 		if err != nil {
 			return domain.Plan{}, err
 		}
@@ -80,6 +85,7 @@ func (s *Service) memberFacts(
 	ctx context.Context,
 	c domain.PlanClass,
 	cache factsCache,
+	mood moods,
 ) ([]domain.PlanMember, error) {
 	members := slices.Clone(c.Members)
 
@@ -94,7 +100,7 @@ func (s *Service) memberFacts(
 			}
 		}
 
-		setFacts(&members[j], c, facts)
+		setFacts(&members[j], c, facts, mood)
 	}
 
 	return members, nil
@@ -102,7 +108,12 @@ func (s *Service) memberFacts(
 
 // setFacts sets the answer, the detail and the fiscal year of each fact of c on m; facts is nil
 // when no company report exists.
-func setFacts(m *domain.PlanMember, c domain.PlanClass, facts *domain.CompanyFacts) {
+func setFacts(
+	m *domain.PlanMember,
+	c domain.PlanClass,
+	facts *domain.CompanyFacts,
+	mood moods,
+) {
 	m.FactAnswers = make([]domain.FactAnswer, len(c.Questions))
 	m.FactDetails = make([]domain.FactDetail, len(c.Questions))
 	m.FactsYear = nil
@@ -125,6 +136,8 @@ func setFacts(m *domain.PlanMember, c domain.PlanClass, facts *domain.CompanyFac
 		case key == "":
 		case domain.HasLimit(key) && (q >= len(c.QuestionLimits) || c.QuestionLimits[q] == ""):
 			m.FactDetails[q] = domain.FactDetail{Reason: domain.NoLimit}
+		case mood.has(key):
+			m.FactAnswers[q], m.FactDetails[q] = mood.answer(key, c.QuestionLimits[q])
 		case facts == nil:
 			m.FactDetails[q] = domain.FactDetail{Reason: domain.NoReport}
 		case domain.IsSignal(key):

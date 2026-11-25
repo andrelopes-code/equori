@@ -13,6 +13,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/marketdata/fundreport"
 	"github.com/andrelopes-code/equori/internal/marketdata/index"
 	"github.com/andrelopes-code/equori/internal/marketdata/institution"
+	"github.com/andrelopes-code/equori/internal/marketdata/sentiment"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/locale"
 )
@@ -30,6 +31,8 @@ type FeedConfig struct {
 	Expectations []expectation.Source
 	// Curves are the curve sources (indexer comparison IC10).
 	Curves []curve.Source
+	// Sentiments are the sentiment sources (contribution conditions CO17).
+	Sentiments []sentiment.Source
 	// Institutions are the institution sources (A237).
 	Institutions []institution.Source
 	// FundReports are the fund report sources (fund report FR2).

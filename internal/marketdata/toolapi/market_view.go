@@ -23,6 +23,7 @@ func (getMarketDataView) Values() []string {
 		"index_rates",
 		"index_expectations",
 		"curves",
+		"sentiment",
 		"fund_reports",
 		"company_reports",
 		"company_figures",
@@ -229,6 +230,8 @@ type getMarketDataOut struct {
 	IndexExpectations indexExpectationsView `json:"index_expectations,omitzero"`
 	// Curves holds the rates the enabled curve sources report by maturity.
 	Curves []curveView `json:"curves,omitzero"`
+	// Sentiment holds the Crypto Fear & Greed Index, 0 to 100, of alternative.me.
+	Sentiment sentimentView `json:"sentiment,omitzero"`
 	// FundReports holds the monthly reports the enabled fund report sources stored for the code.
 	FundReports []fundReportView `json:"fund_reports,omitzero"`
 	// FundReportCandidates holds, for a source without a report of the code, the funds that share

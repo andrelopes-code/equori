@@ -41,6 +41,7 @@ var unscopedQueries = map[string]string{
 	"marketdata.ListInstruments":         "instruments are public or owned by a book; the entry point checks VisibleTo (A236 FC1)",
 	"marketdata.ListInstrumentsByType":   "instruments are public or owned by a book; the entry point checks VisibleTo (A236 FC1)",
 	"marketdata.UpdateInstrument":        "instruments are public or owned by a book; the entry point checks VisibleTo (A236 FC1)",
+	"portfolio.ContributionFactInUse":    "answers one boolean over every book, read by a tick of the instance (CO17)",
 	"reporting.DeleteAccountDaysFrom":    "keyed by an account the caller loaded within the book",
 }
 

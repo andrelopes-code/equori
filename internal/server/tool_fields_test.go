@@ -141,6 +141,9 @@ var uncoveredFields = map[string][]string{
 	"recordInstrumentPrices": {
 		"dry_run",
 	}, // the preview of record_price_series runs the dry run
+	"saveContributionPlan": {
+		"revision",
+	}, // the member confirms the whole plan the tool shows, so it is not checked against a read (CO15)
 	"saveBudgetBuckets": {
 		"from",
 	}, // the tool reads it as month

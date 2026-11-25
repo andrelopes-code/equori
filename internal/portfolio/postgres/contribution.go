@@ -169,3 +169,13 @@ func toPlanMember(m ListContributionMembersRow) domain.PlanMember {
 
 	return member
 }
+
+// FactInUse reports whether a question of any book names the fact (CO17).
+func (r *Repository) FactInUse(ctx context.Context, fact string) (bool, error) {
+	inUse, err := r.q.ContributionFactInUse(ctx, fact)
+	if err != nil {
+		return false, fmt.Errorf("read the use of %s: %w", fact, err)
+	}
+
+	return inUse, nil
+}

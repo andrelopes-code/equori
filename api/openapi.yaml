@@ -5587,6 +5587,32 @@ paths:
                 $ref: "#/components/schemas/CurveList"
         "401":
           $ref: "#/components/responses/Problem"
+  /sentiment-indexes/{id}:
+    get:
+      tags: [marketdata]
+      operationId: getSentimentIndex
+      x-book-role: read
+      summary: The latest value of a sentiment index and the days each value was published on (contribution conditions CO17).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: "^[a-z0-9_]{2,40}$"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SentimentIndex"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
   /fund-reports:
     get:
       tags: [marketdata]
@@ -13671,6 +13697,37 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/IndexExpectation"
+    SentimentIndex:
+      type: object
+      required: [id, enabled, days, counts]
+      properties:
+        id:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
+        enabled:
+          type: boolean
+          description: True when the source of the index is enabled.
+        value:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Latest value; absent without one.
+        date:
+          type: string
+          format: date
+          description: Day of the latest value, in UTC; absent without one.
+        since:
+          type: string
+          format: date
+          description: First stored day; absent without one.
+        days:
+          type: integer
+          description: Number of stored days.
+        counts:
+          type: array
+          items:
+            type: integer
+          description: Stored days of each value, 101 items from value 0 to value 100.
     CurveList:
       type: object
       required: [items]
@@ -14171,7 +14228,7 @@ components:
           pattern: "^[a-z0-9_]{2,40}$"
         kind:
           type: string
-          enum: [price, index, expectation, curve, institution, fund_report, company_report]
+          enum: [price, index, expectation, curve, sentiment, institution, fund_report, company_report]
         enabled:
           type: boolean
         suggested:

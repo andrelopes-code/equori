@@ -75,8 +75,8 @@ func (m *Module) Feeds(ctx context.Context) ([]Feed, error) {
 	return m.registryFeeds(ctx, out, fs)
 }
 
-// registryFeeds appends the index, expectation, curve, institution, fund report and company
-// report sources to out.
+// registryFeeds appends the index, expectation, curve, sentiment, institution, fund report and
+// company report sources to out.
 func (m *Module) registryFeeds(ctx context.Context, out []Feed, fs feedState) ([]Feed, error) {
 	out, err := m.indexFeeds(ctx, out, fs)
 	if err != nil {
@@ -89,6 +89,11 @@ func (m *Module) registryFeeds(ctx context.Context, out []Feed, fs feedState) ([
 	}
 
 	out, err = m.curveFeeds(ctx, out, fs)
+	if err != nil {
+		return nil, err
+	}
+
+	out, err = m.sentimentFeeds(ctx, out, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -275,6 +280,10 @@ func feedLags() map[string]int {
 	}
 
 	for _, e := range curveEntries() {
+		lags[e.id] = e.lag
+	}
+
+	for _, e := range sentimentEntries() {
 		lags[e.id] = e.lag
 	}
 

@@ -12,6 +12,26 @@ import (
 	"github.com/google/uuid"
 )
 
+const contributionFactInUse = `-- name: ContributionFactInUse :one
+SELECT
+    EXISTS (
+        SELECT
+            1
+        FROM
+            portfolio_contribution_question
+        WHERE
+            fact = $1::text
+    )
+`
+
+// Reads every book: a tick asks a source only when one of them names its fact (CO17).
+func (q *Queries) ContributionFactInUse(ctx context.Context, fact string) (bool, error) {
+	row := q.db.QueryRow(ctx, contributionFactInUse, fact)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const deleteContributionClasses = `-- name: DeleteContributionClasses :exec
 DELETE FROM portfolio_contribution_class
 WHERE

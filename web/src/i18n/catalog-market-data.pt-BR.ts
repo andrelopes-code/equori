@@ -47,6 +47,7 @@ export const marketDataPtBR: Record<keyof typeof marketDataEn, string> = {
     "Pesquisa Focus de mercado (Banco Central do Brasil)",
   "marketData.feed.br_focus_ipca":
     "Pesquisa Focus de mercado, inflação (Banco Central do Brasil)",
+  "marketData.feed.alternative_me": "Crypto Fear & Greed (alternative.me)",
   "marketData.feed.br_tesouro":
     "Taxas do Tesouro Direto por vencimento (Tesouro Nacional)",
   "marketData.feed.br_ifdata":
@@ -80,6 +81,7 @@ export const marketDataPtBR: Record<keyof typeof marketDataEn, string> = {
   "marketData.kind.index": "Índice",
   "marketData.kind.expectation": "Expectativa",
   "marketData.kind.curve": "Curva",
+  "marketData.kind.sentiment": "Sentimento",
   "marketData.kind.institution": "Instituição",
   "marketData.kind.fund_report": "Informe de fundo",
   "marketData.kind.company_report": "Demonstrações de companhia",
@@ -148,6 +150,8 @@ export const marketDataPtBR: Record<keyof typeof marketDataEn, string> = {
   "marketData.feedSource.br_focus": "Banco Central do Brasil",
   "marketData.feedName.br_focus_ipca": "Pesquisa Focus de mercado, inflação",
   "marketData.feedSource.br_focus_ipca": "Banco Central do Brasil",
+  "marketData.feedName.alternative_me": "Crypto Fear & Greed",
+  "marketData.feedSource.alternative_me": "alternative.me",
   "marketData.feedName.br_tesouro": "Taxas do Tesouro Direto por vencimento",
   "marketData.feedSource.br_tesouro": "Tesouro Nacional",
   "marketData.feedName.br_ifdata": "Indicadores de instituições do IF.data",

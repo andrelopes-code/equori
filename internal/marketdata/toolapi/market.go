@@ -14,12 +14,12 @@ import (
 func getMarketData(svc Service, cals Calendars) tool.Tool {
 	return tool.New(tool.Spec{
 		Name: "get_market_data",
-		Description: "Returns market data of the instance: instruments with their type and scale, one instrument with its fixed income terms, its prices in a period, business-day calendars, the holidays of a year, " +
+		Description: "Returns market data: instruments with their type and scale, one instrument with its fixed income terms, its prices in a period, business-day calendars, the holidays of a year, " +
 			"the stored economic indexes, the rates of one, or the annual rates a market survey expects for one (where the indexes view says expected). " +
 			"The catalog view searches, by code or name, what the price sources can quote, for manage_instrument. " +
 			"The fund_reports view returns the monthly reports of a listed fund, or the funds that share its code; " +
 			"manage_instrument links one by the symbol of the source set to its identifier. " +
-			"The company_reports view returns the accounts of a listed company by fiscal year and quarter; company_figures its ratios and price multiples (a rate is a fraction), each with its date or the reason it has none. " +
+			"The company_reports view returns the accounts of a company by year and quarter; company_figures its ratios and price multiples (a rate is a fraction), each with its date or the reason it has none; sentiment the crypto fear and greed index. " +
 			"Use it for prices, securities and indexes. " +
 			"Do not use it for the book's holdings: get_portfolio does.",
 		Effect:     tool.ReadOnly,
@@ -57,6 +57,8 @@ func readMarketData(
 		return marketIndexExpectations(ctx, svc, in)
 	case "curves":
 		return marketCurves(ctx, svc)
+	case "sentiment":
+		return marketSentiment(ctx, svc)
 	case "fund_reports":
 		return marketFundReports(ctx, svc, in)
 	case "company_figures":

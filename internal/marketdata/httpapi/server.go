@@ -55,6 +55,7 @@ type Service interface {
 	IndexRates(ctx context.Context, id string, from, to time.Time) ([]domain.IndexRate, error)
 	Expectations(ctx context.Context, id string) (domain.IndexExpectations, error)
 	Curves(ctx context.Context) ([]domain.Curve, error)
+	Sentiment(ctx context.Context, id string) (domain.SentimentIndex, error)
 	FundReports(ctx context.Context, code string) (domain.FundReportList, error)
 	CompanyReports(ctx context.Context, code string) ([]domain.CompanyReport, error)
 	CurrentCompanyFigures(ctx context.Context, code string) ([]domain.CompanyFigureSet, error)
@@ -153,6 +154,8 @@ func (s *Server) registerRates(mux *http.ServeMux) {
 		httpserver.Handle(s.errs, http.StatusOK, s.listIndexExpectations))
 	mux.HandleFunc("GET "+BaseURL+"/curves",
 		httpserver.Handle(s.errs, http.StatusOK, s.listCurves))
+	mux.HandleFunc("GET "+BaseURL+"/sentiment-indexes/{id}",
+		httpserver.Handle(s.errs, http.StatusOK, s.getSentimentIndex))
 	mux.HandleFunc("GET "+BaseURL+"/fund-reports",
 		httpserver.Handle(s.errs, http.StatusOK, s.listFundReports))
 	mux.HandleFunc("GET "+BaseURL+"/company-reports",
@@ -276,6 +279,8 @@ func notFoundProblem(err error) (problem.Details, bool) {
 		return problem.New(http.StatusNotFound, "not_found", "unknown institution"), true
 	case errors.Is(err, domain.ErrNoTerms):
 		return problem.New(http.StatusNotFound, "not_found", "the instrument has no terms"), true
+	case errors.Is(err, domain.ErrUnknownSentiment):
+		return problem.New(http.StatusNotFound, "not_found", "unknown sentiment index"), true
 	case errors.Is(err, domain.ErrUnknownFeed):
 		return problem.New(http.StatusNotFound, "not_found", "unknown feed"), true
 	}

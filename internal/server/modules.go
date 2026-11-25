@@ -244,7 +244,7 @@ func (m *modules) addPortfolio(pool *pgxpool.Pool, _ Config, log *slog.Logger) e
 	}
 
 	m.portfolio = module
-	m.marketdata.WithReclassified(module.RebuildAll)
+	m.marketdata.WithReclassified(module.RebuildAll).WithSentimentDemand(module.SentimentInUse)
 
 	return nil
 }
@@ -346,6 +346,7 @@ func newFeedConfig(
 		Indexes:        indexSources,
 		Expectations:   marketdata.NewExpectationSources(cfg.FeedURLs, feedClient),
 		Curves:         marketdata.NewCurveSources(cfg.FeedURLs, feedClient),
+		Sentiments:     marketdata.NewSentimentSources(cfg.FeedURLs, feedClient),
 		FundReports:    marketdata.NewFundReportSources(cfg.FeedURLs, feedClient),
 		CompanyReports: marketdata.NewCompanyReportSources(cfg.FeedURLs, feedClient),
 		Institutions:   marketdata.NewInstitutionSources(cfg.FeedURLs, feedClient),

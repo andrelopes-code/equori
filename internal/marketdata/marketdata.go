@@ -31,6 +31,7 @@ type Module struct {
 	profiles       Profiles
 	admins         Admins
 	onReclassified func(ctx context.Context) error
+	sentimentInUse func(ctx context.Context, index string) (bool, error)
 
 	calendars registry.Registry[calendar.Calendar]
 

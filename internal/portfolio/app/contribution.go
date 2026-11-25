@@ -170,6 +170,10 @@ func (s *Service) SaveContributionPlan(
 
 	p.Revision = revision
 
+	if err := s.wantSentiments(ctx, p); err != nil {
+		return ContributionView{}, err
+	}
+
 	return s.contributionView(ctx, booksID, ab, p, base, false)
 }
 

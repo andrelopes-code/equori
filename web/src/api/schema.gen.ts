@@ -3327,6 +3327,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sentiment-indexes/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The latest value of a sentiment index and the days each value was published on (contribution conditions CO17). */
+        get: operations["getSentimentIndex"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/fund-reports": {
         parameters: {
             query?: never;
@@ -7696,6 +7713,27 @@ export interface components {
             survey_date: string;
             items: components["schemas"]["IndexExpectation"][];
         };
+        SentimentIndex: {
+            id: string;
+            /** @description True when the source of the index is enabled. */
+            enabled: boolean;
+            /** @description Latest value; absent without one. */
+            value?: number;
+            /**
+             * Format: date
+             * @description Day of the latest value, in UTC; absent without one.
+             */
+            date?: string;
+            /**
+             * Format: date
+             * @description First stored day; absent without one.
+             */
+            since?: string;
+            /** @description Number of stored days. */
+            days: number;
+            /** @description Stored days of each value, 101 items from value 0 to value 100. */
+            counts: number[];
+        };
         CurveList: {
             items: components["schemas"]["Curve"][];
         };
@@ -7996,7 +8034,7 @@ export interface components {
         MarketDataFeed: {
             id: string;
             /** @enum {string} */
-            kind: "price" | "index" | "expectation" | "curve" | "institution" | "fund_report" | "company_report";
+            kind: "price" | "index" | "expectation" | "curve" | "sentiment" | "institution" | "fund_report" | "company_report";
             enabled: boolean;
             /** @description Suggested for the calling book's region (ADR 025 F3); a suggestion enables nothing. */
             suggested: boolean;
@@ -15635,6 +15673,31 @@ export interface operations {
                 };
             };
             401: components["responses"]["Problem"];
+        };
+    };
+    getSentimentIndex: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SentimentIndex"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
         };
     };
     listFundReports: {

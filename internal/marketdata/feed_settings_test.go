@@ -68,6 +68,7 @@ func feedsOf(t *testing.T, h *apitest.Harness) map[string]feedAPI {
 		"br_focus",
 		"br_focus_ipca",
 		"br_tesouro",
+		"alternative_me",
 		"br_ifdata",
 		"br_cvm_fii",
 		"br_cvm_cia",

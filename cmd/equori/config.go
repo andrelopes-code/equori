@@ -78,6 +78,7 @@ func families() config.Families {
 			marketdata.IndexSourceIDs(),
 			marketdata.ExpectationSourceIDs(),
 			marketdata.CurveSourceIDs(),
+			marketdata.SentimentSourceIDs(),
 			marketdata.InstitutionSourceIDs(),
 			marketdata.FundReportSourceIDs(),
 			marketdata.CompanyReportSourceIDs(),
