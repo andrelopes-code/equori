@@ -85,7 +85,7 @@ Each is a pure function with a test of hand-computed values: the monthly project
 | B2 | `read` on the three operations (PJ5); an HTTP test covers a member of the book, a member of another book (their own empty answer) and a request without a session. A member never reads another member's plan. |
 | B3 | No setting. |
 | D1 | Both tables are facts of the book in the export (`TestEveryTableIsClassified`); the birth date travels with the user. The archive version rises if the format requires it; the plan checks. |
-| D2 | One goose migration: the two tables and `identity_user.birth_date`. |
+| D2 | One goose migration: the two tables and `identity_member.birth_date`. |
 | D3 | Does not apply: no recorded fact changes. |
 | D4 | Does not apply. |
 | D5 | Does not apply. |
