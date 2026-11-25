@@ -26,7 +26,7 @@ type Config struct {
 	LogLevel slog.Level
 	// LogFormat is "json" or "text".
 	LogFormat string
-	// InsecureCookies drops the Secure cookie attribute for plain-HTTP LAN deployments (ADR 003).
+	// InsecureCookies drops the Secure cookie attribute whatever the scheme of the page (ADR 003).
 	InsecureCookies bool
 	// Distribution is EQUORI_DISTRIBUTION, which compose.yaml sets to compose (A194.1).
 	Distribution string

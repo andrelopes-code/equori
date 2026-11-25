@@ -56,7 +56,7 @@ func (s *Server) completeSetup(w http.ResponseWriter, r *http.Request) {
 		"request_id",
 		httpserver.RequestID(ctx),
 	)
-	cookie := s.cookie(session.Token, session.ExpiresAt)
+	cookie := s.cookie(r, session.Token, session.ExpiresAt)
 	body := toAPIUser(
 		user,
 		locale.Locale{Language: user.Language, Region: b.Region},

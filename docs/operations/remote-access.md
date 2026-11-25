@@ -1,6 +1,6 @@
 # Remote access
 
-The phone needs HTTPS for three things: installing the application, keeping the session cookie, which carries `Secure` (ADR 003), and queueing captures without the server (ADR 022, D7). Each setup below gives equori an HTTPS address that the phone opens.
+The phone needs HTTPS for two things: installing the application and queueing captures without the server (ADR 022, D7). Each setup below gives equori an HTTPS address that the phone opens.
 
 ## Tailscale
 
@@ -35,13 +35,15 @@ The proxy keeps the `Host` header, which is Caddy's default. The cross-origin pr
 
 ## Plain HTTP on a LAN
 
-The application runs over `http://<lan address>:8080` with `EQUORI_INSECURE_COOKIES=true`. The Homebrew service listens on `127.0.0.1:8080` only: its environment sets `EQUORI_HTTP_ADDR`, and a process value wins over `equori.env` (ADR 022, C2). LAN access from a Homebrew installation therefore runs `EQUORI_HTTP_ADDR=0.0.0.0:8080 EQUORI_INSECURE_COOKIES=true equori serve` outside the service. Compose: `.env` sets `EQUORI_HOST_IP=0.0.0.0` and `EQUORI_INSECURE_COOKIES=true`, then `docker compose up -d` in the installation directory applies them. A browser refuses the secure-context features over plain HTTP:
+The application runs over `http://<lan address>:8080`. The session cookie of a login over plain HTTP carries no `Secure` attribute (ADR 003), so it crosses the network unencrypted. While a session of the same host name over HTTPS is open in the browser, the browser refuses the cookie of a login over HTTP; `EQUORI_INSECURE_COOKIES=true`, set before both logins, allows the two. The Homebrew service listens on `127.0.0.1:8080` only: its environment sets `EQUORI_HTTP_ADDR`, and a process value wins over `equori.env` (ADR 022, C2). LAN access from a Homebrew installation therefore runs `EQUORI_HTTP_ADDR=0.0.0.0:8080 equori serve` outside the service. Compose: `.env` sets `EQUORI_HOST_IP=0.0.0.0`, then `docker compose up -d` in the installation directory applies it. A browser refuses the secure-context features over plain HTTP:
 
 | Works | Does not work |
 |---|---|
-| Login with `EQUORI_INSECURE_COOKIES=true` | Installation on the phone |
+| Login with a password, and with TOTP as second factor | Installation on the phone |
 | Every screen while the server answers | The offline capture queue |
+| Copying a text | Passkeys |
 | | The service worker |
+| | Copying an image of a spreadsheet to other applications |
 
 ## Phone
 

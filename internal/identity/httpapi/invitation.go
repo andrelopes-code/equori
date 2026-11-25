@@ -132,7 +132,7 @@ func (s *Server) acceptInvitation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if session.Token != "" {
-		w.Header().Set("Set-Cookie", s.cookie(session.Token, session.ExpiresAt))
+		w.Header().Set("Set-Cookie", s.cookie(r, session.Token, session.ExpiresAt))
 	}
 
 	w.WriteHeader(http.StatusNoContent)

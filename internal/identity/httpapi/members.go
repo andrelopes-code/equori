@@ -80,7 +80,7 @@ func (s *Server) leaveBooks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Set-Cookie", s.cookie("", time.Unix(0, 0)))
+	w.Header().Set("Set-Cookie", s.cookie(r, "", time.Unix(0, 0)))
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -103,7 +103,7 @@ func (s *Server) deleteCurrentBooks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Set-Cookie", s.cookie("", time.Unix(0, 0)))
+	w.Header().Set("Set-Cookie", s.cookie(r, "", time.Unix(0, 0)))
 	w.WriteHeader(http.StatusNoContent)
 }
 

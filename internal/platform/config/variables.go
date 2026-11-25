@@ -123,8 +123,8 @@ func Variables() []Variable {
 			Expected:      "an IP address",
 			Example:       "0.0.0.0",
 			Audience:      Install,
-			Description:   "Address of the host on which compose.yaml publishes equori. 0.0.0.0 opens it to the network, which over plain HTTP also needs EQUORI_INSECURE_COOKIES=true (docs/operations/remote-access.md).",
-			DescriptionPT: "Endereço do computador em que o compose.yaml publica o equori. 0.0.0.0 o abre para a rede, o que em HTTP sem TLS também exige EQUORI_INSECURE_COOKIES=true (docs/operations/remote-access.md).",
+			Description:   "Address of the host on which compose.yaml publishes equori. 0.0.0.0 opens it to the network (docs/operations/remote-access.md).",
+			DescriptionPT: "Endereço do computador em que o compose.yaml publica o equori. 0.0.0.0 o abre para a rede (docs/operations/remote-access.md).",
 		},
 		{
 			Name:          "EQUORI_COPY_FOLDER",
@@ -185,8 +185,8 @@ func Variables() []Variable {
 			Expected:      "true or false",
 			Example:       "true",
 			Audience:      Install,
-			Description:   "true drops the Secure attribute of the session cookie, which a login over plain HTTP from another host needs (ADR 003).",
-			DescriptionPT: "true remove o atributo Secure do cookie de sessão, o que um login em HTTP sem TLS a partir de outro computador exige (ADR 003).",
+			Description:   "true drops the Secure attribute of the session cookie on every login. A login over plain HTTP drops it without this variable (ADR 003).",
+			DescriptionPT: "true remove o atributo Secure do cookie de sessão em todo login. Um login em HTTP sem TLS o remove sem esta variável (ADR 003).",
 		},
 		{
 			Name:          "EQUORI_DISTRIBUTION",

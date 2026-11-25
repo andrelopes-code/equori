@@ -50,7 +50,7 @@ func (s *Server) createSession(w http.ResponseWriter, r *http.Request) {
 		httpserver.RequestID(ctx),
 	)
 
-	w.Header().Set("Set-Cookie", s.cookie(session.Token, session.ExpiresAt))
+	w.Header().Set("Set-Cookie", s.cookie(r, session.Token, session.ExpiresAt))
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -63,6 +63,6 @@ func (s *Server) deleteSession(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	w.Header().Set("Set-Cookie", s.cookie("", time.Unix(0, 0)))
+	w.Header().Set("Set-Cookie", s.cookie(r, "", time.Unix(0, 0)))
 	w.WriteHeader(http.StatusNoContent)
 }

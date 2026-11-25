@@ -88,3 +88,13 @@ A member with TOTP or a passkey finishes a login with a second factor (ADR 030).
 ## Amendment of 2026-11-01 (account invitation)
 
 An instance admin invites an email to an account of its own through `POST /api/v1/account-invitations` (email and region, optionally the base currency). The answer holds a single-use token valid for 7 days, shown once. Accepting it through `/api/v1/invitations/accept` creates a member with the instance role `member` and a book of its own, with the given password and language, and starts a session. The preview of a token carries `kind`: `books` for the invitation of ADR 029, `account` for this one. A member that is not an admin gets 403 `admin_required`; an email that has a member gets 409 `email_taken`. The command `equori user create` stays for installation and recovery. Self-registration stays impossible: acceptance needs a token.
+
+## Amendment of 2026-11-25 (plain HTTP)
+
+Most self-hosted instances are opened over plain HTTP by their network address. `Secure` of the session cookie and of the pending login cookie follows the page that logs in, with no configuration:
+
+- The `Origin` header of the request starts with `http://`: no `Secure`. A browser sends `Origin` on every unsafe request, and every one of these cookies is written by an unsafe request. `Origin` names the scheme of the page, so it stays right behind a proxy that ends TLS.
+- Any other request, without `Origin` included: `Secure`.
+- `EQUORI_INSECURE_COOKIES=true` drops `Secure` in both cases.
+
+A session over plain HTTP crosses the network unencrypted, as it did with the variable set.

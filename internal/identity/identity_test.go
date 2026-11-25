@@ -370,6 +370,52 @@ func TestSessionCookieAttributes(t *testing.T) {
 	}
 }
 
+// TestSessionOverHTTP: a browser drops a Secure cookie on a page over plain HTTP. The cookie jar of
+// net/http keeps it on a loopback address, so the test reads the header.
+func TestSessionOverHTTP(t *testing.T) {
+	t.Parallel()
+
+	h := newHarness(t, identity.Config{SecureCookies: true})
+	if _, err := h.module.CreateMember(
+		t.Context(),
+		email,
+		password,
+		identity.RoleMember,
+		locale.Locale{Language: "pt", Region: "BR"},
+		"BRL",
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	req, err := http.NewRequestWithContext(
+		t.Context(),
+		http.MethodPost,
+		h.server.URL+"/api/v1/session",
+		strings.NewReader(`{"email":"`+email+`","password":"`+password+`"}`),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Origin", h.server.URL)
+
+	resp, err := h.client.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusNoContent {
+		t.Fatalf("login = %d", resp.StatusCode)
+	}
+
+	cookie := resp.Header.Get("Set-Cookie")
+	if !strings.HasPrefix(cookie, "equori_session=") || strings.Contains(cookie, "Secure") {
+		t.Fatalf("Set-Cookie = %q, want a session cookie without Secure", cookie)
+	}
+}
+
 func TestCreateUserValidation(t *testing.T) {
 	t.Parallel()
 	h := newHarness(t, identity.Config{})

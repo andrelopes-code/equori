@@ -226,8 +226,8 @@ func (s *Server) completeSecondFactor(w http.ResponseWriter, r *http.Request) {
 
 	s.logSecondFactorLogin(ctx, result)
 
-	w.Header().Add("Set-Cookie", s.cookie(result.Session.Token, result.Session.ExpiresAt))
-	w.Header().Add("Set-Cookie", s.loginCookie("", time.Unix(0, 0)))
+	w.Header().Add("Set-Cookie", s.cookie(r, result.Session.Token, result.Session.ExpiresAt))
+	w.Header().Add("Set-Cookie", s.loginCookie(r, "", time.Unix(0, 0)))
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -272,7 +272,7 @@ func (s *Server) writePendingLogin(w http.ResponseWriter, r *http.Request, p *ap
 		}{AllowCredentials: allow, Challenge: encodeBinary(p.Passkey.Challenge)}
 	}
 
-	s.writeJSONCookie(w, r, http.StatusAccepted, s.loginCookie(p.Token, p.ExpiresAt), challenge)
+	s.writeJSONCookie(w, r, http.StatusAccepted, s.loginCookie(r, p.Token, p.ExpiresAt), challenge)
 }
 
 // cookieValue returns the value of the named cookie, or "" when r has none.
