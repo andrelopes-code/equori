@@ -535,6 +535,21 @@ describe("Contribution plan, a criterion edited in place", () => {
     expect(region).toBeInTheDocument();
   });
 
+  it("closes a list of choices on Escape and keeps the panel open", async () => {
+    const { user, region } = await edit();
+
+    await user.click(
+      within(region).getByRole("combobox", { name: "Lembrete" }),
+    );
+    await screen.findByRole("option", { name: "A cada 3 meses" });
+    await user.keyboard("{Escape}");
+
+    await waitFor(() => {
+      expect(screen.queryByRole("option")).not.toBeInTheDocument();
+    });
+    expect(await panel("ABTC11")).toBeInTheDocument();
+  });
+
   it("removes the criterion, and undoes it", async () => {
     const { user, region } = await edit();
 
@@ -647,6 +662,7 @@ describe("Contribution plan, a new criterion", () => {
     expect(
       await within(region).findByText("Escolha o limite"),
     ).toBeInTheDocument();
+    expect(within(region).getByText("hoje 13")).toBeInTheDocument();
     expect(lastClass("Criptoativos")).toMatchObject({
       question_facts: ["crypto_fear_greed_max"],
       question_effects: ["warn"],

@@ -6,21 +6,6 @@
     max-inline-size: 46rem;
   }
 
-  /* The place of today and of the limit on the rail of the slider, whose thumb keeps half of its width
-     inside each end. */
-  .marks {
-    position: relative;
-    block-size: 1.25rem;
-    margin-inline: calc(var(--slotted-slider-thumb-size, 1.25rem) / 2);
-  }
-
-  .now {
-    position: absolute;
-    inset-inline-start: var(--now);
-    white-space: nowrap;
-    transform: translateX(-50%);
-  }
-
   .ends {
     display: flex;
     align-items: baseline;

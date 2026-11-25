@@ -1,7 +1,6 @@
 import { Slider } from "@slotted/react/slider";
 import { Text } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
-import type { CSSProperties } from "react";
 
 import { useApi } from "@/api/api-context";
 import { sentimentQuery } from "@/features/portfolio/api";
@@ -42,9 +41,6 @@ export function SentimentScale({
     index === undefined || value === undefined
       ? undefined
       : shareOfDays(index, value);
-  const style = {
-    "--now": `${String(index?.value ?? 0)}%`,
-  } as CSSProperties;
   const label = t("contributionPlan.index.limit");
 
   function handleCommit(next: number) {
@@ -52,15 +48,7 @@ export function SentimentScale({
   }
 
   return (
-    <div className={styles.scale} style={style}>
-      {index?.value !== undefined && (
-        <div className={styles.marks}>
-          <Text size="xs" weight="semibold" className={styles.now}>
-            {t("contributionPlan.index.today", { value: String(index.value) })}
-          </Text>
-        </div>
-      )}
-
+    <div className={styles.scale}>
       <Slider
         aria-label={label}
         aria-valuetext={
@@ -74,7 +62,18 @@ export function SentimentScale({
         value={value ?? greatest}
         valueLabel="none"
         indicator={value !== undefined}
-        marks={index?.value === undefined ? [] : [index.value]}
+        marks={
+          index?.value === undefined
+            ? []
+            : [
+                {
+                  value: index.value,
+                  label: t("contributionPlan.index.today", {
+                    value: String(index.value),
+                  }),
+                },
+              ]
+        }
         onValueChange={(next) => {
           if (typeof next === "number") pick(next);
         }}

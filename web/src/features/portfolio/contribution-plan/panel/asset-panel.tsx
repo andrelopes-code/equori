@@ -76,7 +76,8 @@ export function AssetPanel({
 
   function handleKeyDown(event: KeyboardEvent<HTMLElement>) {
     if (event.key !== "Escape" || event.defaultPrevented) return;
-    // A popup or a dialog over the panel closes by itself.
+    // A popup or a dialog over the panel closes by itself. Workaround for Slotted issue #208: the
+    // Escape that closes a dialog is marked handled only where the browser has CloseWatcher.
     if (!event.currentTarget.contains(event.target as Node)) return;
     if (document.querySelector(openLayer) !== null) return;
 
