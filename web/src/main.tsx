@@ -12,6 +12,7 @@ import { AuroraBackground } from "@/app/aurora-background";
 import { AppProviders } from "@/app/providers";
 import { AppRouterProvider, newRouter } from "@/app/router";
 import { registerServiceWorker } from "@/app/service-worker";
+import { reloadOnStaleBuild } from "@/app/stale-build";
 import { guardTouchContextMenu } from "@/app/touch-context-menu";
 import { applyAccent, readAccent } from "@/theme/accent";
 import { applyCorners, readCorners } from "@/theme/corners";
@@ -35,6 +36,13 @@ typeface.apply(typeface.read());
 motion.apply(motion.read());
 restoreVisual();
 guardTouchContextMenu(document);
+reloadOnStaleBuild({
+  target: window,
+  storage: sessionStorage,
+  reload: () => {
+    window.location.reload();
+  },
+});
 
 const router = newRouter();
 
