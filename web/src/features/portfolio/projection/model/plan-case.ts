@@ -15,7 +15,8 @@ import type { ProjectionRow } from "@/features/portfolio/projection/model/projec
 
 export interface PlanCaseInput {
   draft: ProjectionDraft;
-  // Today's recorded value and the money contributed so far, which is the basis of the tax.
+  // Today's recorded value and the money contributed so far, the basis of the tax; it is negative
+  // when more was taken out than put in, and then the whole value is gain.
   start: number;
   basis: number;
   months: readonly string[];
@@ -49,7 +50,7 @@ export function planCase(input: PlanCaseInput, returnBp: number): PlanCase {
   const tax =
     taxRate === 0
       ? undefined
-      : { rate: taxRate, basis: input.basis, inflation };
+      : { rate: taxRate, basis: Math.max(input.basis, 0), inflation };
   const base = {
     start: input.start,
     monthlyRate: monthlyRate(returnBp),

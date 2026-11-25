@@ -181,4 +181,27 @@ describe("journeyFigures", () => {
       6,
     );
   });
+
+  it("PX14: a history that took out more than it put in taxes the whole withdrawal at most", () => {
+    const f = journeyFigures({
+      ...input,
+      draft: {
+        ...input.draft,
+        gainTaxBp: 2000,
+        changes: [{ month: "2026-11-01", amount: 0 }],
+      },
+      history: {
+        ...input.history,
+        opening: 0,
+        points: [{ date: "2026-11-25", value: 10000, flows: -5000 }],
+      },
+    });
+
+    // Nothing is left of the money contributed, so all of it is gain: 500 / (1 - 0.2).
+    expect(f.rows.find((r) => r.withdrawal > 0)?.withdrawal).toBeCloseTo(
+      625,
+      6,
+    );
+    expect(f.needed).toBeCloseTo(625 * 12, 6);
+  });
 });
