@@ -2933,6 +2933,17 @@ export const catalogEn = {
   "schedule.changeTerms": "Change amount or recurrence",
   "schedule.changeTermsHint":
     "The new amount and recurrence apply from a date after {date}; expected occurrences from that date on are generated again.",
+  "schedule.terms.actions": "Actions for the version from {date}",
+  "schedule.terms.revise": "Revise",
+  "schedule.terms.reviseTitle": "Revise the version from {date}",
+  "schedule.terms.reviseHint":
+    "The new values replace this version; expected occurrences from the earlier date on are generated again.",
+  "schedule.terms.reviseFirstHint":
+    "The first version starts with the schedule: only the amount changes. Expected occurrences are generated again.",
+  "schedule.terms.remove": "Remove",
+  "schedule.terms.removeTitle": "Remove the version from {date}?",
+  "schedule.terms.removeHint":
+    "The previous version applies again from {date}; expected occurrences from that date on are generated again.",
   "schedule.changeRecurrence": "Change the recurrence too",
   "schedule.save": "Save",
   "schedule.required.change": "Change the amount, the recurrence or both.",
@@ -2980,6 +2991,9 @@ export const catalogEn = {
   "recurrence.end.count": "After a number of times",
   "recurrence.untilField": "Last date",
   "recurrence.countField": "Times",
+  "problem.terms_not_latest":
+    "Only the latest version can be revised or removed.",
+  "problem.terms_first": "The first version of a schedule is never removed.",
   "problem.schedule_ended": "The schedule already ends on or before this date.",
   "problem.pause_overlap": "The pause overlaps another pause.",
   "planning.tab.subscriptions": "Subscriptions",

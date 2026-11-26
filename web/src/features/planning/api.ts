@@ -589,6 +589,45 @@ export function useChangeTerms() {
   });
 }
 
+export function useReviseTerms() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      effectiveFrom,
+      terms,
+    }: {
+      id: string;
+      effectiveFrom: string;
+      terms: components["schemas"]["TermsInput"];
+    }) =>
+      unwrap(
+        await api.PUT("/schedules/{id}/terms/{effective_from}", {
+          params: { path: { id, effective_from: effectiveFrom } },
+          body: terms,
+        }),
+      ),
+  });
+}
+
+export function useRemoveTerms() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      effectiveFrom,
+    }: {
+      id: string;
+      effectiveFrom: string;
+    }) =>
+      unwrap(
+        await api.DELETE("/schedules/{id}/terms/{effective_from}", {
+          params: { path: { id, effective_from: effectiveFrom } },
+        }),
+      ),
+  });
+}
+
 export function usePauseSchedule() {
   const api = useApi();
   return useMutation({

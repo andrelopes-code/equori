@@ -2965,6 +2965,17 @@ export const catalogPtBR: Catalog = {
   "schedule.changeTerms": "Alterar valor ou recorrência",
   "schedule.changeTermsHint":
     "O novo valor e a nova recorrência valem a partir de uma data posterior a {date}; as ocorrências previstas desde essa data são geradas de novo.",
+  "schedule.terms.actions": "Ações da versão de {date}",
+  "schedule.terms.revise": "Corrigir",
+  "schedule.terms.reviseTitle": "Corrigir a versão de {date}",
+  "schedule.terms.reviseHint":
+    "Os novos valores substituem esta versão; as ocorrências previstas desde a data mais antiga são geradas de novo.",
+  "schedule.terms.reviseFirstHint":
+    "A primeira versão começa com o agendamento: só o valor muda. As ocorrências previstas são geradas de novo.",
+  "schedule.terms.remove": "Remover",
+  "schedule.terms.removeTitle": "Remover a versão de {date}?",
+  "schedule.terms.removeHint":
+    "A versão anterior volta a valer a partir de {date}; as ocorrências previstas desde essa data são geradas de novo.",
   "schedule.changeRecurrence": "Alterar também a recorrência",
   "schedule.save": "Salvar",
   "schedule.required.change": "Altere o valor, a recorrência ou ambos.",
@@ -3011,6 +3022,10 @@ export const catalogPtBR: Catalog = {
   "recurrence.end.count": "Após um número de vezes",
   "recurrence.untilField": "Última data",
   "recurrence.countField": "Vezes",
+  "problem.terms_not_latest":
+    "Só a versão mais recente pode ser corrigida ou removida.",
+  "problem.terms_first":
+    "A primeira versão de um agendamento nunca é removida.",
   "problem.schedule_ended": "O agendamento já termina nesta data ou antes.",
   "problem.pause_overlap": "A pausa se sobrepõe a outra pausa.",
   "planning.tab.subscriptions": "Assinaturas",

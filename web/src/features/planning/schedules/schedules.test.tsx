@@ -779,8 +779,8 @@ describe("Schedule page", () => {
             .map((cell) => cell.textContent),
         ),
     ).toEqual([
-      ["R$39.90", "Every month, on day 12, from 01/12/2026"],
-      ["R$44.90", "Every month, on day 12, from 01/12/2026"],
+      ["R$39.90", "Every month, on day 12, from 01/12/2026", ""],
+      ["R$44.90", "Every month, on day 12, from 01/12/2026", ""],
     ]);
     const pauses = screen.getByRole("table", {
       name: catalogEn["schedule.pauses"],
@@ -826,6 +826,148 @@ describe("Schedule page", () => {
       expect(sent).toEqual([
         { effective_from: "2026-10-17", amount: money(230000) },
       ]);
+    });
+  });
+
+  // docs/plans/2026-11-26-schedule-terms-revision.md, TR1 to TR3.
+  describe("terms revision", () => {
+    async function chooseTermsAction(date: string, name: string) {
+      await userEvent.click(
+        await screen.findByRole("button", {
+          name: words("schedule.terms.actions", { date }),
+        }),
+      );
+      await userEvent.click(await screen.findByRole("menuitem", { name }));
+    }
+
+    it("revises the latest version from its row with its values filled", async () => {
+      const sent: unknown[] = [];
+      await renderApp(`/planning/schedules/${streamingID}`, {
+        fetch: api({
+          [`PUT /api/v1/schedules/${streamingID}/terms/2027-01-01`]: async (
+            req,
+          ) => {
+            sent.push(await req.json());
+            return json(200, streamingSchedule);
+          },
+        }),
+      });
+      await chooseTermsAction("01/01/2027", catalogEn["schedule.terms.revise"]);
+      const dialog = await screen.findByRole("dialog");
+      const amount = within(dialog).getByRole("textbox", {
+        name: optionalName(catalogEn["schedule.amount"]),
+      });
+      await userEvent.clear(amount);
+      await userEvent.type(amount, "4590");
+      await userEvent.click(
+        within(dialog).getByRole("button", {
+          name: catalogEn["schedule.save"],
+        }),
+      );
+
+      await waitFor(() => {
+        expect(sent).toEqual([
+          { effective_from: "2027-01-01", amount: money(4590) },
+        ]);
+      });
+    });
+
+    it("revises only the amount of the first version and keeps its date", async () => {
+      const sent: unknown[] = [];
+      await renderApp(`/planning/schedules/${rentID}`, {
+        fetch: api({
+          [`PUT /api/v1/schedules/${rentID}/terms/2026-01-05`]: async (req) => {
+            sent.push(await req.json());
+            return json(200, rent);
+          },
+        }),
+      });
+      await chooseTermsAction("01/05/2026", catalogEn["schedule.terms.revise"]);
+      const dialog = await screen.findByRole("dialog");
+      expect(
+        within(dialog).queryByRole("checkbox", {
+          name: catalogEn["schedule.changeRecurrence"],
+        }),
+      ).toBeNull();
+      const amount = within(dialog).getByRole("textbox", {
+        name: optionalName(catalogEn["schedule.amount"]),
+      });
+      await userEvent.clear(amount);
+      await userEvent.type(amount, "220000");
+      await userEvent.click(
+        within(dialog).getByRole("button", {
+          name: catalogEn["schedule.save"],
+        }),
+      );
+
+      await waitFor(() => {
+        expect(sent).toEqual([
+          { effective_from: "2026-01-05", amount: money(220000) },
+        ]);
+      });
+    });
+
+    it("removes the latest version after confirmation", async () => {
+      const removed: string[] = [];
+      await renderApp(`/planning/schedules/${streamingID}`, {
+        fetch: api({
+          [`DELETE /api/v1/schedules/${streamingID}/terms/2027-01-01`]: (
+            req,
+          ) => {
+            removed.push(new URL(req.url).pathname);
+            return json(200, streamingSchedule);
+          },
+        }),
+      });
+      await chooseTermsAction("01/01/2027", catalogEn["schedule.terms.remove"]);
+      const dialog = await screen.findByRole("dialog");
+      await userEvent.click(
+        within(dialog).getByRole("button", {
+          name: catalogEn["schedule.terms.remove"],
+        }),
+      );
+
+      await waitFor(() => {
+        expect(removed).toEqual([
+          `/api/v1/schedules/${streamingID}/terms/2027-01-01`,
+        ]);
+      });
+    });
+
+    it("offers no menu on a version before the latest", async () => {
+      await renderApp(`/planning/schedules/${streamingID}`, { fetch: api() });
+      await screen.findByRole("table", { name: catalogEn["schedule.terms"] });
+
+      expect(
+        screen.getByRole("button", {
+          name: words("schedule.terms.actions", { date: "01/01/2027" }),
+        }),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", {
+          name: words("schedule.terms.actions", { date: "01/12/2026" }),
+        }),
+      ).toBeNull();
+    });
+
+    it("offers no removal of the first version", async () => {
+      await renderApp(`/planning/schedules/${rentID}`, { fetch: api() });
+      await userEvent.click(
+        await screen.findByRole("button", {
+          name: words("schedule.terms.actions", { date: "01/05/2026" }),
+        }),
+      );
+
+      expect(
+        await screen.findByRole("menuitem", {
+          name: catalogEn["schedule.terms.revise"],
+        }),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByRole("menuitem", {
+          name: catalogEn["schedule.terms.remove"],
+        }),
+      ).toBeNull();
     });
   });
 
