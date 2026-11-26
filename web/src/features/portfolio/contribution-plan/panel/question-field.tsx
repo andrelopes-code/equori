@@ -1,6 +1,7 @@
 import { FieldError, Field } from "@slotted/react/field";
 import { Textarea } from "@slotted/react/textarea";
 
+import styles from "@/features/portfolio/contribution-plan/panel/panel.module.css";
 import { useSavedField } from "@/features/portfolio/contribution-plan/panel/use-saved-field";
 import { useT } from "@/i18n/i18n-provider";
 
@@ -34,6 +35,7 @@ export function QuestionField({
   return (
     <Field necessity="none" invalid={repeated}>
       <Textarea
+        className={styles.line}
         autoSize
         rows={1}
         resize="none"

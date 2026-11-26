@@ -8,8 +8,15 @@
     gap: var(--slotted-space-6);
     padding: var(--slotted-space-5) var(--slotted-space-6)
       var(--slotted-space-6);
+    border: var(--slotted-border-width-thin) solid
+      var(--slotted-tone-accent-border);
     border-radius: var(--slotted-radius-lg);
-    background: var(--slotted-surface-sunken);
+    /* The accent of the chosen row washes the top of the panel and fades into the page. */
+    background: linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--slotted-tone-accent-solid) 9%, transparent),
+      transparent 14rem
+    );
   }
 
   .panelHead {
@@ -294,5 +301,17 @@
     .condMeta > .grow {
       flex-basis: 100%;
     }
+  }
+
+  /* Workaround for Slotted issue #209: the padding of a textarea leaves no room for its border, so
+     one row measured the control height plus two borders. */
+  .line {
+    --_padding-block: max(
+      0px,
+      calc(
+        (var(--slotted-control-height-md) - 1lh) / 2 -
+          var(--slotted-control-border-width, 1px)
+      )
+    );
   }
 }

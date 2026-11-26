@@ -101,6 +101,7 @@ export function AddCriterion({
       <Field necessity="none" invalid={repeated}>
         <div className={styles.composeField}>
           <Textarea
+            className={styles.line}
             autoSize
             rows={1}
             resize="none"
