@@ -258,15 +258,9 @@ func (s investmentStep) tradeOrder(ctx context.Context) (domain.TradeOrder, erro
 		return domain.TradeOrder{}, err
 	}
 
-	// A write-off takes no price (listed options design W1).
-	var price money.Rate
-	if in.Kind != "write_off" {
-		if price, err = money.ParseRate(in.UnitPrice); err != nil {
-			return domain.TradeOrder{}, tool.InvalidArgument(
-				"unit_price",
-				"must be a positive decimal with at most 12 decimals",
-			)
-		}
+	price, err := s.unitPrice()
+	if err != nil {
+		return domain.TradeOrder{}, err
 	}
 
 	fees, err := s.optional("fees", in.Fees)
@@ -298,6 +292,24 @@ func (s investmentStep) tradeOrder(ctx context.Context) (domain.TradeOrder, erro
 	}
 
 	return o, nil
+}
+
+// unitPrice parses the price of the order. A write-off takes no price (listed options design
+// W1).
+func (s investmentStep) unitPrice() (money.Rate, error) {
+	if s.in.Kind == "write_off" {
+		return money.Rate{}, nil
+	}
+
+	price, err := money.ParseRate(s.in.UnitPrice)
+	if err != nil {
+		return price, tool.InvalidArgument(
+			"unit_price",
+			"must be a positive decimal with at most 12 decimals",
+		)
+	}
+
+	return price, nil
 }
 
 func (s investmentStep) appendCashAndDate(pv *tool.Preview) {

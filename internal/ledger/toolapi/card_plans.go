@@ -235,17 +235,9 @@ func planEditCard(
 		return pv, nil, err
 	}
 
-	edit := domain.CardEdit{}
-	if in.Holder != "" {
-		edit.Holder = &in.Holder
-	}
-
-	if in.LastFour != "" {
-		if !lastFourPattern.MatchString(in.LastFour) {
-			return pv, nil, tool.InvalidArgument("last_four", "must be four digits")
-		}
-
-		edit.LastFour = &in.LastFour
+	edit, err := cardEditOf(in)
+	if err != nil {
+		return pv, nil, err
 	}
 
 	after := c
@@ -265,7 +257,6 @@ func planEditCard(
 		},
 	}
 	if in.Network != "" {
-		edit.Network = &in.Network
 		pv.Changes = append(pv.Changes, tool.Change{
 			Field:  "network",
 			Before: tool.TextValue(c.Network),
@@ -279,6 +270,28 @@ func planEditCard(
 
 		return out, err
 	}, nil
+}
+
+// cardEditOf returns the fields of in that change the card.
+func cardEditOf(in manageCardIn) (domain.CardEdit, error) {
+	edit := domain.CardEdit{}
+	if in.Holder != "" {
+		edit.Holder = &in.Holder
+	}
+
+	if in.LastFour != "" {
+		if !lastFourPattern.MatchString(in.LastFour) {
+			return edit, tool.InvalidArgument("last_four", "must be four digits")
+		}
+
+		edit.LastFour = &in.LastFour
+	}
+
+	if in.Network != "" {
+		edit.Network = &in.Network
+	}
+
+	return edit, nil
 }
 
 // cardOf returns the card of the account, or app.ErrNotFound.

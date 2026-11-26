@@ -204,25 +204,9 @@ func fixedIncomeApplication(
 		return app.FixedIncomeApplication{}, err
 	}
 
-	brokerage, err := svc.Account(ctx, booksID, brokerageID)
-	if err != nil {
-		return app.FixedIncomeApplication{}, err
-	}
+	ids := investmentIDs{cash: cashID, brokerage: brokerageID}
 
-	cash.name = brokerage.Name
-
-	currency, err := resolveTargetCash(
-		ctx,
-		svc,
-		booksID,
-		investmentIDs{cash: cashID, brokerage: brokerageID},
-		cash,
-	)
-	if err != nil {
-		return app.FixedIncomeApplication{}, err
-	}
-
-	unit, err := svc.AmountOf(ctx, 0, currency)
+	unit, err := fixedIncomeUnit(ctx, svc, booksID, ids, cash)
 	if err != nil {
 		return app.FixedIncomeApplication{}, err
 	}
@@ -248,6 +232,30 @@ func fixedIncomeApplication(
 	}
 
 	return a, nil
+}
+
+// fixedIncomeUnit names cash after the brokerage and returns a zero amount in the currency of
+// the cash account that pays the application.
+func fixedIncomeUnit(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	ids investmentIDs,
+	cash *investmentTarget,
+) (money.Money, error) {
+	brokerage, err := svc.Account(ctx, booksID, ids.brokerage)
+	if err != nil {
+		return money.Money{}, err
+	}
+
+	cash.name = brokerage.Name
+
+	currency, err := resolveTargetCash(ctx, svc, booksID, ids, cash)
+	if err != nil {
+		return money.Money{}, err
+	}
+
+	return svc.AmountOf(ctx, 0, currency)
 }
 
 func parseFixedIncomeAmounts(
