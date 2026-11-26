@@ -166,6 +166,35 @@ const sheetGripRule = `
 }
 `;
 
+// Workaround for Slotted issue #219: the scrim of a popover sheet reads the drawer's scrim colour
+// but not its backdrop filter, so the page stayed sharp under a help note and blurred under a
+// drawer. The rules copy the drawer's: the filter fades with the veil, the negative z-index keeps
+// the veil under the panel, and high contrast, reduced transparency and forced colors keep the
+// page sharp.
+const popoverScrimRule = `
+[data-ui="popover"] > [data-part="backdrop"] {
+  z-index: -1;
+  transition-property: opacity, -webkit-backdrop-filter, backdrop-filter;
+}
+
+[data-ui="popover"][data-open] > [data-part="backdrop"] {
+  -webkit-backdrop-filter: var(--slotted-drawer-scrim-backdrop-filter, none);
+  backdrop-filter: var(--slotted-drawer-scrim-backdrop-filter, none);
+}
+
+&[data-slotted-scheme="high-contrast"] [data-ui="popover"] > [data-part="backdrop"] {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+@media (prefers-reduced-transparency: reduce), (forced-colors: active) {
+  [data-ui="popover"][data-open] > [data-part="backdrop"] {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+`;
+
 export default extendTheme(
   defaultTheme,
   {
@@ -350,6 +379,7 @@ export default extendTheme(
       highContrastScrimRule,
       sheetSlideRule,
       sheetGripRule,
+      popoverScrimRule,
       tagInsetRule,
       listHeightRule,
       stickyHeaderRule,

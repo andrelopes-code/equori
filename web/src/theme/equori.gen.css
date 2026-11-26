@@ -2227,6 +2227,28 @@
       border-radius: calc(var(--slotted-space-2) / 2) / calc(var(--slotted-target-min) / 2);
     }
 
+    [data-ui="popover"] > [data-part="backdrop"] {
+      z-index: -1;
+      transition-property: opacity, -webkit-backdrop-filter, backdrop-filter;
+    }
+
+    [data-ui="popover"][data-open] > [data-part="backdrop"] {
+      -webkit-backdrop-filter: var(--slotted-drawer-scrim-backdrop-filter, none);
+      backdrop-filter: var(--slotted-drawer-scrim-backdrop-filter, none);
+    }
+
+    &[data-slotted-scheme="high-contrast"] [data-ui="popover"] > [data-part="backdrop"] {
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+
+    @media (prefers-reduced-transparency: reduce), (forced-colors: active) {
+      [data-ui="popover"][data-open] > [data-part="backdrop"] {
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+      }
+    }
+
     [data-ui="tag"] {
       --slotted-tag-inset-inline: calc(var(--slotted-space-4) + var(--slotted-space-1));
     }
