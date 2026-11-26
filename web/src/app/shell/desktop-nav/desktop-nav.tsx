@@ -122,30 +122,32 @@ export function DesktopNav({
             onClick={onCalculator}
           />
         </div>
-        <SideNavigation
-          value={selectedView ?? selected ?? null}
-          expanded={groups}
-          autoExpand={false}
-          onExpandedChange={setGroups}
-        >
-          <SideNavigationList>
-            {listed.map((destination) => (
-              <NavDestination
-                key={destination.key}
-                destination={destination}
-                count={destination.key === "transactions" ? count : undefined}
-                rail={!open}
-                expanded={open && groups.includes(destination.key)}
-                current={
-                  selected === destination.key && selectedView === undefined
-                }
-                onPress={press}
-                onPressGroup={pressGroup}
-                onPressView={pressView}
-              />
-            ))}
-          </SideNavigationList>
-        </SideNavigation>
+        <div className={styles.destinations}>
+          <SideNavigation
+            value={selectedView ?? selected ?? null}
+            expanded={groups}
+            autoExpand={false}
+            onExpandedChange={setGroups}
+          >
+            <SideNavigationList>
+              {listed.map((destination) => (
+                <NavDestination
+                  key={destination.key}
+                  destination={destination}
+                  count={destination.key === "transactions" ? count : undefined}
+                  rail={!open}
+                  expanded={open && groups.includes(destination.key)}
+                  current={
+                    selected === destination.key && selectedView === undefined
+                  }
+                  onPress={press}
+                  onPressGroup={pressGroup}
+                  onPressView={pressView}
+                />
+              ))}
+            </SideNavigationList>
+          </SideNavigation>
+        </div>
       </AppShellNavBody>
       <AppShellNavFooter>
         <div className={styles.foot}>

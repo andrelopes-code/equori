@@ -88,6 +88,24 @@
     justify-items: stretch;
   }
 
+  /* Workaround for Slotted issue #211: nav-body scrolls as a whole and has no pinned block.
+     Only the destinations scroll, so the commands above them stay in place. The body keeps
+     its gutter; this scroller draws none, and its block padding leaves room for a row's
+     focus ring at either edge. */
+  .destinations {
+    flex: auto;
+    min-block-size: 0;
+    overflow: hidden auto;
+    overscroll-behavior: contain;
+    padding-block: var(--slotted-app-shell-row-ring-inset);
+    scrollbar-width: none;
+  }
+
+  /* Safari ignores scrollbar-width. */
+  .destinations::-webkit-scrollbar {
+    display: none;
+  }
+
   .foot {
     box-sizing: border-box;
     inline-size: 100%;
