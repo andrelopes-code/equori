@@ -2,6 +2,7 @@ import {
   AppShellNavBody,
   AppShellNavFooter,
   AppShellNavHeader,
+  AppShellNavPinned,
   AppShellNavToggle,
   useAppShell,
 } from "@slotted/react/app-shell";
@@ -84,70 +85,68 @@ export function DesktopNav({
           />
         </div>
       </AppShellNavHeader>
+      <AppShellNavPinned className={styles.pinned}>
+        <NavCommand
+          open={open}
+          primary
+          icon="plus"
+          label={t("nav.entry.long")}
+          shortcut={entryKey}
+          legend={entryKey}
+          onClick={openEntry}
+        />
+        <NavCommand
+          open={open}
+          icon="search"
+          label={t("nav.search")}
+          shortcut={paletteChord}
+          legend="mod+k"
+          onClick={onSearch}
+        />
+        <NavCommand
+          open={open}
+          icon="assistant"
+          label={t("assistant.title")}
+          railLabel={t("assistant.open")}
+          shortcut={assistantKey}
+          legend={assistantKey}
+          onClick={onAssistant}
+        />
+        <NavCommand
+          open={open}
+          icon="calculator"
+          label={t("calculator.title")}
+          railLabel={t("calculator.open")}
+          shortcut={calculatorKey}
+          legend={calculatorKey}
+          onClick={onCalculator}
+        />
+      </AppShellNavPinned>
       <AppShellNavBody className={styles.body}>
-        <div className={styles.commands} data-open={open || undefined}>
-          <NavCommand
-            open={open}
-            primary
-            icon="plus"
-            label={t("nav.entry.long")}
-            shortcut={entryKey}
-            legend={entryKey}
-            onClick={openEntry}
-          />
-          <NavCommand
-            open={open}
-            icon="search"
-            label={t("nav.search")}
-            shortcut={paletteChord}
-            legend="mod+k"
-            onClick={onSearch}
-          />
-          <NavCommand
-            open={open}
-            icon="assistant"
-            label={t("assistant.title")}
-            railLabel={t("assistant.open")}
-            shortcut={assistantKey}
-            legend={assistantKey}
-            onClick={onAssistant}
-          />
-          <NavCommand
-            open={open}
-            icon="calculator"
-            label={t("calculator.title")}
-            railLabel={t("calculator.open")}
-            shortcut={calculatorKey}
-            legend={calculatorKey}
-            onClick={onCalculator}
-          />
-        </div>
-        <div className={styles.destinations}>
-          <SideNavigation
-            value={selectedView ?? selected ?? null}
-            expanded={groups}
-            autoExpand={false}
-            onExpandedChange={setGroups}
-          >
-            <SideNavigationList>
-              {listed.map((destination) => (
-                <NavDestination
-                  key={destination.key}
-                  destination={destination}
-                  count={destination.key === "transactions" ? count : undefined}
-                  rail={!open}
-                  expanded={open && groups.includes(destination.key)}
-                  current={
-                    selected === destination.key && selectedView === undefined
-                  }
-                  onPress={press}
-                  onPressGroup={pressGroup}
-                  onPressView={pressView}
-                />
-              ))}
-            </SideNavigationList>
-          </SideNavigation>
-        </div>
+        <SideNavigation
+          value={selectedView ?? selected ?? null}
+          expanded={groups}
+          autoExpand={false}
+          onExpandedChange={setGroups}
+        >
+          <SideNavigationList>
+            {listed.map((destination) => (
+              <NavDestination
+                key={destination.key}
+                destination={destination}
+                count={destination.key === "transactions" ? count : undefined}
+                rail={!open}
+                expanded={open && groups.includes(destination.key)}
+                current={
+                  selected === destination.key && selectedView === undefined
+                }
+                onPress={press}
+                onPressGroup={pressGroup}
+                onPressView={pressView}
+              />
+            ))}
+          </SideNavigationList>
+        </SideNavigation>
       </AppShellNavBody>
       <AppShellNavFooter>
         <div className={styles.foot}>

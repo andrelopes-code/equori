@@ -74,36 +74,15 @@
     --slotted-app-shell-scrollbar-thumb-color: transparent;
   }
 
-  /* The two commands stand above the destinations, one step apart; in the rail they stack
-     centred on the marks. */
-  .commands {
-    display: grid;
-    box-sizing: border-box;
-    justify-items: center;
-    gap: var(--slotted-space-3);
+  /* Workaround for Slotted issue #221: the space under nav-pinned is the scrolling body's own
+     padding, so the list scrolled up to the last command. The space moves to the pinned block;
+     the body keeps room for a row's focus ring at its top. */
+  .pinned {
     padding-block-end: var(--slotted-space-6);
   }
 
-  .commands[data-open] {
-    justify-items: stretch;
-  }
-
-  /* Workaround for Slotted issue #211: nav-body scrolls as a whole and has no pinned block.
-     Only the destinations scroll, so the commands above them stay in place. The body keeps
-     its gutter; this scroller draws none, and its block padding leaves room for a row's
-     focus ring at either edge. */
-  .destinations {
-    flex: auto;
-    min-block-size: 0;
-    overflow: hidden auto;
-    overscroll-behavior: contain;
-    padding-block: var(--slotted-app-shell-row-ring-inset);
-    scrollbar-width: none;
-  }
-
-  /* Safari ignores scrollbar-width. */
-  .destinations::-webkit-scrollbar {
-    display: none;
+  .pinned + .body {
+    padding-block-start: var(--slotted-app-shell-row-ring-inset);
   }
 
   .foot {
