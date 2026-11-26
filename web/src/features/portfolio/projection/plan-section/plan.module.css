@@ -98,9 +98,8 @@
     margin: 0;
     font-size: var(--slotted-font-size-lg);
     font-weight: var(--slotted-font-weight-semibold);
-    line-height: var(
-      --slotted-control-height-md
-    ); /* the age shares the line of the fields */
+    /* The age shares the line of the fields */
+    line-height: var(--slotted-control-height-md);
   }
 
   .lifeNote {
