@@ -155,6 +155,17 @@ const sheetSlideRule = `
 }
 `;
 
+// Workaround for Slotted issue #215 (popover) and #216 (picker): the grip of a popover or
+// picker sheet is padded for touch and clipped to its content box, so a full radius ends it in
+// two points. Half the bar's height on the inline axis and half the target on the block axis
+// leave round ends.
+const sheetGripRule = `
+[data-ui="popover"] > [data-part="content"] > [data-part="grip"],
+[data-ui="picker-panel"][data-presentation="sheet"] > [data-part="content"] > [data-part="grip"] {
+  border-radius: calc(var(--slotted-space-2) / 2) / calc(var(--slotted-target-min) / 2);
+}
+`;
+
 export default extendTheme(
   defaultTheme,
   {
@@ -338,6 +349,7 @@ export default extendTheme(
       paletteScrimRule,
       highContrastScrimRule,
       sheetSlideRule,
+      sheetGripRule,
       tagInsetRule,
       listHeightRule,
       stickyHeaderRule,

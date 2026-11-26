@@ -439,3 +439,19 @@ test("a page container keeps a 16 px inset below 600 px", () => {
     "var(--slotted-space-6)",
   );
 });
+
+// Workaround for Slotted issue #215 (popover) and #216 (picker): the grip of a popover or
+// picker sheet is padded for touch, and its content-box clip turns the full radius into a lens
+// with pointed ends.
+test("the grip of a popover or picker sheet has round ends", () => {
+  for (const family of ["popover", "picker-panel"]) {
+    const block = new RegExp(
+      `\\[data-ui="${family}"\\][^{]*\\[data-part="grip"\\][^{]*\\{([^}]*)\\}`,
+    ).exec(css);
+    assert.ok(block, `no grip rule for ${family}`);
+    assert.match(
+      block[1] ?? "",
+      /border-radius: calc\(var\(--slotted-space-2\) \/ 2\) \/ calc\(var\(--slotted-target-min\) \/ 2\)/,
+    );
+  }
+});
