@@ -88,10 +88,8 @@ start_app "$prev_image"
 printf '%s\n' equori-upgrade-test | docker exec -i "$name-app" /equori user create \
 	--email upgrade@equori.test --language pt --region BR
 git worktree add --detach "$work/src" "$prev_ref" >/dev/null
-# The seeder of this tree confirms a statement whose settlement already ran; the one of v0.1.0-beta.1
-# fails on that race. It drives the API of the release it seeds: when it needs an endpoint newer
-# than the previous release, drop this overlay and seed with the seeder of the previous ref.
-cp -R "$(git rev-parse --show-toplevel)/cmd/demoseed/." "$work/src/cmd/demoseed/"
+# The seeder of the previous ref drives the API of the release it seeds; the seeder of this tree
+# asks for account kinds that v0.1.0-beta.5 rejects.
 (cd "$work/src" && go run ./cmd/demoseed -url "http://127.0.0.1:$port" -email upgrade@equori.test \
 	-password equori-upgrade-test)
 settled >"$work/before"
