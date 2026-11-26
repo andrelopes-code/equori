@@ -155,19 +155,6 @@ const sheetSlideRule = `
 }
 `;
 
-// Workaround for Slotted issue #201: the panel draws Clear on a date that cannot be cleared, where the
-// press does nothing. A clearable field keeps the Clear of its control. The footer of a phone holds no
-// hint, so it goes with its Clear.
-const pickerClearRule = `
-[data-ui="picker-panel"] [data-part="clear"] {
-  display: none;
-}
-
-[data-ui="picker-panel"] [data-part="footer"]:has(> [data-part="hint"]:empty):not(:has(> [data-part="apply"])) {
-  display: none;
-}
-`;
-
 export default extendTheme(
   defaultTheme,
   {
@@ -351,7 +338,6 @@ export default extendTheme(
       paletteScrimRule,
       highContrastScrimRule,
       sheetSlideRule,
-      pickerClearRule,
       tagInsetRule,
       listHeightRule,
       stickyHeaderRule,

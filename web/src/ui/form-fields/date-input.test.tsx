@@ -42,6 +42,16 @@ describe("DateInput", () => {
       }),
     ).toBeNull();
   });
+
+  it("draws no Clear in the panel of a date that cannot be cleared", async () => {
+    const user = userEvent.setup();
+    open(vi.fn(), true);
+
+    await user.click(await trigger());
+    const panel = await screen.findByRole("dialog");
+
+    expect(panel.querySelector('[data-part="clear"]')).toBeNull();
+  });
 });
 
 function open(onChange: (iso: string) => void, shortcuts: boolean) {
