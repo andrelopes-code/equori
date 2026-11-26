@@ -58,10 +58,11 @@ export function monthFigures(
   };
 }
 
-// A budget answers for its month only from its first amount on; progress before it is a 422.
-export function startsBy(budget: Budget, month: string): boolean {
-  const first = budget.amounts[0];
-  return first !== undefined && first.effective_from <= month;
+// A budget answers for a month from its first amount on and until an end; progress outside is a
+// 422 (budget end E14, the mirror of Budget.InForce).
+export function inForce(budget: Budget, month: string): boolean {
+  const latest = budget.amounts.filter((a) => a.effective_from <= month).at(-1);
+  return latest !== undefined && !latest.ended;
 }
 
 function ancestors(
@@ -139,15 +140,19 @@ export function budgetGroups(
   });
 }
 
-// The expense categories that spent an amount of their own in the month with no budget on them
-// or on a category above them, the largest first; a month of refunds alone is not spending.
+// The expense categories that spent an amount of their own in the month with no budget in force
+// in it on them or on a category above them (budget end E15), the largest first; a month of
+// refunds alone is not spending.
 export function unbudgeted(
   entries: readonly CategoryEntry[],
   budgets: readonly Budget[],
   totals: readonly CategoryTotal[],
+  month: string,
 ): { entry: CategoryEntry; total: Money }[] {
   const byId = new Map(entries.map((e) => [e.id, e]));
-  const budgeted = new Set(budgets.map((b) => b.category_id));
+  const budgeted = new Set(
+    budgets.filter((b) => inForce(b, month)).map((b) => b.category_id),
+  );
   const own = new Map(totals.map((t) => [t.account_id, t.total]));
   return entries
     .flatMap((entry) => {

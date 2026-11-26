@@ -43,7 +43,7 @@ import { budgetProgressQuery, budgetQuery } from "@/features/planning/api";
 import { BudgetAmountDialog } from "@/features/planning/budget-dialogs/budget-amount-dialog";
 import { DeleteBudgetDialog } from "@/features/planning/budget-dialogs/delete-budget-dialog";
 import { BudgetSpentFigure } from "@/features/planning/budgets/budget-spent-figure";
-import { budgetState } from "@/features/planning/model/budget-month";
+import { budgetState, inForce } from "@/features/planning/model/budget-month";
 import { useScale } from "@/features/setup";
 import { formatMonthName, formatMonthTitle } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -79,10 +79,9 @@ export function BudgetPage() {
   const entries = useCategoryEntries(accounts.data);
   const [adding, setAdding] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const first = budget.data?.amounts[0]?.effective_from;
   const months = Array.from({ length: chartMonths }, (_, i) =>
     addMonths(month, i - chartMonths + 1),
-  ).filter((m) => first !== undefined && m >= first);
+  ).filter((m) => budget.data !== undefined && inForce(budget.data, m));
   const progress = useQueries({
     queries: months.map((m) => budgetProgressQuery(api, id, m)),
   });

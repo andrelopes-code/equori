@@ -21,7 +21,7 @@ export {
 } from "@/features/planning/api";
 export {
   budgetState,
-  startsBy,
+  inForce,
   usedShare,
 } from "@/features/planning/model/budget-month";
 export type {

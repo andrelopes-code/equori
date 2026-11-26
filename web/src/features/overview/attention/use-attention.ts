@@ -21,7 +21,7 @@ import { useBase } from "@/features/overview/model/use-base";
 import {
   budgetProgressQuery,
   budgetsQuery,
-  startsBy,
+  inForce,
 } from "@/features/planning";
 import { fixedIncomeEventsQuery } from "@/features/portfolio";
 import { useAppLocale } from "@/i18n/i18n-provider";
@@ -82,7 +82,7 @@ export function useAttention(): Attention {
     ),
   });
   const active = (budgets.data ?? []).filter((budget) =>
-    startsBy(budget, month),
+    inForce(budget, month),
   );
   const progress = useQueries({
     queries: active.map((budget) => budgetProgressQuery(api, budget.id, month)),

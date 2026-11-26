@@ -15,7 +15,7 @@ import { useBase } from "@/features/overview/model/use-base";
 import {
   budgetProgressQuery,
   budgetsQuery,
-  startsBy,
+  inForce,
 } from "@/features/planning";
 import type { Figures } from "@/features/planning";
 import { numberFormatter } from "@/i18n/format";
@@ -36,7 +36,7 @@ export function BudgetsBlock({
   const budgets = useQuery(budgetsQuery(api));
   const accounts = useQuery(accountsQuery(api));
   const active = (budgets.data ?? []).filter((budget) =>
-    startsBy(budget, month),
+    inForce(budget, month),
   );
   const progress = useQueries({
     queries: active.map((budget) => budgetProgressQuery(api, budget.id, month)),

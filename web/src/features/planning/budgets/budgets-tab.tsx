@@ -32,7 +32,7 @@ import {
 import {
   budgetGroups,
   monthFigures,
-  startsBy,
+  inForce,
   unbudgeted,
 } from "@/features/planning/model/budget-month";
 import { BudgetAmountDialog } from "@/features/planning/budget-dialogs/budget-amount-dialog";
@@ -76,7 +76,7 @@ export function BudgetsTab({
   const totals = useQuery(
     categoryTotalsQuery(api, `${month}-01`, monthEnd(month), "expense"),
   );
-  const shown = (budgets.data ?? []).filter((b) => startsBy(b, month));
+  const shown = (budgets.data ?? []).filter((b) => inForce(b, month));
   const progress = useQueries({
     queries: shown.map((b) => budgetProgressQuery(api, b.id, month)),
   });
@@ -120,7 +120,12 @@ export function BudgetsTab({
       </div>
     );
   const groups = budgetGroups(entries, shown, byBudget);
-  const loose = unbudgeted(entries, budgets.data ?? [], totals.data ?? []);
+  const loose = unbudgeted(
+    entries,
+    budgets.data ?? [],
+    totals.data ?? [],
+    month,
+  );
 
   return (
     <>
