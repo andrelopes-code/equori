@@ -5,7 +5,6 @@ import type {
   EvolutionField,
   EvolutionRow,
 } from "@/features/portfolio/results/evolution-block/evolution-rows";
-import { withoutAxisLabels } from "@/features/portfolio/results/evolution-block/hide-axis-labels";
 import styles from "@/features/portfolio/results/evolution-block/evolution-block.module.css";
 import type { EvolutionAxes } from "@/features/portfolio/results/evolution-block/use-evolution-axes";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -70,9 +69,9 @@ export function FlowStrip({ rows, axes }: FlowStripProps) {
         locale={tag}
         data={rows}
         series={series}
-        x={axes.x}
+        // The plot above writes the months; the strip gives their room to its bars.
+        x={{ ...axes.x, labels: false }}
         y={axes.y}
-        extendOption={withoutAxisLabels}
       />
     </>
   );
