@@ -11,7 +11,10 @@ import { Fragment } from "react";
 
 import type { components } from "@/api/schema.gen";
 import { BudgetTableRow } from "@/features/planning/budgets/budget-table-row";
-import type { BudgetGroup } from "@/features/planning/model/budget-month";
+import type {
+  BudgetGroup,
+  BudgetRow,
+} from "@/features/planning/model/budget-month";
 import { useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
@@ -22,6 +25,7 @@ interface BudgetTableProps {
   month: string;
   scale: (code: string) => number;
   onChangeAmount: (budget: Budget) => void;
+  onEnd: (row: BudgetRow) => void;
   onDelete: (budget: Budget, name: string) => void;
 }
 
@@ -32,6 +36,7 @@ export function BudgetTable({
   month,
   scale,
   onChangeAmount,
+  onEnd,
   onDelete,
 }: BudgetTableProps) {
   const t = useT();
@@ -78,6 +83,7 @@ export function BudgetTable({
                     month={month}
                     scale={scale}
                     onChangeAmount={onChangeAmount}
+                    onEnd={onEnd}
                     onDelete={onDelete}
                   />
                 ))}

@@ -3121,7 +3121,14 @@ export const catalogPtBR: Catalog = {
   "budget.delete": "Excluir orçamento",
   "budget.deleteTitle": "Excluir o orçamento de {name}?",
   "budget.deleteHint":
-    "Os valores do orçamento vão junto. A categoria e suas transações ficam.",
+    "Apaga o orçamento de todos os meses, inclusive os anteriores. Para deixar de orçar a partir de um mês, use Encerrar. A categoria e as transações ficam.",
+  "budget.end": "Encerrar a partir de {month}",
+  "budget.endTitle": "Encerrar o orçamento de {name} a partir de {month}?",
+  "budget.endHint": "Os meses antes de {month} mantêm seus valores.",
+  "budget.endRemoved": "O valor de {amount} a partir de {month} é removido.",
+  "budget.endCarried": "O saldo acumulado de {amount} não passa para {month}.",
+  "budget.endConfirm": "Encerrar orçamento",
+  "budget.ended": "Encerrado",
   "budget.more": "Mais ações do orçamento",
   "overview.subtitle":
     "Onde o dinheiro está, o que vem pela frente e o que pede decisão",

@@ -153,6 +153,30 @@ describe("Budget page", () => {
     ]);
   });
 
+  // Budget end E17: an end reads "Ended" in place of an amount.
+  it("lists an end in place of an amount", async () => {
+    const ended = {
+      ...foodBudget,
+      amounts: [
+        { effective_from: "2026-10", amount: money(180000), ended: false },
+        { effective_from: "2026-12", amount: money(0), ended: true },
+      ],
+    };
+    await renderApp(page, {
+      fetch: budgetApi({
+        [`GET /api/v1/budgets/${foodBudget.id}`]: () => json(200, ended),
+      }),
+    });
+    const table = await screen.findByRole("table", {
+      name: catalogEn["budget.amounts"],
+    });
+    const rows = within(table).getAllByRole("row").slice(1);
+    expect(rows.map((row) => row.textContent)).toEqual([
+      `${formatMonthTitle("2026-10", "en")}R$1,800.00`,
+      `${formatMonthTitle("2026-12", "en")}${catalogEn["budget.ended"]}`,
+    ]);
+  });
+
   it("adds an amount from the month after the latest one", async () => {
     const sent: unknown[] = [];
     await renderApp(page, {

@@ -3089,7 +3089,15 @@ export const catalogEn = {
   "budget.delete": "Delete budget",
   "budget.deleteTitle": "Delete the budget of {name}?",
   "budget.deleteHint":
-    "Its amounts go with it. The category and its transactions stay.",
+    "Deletes the budget from every month, past ones included. To stop budgeting from a month, use End. The category and its transactions stay.",
+  "budget.end": "End from {month}",
+  "budget.endTitle": "End the budget of {name} from {month}?",
+  "budget.endHint": "The months before {month} keep their amounts.",
+  "budget.endRemoved": "The amount of {amount} from {month} is removed.",
+  "budget.endCarried":
+    "The carried balance of {amount} does not pass to {month}.",
+  "budget.endConfirm": "End budget",
+  "budget.ended": "Ended",
   "budget.more": "More budget actions",
   "overview.subtitle":
     "Where the money stands, what is coming and what needs a decision",

@@ -31,6 +31,7 @@ interface BudgetTableRowProps {
   month: string;
   scale: (code: string) => number;
   onChangeAmount: (budget: Budget) => void;
+  onEnd: (row: BudgetRow) => void;
   onDelete: (budget: Budget, name: string) => void;
 }
 
@@ -40,6 +41,7 @@ export function BudgetTableRow({
   month,
   scale,
   onChangeAmount,
+  onEnd,
   onDelete,
 }: BudgetTableRowProps) {
   const t = useT();
@@ -143,6 +145,7 @@ export function BudgetTableRow({
           row={row}
           month={month}
           onChangeAmount={onChangeAmount}
+          onEnd={onEnd}
           onDelete={onDelete}
         />
       </TableCell>

@@ -305,6 +305,61 @@ describe("PlanningPage budgets", () => {
       expect(deleted).toEqual([foodBudget.id]);
     });
   });
+
+  it("ends a budget from the month shown after a confirmation (budget end E16)", async () => {
+    const sent: unknown[] = [];
+    await renderApp(november, {
+      fetch: budgetApi({
+        [`POST /api/v1/budgets/${foodBudget.id}/end`]: async (req: Request) => {
+          sent.push(await req.json());
+          return json(200, foodBudget);
+        },
+      }),
+    });
+    const food = await screen.findByRole("row", { name: "Food" });
+    await userEvent.click(
+      within(food).getByRole("button", {
+        name: words("budget.actions", { name: "Food" }),
+      }),
+    );
+    await userEvent.click(
+      await screen.findByRole("menuitem", {
+        name: words("budget.end", { month: "Nov/2026" }),
+      }),
+    );
+    const dialog = await screen.findByRole("alertdialog", {
+      name: words("budget.endTitle", { name: "Food", month: "Nov/2026" }),
+    });
+    expect(within(dialog).getByText(/Dec\/2026/)).toBeDefined();
+    expect(within(dialog).getByText(/Nov\/2026\.$/)).toBeDefined();
+    expect(sent).toEqual([]);
+    await userEvent.click(
+      within(dialog).getByRole("button", {
+        name: catalogEn["budget.endConfirm"],
+      }),
+    );
+    await waitFor(() => {
+      expect(sent).toEqual([{ month: "2026-11" }]);
+    });
+  });
+
+  it("offers no end in the first month of a budget", async () => {
+    await renderApp("/planning?tab=budgets&view=track&month=2026-10", {
+      fetch: budgetApi(),
+    });
+    const food = await screen.findByRole("row", { name: "Food" });
+    await userEvent.click(
+      within(food).getByRole("button", {
+        name: words("budget.actions", { name: "Food" }),
+      }),
+    );
+    await screen.findByRole("menuitem", { name: catalogEn["budget.delete"] });
+    expect(
+      screen.queryByRole("menuitem", {
+        name: words("budget.end", { month: "Oct/2026" }),
+      }),
+    ).toBeNull();
+  });
 });
 
 // The value a figure of the month strip shows, symbol and minor digits included.

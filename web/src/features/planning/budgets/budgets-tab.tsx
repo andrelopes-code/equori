@@ -17,10 +17,8 @@ import {
 } from "@slotted/react/section";
 import { Text } from "@slotted/react/typography";
 import { useQueries, useQuery } from "@tanstack/react-query";
-import { useState } from "react";
 
 import { useApi } from "@/api/api-context";
-import type { components } from "@/api/schema.gen";
 import { accountsQuery } from "@/features/accounts";
 import { categoryTotalsQuery, useCategoryEntries } from "@/features/categories";
 import { monthEnd } from "@/features/planning/model/agenda";
@@ -31,16 +29,16 @@ import {
 } from "@/features/planning/api";
 import {
   budgetGroups,
-  monthFigures,
   inForce,
+  monthFigures,
   unbudgeted,
 } from "@/features/planning/model/budget-month";
-import { BudgetAmountDialog } from "@/features/planning/budget-dialogs/budget-amount-dialog";
-import { DeleteBudgetDialog } from "@/features/planning/budget-dialogs/delete-budget-dialog";
 import { BudgetDetails } from "@/features/planning/budgets/budget-details";
+import { BudgetRowDialogs } from "@/features/planning/budgets/budget-row-dialogs";
 import { BudgetSummary } from "@/features/planning/budgets/budget-summary";
 import { BudgetTable } from "@/features/planning/budgets/budget-table";
 import styles from "@/features/planning/budgets/budgets.module.css";
+import { useBudgetDialogs } from "@/features/planning/budgets/use-budget-dialogs";
 import {
   budgetStates,
   spendingSlices,
@@ -48,8 +46,6 @@ import {
 import { settingsQuery, useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { QueryError } from "@/ui/feedback/query-error";
-
-type Budget = components["schemas"]["Budget"];
 
 // The budgets of a month: one section with the month over every budget and one line per budget
 // under its top category, then the spending no budget covers and where the spending went, closed.
@@ -63,11 +59,7 @@ export function BudgetsTab({
   const t = useT();
   const api = useApi();
   const scale = useScale();
-  const [editing, setEditing] = useState<Budget | null>(null);
-  const [deleting, setDeleting] = useState<{
-    budget: Budget;
-    name: string;
-  } | null>(null);
+  const dialogs = useBudgetDialogs();
   const budgets = useQuery(budgetsQuery(api));
   const accounts = useQuery(accountsQuery(api));
   const settings = useQuery(settingsQuery(api));
@@ -155,10 +147,9 @@ export function BudgetsTab({
                   groups={groups}
                   month={month}
                   scale={scale}
-                  onChangeAmount={setEditing}
-                  onDelete={(budget, name) => {
-                    setDeleting({ budget, name });
-                  }}
+                  onChangeAmount={dialogs.changeAmount}
+                  onEnd={dialogs.end}
+                  onDelete={dialogs.remove}
                 />
               </SectionBleed>
             )}
@@ -173,29 +164,12 @@ export function BudgetsTab({
           loading={totals.isPending}
         />
       </div>
-      {deleting !== null && (
-        <DeleteBudgetDialog
-          budget={deleting.budget}
-          name={deleting.name}
-          onDone={() => {
-            setDeleting(null);
-          }}
-          onCancel={() => {
-            setDeleting(null);
-          }}
-        />
-      )}
-      {editing !== null && (
-        <BudgetAmountDialog
-          budget={editing}
-          onDone={() => {
-            setEditing(null);
-          }}
-          onCancel={() => {
-            setEditing(null);
-          }}
-        />
-      )}
+
+      <BudgetRowDialogs
+        dialog={dialogs.dialog}
+        month={month}
+        onClose={dialogs.close}
+      />
     </>
   );
 }

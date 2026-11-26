@@ -207,6 +207,20 @@ export function useDeleteBudget() {
   });
 }
 
+// Budget end E12: ends the budget from month on.
+export function useEndBudget() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async ({ id, month }: { id: string; month: string }) =>
+      unwrap(
+        await api.POST("/budgets/{id}/end", {
+          params: { path: { id } },
+          body: { month },
+        }),
+      ),
+  });
+}
+
 export function useAddBudgetAmount() {
   const api = useApi();
   return useMutation({

@@ -14,17 +14,6 @@ import {
   PageHeaderTitleRow,
 } from "@slotted/react/page-header";
 import { SkeletonText } from "@slotted/react/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableColumnHeader,
-  TableContent,
-  TableHead,
-  TableRow,
-  TableRowHeader,
-} from "@slotted/react/table";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import {
   Link,
@@ -42,6 +31,7 @@ import { monthEnd } from "@/features/planning/model/agenda";
 import { budgetProgressQuery, budgetQuery } from "@/features/planning/api";
 import { BudgetAmountDialog } from "@/features/planning/budget-dialogs/budget-amount-dialog";
 import { DeleteBudgetDialog } from "@/features/planning/budget-dialogs/delete-budget-dialog";
+import { BudgetAmountsTable } from "@/features/planning/budgets/budget-amounts-table";
 import { BudgetSpentFigure } from "@/features/planning/budgets/budget-spent-figure";
 import { budgetState, inForce } from "@/features/planning/model/budget-month";
 import { useScale } from "@/features/setup";
@@ -271,31 +261,7 @@ export function BudgetPage() {
               })}
             </ButtonLink>
           </Inline>
-          <Table columns={2} variant="framed">
-            <TableContent>
-              <TableCaption>{t("budget.amounts")}</TableCaption>
-              <TableHead>
-                <TableRow>
-                  <TableColumnHeader>{t("budget.from")}</TableColumnHeader>
-                  <TableColumnHeader numeric>
-                    {t("budget.amount")}
-                  </TableColumnHeader>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {b.amounts.map((a) => (
-                  <TableRow key={a.effective_from} value={a.effective_from}>
-                    <TableRowHeader>
-                      {formatMonthTitle(a.effective_from, locale)}
-                    </TableRowHeader>
-                    <TableCell numeric>
-                      {fmt.money(a.amount, scale(a.amount.currency))}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </TableContent>
-          </Table>
+          <BudgetAmountsTable budget={b} scale={scale} />
         </PageStack>
       </PageBody>
       {deleting && (
