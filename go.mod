@@ -1,6 +1,6 @@
 module github.com/andrelopes-code/equori
 
-go 1.27.3
+go 1.27.4
 
 ignore ./web/node_modules
 
