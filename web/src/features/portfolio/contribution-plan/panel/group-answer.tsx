@@ -2,15 +2,15 @@ import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
 import { AnswerControl } from "@/features/portfolio/contribution-plan/panel/answer-control";
-import { setAnswer } from "@/features/portfolio/contribution-plan/panel/criteria-edits";
+import { setAnswer } from "@/features/portfolio/contribution-plan/panel/model/criteria-edits";
 import {
   type CriterionView,
   answerOf,
-} from "@/features/portfolio/contribution-plan/panel/criterion-view";
+} from "@/features/portfolio/contribution-plan/panel/model/criterion-view";
 import {
   answerKeys,
   factText,
-} from "@/features/portfolio/contribution-plan/panel/criterion-words";
+} from "@/features/portfolio/contribution-plan/panel/model/criterion-words";
 import styles from "@/features/portfolio/contribution-plan/panel/panel.module.css";
 import type { Criteria } from "@/features/portfolio/contribution-plan/panel/use-criteria";
 import { shareText } from "@/features/portfolio/contribution-plan/model/share-text";

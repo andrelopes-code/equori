@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import type { components } from "@/api/schema.gen";
 import { PlanDistributeDialog } from "@/features/planning/budget-plan/plan-distribute-dialog";
-import { suggestion } from "@/features/planning/budget-plan/plan-math";
+import { suggestion } from "@/features/planning/budget-plan/model/plan-math";
 import { PlanSuggestionBanner } from "@/features/planning/budget-plan/plan-suggestion-banner";
 import { PlanTable } from "@/features/planning/budget-plan/plan-table";
 import { PlanToolbar } from "@/features/planning/budget-plan/plan-toolbar";

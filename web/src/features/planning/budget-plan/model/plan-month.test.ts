@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   firstNextChange,
   previousMonth,
-} from "@/features/planning/budget-plan/plan-month";
+} from "@/features/planning/budget-plan/model/plan-month";
 
 describe("previousMonth", () => {
   it.each([

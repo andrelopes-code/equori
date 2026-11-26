@@ -8,11 +8,11 @@ import {
   type CriterionKey,
   renewAnswer,
   setAnswer,
-} from "@/features/portfolio/contribution-plan/panel/criteria-edits";
+} from "@/features/portfolio/contribution-plan/panel/model/criteria-edits";
 import {
   type CriterionView,
   answerOf,
-} from "@/features/portfolio/contribution-plan/panel/criterion-view";
+} from "@/features/portfolio/contribution-plan/panel/model/criterion-view";
 import {
   answerKeys,
   answeredText,
@@ -20,7 +20,7 @@ import {
   factText,
   settingsText,
   sourceText,
-} from "@/features/portfolio/contribution-plan/panel/criterion-words";
+} from "@/features/portfolio/contribution-plan/panel/model/criterion-words";
 import styles from "@/features/portfolio/contribution-plan/panel/panel.module.css";
 import { SentimentBar } from "@/features/portfolio/contribution-plan/panel/sentiment-bar";
 import type { Criteria } from "@/features/portfolio/contribution-plan/panel/use-criteria";

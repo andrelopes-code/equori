@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { planTotals } from "@/features/planning/budget-plan/plan-math";
+import { planTotals } from "@/features/planning/budget-plan/model/plan-math";
 import { usePlanDraft } from "@/features/planning/budget-plan/use-plan-draft";
 import {
   budgetPlan,

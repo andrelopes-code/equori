@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import {
   readCollapsed,
   writeCollapsed,
-} from "@/features/planning/budget-plan/plan-collapsed";
+} from "@/features/planning/budget-plan/model/plan-collapsed";
 import { rememberDeviceUser } from "@/features/session";
 
 describe("collapsed plan groups", () => {

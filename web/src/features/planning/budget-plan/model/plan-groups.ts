@@ -1,6 +1,6 @@
 import { pathSeparator } from "@/features/categories";
 import type { CategoryEntry } from "@/features/categories";
-import type { PlanDraftRow } from "@/features/planning/budget-plan/plan-math";
+import type { PlanDraftRow } from "@/features/planning/budget-plan/model/plan-math";
 
 export interface PlanLine {
   row: PlanDraftRow;

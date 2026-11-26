@@ -1,7 +1,7 @@
 import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
 
-import type { Answer } from "@/features/portfolio/contribution-plan/panel/criteria-edits";
-import { answerKeys } from "@/features/portfolio/contribution-plan/panel/criterion-words";
+import type { Answer } from "@/features/portfolio/contribution-plan/panel/model/criteria-edits";
+import { answerKeys } from "@/features/portfolio/contribution-plan/panel/model/criterion-words";
 import { usePicked } from "@/features/portfolio/contribution-plan/panel/use-picked";
 import { useT } from "@/i18n/i18n-provider";
 

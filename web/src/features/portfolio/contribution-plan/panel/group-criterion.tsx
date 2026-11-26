@@ -7,11 +7,11 @@ import { GroupAnswer } from "@/features/portfolio/contribution-plan/panel/group-
 import {
   type CriterionView,
   answerCounts,
-} from "@/features/portfolio/contribution-plan/panel/criterion-view";
+} from "@/features/portfolio/contribution-plan/panel/model/criterion-view";
 import {
   criterionTitle,
   settingsText,
-} from "@/features/portfolio/contribution-plan/panel/criterion-words";
+} from "@/features/portfolio/contribution-plan/panel/model/criterion-words";
 import styles from "@/features/portfolio/contribution-plan/panel/panel.module.css";
 import type { Criteria } from "@/features/portfolio/contribution-plan/panel/use-criteria";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";

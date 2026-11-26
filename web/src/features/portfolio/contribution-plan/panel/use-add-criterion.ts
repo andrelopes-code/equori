@@ -8,7 +8,7 @@ import {
   fearGreedFeed,
 } from "@/features/portfolio/contribution-plan/criteria/model/criteria-catalog";
 import { criterionText } from "@/features/portfolio/contribution-plan/criteria/model/criterion-text";
-import { addCriteria } from "@/features/portfolio/contribution-plan/panel/criteria-edits";
+import { addCriteria } from "@/features/portfolio/contribution-plan/panel/model/criteria-edits";
 import type { Criteria } from "@/features/portfolio/contribution-plan/panel/use-criteria";
 import { useT } from "@/i18n/i18n-provider";
 

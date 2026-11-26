@@ -4,8 +4,8 @@ import type { components } from "@/api/schema.gen";
 import {
   largestRemainder,
   planTotals,
-} from "@/features/planning/budget-plan/plan-math";
-import type { PlanDraftRow } from "@/features/planning/budget-plan/plan-math";
+} from "@/features/planning/budget-plan/model/plan-math";
+import type { PlanDraftRow } from "@/features/planning/budget-plan/model/plan-math";
 
 type BudgetPlan = components["schemas"]["BudgetPlan"];
 type BudgetPlanSource = components["schemas"]["BudgetPlanSource"];

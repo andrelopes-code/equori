@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { shareOfDays } from "@/features/portfolio/contribution-plan/panel/share-of-days";
+import { shareOfDays } from "@/features/portfolio/contribution-plan/panel/model/share-of-days";
 
 const counts = Array.from({ length: 101 }, (_, value) =>
   value === 10 || value === 25 || value === 26 ? 1 : 0,

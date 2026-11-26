@@ -2,7 +2,7 @@ import { Button } from "@slotted/react/button";
 import { Text } from "@slotted/react/typography";
 
 import styles from "@/features/portfolio/contribution-plan/panel/panel.module.css";
-import type { Verdict } from "@/features/portfolio/contribution-plan/panel/verdict";
+import type { Verdict } from "@/features/portfolio/contribution-plan/panel/model/verdict";
 import { useT } from "@/i18n/i18n-provider";
 
 interface PanelVerdictProps {

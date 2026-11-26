@@ -9,8 +9,8 @@ import {
   suggestion,
   bpFromText,
   textFromBp,
-} from "@/features/planning/budget-plan/plan-math";
-import type { PlanDraftRow } from "@/features/planning/budget-plan/plan-math";
+} from "@/features/planning/budget-plan/model/plan-math";
+import type { PlanDraftRow } from "@/features/planning/budget-plan/model/plan-math";
 
 const brl = (amount: number) => ({ amount, currency: "BRL" });
 

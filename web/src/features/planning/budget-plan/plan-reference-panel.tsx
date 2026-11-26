@@ -7,7 +7,7 @@ import type { ReactNode } from "react";
 
 import type { components } from "@/api/schema.gen";
 import styles from "@/features/planning/budget-plan/budget-plan.module.css";
-import { planShare } from "@/features/planning/budget-plan/plan-math";
+import { planShare } from "@/features/planning/budget-plan/model/plan-math";
 import { PlanFigure } from "@/features/planning/budget-plan/plan-figure";
 import { PlanSavingsTarget } from "@/features/planning/budget-plan/plan-savings-target";
 import type { PlanFormat } from "@/features/planning/budget-plan/use-plan-format";

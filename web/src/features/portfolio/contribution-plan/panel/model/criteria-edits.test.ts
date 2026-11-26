@@ -13,7 +13,7 @@ import {
   setReleased,
   setReview,
   setText,
-} from "@/features/portfolio/contribution-plan/panel/criteria-edits";
+} from "@/features/portfolio/contribution-plan/panel/model/criteria-edits";
 
 type Plan = components["schemas"]["ContributionPlan"];
 

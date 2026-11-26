@@ -7,7 +7,7 @@ import { useCompanyFigures } from "@/features/portfolio/contribution-plan/month/
 import { AssetCriteria } from "@/features/portfolio/contribution-plan/panel/asset-criteria";
 import { AssetVerdicts } from "@/features/portfolio/contribution-plan/panel/asset-verdicts";
 import { AssetFacts } from "@/features/portfolio/contribution-plan/panel/asset-facts";
-import { criteriaOf } from "@/features/portfolio/contribution-plan/panel/criterion-view";
+import { criteriaOf } from "@/features/portfolio/contribution-plan/panel/model/criterion-view";
 import { PanelHead } from "@/features/portfolio/contribution-plan/panel/panel-head";
 import { SaveNotice } from "@/features/portfolio/contribution-plan/panel/save-notice";
 import { useCriteria } from "@/features/portfolio/contribution-plan/panel/use-criteria";

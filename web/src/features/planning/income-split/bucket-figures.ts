@@ -3,9 +3,9 @@ import type { CategoryEntry } from "@/features/categories";
 import type {
   PlanGroup,
   PlanLine,
-} from "@/features/planning/budget-plan/plan-groups";
-import { largestRemainder } from "@/features/planning/budget-plan/plan-math";
-import type { PlanDraftRow } from "@/features/planning/budget-plan/plan-math";
+} from "@/features/planning/budget-plan/model/plan-groups";
+import { largestRemainder } from "@/features/planning/budget-plan/model/plan-math";
+import type { PlanDraftRow } from "@/features/planning/budget-plan/model/plan-math";
 import { measureOf } from "@/features/planning/income-split/bucket-draft";
 import type { BucketMeasure } from "@/features/planning/income-split/bucket-draft";
 

@@ -1,5 +1,5 @@
 import type { components } from "@/api/schema.gen";
-import { largestRemainder } from "@/features/planning/budget-plan/plan-math";
+import { largestRemainder } from "@/features/planning/budget-plan/model/plan-math";
 import { measureOf } from "@/features/planning/income-split/bucket-draft";
 import type { BucketMeasure } from "@/features/planning/income-split/bucket-draft";
 import type { MessageKey } from "@/i18n/catalog.en";

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import type { PlanGroup } from "@/features/planning/budget-plan/plan-groups";
-import { planSegments } from "@/features/planning/budget-plan/plan-segments";
+import type { PlanGroup } from "@/features/planning/budget-plan/model/plan-groups";
+import { planSegments } from "@/features/planning/budget-plan/model/plan-segments";
 
 const names = { installments: "I", savings: "S", goalDeposits: "G", rest: "R" };
 

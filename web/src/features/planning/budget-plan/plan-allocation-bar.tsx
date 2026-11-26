@@ -2,7 +2,7 @@ import { Text } from "@slotted/react/typography";
 
 import styles from "@/features/planning/budget-plan/budget-plan.module.css";
 import type { PlanFormat } from "@/features/planning/budget-plan/use-plan-format";
-import { planShare } from "@/features/planning/budget-plan/plan-math";
+import { planShare } from "@/features/planning/budget-plan/model/plan-math";
 import { PlanOverMark } from "@/features/planning/budget-plan/plan-over-mark";
 import { useT } from "@/i18n/i18n-provider";
 

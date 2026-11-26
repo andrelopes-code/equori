@@ -16,8 +16,8 @@ import { Fragment } from "react";
 import type { KeyboardEvent } from "react";
 
 import styles from "@/features/planning/budget-plan/budget-plan.module.css";
-import type { PlanGroup } from "@/features/planning/budget-plan/plan-groups";
-import { planShare } from "@/features/planning/budget-plan/plan-math";
+import type { PlanGroup } from "@/features/planning/budget-plan/model/plan-groups";
+import { planShare } from "@/features/planning/budget-plan/model/plan-math";
 import { PlanRow } from "@/features/planning/budget-plan/plan-row";
 import type { RowReview } from "@/features/planning/budget-plan/plan-row";
 import type { PlanFormat } from "@/features/planning/budget-plan/use-plan-format";

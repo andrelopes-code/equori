@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import type { components } from "@/api/schema.gen";
-import type { CriterionView } from "@/features/portfolio/contribution-plan/panel/criterion-view";
+import type { CriterionView } from "@/features/portfolio/contribution-plan/panel/model/criterion-view";
 import {
   assetVerdict,
   groupVerdict,
-} from "@/features/portfolio/contribution-plan/panel/verdict";
+} from "@/features/portfolio/contribution-plan/panel/model/verdict";
 import { catalogPtBR } from "@/i18n/catalog.pt-BR";
 import type { TFunction } from "@/i18n/i18n-provider";
 

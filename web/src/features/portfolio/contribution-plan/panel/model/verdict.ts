@@ -6,7 +6,7 @@ import {
   answerOf,
   effectiveAnswer,
   pointsOf,
-} from "@/features/portfolio/contribution-plan/panel/criterion-view";
+} from "@/features/portfolio/contribution-plan/panel/model/criterion-view";
 import type { TFunction } from "@/i18n/i18n-provider";
 
 type Plan = components["schemas"]["ContributionPlan"];

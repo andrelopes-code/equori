@@ -7,7 +7,7 @@ import type { CategoryEntry } from "@/features/categories";
 import styles from "@/features/planning/budget-plan/budget-plan.module.css";
 import { PlanAllocationBar } from "@/features/planning/budget-plan/plan-allocation-bar";
 import { PlanAnswer } from "@/features/planning/budget-plan/plan-answer";
-import { planShortcut } from "@/features/planning/budget-plan/plan-keys";
+import { planShortcut } from "@/features/planning/budget-plan/model/plan-keys";
 import { PlanBuckets } from "@/features/planning/income-split/plan-buckets";
 import { PlanAnnouncer } from "@/features/planning/budget-plan/plan-announcer";
 import { PlanLeaveGuard } from "@/features/planning/plan-leave/plan-leave-guard";

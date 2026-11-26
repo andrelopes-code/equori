@@ -2,14 +2,14 @@ import type { components } from "@/api/schema.gen";
 import {
   setGroupReleased,
   setReleased,
-} from "@/features/portfolio/contribution-plan/panel/criteria-edits";
-import type { CriterionView } from "@/features/portfolio/contribution-plan/panel/criterion-view";
+} from "@/features/portfolio/contribution-plan/panel/model/criteria-edits";
+import type { CriterionView } from "@/features/portfolio/contribution-plan/panel/model/criterion-view";
 import { PanelVerdict } from "@/features/portfolio/contribution-plan/panel/panel-verdict";
 import type { Criteria } from "@/features/portfolio/contribution-plan/panel/use-criteria";
 import {
   assetVerdict,
   groupVerdict,
-} from "@/features/portfolio/contribution-plan/panel/verdict";
+} from "@/features/portfolio/contribution-plan/panel/model/verdict";
 import { useScale } from "@/features/setup";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";

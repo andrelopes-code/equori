@@ -3,7 +3,7 @@ import { useState } from "react";
 import {
   readCollapsed,
   writeCollapsed,
-} from "@/features/planning/budget-plan/plan-collapsed";
+} from "@/features/planning/budget-plan/model/plan-collapsed";
 import { useMediaQuery } from "@/ui/runtime/use-media-query";
 
 // The collapsed groups of the plan table, kept per browser, and the scroll to a group that a

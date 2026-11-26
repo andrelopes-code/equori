@@ -7,7 +7,7 @@ import { sentimentQuery } from "@/features/portfolio/api";
 import { fearGreedIndex } from "@/features/portfolio/contribution-plan/criteria/model/criteria-catalog";
 import styles from "@/features/portfolio/contribution-plan/panel/sentiment-scale.module.css";
 import { usePicked } from "@/features/portfolio/contribution-plan/panel/use-picked";
-import { shareOfDays } from "@/features/portfolio/contribution-plan/panel/share-of-days";
+import { shareOfDays } from "@/features/portfolio/contribution-plan/panel/model/share-of-days";
 import { shareText } from "@/features/portfolio/contribution-plan/model/share-text";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 

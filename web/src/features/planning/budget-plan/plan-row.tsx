@@ -16,13 +16,13 @@ import type { KeyboardEvent } from "react";
 
 import { CategoryMark } from "@/features/categories";
 import styles from "@/features/planning/budget-plan/budget-plan.module.css";
-import type { PlanLine } from "@/features/planning/budget-plan/plan-groups";
+import type { PlanLine } from "@/features/planning/budget-plan/model/plan-groups";
 import {
   bpFromText,
   fromShare,
   planShare,
   textFromBp,
-} from "@/features/planning/budget-plan/plan-math";
+} from "@/features/planning/budget-plan/model/plan-math";
 import type { PlanFormat } from "@/features/planning/budget-plan/use-plan-format";
 import { useT } from "@/i18n/i18n-provider";
 import { MoneyInput } from "@/ui/money/money-input";

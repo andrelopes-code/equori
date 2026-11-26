@@ -3,7 +3,7 @@ import type { CategoryEntry } from "@/features/categories";
 import {
   bpFromText,
   textFromBp,
-} from "@/features/planning/budget-plan/plan-math";
+} from "@/features/planning/budget-plan/model/plan-math";
 import type { MessageKey } from "@/i18n/catalog.en";
 
 type Bucket = components["schemas"]["BudgetBucket"];

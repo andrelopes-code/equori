@@ -2,7 +2,7 @@ import type {
   PlanSegment,
   SegmentTone,
 } from "@/features/planning/budget-plan/plan-allocation-bar";
-import type { PlanGroup } from "@/features/planning/budget-plan/plan-groups";
+import type { PlanGroup } from "@/features/planning/budget-plan/model/plan-groups";
 
 const groupTones: readonly SegmentTone[] = [
   "data-1",

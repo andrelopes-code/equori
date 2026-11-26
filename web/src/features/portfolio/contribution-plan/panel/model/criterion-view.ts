@@ -6,7 +6,7 @@ import {
   effectOf,
 } from "@/features/portfolio/contribution-plan/criteria/model/criterion-effect";
 import { criterionText } from "@/features/portfolio/contribution-plan/criteria/model/criterion-text";
-import type { Answer } from "@/features/portfolio/contribution-plan/panel/criteria-edits";
+import type { Answer } from "@/features/portfolio/contribution-plan/panel/model/criteria-edits";
 import type { TFunction } from "@/i18n/i18n-provider";
 
 type Group = components["schemas"]["ContributionClass"];

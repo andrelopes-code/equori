@@ -1,4 +1,4 @@
-import { bpFromText } from "@/features/planning/budget-plan/plan-math";
+import { bpFromText } from "@/features/planning/budget-plan/model/plan-math";
 import { totalBp } from "@/features/planning/income-split/bucket-draft";
 import type { DraftBucket } from "@/features/planning/income-split/bucket-draft";
 

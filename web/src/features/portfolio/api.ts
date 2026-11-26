@@ -10,7 +10,7 @@ import { unwrap } from "@/api/problem";
 import { ProblemError } from "@/api/problem-error";
 import type { components, paths } from "@/api/schema.gen";
 import type { AllocationBy } from "@/features/portfolio/model/portfolio-search";
-import type { PlanEdit } from "@/features/portfolio/contribution-plan/panel/criteria-edits";
+import type { PlanEdit } from "@/features/portfolio/contribution-plan/panel/model/criteria-edits";
 
 type Plan = components["schemas"]["ContributionPlan"];
 

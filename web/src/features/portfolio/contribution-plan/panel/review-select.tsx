@@ -10,7 +10,7 @@ import {
   type Review,
   reviews,
 } from "@/features/portfolio/contribution-plan/criteria/model/criterion-effect";
-import { reviewKeys } from "@/features/portfolio/contribution-plan/panel/criterion-words";
+import { reviewKeys } from "@/features/portfolio/contribution-plan/panel/model/criterion-words";
 import { usePicked } from "@/features/portfolio/contribution-plan/panel/use-picked";
 import { useT } from "@/i18n/i18n-provider";
 

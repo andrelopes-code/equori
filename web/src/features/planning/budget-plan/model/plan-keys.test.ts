@@ -1,7 +1,7 @@
 import type { KeyboardEvent } from "react";
 import { describe, expect, it } from "vitest";
 
-import { planShortcut } from "@/features/planning/budget-plan/plan-keys";
+import { planShortcut } from "@/features/planning/budget-plan/model/plan-keys";
 
 function press(key: string, ctrl: boolean, target: EventTarget | null = null) {
   return { key, ctrlKey: ctrl, metaKey: false, target } as KeyboardEvent;

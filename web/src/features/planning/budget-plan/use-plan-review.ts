@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { fitToRoom } from "@/features/planning/budget-plan/plan-math";
+import { fitToRoom } from "@/features/planning/budget-plan/model/plan-math";
 import type { RowReview } from "@/features/planning/budget-plan/plan-row";
 import type { SuggestBasis } from "@/features/planning/budget-plan/plan-toolbar";
 import type { usePlanDraft } from "@/features/planning/budget-plan/use-plan-draft";

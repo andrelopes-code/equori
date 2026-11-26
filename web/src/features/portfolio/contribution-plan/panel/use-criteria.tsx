@@ -4,7 +4,7 @@ import { useEditContributionPlan } from "@/features/portfolio/api";
 import {
   type PlanEdit,
   restore,
-} from "@/features/portfolio/contribution-plan/panel/criteria-edits";
+} from "@/features/portfolio/contribution-plan/panel/model/criteria-edits";
 import { showUndo } from "@/features/portfolio/contribution-plan/panel/show-undo";
 import { useT } from "@/i18n/i18n-provider";
 

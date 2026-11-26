@@ -4,12 +4,12 @@ import {
   bucketFigures,
   bucketGroups,
 } from "@/features/planning/income-split/bucket-figures";
-import { planGroups } from "@/features/planning/budget-plan/plan-groups";
+import { planGroups } from "@/features/planning/budget-plan/model/plan-groups";
 import {
   firstNextChange,
   previousMonth,
-} from "@/features/planning/budget-plan/plan-month";
-import { planSegments } from "@/features/planning/budget-plan/plan-segments";
+} from "@/features/planning/budget-plan/model/plan-month";
+import { planSegments } from "@/features/planning/budget-plan/model/plan-segments";
 import type { usePlanDraft } from "@/features/planning/budget-plan/use-plan-draft";
 import type { PlanFormat } from "@/features/planning/budget-plan/use-plan-format";
 import { useT } from "@/i18n/i18n-provider";

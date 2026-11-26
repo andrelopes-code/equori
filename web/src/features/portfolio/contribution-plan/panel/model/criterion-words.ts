@@ -9,11 +9,11 @@ import type {
 } from "@/features/portfolio/contribution-plan/criteria/model/criterion-effect";
 import { figureText } from "@/features/portfolio/contribution-plan/criteria/model/figure-text";
 import { limitNumber } from "@/features/portfolio/contribution-plan/criteria/model/limit-value";
-import type { Answer } from "@/features/portfolio/contribution-plan/panel/criteria-edits";
+import type { Answer } from "@/features/portfolio/contribution-plan/panel/model/criteria-edits";
 import type {
   AnswerView,
   CriterionView,
-} from "@/features/portfolio/contribution-plan/panel/criterion-view";
+} from "@/features/portfolio/contribution-plan/panel/model/criterion-view";
 import { reasonText } from "@/features/instruments";
 import { formatDate, numberFormatter } from "@/i18n/format";
 import type { TFunction } from "@/i18n/i18n-provider";

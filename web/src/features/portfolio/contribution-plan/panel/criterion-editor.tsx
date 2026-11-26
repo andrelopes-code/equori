@@ -19,15 +19,15 @@ import {
   setLimit,
   setReview,
   setText,
-} from "@/features/portfolio/contribution-plan/panel/criteria-edits";
+} from "@/features/portfolio/contribution-plan/panel/model/criteria-edits";
 import {
   type CriterionView,
   answerOf,
-} from "@/features/portfolio/contribution-plan/panel/criterion-view";
+} from "@/features/portfolio/contribution-plan/panel/model/criterion-view";
 import {
   criterionTitle,
   effectKeys,
-} from "@/features/portfolio/contribution-plan/panel/criterion-words";
+} from "@/features/portfolio/contribution-plan/panel/model/criterion-words";
 import { EditorFoot } from "@/features/portfolio/contribution-plan/panel/editor-foot";
 import { LimitField } from "@/features/portfolio/contribution-plan/panel/limit-field";
 import styles from "@/features/portfolio/contribution-plan/panel/panel.module.css";

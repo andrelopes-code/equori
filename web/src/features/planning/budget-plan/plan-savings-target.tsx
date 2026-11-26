@@ -10,7 +10,7 @@ import {
   fromShare,
   planShare,
   textFromBp,
-} from "@/features/planning/budget-plan/plan-math";
+} from "@/features/planning/budget-plan/model/plan-math";
 import type { PlanFormat } from "@/features/planning/budget-plan/use-plan-format";
 import { useT } from "@/i18n/i18n-provider";
 

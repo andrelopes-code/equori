@@ -4,7 +4,7 @@ import type { components } from "@/api/schema.gen";
 import { AddCriterion } from "@/features/portfolio/contribution-plan/panel/add-criterion";
 import { CriterionEditor } from "@/features/portfolio/contribution-plan/panel/criterion-editor";
 import { CriterionItem } from "@/features/portfolio/contribution-plan/panel/criterion-item";
-import type { CriterionView } from "@/features/portfolio/contribution-plan/panel/criterion-view";
+import type { CriterionView } from "@/features/portfolio/contribution-plan/panel/model/criterion-view";
 import { GroupCriterion } from "@/features/portfolio/contribution-plan/panel/group-criterion";
 import styles from "@/features/portfolio/contribution-plan/panel/panel.module.css";
 import type { Criteria } from "@/features/portfolio/contribution-plan/panel/use-criteria";

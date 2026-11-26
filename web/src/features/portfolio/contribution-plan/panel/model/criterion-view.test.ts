@@ -8,7 +8,7 @@ import {
   criteriaOf,
   effectiveAnswer,
   pointsOf,
-} from "@/features/portfolio/contribution-plan/panel/criterion-view";
+} from "@/features/portfolio/contribution-plan/panel/model/criterion-view";
 import { catalogPtBR } from "@/i18n/catalog.pt-BR";
 import type { TFunction } from "@/i18n/i18n-provider";
 

@@ -10,7 +10,7 @@ import {
 } from "@slotted/react/dialog";
 import { useState } from "react";
 
-import type { PlanLine } from "@/features/planning/budget-plan/plan-groups";
+import type { PlanLine } from "@/features/planning/budget-plan/model/plan-groups";
 import type { PlanFormat } from "@/features/planning/budget-plan/use-plan-format";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/form-fields/choice-select";
