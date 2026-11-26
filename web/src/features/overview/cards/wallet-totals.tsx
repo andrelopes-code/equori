@@ -54,7 +54,12 @@ export function WalletTotals({ due, open, scale }: WalletTotalsProps) {
         )}
 
         {deadline !== undefined && (
-          <Text size="3xl" weight="semibold" numeric="tabular">
+          <Text
+            className={styles.roll}
+            size="3xl"
+            weight="semibold"
+            numeric="tabular"
+          >
             <MoneyFigure
               amount={due.amount.amount}
               currency={due.amount.currency}
@@ -74,7 +79,12 @@ export function WalletTotals({ due, open, scale }: WalletTotalsProps) {
         <Text size="sm" tone="muted">
           {t("overview.cards.openAll")}
         </Text>
-        <Text size="lg" weight="semibold" numeric="tabular">
+        <Text
+          className={styles.roll}
+          size="lg"
+          weight="semibold"
+          numeric="tabular"
+        >
           <MoneyFigure
             amount={open.amount.amount}
             currency={base}

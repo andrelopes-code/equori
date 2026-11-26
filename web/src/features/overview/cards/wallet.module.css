@@ -25,147 +25,11 @@
     justify-items: end;
   }
 
-  /* Concept C: the wallet. The cards stand in a pocket; the chosen one is pulled out whole and
-     its detail stands beside it. The choice is a radio group, so the arrow keys move it and the
-     layout needs no script. */
-  .wallet {
-    container-type: inline-size;
-  }
-
-  .walletGrid {
-    --face: 16.25rem; /* literal: at 227 px three faces fit the default height and a strip holds brand, name and amount */
-    --strip: calc(var(--face, 16.25rem) * 0.18);
-    --whole: calc(var(--face, 16.25rem) / 1.586);
-    --tuck: calc(var(--face, 16.25rem) * 0.03);
-    --lift: var(--slotted-space-2);
-
-    position: relative;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--slotted-space-5);
-  }
-
   .summary {
     display: flex;
     align-items: start;
     justify-content: space-between;
     gap: var(--slotted-space-5);
-  }
-
-  .pocket {
-    display: flex;
-    flex-direction: column;
-    overflow: clip;
-    padding-block-start: var(--lift, 0px);
-  }
-
-  .cardUnit {
-    display: contents;
-  }
-
-  /* A slot shows the top strip of its face; the face under it is covered by the next one. */
-  .slot {
-    position: relative;
-    display: block;
-    flex: none;
-    align-self: center;
-    inline-size: var(--face, 16.25rem);
-    max-inline-size: 100%;
-    block-size: var(--strip, 0px);
-    cursor: pointer;
-    /* The slot moves, never the pocket: a moving pocket would become the containing block of the
-       detail, which is placed against the grid. */
-    animation: wallet-in var(--slotted-duration-long)
-      var(--slotted-easing-emphasized) backwards;
-    transition:
-      block-size var(--slotted-duration-long) var(--slotted-easing-emphasized),
-      margin-block-start var(--slotted-duration-long)
-        var(--slotted-easing-emphasized),
-      margin-block-end var(--slotted-duration-long)
-        var(--slotted-easing-emphasized);
-  }
-
-  /* A face that is not the chosen one ends just under its strip, where the next face covers it:
-     past that point nothing would cover it once the last face ends at the edge of the pocket.
-     The negative insets leave room for the lift and for the rounded corners of the next face. */
-  .cardUnit:not(:has(.pick:checked)) .slot {
-    clip-path: inset(
-      calc(-1 * var(--lift, 0px)) 0 calc(var(--face, 16.25rem) * -0.06)
-    );
-  }
-
-  /* The chosen face ends at its slot too: while the slot grows, the face comes out of the pocket
-     with it and never stands over the detail under the wallet. */
-  .cardUnit:has(.pick:checked) .slot {
-    block-size: var(--whole, 0px);
-    clip-path: inset(calc(-1 * var(--lift, 0px)) 0 0);
-    cursor: default;
-  }
-
-  /* The face after the chosen one covers its lower edge, as a card tucked behind another. */
-  .cardUnit:has(.pick:checked) + .cardUnit .slot {
-    margin-block-start: calc(-1 * var(--tuck, 0px));
-  }
-
-  .pick {
-    position: absolute;
-    inset: 0;
-    margin: 0;
-    opacity: 0;
-    cursor: inherit;
-  }
-
-  .slotFace {
-    position: absolute;
-    inset: 0 0 auto;
-    display: block;
-    border-radius: calc(var(--face, 16.25rem) * 0.045);
-    pointer-events: none;
-    transition: translate var(--slotted-duration-short)
-      var(--slotted-easing-standard);
-  }
-
-  .cardUnit:not(:has(.pick:checked)) .slot:hover .slotFace {
-    translate: 0 calc(-1 * var(--lift, 0px));
-  }
-
-  .slot:has(.pick:focus-visible) .slotFace {
-    outline: var(--slotted-focus-ring-width) solid
-      var(--slotted-focus-ring-color);
-    outline-offset: calc(-1 * var(--slotted-focus-ring-width));
-  }
-
-  /* The edge of the pocket: the last face, when it is not the chosen one, goes into it. */
-  .lip {
-    position: relative;
-    flex: none;
-    order: 1;
-    block-size: var(--slotted-space-5);
-    margin-block-start: calc(-1 * var(--slotted-space-5));
-    background: linear-gradient(
-      to bottom,
-      transparent,
-      var(--equori-panel-surface, var(--slotted-surface-raised))
-    );
-    pointer-events: none;
-  }
-
-  .cardUnit:last-of-type:has(.pick:checked) ~ .lip {
-    display: none;
-  }
-
-  /* The last face, when chosen, keeps under it the room its longer strip and the tuck held: the
-     pocket is as tall for every choice, so the detail does not move with the choice. */
-  .cardUnit:last-of-type:has(.pick:checked) .slot {
-    margin-block-end: calc(var(--slotted-space-5) - var(--tuck, 0px));
-  }
-
-  /* The last face keeps its whole strip above the edge and ends there: in the narrow form the
-     detail stands under it, inside the pocket, and the rest of the face would cover it. The
-     negative inset leaves room for the lift. */
-  .cardUnit:last-of-type:not(:has(.pick:checked)) .slot {
-    block-size: calc(var(--strip, 0px) + var(--slotted-space-5));
-    clip-path: inset(calc(-1 * var(--lift, 0px)) 0 0);
   }
 
   /* The extension of the face: an amount at the end of its top strip, in the face's ink. */
@@ -178,26 +42,6 @@
     ); /* literal: 7 px, the floor of the note on the faces of a full wallet */
     font-weight: var(--slotted-font-weight-semibold);
     font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-  }
-
-  .cardDetail {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    order: 2;
-    gap: var(--slotted-space-3);
-    padding-block-start: var(--slotted-space-4);
-    border-block-start: var(--slotted-border-width-thin) solid
-      var(--slotted-border-subtle);
-  }
-
-  .cardUnit:not(:has(.pick:checked)) .cardDetail {
-    display: none;
-  }
-
-  .cardName {
-    overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
   }
 
@@ -256,59 +100,531 @@
     outline-offset: var(--slotted-focus-ring-offset);
   }
 
-  /* Wide: the wallet at the start; beside it the totals at the top and the chosen card's detail
-     at the bottom, on the line of the chosen face. */
+  /* The deck: the real faces stacked in depth, the chosen one in front. The choice is a radio
+     group and the layout answers it through :has(); an animation bound to the chosen state
+     starts again on every choice, so the choreography replays with no script. */
+  .deck {
+    container-type: inline-size;
+  }
+
+  .deckGrid {
+    --face: 18.5rem; /* literal: 259 px, two cards and their strips in the default height */
+    --strip: calc(var(--face, 17rem) * 0.19);
+    --spring: linear(
+      0,
+      0.006,
+      0.025 2.8%,
+      0.101 6.1%,
+      0.539 18.9%,
+      0.721 25.3%,
+      0.849 31.5%,
+      0.937 38.1%,
+      0.968 41.8%,
+      0.991 45.7%,
+      1.006 50.1%,
+      1.015 55%,
+      1.017 63.9%,
+      1.001 85.9%,
+      1
+    ); /* literal: a soft spring, 2% past the rest */
+
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "summary"
+      "deck"
+      "panel";
+    row-gap: var(--slotted-space-6);
+    perspective: 1200px; /* literal: the depth the entry turns the cards in */
+  }
+
+  /* A fuller deck draws smaller faces, so the default height holds up to six cards. */
+  .deckGrid:has(.deckUnit:nth-child(3)) {
+    --face: 15.5rem; /* literal: three faces in the default height */
+  }
+
+  .deckGrid:has(.deckUnit:nth-child(4)) {
+    --face: 13.5rem; /* literal: four faces in the default height */
+  }
+
+  .deckGrid:has(.deckUnit:nth-child(5)) {
+    --face: 12rem; /* literal: five faces in the default height */
+  }
+
+  .deckGrid:has(.deckUnit:nth-child(6)) {
+    --face: 10.5rem; /* literal: six faces in the default height */
+  }
+
+  .deck .summary {
+    grid-area: summary;
+    animation: deck-rise var(--slotted-duration-long)
+      var(--slotted-easing-emphasized) backwards;
+  }
+
+  /* The totals roll up into place once, as the deck lands. */
+  .summary .roll {
+    animation: deck-roll 800ms var(--spring, ease-out) 250ms backwards; /* literal: the figures land with the deck */
+  }
+
+  .deckGroup,
+  .deckUnit {
+    display: contents;
+  }
+
+  /* Depth 0 is the chosen card; the others keep their order behind it, one strip apart. */
+  .deckUnit {
+    --depth: calc(var(--n, 1) - 1 - var(--k, 0) + var(--after, 0));
+    --ink: oklch(
+      from var(--card-face-color, currentcolor) min(l, 0.62) c h
+    ); /* literal: the lightest ink that keeps 3:1 on the light panel */
+  }
+
+  [data-slotted-scheme="dark"] .deckUnit {
+    --ink: oklch(
+      from var(--card-face-color, currentcolor) max(l, 0.66) c h
+    ); /* literal: the darkest ink that keeps 3:1 on the dark panel */
+  }
+
+  .deckUnit:has(.deckPick:checked) ~ .deckUnit {
+    --after: 1;
+  }
+
+  .deckUnit:has(.deckPick:checked) {
+    --depth: 0;
+  }
+
+  /* The light of the chosen card on the panel under it. Its box holds the whole stack, so the
+     cell of the deck is as tall as the stack. */
+  .deckGlow {
+    grid-area: deck;
+    align-self: end;
+    justify-self: center;
+    inline-size: var(--face, 17rem);
+    block-size: calc(
+      var(--face, 17rem) / 1.586 + (var(--n, 1) - 1) * var(--strip, 0px)
+    );
+    background: radial-gradient(
+      45% 32% at 50% 78%,
+      oklch(from var(--card-face-color, currentcolor) l c h / 55%),
+      transparent
+    );
+    filter: blur(var(--slotted-space-8));
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--slotted-duration-long)
+      var(--slotted-easing-standard);
+  }
+
+  .deckUnit:has(.deckPick:checked) .deckGlow {
+    opacity: 1;
+  }
+
+  .deckCard {
+    position: relative;
+    z-index: calc(20 - var(--depth, 0));
+    grid-area: deck;
+    align-self: end;
+    justify-self: center;
+    inline-size: var(--face, 17rem);
+    cursor: pointer;
+    transform-origin: 50% 0;
+    transform: translateY(calc(-1 * var(--depth, 0) * var(--strip, 0px)))
+      scale(calc(1 - var(--depth, 0) * 0.045));
+    filter: brightness(calc(1 - var(--depth, 0) * 0.12));
+    animation: deck-in 900ms var(--spring, ease-out)
+      calc((var(--n, 1) - 1 - var(--depth, 0)) * 90ms) backwards; /* literal: the entry of the deck, back card first */
+    transition:
+      transform 700ms var(--spring, ease-out),
+      translate var(--slotted-duration-medium) var(--slotted-easing-emphasized),
+      filter var(--slotted-duration-long) var(--slotted-easing-standard); /* literal: the flight of a card to the front */
+  }
+
+  .deckUnit:not(:has(.deckPick:checked)) .deckCard:hover {
+    translate: 0 calc(-1 * var(--slotted-space-4));
+  }
+
+  .deckUnit:has(.deckPick:checked) .deckCard {
+    cursor: default;
+  }
+
+  /* The radio of the chosen card takes no pointer event, so the pointer reaches the face and
+     the face follows it (CD3); the keyboard still reaches the radio. */
+  .deckUnit:has(.deckPick:checked) .deckPick {
+    pointer-events: none;
+  }
+
+  .deckUnit:has(.deckPick:checked) .deckCard:hover [data-ink] {
+    --rx: 5deg;
+    --ry: -7deg;
+  }
+
+  .deckPick {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    margin: 0;
+    opacity: 0;
+    cursor: inherit;
+  }
+
+  .deckFront {
+    display: block;
+  }
+
+  .deckCard:has(.deckPick:focus-visible) .deckFront {
+    border-radius: calc(var(--face, 17rem) * 0.044);
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: var(--slotted-focus-ring-offset);
+  }
+
+  .deckUnit:has(.deckPick:checked) .deckFront {
+    animation: deck-pop 700ms var(--spring, ease-out); /* literal: the card lands in front */
+  }
+
+  /* One sweep of light across the face that comes to the front. */
+  .deckSheen {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    background: linear-gradient(
+        115deg,
+        transparent 38%,
+        rgb(255 255 255 / 55%) 50%,
+        transparent 62%
+      )
+      0 0 / 300% 100% no-repeat; /* literal: a white band, the light on plastic */
+    mix-blend-mode: soft-light;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .deckUnit:has(.deckPick:checked) .deckSheen {
+    animation: deck-sheen 1100ms var(--slotted-easing-standard) 300ms; /* literal: the sweep crosses the face in 1.1 s */
+  }
+
+  /* The twelve months engraved on the face, right of the chip, the open statement
+     in the full ink of the face. */
+  .faceTrend {
+    position: absolute;
+    inset-block-start: calc(var(--u, 1px) * 25);
+    inset-inline-end: calc(var(--u, 1px) * 6.5);
+    z-index: 1;
+    display: grid;
+    grid-template-columns: repeat(var(--bars, 13), minmax(0, 1fr));
+    grid-template-rows: 100%;
+    align-items: end;
+    gap: calc(var(--u, 1px) * 1);
+    inline-size: calc(var(--u, 1px) * 42);
+    block-size: calc(var(--u, 1px) * 14);
+  }
+
+  .trendBar {
+    block-size: calc(var(--h, 0) * 1%);
+    min-block-size: calc(var(--u, 1px) * 0.6);
+    border-radius: calc(var(--u, 1px) * 0.5) calc(var(--u, 1px) * 0.5) 0 0;
+    background: color-mix(
+      in srgb,
+      var(--card-face-ink, currentcolor) 34%,
+      transparent
+    );
+    box-shadow: var(--emboss, none);
+    transform-origin: bottom;
+  }
+
+  .trendBar[data-open] {
+    background: var(--card-face-ink, currentcolor);
+  }
+
+  .trendMean {
+    position: absolute;
+    inset-block-end: calc(var(--mean, 0) * 1%);
+    inset-inline: 0;
+    border-block-start: max(1px, calc(var(--u, 1px) * 0.3)) dashed
+      color-mix(in srgb, var(--card-face-ink, currentcolor) 60%, transparent);
+  }
+
+  .deckUnit:has(.deckPick:checked) .trendBar {
+    animation: deck-bar 700ms var(--spring, ease-out)
+      calc(var(--j, 0) * 40ms + 400ms) backwards; /* literal: a wave across the months */
+  }
+
+  /* The panel of the chosen card: the rail of its cycle, then its facts. The
+     panels share one cell, so the cell keeps one height for every choice. */
+  .deckPanel {
+    grid-area: panel;
+    display: grid;
+    align-self: end;
+    align-content: end;
+    gap: var(--slotted-space-5);
+    transition:
+      opacity var(--slotted-duration-medium) var(--slotted-easing-standard),
+      visibility 0s;
+  }
+
+  .deckUnit:not(:has(.deckPick:checked)) .deckPanel {
+    visibility: hidden;
+    opacity: 0;
+  }
+
+  .deckUnit:has(.deckPick:checked) .deckPanel > * {
+    animation: deck-rise var(--slotted-duration-long)
+      var(--slotted-easing-emphasized) backwards;
+  }
+
+  .deckUnit:has(.deckPick:checked) .deckPanel > :nth-child(2) {
+    animation-delay: 90ms;
+  }
+
+  .deckUnit:has(.deckPick:checked) .deckPanel > :nth-child(3) {
+    animation-delay: 180ms;
+  }
+
+  .deckUnit:has(.deckPick:checked) .deckPanel .fill {
+    animation: deck-fill 900ms var(--spring, ease-out) 450ms backwards; /* literal: the limit fills after the rows land */
+  }
+
+  .deckHidden {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* The rail of the open cycle: done up to today, the closing marked, the days to the due date
+     hatched. */
+  .rail {
+    display: grid;
+    gap: var(--slotted-space-2);
+  }
+
+  .railHead {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--slotted-space-4);
+    white-space: nowrap;
+  }
+
+  .railLead {
+    color: var(--ink, currentcolor);
+  }
+
+  .railTrack {
+    position: relative;
+    block-size: var(--slotted-space-3);
+    border-radius: var(--slotted-radius-full);
+    background: var(--slotted-border-subtle);
+  }
+
+  .railDone {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    inline-size: calc(var(--today, 0) * 1%);
+    border-radius: inherit;
+    background: var(--ink, currentcolor);
+    transform-origin: left;
+  }
+
+  .railWindow {
+    position: absolute;
+    inset-block: 0;
+    inset-inline: calc(var(--close, 0) * 1%) 0;
+    border-radius: 0 var(--slotted-radius-full) var(--slotted-radius-full) 0;
+    background: repeating-linear-gradient(
+      -45deg,
+      var(--slotted-text-muted) 0 1px,
+      transparent 1px 4px
+    ); /* literal: a 4 px hatch, the days between closing and due */
+  }
+
+  .railClose {
+    position: absolute;
+    inset-block: calc(-1 * var(--slotted-space-2));
+    inset-inline-start: calc(var(--close, 0) * 1%);
+    inline-size: 2px; /* literal: the closing mark */
+    background: var(--slotted-text);
+    translate: -50% 0;
+  }
+
+  .railToday {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: calc(var(--today, 0) * 1%);
+    inline-size: 12px; /* literal: an even dot, centred on a pixel */
+    block-size: 12px; /* literal: an even dot, centred on a pixel */
+    border-radius: var(--slotted-radius-full);
+    background: var(--ink, currentcolor);
+    box-shadow: 0 0 0 3px
+      /* literal: the ring that lifts the dot off the rail */
+      var(--equori-panel-surface, var(--slotted-surface-raised));
+    translate: -50% -50%;
+  }
+
+  .railToday::after {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--ink, currentcolor);
+    opacity: 0;
+    content: "";
+  }
+
+  .railFoot {
+    position: relative;
+    display: flex;
+    block-size: 1rem; /* literal: one line of xs text */
+    white-space: nowrap;
+  }
+
+  .railShut {
+    position: absolute;
+    inset-inline-start: calc(var(--close, 0) * 1%);
+    translate: -50% 0;
+  }
+
+  .rail[data-none] {
+    block-size: 3.25rem; /* literal: the height of a rail, so the panel keeps its height */
+    align-content: center;
+  }
+
+  .deckUnit:has(.deckPick:checked) .railDone {
+    animation: deck-fill 800ms var(--slotted-easing-emphasized) 200ms backwards; /* literal: the days gone draw before the dot lands */
+  }
+
+  .deckUnit:has(.deckPick:checked) .railToday {
+    animation: deck-dot 600ms var(--spring, ease-out) 750ms backwards; /* literal: the dot lands at the end of the draw */
+  }
+
+  .deckUnit:has(.deckPick:checked) .railToday::after {
+    animation: deck-ripple 900ms var(--slotted-easing-standard) 1000ms; /* literal: one ripple when today lands */
+  }
+
+  /* Wide: the deck at the start, the totals at the top beside it and the panel at the bottom. */
   @container (min-width: 30.01rem) {
-    /* literal: the complement of the narrow form */
-    .walletGrid {
-      grid-template-columns: var(--face, 16.25rem) minmax(0, 1fr);
+    /* literal: the complement of the narrow form, as the wallet */
+    .deckGrid {
+      grid-template-columns: var(--face, 17rem) minmax(0, 1fr);
+      grid-template-rows: auto minmax(0, 1fr);
+      grid-template-areas:
+        "deck summary"
+        "deck panel";
       column-gap: var(--slotted-space-7);
-      min-block-size: 13rem; /* literal: the totals and one detail, when the wallet holds one face */
+      row-gap: var(--slotted-space-4);
     }
 
-    /* A fuller wallet draws smaller faces and shorter strips, so the default height of the
-       widget holds up to six cards without a scroll. The narrow form has no fixed height. */
-    .walletGrid:has(.cardUnit:nth-child(4)) {
-      --face: 14.75rem; /* literal: four faces in the default height */
-      --strip: calc(var(--face, 16.25rem) * 0.155);
-    }
-
-    .walletGrid:has(.cardUnit:nth-child(5)) {
-      --face: 13rem; /* literal: five faces in the default height */
-    }
-
-    .walletGrid:has(.cardUnit:nth-child(6)) {
-      --face: 11.5rem; /* literal: six faces in the default height */
-    }
-
-    .summary {
-      grid-area: 1 / 2;
-    }
-
-    .pocket {
-      grid-area: 1 / 1;
-    }
-
-    .cardDetail {
-      position: absolute;
-      inset-block-end: 0;
-      inset-inline: calc(var(--face, 16.25rem) + var(--slotted-space-7)) 0;
+    .deckCard,
+    .deckGlow {
+      justify-self: start;
     }
   }
 
-  @keyframes wallet-in {
+  @keyframes deck-in {
     from {
-      translate: 0 var(--slotted-space-5);
+      opacity: 0;
+      translate: 0 calc(var(--strip, 0px) * 2);
+      rotate: x 40deg;
+    }
+  }
+
+  @keyframes deck-pop {
+    from {
+      scale: 0.92;
+    }
+  }
+
+  @keyframes deck-roll {
+    from {
+      clip-path: inset(0 0 100%);
+      translate: 0 0.6em; /* literal: the figures rise by most of their height */
+    }
+  }
+
+  @keyframes deck-sheen {
+    from {
+      background-position: 100% 0;
+      opacity: 1;
+    }
+
+    to {
+      background-position: 0 0;
+      opacity: 1;
+    }
+  }
+
+  @keyframes deck-rise {
+    from {
+      opacity: 0;
+      translate: 0 var(--slotted-space-4);
+    }
+  }
+
+  @keyframes deck-fill {
+    from {
+      scale: 0 1;
+    }
+  }
+
+  @keyframes deck-bar {
+    from {
+      scale: 1 0;
+    }
+  }
+
+  @keyframes deck-dot {
+    from {
+      scale: 0;
+    }
+  }
+
+  @keyframes deck-ripple {
+    from {
+      opacity: 0.5;
+      scale: 1;
+    }
+
+    to {
+      opacity: 0;
+      scale: 3.5;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .slot {
+    .deck .summary,
+    .deckCard,
+    .deckFront,
+    .deckSheen,
+    .summary .roll,
+    .trendBar,
+    .deckPanel > *,
+    .deckPanel .fill,
+    .railDone,
+    .railToday,
+    .railToday::after {
       animation: none;
     }
 
-    .slot,
-    .slotFace,
+    .deckCard,
+    .deckGlow,
+    .deckPanel {
+      transition: none;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .railDone,
+    .railToday {
+      background: CanvasText;
+    }
+
+    .deckGlow {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
     .fact .fill {
       transition: none;
     }

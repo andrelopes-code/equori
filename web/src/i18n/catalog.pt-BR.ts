@@ -3251,6 +3251,11 @@ export const catalogPtBR: Catalog = {
   "overview.cards.cardOwes": "{name}, {amount} a pagar, {deadline}",
   "overview.cards.cardClear": "{name}, nada a pagar",
   "overview.cards.empty": "Nenhuma fatura em aberto",
+  "overview.cards.closesIn": "fecha {when}",
+  "overview.cards.railLabel":
+    "Ciclo da fatura de {name}: começou em {start}, {closes}, em {date}, vence {due}",
+  "overview.cards.trendLabel":
+    "Faturas de {name} nos últimos 12 meses: {months}; média {mean}",
   "overview.budgets.title": "Orçamentos",
   "overview.budgets.open": "Abrir orçamentos",
   "overview.budgets.of": "{spent} de {planned}",

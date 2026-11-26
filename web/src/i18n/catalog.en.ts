@@ -3219,6 +3219,11 @@ export const catalogEn = {
   "overview.cards.cardOwes": "{name}, {amount} to pay, {deadline}",
   "overview.cards.cardClear": "{name}, nothing to pay",
   "overview.cards.empty": "No statement owes anything",
+  "overview.cards.closesIn": "closes {when}",
+  "overview.cards.railLabel":
+    "Statement cycle of {name}: started {start}, {closes}, on {date}, due {due}",
+  "overview.cards.trendLabel":
+    "Statements of {name} in the last 12 months: {months}; mean {mean}",
   "overview.budgets.title": "Budgets",
   "overview.budgets.open": "Open budgets",
   "overview.budgets.of": "{spent} of {planned}",

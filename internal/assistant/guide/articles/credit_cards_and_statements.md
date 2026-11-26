@@ -8,7 +8,7 @@ On Card, the settings hold the card's appearance, billing cycle and credit limit
 
 See cards on Cards, a card's statements and settings on Card, and a statement's lines, payment and financing on Statement.
 
-The Overview draws the cards that owe something as a wallet: the total to pay with its deadline, the amount each card owes on its face, and, for the card chosen, what it owes, its open statement with the closing date and its free limit.
+The Overview draws the cards that owe something as a deck of their faces, the card to pay first in front: the total to pay with its deadline, the amount each card owes on its face, and, for the card chosen, its open billing cycle on a line (the days gone, the closing date and the days up to the due date), its last twelve statements as bars on its face, what it owes, its open statement and its free limit.
 
 The tools. get_account_details lists the statements of a card with their IDs, its plastic cards, limit and cycle, the statement a purchase date falls on (purchase_date) and the installments committed to a month (month). get_statement returns one statement with its amounts, status, dates and every line.
 
