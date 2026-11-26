@@ -1,6 +1,6 @@
 // Where a figure is cut and where its mark sits: both come from the boxes the browser reports
 // for the elements of the step, never from a number typed by hand.
-import { VIEW } from "./app.mjs";
+import { VIEW } from "./screen.mjs";
 
 // Every figure is this window of the screen, in CSS pixels: half the width of the screen. The
 // page draws it at two thirds of its size, from three device pixels for each of its own; the

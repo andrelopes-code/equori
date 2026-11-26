@@ -4,7 +4,7 @@
 // timeline; the frame at second t is a function of them alone.
 import { createHash } from "node:crypto";
 
-import { VIEW } from "./app.mjs";
+import { VIEW } from "./screen.mjs";
 
 // Seconds of each part of a beat.
 const TRAVEL = 0.9;

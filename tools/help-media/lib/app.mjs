@@ -2,9 +2,8 @@
 // clock and motion are set here and nowhere else.
 import { chromium } from "playwright";
 
-// The screen of a desktop: the application is laid out as on a 1920 px monitor, so no control
-// wraps and no layout for a narrow screen shows (owner, 2026-11-18).
-export const VIEW = { width: 1920, height: 1200 };
+import { VIEW } from "./screen.mjs";
+
 // Device pixels per CSS pixel. It changes the sharpness of a capture and never its layout: a
 // still is 3840 by 2400 device pixels, a figure 1920 by 1200.
 export const RATIO = 2;
