@@ -52,12 +52,15 @@ describe("Reports assets allocation", () => {
       "REITs||R$105.00|10.45%",
       "Total|R$1,005.00|100.00%",
     ]);
-    expect(
-      within(table)
-        .getByText("Currencies")
-        .closest("tr")
-        ?.querySelector("[style]"),
-    ).toHaveStyle({ inlineSize: "89.55%" });
+    // The Meter draws its length from the ratio it publishes on its root (Slotted 0.1.0-beta.41).
+    const meter = within(table)
+      .getByText("Currencies")
+      .closest("tr")
+      ?.querySelector<HTMLElement>('[data-ui="meter"]');
+
+    expect(meter?.style.getPropertyValue("--slotted-meter-ratio")).toBe(
+      "0.8955",
+    );
   });
 
   it("falls back to the raw key of a type without a catalog entry", async () => {

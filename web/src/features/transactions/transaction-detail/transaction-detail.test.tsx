@@ -238,7 +238,12 @@ describe("transaction detail", () => {
 
       const panel = heading.closest('[data-ui="detail-panel"]');
 
-      expect(panel?.parentElement).toHaveAttribute("data-part", "breakout");
+      // Slotted spans a level-1 panel that stands in the page body's container across the page
+      // (andrelopes-code/slotted#167).
+      expect(panel).toHaveAttribute("data-level", "1");
+      expect(
+        panel?.parentElement?.matches("[data-part-body] > [data-ui-container]"),
+      ).toBe(true);
     });
 
     // MD2, MD3: the amount stands alone under the header; the subheading keeps the date and accounts.
