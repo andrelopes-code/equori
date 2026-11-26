@@ -48,6 +48,7 @@ function budget(
     amounts: amounts.map(([from, amount]) => ({
       effective_from: from,
       amount: money(amount),
+      ended: false,
     })),
   };
 }

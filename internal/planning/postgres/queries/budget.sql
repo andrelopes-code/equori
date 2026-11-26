@@ -8,9 +8,9 @@ RETURNING
 
 -- name: InsertBudgetAmount :exec
 INSERT INTO
-    planning_budget_amount (books_id, budget_id, effective_from, amount)
+    planning_budget_amount (books_id, budget_id, effective_from, amount, ended)
 VALUES
-    (@books_id, @budget_id, @effective_from, @amount);
+    (@books_id, @budget_id, @effective_from, @amount, @ended);
 
 -- name: GetBudget :one
 SELECT
@@ -67,14 +67,23 @@ WHERE
     AND id = @id;
 
 -- name: UpsertBudgetAmount :exec
--- A130: a plan save replaces the version of its month.
+-- A130: a plan save replaces the version of its month, an end included (budget end E10).
 INSERT INTO
-    planning_budget_amount (books_id, budget_id, effective_from, amount)
+    planning_budget_amount (books_id, budget_id, effective_from, amount, ended)
 VALUES
-    (@books_id, @budget_id, @effective_from, @amount)
+    (@books_id, @budget_id, @effective_from, @amount, @ended)
 ON CONFLICT (budget_id, effective_from) DO UPDATE
 SET
-    amount = EXCLUDED.amount;
+    amount = EXCLUDED.amount,
+    ended = EXCLUDED.ended;
+
+-- name: DeleteBudgetAmountsFrom :exec
+-- Budget end E7: an end removes the version of its month and the later ones.
+DELETE FROM planning_budget_amount
+WHERE
+    books_id = @books_id
+    AND budget_id = @budget_id
+    AND effective_from >= @effective_from;
 
 -- name: ListAllBudgets :many
 SELECT

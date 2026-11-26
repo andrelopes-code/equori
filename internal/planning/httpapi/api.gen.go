@@ -222,6 +222,15 @@ type Budget struct {
 type BudgetAmount struct {
 	Amount        Money  `json:"amount"`
 	EffectiveFrom string `json:"effective_from"`
+
+	// Ended The version ends the budget from effective_from on; its amount is zero (budget end E13).
+	Ended bool `json:"ended"`
+}
+
+// BudgetAmountInput defines model for BudgetAmountInput.
+type BudgetAmountInput struct {
+	Amount        Money  `json:"amount"`
+	EffectiveFrom string `json:"effective_from"`
 }
 
 // BudgetBucket defines model for BudgetBucket.
@@ -340,6 +349,12 @@ type BudgetBucketsInput struct {
 
 	// From First month of this version; the current month when absent (A240).
 	From *string `json:"from,omitempty"`
+}
+
+// BudgetEndInput defines model for BudgetEndInput.
+type BudgetEndInput struct {
+	// Month First month without the budget.
+	Month string `json:"month"`
 }
 
 // BudgetInput defines model for BudgetInput.
@@ -1052,7 +1067,10 @@ type SaveBudgetPlanJSONRequestBody = BudgetPlanInput
 type CreateBudgetJSONRequestBody = BudgetInput
 
 // AddBudgetAmountJSONRequestBody defines body for AddBudgetAmount for application/json ContentType.
-type AddBudgetAmountJSONRequestBody = BudgetAmount
+type AddBudgetAmountJSONRequestBody = BudgetAmountInput
+
+// EndBudgetJSONRequestBody defines body for EndBudget for application/json ContentType.
+type EndBudgetJSONRequestBody = BudgetEndInput
 
 // CreateGoalJSONRequestBody defines body for CreateGoal for application/json ContentType.
 type CreateGoalJSONRequestBody = GoalInput

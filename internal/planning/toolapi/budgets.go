@@ -256,8 +256,8 @@ func fillBudgets(
 		}
 
 		for _, b := range bs {
-			// A budget that starts after the month has no progress to report.
-			if len(b.Amounts) == 0 || b.Amounts[0].EffectiveFrom.After(month) {
+			// A budget out of force in the month has no progress to report (budget end E21).
+			if !b.InForce(month) {
 				continue
 			}
 

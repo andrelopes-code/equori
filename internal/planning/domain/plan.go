@@ -117,9 +117,14 @@ func newPlanTree(in PlanInput, month time.Time, n int) planTree {
 		}
 	}
 
+	// A budget ended before the month with no later version plans nothing: its category reads as
+	// one without a budget (budget end E11).
 	budgets := make(map[uuid.UUID]Budget, len(in.Budgets))
 	for _, b := range in.Budgets {
-		budgets[b.CategoryID] = b
+		n := len(b.Amounts)
+		if n == 0 || b.InForce(month) || b.Amounts[n-1].EffectiveFrom.After(month) {
+			budgets[b.CategoryID] = b
+		}
 	}
 
 	return planTree{

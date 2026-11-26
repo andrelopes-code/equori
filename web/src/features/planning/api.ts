@@ -215,7 +215,7 @@ export function useAddBudgetAmount() {
       amount,
     }: {
       id: string;
-      amount: components["schemas"]["BudgetAmount"];
+      amount: components["schemas"]["BudgetAmountInput"];
     }) =>
       unwrap(
         await api.POST("/budgets/{id}/amounts", {

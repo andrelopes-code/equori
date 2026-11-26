@@ -208,9 +208,14 @@ func (s *Service) BudgetProgress(
 	}
 
 	if !ok {
+		message := "precedes the first amount of the budget"
+		if !month.Before(b.Amounts[0].EffectiveFrom) {
+			message = "is after the end of the budget"
+		}
+
 		return domain.Progress{}, "", &domain.FieldError{
 			Field:   "month",
-			Message: "precedes the first amount of the budget",
+			Message: message,
 			Err:     domain.ErrValidation,
 		}
 	}

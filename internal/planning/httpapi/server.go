@@ -63,6 +63,8 @@ func (s *Server) Register(mux *http.ServeMux) {
 		httpserver.Handle(s.errs, http.StatusOK, s.deleteBudget))
 	mux.HandleFunc("POST "+BaseURL+"/budgets/{id}/amounts",
 		httpserver.Handle(s.errs, http.StatusCreated, s.addBudgetAmount))
+	mux.HandleFunc("POST "+BaseURL+"/budgets/{id}/end",
+		httpserver.Handle(s.errs, http.StatusOK, s.endBudget))
 	mux.HandleFunc("GET "+BaseURL+"/budgets/{id}/progress",
 		httpserver.Handle(s.errs, http.StatusOK, s.getBudgetProgress))
 	mux.HandleFunc("GET "+BaseURL+"/goals",

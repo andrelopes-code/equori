@@ -33,6 +33,26 @@ func (q *Queries) DeleteBudget(ctx context.Context, arg DeleteBudgetParams) (int
 	return result.RowsAffected(), nil
 }
 
+const deleteBudgetAmountsFrom = `-- name: DeleteBudgetAmountsFrom :exec
+DELETE FROM planning_budget_amount
+WHERE
+    books_id = $1
+    AND budget_id = $2
+    AND effective_from >= $3
+`
+
+type DeleteBudgetAmountsFromParams struct {
+	BooksID       int64
+	BudgetID      uuid.UUID
+	EffectiveFrom time.Time
+}
+
+// Budget end E7: an end removes the version of its month and the later ones.
+func (q *Queries) DeleteBudgetAmountsFrom(ctx context.Context, arg DeleteBudgetAmountsFromParams) error {
+	_, err := q.db.Exec(ctx, deleteBudgetAmountsFrom, arg.BooksID, arg.BudgetID, arg.EffectiveFrom)
+	return err
+}
+
 const getBudget = `-- name: GetBudget :one
 SELECT
     id, books_id, category_account_id, period_type, rollover, currency, created_at
@@ -101,9 +121,9 @@ func (q *Queries) InsertBudget(ctx context.Context, arg InsertBudgetParams) (Pla
 
 const insertBudgetAmount = `-- name: InsertBudgetAmount :exec
 INSERT INTO
-    planning_budget_amount (books_id, budget_id, effective_from, amount)
+    planning_budget_amount (books_id, budget_id, effective_from, amount, ended)
 VALUES
-    ($1, $2, $3, $4)
+    ($1, $2, $3, $4, $5)
 `
 
 type InsertBudgetAmountParams struct {
@@ -111,6 +131,7 @@ type InsertBudgetAmountParams struct {
 	BudgetID      uuid.UUID
 	EffectiveFrom time.Time
 	Amount        int64
+	Ended         bool
 }
 
 func (q *Queries) InsertBudgetAmount(ctx context.Context, arg InsertBudgetAmountParams) error {
@@ -119,6 +140,7 @@ func (q *Queries) InsertBudgetAmount(ctx context.Context, arg InsertBudgetAmount
 		arg.BudgetID,
 		arg.EffectiveFrom,
 		arg.Amount,
+		arg.Ended,
 	)
 	return err
 }
@@ -164,7 +186,7 @@ func (q *Queries) ListAllBudgets(ctx context.Context, booksID int64) ([]Planning
 
 const listBudgetAmounts = `-- name: ListBudgetAmounts :many
 SELECT
-    books_id, budget_id, effective_from, amount
+    books_id, budget_id, effective_from, amount, ended
 FROM
     planning_budget_amount
 WHERE
@@ -194,6 +216,7 @@ func (q *Queries) ListBudgetAmounts(ctx context.Context, arg ListBudgetAmountsPa
 			&i.BudgetID,
 			&i.EffectiveFrom,
 			&i.Amount,
+			&i.Ended,
 		); err != nil {
 			return nil, err
 		}
@@ -289,12 +312,13 @@ func (q *Queries) LockBudget(ctx context.Context, arg LockBudgetParams) (Plannin
 
 const upsertBudgetAmount = `-- name: UpsertBudgetAmount :exec
 INSERT INTO
-    planning_budget_amount (books_id, budget_id, effective_from, amount)
+    planning_budget_amount (books_id, budget_id, effective_from, amount, ended)
 VALUES
-    ($1, $2, $3, $4)
+    ($1, $2, $3, $4, $5)
 ON CONFLICT (budget_id, effective_from) DO UPDATE
 SET
-    amount = EXCLUDED.amount
+    amount = EXCLUDED.amount,
+    ended = EXCLUDED.ended
 `
 
 type UpsertBudgetAmountParams struct {
@@ -302,15 +326,17 @@ type UpsertBudgetAmountParams struct {
 	BudgetID      uuid.UUID
 	EffectiveFrom time.Time
 	Amount        int64
+	Ended         bool
 }
 
-// A130: a plan save replaces the version of its month.
+// A130: a plan save replaces the version of its month, an end included (budget end E10).
 func (q *Queries) UpsertBudgetAmount(ctx context.Context, arg UpsertBudgetAmountParams) error {
 	_, err := q.db.Exec(ctx, upsertBudgetAmount,
 		arg.BooksID,
 		arg.BudgetID,
 		arg.EffectiveFrom,
 		arg.Amount,
+		arg.Ended,
 	)
 	return err
 }

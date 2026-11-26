@@ -6781,10 +6781,43 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/BudgetAmount"
+              $ref: "#/components/schemas/BudgetAmountInput"
       responses:
         "201":
           description: Created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Budget"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /budgets/{id}/end:
+    post:
+      tags: [planning]
+      operationId: endBudget
+      x-book-role: write
+      summary: End a budget from a month on; the months before keep their amounts (budget end E7).
+      description: >-
+        The version of the month and the later ones are removed and an end takes their place. A
+        later amount resumes the budget. 422 on month before the current month, after today + 12
+        months or not after the first amount.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BudgetEndInput"
+      responses:
+        "200":
+          description: OK.
           content:
             application/json:
               schema:
@@ -15233,6 +15266,19 @@ components:
     BudgetAmount:
       type: object
       additionalProperties: false
+      required: [effective_from, amount, ended]
+      properties:
+        effective_from:
+          type: string
+          pattern: "^[0-9]{4}-[0-9]{2}$"
+        amount:
+          $ref: "#/components/schemas/Money"
+        ended:
+          type: boolean
+          description: The version ends the budget from effective_from on; its amount is zero (budget end E13).
+    BudgetAmountInput:
+      type: object
+      additionalProperties: false
       required: [effective_from, amount]
       properties:
         effective_from:
@@ -15240,6 +15286,15 @@ components:
           pattern: "^[0-9]{4}-[0-9]{2}$"
         amount:
           $ref: "#/components/schemas/Money"
+    BudgetEndInput:
+      type: object
+      additionalProperties: false
+      required: [month]
+      properties:
+        month:
+          type: string
+          pattern: "^[0-9]{4}-[0-9]{2}$"
+          description: First month without the budget.
     BudgetInput:
       type: object
       additionalProperties: false

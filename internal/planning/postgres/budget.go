@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -59,6 +60,7 @@ func (r *Repository) InsertBudgetAmount(
 			BudgetID:      budgetID,
 			EffectiveFrom: a.EffectiveFrom,
 			Amount:        a.Amount,
+			Ended:         a.Ended,
 		},
 	)
 	if err != nil {
@@ -103,7 +105,7 @@ func (r *Repository) completeBudgets(
 		b := byID[a.BudgetID]
 		b.Amounts = append(
 			b.Amounts,
-			domain.BudgetAmount{EffectiveFrom: a.EffectiveFrom, Amount: a.Amount},
+			domain.BudgetAmount{EffectiveFrom: a.EffectiveFrom, Amount: a.Amount, Ended: a.Ended},
 		)
 	}
 
@@ -201,10 +203,28 @@ func (r *Repository) UpsertBudgetAmount(
 			BudgetID:      budgetID,
 			EffectiveFrom: a.EffectiveFrom,
 			Amount:        a.Amount,
+			Ended:         a.Ended,
 		},
 	)
 	if err != nil {
 		return fmt.Errorf("upsert budget amount: %w", err)
+	}
+
+	return nil
+}
+
+func (r *Repository) DeleteBudgetAmountsFrom(
+	ctx context.Context,
+	booksID int64,
+	budgetID uuid.UUID,
+	from time.Time,
+) error {
+	err := r.q.DeleteBudgetAmountsFrom(
+		ctx,
+		DeleteBudgetAmountsFromParams{BooksID: booksID, BudgetID: budgetID, EffectiveFrom: from},
+	)
+	if err != nil {
+		return fmt.Errorf("delete budget amounts: %w", err)
 	}
 
 	return nil

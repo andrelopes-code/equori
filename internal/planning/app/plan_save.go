@@ -21,7 +21,8 @@ type PlanAmount struct {
 
 // SaveBudgetPlan stores the reference choice and sets each listed category's amount from month
 // on, in one transaction (A130): the version of month is replaced, a category without a budget
-// gets one when its amount is above zero, and versions of other months stay.
+// gets one when its amount is above zero, a budget out of force in month resumes only above
+// zero (budget end E10), and versions of other months stay.
 // fixed is read only with SourceFixed. targetBP is the savings target in basis points; nil
 // clears it (A187).
 func (s *Service) SaveBudgetPlan(
@@ -209,15 +210,21 @@ func (s *Service) persistPlan(
 			return err
 		}
 
-		byCategory := make(map[uuid.UUID]uuid.UUID, len(budgets))
+		byCategory := make(map[uuid.UUID]domain.Budget, len(budgets))
 		for _, b := range budgets {
-			byCategory[b.CategoryID] = b.ID
+			byCategory[b.CategoryID] = b
 		}
 
 		for _, a := range amounts {
 			version := domain.BudgetAmount{EffectiveFrom: month, Amount: a.Amount.Amount()}
 
-			id, ok := byCategory[a.CategoryID]
+			b, ok := byCategory[a.CategoryID]
+			// A zero on a budget out of force in month adds nothing (budget end E10).
+			if ok && version.Amount == 0 && !b.InForce(month) {
+				continue
+			}
+
+			id := b.ID
 			if !ok {
 				if version.Amount == 0 {
 					continue

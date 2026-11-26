@@ -25,6 +25,7 @@ type PlanningBudgetAmount struct {
 	BudgetID      uuid.UUID
 	EffectiveFrom time.Time
 	Amount        int64
+	Ended         bool
 }
 
 type PlanningBudgetReference struct {

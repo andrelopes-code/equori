@@ -377,6 +377,8 @@ type Repository interface {
 		budgetID uuid.UUID,
 		a domain.BudgetAmount,
 	) error
+	// DeleteBudgetAmountsFrom removes the versions of the budget from from on (budget end E7).
+	DeleteBudgetAmountsFrom(ctx context.Context, booksID int64, id uuid.UUID, from time.Time) error
 	// BudgetReference returns the stored reference choice; ok is false when there is none (A131).
 	BudgetReference(ctx context.Context, booksID int64) (r domain.Reference, ok bool, err error)
 	SaveBudgetReference(

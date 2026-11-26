@@ -39,6 +39,7 @@ func toBudgetAPI(b domain.Budget) Budget {
 		out.Amounts[i] = BudgetAmount{
 			EffectiveFrom: a.EffectiveFrom.Format(monthLayout),
 			Amount:        toMoneyAPI(a.Amount, b.Currency),
+			Ended:         a.Ended,
 		}
 	}
 

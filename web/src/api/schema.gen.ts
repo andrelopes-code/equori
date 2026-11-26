@@ -3936,6 +3936,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/budgets/{id}/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * End a budget from a month on; the months before keep their amounts (budget end E7).
+         * @description The version of the month and the later ones are removed and an end takes their place. A later amount resumes the budget. 422 on month before the current month, after today + 12 months or not after the first amount.
+         */
+        post: operations["endBudget"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/budgets/{id}/progress": {
         parameters: {
             query?: never;
@@ -8571,6 +8591,16 @@ export interface components {
         BudgetAmount: {
             effective_from: string;
             amount: components["schemas"]["Money"];
+            /** @description The version ends the budget from effective_from on; its amount is zero (budget end E13). */
+            ended: boolean;
+        };
+        BudgetAmountInput: {
+            effective_from: string;
+            amount: components["schemas"]["Money"];
+        };
+        BudgetEndInput: {
+            /** @description First month without the budget. */
+            month: string;
         };
         BudgetInput: {
             /** Format: uuid */
@@ -16876,12 +16906,42 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BudgetAmount"];
+                "application/json": components["schemas"]["BudgetAmountInput"];
             };
         };
         responses: {
             /** @description Created. */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Budget"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    endBudget: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BudgetEndInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
