@@ -19,8 +19,8 @@ export interface JourneyAxes {
   exact: ChartNumberFormat;
 }
 
-// PX6: one money axis, and a time axis whose label writes the calendar year and, beside it, the
-// age the person reaches in that year.
+// PX6: one money axis, and a time axis with a tick at each decade of age: the age the person
+// reaches in that year, and the calendar year under it.
 export function useJourneyAxes(
   currency: string,
   scale: number,
@@ -32,20 +32,29 @@ export function useJourneyAxes(
 
   const short = (value: number) => money.compact(value * 10 ** scale);
   const exact = (value: number) => money.exact(value * 10 ** scale);
-  // Workaround for Slotted issue #197: a time axis takes no explicit ticks and no second label
-  // line, so the age stands beside the year of each tick in place of the decades of age of the mock.
-  const year = (ms: number) => {
-    const iso = new Date(ms).toISOString().slice(0, 10);
-
-    return t("portfolio.projection.journey.axis", {
-      year: formatYear(iso, tag),
-      age: Number(iso.slice(0, 4)) - birthYear,
+  const age = (ms: number) =>
+    t("portfolio.projection.journey.axis", {
+      age: new Date(ms).getUTCFullYear() - birthYear,
     });
-  };
+  const year = (date: Date) => formatYear(date.toISOString().slice(0, 10), tag);
 
   return {
-    x: { field: "date", type: "time", format: year },
+    x: {
+      field: "date",
+      type: "time",
+      format: age,
+      ticks: decadesOfAge(birthYear),
+      secondary: year,
+    },
     y: { format: short, labelWidth },
     exact,
   };
+}
+
+// Every decade of a life: a tick outside the plotted years is not drawn.
+function decadesOfAge(birthYear: number): string[] {
+  return Array.from(
+    { length: 12 },
+    (_, decade) => `${String(birthYear + (decade + 1) * 10)}-01-01`,
+  );
 }

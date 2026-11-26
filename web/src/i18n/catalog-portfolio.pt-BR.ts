@@ -428,7 +428,7 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.projection.journey.key.contributed": "Aportado",
   "portfolio.projection.journey.key.gain": "Rendimento",
   "portfolio.projection.journey.plot": "Gráfico da jornada do patrimônio",
-  "portfolio.projection.journey.axis": "{year} · {age} anos",
+  "portfolio.projection.journey.axis": "{age} anos",
   "portfolio.projection.journey.today": "hoje",
   "portfolio.projection.journey.withdrawals": "retiradas · {age} anos",
   "portfolio.projection.journey.verdict.label": "Projeção em dinheiro de hoje",

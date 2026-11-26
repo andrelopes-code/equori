@@ -440,7 +440,7 @@ describe("Portfolio projection page", () => {
     expect(journey.getByText("R$883.34K")).toBeInTheDocument();
     // The summary of the plot: the area of the return ends where the withdrawals start.
     expect(
-      journey.getByText(/Return: from .* up to R\$883\.34K at 2054 · age 60\./),
+      journey.getByText(/Return: from .* up to R\$883\.34K at age 60\./),
     ).toBeInTheDocument();
     for (const key of ["Recorded", "Projection", "Contributed", "Return"])
       expect(journey.getByText(key)).toBeInTheDocument();

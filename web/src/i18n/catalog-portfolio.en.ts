@@ -426,7 +426,7 @@ export const portfolioEn = {
   "portfolio.projection.journey.key.contributed": "Contributed",
   "portfolio.projection.journey.key.gain": "Return",
   "portfolio.projection.journey.plot": "Wealth journey chart",
-  "portfolio.projection.journey.axis": "{year} · age {age}",
+  "portfolio.projection.journey.axis": "age {age}",
   "portfolio.projection.journey.today": "today",
   "portfolio.projection.journey.withdrawals": "withdrawals · age {age}",
   "portfolio.projection.journey.verdict.label": "Projection in today's money",
