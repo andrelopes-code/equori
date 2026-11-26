@@ -285,6 +285,18 @@ func (r *Repository) InsertTerms(
 	return r.insertTerms(ctx, booksID, scheduleID, t)
 }
 
+func (r *Repository) DeleteTerms(
+	ctx context.Context,
+	booksID int64,
+	scheduleID uuid.UUID,
+	effectiveFrom time.Time,
+) error {
+	return r.q.DeleteTerms(
+		ctx,
+		DeleteTermsParams{BooksID: booksID, ScheduleID: scheduleID, EffectiveFrom: effectiveFrom},
+	)
+}
+
 // MoveScheduleStart moves the first terms version from oldStart to newStart and renumbers the
 // occurrences and the later terms versions by shift, the dates the rule gained before them.
 func (r *Repository) MoveScheduleStart(

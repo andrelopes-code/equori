@@ -3815,6 +3815,34 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/schedules/{id}/terms/{effective_from}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Replace the latest terms version (A269, TR1, TR2).
+         * @description An absent amount or recurrence keeps the value of the version replaced; the date is after the previous
+         *     version. The first version keeps its date and its recurrence. Expected occurrences that were not moved, from
+         *     the earlier of the two dates on, are regenerated. 409 terms_not_latest for another version; 409
+         *     schedule_ended on or after ends_on.
+         */
+        put: operations["reviseScheduleTerms"];
+        post?: never;
+        /**
+         * Remove the latest terms version; the previous one applies again from its date (A269, TR3).
+         * @description Expected occurrences that were not moved, from the date on, are regenerated. 409 terms_first for the first
+         *     version; 409 terms_not_latest for another version.
+         */
+        delete: operations["removeScheduleTerms"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/schedules/{id}/pauses": {
         parameters: {
             query?: never;
@@ -16612,6 +16640,67 @@ export interface operations {
             404: components["responses"]["Problem"];
             409: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+        };
+    };
+    reviseScheduleTerms: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+                /** @description The effective date of the latest terms version. */
+                effective_from: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TermsInput"];
+            };
+        };
+        responses: {
+            /** @description Revised. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Schedule"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    removeScheduleTerms: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+                /** @description The effective date of the latest terms version. */
+                effective_from: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Schedule"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
         };
     };
     pauseSchedule: {

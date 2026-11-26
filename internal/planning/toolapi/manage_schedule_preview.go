@@ -31,10 +31,12 @@ func previewSchedule(in manageScheduleIn, p schedulePlan) (tool.Preview, error) 
 		return pv, nil
 	case "update":
 		pv.Target, pv.Changes = p.schedule.Description, updateChanges(p.schedule, in)
-	case "change_terms":
+	case "change_terms", "revise_terms":
 		if err := previewTermsChange(&pv, in, p); err != nil {
 			return tool.Preview{}, err
 		}
+	case "remove_terms":
+		previewTermsRemoval(&pv, p)
 	case "pause", "end":
 		previewScheduleStop(&pv, in, p)
 	}
@@ -107,6 +109,32 @@ func previewTermsChange(pv *tool.Preview, in manageScheduleIn, p schedulePlan) e
 	pv.Changes = append(pv.Changes, tool.Change{Field: "date", After: tool.DateValue(in.From.Time)})
 
 	return nil
+}
+
+// previewTermsRemoval names the latest terms version removed and the version that applies again.
+func previewTermsRemoval(pv *tool.Preview, p schedulePlan) {
+	n := len(p.schedule.Terms)
+	last := p.schedule.Terms[n-1]
+	pv.Target, pv.Basis = p.schedule.Description, last.EffectiveFrom.Format(
+		time.DateOnly,
+	)+"|"+fmt.Sprint(
+		last.Amount,
+	)
+
+	after := "removed"
+	if n > 1 {
+		after = "removed; the terms from " +
+			p.schedule.Terms[n-2].EffectiveFrom.Format(time.DateOnly) + " apply again"
+	}
+
+	pv.Changes = []tool.Change{
+		{
+			Field:  "terms",
+			Before: tool.TextValue(describeTerms(last.Rule, last.EffectiveFrom)),
+			After:  tool.TextValue(after),
+		},
+		{Field: "date", After: tool.DateValue(last.EffectiveFrom)},
+	}
 }
 
 func previewScheduleStop(pv *tool.Preview, in manageScheduleIn, p schedulePlan) {

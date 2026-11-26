@@ -26,6 +26,10 @@ var (
 	ErrPauseOverlap = errors.New("the pause overlaps another pause of the schedule")
 	// ErrScheduleEnded refuses a change dated on or after the schedule's end (A52).
 	ErrScheduleEnded = errors.New("the schedule ends before this date")
+	// ErrTermsNotLatest refuses a revision of a terms version that is not the latest (A269).
+	ErrTermsNotLatest = errors.New("only the latest terms version is revised or removed")
+	// ErrTermsFirst refuses the removal of the first terms version (A269).
+	ErrTermsFirst = errors.New("the first terms version is never removed")
 )
 
 // CurrencyError names the field whose account has an unsupported instrument.
@@ -337,6 +341,12 @@ type Repository interface {
 		from time.Time,
 	) ([]domain.Occurrence, error)
 	InsertTerms(ctx context.Context, booksID int64, scheduleID uuid.UUID, t domain.Terms) error
+	DeleteTerms(
+		ctx context.Context,
+		booksID int64,
+		scheduleID uuid.UUID,
+		effectiveFrom time.Time,
+	) error
 	// InsertPause returns ErrPauseOverlap when the pause overlaps another one.
 	InsertPause(ctx context.Context, booksID int64, scheduleID uuid.UUID, p domain.Pause) error
 	SetEndsOn(ctx context.Context, booksID int64, id uuid.UUID, d time.Time) error

@@ -6547,6 +6547,81 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /schedules/{id}/terms/{effective_from}:
+    put:
+      tags: [planning]
+      operationId: reviseScheduleTerms
+      x-book-role: write
+      summary: Replace the latest terms version (A269, TR1, TR2).
+      description: |
+        An absent amount or recurrence keeps the value of the version replaced; the date is after the previous
+        version. The first version keeps its date and its recurrence. Expected occurrences that were not moved, from
+        the earlier of the two dates on, are regenerated. 409 terms_not_latest for another version; 409
+        schedule_ended on or after ends_on.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+        - name: effective_from
+          in: path
+          required: true
+          description: The effective date of the latest terms version.
+          schema:
+            type: string
+            format: date
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TermsInput"
+      responses:
+        "200":
+          description: Revised.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Schedule"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [planning]
+      operationId: removeScheduleTerms
+      x-book-role: write
+      summary: Remove the latest terms version; the previous one applies again from its date (A269, TR3).
+      description: |
+        Expected occurrences that were not moved, from the date on, are regenerated. 409 terms_first for the first
+        version; 409 terms_not_latest for another version.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+        - name: effective_from
+          in: path
+          required: true
+          description: The effective date of the latest terms version.
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Removed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Schedule"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
   /schedules/{id}/pauses:
     post:
       tags: [planning]

@@ -59,12 +59,8 @@ func nextTerms(
 	rule *domain.Rule,
 ) (domain.Terms, error) {
 	last := sch.Terms[len(sch.Terms)-1]
-	if !effectiveFrom.After(last.EffectiveFrom) {
-		return domain.Terms{}, &domain.FieldError{
-			Field:   "effective_from",
-			Message: "must be after the latest terms version",
-			Err:     domain.ErrValidation,
-		}
+	if err := afterLatest(sch, effectiveFrom); err != nil {
+		return domain.Terms{}, err
 	}
 
 	if amount == nil && rule == nil {
@@ -75,7 +71,31 @@ func nextTerms(
 		}
 	}
 
-	next := domain.Terms{EffectiveFrom: effectiveFrom, Rule: last.Rule, Amount: last.Amount}
+	base := domain.Terms{EffectiveFrom: effectiveFrom, Rule: last.Rule, Amount: last.Amount}
+
+	return withChanges(sch, base, amount, rule)
+}
+
+// afterLatest refuses an effective date on or before the latest terms version of sch.
+func afterLatest(sch domain.Schedule, effectiveFrom time.Time) error {
+	if effectiveFrom.After(sch.Terms[len(sch.Terms)-1].EffectiveFrom) {
+		return nil
+	}
+
+	return &domain.FieldError{
+		Field:   "effective_from",
+		Message: "must be after the latest terms version",
+		Err:     domain.ErrValidation,
+	}
+}
+
+// withChanges returns next with the amount and the rule given; an absent one keeps its value.
+func withChanges(
+	sch domain.Schedule,
+	next domain.Terms,
+	amount *money.Money,
+	rule *domain.Rule,
+) (domain.Terms, error) {
 	if amount != nil {
 		if amount.Currency() != sch.Currency {
 			return domain.Terms{}, &domain.FieldError{

@@ -46,6 +46,10 @@ func (s *Server) Register(mux *http.ServeMux) {
 		httpserver.Handle(s.errs, http.StatusOK, s.moveOccurrence))
 	mux.HandleFunc("POST "+BaseURL+"/schedules/{id}/terms",
 		httpserver.Handle(s.errs, http.StatusCreated, s.changeScheduleTerms))
+	mux.HandleFunc("PUT "+BaseURL+"/schedules/{id}/terms/{effective_from}",
+		httpserver.Handle(s.errs, http.StatusOK, s.reviseScheduleTerms))
+	mux.HandleFunc("DELETE "+BaseURL+"/schedules/{id}/terms/{effective_from}",
+		httpserver.Handle(s.errs, http.StatusOK, s.removeScheduleTerms))
 	mux.HandleFunc("POST "+BaseURL+"/schedules/{id}/pauses",
 		httpserver.Handle(s.errs, http.StatusCreated, s.pauseSchedule))
 	mux.HandleFunc("POST "+BaseURL+"/schedules/{id}/end",
@@ -161,6 +165,10 @@ func ToProblem(err error) (problem.Details, bool) {
 		return problem.New(http.StatusConflict, "pause_overlap", err.Error()), true
 	case errors.Is(err, app.ErrScheduleEnded):
 		return problem.New(http.StatusConflict, "schedule_ended", err.Error()), true
+	case errors.Is(err, app.ErrTermsNotLatest):
+		return problem.New(http.StatusConflict, "terms_not_latest", err.Error()), true
+	case errors.Is(err, app.ErrTermsFirst):
+		return problem.New(http.StatusConflict, "terms_first", err.Error()), true
 	case errors.Is(err, app.ErrBudgetExists):
 		return problem.New(http.StatusConflict, "budget_exists", err.Error()), true
 	}

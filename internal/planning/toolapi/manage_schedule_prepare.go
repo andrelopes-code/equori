@@ -2,6 +2,7 @@ package toolapi
 
 import (
 	"context"
+	"slices"
 
 	"github.com/google/uuid"
 
@@ -33,7 +34,7 @@ func prepareSchedule(
 		if unit, err = prepareScheduleCreate(ctx, l, booksID, in, &p); err != nil {
 			return schedulePlan{}, err
 		}
-	case "change_terms":
+	case "change_terms", "revise_terms":
 		if unit, err = prepareTermsChange(in, &p); err != nil {
 			return schedulePlan{}, err
 		}
@@ -86,6 +87,11 @@ func requiredByAction(in manageScheduleIn, fields []field) error {
 		err = checkUpdateFields(in, fields)
 	case "change_terms":
 		err = checkChangeTermsFields(in, fields)
+	case "revise_terms":
+		err = required(name, fields, []string{"schedule_id", "from"},
+			"amount", "frequency", "interval", "day_of_month")
+	case "remove_terms":
+		err = required(name, fields, []string{"schedule_id"})
 	case "pause":
 		err = required(name, fields, []string{"schedule_id", "from", "to"})
 	case "end":
@@ -304,7 +310,10 @@ func checkPause(in manageScheduleIn, p schedulePlan) error {
 }
 
 func finishSchedulePlan(in manageScheduleIn, p *schedulePlan, unit money.Money) error {
-	if (in.Action == "change_terms" || in.Action == "pause" || in.Action == "end") &&
+	if slices.Contains(
+		[]manageScheduleAction{"change_terms", "revise_terms", "pause", "end"},
+		in.Action,
+	) &&
 		p.schedule.EndsOn != nil &&
 		!in.From.Before(*p.schedule.EndsOn) {
 		return app.ErrScheduleEnded

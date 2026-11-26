@@ -1086,3 +1086,6 @@ type PauseScheduleJSONRequestBody = SchedulePause
 
 // ChangeScheduleTermsJSONRequestBody defines body for ChangeScheduleTerms for application/json ContentType.
 type ChangeScheduleTermsJSONRequestBody = TermsInput
+
+// ReviseScheduleTermsJSONRequestBody defines body for ReviseScheduleTerms for application/json ContentType.
+type ReviseScheduleTermsJSONRequestBody = TermsInput

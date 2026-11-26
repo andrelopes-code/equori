@@ -125,6 +125,13 @@ WHERE
 RETURNING
     *;
 
+-- name: DeleteTerms :exec
+DELETE FROM planning_schedule_terms
+WHERE
+    books_id = @books_id
+    AND schedule_id = @schedule_id
+    AND effective_from = @effective_from;
+
 -- name: MoveFirstTermsStart :exec
 -- The first terms version starts where its rule starts (P7 amendment A198).
 UPDATE planning_schedule_terms

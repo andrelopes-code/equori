@@ -285,6 +285,8 @@ var exposure = map[string]string{
 	"skipOccurrence":                   "manage_occurrence",
 	"moveOccurrence":                   "manage_occurrence",
 	"changeScheduleTerms":              "manage_schedule",
+	"reviseScheduleTerms":              "manage_schedule",
+	"removeScheduleTerms":              "manage_schedule",
 	"updateScheduleMatching":           "manage_schedule",
 	"pauseSchedule":                    "manage_schedule",
 	"endSchedule":                      "manage_schedule",

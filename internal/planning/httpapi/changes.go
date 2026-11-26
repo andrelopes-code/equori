@@ -5,10 +5,8 @@ import (
 	"net/http"
 
 	"github.com/andrelopes-code/equori/internal/planning/app"
-	"github.com/andrelopes-code/equori/internal/planning/domain"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
-	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
 func (s *Server) skipOccurrence(
@@ -62,20 +60,9 @@ func (s *Server) changeScheduleTerms(
 		return Schedule{}, err
 	}
 
-	var amount *money.Money
-	if in.Amount != nil {
-		m, err := fromMoneyAPI("amount", *in.Amount)
-		if err != nil {
-			return Schedule{}, err
-		}
-
-		amount = &m
-	}
-
-	var rule *domain.Rule
-	if in.Recurrence != nil {
-		rr := fromRecurrenceAPI(*in.Recurrence)
-		rule = &rr
+	amount, rule, err := termsChanges(in)
+	if err != nil {
+		return Schedule{}, err
 	}
 
 	sch, err := s.svc.ChangeTerms(

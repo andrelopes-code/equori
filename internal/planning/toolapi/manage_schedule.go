@@ -13,7 +13,7 @@ func manageSchedule(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 	return tool.NewWrite(tool.Spec{
 		Name: "manage_schedule",
 		Description: "Proposes creating a recurring schedule or changing one: update its description, first date or matching, " +
-			"new terms from a date, a pause, or an end. " +
+			"new, revised or removed terms, a pause, or an end. " +
 			"Use it when the user sets up or changes a recurring bill, income, subscription, transfer or saving. " +
 			"Do not use it for one occurrence: manage_occurrence does. " +
 			"The user confirms first.",
@@ -73,6 +73,14 @@ func runSchedule(
 		return svc.Update(ctx, booksID, p.schedule.ID, scheduleChange(in))
 	case "change_terms":
 		return svc.ChangeTerms(ctx, booksID, p.schedule.ID, in.From.Time, p.amount, p.rule)
+	case "revise_terms":
+		latest := p.schedule.Terms[len(p.schedule.Terms)-1].EffectiveFrom
+
+		return svc.ReviseTerms(ctx, booksID, p.schedule.ID, latest, in.From.Time, p.amount, p.rule)
+	case "remove_terms":
+		latest := p.schedule.Terms[len(p.schedule.Terms)-1].EffectiveFrom
+
+		return svc.RemoveTerms(ctx, booksID, p.schedule.ID, latest)
 	case "pause":
 		return svc.Pause(ctx, booksID, p.schedule.ID, in.From.Time, in.To.Time)
 	}

@@ -12,6 +12,25 @@ import (
 	"github.com/google/uuid"
 )
 
+const deleteTerms = `-- name: DeleteTerms :exec
+DELETE FROM planning_schedule_terms
+WHERE
+    books_id = $1
+    AND schedule_id = $2
+    AND effective_from = $3
+`
+
+type DeleteTermsParams struct {
+	BooksID       int64
+	ScheduleID    uuid.UUID
+	EffectiveFrom time.Time
+}
+
+func (q *Queries) DeleteTerms(ctx context.Context, arg DeleteTermsParams) error {
+	_, err := q.db.Exec(ctx, deleteTerms, arg.BooksID, arg.ScheduleID, arg.EffectiveFrom)
+	return err
+}
+
 const getSchedule = `-- name: GetSchedule :one
 SELECT
     id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar, match_window_days, goal_id

@@ -10948,7 +10948,7 @@
   },
   {
     "name": "manage_schedule",
-    "description": "Proposes creating a recurring schedule or changing one: update its description, first date or matching, new terms from a date, a pause, or an end. Use it when the user sets up or changes a recurring bill, income, subscription, transfer or saving. Do not use it for one occurrence: manage_occurrence does. The user confirms first.",
+    "description": "Proposes creating a recurring schedule or changing one: update its description, first date or matching, new, revised or removed terms, a pause, or an end. Use it when the user sets up or changes a recurring bill, income, subscription, transfer or saving. Do not use it for one occurrence: manage_occurrence does. The user confirms first.",
     "effect": "write",
     "idempotent": false,
     "input_schema": {
@@ -10961,13 +10961,15 @@
             "create",
             "update",
             "change_terms",
+            "revise_terms",
+            "remove_terms",
             "pause",
             "end"
           ]
         },
         "schedule_id": {
           "type": "string",
-          "description": "for update, change_terms, pause and end: schedule from list_schedules"
+          "description": "for every action but create: from list_schedules"
         },
         "kind": {
           "type": "string",
@@ -10998,11 +11000,11 @@
         },
         "amount": {
           "type": "string",
-          "description": "for create and change_terms: positive amount of each occurrence"
+          "description": "for create and terms actions: amount of each occurrence"
         },
         "frequency": {
           "type": "string",
-          "description": "for create and change_terms: repetition unit",
+          "description": "for create and terms actions: repetition unit",
           "enum": [
             "daily",
             "weekly",
@@ -11012,11 +11014,11 @@
         },
         "interval": {
           "type": "integer",
-          "description": "for create and change_terms: repeat every this many units; 1 when absent"
+          "description": "for create and terms actions: every this many units; 1 when absent"
         },
         "day_of_month": {
           "type": "integer",
-          "description": "for monthly schedules: day of the month"
+          "description": "for monthly: day of the month"
         },
         "start": {
           "type": "string",
@@ -11030,7 +11032,7 @@
         },
         "from": {
           "type": "string",
-          "description": "for change_terms: first date the new terms apply; for pause: first paused date; for end: first date without occurrences",
+          "description": "for change_terms and revise_terms: first date the terms apply; for pause: first paused date; for end: first date without occurrences",
           "format": "date"
         },
         "to": {
@@ -11040,11 +11042,11 @@
         },
         "paid_by_transaction_id": {
           "type": "string",
-          "description": "for create: the transaction that paid the occurrence on start"
+          "description": "for create: transaction that paid the occurrence on start"
         },
         "starts_on": {
           "type": "string",
-          "description": "for update: earlier first date, on the rhythm of the schedule",
+          "description": "for update: earlier first date, on the schedule's rhythm",
           "format": "date"
         },
         "match_tolerance_bp": {
