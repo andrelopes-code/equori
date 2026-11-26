@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { json, problem } from "@/testing/fake-api";
@@ -29,10 +29,6 @@ async function openAction(row: string, index: number, action: string) {
 }
 
 describe("PlanningPage agenda", () => {
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
   it("steps the agenda's month from the page header", async () => {
     const { container, router } = await renderApp("/planning", {
       fetch: api(),
@@ -344,8 +340,6 @@ describe("PlanningPage agenda", () => {
   });
 
   it("moves an occurrence to another date", async () => {
-    // Workaround for Slotted issue #204: the Today of the picker reads the clock of the browser.
-    vi.useFakeTimers({ toFake: ["Date"], now: new Date(2026, 9, 17, 12) });
     const sent: unknown[] = [];
     await renderApp("/planning", {
       fetch: api({

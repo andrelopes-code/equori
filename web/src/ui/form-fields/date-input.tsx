@@ -37,6 +37,7 @@ export function DateInput({
 
   const minValue = min === undefined ? null : parseISODate(min);
   const maxValue = max === undefined ? null : parseISODate(max);
+  const todayValue = parseISODate(today);
   const presets = [
     { label: t("day.yesterday"), value: parseISODate(shiftDate(today, -1)) },
     {
@@ -54,6 +55,7 @@ export function DateInput({
       {...(maxValue === null ? {} : { max: maxValue })}
       messages={messages}
       clearable={clearable}
+      {...(todayValue === null ? {} : { today: todayValue })}
       presets={shortcuts ? presets : []}
       onValueChange={(next) => {
         if (next === null && clearable) onChange("");
