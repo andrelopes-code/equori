@@ -10,6 +10,10 @@ const millisecondsPerDay = 86_400_000;
 const soonDays = 3;
 const weekDays = 7;
 
+// The face carries the last twelve closed statements (CD5).
+const historyMonths = 12;
+const whole = 100;
+
 export interface Deadline {
   kind: "overdue" | "soon" | "week" | "date";
   // Calendar days from today to the due date; negative when past.
@@ -26,6 +30,33 @@ export interface WalletLimit {
   full: boolean;
 }
 
+// The open cycle of a card on its rail (CD7): places in percent of the rail, one decimal.
+export interface WalletCycle {
+  start: string;
+  closes: string;
+  due: string;
+  // Calendar days from today to the closing, and from the start to today.
+  left: number;
+  gone: number;
+  today: number;
+  close: number;
+}
+
+export interface HistoryBar {
+  reference: string;
+  amount: Money;
+  open: boolean;
+  // A share of the tallest bar or mean, in percent, one decimal.
+  height: number;
+}
+
+// The statements engraved on the face (CD5); no bar without a closed statement.
+export interface WalletHistory {
+  bars: HistoryBar[];
+  mean: Money | undefined;
+  meanHeight: number;
+}
+
 export interface WalletCard {
   account: Account;
   // What the closed statements of the card still owe, and the most urgent of them.
@@ -33,6 +64,8 @@ export interface WalletCard {
   // The open statement, when it holds an amount.
   open: Statement | undefined;
   limit: WalletLimit | undefined;
+  cycle: WalletCycle | undefined;
+  history: WalletHistory;
 }
 
 export interface WalletView {
@@ -47,6 +80,8 @@ interface CardStatements {
   account: Account;
   current: Statement | undefined;
   unpaid: readonly Statement[];
+  // Every statement read for the card, for its cycle and its history.
+  statements: readonly Statement[];
 }
 
 // The wallet of the Cards widget (docs/specs/2026-11-17-overview-cards-design.md). It holds no
@@ -107,7 +142,95 @@ function cardOf(card: CardStatements, today: string): WalletCard {
           },
     open,
     limit: limitOf(card.account),
+    cycle:
+      card.current === undefined
+        ? undefined
+        : cycleOf(card.current, card.statements, today),
+    history: historyOf(card.statements, card.current),
   };
+}
+
+// The rail runs from the closing before the open statement to its due date; without one
+// before it, from a month before the closing (CD7).
+function cycleOf(
+  current: Statement,
+  statements: readonly Statement[],
+  today: string,
+): WalletCycle {
+  const before = statements
+    .map((s) => s.closing_date)
+    .filter((date) => date < current.closing_date)
+    .sort();
+  const start = before.at(-1) ?? monthBefore(current.closing_date);
+  const span = daysBetween(start, current.due_date);
+  const at = (date: string) =>
+    tenths(
+      Math.min(whole, Math.max(0, (daysBetween(start, date) * whole) / span)),
+    );
+
+  return {
+    start,
+    closes: current.closing_date,
+    due: current.due_date,
+    left: daysBetween(today, current.closing_date),
+    gone: daysBetween(start, today),
+    today: at(today),
+    close: at(current.closing_date),
+  };
+}
+
+function historyOf(
+  statements: readonly Statement[],
+  current: Statement | undefined,
+): WalletHistory {
+  const closed = statements
+    .filter((s) => s.status !== "open")
+    .sort((a, b) => a.reference.localeCompare(b.reference))
+    .slice(-historyMonths);
+  const [first] = closed;
+
+  if (first === undefined) return { bars: [], mean: undefined, meanHeight: 0 };
+
+  const values = [
+    ...closed.map((s) => ({ s, amount: s.billed_amount, open: false })),
+    ...(current === undefined
+      ? []
+      : [{ s: current, amount: current.open_amount, open: true }]),
+  ];
+  const mean = Math.round(
+    closed.reduce((sum, s) => sum + s.billed_amount.amount, 0) / closed.length,
+  );
+  const top = Math.max(1, mean, ...values.map((v) => v.amount.amount));
+  const height = (amount: number) => tenths((amount * whole) / top);
+
+  return {
+    bars: values.map(({ s, amount, open }) => ({
+      reference: s.reference,
+      amount,
+      open,
+      height: height(amount.amount),
+    })),
+    mean: { amount: mean, currency: first.billed_amount.currency },
+    meanHeight: height(mean),
+  };
+}
+
+// The same day a month earlier, the last day of that month when it has fewer days.
+function monthBefore(date: string): string {
+  const [year, month, day] = date.split("-").map(Number) as [
+    number,
+    number,
+    number,
+  ];
+  const last = new Date(Date.UTC(year, month - 1, 0)).getUTCDate();
+
+  return new Date(Date.UTC(year, month - 2, Math.min(day, last)))
+    .toISOString()
+    .slice(0, 10);
+}
+
+function tenths(value: number): number {
+  return Math.round(value * 10) / 10;
 }
 
 function mostUrgent(unpaid: readonly Statement[]): Statement | undefined {

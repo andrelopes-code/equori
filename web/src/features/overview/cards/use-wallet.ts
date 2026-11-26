@@ -41,6 +41,7 @@ export function useWallet() {
         cards.map((account, i) => ({
           account,
           ...currentAndUnpaid(statements[i]?.data ?? []),
+          statements: statements[i]?.data ?? [],
         })),
         today,
         base,
