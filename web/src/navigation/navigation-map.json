@@ -337,8 +337,26 @@
     "topics": ["investments"],
     "screen": "Portfolio",
     "tasks": [
+      "see the value of the portfolio, the gain over cost, the total result and the income of the year",
+      "see the return of every brokerage or of one account over a period, beside its comparisons"
+    ]
+  },
+  {
+    "path": "/portfolio/positions",
+    "topics": ["investments"],
+    "screen": "Portfolio positions",
+    "tasks": [
       "see the positions of every account at a valuation date, grouped by account or by security",
       "see the share of each valued position in the total"
+    ]
+  },
+  {
+    "path": "/portfolio/projection",
+    "topics": ["investments"],
+    "screen": "Portfolio projection",
+    "tasks": [
+      "plan the ages, the real return, the inflation and the withdrawal of the portfolio",
+      "see the wealth journey, the scenarios and the year by year table of the plan"
     ]
   },
   {

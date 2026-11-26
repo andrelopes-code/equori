@@ -30,13 +30,16 @@ newRouter();
 const routes = fullPaths(routeTree as RouteNode, new Set());
 // /offline opens without the server, where no assistant answers (P3 of ADR 022); /setup opens
 // before the first user exists, who could ask one (W-U6 of the Windows design); /invite opens only
-// from an invitation link, whose token no assistant holds (HA25).
+// from an invitation link, whose token no assistant holds (HA25). /portfolio/results only
+// redirects to /portfolio (PT1); the /preview pages exist in the development build alone.
 const unmapped = new Set([
   "/login",
   "/offline",
   "/setup",
   "/invite",
+  "/portfolio/results",
   "/preview/account-card",
+  "/preview/assistant-answers",
   "/preview/card-face",
   "/accounts",
   "",
