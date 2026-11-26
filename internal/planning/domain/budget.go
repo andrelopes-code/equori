@@ -9,9 +9,12 @@ import (
 )
 
 // BudgetAmount is the planned amount of each month from EffectiveFrom, the first day of a month.
+// Ended marks the version that ends the budget from EffectiveFrom on; its Amount is 0 (budget
+// end E3).
 type BudgetAmount struct {
 	EffectiveFrom time.Time
 	Amount        int64
+	Ended         bool
 }
 
 // Budget is the monthly plan of one category (P7 amendment A54).
@@ -29,7 +32,16 @@ func MonthOf(
 	return time.Date(d.Year(), d.Month(), 1, 0, 0, 0, 0, time.UTC)
 }
 
-// planned returns the amount in force in month; ok is false before the first amount.
+// InForce reports whether a version starts at or before month and the latest such version is
+// not an end (budget end E4).
+func (b Budget) InForce(month time.Time) bool {
+	_, ok := b.planned(month)
+
+	return ok
+}
+
+// planned returns the amount in force in month; ok is false before the first amount and after
+// an end.
 func (b Budget) planned(month time.Time) (int64, bool) {
 	var amount int64
 
@@ -39,7 +51,7 @@ func (b Budget) planned(month time.Time) (int64, bool) {
 			break
 		}
 
-		amount, ok = a.Amount, true
+		amount, ok = a.Amount, !a.Ended
 	}
 
 	return amount, ok
@@ -78,8 +90,9 @@ type Progress struct {
 }
 
 // Progress walks the months from the first amount to month: available = planned + carried −
-// spent, and carried is the previous month's available when Rollover is set. spent returns the
-// spending of a month; ok is false when month precedes the first amount.
+// spent, and carried is the previous month's available when Rollover is set. A month after an
+// end carries nothing to the next (budget end E5). spent returns the spending of a month; ok is
+// false when the budget is not in force in month.
 func (b Budget) Progress(
 	month time.Time,
 	spent func(month time.Time) (int64, error),
@@ -93,7 +106,12 @@ func (b Budget) Progress(
 
 	var carried int64
 	for m := b.Amounts[0].EffectiveFrom; !m.After(month); m = m.AddDate(0, 1, 0) {
-		planned, _ := b.planned(m)
+		planned, inForce := b.planned(m)
+		if !inForce {
+			carried = 0
+
+			continue
+		}
 
 		s, err := spent(m)
 		if err != nil {
