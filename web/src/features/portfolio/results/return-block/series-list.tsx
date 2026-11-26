@@ -37,7 +37,7 @@ export function SeriesList({ figures, on, onToggle }: SeriesListProps) {
           name={index.name}
           value={percent(index.last)}
           slot={index.slot}
-          dashed={index.dashed}
+          stroke={index.stroke}
           on={on.includes(index.id)}
           onToggle={() => {
             onToggle(index.id);

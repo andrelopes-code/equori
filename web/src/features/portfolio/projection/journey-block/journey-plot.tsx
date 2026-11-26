@@ -21,9 +21,9 @@ interface JourneyPlotProps {
   withdrawalAge: number;
 }
 
-// PX6: the recorded value (solid), the money contributed and the projection (dashed), the area
-// between the value and the money contributed up to the withdrawals, and the marks at today and at
-// the withdrawal age.
+// PX6: the recorded value (solid), the money contributed (dashed) and the projection (dotted),
+// the area between the value and the money contributed up to the withdrawals, and the marks at
+// today and at the withdrawal age.
 export function JourneyPlot({
   rows,
   cases,
@@ -59,9 +59,7 @@ export function JourneyPlot({
       field: "projected",
       label: t("portfolio.projection.journey.key.plan"),
       slot: 1,
-      // Workaround for Slotted issue #186: the chart has no dotted stroke, so the projection of
-      // the mock takes the dash; its colour tells it from the money contributed.
-      stroke: "dashed",
+      stroke: "dotted",
       markers: "last",
       format: axes.exact,
     },

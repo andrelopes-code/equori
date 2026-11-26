@@ -53,7 +53,7 @@ export function ReturnPlot({ series, figures, on }: ReturnPlotProps) {
       field: index.id,
       label: index.name,
       slot: index.slot as ChartSeries["slot"],
-      stroke: index.dashed ? "dashed" : "solid",
+      stroke: index.stroke,
       connectNulls: true,
       format: exact,
     })),

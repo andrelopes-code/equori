@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import type { IndexStroke } from "@/features/portfolio/results/return-block/block-figures";
 import styles from "@/features/portfolio/results/return-block/return-block.module.css";
 
 interface SeriesRowProps {
@@ -7,12 +8,18 @@ interface SeriesRowProps {
   value: ReactNode;
   // The slot of the data scale of the series; its mark repeats the stroke of the line.
   slot: number;
-  // The line is drawn dashed.
-  dashed?: boolean;
+  // The stroke of the line, which the mark repeats.
+  stroke?: IndexStroke;
   on: boolean;
   // Absent for the portfolio, whose line is always drawn.
   onToggle?: (() => void) | undefined;
 }
+
+const strokeMarks = {
+  solid: undefined,
+  dashed: styles.markDashed,
+  dotted: styles.markDotted,
+};
 
 const markNames = [
   "portfolio",
@@ -27,17 +34,15 @@ export function SeriesRow({
   name,
   value,
   slot,
-  dashed = false,
+  stroke = "solid",
   on,
   onToggle,
 }: SeriesRowProps) {
   const mark =
     styles[`mark-${markNames[Math.min(slot, markNames.length) - 1] ?? "ftse"}`];
-  const marks = [
-    styles.seriesMark,
-    mark,
-    dashed ? styles.markDashed : undefined,
-  ].filter((name) => name !== undefined);
+  const marks = [styles.seriesMark, mark, strokeMarks[stroke]].filter(
+    (name) => name !== undefined,
+  );
   const content = (
     <>
       <span className={marks.join(" ")} aria-hidden="true" />

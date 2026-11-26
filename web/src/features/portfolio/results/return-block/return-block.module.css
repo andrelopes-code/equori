@@ -155,6 +155,10 @@
     border-block-start-style: dashed;
   }
 
+  .markDotted {
+    border-block-start-style: dotted;
+  }
+
   @container slotted-page (max-width: 1000px) {
     /* literal: the page width the assistant pane leaves */
     .hero {

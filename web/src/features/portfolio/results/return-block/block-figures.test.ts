@@ -46,6 +46,25 @@ describe("blockFigures", () => {
     expect(figures.indexes[1]?.apart).toBeNull();
   });
 
+  it("draws the first daily index solid and the others dashed and dotted in turn", () => {
+    const daily = (index: string) => ({
+      index,
+      period: "day" as const,
+      points: historySeries.points.map((p) => ({ date: p.date, return_bp: 0 })),
+    });
+    const figures = blockFigures({
+      ...series,
+      indexes: ["cdi", "ibov", "ipca", "sp500"].map(daily),
+    });
+
+    expect(figures.indexes.map((i) => i.stroke)).toEqual([
+      "solid",
+      "dashed",
+      "dotted",
+      "dashed",
+    ]);
+  });
+
   it("compares only the daily indexes that are on", () => {
     const figures = blockFigures({
       ...series,

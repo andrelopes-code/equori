@@ -20,7 +20,7 @@ interface VersusPlotProps {
   scale: number;
 }
 
-// PX7: the recorded value (solid) and the plan line (dashed), with the area between them in the
+// PX7: the recorded value (solid) and the plan line (dotted), with the area between them in the
 // success tone where the value is above the line and in the danger tone where it is below, and a
 // mark on the day the plan was saved when the history starts before it.
 export function VersusPlot({
@@ -67,9 +67,7 @@ export function VersusPlot({
       field: "plan",
       label: t("portfolio.projection.versus.key.plan"),
       slot: 1,
-      // Workaround for Slotted issue #186: the chart has no dotted stroke, so the plan line of the
-      // mock takes the dash.
-      stroke: "dashed",
+      stroke: "dotted",
       markers: "last",
       format: exact,
     },

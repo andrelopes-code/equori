@@ -1,5 +1,6 @@
 import type { components } from "@/api/schema.gen";
 import { blockFigures } from "@/features/portfolio/results/return-block/block-figures";
+import type { IndexStroke } from "@/features/portfolio/results/return-block/block-figures";
 import {
   portfolioField,
   type PlotRow,
@@ -25,8 +26,8 @@ export interface IndexWindows {
   id: string;
   name: string;
   slot: number;
-  // The first daily index is drawn solid, the others dashed.
-  dashed: boolean;
+  // The first daily index is drawn solid, the others dashed and dotted in turn.
+  stroke: IndexStroke;
   windows: Window[];
   // The share of the windows of the portfolio above the window of the index with the same end;
   // absent beyond the first two indexes and for an index that shares no end.
@@ -58,7 +59,7 @@ export function windowFigures(series: ReturnSeries): WindowFigures {
         id: meta.id,
         name: meta.name,
         slot: meta.slot,
-        dashed: meta.dashed,
+        stroke: meta.stroke,
         windows: own,
         above: position < comparedIndexes && above.total > 0 ? above : null,
       };

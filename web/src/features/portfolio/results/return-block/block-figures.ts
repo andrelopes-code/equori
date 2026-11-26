@@ -16,12 +16,14 @@ type ReturnSeries = components["schemas"]["ReturnSeries"];
 const firstIndexSlot = 2;
 const lastSlot = 8;
 
+export type IndexStroke = "solid" | "dashed" | "dotted";
+
 export interface IndexFigure {
   id: string;
   name: string;
   daily: boolean;
-  // The first daily index is drawn solid, the others dashed.
-  dashed: boolean;
+  // The first daily index is drawn solid, the others dashed and dotted in turn.
+  stroke: IndexStroke;
   slot: number;
   // The cumulative return at the last point, as a fraction.
   last: number | null;
@@ -61,9 +63,7 @@ export function blockFigures(series: ReturnSeries): BlockFigures {
       id: index.index,
       name: indexName(index.index),
       daily: index.period === "day",
-      // Workaround for Slotted issue #186: the chart has no dotted stroke, so the third reference
-      // repeats the dash.
-      dashed: position !== firstDaily,
+      stroke: strokeOf(position, firstDaily),
       slot: Math.min(position + firstIndexSlot, lastSlot),
       last: lastOf(index.points),
       apart:
@@ -94,4 +94,13 @@ function lastOf(points: readonly { return_bp?: number }[]): number | null {
   const bp = points.filter((p) => p.return_bp !== undefined).at(-1)?.return_bp;
 
   return bp === undefined ? null : bp / 10000;
+}
+
+function strokeOf(position: number, firstDaily: number): IndexStroke {
+  if (position === firstDaily) return "solid";
+
+  const after =
+    firstDaily >= 0 && position > firstDaily ? position - 1 : position;
+
+  return after % 2 === 0 ? "dashed" : "dotted";
 }

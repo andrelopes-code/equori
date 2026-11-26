@@ -62,7 +62,7 @@ export function WindowsPlot({ figures }: WindowsPlotProps) {
       field: index.id,
       label: index.name,
       slot: index.slot as ChartSeries["slot"],
-      stroke: index.dashed ? "dashed" : "solid",
+      stroke: index.stroke,
       markers: "last",
       connectNulls: true,
       format: exact,

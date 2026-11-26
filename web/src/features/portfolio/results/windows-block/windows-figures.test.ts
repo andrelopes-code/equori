@@ -103,7 +103,11 @@ describe("windowFigures", () => {
       3,
       null,
     ]);
-    expect(got.indexes.map((i) => i.dashed)).toEqual([false, true, true]);
+    expect(got.indexes.map((i) => i.stroke)).toEqual([
+      "solid",
+      "dashed",
+      "dotted",
+    ]);
   });
 
   it("has no extremes under 12 months and closes the first window on its twelfth whole month", () => {
