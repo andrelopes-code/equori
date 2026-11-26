@@ -33,6 +33,9 @@ export interface CardFaceProps {
   // What stands at the end of the top strip, in the place of the contactless symbol: an amount
   // the card owes, in a wallet. It inherits the face's ink and its unit (--u).
   note?: ReactNode;
+  // What stands inside the face, under its glare: marks engraved on the plastic, placed by the
+  // caller in the face's unit (--u) and ink.
+  inset?: ReactNode;
   link?: LinkOptions;
   onActivate?: () => void;
   pressed?: boolean;
@@ -107,6 +110,7 @@ export function CardFace(props: CardFaceProps) {
       <span className={styles.net}>
         <CardFaceNetwork network={props.network} />
       </span>
+      {props.inset}
       <span className={styles.glare} aria-hidden="true" />
     </>
   );

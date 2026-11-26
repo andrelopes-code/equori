@@ -40,6 +40,16 @@ describe("CardFace", () => {
     expect(top?.querySelector("svg")).toBeNull();
   });
 
+  it("draws an inset inside the face, under its glare", () => {
+    face({ inset: <span data-testid="inset" /> });
+
+    const element = screen.getByRole("img", { name: "Itaú Visa, ending 4821" });
+    const inset = screen.getByTestId("inset");
+
+    expect(element.contains(inset)).toBe(true);
+    expect(element.lastElementChild?.previousElementSibling).toBe(inset);
+  });
+
   it("names a virtual card and draws the Virtual tag", () => {
     face({ virtual: true });
 

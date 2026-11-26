@@ -16,11 +16,13 @@ interface AccountFaceProps {
   account: Account;
   // What stands at the end of the face's top strip.
   note?: ReactNode;
+  // What stands inside the face, under its glare.
+  inset?: ReactNode;
 }
 
 // The face of a card account as the Cards page draws it, for a screen that shows the card and
 // does not link it: its stored look, the logo of its institution and its active plastic card.
-export function AccountFace({ account, note }: AccountFaceProps) {
+export function AccountFace({ account, note, inset }: AccountFaceProps) {
   const api = useApi();
   const institutions = useQuery(institutionsQuery(api));
   const logos = useQuery(logoIndexQuery);
@@ -34,5 +36,7 @@ export function AccountFace({ account, note }: AccountFaceProps) {
   const appearance = useFaceAppearance(account.face, account.color, logo);
   const identity = previewFace(account.name, institution, logo, plastic);
 
-  return <CardFace {...identity} {...appearance.props} note={note} />;
+  return (
+    <CardFace {...identity} {...appearance.props} note={note} inset={inset} />
+  );
 }
