@@ -2,6 +2,7 @@ import { List, ListSection } from "@slotted/react/list";
 import {
   ListItem,
   ListItemBody,
+  ListItemContent,
   ListItemDescription,
   ListItemEnd,
   ListItemLabel,
@@ -40,31 +41,33 @@ export function StatementPlaceholder({ label }: StatementPlaceholderProps) {
       >
         {rows.map((index) => (
           <ListItem key={index} className={styles.row}>
-            <ListItemStart>
-              <Skeleton loading shape="circle" size="md">
-                <span className={styles.placeholderMark} />
-              </Skeleton>
-            </ListItemStart>
-
-            <ListItemBody className={styles.body}>
-              <ListItemLabel>
-                <Skeleton loading shape="text">
-                  {t("transactions.column.description")}
+            <ListItemContent>
+              <ListItemStart>
+                <Skeleton loading shape="circle" size="md">
+                  <span className={styles.placeholderMark} />
                 </Skeleton>
-              </ListItemLabel>
+              </ListItemStart>
 
-              <ListItemDescription>
+              <ListItemBody className={styles.body}>
+                <ListItemLabel>
+                  <Skeleton loading shape="text">
+                    {t("transactions.column.description")}
+                  </Skeleton>
+                </ListItemLabel>
+
+                <ListItemDescription>
+                  <Skeleton loading shape="text">
+                    {t("transactions.column.category")}
+                  </Skeleton>
+                </ListItemDescription>
+              </ListItemBody>
+
+              <ListItemEnd className={styles.end}>
                 <Skeleton loading shape="text">
-                  {t("transactions.column.category")}
+                  {t("transactions.column.amount")}
                 </Skeleton>
-              </ListItemDescription>
-            </ListItemBody>
-
-            <ListItemEnd className={styles.end}>
-              <Skeleton loading shape="text">
-                {t("transactions.column.amount")}
-              </Skeleton>
-            </ListItemEnd>
+              </ListItemEnd>
+            </ListItemContent>
           </ListItem>
         ))}
       </ListSection>
