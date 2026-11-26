@@ -301,9 +301,11 @@ describe("transaction detail", () => {
       const list = within(moved).getByRole("list", {
         name: catalogEn["postings.caption"],
       });
+      // The amount is read before the click: the navigation it starts unmounts the list.
+      expect(within(list).getByText("−R$120.00")).toBeInTheDocument();
+
       await user.click(within(list).getByRole("button", { name: /^Itau/ }));
 
-      expect(within(list).getByText("−R$120.00")).toBeInTheDocument();
       await waitFor(() => {
         expect(router.state.location.pathname).toBe(`/accounts/${checkingID}`);
       });
