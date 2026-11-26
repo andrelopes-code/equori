@@ -112,6 +112,23 @@ export function budgetPlan(
     received_income: money(720000),
     reference: money(850000),
     installments: money(64000),
+    installment_items: [
+      {
+        transaction_id: "5c000000-0000-4000-8000-000000000101",
+        description: "Notebook",
+        card_account_id: "5c000000-0000-4000-8000-000000000102",
+        number: 3,
+        count: 10,
+        amount: money(40000),
+      },
+      {
+        transaction_id: "5c000000-0000-4000-8000-000000000103",
+        description: "Chair",
+        card_account_id: "5c000000-0000-4000-8000-000000000102",
+        count: 4,
+        amount: money(24000),
+      },
+    ],
     savings: money(0),
     goal_deposits: money(0),
     savings_brokerage: money(0),

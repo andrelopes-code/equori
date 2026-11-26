@@ -9,16 +9,26 @@ import {
 } from "@slotted/react/table";
 import { VisuallyHidden } from "@slotted/react/visually-hidden";
 
+import { useState } from "react";
+
+import type { components } from "@/api/schema.gen";
+
 import type { BucketTotals } from "@/features/planning/income-split/bucket-figures";
 import { PlanBucketRow } from "@/features/planning/income-split/plan-bucket-row";
 import { PlanOutsideRow } from "@/features/planning/income-split/plan-outside-row";
 import type { PlanFormat } from "@/features/planning/budget-plan/use-plan-format";
+import { InstallmentsDrawer } from "@/features/planning/plan-installments/installments-drawer";
 import { useT } from "@/i18n/i18n-provider";
+
+type Installment = components["schemas"]["BudgetPlanInstallment"];
 
 interface PlanBucketsTableProps {
   totals: BucketTotals;
   // What the plan leaves to distribute; undefined without a reference.
   unassigned: number | undefined;
+  // The charges behind the installments row, and the month they are billed in.
+  installments: readonly Installment[];
+  month: string;
   format: PlanFormat;
 }
 
@@ -28,7 +38,7 @@ const rowNames = {
   goalDeposits: "plan.goalDeposits",
 } as const;
 
-// The screen that plans each figure no bucket takes; the installments have none.
+// The screen that plans each figure no bucket takes; the installments open their drawer instead.
 const rowLinks = {
   installments: undefined,
   savings: "/portfolio/contribution-plan",
@@ -41,10 +51,25 @@ const rowLinks = {
 export function PlanBucketsTable({
   totals,
   unassigned,
+  installments,
+  month,
   format,
 }: PlanBucketsTableProps) {
   const t = useT();
+
+  const [open, setOpen] = useState(false);
+
   const outside = totals.outsidePlanned > 0;
+  const installmentsTotal =
+    totals.rows.find((r) => r.key === "installments")?.amount ?? 0;
+
+  function handleOpen() {
+    setOpen(true);
+  }
+
+  function handleClose() {
+    setOpen(false);
+  }
 
   return (
     <Table columns={5} variant="framed">
@@ -96,6 +121,7 @@ export function PlanBucketsTable({
               key={row.key}
               name={t(rowNames[row.key])}
               to={rowLinks[row.key]}
+              onOpen={row.key === "installments" ? handleOpen : undefined}
               amount={row.amount}
               format={format}
             />
@@ -109,6 +135,16 @@ export function PlanBucketsTable({
           )}
         </TableBody>
       </TableContent>
+
+      {open && (
+        <InstallmentsDrawer
+          items={installments}
+          total={installmentsTotal}
+          month={month}
+          format={format}
+          onClose={handleClose}
+        />
+      )}
     </Table>
   );
 }

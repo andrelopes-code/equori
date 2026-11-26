@@ -111,6 +111,7 @@ export function PlanEditor({
         <PlanBuckets
           totals={figures.buckets}
           unassigned={figures.unassigned}
+          installments={plan.installment_items}
           format={format}
           stored={plan.buckets}
           entries={entries}

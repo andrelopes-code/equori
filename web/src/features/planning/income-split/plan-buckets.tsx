@@ -22,12 +22,15 @@ import type { PlanFormat } from "@/features/planning/budget-plan/use-plan-format
 import { useT } from "@/i18n/i18n-provider";
 
 type Bucket = components["schemas"]["BudgetBucket"];
+type Installment = components["schemas"]["BudgetPlanInstallment"];
 
 interface PlanBucketsProps {
   // Undefined while the book has no bucket method.
   totals: BucketTotals | undefined;
   // What the plan leaves to distribute; undefined without a reference.
   unassigned: number | undefined;
+  // The charges behind the plan's installments.
+  installments: readonly Installment[];
   format: PlanFormat;
   // The stored method, which the dialog edits; undefined while the book has none.
   stored: readonly Bucket[] | undefined;
@@ -43,6 +46,7 @@ interface PlanBucketsProps {
 export function PlanBuckets({
   totals,
   unassigned,
+  installments,
   format,
   stored,
   entries,
@@ -84,6 +88,8 @@ export function PlanBuckets({
           <PlanBucketsTable
             totals={totals}
             unassigned={unassigned}
+            installments={installments}
+            month={month}
             format={format}
           />
           <PlanBucketsOutside

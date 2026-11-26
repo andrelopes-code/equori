@@ -1,3 +1,4 @@
+import { Button } from "@slotted/react/button";
 import { Link } from "@slotted/react/link";
 import { TableCell, TableRow, TableRowHeader } from "@slotted/react/table";
 import { Text } from "@slotted/react/typography";
@@ -11,6 +12,8 @@ interface PlanOutsideRowProps {
   name: string;
   // The screen that plans the figure; the name is a link to it.
   to?: LinkOptions["to"];
+  // Opens what the figure is made of; the name is a button that calls it.
+  onOpen?: (() => void) | undefined;
   amount: number;
   format: PlanFormat;
 }
@@ -20,6 +23,7 @@ interface PlanOutsideRowProps {
 export function PlanOutsideRow({
   name,
   to,
+  onOpen,
   amount,
   format,
 }: PlanOutsideRowProps) {
@@ -29,9 +33,16 @@ export function PlanOutsideRow({
   return (
     <TableRow>
       <TableRowHeader>
-        {to === undefined && (
+        {to === undefined && onOpen === undefined && (
           <Text size="sm" weight="medium">
             {name}
+          </Text>
+        )}
+        {onOpen !== undefined && (
+          <Text size="sm" weight="medium">
+            <Button inline onClick={onOpen}>
+              {name}
+            </Button>
           </Text>
         )}
         {to !== undefined && (
