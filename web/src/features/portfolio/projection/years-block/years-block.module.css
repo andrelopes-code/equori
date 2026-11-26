@@ -46,7 +46,10 @@
   .yearScroll thead th {
     position: sticky;
     inset-block-start: 0;
-    background: var(--slotted-section-surface, var(--slotted-surface-raised));
+    background: var(
+      --slotted-section-surface,
+      var(--equori-panel-surface, var(--slotted-surface-raised))
+    );
   }
 
   /* A result reads in its tone; the sign stays in the text */
