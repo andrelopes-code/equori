@@ -77,6 +77,7 @@ export function SelectionBar({
             side="top"
             align="end"
             size="lg"
+            presentation="auto"
             initialFocus="input"
           >
             <PopoverTrigger

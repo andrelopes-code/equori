@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { fakeApi } from "@/testing/fake-api";
 import { renderWithProviders } from "@/testing/render-app";
+import { setViewport } from "@/testing/viewport";
 import { PeriodControl } from "@/ui/navigation/period-control";
 
 describe("period control", () => {
@@ -68,5 +69,24 @@ describe("period control", () => {
     expect(label?.getAttribute("data-widest")?.split("\n")).toContain(
       "September 2026",
     );
+  });
+
+  it("opens the choices as a sheet on a phone", async () => {
+    setViewport(390, "coarse");
+    renderWithProviders(
+      <PeriodControl
+        value={{ from: "2026-01-01", to: "2026-12-31" }}
+        onChange={() => undefined}
+      />,
+      { fetch: fakeApi({}), today: "2026-10-17" },
+    );
+
+    await userEvent
+      .setup()
+      .click(screen.getByRole("button", { name: "2026, current period" }));
+
+    expect(
+      await screen.findByRole("dialog", { name: "Choose period" }),
+    ).toHaveAttribute("aria-modal", "true");
   });
 });

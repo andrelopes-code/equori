@@ -1,8 +1,16 @@
 const WIDTH_CONDITION = /^\(\s*(min|max)-width\s*:\s*(\d+(?:\.\d+)?)px\s*\)$/;
+const POINTER_CONDITION = /^\(\s*pointer\s*:\s*(fine|coarse)\s*\)$/;
+
+export type Pointer = "fine" | "coarse";
 
 function evaluate(query: string, width: number): boolean {
   const conditions = query.trim().split(/\s+and\s+/i);
   return conditions.every((condition) => {
+    const pointer = POINTER_CONDITION.exec(condition.trim());
+    if (pointer !== null) {
+      return pointer[1] === currentPointer;
+    }
+
     const match = WIDTH_CONDITION.exec(condition.trim());
     if (match === null) {
       return false;
@@ -49,11 +57,14 @@ class FakeMediaQueryList extends EventTarget {
 
 // Module state is test-only: one jsdom window per test file, reset by setup.ts.
 let currentWidth = 1280;
+let currentPointer: Pointer = "fine";
 const queries = new Set<FakeMediaQueryList>();
 
-// setViewport sets the window width and re-evaluates every query created by window.matchMedia.
-export function setViewport(width: number): void {
+// setViewport sets the window width and the pointer, and re-evaluates every query created by
+// window.matchMedia.
+export function setViewport(width: number, pointer: Pointer = "fine"): void {
   currentWidth = width;
+  currentPointer = pointer;
   window.innerWidth = width;
   Object.defineProperty(window, "matchMedia", {
     configurable: true,

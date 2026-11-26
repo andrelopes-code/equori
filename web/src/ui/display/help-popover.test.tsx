@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { fakeApi } from "@/testing/fake-api";
 import { renderWithProviders } from "@/testing/render-app";
+import { setViewport } from "@/testing/viewport";
 
 import { HelpPopover } from "@/ui/display/help-popover";
 
@@ -24,5 +25,23 @@ describe("HelpPopover", () => {
     expect(
       await screen.findByRole("dialog", { name: "About the criteria" }),
     ).toHaveTextContent("A yes or no question.");
+  });
+
+  it("opens its text as a sheet on a phone", async () => {
+    setViewport(390, "coarse");
+    renderWithProviders(
+      <HelpPopover label="About the criteria">
+        A yes or no question.
+      </HelpPopover>,
+      { fetch: fakeApi({}) },
+    );
+
+    await userEvent
+      .setup()
+      .click(screen.getByRole("button", { name: "About the criteria" }));
+
+    expect(
+      await screen.findByRole("dialog", { name: "About the criteria" }),
+    ).toHaveAttribute("aria-modal", "true");
   });
 });

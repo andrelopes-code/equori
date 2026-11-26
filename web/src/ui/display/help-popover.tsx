@@ -25,7 +25,7 @@ interface HelpPopoverProps {
 // A single sentence about a term is a HelpTip.
 export function HelpPopover({ label, size, children }: HelpPopoverProps) {
   return (
-    <Popover size={size}>
+    <Popover size={size} presentation="auto">
       <PopoverTrigger
         render={(props) => (
           <IconButton

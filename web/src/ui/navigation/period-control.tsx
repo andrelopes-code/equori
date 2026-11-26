@@ -121,6 +121,7 @@ export function PeriodControl({
           }}
           size="lg"
           align="end"
+          presentation="auto"
         >
           <PopoverTrigger
             render={(props) => (

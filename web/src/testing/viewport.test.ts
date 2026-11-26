@@ -16,6 +16,18 @@ describe("setViewport", () => {
     expect(window.matchMedia("(max-width: 600px)").matches).toBe(false);
   });
 
+  it("evaluates the pointer of a query beside its width", () => {
+    setViewport(390, "coarse");
+    const sheet = "(max-width: 480px) and (pointer: coarse)";
+
+    expect(window.matchMedia(sheet).matches).toBe(true);
+    expect(window.matchMedia("(pointer: fine)").matches).toBe(false);
+
+    setViewport(390);
+
+    expect(window.matchMedia(sheet).matches).toBe(false);
+  });
+
   it("fires one change event on a listener whose result changed", () => {
     setViewport(360);
     const query = window.matchMedia("(min-width: 600px)");

@@ -55,6 +55,7 @@ export function PeriodMenu({ value, onChange }: PeriodMenuProps) {
       onOpenChange={handleOpenChange}
       size="lg"
       align="start"
+      presentation="auto"
     >
       <PopoverTrigger
         render={(props) => (
