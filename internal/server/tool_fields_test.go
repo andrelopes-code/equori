@@ -275,9 +275,8 @@ var uncoveredFields = map[string][]string{
 		"value",
 	}, // read as code and price
 	"recordTrade": {
-		"settlement_date",
 		"side",
-	}, // side is read as kind; settlement_date takes the exchange's cycle (A228 NG8)
+	}, // side is read as kind
 	"reimburseTransaction": {
 		"expected_version",
 	}, // expected_version is the version the preview read
@@ -302,8 +301,9 @@ var uncoveredFields = map[string][]string{
 		"from",
 	}, // read as date
 	"updateCurrentUser": {
+		"birth_date",
 		"display_name",
-	}, // display_name is not offered; update_profile sets the language
+	}, // display_name and birth_date are not offered; update_profile sets the language
 	"updateGoal": {
 		"allocated_account_ids",
 		"target",

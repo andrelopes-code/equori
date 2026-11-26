@@ -25,3 +25,5 @@ What the assistant does not do. Every other action a member takes on a screen ha
 - editor: spreadsheets. A spreadsheet is read and written by its editor alone; the assistant does not open, create or change one. The Spreadsheets screen holds them.
 - binary: the content of an attachment and of an export archive. The assistant names the file or gives the path that downloads it.
 - capture: the reading of typed lines on the Capture screen. The assistant reads the same text in the conversation and proposes the transactions with record_transaction.
+- projection: the projection plan of the portfolio, its ages, returns, withdrawals and planned contributions. The assistant does not read, save or delete it. The Projection tab of the Portfolio screen holds it.
+- series: the dated points of the return chart. The assistant answers the return in figures with get_portfolio. The Results tab of the Portfolio screen draws them.
