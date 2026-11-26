@@ -99,7 +99,7 @@ func (s *Service) settleYields(ctx context.Context, p *importPlan) error {
 		return nil
 	}
 
-	spans, err := s.reserveYields(ctx, p)
+	spans, err := s.reserveYields(ctx, p, nil)
 	if err != nil {
 		return err
 	}
@@ -139,8 +139,13 @@ func (s *Service) settleYields(ctx context.Context, p *importPlan) error {
 }
 
 // reserveYields returns the yields of the mapped reserves the lines may report: the booked ones,
-// and the one the reported amount adds to the settled balance.
-func (s *Service) reserveYields(ctx context.Context, p *importPlan) ([]domain.YieldSpan, error) {
+// and the one the reported amount adds to the settled balance less the amount released from the
+// reserve by pairs not yet booked (A268).
+func (s *Service) reserveYields(
+	ctx context.Context,
+	p *importPlan,
+	released map[uuid.UUID]int64,
+) ([]domain.YieldSpan, error) {
 	from := p.yields[0].rec.Date
 	for _, y := range p.yields {
 		if y.rec.Date.Before(from) {
@@ -162,7 +167,7 @@ func (s *Service) reserveYields(ctx context.Context, p *importPlan) ([]domain.Yi
 
 		spans = append(spans, booked...)
 
-		reported, err := s.reportedYield(ctx, p, reserve)
+		reported, err := s.reportedYield(ctx, p, reserve, released[*reserve.AccountID])
 		if err != nil {
 			return nil, err
 		}
@@ -181,6 +186,7 @@ func (s *Service) reportedYield(
 	ctx context.Context,
 	p *importPlan,
 	reserve domain.ExternalAccount,
+	released int64,
 ) (*domain.YieldSpan, error) {
 	balance, err := p.source.read(ctx, reserve, p.currency.MinorUnits())
 	if err != nil || balance == nil {
@@ -193,6 +199,7 @@ func (s *Service) reportedYield(
 	}
 
 	missing, err := s.missing(ctx, p.batch.BooksID, *reserve.AccountID, *balance)
+	missing += released
 	if err != nil || missing <= 0 {
 		return nil, err
 	}

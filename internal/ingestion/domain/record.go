@@ -27,6 +27,11 @@ type NormalizedRecord struct {
 	ReserveName       string
 	// Yield says the source states the line as yield credited to a bank account (A264).
 	Yield bool
+	// ReserveRelease says the source states the line as the gross debit of a reserved balance
+	// that a withdrawal line beside it credits, net, to the bank account (A268 RL1).
+	ReserveRelease bool
+	// At is the source's timestamp of the line; zero when the source states only a date.
+	At time.Time
 	// Counterparty is the party on the other side of the line as the source reports it; nil
 	// without one (A217). It never enters Raw (A221).
 	Counterparty *PartyID

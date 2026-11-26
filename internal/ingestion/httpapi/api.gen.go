@@ -182,16 +182,17 @@ func (e ExternalRecordDecision) Valid() bool {
 
 // Defines values for ExternalRecordReviewReason.
 const (
-	Ambiguous  ExternalRecordReviewReason = "ambiguous"
-	Changed    ExternalRecordReviewReason = "changed"
-	Duplicate  ExternalRecordReviewReason = "duplicate"
-	Group      ExternalRecordReviewReason = "group"
-	Probable   ExternalRecordReviewReason = "probable"
-	Reconciled ExternalRecordReviewReason = "reconciled"
-	Repeated   ExternalRecordReviewReason = "repeated"
-	Reserve    ExternalRecordReviewReason = "reserve"
-	Transfer   ExternalRecordReviewReason = "transfer"
-	Yield      ExternalRecordReviewReason = "yield"
+	Ambiguous      ExternalRecordReviewReason = "ambiguous"
+	Changed        ExternalRecordReviewReason = "changed"
+	Duplicate      ExternalRecordReviewReason = "duplicate"
+	Group          ExternalRecordReviewReason = "group"
+	Probable       ExternalRecordReviewReason = "probable"
+	Reconciled     ExternalRecordReviewReason = "reconciled"
+	Repeated       ExternalRecordReviewReason = "repeated"
+	Reserve        ExternalRecordReviewReason = "reserve"
+	ReserveRelease ExternalRecordReviewReason = "reserve_release"
+	Transfer       ExternalRecordReviewReason = "transfer"
+	Yield          ExternalRecordReviewReason = "yield"
 )
 
 // Valid indicates whether the value is a known member of the ExternalRecordReviewReason enum.
@@ -212,6 +213,8 @@ func (e ExternalRecordReviewReason) Valid() bool {
 	case Repeated:
 		return true
 	case Reserve:
+		return true
+	case ReserveRelease:
 		return true
 	case Transfer:
 		return true
@@ -696,7 +699,7 @@ type ExternalRecord struct {
 	GroupRecordIds *[]openapi_types.UUID `json:"group_record_ids,omitempty"`
 	Id             openapi_types.UUID    `json:"id"`
 
-	// ReviewReason Why the record waits for review (A100, A102, A142, A168, A213, A215, A219, A261, A264).
+	// ReviewReason Why the record waits for review (A100, A102, A142, A168, A213, A215, A219, A261, A264, A268).
 	ReviewReason *ExternalRecordReviewReason `json:"review_reason,omitempty"`
 
 	// ScoredCandidates The candidates as matching scored them, best first (A99, A100).
@@ -711,7 +714,7 @@ type ExternalRecord struct {
 // ExternalRecordDecision The last automatic decision of a sync, present while POST /external-records/{id}/undo can revert it (A148, A220).
 type ExternalRecordDecision string
 
-// ExternalRecordReviewReason Why the record waits for review (A100, A102, A142, A168, A213, A215, A219, A261, A264).
+// ExternalRecordReviewReason Why the record waits for review (A100, A102, A142, A168, A213, A215, A219, A261, A264, A268).
 type ExternalRecordReviewReason string
 
 // ExternalRecordState defines model for ExternalRecord.State.

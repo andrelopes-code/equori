@@ -20,6 +20,7 @@ type Line struct {
 	DueDate      *time.Time             // due date of the card bill it belongs to (A39)
 	Category     *domain.SourceCategory // the aggregator's category (A41)
 	TransferTo   *uuid.UUID             // the reserve the line moves money into or out of (A76)
+	Retained     int64                  // what TransferTo gives beyond Amount, to Yield (A268)
 	Kind         string                 // the card line type the source states (A88)
 	Unclassified bool                   // recorded against the uncategorized account without classification (A218 rule 2)
 }

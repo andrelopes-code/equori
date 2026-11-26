@@ -111,6 +111,7 @@ func (s *Service) classifyLine(ctx context.Context, p *importPlan, i int) error 
 
 	rec.BatchID = p.batch.ID
 	p.pending = append(p.pending, rec)
+	p.at[rec.ID] = r.At
 
 	line := p.lineOf(rec, r)
 

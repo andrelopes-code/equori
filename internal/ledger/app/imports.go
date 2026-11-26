@@ -51,7 +51,10 @@ type ImportDecision struct {
 	Parts   []domain.CategoryPart
 	// TransferTo makes the line a transfer to another of the owner's accounts (P5b A30).
 	TransferTo uuid.UUID
-	Cause      Cause
+	// Retained is what the TransferTo account gives beyond the line, booked against the system
+	// account Yield; zero for none (A268 RL4).
+	Retained money.Money
+	Cause    Cause
 }
 
 // LineError names the line of a batch that a ledger rule rejected.
@@ -119,7 +122,8 @@ func (s *Service) RecordImportedBatch(
 				return &LineError{Index: i, Err: err}
 			}
 
-			if d := rec.Decision; d != nil && d.TransferTo != uuid.Nil {
+			// A retained amount leaves no counterpart of the line's amount to pair with (A268).
+			if d := rec.Decision; d != nil && d.TransferTo != uuid.Nil && d.Retained.IsZero() {
 				id, transfer, err := s.completePairing(ctx, r, booksID, rec)
 				if err != nil {
 					return err

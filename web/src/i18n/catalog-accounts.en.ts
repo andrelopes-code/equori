@@ -646,6 +646,8 @@ export const accountsEn = {
     "The bank reported this line after a reconciled balance of a later date, and that balance did not include it. Discard it if it did not move this account; create it if it did.",
   "batch.reason.yield":
     "This account has reserved balances, and neither their yield nor the balance the bank reported explains this line. Discard it if a reserve yielded it; create it if this account did.",
+  "batch.reason.reserve_release":
+    "This line looks like a reserve's withdrawal that the bank listed under this account, but the reported balance did not confirm it. Discard it if it did not move this account; create it if it did.",
   "batch.group.confirm": "Confirm the group",
   "batch.group.lines": "Group of {count} bank lines.",
   "batch.unapplied": "Change not applied: {change}",

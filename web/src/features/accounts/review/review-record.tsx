@@ -40,6 +40,7 @@ const reasonWords: Record<
   transfer: "batch.reason.transfer",
   reconciled: "batch.reason.reconciled",
   yield: "batch.reason.yield",
+  reserve_release: "batch.reason.reserve_release",
 };
 
 // The line waiting for review, the transactions it may confirm best first, and the three ways

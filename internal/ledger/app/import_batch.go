@@ -18,6 +18,7 @@ type importBatch struct {
 	expense  domain.Account
 	income   domain.Account
 	transit  domain.Account
+	yield    domain.Account
 	accounts map[uuid.UUID]domain.Account
 	leaf     map[uuid.UUID]error
 }
@@ -31,51 +32,59 @@ func (s *Service) loadImportBatch(
 ) (importBatch, error) {
 	recordIDs, lineAccounts, categories := importTargets(recs)
 
-	existing, err := r.TransactionsByExternalRecords(ctx, booksID, recordIDs)
+	b, err := systemAccounts(ctx, r, booksID)
 	if err != nil {
 		return importBatch{}, err
 	}
 
-	settings, err := r.Settings(ctx, booksID)
-	if err != nil {
+	if b.existing, err = r.TransactionsByExternalRecords(ctx, booksID, recordIDs); err != nil {
 		return importBatch{}, err
 	}
 
-	expense, err := r.SystemAccount(ctx, booksID, domain.RoleUncategorizedExpense)
-	if err != nil {
+	if b.settings, err = r.Settings(ctx, booksID); err != nil {
 		return importBatch{}, err
 	}
 
-	income, err := r.SystemAccount(ctx, booksID, domain.RoleUncategorizedIncome)
-	if err != nil {
-		return importBatch{}, err
-	}
-
-	transit, err := r.SystemAccount(ctx, booksID, domain.RoleTransfersInTransit)
-	if err != nil {
-		return importBatch{}, err
-	}
-
-	accounts, err := r.Accounts(
+	b.accounts, err = r.Accounts(
 		ctx,
 		booksID,
-		slices.Concat(lineAccounts, categories, []uuid.UUID{expense.ID, income.ID, transit.ID}),
+		slices.Concat(
+			lineAccounts,
+			categories,
+			[]uuid.UUID{b.expense.ID, b.income.ID, b.transit.ID, b.yield.ID},
+		),
 	)
 	if err != nil {
 		return importBatch{}, err
 	}
 
-	leaf := leafBalances(ctx, r, lineAccounts, accounts)
+	b.leaf = leafBalances(ctx, r, lineAccounts, b.accounts)
 
-	return importBatch{
-		existing: existing,
-		settings: settings,
-		expense:  expense,
-		income:   income,
-		transit:  transit,
-		accounts: accounts,
-		leaf:     leaf,
-	}, nil
+	return b, nil
+}
+
+// systemAccounts returns a batch holding the system accounts an import books against.
+func systemAccounts(ctx context.Context, r Repository, booksID int64) (importBatch, error) {
+	var b importBatch
+
+	for _, s := range []struct {
+		role    domain.SystemRole
+		account *domain.Account
+	}{
+		{domain.RoleUncategorizedExpense, &b.expense},
+		{domain.RoleUncategorizedIncome, &b.income},
+		{domain.RoleTransfersInTransit, &b.transit},
+		{domain.RoleYield, &b.yield},
+	} {
+		a, err := r.SystemAccount(ctx, booksID, s.role)
+		if err != nil {
+			return importBatch{}, err
+		}
+
+		*s.account = a
+	}
+
+	return b, nil
 }
 
 // importTargets collects the record ids, the line accounts and the decided categories of recs.
@@ -120,6 +129,10 @@ func (s *Service) insertImported(
 	}
 
 	draft := importedTransaction(booksID, b.settings.BaseCurrency, rec, b.expense, b.income)
+	if err := retain(&draft, rec.Decision, b.yield); err != nil {
+		return uuid.Nil, &LineError{Index: i, Err: err}
+	}
+
 	if payment {
 		draft.Postings[0].CardRole = domain.RolePayment
 	}
@@ -161,6 +174,31 @@ func (s *Service) insertImported(
 }
 
 // withoutTransfer returns rec with its decision stripped of the transfer target.
+// retain moves the retained amount of d from the transfer leg of t to the system account Yield
+// (A268 RL4): the transfer account gives the line's amount and the retained amount.
+func retain(t *domain.Transaction, d *ImportDecision, yield domain.Account) error {
+	if d == nil || d.TransferTo == uuid.Nil || d.Retained.IsZero() {
+		return nil
+	}
+
+	i := slices.IndexFunc(t.Postings, func(p domain.Posting) bool {
+		return p.AccountID == d.TransferTo
+	})
+	if i < 0 {
+		return nil
+	}
+
+	given, err := t.Postings[i].Amount.Add(d.Retained.Neg())
+	if err != nil {
+		return err
+	}
+
+	t.Postings[i].Amount = given
+	t.Postings = append(t.Postings, domain.Posting{AccountID: yield.ID, Amount: d.Retained})
+
+	return nil
+}
+
 func withoutTransfer(rec ImportedRecord) ImportedRecord {
 	undecided := *rec.Decision
 	undecided.TransferTo = uuid.Nil

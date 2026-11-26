@@ -325,6 +325,55 @@ func TestNormalizeYield(t *testing.T) {
 	}
 }
 
+// A268 RL1: a debit of a bank account worded "Liberação de dinheiro" is a release line, and
+// every line keeps the source timestamp RL2 compares.
+func TestNormalizeReserveRelease(t *testing.T) {
+	t.Parallel()
+
+	checking := client.Account{Subtype: client.SubtypeChecking, CurrencyCode: "BRL"}
+	card := client.Account{Subtype: client.SubtypeCard, CurrencyCode: "BRL"}
+
+	for _, tt := range []struct {
+		name        string
+		account     client.Account
+		description string
+		amount      client.Decimal
+		want        bool
+	}{
+		{"release", checking, "Liberação de dinheiro", "-997.48", true},
+		{"case, accents and spacing", checking, " LIBERACAO  de Dinheiro", "-997.48", true},
+		{"credit", checking, "Liberação de dinheiro", "997.48", false},
+		{"other wording", checking, "Liberação de dinheiro da venda", "-997.48", false},
+		{"card line", card, "Liberação de dinheiro", "997.48", false},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			r, ok, err := Normalize(client.Transaction{
+				ID:            "t1",
+				Description:   tt.description,
+				CurrencyCode:  "BRL",
+				Amount:        tt.amount,
+				Date:          "2026-11-26T14:11:51.011Z",
+				Status:        "POSTED",
+				OperationType: ptr("OUTROS"),
+			}, tt.account, nil, 2, saoPaulo(t))
+			if err != nil || !ok {
+				t.Fatal(ok, err)
+			}
+
+			if r.ReserveRelease != tt.want {
+				t.Fatalf("ReserveRelease = %v, want %v", r.ReserveRelease, tt.want)
+			}
+
+			at := time.Date(2026, 11, 26, 14, 11, 51, 11_000_000, time.UTC)
+			if !r.At.Equal(at) {
+				t.Fatalf("At = %v, want %v", r.At, at)
+			}
+		})
+	}
+}
+
 func TestNormalizeCounterparty(t *testing.T) {
 	t.Parallel()
 

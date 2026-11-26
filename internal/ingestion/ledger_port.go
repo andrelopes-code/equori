@@ -137,8 +137,14 @@ func (p ledgerPort) RecordImported(
 		}
 
 		if to := lines[i].Line.TransferTo; to != nil {
+			retained, err := money.New(lines[i].Line.Retained, lines[i].Line.Currency)
+			if err != nil {
+				return nil, err
+			}
+
 			recs[i].Decision = &ledger.ImportDecision{
 				TransferTo: *to,
+				Retained:   retained,
 				Cause:      ledger.Cause{Method: "source"},
 			}
 		}

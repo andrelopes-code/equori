@@ -8,6 +8,7 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/ingestion/aggregator/pluggy/client"
 	"github.com/andrelopes-code/equori/internal/ingestion/domain"
+	"github.com/andrelopes-code/equori/internal/platform/textfold"
 )
 
 const statusPending = "PENDING"
@@ -23,6 +24,9 @@ const categoryYield = "03060000"
 const (
 	reservedPrefix  = "Dinheiro reservado "
 	withdrawnPrefix = "Dinheiro retirado "
+	// releaseWording is the gross debit of a reserved balance whose withdrawal line credits
+	// less than it (A268 RL1).
+	releaseWording = "Liberação de dinheiro"
 )
 
 var documentSchemes = map[string]string{"CPF": "br_cpf", "CNPJ": "br_cnpj"}
@@ -65,6 +69,9 @@ func Normalize(
 	if r.Date, err = Date(t.Date, loc); err != nil {
 		return domain.NormalizedRecord{}, false, fmt.Errorf("transaction %s: %w", t.ID, err)
 	}
+
+	// A date without a time leaves At zero.
+	r.At, _ = time.Parse(time.RFC3339Nano, t.Date)
 
 	if r.Amount, err = readAmount(t, a, scale); err != nil {
 		return domain.NormalizedRecord{}, false, err
@@ -190,6 +197,7 @@ func applyBankFields(r *domain.NormalizedRecord, t client.Transaction, scale int
 	r.ReserveMove = t.OperationType != nil && *t.OperationType == operationReservedTransfer
 	r.ReserveName = reserveName(t, r.Amount)
 	r.Yield = t.CategoryID != nil && *t.CategoryID == categoryYield && r.Amount > 0
+	r.ReserveRelease = r.Amount < 0 && textfold.Key(t.Description) == textfold.Key(releaseWording)
 
 	if t.Balance != "" {
 		if b, err := client.Minor(t.Balance, scale); err == nil {

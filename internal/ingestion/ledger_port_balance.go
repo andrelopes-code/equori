@@ -81,6 +81,18 @@ func (p ledgerPort) YieldsSince(
 	return spans, p.translate(err)
 }
 
+func (p ledgerPort) ReserveYieldBound(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	settled int64,
+	from, to time.Time,
+) (int64, error) {
+	bound, err := p.l.ReserveYieldBound(ctx, booksID, accountID, settled, from, to)
+
+	return bound, p.translate(err)
+}
+
 type assertFunc func(ctx context.Context, booksID int64, accountID uuid.UUID, date time.Time, amount money.Money) error
 
 func (p ledgerPort) assert(

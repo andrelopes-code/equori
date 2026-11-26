@@ -6271,10 +6271,10 @@ export interface components {
              */
             decision?: "linked" | "followed" | "withdrawn" | "re_identified" | "paired";
             /**
-             * @description Why the record waits for review (A100, A102, A142, A168, A213, A215, A219, A261, A264).
+             * @description Why the record waits for review (A100, A102, A142, A168, A213, A215, A219, A261, A264, A268).
              * @enum {string}
              */
-            review_reason?: "ambiguous" | "probable" | "changed" | "repeated" | "group" | "reserve" | "duplicate" | "transfer" | "reconciled" | "yield";
+            review_reason?: "ambiguous" | "probable" | "changed" | "repeated" | "group" | "reserve" | "duplicate" | "transfer" | "reconciled" | "yield" | "reserve_release";
             /** @description The other lines of the group, while review_reason is group (A168). */
             group_record_ids?: string[];
             /** @description The candidates as matching scored them, best first (A99, A100). */

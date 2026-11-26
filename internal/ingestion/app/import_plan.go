@@ -40,6 +40,10 @@ type importPlan struct {
 	retried []*domain.ExternalRecord
 	again   []InstallmentLine
 	yields  []yieldLine
+	// at holds the source timestamp of each new line by record (A268 RL2).
+	at       map[uuid.UUID]time.Time
+	releases []releaseLine
+	pairs    []releasePair
 }
 
 // importRecords deduplicates, matches and creates the lines of one batch with a constant
@@ -66,6 +70,7 @@ func (s *Service) importRecords(
 		lines:    lines,
 		reserve:  reserve,
 		source:   source,
+		at:       map[uuid.UUID]time.Time{},
 	}
 
 	if err := s.claimLines(ctx, p); err != nil {
@@ -115,6 +120,8 @@ func (s *Service) applyPlan(ctx context.Context, p *importPlan) error {
 		return err
 	}
 
+	p.takePairs()
+
 	if err := s.create(
 		ctx,
 		p.batch.BooksID,
@@ -127,6 +134,10 @@ func (s *Service) applyPlan(ctx context.Context, p *importPlan) error {
 	}
 
 	if err := s.placeInstallments(ctx, p); err != nil {
+		return err
+	}
+
+	if err := s.settleReleases(ctx, p); err != nil {
 		return err
 	}
 
@@ -197,6 +208,8 @@ func (p *importPlan) routeZone(i int, a domain.Assignment) {
 	case a.Zone == domain.ZoneNew && p.scoring[i].closed:
 		// A261: a reconciled balance the bank reported after the line's date left it out.
 		rec.State, rec.ReviewReason = domain.StateNeedsReview, domain.ReviewReconciled
+	case a.Zone == domain.ZoneNew && p.scoring[i].release:
+		p.releases = append(p.releases, releaseLine{rec: rec, withdrawal: -1})
 	case a.Zone == domain.ZoneNew:
 		p.creates, p.created = append(
 			p.creates,
@@ -251,6 +264,7 @@ func (p *importPlan) scored(i int, line Line, reserveReview bool) scoredLine {
 		reserveReview: reserveReview,
 		closed:        p.closed(i, r),
 		yield:         p.source != nil && r.Yield,
+		release:       p.source != nil && r.ReserveRelease,
 	}
 }
 

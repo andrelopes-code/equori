@@ -74,6 +74,18 @@ func (m *Module) YieldsSince(
 	return m.svc.YieldsSince(ctx, booksID, accountID, from)
 }
 
+// ReserveYieldBound returns the yield D3 can book on settled over the days from from to to on
+// the account (A268 RL3).
+func (m *Module) ReserveYieldBound(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	settled int64,
+	from, to time.Time,
+) (int64, error) {
+	return m.svc.ReserveYieldBound(ctx, booksID, accountID, settled, from, to)
+}
+
 // AccountChecks lists the open balance accounts with their open differences (P12 A152).
 func (m *Module) AccountChecks(ctx context.Context, booksID int64) ([]AccountCheck, error) {
 	return m.svc.AccountChecks(ctx, booksID)

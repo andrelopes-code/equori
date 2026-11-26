@@ -227,3 +227,22 @@ func (s *Service) reconcile(ctx context.Context, r Repository, rec Reconciliatio
 		},
 	})
 }
+
+// ReserveYieldBound returns the yield D3 can book on settled over the days from from to to on
+// the account, with the bound of the account's currency (A268 RL3).
+func (s *Service) ReserveYieldBound(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	settled int64,
+	from, to time.Time,
+) (int64, error) {
+	a, err := s.repo.Account(ctx, booksID, accountID)
+	if err != nil {
+		return 0, err
+	}
+
+	days := int(to.Sub(from) / (24 * time.Hour))
+
+	return domain.YieldBound(settled, days, s.defaults.ReserveYieldPercent(a.Instrument)), nil
+}

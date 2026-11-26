@@ -135,6 +135,7 @@ type scoredLine struct {
 	reserveReview bool
 	closed        bool // A261: first reported and dated before the last reconciled balance
 	yield         bool // A264: decided by the reserves' yields and the reported balance
+	release       bool // A268: a reserve's gross debit, decided with its withdrawal line
 }
 
 // assign decides the lines by score (A98–A100); the payees of the lines are asked of

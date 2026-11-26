@@ -204,6 +204,15 @@ type Ledger interface {
 		accountID uuid.UUID,
 		from time.Time,
 	) ([]domain.YieldSpan, error)
+	// ReserveYieldBound returns the yield D3 can book on settled over the days from from to to
+	// on the account (A268 RL3).
+	ReserveYieldBound(
+		ctx context.Context,
+		booksID int64,
+		accountID uuid.UUID,
+		settled int64,
+		from, to time.Time,
+	) (int64, error)
 	// AssertSyncedReserve is AssertSyncedBalance for a reserved balance, which books bounded
 	// yield on a positive difference (A75).
 	AssertSyncedReserve(
