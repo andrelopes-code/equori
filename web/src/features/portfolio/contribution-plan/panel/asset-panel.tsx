@@ -31,8 +31,6 @@ interface AssetPanelProps {
   onSplit: (group: number) => void;
 }
 
-const openLayer = "dialog[open], [role=dialog], [role=listbox]";
-
 // The asset chosen in the list: what its criteria do this month, its answers and its facts (spec, Panel).
 export function AssetPanel({
   row,
@@ -75,11 +73,8 @@ export function AssetPanel({
   const undivided = member === undefined && cls.members.length > 1 && !readOnly;
 
   function handleKeyDown(event: KeyboardEvent<HTMLElement>) {
+    // A popup or a dialog over the panel marks the Escape that closes it handled.
     if (event.key !== "Escape" || event.defaultPrevented) return;
-    // A popup or a dialog over the panel closes by itself. Workaround for Slotted issue #208: the
-    // Escape that closes a dialog is marked handled only where the browser has CloseWatcher.
-    if (!event.currentTarget.contains(event.target as Node)) return;
-    if (document.querySelector(openLayer) !== null) return;
 
     onClose();
   }
