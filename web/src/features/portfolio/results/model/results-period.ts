@@ -48,6 +48,19 @@ export function seriesStep(
   return days <= weekStepDays ? "week" : "month";
 }
 
+// PR3, PR5: the period read. A whole history reads itself at the step of its length once its first
+// date is known; at `month` the history read is the period read (own false).
+export function periodRead(
+  from: string | undefined,
+  historyFrom: string | undefined,
+  to: string,
+): { from: string | undefined; step: "day" | "week" | "month"; own: boolean } {
+  const start = from ?? historyFrom;
+  const step = seriesStep(start, to);
+
+  return { from: start, step, own: from !== undefined || step !== "month" };
+}
+
 // The day after the same day `months` months before `to`; a day the month lacks becomes its last.
 function startAfterMonths(to: string, months: number): string {
   const [year = 0, month = 1, day = 1] = to.split("-").map(Number);

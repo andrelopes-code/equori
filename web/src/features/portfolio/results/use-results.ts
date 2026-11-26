@@ -9,7 +9,7 @@ import {
 } from "@/features/portfolio/return/use-return-options";
 import {
   periodRange,
-  seriesStep,
+  periodRead,
 } from "@/features/portfolio/results/model/results-period";
 import { useResultsSearch } from "@/features/portfolio/results/use-results-search";
 import { useTrailingYear } from "@/features/portfolio/results/use-trailing-year";
@@ -17,9 +17,9 @@ import { settingsQuery } from "@/features/setup";
 import { useToday } from "@/i18n/today";
 
 // The reads of the results tab: the history (PR3, the whole history by month), the period at its
-// step, which is the history itself while the period is the whole history, the 12 months to today
-// (PR7) and the return of getReturn that feeds the method layer while the period holds at most
-// 3,660 days (PR9).
+// step, which is the history itself while the whole history is read by month, the 12 months to
+// today (PR7) and the return of getReturn that feeds the method layer while the period holds at
+// most 3,660 days (PR9).
 export function useResults() {
   const api = useApi();
   const today = useToday();
@@ -40,18 +40,19 @@ export function useResults() {
   const history = useQuery(
     returnSeriesQuery(api, accountID, undefined, today, "month", valueIn, true),
   );
+  const read = periodRead(range.from, history.data?.from, range.to);
   const asked = useQuery(
     returnSeriesQuery(
       api,
       accountID,
-      range.from,
+      read.from,
       range.to,
-      seriesStep(range.from, range.to),
+      read.step,
       valueIn,
-      !whole,
+      read.own,
     ),
   );
-  const period = whole ? history : asked;
+  const period = read.own ? asked : history;
   const trailing = useTrailingYear(
     accountID,
     today,

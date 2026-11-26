@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { cutHistory } from "@/features/portfolio/results/evolution-block/evolution-cut";
+import {
+  cutHistory,
+  evolutionCut,
+} from "@/features/portfolio/results/evolution-block/evolution-cut";
 
 const history = {
   from: "2025-10-01",
@@ -52,5 +55,41 @@ describe("cutHistory", () => {
 
     expect(cut.points).toHaveLength(3);
     expect(cut.opening).toBe(5000);
+  });
+});
+
+describe("evolutionCut", () => {
+  const days = {
+    from: "2025-12-29",
+    to: "2025-12-31",
+    currency: "BRL",
+    opening: 101000,
+    points: [
+      { date: "2025-12-29", value: 101000, flows: 0 },
+      { date: "2025-12-30", value: 201500, flows: 100000 },
+      { date: "2025-12-31", value: 203020, flows: 0 },
+    ],
+    indexes: [],
+  };
+
+  // PR9: two month points or more draw the months of the period.
+  it("draws the months of a period with two month points", () => {
+    const cut = evolutionCut(history, { ...days, from: "2025-11-01" }, false);
+
+    expect(cut.points.map((p) => p.date)).toEqual(["2025-11-30", "2025-12-31"]);
+    expect(cut.opening).toBe(100000);
+  });
+
+  // PR9: a period with one month point draws the points of the period read.
+  it("draws the period read when the period holds one month point", () => {
+    const cut = evolutionCut(history, days, false);
+
+    expect(cut.points.map((p) => p.date)).toEqual([
+      "2025-12-29",
+      "2025-12-30",
+      "2025-12-31",
+    ]);
+    expect(cut.opening).toBe(101000);
+    expect(cut.currency).toBe("BRL");
   });
 });

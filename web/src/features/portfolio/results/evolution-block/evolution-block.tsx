@@ -8,7 +8,7 @@ import {
 } from "@slotted/react/section";
 
 import type { components } from "@/api/schema.gen";
-import { cutHistory } from "@/features/portfolio/results/evolution-block/evolution-cut";
+import { evolutionCut } from "@/features/portfolio/results/evolution-block/evolution-cut";
 import { EvolutionBridge } from "@/features/portfolio/results/evolution-block/evolution-bridge";
 import styles from "@/features/portfolio/results/evolution-block/evolution-block.module.css";
 import {
@@ -28,7 +28,7 @@ type ReturnReport = components["schemas"]["ReturnReport"];
 type ReturnSeries = components["schemas"]["ReturnSeries"];
 
 interface EvolutionBlockProps {
-  // The history read, cut here to the period.
+  // The history read, cut here to the period; the period read stands in for fewer than two months.
   history: ReturnSeries | undefined;
   // The period read: its dates are the period of the page.
   period: ReturnSeries | undefined;
@@ -52,7 +52,7 @@ export function EvolutionBlock({
   const cut =
     history === undefined || period === undefined
       ? undefined
-      : cutHistory(history, whole ? undefined : period.from, period.to);
+      : evolutionCut(history, period, whole);
   const days = period === undefined ? 0 : periodDays(period.from, period.to);
   const digits = cut === undefined ? 0 : (scale?.(cut.currency) ?? 0);
   const axes = useEvolutionAxes(cut?.currency ?? "", digits, days);
