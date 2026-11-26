@@ -264,36 +264,103 @@ WHERE
     id = @id;
 
 -- name: CommittedInstallments :one
+-- A135: the installment charges and anticipation charges (o is their purchase) of statement M,
+-- less the installments a cancellation or an anticipation credited on M. PriorInstallments
+-- repeats this filter.
 SELECT
     coalesce(- sum(p.amount), 0)::bigint
 FROM
     ledger_posting p
     JOIN ledger_statement s ON s.id = p.statement_id
+    LEFT JOIN ledger_link a ON a.books_id = p.books_id
+    AND a.from_transaction_id = p.transaction_id
+    AND a.link_type = 'anticipation_of'
+    JOIN ledger_transaction o ON o.books_id = p.books_id
+    AND o.id = coalesce(a.to_transaction_id, p.transaction_id)
 WHERE
     p.books_id = @books_id
     AND p.account_id = @account_id
     AND NOT p.voided
-    AND p.installment_plan_id IS NOT NULL
     AND p.card_role = 'charge'
+    AND (
+        p.installment_plan_id IS NOT NULL
+        OR a.to_transaction_id IS NOT NULL
+    )
     AND s.reference_month = @reference_month
+    AND NOT EXISTS (
+        SELECT
+            1
+        FROM
+            ledger_link l
+            JOIN ledger_transaction t ON t.books_id = l.books_id
+            AND t.id = l.from_transaction_id
+            AND t.voided_at IS NULL
+            JOIN ledger_posting c ON c.books_id = l.books_id
+            AND c.transaction_id = t.id
+            AND c.card_role = 'credit'
+            AND NOT c.voided
+            AND c.statement_id = p.statement_id
+        WHERE
+            l.books_id = p.books_id
+            AND l.to_transaction_id = o.id
+            AND (
+                l.link_type = 'cancellation_of'
+                OR (
+                    l.link_type = 'anticipation_of'
+                    AND a.to_transaction_id IS NULL
+                )
+            )
+    )
     AND s.closing_date > @today;
 
 -- name: PriorInstallments :one
 -- Budget plan amendment A129: installments billed on statement M of purchases booked before M,
--- which the accrual view counted in an earlier month.
+-- which the accrual view counted in an earlier month. The filter is CommittedInstallments'.
 SELECT
     coalesce(- sum(p.amount), 0)::bigint
 FROM
     ledger_posting p
     JOIN ledger_statement s ON s.id = p.statement_id
+    LEFT JOIN ledger_link a ON a.books_id = p.books_id
+    AND a.from_transaction_id = p.transaction_id
+    AND a.link_type = 'anticipation_of'
+    JOIN ledger_transaction o ON o.books_id = p.books_id
+    AND o.id = coalesce(a.to_transaction_id, p.transaction_id)
 WHERE
     p.books_id = @books_id
     AND p.account_id = @account_id
     AND NOT p.voided
-    AND p.installment_plan_id IS NOT NULL
     AND p.card_role = 'charge'
+    AND (
+        p.installment_plan_id IS NOT NULL
+        OR a.to_transaction_id IS NOT NULL
+    )
     AND s.reference_month = @reference_month
-    AND p.booked_on < @reference_month;
+    AND NOT EXISTS (
+        SELECT
+            1
+        FROM
+            ledger_link l
+            JOIN ledger_transaction t ON t.books_id = l.books_id
+            AND t.id = l.from_transaction_id
+            AND t.voided_at IS NULL
+            JOIN ledger_posting c ON c.books_id = l.books_id
+            AND c.transaction_id = t.id
+            AND c.card_role = 'credit'
+            AND NOT c.voided
+            AND c.statement_id = p.statement_id
+        WHERE
+            l.books_id = p.books_id
+            AND l.to_transaction_id = o.id
+            AND (
+                l.link_type = 'cancellation_of'
+                OR (
+                    l.link_type = 'anticipation_of'
+                    AND a.to_transaction_id IS NULL
+                )
+            )
+    )
+    AND o.date < @reference_month;
 
 -- name: SetStatementFinanced :exec
 UPDATE ledger_statement

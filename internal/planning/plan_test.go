@@ -144,6 +144,80 @@ func TestS158PlanFigures(t *testing.T) {
 	}
 }
 
+// A cancelled installment leaves the month's installments, and an anticipated installment counts
+// on the statement its anticipation charges (A129, A135).
+func TestPlanInstallmentsReversed(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-12-02")
+	card := f.h.Card("Visa", 3, 10, "next")
+	electronics := f.h.Account("Electronics", "expense", "", nil)
+	purchase := func(date string, amount int64) string {
+		var out struct {
+			PlanID string `json:"plan_id"`
+		}
+		f.h.MustDo(http.MethodPost, "/api/v1/installment-purchases", map[string]any{
+			"card_account_id": card,
+			"date":            date,
+			"description":     "Purchase",
+			"splits": []map[string]any{
+				{"account_id": electronics, "amount": apitest.BRL(amount)},
+			},
+			"installment_count": 3,
+		}, http.StatusCreated, &out)
+
+		return out.PlanID
+	}
+
+	// Statements 2026-11 to 2027-01: 30000 each.
+	purchase("2026-10-20", 90000)
+
+	// Statements 2026-10 to 2026-12; 2026-12 is cancelled.
+	cancelled := purchase("2026-09-20", 60000)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/installment-plans/"+cancelled+"/cancellation",
+		map[string]any{"date": "2026-11-20"},
+		http.StatusCreated,
+		nil,
+	)
+
+	// Statements 2026-11 to 2027-01; 2/3 and 3/3 are anticipated to 2026-12 for 55000.
+	anticipated := purchase("2026-10-10", 90000)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/installment-plans/"+anticipated+"/anticipation",
+		map[string]any{
+			"date":             "2026-11-10",
+			"from_installment": 2,
+			"to_installment":   3,
+			"target_statement": "2026-12",
+			"amount":           apitest.BRL(55000),
+		},
+		http.StatusCreated,
+		nil,
+	)
+
+	var committed struct {
+		Installments money `json:"installments"`
+	}
+	f.h.MustDo(http.MethodGet, "/api/v1/commitments?month=2026-12", nil, http.StatusOK, &committed)
+
+	tests := []struct {
+		name string
+		got  int64
+		want int64
+	}{
+		{"plan 2026-12", f.plan("2026-12").Installments.Amount, 30000 + 55000},
+		{"plan 2027-01", f.plan("2027-01").Installments.Amount, 30000},
+		{"commitments 2026-12", committed.Installments.Amount, 30000 + 55000},
+	}
+	for _, tt := range tests {
+		if tt.got != tt.want {
+			t.Errorf("%s: installments = %d, want %d", tt.name, tt.got, tt.want)
+		}
+	}
+}
+
 // S159: the average income divides by the months of history, at most three.
 func TestS159AverageIncome(t *testing.T) {
 	t.Parallel()
