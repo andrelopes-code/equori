@@ -103,6 +103,44 @@ func TestS393ReturnSeriesByMonth(t *testing.T) {
 	}
 }
 
+// A208 R1 (amended 2026-11-26): a purchase paid from outside the tree into an empty brokerage
+// earns from its price to the close of its day, so the return holds from the purchase on.
+func TestReturnSeriesPurchaseIntoEmptyTree(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t)
+	checking := f.h.Account("Checking", "asset", "checking", nil)
+
+	f.h.Record(
+		"2026-10-30",
+		map[string]any{
+			"account_id": f.mxrf11,
+			"amount":     units(10, "MXRF11"),
+			"weight":     f.h.Money(10000),
+		},
+		apitest.Posting(checking, -10000),
+	)
+	f.price(t, "MXRF11", "10.10")
+
+	r, got := f.seriesOf(t, "from=2026-10-29&to=2026-10-31&step=day")
+	if r.Status != http.StatusOK {
+		t.Fatalf("status %d: %s", r.Status, r.Body)
+	}
+
+	if !reflect.DeepEqual(got.shape(), shapeOf(
+		[]string{"2026-10-29", "2026-10-30", "2026-10-31"},
+		[]int64{0, 10100, 10100},
+		[]int64{0, 10000, 0},
+		[]int{0, 100, 100},
+	)) {
+		t.Fatalf("points = %+v", got.Points)
+	}
+
+	_, report := f.returnReportOf(t, "2026-10-01", "2026-10-31")
+	if report.PeriodBP == nil || *report.PeriodBP != 100 {
+		t.Fatalf("period_bp = %v", report.PeriodBP)
+	}
+}
+
 // S394: the indexes of the region beside the series: the CDI as one point per step date, the IPCA
 // as one point per whole month, and none for another currency or a region without an index
 // (portfolio results PS5, PS6).

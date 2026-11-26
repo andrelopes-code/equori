@@ -90,7 +90,7 @@ func (s *Service) pieces(
 		flowOn[f.Date] += f.Amount.Amount()
 	}
 
-	for _, c := range p.cuts {
+	for _, c := range slices.Concat(p.cuts, p.inflowEves(flowOn)) {
 		if !c.Before(start) && c.Before(end) && !slices.Contains(dates, c) {
 			dates = append(dates, c)
 		}
@@ -105,10 +105,32 @@ func (s *Service) pieces(
 			return 0, nil, nil, err
 		}
 
-		out[i] = domain.Subperiod{Value: v, Flow: flowOn[d]}
+		out[i] = domain.Subperiod{
+			Value:       v,
+			Flow:        flowOn[d],
+			FlowAtStart: !p.recorded && flowOn[d] > 0,
+		}
 	}
 
 	return opening, out, dates, nil
+}
+
+// inflowEves are the days before the inflow dates of a tree outside R19: each cut makes the piece
+// that ends on an inflow span that one day, so the inflow joins the base of its own day (R1).
+func (p period) inflowEves(flowOn map[time.Time]int64) []time.Time {
+	if p.recorded {
+		return nil
+	}
+
+	var eves []time.Time
+
+	for d, f := range flowOn {
+		if f > 0 {
+			eves = append(eves, d.AddDate(0, 0, -1))
+		}
+	}
+
+	return eves
 }
 
 // valueOn is the value of the tree at the end of day, valued once per day.

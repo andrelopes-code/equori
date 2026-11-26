@@ -28,11 +28,15 @@ const (
 // of a day, that day's flows included, and the sum of that day's flows.
 type Subperiod struct {
 	Value, Flow int64
+
+	// FlowAtStart puts the flow in the base of the piece, which then spans its one day: an inflow
+	// into a tree valued at market prices, bought during the day (A208 R1, amended 2026-11-26).
+	FlowAtStart bool
 }
 
 // PeriodFactor is 1 plus the time-weighted return from the start value through ends, oldest
-// first (amendment A208 R1). A flow earns from the day after it. ok is false when a gain has no
-// invested base or when a piece loses everything.
+// first (amendment A208 R1). A flow earns from the day after it, or from its own day when
+// FlowAtStart. ok is false when a gain has no invested base or when a piece loses everything.
 func PeriodFactor(start int64, ends []Subperiod) (factor float64, ok bool) {
 	return periodFactor(start, ends, false)
 }
@@ -81,13 +85,18 @@ func periodFactor(start int64, ends []Subperiod, zeroBase bool) (factor float64,
 	factor = 1
 
 	for _, e := range ends {
+		base := start
+		if e.FlowAtStart {
+			base += e.Flow
+		}
+
 		gain := e.Value - e.Flow - start
-		if start <= 0 && gain != 0 && (!zeroBase || start != 0) {
+		if base <= 0 && gain != 0 && (!zeroBase || start != 0) {
 			return 0, false
 		}
 
-		if start > 0 {
-			factor *= 1 + float64(gain)/float64(start)
+		if base > 0 {
+			factor *= 1 + float64(gain)/float64(base)
 		}
 
 		if factor <= 0 {

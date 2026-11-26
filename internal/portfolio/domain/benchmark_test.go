@@ -40,6 +40,22 @@ func TestPeriodFactor(t *testing.T) {
 			true,
 		},
 		{"a gain on an empty start", 0, []Subperiod{{Value: 100500, Flow: 100000}}, 0, false},
+		// A208 R1 (amended 2026-11-26): bought at 158.56, closed at 159.09.
+		{
+			"an inflow at the start of its day into an empty tree",
+			0,
+			[]Subperiod{{Value: 15909, Flow: 15856, FlowAtStart: true}},
+			15909.0 / 15856,
+			true,
+		},
+		// 208.56 held, 987.64 bought during the day, 1,201.25 at the close: 5.05 on 1,196.20.
+		{
+			"an inflow at the start of its day joins the base",
+			20856,
+			[]Subperiod{{Value: 120125, Flow: 98764, FlowAtStart: true}},
+			1 + 505.0/119620,
+			true,
+		},
 		{"total loss", 100000, []Subperiod{{Value: 0}}, 0, false},
 		{"no subperiod", 100000, nil, 1, true},
 	}
