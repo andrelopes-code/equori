@@ -241,7 +241,7 @@
     margin-inline-start: -3px;
     border: 1.5px solid var(--slotted-text);
     border-radius: 2px;
-    background: var(--slotted-panel-surface, var(--slotted-surface-raised));
+    background: var(--equori-panel-surface, var(--slotted-surface-raised));
   }
 
   .rowValue small.over {
@@ -385,14 +385,13 @@
     flex-direction: column;
     box-sizing: border-box;
     padding: 6px 8px;
-    border: 1px solid
-      var(--slotted-panel-surface, var(--slotted-surface-raised));
+    border: 1px solid var(--equori-panel-surface, var(--slotted-surface-raised));
     border-inline-start: 3px solid var(--fill);
     border-radius: 6px;
     background: color-mix(
       in oklab,
       var(--fill) 22%,
-      var(--slotted-panel-surface, var(--slotted-surface-raised))
+      var(--equori-panel-surface, var(--slotted-surface-raised))
     );
     outline: none;
     transition: background var(--slotted-duration-short)
@@ -404,7 +403,7 @@
     background: color-mix(
       in oklab,
       var(--fill) 40%,
-      var(--slotted-panel-surface, var(--slotted-surface-raised))
+      var(--equori-panel-surface, var(--slotted-surface-raised))
     );
   }
 
@@ -887,7 +886,7 @@
       transparent
     );
     box-shadow: 0 0 0 1.5px
-      var(--slotted-panel-surface, var(--slotted-surface-raised));
+      var(--equori-panel-surface, var(--slotted-surface-raised));
     outline: none;
   }
 
@@ -897,7 +896,7 @@
     translate: -6px -6px;
     background: var(--slotted-tone-accent-solid);
     box-shadow:
-      0 0 0 2px var(--slotted-panel-surface, var(--slotted-surface-raised)),
+      0 0 0 2px var(--equori-panel-surface, var(--slotted-surface-raised)),
       0 0 0 4px var(--slotted-tone-accent-border);
   }
 
@@ -1226,8 +1225,7 @@
     inline-size: 10px;
     block-size: 10px;
     translate: -5px -5px;
-    border: 2px solid
-      var(--slotted-panel-surface, var(--slotted-surface-raised));
+    border: 2px solid var(--equori-panel-surface, var(--slotted-surface-raised));
     border-radius: 50%;
     background: var(--slotted-tone-warning-solid);
     pointer-events: none;

@@ -6,8 +6,8 @@
     display: grid;
     grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(0, 1fr));
     border-radius: var(--slotted-radius-md);
-    background: var(--slotted-panel-surface, var(--slotted-surface-raised));
-    box-shadow: var(--slotted-panel-shadow, none);
+    background: var(--equori-panel-surface, var(--slotted-surface-raised));
+    box-shadow: var(--equori-panel-shadow, none);
   }
 
   /* Label, value and note on three fixed lines, the cells parted by hairlines. */

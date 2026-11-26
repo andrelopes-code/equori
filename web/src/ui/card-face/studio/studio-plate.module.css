@@ -3,9 +3,9 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     border: 1px solid
-      var(--slotted-panel-border-color, var(--slotted-border-subtle));
+      var(--equori-panel-border-color, var(--slotted-border-subtle));
     border-radius: var(--slotted-radius-lg);
-    background: var(--slotted-panel-surface, var(--slotted-surface-raised));
+    background: var(--equori-panel-surface, var(--slotted-surface-raised));
   }
 
   .cell {
@@ -14,7 +14,7 @@
     min-inline-size: 0;
     padding: var(--slotted-space-5) var(--slotted-space-6);
     border-block-start: 1px solid
-      var(--slotted-panel-border-color, var(--slotted-border-subtle));
+      var(--equori-panel-border-color, var(--slotted-border-subtle));
   }
 
   .cell:nth-child(-n + 2) {
@@ -23,7 +23,7 @@
 
   .cell:nth-child(odd) {
     border-inline-end: 1px solid
-      var(--slotted-panel-border-color, var(--slotted-border-subtle));
+      var(--equori-panel-border-color, var(--slotted-border-subtle));
   }
 
   .label {

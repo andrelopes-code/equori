@@ -69,10 +69,10 @@
     gap: var(--slotted-space-1);
     padding: var(--slotted-space-8);
     border: 1px solid
-      var(--slotted-panel-border-color, var(--slotted-border-subtle));
+      var(--equori-panel-border-color, var(--slotted-border-subtle));
     border-radius: var(--slotted-radius-lg);
-    background: var(--slotted-panel-surface, var(--slotted-surface-raised));
-    box-shadow: var(--slotted-panel-shadow, none);
+    background: var(--equori-panel-surface, var(--slotted-surface-raised));
+    box-shadow: var(--equori-panel-shadow, none);
   }
 
   .answer p {

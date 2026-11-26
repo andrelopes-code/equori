@@ -262,9 +262,9 @@ export const surfaces: readonly Surface[] = [
     tokens: {
       "--slotted-app-shell-main-surface": fill("page"),
       "--slotted-section-surface": fill("card"),
-      "--slotted-panel-surface": fill("card"),
-      "--slotted-panel-border-color": ring,
-      "--slotted-panel-shadow": elevation(1),
+      "--equori-panel-surface": fill("card"),
+      "--equori-panel-border-color": ring,
+      "--equori-panel-shadow": elevation(1),
     },
   },
 ];

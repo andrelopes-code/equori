@@ -11,7 +11,7 @@
     padding: var(--slotted-space-8);
     overflow: hidden;
     border: 1px solid
-      var(--slotted-panel-border-color, var(--slotted-border-subtle));
+      var(--equori-panel-border-color, var(--slotted-border-subtle));
     border-radius: var(--slotted-radius-lg);
     background:
       radial-gradient(
@@ -24,7 +24,7 @@
         color-mix(in srgb, var(--slotted-text) 7%, transparent),
         transparent 70%
       ),
-      var(--slotted-panel-surface, var(--slotted-surface-raised));
+      var(--equori-panel-surface, var(--slotted-surface-raised));
     transition: background var(--slotted-duration-medium)
       var(--slotted-easing-standard);
   }

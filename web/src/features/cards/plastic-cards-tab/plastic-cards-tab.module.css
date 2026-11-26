@@ -50,7 +50,7 @@
   .rows {
     display: grid;
     border-block-end: 1px solid
-      var(--slotted-panel-border-color, var(--slotted-border-subtle));
+      var(--equori-panel-border-color, var(--slotted-border-subtle));
   }
 
   /* A row is 44 px tall: the label at the start, the value at the end on one line. */
@@ -62,7 +62,7 @@
     block-size: 44px;
     min-inline-size: 0;
     border-block-start: 1px solid
-      var(--slotted-panel-border-color, var(--slotted-border-subtle));
+      var(--equori-panel-border-color, var(--slotted-border-subtle));
     white-space: nowrap;
   }
 

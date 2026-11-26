@@ -2580,9 +2580,9 @@
     &[data-slotted-scheme="dark"] [data-ui="app-shell"] {
       --slotted-app-shell-main-surface: var(--glass-fill-page);
       --slotted-section-surface: var(--glass-fill-card);
-      --slotted-panel-surface: var(--glass-fill-card);
-      --slotted-panel-border-color: var(--glass-ring);
-      --slotted-panel-shadow: var(--glass-shadow-1);
+      --equori-panel-surface: var(--glass-fill-card);
+      --equori-panel-border-color: var(--glass-ring);
+      --equori-panel-shadow: var(--glass-shadow-1);
     }
 
     &[data-slotted-scheme="dark"] [data-ui="dashboard-grid"][data-editing] [data-part="widget"] > [data-ui="card"] {

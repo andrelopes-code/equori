@@ -7,9 +7,9 @@
     box-sizing: border-box;
     inline-size: 100%;
     border-radius: 18px;
-    background: var(--slotted-panel-surface, var(--slotted-surface-raised));
+    background: var(--equori-panel-surface, var(--slotted-surface-raised));
     box-shadow: var(
-      --slotted-panel-shadow,
+      --equori-panel-shadow,
       var(--slotted-shadow-md),
       inset 0 1px 0 color-mix(in oklab, var(--slotted-text) 6%, transparent)
     );

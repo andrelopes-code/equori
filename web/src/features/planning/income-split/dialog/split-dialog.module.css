@@ -199,7 +199,7 @@
     border-block-end: 1px solid var(--slotted-border-subtle);
     background: var(
       --slotted-dialog-surface,
-      var(--slotted-panel-surface, var(--slotted-surface-raised))
+      var(--equori-panel-surface, var(--slotted-surface-raised))
     );
   }
 

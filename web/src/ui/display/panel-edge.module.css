@@ -8,7 +8,7 @@
     position: absolute;
     inset: 0;
     border: var(--slotted-border-width-thin) solid
-      var(--slotted-panel-border-color, var(--slotted-border-subtle));
+      var(--equori-panel-border-color, var(--slotted-border-subtle));
     border-radius: inherit;
     pointer-events: none;
   }

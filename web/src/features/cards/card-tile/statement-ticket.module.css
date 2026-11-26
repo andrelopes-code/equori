@@ -4,11 +4,11 @@
     --ticket-tone: var(--slotted-text);
     --ticket-tone-text: var(--slotted-text);
     --ticket-border: var(
-      --slotted-panel-border-color,
+      --equori-panel-border-color,
       var(--slotted-border-subtle)
     );
     --ticket-surface: var(
-      --slotted-panel-surface,
+      --equori-panel-surface,
       var(--slotted-surface-raised)
     );
 
@@ -23,7 +23,7 @@
     border-block-start: 0;
     border-radius: 0 0 var(--slotted-radius-lg) var(--slotted-radius-lg);
     background: var(--ticket-surface);
-    box-shadow: var(--slotted-panel-shadow, none);
+    box-shadow: var(--equori-panel-shadow, none);
   }
 
   .ticket[data-status="info"] {

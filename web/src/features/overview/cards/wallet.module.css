@@ -145,7 +145,7 @@
     background: linear-gradient(
       to bottom,
       transparent,
-      var(--slotted-panel-surface, var(--slotted-surface-raised))
+      var(--equori-panel-surface, var(--slotted-surface-raised))
     );
     pointer-events: none;
   }

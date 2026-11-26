@@ -6,8 +6,8 @@
     position: relative;
     overflow: hidden;
     border-radius: var(--slotted-radius-lg);
-    background: var(--slotted-panel-surface, var(--slotted-surface-raised));
-    box-shadow: var(--slotted-panel-shadow, var(--slotted-shadow-sm));
+    background: var(--equori-panel-surface, var(--slotted-surface-raised));
+    box-shadow: var(--equori-panel-shadow, var(--slotted-shadow-sm));
     container-type: inline-size;
   }
 

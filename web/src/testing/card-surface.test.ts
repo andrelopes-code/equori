@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 // Files that paint `--slotted-surface-raised` as a ground today. The list only shrinks: a file
-// leaves it when its ground reads `--slotted-panel-surface` (docs/contributing/web.md, O18).
+// leaves it when its ground reads `--equori-panel-surface` (docs/contributing/web.md, O18).
 const RAW_GROUND = [
   "src/features/accounts/kind-chooser/kind-chooser.module.css",
   "src/features/assistant/message/turn-activity.module.css",
@@ -26,7 +26,7 @@ describe("rawGrounds", () => {
       1,
     ],
     [
-      "background: var(--slotted-panel-surface, var(--slotted-surface-raised));",
+      "background: var(--equori-panel-surface, var(--slotted-surface-raised));",
       0,
     ],
     ["border: 1px solid var(--slotted-surface-raised);", 0],
@@ -63,11 +63,11 @@ function stylesheets(): string[] {
 }
 
 // A ground is a `background` declaration; the glass theme publishes the card fill under
-// `--slotted-panel-surface`, and the raised surface stays the fallback of the standard theme.
+// `--equori-panel-surface`, and the raised surface stays the fallback of the standard theme.
 function rawGrounds(source: string): number {
   return [...source.matchAll(/background(?:-color)?:[^;]*;/g)].filter(
     ([declaration]) =>
       declaration.includes("var(--slotted-surface-raised)") &&
-      !declaration.includes("--slotted-panel-surface"),
+      !declaration.includes("--equori-panel-surface"),
   ).length;
 }

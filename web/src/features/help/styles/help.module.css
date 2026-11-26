@@ -259,10 +259,10 @@
     display: grid;
     padding: var(--slotted-space-4) var(--slotted-space-5);
     border: 1px solid
-      var(--slotted-panel-border-color, var(--slotted-border-subtle));
+      var(--equori-panel-border-color, var(--slotted-border-subtle));
     border-radius: var(--slotted-radius-lg);
-    background: var(--slotted-panel-surface, var(--slotted-surface-raised));
-    box-shadow: var(--slotted-panel-shadow, none);
+    background: var(--equori-panel-surface, var(--slotted-surface-raised));
+    box-shadow: var(--equori-panel-shadow, none);
     gap: var(--slotted-space-3);
     grid-template-columns: minmax(0, 1fr);
   }
@@ -564,11 +564,11 @@
     display: block;
     overflow: hidden;
     border: 1px solid
-      var(--slotted-panel-border-color, var(--slotted-border-subtle));
+      var(--equori-panel-border-color, var(--slotted-border-subtle));
     border-radius: var(--slotted-radius-lg);
     aspect-ratio: 8 / 5; /* literal: every capture is cut at 640 by 400 */
-    background: var(--slotted-panel-surface, var(--slotted-surface-raised));
-    box-shadow: var(--slotted-panel-shadow, none);
+    background: var(--equori-panel-surface, var(--slotted-surface-raised));
+    box-shadow: var(--equori-panel-shadow, none);
     container-type: inline-size;
   }
 
@@ -724,10 +724,10 @@
     overflow-y: auto;
     padding: var(--slotted-space-3) var(--slotted-space-5);
     border: 1px solid
-      var(--slotted-panel-border-color, var(--slotted-border-subtle));
+      var(--equori-panel-border-color, var(--slotted-border-subtle));
     border-radius: var(--slotted-radius-lg);
-    background: var(--slotted-panel-surface, var(--slotted-surface-raised));
-    box-shadow: var(--slotted-panel-shadow, none);
+    background: var(--equori-panel-surface, var(--slotted-surface-raised));
+    box-shadow: var(--equori-panel-shadow, none);
     max-block-size: 80dvb;
   }
 
@@ -747,10 +747,10 @@
     z-index: 1;
     overflow: hidden;
     border: 1px solid
-      var(--slotted-panel-border-color, var(--slotted-border-subtle));
+      var(--equori-panel-border-color, var(--slotted-border-subtle));
     border-radius: var(--slotted-radius-lg);
     background: var(--slotted-surface-sunken);
-    box-shadow: var(--slotted-shadow-lg, var(--slotted-panel-shadow, none));
+    box-shadow: var(--slotted-shadow-lg, var(--equori-panel-shadow, none));
     inline-size: min(
       94dvi - 20rem - var(--slotted-space-5),
       (94dvb - 3rem) * 1.6
@@ -802,7 +802,7 @@
     align-items: center;
     padding-inline: var(--slotted-space-3);
     border-block-start: 1px solid
-      var(--slotted-panel-border-color, var(--slotted-border-subtle));
+      var(--equori-panel-border-color, var(--slotted-border-subtle));
     gap: var(--slotted-space-3);
     min-block-size: 3rem; /* literal: the room the player's size keeps for the controls */
   }

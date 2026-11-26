@@ -1,11 +1,11 @@
 @layer app {
   /* The pane's card: the panel material of O18 with rows that run edge to edge. */
   .card {
-    background: var(--slotted-panel-surface, var(--slotted-surface-raised));
+    background: var(--equori-panel-surface, var(--slotted-surface-raised));
     border: var(--slotted-border-width-thin) solid
-      var(--slotted-panel-border-color, var(--slotted-border-subtle));
+      var(--equori-panel-border-color, var(--slotted-border-subtle));
     border-radius: var(--slotted-radius-lg);
-    box-shadow: var(--slotted-panel-shadow, none);
+    box-shadow: var(--equori-panel-shadow, none);
     overflow: hidden;
   }
 

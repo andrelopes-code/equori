@@ -22,8 +22,8 @@
         color-mix(in oklab, var(--slotted-data-3) 8%, transparent) 55%,
         transparent
       ),
-      var(--slotted-panel-surface, var(--slotted-surface-raised));
-    box-shadow: var(--slotted-panel-shadow, none);
+      var(--equori-panel-surface, var(--slotted-surface-raised));
+    box-shadow: var(--equori-panel-shadow, none);
     color: var(--slotted-text);
     column-gap: var(--slotted-space-5);
     cursor: pointer;

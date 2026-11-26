@@ -3,7 +3,7 @@
     min-inline-size: 0;
     padding-block: var(--slotted-space-8);
     border-block-start: 1px solid
-      var(--slotted-panel-border-color, var(--slotted-border-subtle));
+      var(--equori-panel-border-color, var(--slotted-border-subtle));
   }
 
   .step:first-child {

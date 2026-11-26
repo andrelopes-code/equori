@@ -416,8 +416,8 @@
     gap: var(--slotted-space-4);
     padding: var(--slotted-space-2) var(--slotted-space-4);
     border-radius: var(--slotted-radius-md);
-    background: var(--slotted-panel-surface, var(--slotted-surface-raised));
-    box-shadow: var(--slotted-panel-shadow, none);
+    background: var(--equori-panel-surface, var(--slotted-surface-raised));
+    box-shadow: var(--equori-panel-shadow, none);
     opacity: 0;
     visibility: hidden;
     translate: 0 -100%;
