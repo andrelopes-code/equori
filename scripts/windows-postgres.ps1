@@ -23,7 +23,7 @@ foreach ($p in 'postgres', 'initdb', 'pg_ctl', 'pg_dump', 'pg_restore', 'pg_upgr
     Copy-Item (Join-Path $src "bin\$p.exe") (Join-Path $Out 'bin')
 }
 foreach ($d in 'icudt77', 'icuin77', 'icuuc77', 'libcrypto-3-x64', 'libiconv-2', 'libintl-9', 'liblz4', 'libpq',
-    'libssl-3-x64', 'libwinpthread-1', 'libxml2', 'libxslt', 'libzstd', 'zlib1') {
+    'libssl-3-x64', 'libxml2', 'libxslt', 'libzstd', 'zlib1') {
     Copy-Item (Join-Path $src "bin\$d.dll") (Join-Path $Out 'bin')
 }
 # plperl, plpython3 and pltcl load interpreters the zip does not hold.
