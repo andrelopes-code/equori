@@ -22,9 +22,7 @@ export function NameCell({ row }: NameCellProps) {
         </Tag>
       )}
 
-      <RowText row={row} title={row.name}>
-        {row.name}
-      </RowText>
+      <RowText title={row.name}>{row.name}</RowText>
     </>
   );
 }

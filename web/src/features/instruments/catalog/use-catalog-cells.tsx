@@ -27,18 +27,18 @@ export function useCatalogCells(quotesFailed: boolean) {
           underline="hover"
           to={{ to: "/instruments/$code", params: { code: row.code } }}
         >
-          <RowText row={row}>{row.code}</RowText>
+          <RowText>{row.code}</RowText>
         </AppLink>
       ),
       name: ({ row }: CellContext) => <NameCell row={row} />,
       price: ({ row }: CellContext) => (
-        <RowText row={row}>
+        <RowText>
           <PriceCell row={row} failed={quotesFailed} />
         </RowText>
       ),
       trend: ({ row }: CellContext) => <TrendCell row={row} />,
       priceDate: ({ row }: CellContext) => (
-        <RowText row={row}>
+        <RowText>
           <PriceDateCell row={row} />
         </RowText>
       ),
@@ -53,7 +53,7 @@ export function useCatalogCells(quotesFailed: boolean) {
       ...Object.fromEntries(
         (["quoteCurrency", "subtype", "exchange"] as const).map((id) => [
           id,
-          ({ row }: CellContext) => <RowText row={row}>{row[id]}</RowText>,
+          ({ row }: CellContext) => <RowText>{row[id]}</RowText>,
         ]),
       ),
     }),

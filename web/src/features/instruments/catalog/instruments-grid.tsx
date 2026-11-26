@@ -58,11 +58,6 @@ export function InstrumentsGrid({
     [columnState],
   );
   const cellRenderers = useCatalogCells(quotesFailed);
-  // A currency has no hidden state, so it takes no mark (HD2).
-  const disabledKeys = useMemo(
-    () => rows.filter((row) => row.type === "currency").map((row) => row.code),
-    [rows],
-  );
   const renderHeader = useCallback(
     ({ column }: { column: { id: string; label: string } }) =>
       // The actions column is named for a screen reader and draws no words over its buttons.
@@ -146,7 +141,9 @@ export function InstrumentsGrid({
           }}
           height="100%"
           selectionMode="multiple"
-          disabledKeys={disabledKeys}
+          // A currency has no hidden state, so it takes no mark (HD2).
+          isRowSelectable={(row) => row.type !== "currency"}
+          isRowMuted={(row) => row.hidden}
           value={selection.selection}
           onValueChange={(value) => {
             selection.setMarked(

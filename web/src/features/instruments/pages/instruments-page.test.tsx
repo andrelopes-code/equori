@@ -866,6 +866,7 @@ describe("Hidden instruments", () => {
       '[role="row"]',
     );
     expect(row).toHaveTextContent(catalogEn["instrument.hidden"]);
+    expect(row).toHaveAttribute("data-muted");
     expect(within(grid).getByText(bp(2000))).toHaveAttribute(
       "data-tone",
       "muted",
@@ -932,6 +933,27 @@ describe("Hidden instruments", () => {
     expect(
       within(await selectionBar()).getByRole("button", { name: "Hide 3" }),
     ).toBeVisible();
+  });
+
+  it("HD13: keeps a currency out of the marks and opens it from its row", async () => {
+    const { router } = await renderApp("/instruments", { fetch: api() });
+    const grid = await screen.findByRole("grid", {
+      name: catalogEn["instruments.caption"],
+    });
+    await within(grid).findByText("38.45");
+    const user = userEvent.setup();
+    await user.click(within(grid).getByRole("button", { name: /Currencies/ }));
+    const row = (
+      await within(grid).findByRole("checkbox", { name: /USD/ })
+    ).closest('[role="row"]');
+
+    expect(row).not.toHaveAttribute("data-disabled");
+
+    await user.dblClick(within(grid).getByText("USD"));
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/instruments/USD");
+    });
   });
 
   it("HD13: shows the marked hidden securities again", async () => {
