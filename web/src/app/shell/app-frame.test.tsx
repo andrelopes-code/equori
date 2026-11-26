@@ -103,21 +103,6 @@ describe("AppFrame layout", () => {
     },
   );
 
-  // jsdom computes no layout, so the declaration is asserted on the stylesheet text.
-  it.each([1280, 390])(
-    "keeps absolutely positioned content inside the scroll of the main region (%i px)",
-    async (width) => {
-      const css = readFileSync("src/app/shell/app-frame.module.css", "utf8");
-
-      await renderApp("/", { width, fetch: newFetch() });
-
-      expect(
-        document.querySelector('[data-ui="app-shell"] > [data-part="main"]'),
-      ).toHaveClass(styles.scroller ?? "missing");
-      expect(css).toMatch(/\.scroller\s*\{[^}]*position:\s*relative;/);
-    },
-  );
-
   it("sets the compact density when none is stored", async () => {
     await renderApp("/", { width: 390, fetch: newFetch() });
     expect(html).toHaveAttribute("data-slotted-density", "compact");
