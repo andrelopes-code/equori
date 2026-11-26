@@ -88,6 +88,11 @@ Amendment 2026-11-23:
 - A field whose value is a code (class, kind, role, decision, source, appearance choices and `status`) reads from the catalogue; an unknown code stays as written. Every action of the tool catalogue has a title in each language.
 - An `icon` change draws the glyph.
 
+Amendment 2026-11-26:
+
+- A list of transaction rows carries a caption above it: "New transaction" for the row `record_transaction` creates, "Existing transaction" or "N existing transactions" for the rows a change, a categorization or a void touches. A change of a recorded transaction never draws as a new one.
+- `change_transaction.reimburse` names each purchase it reimburses in a `reimbursed` change in place of `transaction`.
+
 ## 8. Answer blocks (plan 3)
 
 A GFM table of the answer whose last column holds amounts of one currency is drawn as: two rows, paired bars with the difference as a percentage in words; three or more rows, bars in the table's order, numbered when the order is descending; a first column of dates, a step line with the lowest point marked. Any other table, and every table while privacy is on, stays the Markdown table. Plan 3 states the parsing rules.

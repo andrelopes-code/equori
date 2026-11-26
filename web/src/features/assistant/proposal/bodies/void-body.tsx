@@ -26,7 +26,7 @@ export function VoidBody({ preview }: VoidBodyProps) {
 
   return (
     <div className={styles.body}>
-      <ItemRows items={preview.items ?? []} struck />
+      <ItemRows role="existing" items={preview.items ?? []} struck />
 
       {reason !== undefined && (
         <Text size="sm" tone="muted">

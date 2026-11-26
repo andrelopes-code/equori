@@ -15,7 +15,7 @@ export function ChangeBody({ preview }: ChangeBodyProps) {
 
   return (
     <div className={styles.body}>
-      {items.length > 0 && <ItemRows items={items} />}
+      {items.length > 0 && <ItemRows role="existing" items={items} />}
       <DiffRows changes={preview.changes} />
     </div>
   );

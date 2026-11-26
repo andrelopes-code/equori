@@ -136,7 +136,7 @@ func TestChangeTransactionReimburse(t *testing.T) {
 	}
 
 	p := previewTool(t, b.h, "change_transaction", args)
-	if len(p.Changes) != 2 || p.Changes[0].Field != "transaction" ||
+	if len(p.Changes) != 2 || p.Changes[0].Field != "reimbursed" ||
 		p.Changes[1].After.Amount != "15.00" {
 		t.Fatalf("preview = %+v", p)
 	}

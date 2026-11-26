@@ -64,7 +64,12 @@
     text-overflow: ellipsis;
   }
 
-  /* Item rows: a framed list, 44 px rows. */
+  /* Item rows: a caption over a framed list, 44 px rows. */
+  .items {
+    display: grid;
+    gap: 6px;
+  }
+
   .txs {
     display: grid;
     margin: 0;

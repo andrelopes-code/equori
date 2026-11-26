@@ -229,6 +229,60 @@ describe("OperationBody", () => {
     expect(screen.getByText("11/15/2026")).toBeVisible();
   });
 
+  // Amendment 2026-11-26: a row list says whether the proposal creates its transactions or touches
+  // transactions already recorded, so a change never reads as a new transaction.
+  it.each([
+    {
+      action: "record_transaction",
+      changes: [{ field: "description", after: { text: "Lunch" } }],
+      items: undefined,
+      caption: catalogEn["assistant.body.items.new"],
+    },
+    {
+      action: "change_transaction.reimburse",
+      changes: [
+        { field: "reimbursed", after: { text: "Store purchase" } },
+        { field: "amount", after: usd("19.90") },
+      ],
+      items: [{ description: "Store refund", amount: usd("19.90") }],
+      caption: "Existing transaction",
+    },
+    {
+      action: "void_transaction",
+      changes: [],
+      items: [{ description: "Outback", amount: usd("-389.00") }],
+      caption: "Existing transaction",
+    },
+    {
+      action: "categorize_transactions",
+      changes: [{ field: "category", after: { text: "Dining" } }],
+      items: [
+        { description: "iFood lunch", amount: usd("-54.90") },
+        { description: "Padaria Real", amount: usd("-18.50") },
+      ],
+      caption: "2 existing transactions",
+    },
+  ])(
+    "captions the rows of $action as $caption",
+    ({ action, changes, items, caption }) => {
+      drawBody({ action, changes, ...(items !== undefined && { items }) });
+
+      expect(screen.getByText(caption)).toBeVisible();
+    },
+  );
+
+  it("names the purchase a refund reimburses", () => {
+    drawBody({
+      action: "change_transaction.reimburse",
+      changes: [{ field: "reimbursed", after: { text: "Store purchase" } }],
+      items: [{ description: "Store refund", amount: usd("19.90") }],
+    });
+
+    expect(
+      screen.getByText(catalogEn["assistant.field.reimbursed"]),
+    ).toBeVisible();
+  });
+
   it("falls back to the field rows for an action without a body", () => {
     drawBody({
       action: "manage_card.add_card",

@@ -56,7 +56,7 @@ export function CategorizeBody({ preview }: CategorizeBodyProps) {
         </div>
       </div>
 
-      <ItemRows items={items} />
+      <ItemRows role="existing" items={items} />
 
       <ProposalChanges changes={rest} />
     </div>

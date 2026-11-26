@@ -48,6 +48,7 @@ var ChangeFields = []string{
 	"count",
 	"rate",
 	"transaction",
+	"reimbursed",
 	"source",
 	"reference",
 	"decision",

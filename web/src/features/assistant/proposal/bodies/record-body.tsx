@@ -34,7 +34,7 @@ export function RecordBody({ preview }: RecordBodyProps) {
 
   return (
     <div className={styles.body}>
-      <ItemRows items={[item]} />
+      <ItemRows role="new" items={[item]} />
 
       <ProposalChanges changes={rest} />
     </div>

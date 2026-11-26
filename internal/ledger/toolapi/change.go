@@ -123,7 +123,7 @@ func reimbursementChanges(p changePlan) ([]tool.Change, error) {
 	for i, a := range p.allocs {
 		changes = append(
 			changes,
-			tool.Change{Field: "transaction", After: tool.TextValue(p.expenses[i].Description)},
+			tool.Change{Field: "reimbursed", After: tool.TextValue(p.expenses[i].Description)},
 		)
 		if i == 0 {
 			total = a.Amount
