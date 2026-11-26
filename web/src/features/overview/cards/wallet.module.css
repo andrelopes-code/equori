@@ -110,6 +110,8 @@
   .deckGrid {
     --face: 18.5rem; /* literal: 259 px, two cards and their strips in the default height */
     --strip: calc(var(--face, 17rem) * 0.19);
+    /* Workaround for Slotted issue #220: the theme publishes no spring easing, so the deck
+       writes the curve its cards land on. */
     --spring: linear(
       0,
       0.006,
