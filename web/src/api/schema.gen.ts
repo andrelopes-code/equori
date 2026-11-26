@@ -8587,6 +8587,20 @@ export interface components {
             amount: components["schemas"]["Money"];
         };
         /**
+         * @description One charge of installments: installment number of count of the purchase transaction_id, or the charge of an
+         *     anticipation of that purchase when number is absent.
+         */
+        BudgetPlanInstallment: {
+            /** Format: uuid */
+            transaction_id: string;
+            description: string;
+            /** Format: uuid */
+            card_account_id: string;
+            number?: number;
+            count: number;
+            amount: components["schemas"]["Money"];
+        };
+        /**
          * @description A category of the plan. last_month and average read the subtree of a budgeted category and the own postings
          *     of another; counted is false for a budget under a category whose budget is in force.
          */
@@ -8745,7 +8759,8 @@ export interface components {
             spent: components["schemas"]["Money"];
         };
         /**
-         * @description installments are those billed on the month's statements for purchases booked before it. savings is what the
+         * @description installments are those billed on the month's statements for purchases booked before it; installment_items
+         *     holds them one per charge, by card and then in the order of the purchase dates. savings is what the
          *     month's occurrences of savings and transfer schedules move into the savings set, minus what they move out of it;
          *     goal_deposits is the same over the goal set; savings_brokerage and goal_deposits_brokerage are their parts whose
          *     counterpart is a brokerage account (A253). unassigned is reference - installments - savings - goal_deposits -
@@ -8763,6 +8778,7 @@ export interface components {
             received_income: components["schemas"]["Money"];
             reference?: components["schemas"]["Money"];
             installments: components["schemas"]["Money"];
+            installment_items: components["schemas"]["BudgetPlanInstallment"][];
             savings: components["schemas"]["Money"];
             goal_deposits: components["schemas"]["Money"];
             savings_brokerage: components["schemas"]["Money"];

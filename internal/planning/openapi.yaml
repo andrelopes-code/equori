@@ -1390,6 +1390,29 @@ schemas:
         type: string
       amount:
         $ref: "#/components/schemas/Money"
+  BudgetPlanInstallment:
+    type: object
+    required: [transaction_id, description, card_account_id, count, amount]
+    description: |
+      One charge of installments: installment number of count of the purchase transaction_id, or the charge of an
+      anticipation of that purchase when number is absent.
+    properties:
+      transaction_id:
+        type: string
+        format: uuid
+      description:
+        type: string
+      card_account_id:
+        type: string
+        format: uuid
+      number:
+        type: integer
+        minimum: 1
+      count:
+        type: integer
+        minimum: 2
+      amount:
+        $ref: "#/components/schemas/Money"
   BudgetPlanRow:
     type: object
     required: [category_id, planned, last_month, average, counted]
@@ -1682,6 +1705,7 @@ schemas:
       - source
       - received_income
       - installments
+      - installment_items
       - savings
       - goal_deposits
       - savings_brokerage
@@ -1689,7 +1713,8 @@ schemas:
       - planned
       - rows
     description: |
-      installments are those billed on the month's statements for purchases booked before it. savings is what the
+      installments are those billed on the month's statements for purchases booked before it; installment_items
+      holds them one per charge, by card and then in the order of the purchase dates. savings is what the
       month's occurrences of savings and transfer schedules move into the savings set, minus what they move out of it;
       goal_deposits is the same over the goal set; savings_brokerage and goal_deposits_brokerage are their parts whose
       counterpart is a brokerage account (A253). unassigned is reference - installments - savings - goal_deposits -
@@ -1721,6 +1746,10 @@ schemas:
         $ref: "#/components/schemas/Money"
       installments:
         $ref: "#/components/schemas/Money"
+      installment_items:
+        type: array
+        items:
+          $ref: "#/components/schemas/BudgetPlanInstallment"
       savings:
         $ref: "#/components/schemas/Money"
       goal_deposits:

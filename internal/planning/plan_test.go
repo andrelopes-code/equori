@@ -1,7 +1,10 @@
 package planning_test
 
 import (
+	"fmt"
 	"net/http"
+	"slices"
+	"strconv"
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
@@ -23,7 +26,16 @@ type planView struct {
 	ReceivedIncome money  `json:"received_income"`
 	Reference      *money `json:"reference"`
 	Installments   money  `json:"installments"`
-	Savings        money  `json:"savings"`
+	// The installments' parts, one per charge.
+	InstallmentItems []struct {
+		TransactionID string `json:"transaction_id"`
+		Description   string `json:"description"`
+		CardAccountID string `json:"card_account_id"`
+		Number        *int   `json:"number"`
+		Count         int    `json:"count"`
+		Amount        money  `json:"amount"`
+	} `json:"installment_items"`
+	Savings money `json:"savings"`
 	// The figures of A253 are pointers: a response without the field fails the test.
 	GoalDeposits          *money `json:"goal_deposits"`
 	SavingsBrokerage      *money `json:"savings_brokerage"`
@@ -158,7 +170,7 @@ func TestPlanInstallmentsReversed(t *testing.T) {
 		f.h.MustDo(http.MethodPost, "/api/v1/installment-purchases", map[string]any{
 			"card_account_id": card,
 			"date":            date,
-			"description":     "Purchase",
+			"description":     "Purchase " + date,
 			"splits": []map[string]any{
 				{"account_id": electronics, "amount": apitest.BRL(amount)},
 			},
@@ -215,6 +227,24 @@ func TestPlanInstallmentsReversed(t *testing.T) {
 		if tt.got != tt.want {
 			t.Errorf("%s: installments = %d, want %d", tt.name, tt.got, tt.want)
 		}
+	}
+
+	// The anticipation's charge has no installment number.
+	var items []string
+	for _, i := range f.plan("2026-12").InstallmentItems {
+		number := "-"
+		if i.Number != nil {
+			number = strconv.Itoa(*i.Number)
+		}
+
+		items = append(items, fmt.Sprintf("%s %t %s/%d %d",
+			i.Description, i.CardAccountID == card && i.TransactionID != "",
+			number, i.Count, i.Amount.Amount))
+	}
+
+	want := []string{"Purchase 2026-10-10 true -/3 55000", "Purchase 2026-10-20 true 2/3 30000"}
+	if !slices.Equal(items, want) {
+		t.Errorf("installment items = %q, want %q", items, want)
 	}
 }
 

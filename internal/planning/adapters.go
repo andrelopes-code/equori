@@ -170,9 +170,25 @@ func (p ledgerPort) PriorInstallments(
 	booksID int64,
 	cardID uuid.UUID,
 	month time.Time,
-) (int64, error) {
-	m, err := p.l.PriorInstallments(ctx, booksID, cardID, month)
-	return m.Amount(), err
+) ([]app.PlanInstallment, error) {
+	items, err := p.l.PriorInstallments(ctx, booksID, cardID, month)
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]app.PlanInstallment, len(items))
+	for i, in := range items {
+		out[i] = app.PlanInstallment{
+			TransactionID: in.TransactionID,
+			CardID:        cardID,
+			Description:   in.Description,
+			Number:        in.Number,
+			Count:         in.Count,
+			Amount:        in.Amount,
+		}
+	}
+
+	return out, nil
 }
 
 func (p ledgerPort) OwnCategoryMonthlyTotals(

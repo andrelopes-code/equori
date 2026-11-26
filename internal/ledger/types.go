@@ -37,6 +37,9 @@ const (
 // WithholdingEstimate is the income tax, the IOF and the net of a sale of a taxed security.
 type WithholdingEstimate = app.WithholdingEstimate
 
+// PriorInstallment is one charge of the installments a statement bills for earlier purchases.
+type PriorInstallment = app.PriorInstallment
+
 // Errors returned to other modules.
 var (
 	ErrNotFound          = app.ErrNotFound

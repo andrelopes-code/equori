@@ -31,8 +31,8 @@ func (r *Repository) PriorInstallments(
 	booksID int64,
 	accountID uuid.UUID,
 	month domain.ReferenceMonth,
-) (int64, error) {
-	return r.q.PriorInstallments(
+) ([]app.PriorInstallment, error) {
+	rows, err := r.q.PriorInstallments(
 		ctx,
 		PriorInstallmentsParams{
 			BooksID:        booksID,
@@ -40,6 +40,26 @@ func (r *Repository) PriorInstallments(
 			ReferenceMonth: month.FirstDay(),
 		},
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]app.PriorInstallment, 0, len(rows))
+	for _, row := range rows {
+		in := app.PriorInstallment{
+			TransactionID: row.TransactionID,
+			Description:   row.Description,
+			Count:         int(row.InstallmentCount),
+			Amount:        row.Amount,
+		}
+		if row.InstallmentNumber != nil {
+			in.Number = int(*row.InstallmentNumber)
+		}
+
+		out = append(out, in)
+	}
+
+	return out, nil
 }
 
 func (r *Repository) CommittedInstallments(

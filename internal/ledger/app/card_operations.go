@@ -318,25 +318,30 @@ func (s *Service) Commitment(
 	return money.New(total, a.Instrument)
 }
 
-// PriorInstallments sums the installments billed on the statement of month of purchases booked
-// before month: the accrual view counted them in an earlier month (budget plan amendment A129).
+// PriorInstallment is one charge of PriorInstallments on the purchase TransactionID: installment
+// Number of Count, or the charge of an anticipation when Number is zero. Amount is in minor units
+// of the card's currency.
+type PriorInstallment struct {
+	TransactionID uuid.UUID
+	Description   string
+	Number, Count int
+	Amount        int64
+}
+
+// PriorInstallments returns the installments billed on the statement of month of purchases
+// booked before month, one per charge: the accrual view counted them in an earlier month (budget
+// plan amendment A129).
 func (s *Service) PriorInstallments(
 	ctx context.Context,
 	booksID int64,
 	accountID uuid.UUID,
 	month domain.ReferenceMonth,
-) (money.Money, error) {
-	a, err := s.card(ctx, booksID, accountID)
-	if err != nil {
-		return money.Money{}, err
+) ([]PriorInstallment, error) {
+	if _, err := s.card(ctx, booksID, accountID); err != nil {
+		return nil, err
 	}
 
-	total, err := s.repo.PriorInstallments(ctx, booksID, accountID, month)
-	if err != nil {
-		return money.Money{}, err
-	}
-
-	return money.New(total, a.Instrument)
+	return s.repo.PriorInstallments(ctx, booksID, accountID, month)
 }
 
 func (s *Service) insertPurchase(

@@ -23,6 +23,7 @@ type Plan struct {
 	Average                                  *int64
 	AverageMonths                            int
 	Received, Installments, Savings, Planned int64
+	InstallmentItems                         []PlanInstallment
 	// GoalDeposits is what the schedules move into the goal set; the brokerage figures are the
 	// parts of Savings and GoalDeposits whose counterpart is a brokerage account (A253).
 	GoalDeposits, SavingsBrokerage, GoalDepositsBrokerage int64
@@ -43,6 +44,15 @@ type PlanIncome struct {
 	ScheduleID  uuid.UUID
 	Description string
 	Amount      int64
+}
+
+// PlanInstallment is one charge of the plan's installments: installment Number of Count of the
+// purchase TransactionID on the card CardID, or an anticipation's charge when Number is zero.
+type PlanInstallment struct {
+	TransactionID, CardID uuid.UUID
+	Description           string
+	Number, Count         int
+	Amount                int64
 }
 
 // ReferenceAmount is the figure of the chosen source; false when the source has none.

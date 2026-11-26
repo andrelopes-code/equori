@@ -111,12 +111,16 @@ func (s *Service) classifyAccounts(
 		case a.Class == "income":
 			accounts.flow = append(accounts.flow, a.ID)
 		case a.Kind == "credit_card" && a.Instrument == out.Currency:
-			c, err := s.ledger.PriorInstallments(ctx, booksID, a.ID, month)
+			items, err := s.ledger.PriorInstallments(ctx, booksID, a.ID, month)
 			if err != nil {
 				return planAccounts{}, err
 			}
 
-			out.Installments += c
+			for _, in := range items {
+				out.Installments += in.Amount
+			}
+
+			out.InstallmentItems = append(out.InstallmentItems, items...)
 		}
 	}
 

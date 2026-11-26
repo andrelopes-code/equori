@@ -151,14 +151,14 @@ type Ledger interface {
 	) (Valuation, error)
 	// Commitment sums the installments of a card billed on the statement of month while it is open.
 	Commitment(ctx context.Context, booksID int64, cardID uuid.UUID, month time.Time) (int64, error)
-	// PriorInstallments sums the installments of a card billed on the statement of month of
-	// purchases booked before month (A129).
+	// PriorInstallments returns the installments of a card billed on the statement of month of
+	// purchases booked before month, one per charge (A129).
 	PriorInstallments(
 		ctx context.Context,
 		booksID int64,
 		cardID uuid.UUID,
 		month time.Time,
-	) (int64, error)
+	) ([]PlanInstallment, error)
 	// OwnCategoryMonthlyTotals returns the own postings of each category of class by category and
 	// first day of month in [from, to), in minor units of the base currency.
 	OwnCategoryMonthlyTotals(

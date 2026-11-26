@@ -37,11 +37,12 @@ func toBudgetPlanAPI(p app.Plan) BudgetPlan {
 		ReceivedIncome: m(
 			p.Received,
 		),
-		Installments: m(p.Installments),
-		Savings:      m(p.Savings),
-		Planned:      m(p.Planned),
-		Prices:       toPricesAPI(p.Prices),
-		Rows:         make([]BudgetPlanRow, len(p.Rows)),
+		Installments:     m(p.Installments),
+		InstallmentItems: planInstallmentsAPI(p.InstallmentItems, m),
+		Savings:          m(p.Savings),
+		Planned:          m(p.Planned),
+		Prices:           toPricesAPI(p.Prices),
+		Rows:             make([]BudgetPlanRow, len(p.Rows)),
 	}
 	if p.Reference.HasFixed {
 		out.Fixed = optional(&p.Reference.Fixed)
@@ -82,6 +83,27 @@ func planIncomeAPI(items []app.PlanIncome, m func(int64) Money) []BudgetPlanInco
 			ScheduleId:  x.ScheduleID,
 			Description: x.Description,
 			Amount:      m(x.Amount),
+		}
+	}
+
+	return out
+}
+
+func planInstallmentsAPI(
+	items []app.PlanInstallment,
+	m func(int64) Money,
+) []BudgetPlanInstallment {
+	out := make([]BudgetPlanInstallment, len(items))
+	for i, x := range items {
+		out[i] = BudgetPlanInstallment{
+			TransactionId: x.TransactionID,
+			Description:   x.Description,
+			CardAccountId: x.CardID,
+			Count:         x.Count,
+			Amount:        m(x.Amount),
+		}
+		if x.Number > 0 {
+			out[i].Number = &x.Number
 		}
 	}
 

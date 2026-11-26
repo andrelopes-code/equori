@@ -23,14 +23,14 @@ func (m *Module) Commitment(
 	return m.svc.Commitment(ctx, booksID, accountID, domain.MonthOf(month))
 }
 
-// PriorInstallments sums the installments billed on the statement of month of purchases booked
-// before month (budget plan amendment A129).
+// PriorInstallments returns the installments billed on the statement of month of purchases
+// booked before month, one per charge (budget plan amendment A129).
 func (m *Module) PriorInstallments(
 	ctx context.Context,
 	booksID int64,
 	accountID uuid.UUID,
 	month time.Time,
-) (money.Money, error) {
+) ([]PriorInstallment, error) {
 	return m.svc.PriorInstallments(ctx, booksID, accountID, domain.MonthOf(month))
 }
 

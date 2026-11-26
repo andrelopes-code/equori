@@ -135,13 +135,14 @@ type cardStore interface {
 		month domain.ReferenceMonth,
 		today time.Time,
 	) (int64, error)
-	// PriorInstallments sums the installments billed on statement month of purchases booked before it.
+	// PriorInstallments returns the installments billed on statement month of purchases booked
+	// before it, one per charge.
 	PriorInstallments(
 		ctx context.Context,
 		booksID int64,
 		accountID uuid.UUID,
 		month domain.ReferenceMonth,
-	) (int64, error)
+	) ([]PriorInstallment, error)
 	StatementPostings(
 		ctx context.Context,
 		booksID int64,

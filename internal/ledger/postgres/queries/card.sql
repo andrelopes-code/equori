@@ -313,11 +313,16 @@ WHERE
     )
     AND s.closing_date > @today;
 
--- name: PriorInstallments :one
+-- name: PriorInstallments :many
 -- Budget plan amendment A129: installments billed on statement M of purchases booked before M,
--- which the accrual view counted in an earlier month. The filter is CommittedInstallments'.
+-- which the accrual view counted in an earlier month, one row per charge. The filter is
+-- CommittedInstallments'. An anticipation's charge has no installment number.
 SELECT
-    coalesce(- sum(p.amount), 0)::bigint
+    o.id AS transaction_id,
+    o.description,
+    p.installment_number,
+    pl.installment_count,
+    (- p.amount)::bigint AS amount
 FROM
     ledger_posting p
     JOIN ledger_statement s ON s.id = p.statement_id
@@ -326,6 +331,8 @@ FROM
     AND a.link_type = 'anticipation_of'
     JOIN ledger_transaction o ON o.books_id = p.books_id
     AND o.id = coalesce(a.to_transaction_id, p.transaction_id)
+    JOIN ledger_installment_plan pl ON pl.books_id = o.books_id
+    AND pl.origin_transaction_id = o.id
 WHERE
     p.books_id = @books_id
     AND p.account_id = @account_id
@@ -360,7 +367,11 @@ WHERE
                 )
             )
     )
-    AND o.date < @reference_month;
+    AND o.date < @reference_month
+ORDER BY
+    o.date,
+    o.id,
+    p.installment_number;
 
 -- name: SetStatementFinanced :exec
 UPDATE ledger_statement

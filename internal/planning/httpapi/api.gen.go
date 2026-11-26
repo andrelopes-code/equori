@@ -358,7 +358,8 @@ type BudgetPage struct {
 	NextCursor *string `json:"next_cursor,omitempty"`
 }
 
-// BudgetPlan installments are those billed on the month's statements for purchases booked before it. savings is what the
+// BudgetPlan installments are those billed on the month's statements for purchases booked before it; installment_items
+// holds them one per charge, by card and then in the order of the purchase dates. savings is what the
 // month's occurrences of savings and transfer schedules move into the savings set, minus what they move out of it;
 // goal_deposits is the same over the goal set; savings_brokerage and goal_deposits_brokerage are their parts whose
 // counterpart is a brokerage account (A253). unassigned is reference - installments - savings - goal_deposits -
@@ -368,15 +369,16 @@ type BudgetPlan struct {
 	AverageMonths *int   `json:"average_months,omitempty"`
 
 	// Buckets The book's income bucket method; absent without one (A229).
-	Buckets               *[]BudgetPlanBucket `json:"buckets,omitempty"`
-	Currency              string              `json:"currency"`
-	ExpectedIncome        *Money              `json:"expected_income,omitempty"`
-	ExpectedItems         *[]BudgetPlanIncome `json:"expected_items,omitempty"`
-	Fixed                 *Money              `json:"fixed,omitempty"`
-	GoalDeposits          Money               `json:"goal_deposits"`
-	GoalDepositsBrokerage Money               `json:"goal_deposits_brokerage"`
-	Installments          Money               `json:"installments"`
-	Month                 string              `json:"month"`
+	Buckets               *[]BudgetPlanBucket     `json:"buckets,omitempty"`
+	Currency              string                  `json:"currency"`
+	ExpectedIncome        *Money                  `json:"expected_income,omitempty"`
+	ExpectedItems         *[]BudgetPlanIncome     `json:"expected_items,omitempty"`
+	Fixed                 *Money                  `json:"fixed,omitempty"`
+	GoalDeposits          Money                   `json:"goal_deposits"`
+	GoalDepositsBrokerage Money                   `json:"goal_deposits_brokerage"`
+	InstallmentItems      []BudgetPlanInstallment `json:"installment_items"`
+	Installments          Money                   `json:"installments"`
+	Month                 string                  `json:"month"`
 
 	// OutsideCategoryIds The open expense categories, the uncategorized one excepted, that resolve to no bucket of the method of the month,
 	// by name; present with `buckets` (A236).
@@ -444,6 +446,17 @@ type BudgetPlanInput struct {
 	// server as a 422 on this field). A save without it clears the stored target.
 	SavingsTargetBp *int             `json:"savings_target_bp,omitempty"`
 	Source          BudgetPlanSource `json:"source"`
+}
+
+// BudgetPlanInstallment One charge of installments: installment number of count of the purchase transaction_id, or the charge of an
+// anticipation of that purchase when number is absent.
+type BudgetPlanInstallment struct {
+	Amount        Money              `json:"amount"`
+	CardAccountId openapi_types.UUID `json:"card_account_id"`
+	Count         int                `json:"count"`
+	Description   string             `json:"description"`
+	Number        *int               `json:"number,omitempty"`
+	TransactionId openapi_types.UUID `json:"transaction_id"`
 }
 
 // BudgetPlanRow A category of the plan. last_month and average read the subtree of a budgeted category and the own postings
