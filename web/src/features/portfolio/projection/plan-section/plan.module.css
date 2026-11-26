@@ -78,7 +78,7 @@
   .lifeField,
   .lifeFact {
     display: grid;
-    grid-template-rows: auto 2.4286rem auto; /* literal: 34 px, the control height */
+    grid-template-rows: auto var(--slotted-control-height-md) auto;
     row-gap: var(--slotted-space-3);
     align-content: start;
     min-inline-size: 0;
@@ -86,9 +86,6 @@
   }
 
   .lifeLabel {
-    display: flex;
-    align-items: center;
-    gap: var(--slotted-space-2);
     margin: 0;
     color: var(--slotted-text);
     font-size: var(--slotted-control-font-size-md);
@@ -101,7 +98,9 @@
     margin: 0;
     font-size: var(--slotted-font-size-lg);
     font-weight: var(--slotted-font-weight-semibold);
-    line-height: 2.4286rem; /* literal: 34 px, the control height, so the age shares the line of the fields */
+    line-height: var(
+      --slotted-control-height-md
+    ); /* the age shares the line of the fields */
   }
 
   .lifeNote {
@@ -165,7 +164,7 @@
     align-items: center;
     column-gap: var(--slotted-space-6);
     row-gap: var(--slotted-space-1);
-    block-size: 4rem; /* literal: 56 px, a 34 px control with 11 px above and below */
+    block-size: 4rem; /* literal: 56 px, the label and the note, a control of 28 px with 14 px above and below */
     border-block-end: 1px solid var(--slotted-border-subtle);
   }
 
@@ -219,7 +218,7 @@
   .planPending {
     display: block;
     inline-size: 100%;
-    block-size: 2.4286rem; /* literal: 34 px, the control height */
+    block-size: var(--slotted-control-height-md);
     border-radius: var(--slotted-radius-sm);
     background: var(--slotted-surface-sunken);
   }
