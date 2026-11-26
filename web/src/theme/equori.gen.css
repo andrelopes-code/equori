@@ -2212,7 +2212,7 @@
       --slotted-dialog-scrim: color-mix(in srgb, var(--slotted-scrim) 30%, transparent);
     }
 
-    &[data-slotted-scheme="high-contrast"] :is([data-ui="dialog"], [data-ui="drawer"]) {
+    &[data-slotted-scheme="high-contrast"] :is([data-ui="dialog"], [data-ui="drawer"], [data-ui="popover"]) {
       --slotted-dialog-scrim-backdrop-filter: none;
       --slotted-drawer-scrim-backdrop-filter: none;
     }
@@ -2220,33 +2220,6 @@
     [data-ui="drawer"][data-mode="overlay"][data-side="bottom"][data-drag] {
       --slotted-drawer-slide-duration: 480ms;
       --slotted-drawer-slide-exit-duration: 260ms;
-    }
-
-    [data-ui="popover"] > [data-part="content"] > [data-part="grip"],
-    [data-ui="picker-panel"][data-presentation="sheet"] > [data-part="content"] > [data-part="grip"] {
-      border-radius: calc(var(--slotted-space-2) / 2) / calc(var(--slotted-target-min) / 2);
-    }
-
-    [data-ui="popover"] > [data-part="backdrop"] {
-      z-index: -1;
-      transition-property: opacity, -webkit-backdrop-filter, backdrop-filter;
-    }
-
-    [data-ui="popover"][data-open] > [data-part="backdrop"] {
-      -webkit-backdrop-filter: var(--slotted-drawer-scrim-backdrop-filter, none);
-      backdrop-filter: var(--slotted-drawer-scrim-backdrop-filter, none);
-    }
-
-    &[data-slotted-scheme="high-contrast"] [data-ui="popover"] > [data-part="backdrop"] {
-      -webkit-backdrop-filter: none;
-      backdrop-filter: none;
-    }
-
-    @media (prefers-reduced-transparency: reduce), (forced-colors: active) {
-      [data-ui="popover"][data-open] > [data-part="backdrop"] {
-        -webkit-backdrop-filter: none;
-        backdrop-filter: none;
-      }
     }
 
     [data-ui="tag"] {

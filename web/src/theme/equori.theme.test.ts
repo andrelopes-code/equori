@@ -152,7 +152,7 @@ test("the page blurs under a modal dialog or drawer", () => {
 
 test("the page stays sharp under high contrast", () => {
   const root =
-    '&[data-slotted-scheme="high-contrast"] :is([data-ui="dialog"], [data-ui="drawer"])';
+    '&[data-slotted-scheme="high-contrast"] :is([data-ui="dialog"], [data-ui="drawer"], [data-ui="popover"])';
   const body = css.split(`${root} {`)[1]?.split("}")[0] ?? "";
 
   for (const token of scrimFilters) assert.ok(body.includes(`${token}: none;`));
@@ -438,39 +438,4 @@ test("a page container keeps a 16 px inset below 600 px", () => {
     components["--slotted-page-inset-compact"],
     "var(--slotted-space-6)",
   );
-});
-
-// Workaround for Slotted issue #215 (popover) and #216 (picker): the grip of a popover or
-// picker sheet is padded for touch, and its content-box clip turns the full radius into a lens
-// with pointed ends.
-test("the grip of a popover or picker sheet has round ends", () => {
-  for (const family of ["popover", "picker-panel"]) {
-    const block = new RegExp(
-      `\\[data-ui="${family}"\\][^{]*\\[data-part="grip"\\][^{]*\\{([^}]*)\\}`,
-    ).exec(css);
-    assert.ok(block, `no grip rule for ${family}`);
-    assert.match(
-      block[1] ?? "",
-      /border-radius: calc\(var\(--slotted-space-2\) \/ 2\) \/ calc\(var\(--slotted-target-min\) \/ 2\)/,
-    );
-  }
-});
-
-// Workaround for Slotted issue #219: the scrim of a popover sheet does not read the drawer
-// scrim's backdrop filter.
-test("the page blurs under a popover sheet as under a drawer, and stays sharp under high contrast", () => {
-  const open =
-    /\[data-ui="popover"\]\[data-open\] > \[data-part="backdrop"\] \{([^}]*)\}/.exec(
-      css,
-    );
-  assert.ok(open, "no rule for the open popover scrim");
-  assert.match(
-    open[1] ?? "",
-    /backdrop-filter: var\(--slotted-drawer-scrim-backdrop-filter, none\)/,
-  );
-
-  const sharp = css.split(
-    '&[data-slotted-scheme="high-contrast"] [data-ui="popover"] > [data-part="backdrop"] {',
-  )[1];
-  assert.ok(sharp?.split("}")[0]?.includes("backdrop-filter: none;"));
 });

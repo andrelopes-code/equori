@@ -85,7 +85,7 @@ const paletteScrimRule = `
 `;
 
 const highContrastScrimRule = `
-&[data-slotted-scheme="high-contrast"] :is([data-ui="dialog"], [data-ui="drawer"]) {
+&[data-slotted-scheme="high-contrast"] :is([data-ui="dialog"], [data-ui="drawer"], [data-ui="popover"]) {
   --slotted-dialog-scrim-backdrop-filter: none;
   --slotted-drawer-scrim-backdrop-filter: none;
 }
@@ -152,46 +152,6 @@ const sheetSlideRule = `
 [data-ui="drawer"][data-mode="overlay"][data-side="bottom"][data-drag] {
   --slotted-drawer-slide-duration: 480ms;
   --slotted-drawer-slide-exit-duration: 260ms;
-}
-`;
-
-// Workaround for Slotted issue #215 (popover) and #216 (picker): the grip of a popover or
-// picker sheet is padded for touch and clipped to its content box, so a full radius ends it in
-// two points. Half the bar's height on the inline axis and half the target on the block axis
-// leave round ends.
-const sheetGripRule = `
-[data-ui="popover"] > [data-part="content"] > [data-part="grip"],
-[data-ui="picker-panel"][data-presentation="sheet"] > [data-part="content"] > [data-part="grip"] {
-  border-radius: calc(var(--slotted-space-2) / 2) / calc(var(--slotted-target-min) / 2);
-}
-`;
-
-// Workaround for Slotted issue #219: the scrim of a popover sheet reads the drawer's scrim colour
-// but not its backdrop filter, so the page stayed sharp under a help note and blurred under a
-// drawer. The rules copy the drawer's: the filter fades with the veil, the negative z-index keeps
-// the veil under the panel, and high contrast, reduced transparency and forced colors keep the
-// page sharp.
-const popoverScrimRule = `
-[data-ui="popover"] > [data-part="backdrop"] {
-  z-index: -1;
-  transition-property: opacity, -webkit-backdrop-filter, backdrop-filter;
-}
-
-[data-ui="popover"][data-open] > [data-part="backdrop"] {
-  -webkit-backdrop-filter: var(--slotted-drawer-scrim-backdrop-filter, none);
-  backdrop-filter: var(--slotted-drawer-scrim-backdrop-filter, none);
-}
-
-&[data-slotted-scheme="high-contrast"] [data-ui="popover"] > [data-part="backdrop"] {
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-}
-
-@media (prefers-reduced-transparency: reduce), (forced-colors: active) {
-  [data-ui="popover"][data-open] > [data-part="backdrop"] {
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
 }
 `;
 
@@ -378,8 +338,6 @@ export default extendTheme(
       paletteScrimRule,
       highContrastScrimRule,
       sheetSlideRule,
-      sheetGripRule,
-      popoverScrimRule,
       tagInsetRule,
       listHeightRule,
       stickyHeaderRule,
