@@ -49,14 +49,17 @@ Known limits:
 
 ## 3. Repair of 2026-11-26
 
-The four transactions of section 1 are corrected through the MCP tools `void_transaction` and `change_transaction`, with the postings of RL4:
+`change_transaction` keeps a posting on an account that an imported record confirms, so a release transaction cannot move to the reserve. The repair of 2026-11-26 went through the MCP tools and reaches the balances of RL4 with separate transactions:
 
 | Transaction | Action |
 |---|---|
-| `01a218bb-c994-72a2-b213-964b1bb98919` (−997.48) | void, reason "A268: release line of Cofrinho Mercado Livre" |
-| `01a218bb-c950-7751-953d-3d1e89370016` (−19.90) | void, same reason |
-| `01a218bb-c991-7095-9a51-2749169bb458` (+980.44) | correct: reserve −997.48, checking +980.44, Yield +17.04 |
-| `01a218bb-c8e7-74ce-892a-2ad7f37a1533` (+19.56) | correct: reserve −19.90, checking +19.56, Yield +0.34 |
+| `01a218bb-c994-72a2-b213-964b1bb98919` (−997.48) | voided, reason A268 |
+| `01a218bb-c950-7751-953d-3d1e89370016` (−19.90) | voided, reason A268 |
+| `01a21901-51d4-797b-ae9d-37e983e14fd8` | recorded: reserve −17.04, Yield +17.04 |
+| `01a21901-1abe-7d25-baa0-e38e8c3349aa` | recorded: reserve −0.34, Yield +0.34 |
+| assertion of 2026-11-26 of the reserve | resolved as yield, +0.55 |
+
+The transfers of 980.44 and 19.56 are unchanged. The reserve settles at 0.00, the reported amount.
 
 ## 4. Cross-cutting questions
 
