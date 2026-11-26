@@ -15,7 +15,6 @@ interface HideSelectionFooterProps {
 
 // The actions start under the marks instead of at the far end (LP-03): the reader marks and hides
 // on one side of the screen (A238 HD13). Each action carries the count of the rows it changes.
-// Workaround for Slotted issue #182: a status beside the actions would push them to the far end.
 export function HideSelectionFooter({ selection }: HideSelectionFooterProps) {
   const t = useT();
 
