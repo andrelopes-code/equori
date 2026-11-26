@@ -19,7 +19,7 @@ const MinMajor = 18
 const defaultMaxConns = 20
 
 func Open(ctx context.Context, url string) (*pgxpool.Pool, error) {
-	cfg, err := poolConfig(url)
+	cfg, err := PoolConfig(url)
 	if err != nil {
 		return nil, fmt.Errorf("parse database url: %w", err)
 	}
@@ -37,8 +37,8 @@ func Open(ctx context.Context, url string) (*pgxpool.Pool, error) {
 	return pool, nil
 }
 
-// poolConfig reads url and fixes the size of the pool unless pool_max_conns sets it.
-func poolConfig(url string) (*pgxpool.Config, error) {
+// PoolConfig reads url and fixes the size of the pool unless pool_max_conns sets it.
+func PoolConfig(url string) (*pgxpool.Config, error) {
 	cfg, err := pgxpool.ParseConfig(url)
 	if err != nil {
 		return nil, err

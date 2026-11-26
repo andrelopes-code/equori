@@ -20,7 +20,7 @@ func TestPoolConfig(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			cfg, err := poolConfig(tc.url)
+			cfg, err := PoolConfig(tc.url)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -31,7 +31,7 @@ func TestPoolConfig(t *testing.T) {
 		})
 	}
 
-	if _, err := poolConfig("postgres://u:p@h:5432/d?pool_max_conns=x"); err == nil {
+	if _, err := PoolConfig("postgres://u:p@h:5432/d?pool_max_conns=x"); err == nil {
 		t.Fatal("an invalid pool_max_conns: want an error")
 	}
 }

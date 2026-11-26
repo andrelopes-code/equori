@@ -207,7 +207,9 @@ func create(t testing.TB, template string) *pgxpool.Pool {
 		}
 	})
 
-	poolCfg, err := pgxpool.ParseConfig(os.Getenv(envURL))
+	// The size of the production pool: one sized by the CPUs, 4 on a CI runner, stalls a request
+	// that holds a transaction and asks for a second connection.
+	poolCfg, err := postgres.PoolConfig(os.Getenv(envURL))
 	if err != nil {
 		t.Fatal(err)
 	}
