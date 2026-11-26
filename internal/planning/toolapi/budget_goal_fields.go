@@ -12,6 +12,8 @@ func checkBudgetGoalFields(in manageBudgetOrGoalIn) error {
 		err = required(name, fields, []string{"budget_id", "amount", "month"})
 	case "delete_budget":
 		err = required(name, fields, []string{"budget_id"})
+	case "end_budget":
+		err = required(name, fields, []string{"budget_id", "month"})
 	case "create_goal", "update_goal", "delete_goal", "link_expense", "unlink_expense", "allocate":
 		err = checkGoalFields(name, fields)
 	case "save_plan":

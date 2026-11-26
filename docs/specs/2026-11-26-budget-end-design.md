@@ -90,17 +90,17 @@ Owner choice of 2026-11-26: the option that holds best for the application. Appr
 
 ## Scenarios
 
-IDs follow S741. Each has a test through `internal/apitest` that carries its ID.
+IDs follow S743. Each has a test through `internal/apitest` that carries its ID.
 
-- S742 End a budget. Ajuda familiar 428.00 from 2026-11, today 2026-11-26. `POST /budgets/{id}/end` with 2026-12 returns 200 with two versions, the second `ended`. Progress 2026-11: planned 428.00. Progress 2026-12: 422 on `month`. The list still holds the budget.
-- S743 The end removes later versions. Food 1,800.00 from 2026-11 and 1,500.00 from 2027-01; end from 2026-12 leaves two versions, 2026-11 and the end.
-- S744 Resume after an end. S742, then `POST /budgets/{id}/amounts` 300.00 from 2027-02: progress 2027-02 planned 300.00, carried 0.00; progress 2027-01: 422.
-- S745 Rollover stops at the end. Rollover budget 500.00 from 2026-11 with 200.00 spent in 2026-11; end from 2026-12, resume 500.00 from 2027-01: progress 2027-01 carried 0.00.
-- S746 An ended parent stops covering its children. Food 1,000.00 and Food › Delivery 200.00 from 2026-11; end Food from 2026-12: the plan of 2026-12 counts Delivery, the plan of 2026-11 does not.
-- S747 The plan resumes an ended budget. S742: saving the plan of 2026-12 with 0.00 creates no version; with 350.00 it replaces the end with 350.00.
-- S748 Validation and access. A month before the current one, the month of the first version and a month after the horizon return 422 on `month`. Another book's budget is 404. A member with the read role gets 403.
-- S749 Assistant. `end_budget` over S743 previews the removed version of 2027-01 as destructive before it runs.
-- S750 Export. A book with S742 exported and restored keeps the end version.
+- S744 End a budget. Ajuda familiar 428.00 from 2026-11, today 2026-11-26. `POST /budgets/{id}/end` with 2026-12 returns 200 with two versions, the second `ended`. Progress 2026-11: planned 428.00. Progress 2026-12: 422 on `month`. The list still holds the budget.
+- S745 The end removes later versions. Food 1,800.00 from 2026-11 and 1,500.00 from 2027-01; end from 2026-12 leaves two versions, 2026-11 and the end.
+- S746 Resume after an end. S744, then `POST /budgets/{id}/amounts` 300.00 from 2027-02: progress 2027-02 planned 300.00, carried 0.00; progress 2027-01: 422.
+- S747 Rollover stops at the end. Rollover budget 500.00 from 2026-11 with 200.00 spent in 2026-11; end from 2026-12, resume 500.00 from 2027-01: progress 2027-01 carried 0.00.
+- S748 An ended parent stops covering its children. Food 1,000.00 and Food › Delivery 200.00 from 2026-11; end Food from 2026-12: the plan of 2026-12 counts Delivery, the plan of 2026-11 does not.
+- S749 The plan resumes an ended budget. S744: saving the plan of 2026-12 with 0.00 creates no version; with 350.00 it replaces the end with 350.00.
+- S750 Validation and access. A month before the current one, the month of the first version and a month after the horizon return 422 on `month`. Another book's budget is 404. A member with the read role gets 403.
+- S751 Assistant. Food 1,800.00 from 2026-11 with rollover, 500.00 spent in 2026-11 and 1,500.00 from 2027-01: `end_budget` from 2026-12 previews, as destructive, the budget, its last day 2026-11-30, the removed version of 2027-01 and the carried 1,300.00, then ends the budget. An end that removes and drops nothing is not destructive.
+- S752 Export. Family help 428.00 from 2026-10 ended from 2026-11, exported and imported into another instance, keeps the end version of 2026-11.
 
 Schema test: a row with `ended` true and an amount of 100 is rejected.
 
@@ -119,7 +119,7 @@ Schema test: a row with `ended` true and an amount of 100 is rejected.
 - T1. The current month comes from `platform/clock`; versions are first days of months (`MonthOf`).
 - T2. Does not apply: no business days.
 - B1. Does not apply: no new table; `planning_budget_amount` keeps `books_id` and its filters.
-- B2. `endBudget` needs `write`. HTTP tests cover write, read (403) and no membership (S748).
+- B2. `endBudget` needs `write`. HTTP tests cover write, read (403) and no membership (S750).
 - B3. Does not apply: no setting.
 - D1. A changed exported table: `ArchiveVersion` 37 with its step (E22).
 - D2. New goose migration (E1).
@@ -130,7 +130,7 @@ Schema test: a row with `ended` true and an amount of 100 is rejected.
 - S2. Budgets is a desk screen under ADR 027; no phone layout.
 - S3. `budgets.md` changes in the commit of the screen (E23).
 - S4. Yes: `end_budget` and the in-force listing (E20, E21).
-- X1. S742 to S750.
+- X1. S744 to S752.
 - X2. Does not apply: R1, R2, C2 and C3 hold no new behavior.
 
 ## Left to the builder

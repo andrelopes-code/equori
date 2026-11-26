@@ -3,6 +3,7 @@ package planning_test
 import (
 	"errors"
 	"net/http"
+	"reflect"
 	"slices"
 	"strconv"
 	"testing"
@@ -10,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
+	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
 type budgetVersions struct {
@@ -20,8 +22,8 @@ type budgetVersions struct {
 	} `json:"amounts"`
 }
 
-// S742: ending a budget keeps the month before the end and takes it out of force after.
-func TestS742EndBudget(t *testing.T) {
+// S744: ending a budget keeps the month before the end and takes it out of force after.
+func TestS744EndBudget(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, "2026-11-26")
 	family := f.h.Account("Family help", "expense", "", nil)
@@ -50,8 +52,8 @@ func TestS742EndBudget(t *testing.T) {
 	}
 }
 
-// S743: the end removes the versions after its month.
-func TestS743EndRemovesLaterVersions(t *testing.T) {
+// S745: the end removes the versions after its month.
+func TestS745EndRemovesLaterVersions(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, "2026-11-26")
 	food := f.h.Account("Food", "expense", "", nil)
@@ -63,8 +65,8 @@ func TestS743EndRemovesLaterVersions(t *testing.T) {
 	checkVersions(t, got, "2026-11 180000", "2026-12 ended")
 }
 
-// S744: a new amount after the end resumes the budget.
-func TestS744ResumeAfterEnd(t *testing.T) {
+// S746: a new amount after the end resumes the budget.
+func TestS746ResumeAfterEnd(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, "2026-11-26")
 	family := f.h.Account("Family help", "expense", "", nil)
@@ -82,8 +84,8 @@ func TestS744ResumeAfterEnd(t *testing.T) {
 	)
 }
 
-// S745: a rollover budget carries nothing across its end.
-func TestS745RolloverStopsAtEnd(t *testing.T) {
+// S747: a rollover budget carries nothing across its end.
+func TestS747RolloverStopsAtEnd(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, "2026-11-26")
 	leisure := f.h.Account("Leisure", "expense", "", nil)
@@ -97,8 +99,8 @@ func TestS745RolloverStopsAtEnd(t *testing.T) {
 	checkProgress(t, f.progress(id, "2027-01"), 50000, 0, 0, 50000)
 }
 
-// S746: an ended parent stops keeping its subcategories out of the plan's count.
-func TestS746EndedParentStopsCovering(t *testing.T) {
+// S748: an ended parent stops keeping its subcategories out of the plan's count.
+func TestS748EndedParentStopsCovering(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, "2026-11-26")
 	food := f.h.Account("Food", "expense", "", nil)
@@ -124,8 +126,8 @@ func TestS746EndedParentStopsCovering(t *testing.T) {
 	}
 }
 
-// S747: the plan creates nothing on an ended budget at zero and resumes it above zero.
-func TestS747PlanResumesEndedBudget(t *testing.T) {
+// S749: the plan creates nothing on an ended budget at zero and resumes it above zero.
+func TestS749PlanResumesEndedBudget(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, "2026-11-26")
 	family := f.h.Account("Family help", "expense", "", nil)
@@ -147,8 +149,8 @@ func TestS747PlanResumesEndedBudget(t *testing.T) {
 	checkVersions(t, f.budgetVersions(id), "2026-11 42800", "2026-12 35000")
 }
 
-// S748: the month of an end is validated, and only a writer of the book ends its budget.
-func TestS748EndBudgetValidationAndAccess(t *testing.T) {
+// S750: the month of an end is validated, and only a writer of the book ends its budget.
+func TestS750EndBudgetValidationAndAccess(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, "2026-11-26")
 	family := f.h.Account("Family help", "expense", "", nil)
@@ -306,5 +308,70 @@ func TestBudgetEndCarriesNoAmount(t *testing.T) {
 
 	if err := insert("2026-12-01", 0); err != nil {
 		t.Errorf("end without an amount: %v", err)
+	}
+}
+
+// S751: end_budget previews the removed version and the dropped balance as destructive, then
+// ends the budget.
+func TestS751EndBudgetThroughAssistant(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-26")
+	food := f.h.Account("Food", "expense", "", nil)
+	f.h.Record("2026-11-10", apitest.Posting(f.checking, -50000), apitest.Posting(food, 50000))
+	id := f.budget(food, 180000, "2026-11", true)
+	f.addAmount(id, "2027-01", 150000)
+	end := map[string]any{"action": "end_budget", "budget_id": id, "month": "2026-12"}
+
+	p, r := preview(t, f.h, "manage_budget_or_goal", end)
+	if r.IsError {
+		t.Fatalf("end preview error: %+v", r)
+	}
+
+	want := []tool.Change{
+		{Field: "budget", Before: tool.TextValue("Food")},
+		{Field: "until", After: tool.Value{Date: "2026-11-30"}},
+		{Field: "from", Before: tool.Value{Date: "2027-01-01"}},
+		{Field: "amount", Before: tool.Value{Amount: "1500.00", Currency: "BRL"}},
+		{Field: "carried", Before: tool.Value{Amount: "1300.00", Currency: "BRL"}},
+	}
+	if p.Target != "Food" || !p.Destructive || !reflect.DeepEqual(p.Changes, want) {
+		t.Errorf("end preview = %+v, want target Food, destructive, changes %+v", p, want)
+	}
+
+	var ended toolManaged
+	toolOutput(t, f.h, "manage_budget_or_goal", end, &ended)
+
+	if ended.BudgetID != id {
+		t.Errorf("end = %+v", ended)
+	}
+
+	checkVersions(t, f.budgetVersions(id), "2026-11 180000", "2026-12 ended")
+	f.h.ExpectToolError(
+		f.h.Tool("manage_budget_or_goal", map[string]any{"action": "end_budget", "budget_id": id}),
+		"invalid_arguments",
+		"month",
+	)
+}
+
+// Budget end E20: an end that removes nothing and drops nothing is not destructive.
+func TestEndBudgetPreviewWithoutLoss(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-26")
+	family := f.h.Account("Family help", "expense", "", nil)
+	id := f.budget(family, 42800, "2026-11", false)
+
+	p, _ := preview(
+		t,
+		f.h,
+		"manage_budget_or_goal",
+		map[string]any{"action": "end_budget", "budget_id": id, "month": "2026-12"},
+	)
+
+	want := []tool.Change{
+		{Field: "budget", Before: tool.TextValue("Family help")},
+		{Field: "until", After: tool.Value{Date: "2026-11-30"}},
+	}
+	if p.Destructive || !reflect.DeepEqual(p.Changes, want) {
+		t.Errorf("end preview = %+v, want not destructive with changes %+v", p, want)
 	}
 }

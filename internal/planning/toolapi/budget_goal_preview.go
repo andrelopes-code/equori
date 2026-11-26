@@ -32,6 +32,8 @@ func previewBudgetOrGoal(in manageBudgetOrGoalIn, p budgetGoalPlan) (tool.Previe
 	case "delete_budget":
 		pv.Target, pv.Destructive = p.categoryName, true
 		pv.Changes = []tool.Change{{Field: "budget", Before: tool.TextValue(p.categoryName)}}
+	case "end_budget":
+		previewBudgetEnd(&pv, p)
 	case "create_goal":
 		previewGoalCreate(&pv, in, p, accounts)
 	case "update_goal":

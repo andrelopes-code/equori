@@ -2518,6 +2518,7 @@ export const catalogEn = {
   "assistant.action.manage_accounts_and_payees.reopen_category":
     "Reopen category",
   "assistant.action.manage_budget_or_goal.delete_budget": "Delete budget",
+  "assistant.action.manage_budget_or_goal.end_budget": "End budget",
   "assistant.action.manage_budget_or_goal.save_plan": "Save month plan",
   "assistant.action.manage_budget_or_goal.save_buckets": "Save income split",
   "assistant.action.manage_budget_or_goal.move_category":
@@ -2662,6 +2663,7 @@ export const catalogEn = {
   "assistant.field.date": "Date",
   "assistant.field.from": "Since",
   "assistant.field.until": "Until",
+  "assistant.field.carried": "Carried balance",
   "assistant.field.instruments": "Instruments",
   "assistant.field.description": "Description",
   "assistant.field.payee": "Payee",

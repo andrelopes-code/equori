@@ -2536,6 +2536,7 @@ export const catalogPtBR: Catalog = {
   "assistant.action.manage_accounts_and_payees.reopen_category":
     "Reabrir categoria",
   "assistant.action.manage_budget_or_goal.delete_budget": "Apagar orçamento",
+  "assistant.action.manage_budget_or_goal.end_budget": "Encerrar orçamento",
   "assistant.action.manage_budget_or_goal.save_plan": "Salvar plano do mês",
   "assistant.action.manage_budget_or_goal.save_buckets":
     "Salvar divisão da renda",
@@ -2696,6 +2697,7 @@ export const catalogPtBR: Catalog = {
   "assistant.field.date": "Data",
   "assistant.field.from": "Desde",
   "assistant.field.until": "Até",
+  "assistant.field.carried": "Saldo acumulado",
   "assistant.field.instruments": "Ativos",
   "assistant.field.description": "Descrição",
   "assistant.field.payee": "Favorecido",

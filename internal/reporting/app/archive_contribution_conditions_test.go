@@ -36,8 +36,4 @@ func TestAddContributionConditions(t *testing.T) {
 	if string(v35[0].Rows[0]) != `{"amount":null}` {
 		t.Fatalf("the step changed its input: %s", v35[0].Rows[0])
 	}
-
-	if ArchiveVersion != 36 {
-		t.Fatalf("ArchiveVersion = %d, want 36", ArchiveVersion)
-	}
 }

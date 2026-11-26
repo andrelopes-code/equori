@@ -9808,7 +9808,7 @@
   },
   {
     "name": "manage_budget_or_goal",
-    "description": "Proposes creating, changing or deleting a monthly budget or a goal, saving a month's budget plan or the income split into buckets (50/30/20 and others), or moving one category to another bucket. link_expense states that a goal paid an expense, which then counts against neither its budget nor its bucket. allocate sets aside part of a shared account for a goal; a negative amount releases it. Use it when the user sets a spending limit or a savings target. Do not use it for recurring payments: manage_schedule does. Deleting a budget or a goal cannot be undone; the user confirms every change.",
+    "description": "Proposes creating, changing, ending or deleting a monthly budget or a goal, saving a month's budget plan or the income split into buckets (50/30/20 and others), or moving one category to another bucket. link_expense states that a goal paid an expense, which then counts against neither its budget nor its bucket. allocate sets aside part of a shared account for a goal; a negative amount releases it. Use it when the user sets a spending limit or a savings target. Do not use it for recurring payments: manage_schedule does. Deleting cannot be undone; the user confirms every change.",
     "effect": "destructive",
     "idempotent": false,
     "input_schema": {
@@ -9821,6 +9821,7 @@
             "create_budget",
             "set_budget_amount",
             "delete_budget",
+            "end_budget",
             "create_goal",
             "update_goal",
             "delete_goal",

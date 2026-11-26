@@ -18,6 +18,7 @@ func (manageBudgetOrGoalAction) Values() []string {
 		"create_budget",
 		"set_budget_amount",
 		"delete_budget",
+		"end_budget",
 		"create_goal",
 		"update_goal",
 		"delete_goal",
@@ -93,4 +94,13 @@ type budgetGoalPlan struct {
 	storedNames                  []string
 	outsideNames                 []string
 	move                         app.CategoryMove
+	// removed and carried are what end_budget takes away (budget end E20).
+	removed []removedVersion
+	carried money.Money
+}
+
+// removedVersion is a version of a budget that end_budget removes.
+type removedVersion struct {
+	from   time.Time
+	amount money.Money
 }

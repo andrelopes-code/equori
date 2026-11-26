@@ -55,6 +55,7 @@ var ChangeFields = []string{
 	"counts_in",
 	"from",
 	"until",
+	"carried",
 	"instruments",
 	"exchange",
 	"subtype",

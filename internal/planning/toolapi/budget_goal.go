@@ -138,6 +138,8 @@ func resolveBudgetGoalCurrency(
 		if p.budget, err = svc.Budget(ctx, booksID, p.budgetID); err == nil {
 			p.categoryName, currency = accounts[p.budget.CategoryID].Name, p.budget.Currency
 		}
+	case "end_budget":
+		return loadBudgetEnd(ctx, svc, booksID, p, accounts)
 	case "create_goal":
 		currency, err = l.BaseCurrency(ctx, booksID)
 	case "save_plan":
@@ -230,11 +232,11 @@ func parseBudgetGoalAmount(amount string, currency money.Currency) (*money.Money
 func manageBudgetOrGoal(svc *app.Service, l Ledger, _ clock.Clock) tool.Tool {
 	return tool.NewWrite(tool.Spec{
 		Name: "manage_budget_or_goal",
-		Description: "Proposes creating, changing or deleting a monthly budget or a goal, saving a month's budget plan or the income split into buckets (50/30/20 and others), or moving one category to another bucket. " +
+		Description: "Proposes creating, changing, ending or deleting a monthly budget or a goal, saving a month's budget plan or the income split into buckets (50/30/20 and others), or moving one category to another bucket. " +
 			"link_expense states that a goal paid an expense, which then counts against neither its budget nor its bucket. " +
 			"allocate sets aside part of a shared account for a goal; a negative amount releases it. " +
 			"Use it when the user sets a spending limit or a savings target. Do not use it for recurring payments: manage_schedule does. " +
-			"Deleting a budget or a goal cannot be undone; the user confirms every change.",
+			"Deleting cannot be undone; the user confirms every change.",
 		Effect: tool.Destructive,
 	}, func(ctx context.Context, booksID int64, in manageBudgetOrGoalIn) (tool.Preview, error) {
 		p, err := prepareBudgetOrGoal(ctx, svc, l, booksID, in)
@@ -270,6 +272,9 @@ func runBudgetOrGoal(
 	case "delete_budget":
 		out := manageBudgetOrGoalOut{BudgetID: p.budgetID.String(), Deleted: true}
 		return out, svc.DeleteBudget(ctx, booksID, p.budgetID)
+	case "end_budget":
+		_, err := svc.EndBudget(ctx, booksID, p.budgetID, p.month)
+		return manageBudgetOrGoalOut{BudgetID: p.budgetID.String()}, err
 	case "create_goal":
 		whole, allocated := goalAccountLists(in, p)
 		g, err := svc.CreateGoal(

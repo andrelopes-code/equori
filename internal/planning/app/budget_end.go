@@ -18,12 +18,8 @@ func (s *Service) EndBudget(
 	month time.Time,
 ) (domain.Budget, error) {
 	month = domain.MonthOf(month)
-	if month.Before(domain.MonthOf(s.clk.Today(ctx))) || month.After(s.horizon(ctx)) {
-		return domain.Budget{}, &domain.FieldError{
-			Field:   "month",
-			Message: "must be from the current month to today + 12 months",
-			Err:     domain.ErrValidation,
-		}
+	if err := s.checkEndMonth(ctx, month); err != nil {
+		return domain.Budget{}, err
 	}
 
 	var out domain.Budget
@@ -54,4 +50,48 @@ func (s *Service) EndBudget(
 	})
 
 	return out, err
+}
+
+// BudgetEndPreview returns what EndBudget would remove from the budget: the versions from month
+// on and the balance a rollover budget would carry into month, zero when none (budget end E20).
+func (s *Service) BudgetEndPreview(
+	ctx context.Context,
+	booksID int64,
+	b domain.Budget,
+	month time.Time,
+) ([]domain.BudgetAmount, int64, error) {
+	month = domain.MonthOf(month)
+	if err := s.checkEndMonth(ctx, month); err != nil {
+		return nil, 0, err
+	}
+
+	_, removed, err := b.End(month)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	if !b.Rollover || !b.InForce(month) {
+		return removed, 0, nil
+	}
+
+	p, _, err := s.BudgetProgress(ctx, booksID, b.ID, month)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return removed, max(p.Carried, 0), nil
+}
+
+// checkEndMonth keeps an end from the current month to the horizon: the months already lived
+// keep their figures (budget end E7).
+func (s *Service) checkEndMonth(ctx context.Context, month time.Time) error {
+	if month.Before(domain.MonthOf(s.clk.Today(ctx))) || month.After(s.horizon(ctx)) {
+		return &domain.FieldError{
+			Field:   "month",
+			Message: "must be from the current month to today + 12 months",
+			Err:     domain.ErrValidation,
+		}
+	}
+
+	return nil
 }
