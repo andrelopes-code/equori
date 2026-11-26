@@ -51,6 +51,7 @@ func WholeMonthGrowth(
 		}
 
 		factor *= 1 + rate
+
 		ends = append(ends, monthEnd(first))
 		factors = append(factors, factor)
 	}

@@ -149,6 +149,7 @@ func dailySum(lines []YieldLine, indexes []int, total int64) (found []int, ok bo
 			if lines[i].Amount <= left {
 				chosen = append(chosen, i)
 				walk(day+1, left-lines[i].Amount)
+
 				chosen = chosen[:len(chosen)-1]
 			}
 		}

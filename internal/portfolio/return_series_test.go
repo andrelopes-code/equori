@@ -271,6 +271,7 @@ func (b benchmarkBook) addUSD(t *testing.T) {
 
 func (f fixture) seedSeries(t *testing.T) {
 	t.Helper()
+
 	checking := f.h.Account("Checking", "asset", "checking", nil)
 	f.h.Record("2025-10-15", apitest.Posting(checking, -100000), apitest.Posting(f.cash, 100000))
 	f.income(t, f.mxrf11, "dividend", 5000, f.dividends)

@@ -71,6 +71,7 @@ func (s *seeder) spending(month time.Time) {
 		intensity, scale := essential, int64(lifestyle)
 		if discretionary[h.category] {
 			intensity = loose
+
 			if ym(month) >= carMonths {
 				scale = leanLifestyle
 			}

@@ -24,6 +24,7 @@ func TestChangeTransactionCorrect(t *testing.T) {
 		"amount":         "130.00",
 		"reason":         "typo",
 	}
+
 	p := previewTool(t, f.h, "change_transaction", args)
 	if p.Action != "change_transaction.correct" {
 		t.Fatalf("action = %q", p.Action)

@@ -10,7 +10,8 @@ func TestApplicationIDBelongsToTheBook(t *testing.T) {
 		other = "01a1f1b2-b5e7-796a-baf0-aaf465350895"
 	)
 
-	if applicationID(book, 0) != applicationID(book, 0) {
+	first, again := applicationID(book, 0), applicationID(book, 0)
+	if first != again {
 		t.Error("the same brokerage and index give two ids, want one")
 	}
 

@@ -265,6 +265,7 @@ func planInsert(books, member int64, override map[string]string) string {
 	maps.Copy(values, override)
 
 	columns := slices.Sorted(maps.Keys(values))
+
 	row := make([]string, len(columns))
 	for i, c := range columns {
 		row[i] = values[c]
@@ -382,6 +383,7 @@ func TestSchemaRejectsInvalidProjectionChanges(t *testing.T) {
 
 	book, owner := strconv.FormatInt(user, 10), strconv.FormatInt(member, 10)
 	insert := `INSERT INTO portfolio_projection_change (books_id, member_id, month, amount) VALUES `
+
 	valid := insert + `(` + book + `, ` + owner + `, '2026-11-01', 0), (` +
 		book + `, ` + owner + `, '2026-12-01', 500)`
 	if _, err := pool.Exec(ctx, valid); err != nil {

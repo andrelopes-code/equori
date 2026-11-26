@@ -89,6 +89,7 @@ func TestRenameConnectionTool(t *testing.T) {
 	a.h.ExpectToolError(a.h.Tool("manage_imports", args), "validation_failed", "name")
 
 	delete(args, "name")
+
 	if r := a.h.Tool("manage_imports", args); !r.IsError {
 		t.Errorf("rename without a name = %s", r.Content)
 	}

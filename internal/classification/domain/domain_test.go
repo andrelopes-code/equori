@@ -569,6 +569,7 @@ func TestNewRuleRejections(t *testing.T) {
 // Property account design PA1 (A259): a rule condition names the kind property.
 func TestNewRuleAcceptsPropertyKind(t *testing.T) {
 	t.Parallel()
+
 	r := Rule{
 		Name: "r",
 		Conditions: []Condition{
@@ -578,7 +579,6 @@ func TestNewRuleAcceptsPropertyKind(t *testing.T) {
 	}
 
 	_, err := NewRule(r)
-
 	if err != nil {
 		t.Fatalf("NewRule = %v, want nil", err)
 	}
