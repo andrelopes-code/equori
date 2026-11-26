@@ -1,3 +1,4 @@
+import { Text } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -9,7 +10,7 @@ import { AttributionYearView } from "@/features/portfolio/attribution/attributio
 import { YearChart } from "@/features/portfolio/attribution/year-chart";
 import { CollapsibleSection } from "@/features/portfolio/collapsible-section/collapsible-section";
 import { useT } from "@/i18n/i18n-provider";
-import { HelpTip } from "@/ui/display/help-tip";
+import { HelpPopover } from "@/ui/display/help-popover";
 import { QueryError } from "@/ui/feedback/query-error";
 
 const storageKey = "equori.portfolio.attribution.collapsed";
@@ -36,10 +37,13 @@ export function AttributionSection() {
       description={t("portfolio.attribution.note")}
       storageKey={storageKey}
       actions={
-        <HelpTip
+        <HelpPopover
           label={t("return.help.about", { term: title })}
-          text={t("portfolio.attribution.help")}
-        />
+          size="lg"
+          side="inline-start"
+        >
+          <Text size="sm">{t("portfolio.attribution.help")}</Text>
+        </HelpPopover>
       }
     >
       {report.isPending && <AttributionPending />}

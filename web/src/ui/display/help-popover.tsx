@@ -18,14 +18,16 @@ interface HelpPopoverProps {
   // The accessible name of the trigger and of the text it opens.
   label: string;
   size?: "md" | "lg";
+  // The edge of the mark the text opens against: a mark at the end of a row opens inline-start.
+  side?: "bottom" | "inline-start";
   children: ReactNode;
 }
 
 // The question mark beside a title whose explanation takes paragraphs or links: a press opens it.
 // A single sentence about a term is a HelpTip.
-export function HelpPopover({ label, size, children }: HelpPopoverProps) {
+export function HelpPopover({ label, size, side, children }: HelpPopoverProps) {
   return (
-    <Popover size={size} presentation="auto">
+    <Popover size={size} side={side} presentation="auto">
       <PopoverTrigger
         render={(props) => (
           <IconButton

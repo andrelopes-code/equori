@@ -218,6 +218,19 @@ describe("Attribution section", () => {
     ).toBeInTheDocument();
   });
 
+  it("opens its help paragraph in a popover on a press", async () => {
+    const region = await renderReport(report);
+    const label = "About “Return by holding”";
+
+    await userEvent
+      .setup()
+      .click(within(region).getByRole("button", { name: label }));
+
+    expect(
+      await screen.findByRole("dialog", { name: label }),
+    ).toHaveTextContent(catalogEn["portfolio.attribution.help"]);
+  });
+
   it("draws nothing for a book with no measured year", async () => {
     await renderApp("/portfolio", { fetch: portfolioApi() });
 
