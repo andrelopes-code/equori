@@ -39,16 +39,37 @@ type tray struct {
 // opens the browser and exits.
 func runTray(args []string) error {
 	texts := trayTexts(trayLanguage(preferredLanguages()))
-	logPath := filepath.Join(config.DataDir(os.Getenv), "log", "equori.log")
+	background := slices.Contains(args, "--background")
+	dir := config.DataDir(os.Getenv)
+	logPath := filepath.Join(dir, "log", "equori.log")
 
-	cfg, _, err := setup()
+	// The data directory gets its DACL before the log creates it (W-M3).
+	if err := pgcluster.PrepareDataDir(dir); err != nil {
+		showFailure(texts, err, logPath)
+
+		return err
+	}
+
+	// A second process leaves the log to the first: rotating a file open elsewhere fails.
+	held, err := pgcluster.Held(dir)
 	if err != nil {
 		showFailure(texts, err, logPath)
 
 		return err
 	}
 
+	if held {
+		return openRunning(background)
+	}
+
 	if err := redirectOutput(logPath); err != nil {
+		showFailure(texts, err, logPath)
+
+		return err
+	}
+
+	cfg, _, err := setup()
+	if err != nil {
 		showFailure(texts, err, logPath)
 
 		return err
@@ -58,29 +79,30 @@ func runTray(args []string) error {
 		cfg:        cfg,
 		texts:      texts,
 		logPath:    logPath,
-		background: slices.Contains(args, "--background"),
+		background: background,
 		served:     make(chan struct{}),
 	}
 
 	return t.run()
 }
 
-func (t *tray) run() error {
-	held, err := pgcluster.Held(t.cfg.DataDir)
-	if err != nil {
-		showFailure(t.texts, err, t.logPath)
-
-		return err
-	}
-
-	if held {
-		if !t.background {
-			openBrowser(localURL(t.cfg.HTTPAddr))
-		}
-
+// openRunning opens the browser at the instance that already serves the folder (PW3.1).
+func openRunning(background bool) error {
+	if background {
 		return nil
 	}
 
+	cfg, _, err := setup()
+	if err != nil {
+		return err
+	}
+
+	openBrowser(localURL(cfg.HTTPAddr))
+
+	return nil
+}
+
+func (t *tray) run() error {
 	if err := t.createStopEvent(); err != nil {
 		showFailure(t.texts, err, t.logPath)
 
