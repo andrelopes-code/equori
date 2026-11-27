@@ -33,6 +33,7 @@ func (r *Repository) toTrade(
 	}
 
 	cur := money.Currency(row.Currency)
+
 	amounts, err := tradeAmounts(row, cur)
 	if err != nil {
 		return domain.Trade{}, err
