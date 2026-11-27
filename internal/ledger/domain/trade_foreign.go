@@ -111,3 +111,39 @@ func tradeInBase(trade Trade, rate money.Rate, base money.Currency) (Trade, erro
 func toBase(m money.Money, rate money.Rate, base money.Currency) (money.Money, error) {
 	return money.Convert(m, base, money.Leg{Rate: rate})
 }
+
+// BaseTotal converts each amount of plus and minus to base at rate, rounded half to even (FC3),
+// and returns the absolute difference of the two sums: the weight of the cash posting (FC4).
+func BaseTotal(
+	rate money.Rate,
+	base money.Currency,
+	plus, minus []money.Money,
+) (money.Money, error) {
+	total, err := money.New(0, base)
+	if err != nil {
+		return total, err
+	}
+
+	for sign, parts := range [][]money.Money{plus, minus} {
+		for _, m := range parts {
+			c, err := toBase(m, rate, base)
+			if err != nil {
+				return total, err
+			}
+
+			if sign == 1 {
+				c = c.Neg()
+			}
+
+			if total, err = total.Add(c); err != nil {
+				return total, err
+			}
+		}
+	}
+
+	if total.IsNegative() {
+		total = total.Neg()
+	}
+
+	return total, nil
+}

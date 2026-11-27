@@ -114,11 +114,27 @@ func planFixedIncome(
 	appendMoneyChange(&pv, "fees", a.Fees)
 	appendMoneyChange(&pv, "net", &net)
 
-	err = appendRateChanges(ctx, svc, booksID, &pv, in.ExchangeRate, a.ExchangeRate, net)
+	rate := rateStep{svc, booksID, a.AppliedOn, a.ExchangeRate, in.ExchangeRate}
+
+	err = rate.appendChanges(
+		ctx, &pv, a.Amount.Currency(), []*money.Money{&a.Amount, a.Fees}, nil,
+	)
 	if err != nil {
 		return pv, a, err
 	}
 
+	appendFixedIncomeFacts(&pv, in, a, cash)
+
+	return pv, a, nil
+}
+
+// appendFixedIncomeFacts adds the institution, the cash account, the date and the contract.
+func appendFixedIncomeFacts(
+	pv *tool.Preview,
+	in recordFixedIncomeIn,
+	a app.FixedIncomeApplication,
+	cash investmentTarget,
+) {
 	pv.Changes = append(
 		pv.Changes,
 		tool.Change{Field: "institution", After: tool.TextValue(cash.name)},
@@ -141,10 +157,8 @@ func planFixedIncome(
 	pv.Changes = append(pv.Changes, tool.Change{Field: "date", After: tool.DateValue(a.AppliedOn)})
 
 	if a.Contract != nil {
-		describeContract(&pv, *a.Contract)
+		describeContract(pv, *a.Contract)
 	}
-
-	return pv, a, nil
 }
 
 func checkFixedIncomeFields(in recordFixedIncomeIn) error {

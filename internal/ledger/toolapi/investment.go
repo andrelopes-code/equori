@@ -122,99 +122,6 @@ type investmentStep struct {
 	fix     correction
 }
 
-func (s investmentStep) income(
-	ctx context.Context,
-	pv tool.Preview,
-) (tool.Preview, func() (recordInvestmentOut, error), error) {
-	in := s.in
-
-	gross, err := tool.ParsePositive("gross", in.Gross, s.target.cashUnit)
-	if err != nil {
-		return pv, nil, err
-	}
-
-	withheld, err := s.withheld(ctx, gross)
-	if err != nil {
-		return pv, nil, err
-	}
-
-	o := domain.IncomeOrder{
-		AccountID:          s.ids.account,
-		CashAccountID:      s.ids.cash,
-		BrokerageID:        s.ids.brokerage,
-		Instrument:         money.Currency(in.Instrument),
-		CategoryID:         s.ids.category,
-		Type:               domain.IncomeType(in.IncomeType),
-		Date:               in.Date.Time,
-		Gross:              gross,
-		Withheld:           withheld,
-		WithheldCategoryID: s.ids.withheldCategory,
-		Description:        in.Description,
-	}
-
-	net, err := subtract(gross, withheld)
-	if err != nil {
-		return pv, nil, err
-	}
-
-	if o.ExchangeRate, err = parseExchangeRate(in.ExchangeRate); err != nil {
-		return pv, nil, err
-	}
-
-	appendMoneyChange(&pv, "amount", &gross)
-	appendMoneyChange(&pv, "withheld", withheld)
-	appendMoneyChange(&pv, "net", &net)
-	pv.Changes = append(
-		pv.Changes,
-		tool.Change{Field: "income_type", After: tool.TextValue(in.IncomeType)},
-	)
-
-	err = appendRateChanges(ctx, s.svc, s.booksID, &pv, in.ExchangeRate, o.ExchangeRate, net)
-	if err != nil {
-		return pv, nil, err
-	}
-
-	s.appendCashAndDate(&pv)
-	s.fix.compareIncome(&pv)
-
-	return pv, func() (recordInvestmentOut, error) {
-		t, err := s.fix.income(s.svc)(ctx, s.booksID, o)
-		return recordInvestmentOut{TransactionID: t.ID.String()}, err
-	}, nil
-}
-
-// withheld is the tax the proposal states and records: the one given, zero included, or the one
-// the region's rate takes; nil when neither exists.
-func (s investmentStep) withheld(ctx context.Context, gross money.Money) (*money.Money, error) {
-	in := s.in
-
-	if in.Withheld != "" {
-		given, err := tool.ParseAmount("withheld", in.Withheld, s.target.cashUnit)
-		if err != nil {
-			return nil, err
-		}
-
-		if given.IsNegative() {
-			return nil, tool.InvalidArgument("withheld", "must be zero or greater")
-		}
-
-		return &given, nil
-	}
-
-	estimate, err := s.svc.EstimateIncomeWithholding(
-		ctx,
-		s.booksID,
-		domain.IncomeType(in.IncomeType),
-		in.Date.Time,
-		gross.Amount(),
-	)
-	if err != nil || estimate.RateBP == 0 {
-		return nil, err
-	}
-
-	return &estimate.Withheld, nil
-}
-
 func (s investmentStep) trade(
 	ctx context.Context,
 	pv tool.Preview,
@@ -238,12 +145,14 @@ func (s investmentStep) trade(
 	appendMoneyChange(&pv, "fees", o.Fees)
 	appendMoneyChange(&pv, "taxes", o.Taxes)
 
-	net, err := appendTradeMoney(&pv, o, s.target.cashUnit.Currency())
+	gross, err := appendTradeMoney(&pv, o, s.target.cashUnit.Currency())
 	if err != nil {
 		return pv, nil, err
 	}
 
-	err = appendRateChanges(ctx, s.svc, s.booksID, &pv, s.in.ExchangeRate, o.ExchangeRate, net)
+	rate := rateStep{s.svc, s.booksID, o.Date, o.ExchangeRate, s.in.ExchangeRate}
+
+	err = rate.appendTradeChanges(ctx, &pv, o, gross)
 	if err != nil {
 		return pv, nil, err
 	}
@@ -290,13 +199,7 @@ func (s investmentStep) tradeOrder(ctx context.Context) (domain.TradeOrder, erro
 		return domain.TradeOrder{}, err
 	}
 
-	rate, err := parseExchangeRate(in.ExchangeRate)
-	if err != nil {
-		return domain.TradeOrder{}, err
-	}
-
 	o := domain.TradeOrder{
-		ExchangeRate:    rate,
 		AccountID:       s.ids.account,
 		CashAccountID:   s.ids.cash,
 		BrokerageID:     s.ids.brokerage,
@@ -314,7 +217,9 @@ func (s investmentStep) tradeOrder(ctx context.Context) (domain.TradeOrder, erro
 		o.SettlementDate = &in.SettledOn.Time
 	}
 
-	return o, nil
+	o.ExchangeRate, err = parseExchangeRate(in.ExchangeRate)
+
+	return o, err
 }
 
 // unitPrice parses the price of the order. A write-off takes no price (listed options design
@@ -411,11 +316,11 @@ func appendTradeMoney(
 
 	net, err := subtract(signed, o.Fees, o.Taxes)
 	if err != nil {
-		return net, err
+		return gross, err
 	}
 
 	appendMoneyChange(pv, "amount", &gross)
 	appendMoneyChange(pv, "net", &net)
 
-	return net, nil
+	return gross, nil
 }

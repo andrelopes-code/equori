@@ -3,10 +3,12 @@ package toolapi
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/ledger/app"
+	"github.com/andrelopes-code/equori/internal/ledger/domain"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
@@ -254,4 +256,108 @@ func appendMoneyChange(pv *tool.Preview, field string, m *money.Money) {
 	if m != nil {
 		pv.Changes = append(pv.Changes, tool.Change{Field: field, After: tool.MoneyValue(*m)})
 	}
+}
+
+// parseExchangeRate reads the optional exchange_rate of a proposal; nil when empty.
+func parseExchangeRate(text string) (*money.Rate, error) {
+	if text == "" {
+		return nil, nil
+	}
+
+	rate, err := money.ParseRate(text)
+	if err != nil {
+		return nil, tool.InvalidArgument(
+			"exchange_rate",
+			"must be a positive decimal with at most 12 decimals",
+		)
+	}
+
+	return &rate, nil
+}
+
+// rateStep holds what the preview needs to state the rate of an order and its base amount.
+type rateStep struct {
+	svc     *app.Service
+	booksID int64
+	date    time.Time
+	given   *money.Rate
+	text    string
+}
+
+// appendChanges adds the rate the record takes (the one given, or the stored close of the date)
+// and the base amount: the amounts of plus less those of minus, each converted on its own as the
+// record does. Nothing is added with cash in the base currency.
+func (r rateStep) appendChanges(
+	ctx context.Context,
+	pv *tool.Preview,
+	cash money.Currency,
+	plus, minus []*money.Money,
+) error {
+	if cash == "" {
+		return nil
+	}
+
+	rate, err := r.svc.CashRate(ctx, r.booksID, cash, r.date, r.given)
+	if err != nil || rate == nil {
+		return err
+	}
+
+	settings, err := r.svc.Settings(ctx, r.booksID)
+	if err != nil {
+		return err
+	}
+
+	base, err := domain.BaseTotal(*rate, settings.BaseCurrency, present(plus), present(minus))
+	if err != nil {
+		return tool.InvalidArgument("exchange_rate", "does not convert the amount: "+err.Error())
+	}
+
+	pv.Changes = append(
+		pv.Changes,
+		tool.Change{Field: "exchange_rate", After: tool.TextValue(r.rateText(rate))},
+		tool.Change{Field: "base_amount", After: tool.MoneyValue(base)},
+	)
+
+	return nil
+}
+
+// appendTradeChanges states the rate and the base amount of a trade: a purchase or an opening
+// costs the gross and the fees; a sale proceeds the gross less the fees and the taxes.
+func (r rateStep) appendTradeChanges(
+	ctx context.Context,
+	pv *tool.Preview,
+	o domain.TradeOrder,
+	gross money.Money,
+) error {
+	if o.Side == domain.SideWriteOff {
+		return nil
+	}
+
+	plus, minus := []*money.Money{&gross, o.Fees}, []*money.Money{}
+	if o.Side == domain.SideSell {
+		plus, minus = []*money.Money{&gross}, []*money.Money{o.Fees, o.Taxes}
+	}
+
+	return r.appendChanges(ctx, pv, gross.Currency(), plus, minus)
+}
+
+// rateText keeps the rate as typed; a stored rate prints in its canonical form.
+func (r rateStep) rateText(rate *money.Rate) string {
+	if r.given != nil {
+		return r.text
+	}
+
+	return rate.String()
+}
+
+func present(parts []*money.Money) []money.Money {
+	out := make([]money.Money, 0, len(parts))
+
+	for _, m := range parts {
+		if m != nil {
+			out = append(out, *m)
+		}
+	}
+
+	return out
 }

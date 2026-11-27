@@ -104,13 +104,14 @@ func planBrokerageNote(
 		return pv, n, err
 	}
 
-	net, err := appendNoteMoney(&pv, n, target.cashUnit)
+	plus, minus, err := appendNoteMoney(&pv, n, target.cashUnit)
 	if err != nil {
 		return pv, n, err
 	}
 
-	err = appendRateChanges(ctx, svc, booksID, &pv, in.ExchangeRate, n.ExchangeRate, net)
-	if err != nil {
+	rate := rateStep{svc, booksID, n.Date, n.ExchangeRate, in.ExchangeRate}
+
+	if err = rate.appendChanges(ctx, &pv, target.cashUnit.Currency(), plus, minus); err != nil {
 		return pv, n, err
 	}
 
@@ -225,22 +226,26 @@ func appendNoteMoney(
 	pv *tool.Preview,
 	n app.BrokerageNote,
 	cash money.Money,
-) (money.Money, error) {
+) (plus, minus []*money.Money, err error) {
 	total := cash
+	plus = []*money.Money{n.Fees, n.Taxes}
 
 	for _, o := range n.Orders {
 		gross, err := grossOf(o.Quantity, o.UnitPrice, cash.Currency())
 		if err != nil {
-			return total, err
+			return nil, nil, err
 		}
 
 		signed := gross
 		if o.Side == domain.SideBuy {
 			signed = gross.Neg()
+			plus = append(plus, &gross)
+		} else {
+			minus = append(minus, &gross)
 		}
 
 		if total, err = total.Add(signed); err != nil {
-			return total, fmt.Errorf("add orders of the note: %w", err)
+			return nil, nil, fmt.Errorf("add orders of the note: %w", err)
 		}
 
 		pv.Items = append(pv.Items, tool.Item{
@@ -254,14 +259,14 @@ func appendNoteMoney(
 
 	net, err := subtract(total, n.Fees, n.Taxes)
 	if err != nil {
-		return net, err
+		return nil, nil, err
 	}
 
 	appendMoneyChange(pv, "fees", n.Fees)
 	appendMoneyChange(pv, "taxes", n.Taxes)
 	appendMoneyChange(pv, "net", &net)
 
-	return net, nil
+	return plus, minus, nil
 }
 
 // appendNoteSettlement states the day every order settles, or the day of each one on its item.

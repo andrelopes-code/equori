@@ -113,3 +113,20 @@ func cashCurrencyMessage(base, quote money.Currency) string {
 
 	return "must be in the base currency " + string(base) + " or in " + string(quote)
 }
+
+// CashRate is the rate an order in cash currency takes on date: given, or the stored close;
+// nil with cash in the base currency. It is the rate of the record (FC2).
+func (s *Service) CashRate(
+	ctx context.Context,
+	booksID int64,
+	cash money.Currency,
+	date time.Time,
+	given *money.Rate,
+) (*money.Rate, error) {
+	settings, err := s.Settings(ctx, booksID)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.cashRate(ctx, cash, settings.BaseCurrency, date, given)
+}
