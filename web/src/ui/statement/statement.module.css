@@ -14,10 +14,20 @@
     --slotted-list-section-font-weight: var(--slotted-font-weight-semibold);
     --slotted-list-section-padding-block: var(--slotted-space-6)
       var(--slotted-space-3);
+
+    /* one fixed row height: 15 px above and below two lines (spec MS4) */
+    --row: 64px; /* literal: see above */
+
+    /* Workaround for Slotted issue #225: a touch screen raises the item's block padding with its
+       minimum height, and the content of a row grew to 70 px past the row's 64 px. The padding
+       is what the row leaves around the category mark. */
+    --slotted-list-item-padding-block: calc(
+      (var(--row) - var(--slotted-avatar-size-lg)) / 2
+    );
   }
 
   .row {
-    block-size: 64px; /* one fixed row height: 15 px above and below two lines (spec MS4) */
+    block-size: var(--row);
   }
 
   /* The text column yields to the amount: it cuts before it runs under it. */

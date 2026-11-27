@@ -34,7 +34,13 @@
     grid-template-columns: 2.25rem minmax(0, 1fr) auto auto; /* literal: a day column of two digits over a three-letter weekday */
     align-items: center;
     column-gap: var(--slotted-space-4);
-    block-size: 3rem; /* literal: two lines of text and 6 px above and below, the 42 px of the list row it replaces */
+    /* literal: two lines of text and 6 px above and below, the 42 px of the list row it replaces;
+       a touch screen raises the actions button to its target, and the row keeps an inset
+       around it */
+    block-size: max(
+      3rem,
+      calc(var(--slotted-control-height-sm) + 2 * var(--slotted-space-3))
+    );
   }
 
   .date {

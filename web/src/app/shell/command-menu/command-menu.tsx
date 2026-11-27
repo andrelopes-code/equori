@@ -11,6 +11,7 @@ import type { Ref } from "react";
 
 import { useApi } from "@/api/api-context";
 
+import styles from "@/app/shell/command-menu/command-menu.module.css";
 import { destinations } from "@/app/shell/destinations/destinations";
 import { ShellIcon } from "@/app/shell/destinations/shell-icon";
 import { useEntry } from "@/app/shell/frame-state/use-entry";
@@ -242,6 +243,7 @@ export function CommandMenu({
   return (
     <CommandPalette
       ref={ref}
+      className={styles.palette}
       items={items}
       groups={groups}
       loading={opened && accounts.isPending}

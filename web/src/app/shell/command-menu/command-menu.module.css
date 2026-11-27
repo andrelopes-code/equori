@@ -1,0 +1,11 @@
+@layer app {
+  /* Workaround for Slotted issue #224: a touch screen raises the close button to the height of
+     the header, so the header grows by an inset above and below the button. */
+  @media (pointer: coarse) {
+    .palette {
+      --slotted-control-height-lg: calc(
+        var(--slotted-target-comfortable) + 2 * var(--slotted-space-3)
+      );
+    }
+  }
+}

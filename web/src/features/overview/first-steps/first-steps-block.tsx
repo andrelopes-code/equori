@@ -14,6 +14,7 @@ import {
   uncategorizedQuery,
 } from "@/features/overview/api";
 import { firstSteps } from "@/features/overview/first-steps/first-steps";
+import styles from "@/features/overview/first-steps/first-steps-block.module.css";
 import { useFirstStepsDismissal } from "@/features/overview/first-steps/use-first-steps-dismissal";
 import { useT } from "@/i18n/i18n-provider";
 import { routeTo } from "@/ui/navigation/route-to";
@@ -60,7 +61,12 @@ export function FirstStepsBlock() {
           </Text>
         )}
         <CardActions>
-          <Inline gap={3} align="center" wrap="nowrap">
+          <Inline
+            className={styles.actions}
+            gap={3}
+            align="center"
+            wrap="nowrap"
+          >
             <Tag size="sm" tone="secondary">
               {t("firstSteps.progress", { done, total: steps.length })}
             </Tag>
