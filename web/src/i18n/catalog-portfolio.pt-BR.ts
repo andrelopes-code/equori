@@ -30,6 +30,13 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "taxYear.pool.day_trade": "Day trade",
   "taxYear.pool.fii": "Fundos imobiliários",
   "taxYear.pool.crypto": "Cripto",
+  "gainTax.openingLosses": "Prejuízo anterior a compensar",
+  "gainTax.openingLosses.description":
+    "Prejuízo de cada grupo acumulado antes do histórico registrado, como consta na sua declaração.",
+  "gainTax.openingLosses.month": "A partir de",
+  "gainTax.openingLosses.amount": "Prejuízo",
+  "gainTax.openingLosses.save": "Salvar prejuízos",
+  "gainTax.openingLosses.saved": "Prejuízos salvos",
   "taxYear.unclassified": "Sem classificação",
   "taxYear.realized.title": "Lucro ou prejuízo nas vendas",
   "taxYear.realized.empty": "Nenhuma venda neste ano.",

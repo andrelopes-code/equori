@@ -30,6 +30,13 @@ export const portfolioEn = {
   "taxYear.pool.day_trade": "Day trade",
   "taxYear.pool.fii": "Real estate funds",
   "taxYear.pool.crypto": "Crypto",
+  "gainTax.openingLosses": "Loss to carry from before",
+  "gainTax.openingLosses.description":
+    "Loss of each group accumulated before the recorded history, as your tax records state it.",
+  "gainTax.openingLosses.month": "From",
+  "gainTax.openingLosses.amount": "Loss",
+  "gainTax.openingLosses.save": "Save losses",
+  "gainTax.openingLosses.saved": "Losses saved",
   "taxYear.unclassified": "Unclassified",
   "taxYear.realized.title": "Gain or loss on sales",
   "taxYear.realized.empty": "No sales in this year.",

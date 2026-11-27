@@ -301,3 +301,26 @@ export function planChanged(error: unknown): boolean {
     error.problem.code === "contribution_plan_changed"
   );
 }
+
+export function openingLossesQuery(api: Client<paths>) {
+  return queryOptions({
+    queryKey: ["opening-losses"] as const,
+    queryFn: async () => unwrap(await api.GET("/gain-tax/opening-losses")),
+  });
+}
+
+// LO4: the whole set replaces the saved one; the monthly tax reads it, so the tax of the years is
+// read again.
+export function useSaveOpeningLosses() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (losses: components["schemas"]["OpeningLoss"][]) =>
+      unwrap(await api.PUT("/gain-tax/opening-losses", { body: { losses } })),
+    onSuccess: (saved) => {
+      queryClient.setQueryData(openingLossesQuery(api).queryKey, saved);
+      void queryClient.invalidateQueries({ queryKey: ["gain-tax"] });
+    },
+  });
+}

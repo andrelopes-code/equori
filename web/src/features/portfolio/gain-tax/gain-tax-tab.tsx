@@ -11,6 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
 import { gainTaxQuery } from "@/features/portfolio/api";
+import { OpeningLossesSection } from "@/features/portfolio/gain-tax/opening-losses-section";
 import { gainTaxLines } from "@/features/portfolio/gain-tax/gain-tax-lines";
 import { YearTotalsTable } from "@/features/portfolio/year-totals/year-totals-table";
 import { catalogLabel, useScale } from "@/features/setup";
@@ -107,6 +108,8 @@ export function GainTaxTab({ year }: GainTaxTabProps) {
           }))}
         />
       </Grid>
+
+      <OpeningLossesSection />
     </PageStack>
   );
 }
