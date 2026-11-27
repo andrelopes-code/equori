@@ -44,12 +44,7 @@ func (r *Repository) toTrade(
 		return domain.Trade{}, fmt.Errorf("trade %s day-trade quantity: %w", row.TransactionID, err)
 	}
 
-	dayCost, err := money.New(row.DayTradeCost, cur)
-	if err != nil {
-		return domain.Trade{}, err
-	}
-
-	cost, err := optionalMoney(row.Cost, cur)
+	dayCost, cost, err := tradeCosts(row, cur)
 	if err != nil {
 		return domain.Trade{}, err
 	}
@@ -107,6 +102,21 @@ func tradeAmounts(row LedgerTrade, cur money.Currency) ([]money.Money, error) {
 	}
 
 	return amounts, nil
+}
+
+// tradeCosts is the day-trade cost and the optional cost of a trade, both in its currency.
+func tradeCosts(row LedgerTrade, cur money.Currency) (money.Money, *money.Money, error) {
+	dayCost, err := money.New(row.DayTradeCost, cur)
+	if err != nil {
+		return money.Money{}, nil, err
+	}
+
+	cost, err := optionalMoney(row.Cost, cur)
+	if err != nil {
+		return money.Money{}, nil, err
+	}
+
+	return dayCost, cost, nil
 }
 
 // optionalMoney returns nil for a nil v, else v in cur.
