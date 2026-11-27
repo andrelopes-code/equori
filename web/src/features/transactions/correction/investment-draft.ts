@@ -31,6 +31,7 @@ export function tradeDraftOf(
     fees: trade.fees.amount,
     taxes: trade.taxes.amount,
     taxesCategoryId: chosen(taxesAccount(tx.postings, trade), accounts),
+    exchangeRate: trade.exchange_rate ?? null,
     description: tx.description,
   };
 }
@@ -63,6 +64,7 @@ export function incomeDraftOf(
     categoryId:
       tx.postings.find((p) => p.amount.amount < 0)?.account_id ?? null,
     withheldCategoryId: chosen(withheld?.account_id ?? null, accounts),
+    exchangeRate: income.exchange_rate ?? null,
     description: tx.description,
   };
 }

@@ -31,6 +31,9 @@ export interface FixedIncomeDraft {
   amount: number;
   currency: string;
   appliedOn: string;
+  // The canonical decimal of base currency per unit of the cash currency, for cash in another
+  // currency (FC2); null takes the rate of the day.
+  exchangeRate: string | null;
   // "rate" is a percent of an index, "inflation" an index plus a rate, "fixed" a rate alone.
   returnKind: "rate" | "inflation" | "fixed";
   indexId: string;
@@ -64,6 +67,7 @@ export function emptyFixedIncomeDraft(
     amount: 0,
     currency: "",
     appliedOn: date,
+    exchangeRate: null,
     returnKind: "rate",
     indexId: "",
     percent: "",
@@ -96,6 +100,9 @@ export function applicationBody(
     brokerage_id: draft.brokerageId ?? "",
     applied_on: draft.appliedOn,
     amount: { amount: draft.amount, currency: draft.currency },
+    ...(draft.exchangeRate === null || draft.opening
+      ? {}
+      : { exchange_rate: draft.exchangeRate }),
     ...(draft.opening ? { opening: true } : {}),
     ...(draft.cashAccountId === null || draft.opening
       ? {}

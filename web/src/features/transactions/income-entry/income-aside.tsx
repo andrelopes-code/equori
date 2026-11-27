@@ -8,21 +8,21 @@ import { FigureGrid } from "@/ui/display/figure-grid";
 
 interface IncomeAsideProps {
   view: ReturnType<typeof useIncomeEntry>["view"];
-  baseScale: number;
+  cashScale: number;
   onWithheld: (withheld: number) => void;
 }
 
 // The figures of the income beside the form: the net amount and, where the region withholds tax on
 // the type, the estimate. The estimate enters the form only when it is asked for (A235).
-export function IncomeAside({ view, baseScale, onWithheld }: IncomeAsideProps) {
+export function IncomeAside({ view, cashScale, onWithheld }: IncomeAsideProps) {
   const t = useT();
   const [tag] = useAppLocale();
-  const { base, net, estimate } = view;
+  const { cashCurrency, net, estimate } = view;
 
   function figure(amount: number | null) {
-    return amount === null || base === undefined
+    return amount === null || cashCurrency === undefined
       ? undefined
-      : { money: { amount, currency: base }, scale: baseScale };
+      : { money: { amount, currency: cashCurrency }, scale: cashScale };
   }
 
   return (

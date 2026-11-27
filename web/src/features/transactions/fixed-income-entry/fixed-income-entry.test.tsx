@@ -3,8 +3,16 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
+import { catalogPtBR } from "@/i18n/catalog.pt-BR";
 import { fakeApi, json, problem } from "@/testing/fake-api";
-import { brokerID, cashID, investmentRoutes } from "@/testing/investment-api";
+import {
+  brokerID,
+  cashID,
+  investmentRoutes,
+  usdBrokerage,
+  usdBrokerID,
+} from "@/testing/investment-api";
+import { optionalName } from "@/testing/optional-name";
 import { renderApp } from "@/testing/render-app";
 
 const path = `/transactions/new?kind=fixed_income&brokerage_id=${brokerID}`;
@@ -34,7 +42,7 @@ function api(
     }),
 ) {
   return fakeApi({
-    ...investmentRoutes([]),
+    ...investmentRoutes([], { extraAccounts: usdBrokerage }),
     "GET /api/v1/instruments": () => json(200, { items: [owned] }),
     "GET /api/v1/instrument-subtypes": () =>
       json(200, { items: ["cdb", "lci"] }),
@@ -275,5 +283,45 @@ describe("fixed income entry", () => {
       screen.getByText(catalogEn["fixedIncome.required.rate"]),
     ).toBeInTheDocument();
     expect(sent).toHaveLength(0);
+  });
+});
+
+// FC8, FC19: an application from a brokerage in USD with cash in USD.
+describe("fixed income entry in another currency", () => {
+  it("sends the amount in USD and the typed rate", async () => {
+    const sent: unknown[] = [];
+    localStorage.setItem(
+      "equori.locale",
+      JSON.stringify({ language: "pt", region: "BR" }),
+    );
+    await renderApp(
+      `/transactions/new?kind=fixed_income&brokerage_id=${usdBrokerID}`,
+      { fetch: api(sent) },
+    );
+    await userEvent.click(
+      await screen.findByRole("combobox", {
+        name: catalogPtBR["fixedIncome.existing"],
+      }),
+    );
+    await userEvent.click(
+      await screen.findByRole("option", { name: owned.name }),
+    );
+    await type(catalogPtBR["fixedIncome.amount"], "100000");
+    await type(
+      optionalName(catalogPtBR["trade.exchangeRate"], "opcional"),
+      "5,20",
+    );
+    await userEvent.click(
+      await screen.findByRole("button", { name: catalogPtBR["entry.save"] }),
+    );
+
+    await waitFor(() => {
+      expect(sent).toHaveLength(1);
+    });
+    expect(sent[0]).toMatchObject({
+      brokerage_id: usdBrokerID,
+      amount: { amount: 100000, currency: "USD" },
+      exchange_rate: "5.20",
+    });
   });
 });

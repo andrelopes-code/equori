@@ -27,7 +27,8 @@ export interface BrokerageState {
 }
 
 // The brokerages a trade or an income may name, and what the chosen one holds (BC5, BC6). The
-// payers also take the quote currency of each instrument in `quoted` (FC1).
+// payers also take the quote currency of each instrument in `quoted` (FC1); a code that names no
+// instrument stands for the currency of that code.
 export function useBrokerages(
   brokerageId: string | null,
   instrument: string | null,
@@ -45,7 +46,7 @@ export function useBrokerages(
     );
     const accepted = quotedKey
       .split(",")
-      .flatMap((code) => quotes.get(code) ?? []);
+      .flatMap((code) => quotes.get(code) ?? code);
     const quote = instrument === null ? undefined : quotes.get(instrument);
 
     return {

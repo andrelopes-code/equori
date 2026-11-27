@@ -8,8 +8,9 @@ import { MoneyInput } from "@/ui/money/money-input";
 
 interface IncomeAmountFieldsProps {
   draft: IncomeDraft;
-  base: string | undefined;
-  baseScale: number;
+  // The cash currency (FC1).
+  currency: string | undefined;
+  currencyScale: number;
   // The region withholds tax on the type of the draft.
   taxed: boolean;
   errors: Record<string, string>;
@@ -20,8 +21,8 @@ interface IncomeAmountFieldsProps {
 // says so, since the record takes the field as it stands.
 export function IncomeAmountFields({
   draft,
-  base,
-  baseScale,
+  currency,
+  currencyScale,
   taxed,
   errors,
   onChange,
@@ -35,8 +36,8 @@ export function IncomeAmountFields({
         <MoneyInput
           size="field"
           value={draft.gross}
-          currency={base ?? ""}
-          scale={baseScale}
+          currency={currency ?? ""}
+          scale={currencyScale}
           sign="income"
           onChange={(gross) => {
             onChange({ gross });
@@ -53,8 +54,8 @@ export function IncomeAmountFields({
         <MoneyInput
           size="field"
           value={draft.withheld}
-          currency={base ?? ""}
-          scale={baseScale}
+          currency={currency ?? ""}
+          scale={currencyScale}
           sign="neutral"
           onChange={(withheld) => {
             onChange({ withheld });

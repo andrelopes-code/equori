@@ -26,6 +26,8 @@ interface Index {
 
 export interface FixedIncomeView {
   base: string | undefined;
+  // The currency of the paying account; the rate shows when it differs from the base (FC19).
+  cashCurrency: string | undefined;
   brokerages: components["schemas"]["Account"][];
   brokerage: components["schemas"]["Account"] | undefined;
   payers: components["schemas"]["Account"][];
@@ -65,8 +67,15 @@ export function useFixedIncomeEntry(
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [summary, setSummary] = useState<string | null>(null);
 
-  const state = useBrokerages(draft.brokerageId, draft.cashAccountId);
+  const chosen = useBrokerages(draft.brokerageId, draft.cashAccountId);
+  // The cash may be in the currency of the brokerage (FC8).
+  const state = useBrokerages(draft.brokerageId, draft.cashAccountId, [
+    chosen.brokerage?.currency ?? null,
+  ]);
   const payer = state.payer;
+  const cashCurrency = payer?.currency ?? base;
+  const foreign =
+    !draft.opening && cashCurrency !== undefined && cashCurrency !== base;
   const balanceRead = useQuery({
     ...balanceQuery(api, payer?.id ?? "", draft.appliedOn, "booked"),
     enabled: payer !== undefined,
@@ -82,6 +91,7 @@ export function useFixedIncomeEntry(
 
   const view: FixedIncomeView = {
     base,
+    cashCurrency,
     brokerages: state.brokerages,
     brokerage: state.brokerage,
     payers: state.payers,
@@ -104,6 +114,7 @@ export function useFixedIncomeEntry(
         brokerageId: brokerage?.id ?? null,
         cashAccountId: payer?.id ?? null,
         currency: brokerage?.currency ?? base ?? "",
+        exchangeRate: foreign ? draft.exchangeRate : null,
         indexId,
       },
       t,

@@ -14,6 +14,9 @@ import {
   brokerID,
   securityID,
   taxID,
+  foreignInstruments,
+  usdCash,
+  usdCashID,
 } from "@/testing/investment-api";
 import { moneyValue } from "@/testing/money-value";
 import { optionalName } from "@/testing/optional-name";
@@ -364,3 +367,54 @@ function storeDraft(instrument: string) {
     }),
   );
 }
+
+// FC19: an income paid into cash in the quote currency of the instrument.
+describe("investment income in another currency", () => {
+  it("posts gross and withheld in the cash currency with the typed rate", async () => {
+    const sent: unknown[] = [];
+    localStorage.setItem(
+      "equori.locale",
+      JSON.stringify({ language: "pt", region: "BR" }),
+    );
+    sessionStorage.setItem(
+      "equori.draft.new-income",
+      JSON.stringify({
+        brokerageId: brokerID,
+        instrument: "VOO",
+        cashAccountId: usdCashID,
+        date: "2026-10-17",
+        incomeType: "dividend",
+        gross: 1000,
+        withheld: 300,
+        categoryId: dividendsID,
+        withheldCategoryId: null,
+        description: "",
+        exchangeRate: null,
+      }),
+    );
+    await renderApp("/transactions/new?kind=investment_income", {
+      fetch: api(sent, {
+        extraAccounts: [usdCash],
+        extraInstruments: foreignInstruments,
+      }),
+    });
+
+    await type(
+      optionalName(catalogPtBR["trade.exchangeRate"], "opcional"),
+      "5,20",
+    );
+    await userEvent.click(
+      await screen.findByRole("button", { name: catalogPtBR["entry.save"] }),
+    );
+
+    await waitFor(() => {
+      expect(sent).toHaveLength(1);
+    });
+    expect(sent[0]).toMatchObject({
+      cash_account_id: usdCashID,
+      gross: { amount: 1000, currency: "USD" },
+      withheld: { amount: 300, currency: "USD" },
+      exchange_rate: "5.20",
+    });
+  });
+});

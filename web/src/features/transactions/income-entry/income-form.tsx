@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 
 import { catalogLabel } from "@/features/setup";
 import { BrokerageFields } from "@/features/transactions/brokerage-account/brokerage-fields";
+import { ExchangeRateField } from "@/features/transactions/brokerage-account/exchange-rate-field";
 import { MissingCashNotice } from "@/features/transactions/brokerage-account/missing-cash-notice";
 import type { EntryKind } from "@/features/transactions/entry-model/entry-kind";
 import { EntryKindPicker } from "@/features/transactions/entry-kind-picker/entry-kind-picker";
@@ -44,14 +45,15 @@ export function IncomeForm({
     onChange({ ...draft, ...patch });
   };
   const { base } = view;
-  const baseScale = base === undefined ? 0 : scale(base);
+  const { cashCurrency } = view;
+  const cashScale = cashCurrency === undefined ? 0 : scale(cashCurrency);
 
   return (
     <FormLayout
       aside={
         <IncomeAside
           view={view}
-          baseScale={baseScale}
+          cashScale={cashScale}
           onWithheld={(withheld) => {
             set({ withheld });
           }}
@@ -74,7 +76,7 @@ export function IncomeForm({
         payers={view.payers}
         payer={view.payer}
         balance={view.balance}
-        base={base}
+        base={cashCurrency}
         date={draft.date}
         money="in"
         errors={errors}
@@ -127,10 +129,20 @@ export function IncomeForm({
         {errors.date !== undefined && <FieldError>{errors.date}</FieldError>}
       </Field>
 
+      <ExchangeRateField
+        base={base}
+        currency={cashCurrency}
+        value={draft.exchangeRate ?? null}
+        error={errors.exchange_rate}
+        onChange={(exchangeRate) => {
+          set({ exchangeRate });
+        }}
+      />
+
       <IncomeAmountFields
         draft={draft}
-        base={base}
-        baseScale={baseScale}
+        currency={cashCurrency}
+        currencyScale={cashScale}
         taxed={view.estimate !== null}
         errors={errors}
         onChange={set}

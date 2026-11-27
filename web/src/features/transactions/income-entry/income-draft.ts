@@ -6,11 +6,14 @@ export interface IncomeDraft {
   cashAccountId: string | null;
   date: string;
   incomeType: string | null;
-  // Minor units of the base currency.
+  // Minor units of the cash currency.
   gross: number;
   withheld: number;
   categoryId: string | null;
   withheldCategoryId: string | null;
+  // The canonical decimal of base currency per unit of the cash currency, for cash in the quote
+  // currency (FC2); null takes the rate of the day.
+  exchangeRate?: string | null;
   description: string;
 }
 
@@ -28,6 +31,7 @@ export function emptyIncome(
     withheld: 0,
     categoryId: null,
     withheldCategoryId: null,
+    exchangeRate: null,
     description: "",
   };
 }

@@ -83,11 +83,18 @@ export function useIncomeEntry(
     draft.brokerageId === null && draft.instrument === null && preset !== null
       ? preset
       : draft;
-  const state = useBrokerages(chosen.brokerageId, chosen.instrument);
+  const state = useBrokerages(chosen.brokerageId, chosen.instrument, [
+    chosen.instrument,
+  ]);
   const { brokerage } = state;
   const instrument = chosen.instrument;
   const payer =
     state.payers.find((a) => a.id === draft.cashAccountId) ?? state.payer;
+  const cashCurrency = payer?.currency ?? base;
+  const exchangeRate =
+    cashCurrency !== undefined && cashCurrency !== base
+      ? (draft.exchangeRate ?? null)
+      : null;
   const balance = balanceWithout(
     useQuery({
       ...balanceQuery(api, payer?.id ?? "", draft.date, "booked"),
@@ -111,6 +118,7 @@ export function useIncomeEntry(
     baseCash: state.baseCash,
     balance,
     base,
+    cashCurrency,
     types: types.data ?? [],
     net,
     estimate,
@@ -157,8 +165,9 @@ export function useIncomeEntry(
       cash_account_id: payer.id,
       income_type: draft.incomeType,
       date: draft.date,
-      gross: { amount: draft.gross, currency: base },
-      withheld: { amount: draft.withheld, currency: base },
+      gross: { amount: draft.gross, currency: cashCurrency ?? base },
+      withheld: { amount: draft.withheld, currency: cashCurrency ?? base },
+      ...(exchangeRate === null ? {} : { exchange_rate: exchangeRate }),
       category_id: draft.categoryId,
       ...(draft.withheld > 0 && draft.withheldCategoryId !== null
         ? { withheld_category_id: draft.withheldCategoryId }

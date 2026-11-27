@@ -25,7 +25,20 @@ describe("tradeDraftOf", () => {
       fees: 490,
       taxes: 0,
       taxesCategoryId: null,
+      exchangeRate: null,
       description: "XP",
+    });
+  });
+
+  // FC11: the stored rate stands unless the user changes it.
+  it("keeps the exchange rate of a stored trade", () => {
+    const foreign = trade({ exchange_rate: "5.2" }, [
+      post("cash", -151240),
+      post("sec", 150),
+    ]);
+
+    expect(tradeDraftOf(foreign, accounts)).toMatchObject({
+      exchangeRate: "5.2",
     });
   });
 
@@ -75,6 +88,23 @@ describe("tradeDraftOf", () => {
 });
 
 describe("incomeDraftOf", () => {
+  it("keeps the exchange rate of a stored income, null when none", () => {
+    const stored = {
+      ...dividend,
+      investment_income: {
+        ...dividend.investment_income,
+        exchange_rate: "5.2",
+      },
+    } as unknown as Transaction;
+
+    expect(incomeDraftOf(stored, accounts)).toMatchObject({
+      exchangeRate: "5.2",
+    });
+    expect(incomeDraftOf(dividend, accounts)).toMatchObject({
+      exchangeRate: null,
+    });
+  });
+
   it.each([
     {
       name: "a withheld amount on a chosen category",
@@ -112,6 +142,7 @@ describe("incomeDraftOf", () => {
       incomeType: "dividend",
       gross: 1500,
       withheld,
+      exchangeRate: null,
       description: "",
       ...want,
     });

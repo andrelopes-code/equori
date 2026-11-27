@@ -8,6 +8,7 @@ import { Switch } from "@slotted/react/switch";
 
 import { PaymentsFields } from "@/features/instruments";
 import { BrokerageFields } from "@/features/transactions/brokerage-account/brokerage-fields";
+import { ExchangeRateField } from "@/features/transactions/brokerage-account/exchange-rate-field";
 import type { EntryKind } from "@/features/transactions/entry-model/entry-kind";
 import { EntryKindPicker } from "@/features/transactions/entry-kind-picker/entry-kind-picker";
 import {
@@ -59,7 +60,7 @@ export function FixedIncomeForm({
         payers={draft.opening ? [] : view.payers}
         payer={draft.opening ? undefined : view.payer}
         balance={view.balance}
-        base={view.base}
+        base={view.cashCurrency}
         date={draft.appliedOn}
         money="out"
         errors={errors}
@@ -71,6 +72,18 @@ export function FixedIncomeForm({
           set({ cashAccountId: id });
         }}
       />
+
+      {!draft.opening && (
+        <ExchangeRateField
+          base={view.base}
+          currency={view.cashCurrency}
+          value={draft.exchangeRate}
+          error={errors.exchange_rate}
+          onChange={(exchangeRate) => {
+            set({ exchangeRate });
+          }}
+        />
+      )}
 
       <Field>
         <Switch
