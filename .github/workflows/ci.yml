@@ -82,6 +82,8 @@ jobs:
   windows:
     needs: exchange-linux-dump
     runs-on: windows-latest
+    # A hung step of the smoke test ends here instead of at the 6 h default.
+    timeout-minutes: 45
     defaults:
       run:
         shell: pwsh

@@ -28,9 +28,13 @@ function Install([string]$Zip) {
     $modules = $env:PSModulePath
     $env:PSModulePath = $null
     try {
-        $p = Start-Process -PassThru -Wait powershell.exe -WindowStyle Hidden `
+        # -Wait would also wait for equori.exe, which the installation leaves running.
+        $p = Start-Process -PassThru powershell.exe -WindowStyle Hidden `
             -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$installer`"" `
             -RedirectStandardOutput "$work\install.out" -RedirectStandardError "$work\install.err"
+        # Reading the handle keeps the exit code of a process that ends early.
+        $null = $p.Handle
+        $p.WaitForExit()
     } finally {
         $env:PSModulePath = $modules
     }

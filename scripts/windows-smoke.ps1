@@ -66,9 +66,13 @@ function Invoke-Installer([string]$Lang, [string[]]$Switches = @(), [string]$Scr
     $modules = $env:PSModulePath
     $env:PSModulePath = $null
     try {
-        $p = Start-Process powershell.exe -Wait -PassThru -WindowStyle Hidden `
+        # -Wait would also wait for equori.exe, which the installation leaves running.
+        $p = Start-Process powershell.exe -PassThru -WindowStyle Hidden `
             -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', $encoded `
             -RedirectStandardOutput $out -RedirectStandardError "$out.err"
+        # Reading the handle keeps the exit code of a process that ends early.
+        $null = $p.Handle
+        $p.WaitForExit()
     } finally {
         $env:PSModulePath = $modules
     }
