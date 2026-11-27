@@ -2,6 +2,8 @@ equori keeps a double-entry **Ledger** of your money. Every **Account** you own 
 
 Start with your accounts and their opening balances on the Accounts screen, then record transactions by hand, by text capture, by importing bank files or by linking a bank. The Overview screen summarizes the month; Transactions lists everything by day.
 
+A portfolio held before equori enters in three ways. Each lot is an opening on New transaction (the trade side Opening): its quantity, price and fees on the date it was acquired, at its cost, without moving cash. A file of openings, trades and incomes of one brokerage enters at once with Import a file of operations on the brokerage page. The fixed income a bank connection reads is confirmed on Links. A loss carried from before, for the monthly tax, is typed on the Monthly tax tab of the year's income and sales.
+
 The assistant reads your data, explains concepts and screens, and prepares changes. Every change it prepares is a proposal you confirm or reject on a card in the conversation; nothing changes before you confirm.
 
 On a wide screen, a destination of the navigation column whose page has tabs (Transactions, Categories, Accounts, Planning, Reports) is one row with an arrow at its end: a press on its name or icon goes to the page and opens its tabs as rows under the destination, each one a direct link to that tab; a press on the arrow only opens or closes the tabs, without leaving the current page, and the browser keeps the groups left open. With the column narrowed to icons, the row has no arrow: its press goes to the page and lists the tabs beside the icon.
