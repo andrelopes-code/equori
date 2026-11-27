@@ -72,7 +72,7 @@ The value of a class is the sum of its members. The current share of a class is 
 
 **CN11 Contribution amount.** The stored amount is positive and in the base currency. When the base currency changes, the stored amount is not returned and the field starts empty. A preview with an amount that is not positive returns `contribution_amount_invalid`.
 
-**CN12 Start from the portfolio.** With no plan, the screen offers to start from the current portfolio: one class per instrument type held (named by the existing catalog label of the type), each position a member of its type's class, and each class target equal to its current share. No other default exists.
+**CN12 Start from the portfolio.** With no plan, the screen offers to start from the current portfolio: one class per instrument type held (named by the existing catalog label of the type), each position a member of its type's class, and each class target equal to its current share. A class whose value is below zero, such as brokerage cash of PC4, has a share of 0 and the others share 10000 (amended 2026-11-27: a negative share broke CN2). No other default exists.
 
 **CN13 Preview.** The preview computes CN5 to CN10 for a plan sent in the request and an amount, without storing either. The screen uses it for the saved plan and for a draft under edit.
 

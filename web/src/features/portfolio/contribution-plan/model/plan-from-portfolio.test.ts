@@ -37,6 +37,19 @@ const targets = (entries: TypedEntry[]) =>
   ]);
 
 describe("planFromPortfolio", () => {
+  // PC4: brokerage cash goes below zero when a purchase was recorded without its transfer.
+  it("gives a class with a negative value no share", () => {
+    const entries: TypedEntry[] = [
+      entry("PETR4", "stock", 10000),
+      { entry: { account_id: "acc-1", value: brl(-500) }, type: "currency" },
+    ];
+
+    expect(targets(entries)).toEqual([
+      ["L:stock", 10000],
+      ["L:currency", 0],
+    ]);
+  });
+
   it("makes one class per type in order of first appearance, with the shares of the values", () => {
     const entries: TypedEntry[] = [
       entry("PETR4", "stock", 5000),

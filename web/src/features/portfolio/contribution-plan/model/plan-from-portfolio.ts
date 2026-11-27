@@ -28,7 +28,7 @@ const total = 10000n;
 // the rule `{instrument_type: fixed_income, return_kind}` and no member; any other entry joins
 // the class of its type as a member. Classes come in order of first appearance, each target its
 // share of the values in basis points. Shares round down; the remainder goes to the largest
-// class, the first of equals. An entry without a value is a member with no weight in the shares.
+// class, the first of equals. An entry without a value or below zero has no weight in the shares.
 export function planFromPortfolio(
   entries: readonly TypedEntry[],
   label: (type: string) => string,
@@ -98,7 +98,9 @@ function groupEntries(
   return [...groups.values()];
 }
 
-function shareBasisPoints(values: readonly bigint[]): number[] {
+// A negative value, such as brokerage cash below zero (PC4), weighs 0.
+function shareBasisPoints(amounts: readonly bigint[]): number[] {
+  const values = amounts.map((v) => (v > 0n ? v : 0n));
   const sum = values.reduce((a, b) => a + b, 0n);
   const floors = values.map((v) => (sum === 0n ? 0n : (v * total) / sum));
   const largest = values.reduce(
