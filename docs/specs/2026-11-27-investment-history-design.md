@@ -1,6 +1,6 @@
 # Bringing an existing portfolio into a book
 
-Status: draft, 2026-11-27 (amendment A270). Owner choice of the scope on 2026-11-27.
+Status: accepted and implemented, 2026-11-27 (amendment A270, issue #75). Owner choice of the scope on 2026-11-27.
 
 ## Intent
 
