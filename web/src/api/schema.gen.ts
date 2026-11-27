@@ -7167,9 +7167,11 @@ export interface components {
             brokerage_id: string;
             /**
              * Format: uuid
-             * @description Absent takes the only cash account of the brokerage.
+             * @description Absent takes the only cash account of the brokerage. An opening takes none.
              */
             cash_account_id?: string;
+            /** @description True for an application held before the book (OL7); the amount enters at its cost against the opening balances on applied_on, with no cash. */
+            opening?: boolean;
             /** Format: date */
             applied_on: string;
             amount: components["schemas"]["Money"];

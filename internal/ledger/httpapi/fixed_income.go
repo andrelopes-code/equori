@@ -71,6 +71,7 @@ func fixedIncomeFromInput(in CreateFixedIncomeApplicationJSONRequestBody) (
 		Amount:        amount,
 		Description:   optString(in.Description),
 		Instrument:    money.Currency(optString(in.Instrument)),
+		Opening:       in.Opening != nil && *in.Opening,
 	}
 
 	if in.Fees != nil {

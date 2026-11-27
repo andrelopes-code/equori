@@ -25,6 +25,7 @@ type FixedIncomeApplication struct {
 	Amount                                    money.Money
 	Fees                                      *money.Money
 	Description                               string
+	Opening                                   bool           // held before the book: no cash moves
 	Contract                                  *Contract      // a new contract
 	Instrument                                money.Currency // a contribution; empty with Contract
 }
@@ -254,11 +255,16 @@ func (s *Service) buy(
 		return FixedIncomeResult{}, err
 	}
 
+	side := domain.SideBuy
+	if a.Opening {
+		side = domain.SideOpening
+	}
+
 	t, err := s.RecordTrade(ctx, booksID, domain.TradeOrder{
 		BrokerageID:   a.BrokerageID,
 		Instrument:    code,
 		CashAccountID: a.CashAccountID,
-		Side:          domain.SideBuy,
+		Side:          side,
 		Date:          a.AppliedOn,
 		Quantity:      quantity,
 		UnitPrice:     unit,
@@ -281,6 +287,10 @@ func checkApplication(a FixedIncomeApplication) error {
 
 	if a.Amount.Amount() <= 0 {
 		return fieldErr("amount", "must be positive", domain.ErrValidation)
+	}
+
+	if a.Opening && a.CashAccountID != uuid.Nil {
+		return fieldErr("cash_account_id", "is not taken by an opening", domain.ErrValidation)
 	}
 
 	return nil

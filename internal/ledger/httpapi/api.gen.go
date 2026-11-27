@@ -1891,12 +1891,15 @@ type FixedIncomeApplicationInput struct {
 	AppliedOn     openapi_types.Date `json:"applied_on"`
 	BrokerageId   openapi_types.UUID `json:"brokerage_id"`
 
-	// CashAccountId Absent takes the only cash account of the brokerage.
+	// CashAccountId Absent takes the only cash account of the brokerage. An opening takes none.
 	CashAccountId *openapi_types.UUID       `json:"cash_account_id,omitempty"`
 	Contract      *FixedIncomeContractInput `json:"contract,omitempty"`
 	Description   *string                   `json:"description,omitempty"`
 	Fees          *Money                    `json:"fees,omitempty"`
 	Instrument    *string                   `json:"instrument,omitempty"`
+
+	// Opening True for an application held before the book (OL7); the amount enters at its cost against the opening balances on applied_on, with no cash.
+	Opening *bool `json:"opening,omitempty"`
 }
 
 // FixedIncomeContractInput defines model for FixedIncomeContractInput.

@@ -12715,7 +12715,10 @@ components:
         cash_account_id:
           type: string
           format: uuid
-          description: Absent takes the only cash account of the brokerage.
+          description: Absent takes the only cash account of the brokerage. An opening takes none.
+        opening:
+          type: boolean
+          description: True for an application held before the book (OL7); the amount enters at its cost against the opening balances on applied_on, with no cash.
         applied_on:
           type: string
           format: date

@@ -226,6 +226,66 @@ func TestS757ReturnCountsOpeningAsDeposit(t *testing.T) {
 	}
 }
 
+// S758 (OL7): a fixed income application with opening holds the amount as one lot of its date,
+// takes no cash, refuses a cash account and replays by its application id.
+func TestS758FixedIncomeOpening(t *testing.T) {
+	t.Parallel()
+	f := newInvestFixture(t)
+	body := f.newContractBody("2024-01-10", 1000000)
+	body["opening"] = true
+	delete(body, "cash_account_id")
+	body["contract"].(map[string]any)["matures_on"] = "2028-01-10"
+
+	var out fixedIncomeOut
+	f.h.MustDo(http.MethodPost, fixedIncomePath, body, http.StatusCreated, &out)
+
+	cash := f.h.Rows(
+		`SELECT coalesce(sum(amount), 0)::text FROM ledger_posting WHERE account_id = $1`,
+		f.cash,
+	)
+	if len(cash) != 1 || cash[0] != "0" {
+		t.Errorf("cash sum = %v, want 0", cash)
+	}
+
+	holding := f.h.Rows(
+		`SELECT account_id::text FROM ledger_trade WHERE transaction_id = $1`,
+		out.TransactionID,
+	)
+	if len(holding) != 1 {
+		t.Fatalf("holding = %v, want one trade", holding)
+	}
+
+	var lots lotsOut
+	f.h.MustDo(
+		http.MethodGet,
+		"/api/v1/accounts/"+holding[0]+"/lots?date=2026-11-20",
+		nil,
+		http.StatusOK,
+		&lots,
+	)
+
+	if lots.Method != "fifo" || len(lots.Lots) != 1 ||
+		lots.Lots[0].AcquiredOn != "2024-01-10" ||
+		lots.Lots[0].Cost["amount"] != float64(1000000) {
+		t.Errorf("lots = %+v, want one fifo lot of 1000000 acquired 2024-01-10", lots)
+	}
+
+	var again fixedIncomeOut
+	f.h.MustDo(http.MethodPost, fixedIncomePath, body, http.StatusOK, &again)
+
+	if again.TransactionID != out.TransactionID {
+		t.Errorf("replay transaction = %s, want %s", again.TransactionID, out.TransactionID)
+	}
+
+	body["cash_account_id"] = f.cash
+	f.h.ExpectProblem(
+		f.h.Do(http.MethodPost, fixedIncomePath, body),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"cash_account_id",
+	)
+}
+
 // TestTradeOpeningCarriesNoTaxes (OL8): the table refuses taxes, or a cash account other than the
 // holding, on an opening.
 func TestTradeOpeningCarriesNoTaxes(t *testing.T) {
