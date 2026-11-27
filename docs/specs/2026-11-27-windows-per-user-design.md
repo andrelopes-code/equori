@@ -4,7 +4,7 @@ Status: draft, 2026-11-27. Supersedes `docs/specs/2026-10-27-distribution-window
 
 ## Intent
 
-A person with Windows 10 or 11 installs equori with one pasted PowerShell command, the counterpart of `scripts/install.sh` on Linux. The command shows no SmartScreen screen. After it, the browser opens on the first-user screen, and an icon in the notification area (tray) shows that equori runs. No Docker, no WSL, no administrator rights, no paid or third-party signature. Linux keeps the compose form of `scripts/install.sh` (ADR 022, D9).
+A person with Windows 10 or 11, without WSL, processor virtualization, a virtual machine or Docker, installs equori with one pasted PowerShell command, the counterpart of `scripts/install.sh` on Linux. The command shows no SmartScreen screen. After it, the browser opens on the first-user screen, and an icon in the notification area (tray) shows that equori runs. No Docker, no WSL, no administrator rights, no paid or third-party signature. Linux keeps the compose form of `scripts/install.sh` (ADR 022, D9).
 
 ## Decided by the owner
 
@@ -34,6 +34,8 @@ A person with Windows 10 or 11 installs equori with one pasted PowerShell comman
 | PG2 | No SmartScreen screen at installation or at use: no installed file carries a `Zone.Identifier` stream. |
 | PG3 | Running the same command again upgrades the program and keeps every fact. |
 | PG4 | Every file of the form, data included, lives under one folder. |
+| PG5 | No prerequisite: no WSL, no processor virtualization, no virtual machine, no Docker, no separate PostgreSQL. equori and the bundled `postgres.exe` run as native Windows programs. |
+| PG6 | The script states each step, its result and its duration, and every failure names its cause, the action that fixes it and the section of `docs/install/windows.md` that covers it. |
 
 ## Non-goals
 
@@ -44,6 +46,8 @@ Code signature; Windows service; machine-wide installation; a graphical setup pr
 The design fails, even when every artifact builds, when any of these holds:
 
 - The installation asks for administrator rights.
+- The installation or the use requires enabling WSL, virtualization, a virtual machine or Docker.
+- The script asks a question during an installation or an upgrade.
 - SmartScreen or Microsoft Defender shows a warning for a file of the form.
 - An upgrade or an uninstall deletes data without the person choosing it.
 
@@ -76,6 +80,42 @@ The design fails, even when every artifact builds, when any of these holds:
 | PW2.5 | The script ends by starting `equori.exe`, which opens the browser (PW3.2), and prints the address. |
 | PW2.6 | `equori-cli.exe uninstall` stops the instance, removes the program files, both shortcuts and the registry entry, and asks whether to delete `data\` and `backups\`, with "No" as default. `--yes` answers yes; `--keep-data` answers no without asking. |
 | PW2.7 | An upgrade keeps the state of "Start with Windows": the script recreates the Startup shortcut only when it existed before or on a first installation. |
+
+### PW2b Script presentation and order
+
+| ID | Rule |
+|---|---|
+| PW2.8 | The first line names the version and the operation: installation into the folder, upgrade from the installed version, or "already at version X", which ends the script in under 2 s without a download. |
+| PW2.9 | Each step is one line: a mark at column 3 (`[..]` while it runs, `[ok]` green, `[!!]` red), the step name, its detail and its duration, aligned on fixed columns, at most 80 columns, never wrapped. The running line is rewritten in place with the elapsed seconds; the download line also shows megabytes received, the total and the percentage. |
+| PW2.10 | Steps, in order: checks (Windows 10 1803 or later, x64 or Arm, write access to the folder, port of `EQUORI_HTTP_ADDR` free, Smart App Control not in the "On" state); download; SHA-256 check; stop of the running instance; files; shortcuts; start and `/healthz`. The download and its check finish before the running instance stops, so an upgrade keeps equori unavailable only during the files, shortcuts and start steps. |
+| PW2.11 | The download reads the response as a stream and writes its own progress (Windows PowerShell 5.1 slows a download with its own progress bar on). A network failure is retried 3 times, 2 s apart. |
+| PW2.12 | A failure ends the step with `[!!]`, then prints three lines: `Error:` with the cause, `How to fix:` with the action, and the link to the anchor of the failure in `docs/install/windows.md`. A start failure prints the last 20 lines of `data\log\equori.log` before them. Each failure has an anchor code (`w1-…`), kept stable across releases. |
+| PW2.13 | The final block lists, one per line with values aligned on one column: the address (with the token of `setup.url` on a first installation), the folder, how to open equori (Start menu or tray icon), how to upgrade (the same command) and how to uninstall (Settings → Apps → equori). A first installation adds two lines in yellow: keep a copy of `data\secret.key` apart from the backups; without it, the bank connections cannot be read. |
+| PW2.14 | Colors: green for `[ok]` and the success line, red for `[!!]` and `Error:`, cyan for the address, yellow for the `secret.key` lines. Without a console (redirected output) or with `NO_COLOR` set, the script writes the same lines without color and without in-place rewrite. |
+| PW2.15 | `equori-cli.exe stop` and `uninstall` write their steps in the form of PW2.9 and PW2.12. |
+
+Output of a first installation, `pt-BR`, as a reference for PW2.8 to PW2.13:
+
+```
+equori 0.9.0 · instalação em C:\Users\ana\AppData\Local\equori
+
+  [ok] Verificações        Windows 11 x64, porta 8080 livre
+  [ok] Download            31,2 MB                         4 s
+  [ok] SHA-256             confere
+  [ok] Arquivos            1.014 arquivos                  2 s
+  [ok] Atalhos             Menu Iniciar, Iniciar com o Windows
+  [ok] Início              resposta em /healthz            6 s
+
+O equori está instalado.
+  Endereço     http://127.0.0.1:8080/setup#token=3f9c…
+  Pasta        C:\Users\ana\AppData\Local\equori
+  Abrir        Menu Iniciar → equori, ou o ícone na bandeja
+  Atualizar    execute de novo o mesmo comando
+  Desinstalar  Configurações → Apps → equori
+
+Guarde uma cópia de data\secret.key longe dos backups.
+Sem ela, as conexões bancárias não podem ser lidas.
+```
 
 ### PW3 Tray and execution
 
@@ -156,6 +196,7 @@ The design fails, even when every artifact builds, when any of these holds:
 | Rule | Test |
 |---|---|
 | PW1, PW2, PW3.1 to PW3.4, PW4 | PW6.2 on `windows-latest` |
+| PW2.8 to PW2.14 | PW6.2 captures the redirected output of `install.ps1` and compares its lines, durations masked, with a golden file per language |
 | PW3.6 | the rotation test moved with the log code |
 | PW3.7 | a table test of the language choice |
 | PW3.8 | `go vet` and `golangci-lint` with `GOOS=windows` and on Linux |
@@ -165,6 +206,7 @@ The design fails, even when every artifact builds, when any of these holds:
 
 - The signal between `equori-cli.exe stop` and the running instance (named event, local endpoint or lock wait), within PW3.4.
 - The icon file of the tray, from the existing mark.
+- The source of the Smart App Control state of PW2.10 (the registry value `VerifiedAndReputablePolicyState` under `HKLM\SYSTEM\CurrentControlSet\Control\CI\Policy` is the candidate; the builder confirms it on the runner). Without a reliable source, the check is dropped and the limit stays in the guide.
 - Whether `scripts/windows-postgres.ps1` passes PW6.2 unchanged; a failure is fixed inside it.
 
 ## Sources
