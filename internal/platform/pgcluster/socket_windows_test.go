@@ -22,9 +22,9 @@ func TestSocketDirTooLong(t *testing.T) {
 	}
 }
 
-// PW4.2: postgres.exe writes the socket path in the ANSI code page and Go dials it in UTF-8, so a
-// folder such as C:\Users\João reaches the socket only through its ASCII short name.
-func TestSocketNameOfAFolderOutsideASCII(t *testing.T) {
+// PW4.2: postgres.exe reads its paths in the ANSI code page and its server checks them as UTF-8, so
+// a folder such as C:\Users\João reaches PostgreSQL only through its ASCII short name.
+func TestNativePathOfAFolderOutsideASCII(t *testing.T) {
 	t.Parallel()
 
 	dir := filepath.Join(t.TempDir(), "equori smoke Jo\u00e3o", "run")
@@ -32,13 +32,13 @@ func TestSocketNameOfAFolderOutsideASCII(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := socketName(dir)
+	got, err := nativePath(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	if !isASCII(got) {
-		t.Fatalf("socketName(%q) = %q, want an ASCII path", dir, got)
+		t.Fatalf("nativePath(%q) = %q, want an ASCII path", dir, got)
 	}
 
 	long, err := os.Stat(dir)
@@ -48,11 +48,11 @@ func TestSocketNameOfAFolderOutsideASCII(t *testing.T) {
 
 	short, err := os.Stat(got)
 	if err != nil || !os.SameFile(long, short) {
-		t.Fatalf("socketName(%q) = %q, which is not the same folder (%v)", dir, got, err)
+		t.Fatalf("nativePath(%q) = %q, which is not the same folder (%v)", dir, got, err)
 	}
 
 	ascii := t.TempDir()
-	if got, err := socketName(ascii); err != nil || got != ascii {
-		t.Fatalf("socketName(%q) = %q, %v; want the path unchanged", ascii, got, err)
+	if got, err := nativePath(ascii); err != nil || got != ascii {
+		t.Fatalf("nativePath(%q) = %q, %v; want the path unchanged", ascii, got, err)
 	}
 }

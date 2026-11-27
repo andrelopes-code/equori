@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
@@ -90,5 +91,26 @@ func TestStartEndsTheServerWithItsParent(t *testing.T) {
 
 	if got := query(t, c, "SELECT 'up'"); got != "up" {
 		t.Fatal(got)
+	}
+}
+
+// PW4.2: a data directory outside ASCII, as under C:\Users\João, starts the cluster: initdb and the
+// server check their paths as UTF-8 and read them in the ANSI code page.
+func TestStartInAFolderOutsideASCII(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "equori Jo\u00e3o")
+
+	c, err := Start(t.Context(), dir, testBin(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer func() { _ = c.Stop() }()
+
+	if got := query(t, c, "SELECT 'up'"); got != "up" {
+		t.Fatal(got)
+	}
+
+	if _, err := os.Stat(filepath.Join(dir, "pg", "PG_VERSION")); err != nil {
+		t.Fatal(err)
 	}
 }

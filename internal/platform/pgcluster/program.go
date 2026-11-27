@@ -57,6 +57,7 @@ func bin(explicit, exe string) (string, error) {
 
 // Major returns the major version that program reports with --version.
 func Major(ctx context.Context, program string) (int, error) {
+	//nolint:gosec // G702: the programs directory is the owner's configuration.
 	out, err := exec.CommandContext(ctx, program, "--version").
 		Output()
 		//nolint:gosec // G204: the programs directory is the owner's configuration.

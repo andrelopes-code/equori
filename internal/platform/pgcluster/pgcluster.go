@@ -83,12 +83,13 @@ func Attach(ctx context.Context, dir, bin string) (*Cluster, error) {
 
 	lock, err := lockDir(dir)
 	if errors.Is(err, ErrBusy) {
-		socket, err := socketDir(dir)
+		dir, bin, err := nativePaths(dir, bin)
 		if err != nil {
 			return nil, err
 		}
 
-		if socket, err = socketName(socket); err != nil {
+		socket, err := socketDir(dir)
+		if err != nil {
 			return nil, err
 		}
 

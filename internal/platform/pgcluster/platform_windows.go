@@ -71,10 +71,10 @@ func prepareDataDir(dir string, accounts []string) error {
 	return checkDACL(dir)
 }
 
-// socketName is the socket directory in the bytes postgres.exe and Go both use: postgres.exe
-// converts the path to the ANSI code page and Go dials it in UTF-8, so a path outside ASCII takes
+// nativePath is path in bytes postgres.exe keeps intact: it reads its paths in the ANSI code page,
+// its server checks them as UTF-8 and Go dials the socket in UTF-8, so a path outside ASCII takes
 // its short name, which NTFS writes in ASCII (PW4.2).
-func socketName(path string) (string, error) {
+func nativePath(path string) (string, error) {
 	if isASCII(path) {
 		return path, nil
 	}
@@ -99,7 +99,7 @@ func socketName(path string) (string, error) {
 	short := windows.UTF16ToString(buf[:n])
 	if !isASCII(short) {
 		return "", fmt.Errorf(
-			"socket path %s holds letters outside ASCII and its volume keeps no short names; "+
+			"path %s holds letters outside ASCII and its volume keeps no short names; "+
 				"set EQUORI_DATA_DIR to a directory named in ASCII",
 			path,
 		)

@@ -11,6 +11,11 @@ import (
 )
 
 func start(ctx context.Context, dir, bin string, lock *os.File) (*Cluster, error) {
+	dir, bin, err := nativePaths(dir, bin)
+	if err != nil {
+		return nil, err
+	}
+
 	socket, err := prepareSocket(dir)
 	if err != nil {
 		return nil, err
@@ -52,7 +57,22 @@ func prepareSocket(dir string) (string, error) {
 		return "", err
 	}
 
-	return socketName(socket)
+	return socket, nil
+}
+
+// nativePaths is the data and program directories in the bytes postgres.exe keeps (PW4.2).
+func nativePaths(dir, bin string) (string, string, error) {
+	dir, err := nativePath(dir)
+	if err != nil {
+		return "", "", err
+	}
+
+	bin, err = nativePath(bin)
+	if err != nil {
+		return "", "", err
+	}
+
+	return dir, bin, nil
 }
 
 func checkMajor(ctx context.Context, bin string) (int, error) {
