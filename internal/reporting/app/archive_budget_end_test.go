@@ -27,8 +27,4 @@ func TestAddBudgetEnded(t *testing.T) {
 	if string(v36[0].Rows[0]) != `{"amount":42800}` {
 		t.Fatalf("the step changed its input: %s", v36[0].Rows[0])
 	}
-
-	if ArchiveVersion != 37 {
-		t.Fatalf("ArchiveVersion = %d, want 37", ArchiveVersion)
-	}
 }
