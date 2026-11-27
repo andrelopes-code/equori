@@ -110,12 +110,9 @@ export const holdingsPtBR: Record<keyof typeof holdingsEn, string> = {
   "taxYear.class.fund_exempt": "Fundos isentos",
   "taxYear.class.etf_fixed_income": "ETFs de renda fixa",
   "taxYear.class.currency": "Moedas",
-  "return.subject.portfolio": "a carteira",
   "return.subject.account": "a conta",
   "return.verdict.period": "No período, {subject} rendeu {return}",
   "return.verdict.annual": ", ou {annual} ao ano",
-  "return.verdict.personal":
-    "No per\u00edodo, a sua taxa pessoal foi de {annual} ao ano.",
   "return.help.about": "Sobre “{term}”",
   "return.help.period":
     "Quanto cada 100 aplicados no in\u00edcio do per\u00edodo renderam at\u00e9 o fim. Aportes e retiradas n\u00e3o mudam esse n\u00famero, por isso ele pode ser comparado com \u00edndices.",
@@ -141,7 +138,6 @@ export const holdingsPtBR: Record<keyof typeof holdingsEn, string> = {
   "return.against.months": "{subject} e {index}, de {from} a {until}",
   "return.chip.percent": "{percent} do {index}",
   "return.chip.real": "{real} real",
-  "return.bar.portfolio": "Carteira",
   "return.bar.account": "Conta",
   "return.bars.label": "{subject} {value}, {index} {indexValue}",
   "return.lead.gain": "Rendimento no período",

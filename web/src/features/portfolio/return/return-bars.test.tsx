@@ -33,12 +33,12 @@ const market: ReturnReport = {
 };
 
 const pairNames = [
-  "Portfolio −10.00%, CDI 0.33%",
-  "Portfolio 0.00%, IPCA 0.90%",
+  "Account −10.00%, CDI 0.33%",
+  "Account 0.00%, IPCA 0.90%",
 ] as const;
 
 function renderBars() {
-  const summary = returnSummary(market, "portfolio", t, "en");
+  const summary = returnSummary(market, t, "en");
   if (summary.axis === undefined) throw new Error("the summary has no axis");
 
   return renderWithProviders(

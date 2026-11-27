@@ -12,8 +12,6 @@ import { periodReturn } from "@/features/portfolio/model/yield-figures";
 type ReturnBenchmark = components["schemas"]["ReturnBenchmark"];
 type ReturnReport = components["schemas"]["ReturnReport"];
 
-export type ReturnSubject = "portfolio" | "account";
-
 export interface ReturnBar {
   key: "subject" | "index" | "inflation";
   label: string;
@@ -49,7 +47,6 @@ const YEAR_DAYS = 366;
 // return honesty HR3, HR4). days is the calendar span of the period, its two ends included.
 export function returnSummary(
   report: ReturnReport,
-  subject: ReturnSubject,
   t: TFunction,
   tag: string,
   days?: number,
@@ -60,8 +57,8 @@ export function returnSummary(
       ? annualBP(ret, days)
       : undefined;
   const comparisons = [
-    indexComparison(report, subject, t, tag),
-    inflationComparison(report, subject, t, tag),
+    indexComparison(report, t, tag),
+    inflationComparison(report, t, tag),
   ].filter((comparison) => comparison !== undefined);
   const values = comparisons.flatMap((c) => c.bars.map((bar) => bar.bp));
 
@@ -69,7 +66,7 @@ export function returnSummary(
     ...(ret === undefined
       ? {}
       : {
-          verdict: verdictText(ret, annual, subject, t, tag),
+          verdict: verdictText(ret, annual, t, tag),
           verdictHelp: verdictHelp(annual, t),
         }),
     comparisons,
@@ -81,12 +78,11 @@ export function returnSummary(
 function verdictText(
   ret: number,
   annual: number | undefined,
-  subject: ReturnSubject,
   t: TFunction,
   tag: string,
 ): string {
   const core = t("return.verdict.period", {
-    subject: t(`return.subject.${subject}`),
+    subject: t("return.subject.account"),
     return: formatBasisPoints(ret, tag),
   });
   const year =
@@ -111,7 +107,6 @@ function annualBP(periodBP: number, days: number): number {
 
 function indexComparison(
   report: ReturnReport,
-  subject: ReturnSubject,
   t: TFunction,
   tag: string,
 ): ReturnComparison | undefined {
@@ -125,19 +120,19 @@ function indexComparison(
     key: "index",
     heading: t("return.against.index", { index }),
     window: t("return.against.window", {
-      subject: t(`return.bar.${subject}`),
+      subject: t("return.bar.account"),
       index,
       from: formatDate(b.from, tag),
       until: formatDate(b.until, tag),
       days: String(b.days),
     }),
     help: t("return.help.index", {
-      subject: t(`return.subject.${subject}`),
+      subject: t("return.subject.account"),
       index,
     }),
     ...(chip === undefined ? {} : { chip }),
     bars: [
-      subjectBar(subject, b.return_bp, t),
+      subjectBar(b.return_bp, t),
       { key: "index", label: index, bp: b.index_bp },
     ],
   };
@@ -145,7 +140,6 @@ function indexComparison(
 
 function inflationComparison(
   report: ReturnReport,
-  subject: ReturnSubject,
   t: TFunction,
   tag: string,
 ): ReturnComparison | undefined {
@@ -158,13 +152,13 @@ function inflationComparison(
     key: "inflation",
     heading: t("return.against.inflation"),
     window: t("return.against.months", {
-      subject: t(`return.bar.${subject}`),
+      subject: t("return.bar.account"),
       index: inflation,
       from: formatDate(i.from, tag),
       until: formatDate(i.until, tag),
     }),
     help: t("return.help.inflation", {
-      subject: t(`return.subject.${subject}`),
+      subject: t("return.subject.account"),
       index: inflation,
     }),
     chip: {
@@ -172,7 +166,7 @@ function inflationComparison(
       text: t("return.chip.real", { real: formatBasisPoints(i.real_bp, tag) }),
     },
     bars: [
-      subjectBar(subject, i.return_bp, t),
+      subjectBar(i.return_bp, t),
       { key: "inflation", label: inflation, bp: i.index_bp },
     ],
   };
@@ -213,12 +207,8 @@ function indexChip(
   return undefined;
 }
 
-function subjectBar(
-  subject: ReturnSubject,
-  bp: number,
-  t: TFunction,
-): ReturnBar {
-  return { key: "subject", label: t(`return.bar.${subject}`), bp };
+function subjectBar(bp: number, t: TFunction): ReturnBar {
+  return { key: "subject", label: t("return.bar.account"), bp };
 }
 
 function signTone(bp: number): Pick<ReturnChip, "tone" | "icon"> {

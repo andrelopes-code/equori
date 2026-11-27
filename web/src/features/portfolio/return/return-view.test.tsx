@@ -20,7 +20,6 @@ import {
 import { renderWithProviders } from "@/testing/render-app";
 
 import { ReturnView } from "@/features/portfolio/return/return-view";
-import type { ReturnSubject } from "@/features/portfolio/model/return-summary";
 
 type ReturnReport = components["schemas"]["ReturnReport"];
 
@@ -51,7 +50,7 @@ const unrecorded: ReturnReport = {
 
 const sectionTitle = "Return";
 
-function renderView(report: ReturnReport, subject: ReturnSubject) {
+function renderView(report: ReturnReport) {
   return renderWithProviders(
     <Section size="lg" aria-label={sectionTitle}>
       <SectionHeader>
@@ -60,7 +59,7 @@ function renderView(report: ReturnReport, subject: ReturnSubject) {
         </SectionTitle>
       </SectionHeader>
       <SectionBody>
-        <ReturnView report={report} subject={subject} />
+        <ReturnView report={report} />
       </SectionBody>
     </Section>,
     { fetch: fakeApi({}) },
@@ -83,10 +82,10 @@ function method(): HTMLElement {
 
 describe("ReturnView", () => {
   it("RC1: states the verdict of a market return, its comparisons and the money", () => {
-    renderView(market, "portfolio");
+    renderView(market);
 
     expect(
-      screen.getByText("In the period, the portfolio returned −10.00%."),
+      screen.getByText("In the period, the account returned −10.00%."),
     ).toBeInTheDocument();
     expect(screen.getByText("Against the CDI")).toBeInTheDocument();
     expect(screen.getByText("Against inflation")).toBeInTheDocument();
@@ -103,7 +102,7 @@ describe("ReturnView", () => {
   // 105000 - 100000 = 5000; this harness serves no instrument, so the scale is 0 and the amount
   // reads R$5,000. annual_bp is 500.
   it("RK1, RK6: leads with the gain in money and writes the annual rate beside the button", async () => {
-    renderView(market, "portfolio");
+    renderView(market);
 
     const lead = (
       await screen.findByText(catalogEn["return.lead.gain"])
@@ -115,10 +114,10 @@ describe("ReturnView", () => {
   });
 
   it("RC1: states the verdict of a compared return and keeps the profile sentence", () => {
-    renderView(compared, "portfolio");
+    renderView(compared);
 
     expect(
-      screen.getByText("In the period, the portfolio returned 0.33%."),
+      screen.getByText("In the period, the account returned 0.33%."),
     ).toBeInTheDocument();
     expect(screen.getByText("Against the CDI")).toBeInTheDocument();
     expect(screen.queryByText("Against inflation")).not.toBeInTheDocument();
@@ -130,7 +129,7 @@ describe("ReturnView", () => {
   });
 
   it("RC6: keeps the details closed and holds the groups in them", () => {
-    renderView(market, "portfolio");
+    renderView(market);
 
     expect(method()).toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -145,7 +144,7 @@ describe("ReturnView", () => {
   });
 
   it("RC7: states the note of a report with no yield recorded and no verdict", () => {
-    renderView(unrecorded, "account");
+    renderView(unrecorded);
 
     expect(
       screen.getByText(catalogEn["portfolio.yield.reason.no_yield_recorded"]),
@@ -154,23 +153,9 @@ describe("ReturnView", () => {
     expect(method()).toBeInTheDocument();
   });
 
-  it("HR3: states the personal rate in a sentence when nothing else draws", () => {
-    renderView(plain, "portfolio");
-
-    expect(
-      screen.getByText("In the period, your personal rate was 5.00% a year."),
-    ).toBeInTheDocument();
-  });
-
-  it("RE4: states no personal rate without annual_bp", () => {
-    renderView(withoutAnnual(plain), "portfolio");
-
-    expect(screen.queryByText(/personal rate/)).not.toBeInTheDocument();
-  });
-
   it("RE4: omits the annual line and the personal row without annual_bp", async () => {
     const user = userEvent.setup();
-    renderView(withoutAnnual(market), "account");
+    renderView(withoutAnnual(market));
 
     expect(screen.queryByText(/Annual rate/)).not.toBeInTheDocument();
 
@@ -189,7 +174,6 @@ describe("ReturnView", () => {
     renderWithProviders(
       <ReturnView
         report={market}
-        subject="account"
         window={{ from: "2026-01-02", to: "2026-01-31", days: 30 }}
       />,
       { fetch: fakeApi({}) },
@@ -209,10 +193,10 @@ describe("ReturnView", () => {
 
   it("HR4: explains why each comparison has its own window", async () => {
     const user = userEvent.setup();
-    renderView(market, "portfolio");
+    renderView(market);
 
     expect(
-      screen.getByText("Portfolio and CDI, 01/02/2026 to 01/09/2026 · 6 days"),
+      screen.getByText("Account and CDI, 01/02/2026 to 01/09/2026 · 6 days"),
     ).toBeInTheDocument();
 
     await user.hover(
@@ -220,7 +204,7 @@ describe("ReturnView", () => {
     );
 
     expect(await screen.findByRole("tooltip")).toHaveTextContent(
-      "Both bars measure the portfolio and the CDI on those days",
+      "Both bars measure the account and the CDI on those days",
     );
   });
 });

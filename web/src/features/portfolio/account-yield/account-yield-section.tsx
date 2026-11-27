@@ -59,7 +59,6 @@ export function AccountYieldSection({ accountId }: AccountYieldSectionProps) {
       <SectionBody>
         <ReturnView
           report={report}
-          subject="account"
           window={{ from, to: today, days: WINDOW_DAYS }}
         />
       </SectionBody>

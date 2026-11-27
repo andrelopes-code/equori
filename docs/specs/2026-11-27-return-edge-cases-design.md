@@ -21,7 +21,7 @@ Corrections to the return report after the audit of 2026-11-27. Amends sections 
 
 **RE3 Empty start.** Amends R1: outside R19, a subperiod with `V(start) = 0` and no inflow contributes 1 whatever its gain. Such a subperiod holds no invested money: an income paid after the last unit was sold is cash with no base. A subperiod with `V(start) = 0` and an inflow keeps the rule of R1, and `V(start) < 0` with a nonzero gain still leaves `period_bp` absent.
 
-**RE4 Absent personal rate.** Amends HR3: without `annual_bp`, the method layer omits the row "Sua taxa pessoal ao ano", the foot of the account page omits its line "Taxa anual", and the personal sentence of HR3 is not drawn.
+**RE4 Absent personal rate.** Amends HR3: without `annual_bp`, the method layer omits the row "Sua taxa pessoal ao ano" and the foot of the account page omits its line "Taxa anual". The return view draws only an account (R17): its subject "portfolio", the personal sentence of HR3 and the texts `return.subject.portfolio`, `return.bar.portfolio` and `return.verdict.personal` are removed, since no screen draws them.
 
 **RE5 Flows of a cash tree.** Amends section 4.3 and A124: the annual rate of a tree under R19 discounts the flows of R19, so income and expense other than yield are money in and out, as in its time-weighted return. A goal over a checking account without yield reads 0. S130 records its 50.00 against the Yield account.
 
@@ -33,7 +33,7 @@ Corrections to the return report after the audit of 2026-11-27. Amends sections 
 - R2: Does not apply: no regional behavior changes.
 - R3: Does not apply: no value set.
 - R4: Does not apply: no extension point.
-- R5: Does not apply: no new text.
+- R5: No new text; `return.subject.portfolio`, `return.bar.portfolio` and `return.verdict.personal` leave the pt-BR and en catalogs (RE4).
 - R6: Does not apply: no new format.
 - C1: Does not apply: no amount is stored; rates stay basis points.
 - C2: Does not apply: no sum across currencies.

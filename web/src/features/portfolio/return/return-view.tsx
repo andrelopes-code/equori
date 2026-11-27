@@ -8,17 +8,13 @@ import { returnMoney } from "@/features/portfolio/return-money/return-money";
 import { ReturnMoneyPanel } from "@/features/portfolio/return-money/return-money-panel";
 import { ReturnMethod } from "@/features/portfolio/return/return-method";
 import styles from "@/features/portfolio/return/return-view.module.css";
-import {
-  returnSummary,
-  type ReturnSubject,
-} from "@/features/portfolio/model/return-summary";
+import { returnSummary } from "@/features/portfolio/model/return-summary";
 import {
   yieldGroups,
   yieldNotes,
   type YieldWindow,
 } from "@/features/portfolio/model/yield-figures";
 import { useScale } from "@/features/setup";
-import { formatBasisPoints } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
@@ -27,7 +23,6 @@ type ReturnReport = components["schemas"]["ReturnReport"];
 
 interface ReturnViewProps {
   report: ReturnReport;
-  subject: ReturnSubject;
   window?: YieldWindow;
   // The calendar span of the period, its two ends included; above a year the verdict states the
   // annual rate (return honesty HR3).
@@ -36,10 +31,9 @@ interface ReturnViewProps {
 
 // RK1 to RK6 (docs/specs/2026-11-17-return-card-design.md): the gain and the verdict lead, the
 // comparisons stand beside the origin of the closing balance, and the foot holds the notes, the
-// profile sentence of R17, the annual rate and the details. A report with nothing of these
-// states the personal rate in a sentence on the portfolio (HR3, amending PC11) and draws nothing
-// on an account.
-export function ReturnView({ report, subject, window, days }: ReturnViewProps) {
+// profile sentence of R17, the annual rate and the details. A report with nothing of these draws
+// nothing (RE4).
+export function ReturnView({ report, window, days }: ReturnViewProps) {
   const t = useT();
   const [tag] = useAppLocale();
   const fmt = useMoneyFormat();
@@ -47,7 +41,6 @@ export function ReturnView({ report, subject, window, days }: ReturnViewProps) {
 
   const { verdict, verdictHelp, comparisons, axis } = returnSummary(
     report,
-    subject,
     t,
     tag,
     days,
@@ -60,20 +53,13 @@ export function ReturnView({ report, subject, window, days }: ReturnViewProps) {
   const bare = verdict === undefined && groups.length === 0;
   const showBars = comparisons.length > 0 && axis !== undefined;
   const showGrid = showBars || returnMoney(report) !== undefined;
-  const personal =
-    subject === "portfolio" && bare && report.annual_bp !== undefined
-      ? t("return.verdict.personal", {
-          annual: formatBasisPoints(report.annual_bp, tag),
-        })
-      : undefined;
-
-  if (subject === "account" && bare && notes.length === 0) return null;
+  if (bare && notes.length === 0) return null;
 
   return (
     <div className={styles.layout}>
       <ReturnLead
         report={report}
-        sentence={verdict ?? personal}
+        sentence={verdict}
         help={verdict === undefined ? undefined : (verdictHelp ?? "")}
       />
 

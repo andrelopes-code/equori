@@ -108,12 +108,9 @@ export const holdingsEn = {
   "taxYear.class.fund_exempt": "Tax-exempt funds",
   "taxYear.class.etf_fixed_income": "Fixed income ETFs",
   "taxYear.class.currency": "Currencies",
-  "return.subject.portfolio": "the portfolio",
   "return.subject.account": "the account",
   "return.verdict.period": "In the period, {subject} returned {return}",
   "return.verdict.annual": ", or {annual} a year",
-  "return.verdict.personal":
-    "In the period, your personal rate was {annual} a year.",
   "return.help.about": "About “{term}”",
   "return.help.period":
     "How much each 100 invested at the start of the period earned by its end. Deposits and withdrawals do not change this figure, so it can be compared with indexes.",
@@ -139,7 +136,6 @@ export const holdingsEn = {
   "return.against.months": "{subject} and {index}, {from} to {until}",
   "return.chip.percent": "{percent} of the {index}",
   "return.chip.real": "{real} real",
-  "return.bar.portfolio": "Portfolio",
   "return.bar.account": "Account",
   "return.bars.label": "{subject} {value}, {index} {indexValue}",
   "return.lead.gain": "Gain in the period",
