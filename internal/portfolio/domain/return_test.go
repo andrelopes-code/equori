@@ -63,6 +63,17 @@ func TestAnnualReturnBP(t *testing.T) {
 			false,
 		},
 		{"total loss", []CashFlow{flow("2025-10-31", -100000), flow("2026-10-31", 0)}, 0, false},
+		// RE1: no time passes between the flows.
+		{
+			"every flow on one date",
+			[]CashFlow{
+				flow("2026-08-28", 0),
+				flow("2026-11-26", -100000),
+				flow("2026-11-26", 100000),
+			},
+			0,
+			false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

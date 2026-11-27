@@ -40,6 +40,23 @@ func TestPeriodFactor(t *testing.T) {
 			true,
 		},
 		{"a gain on an empty start", 0, []Subperiod{{Value: 100500, Flow: 100000}}, 0, false},
+		// RE3: an income paid after the last unit was sold has no invested base.
+		{"a gain on an empty start without an inflow", 0, []Subperiod{{Value: 5000}}, 1, true},
+		{
+			"an income on an empty start, withdrawn the same day",
+			0,
+			[]Subperiod{{Value: 0, Flow: -5000}, {Value: 0}},
+			1,
+			true,
+		},
+		{
+			"an empty piece between two held ones",
+			100000,
+			[]Subperiod{{Value: 0, Flow: -110000}, {Value: 5000}, {Value: 5500}},
+			1.1 * 1.1,
+			true,
+		},
+		{"a gain on a negative start", -100, []Subperiod{{Value: 5000}}, 0, false},
 		// A208 R1 (amended 2026-11-26): bought at 158.56, closed at 159.09.
 		{
 			"an inflow at the start of its day into an empty tree",

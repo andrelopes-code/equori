@@ -36,7 +36,8 @@ type Subperiod struct {
 
 // PeriodFactor is 1 plus the time-weighted return from the start value through ends, oldest
 // first (amendment A208 R1). A flow earns from the day after it, or from its own day when
-// FlowAtStart. ok is false when a gain has no invested base or when a piece loses everything.
+// FlowAtStart. A piece that starts at 0 with no inflow contributes 1 (RE3). ok is false when a
+// gain has no invested base or when a piece loses everything.
 func PeriodFactor(start int64, ends []Subperiod) (factor float64, ok bool) {
 	return periodFactor(start, ends, false)
 }
@@ -90,8 +91,12 @@ func periodFactor(start int64, ends []Subperiod, zeroBase bool) (factor float64,
 			base += e.Flow
 		}
 
+		// An empty start holds no invested money when nothing flows in or the yield is recorded:
+		// its gain contributes 1 (R20, RE3).
 		gain := e.Value - e.Flow - start
-		if base <= 0 && gain != 0 && (!zeroBase || start != 0) {
+		empty := start == 0 && (zeroBase || e.Flow <= 0)
+
+		if base <= 0 && gain != 0 && !empty {
 			return 0, false
 		}
 

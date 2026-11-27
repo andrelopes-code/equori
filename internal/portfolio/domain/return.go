@@ -21,7 +21,8 @@ const (
 
 // AnnualReturnBP is the internal rate of return of the flows, annualized by days over 365 from
 // the first flow, in basis points rounded half to even. ok is false when no money was put in,
-// when there are fewer than two flows or when the rate lies outside [-99.99%, 100000%].
+// when there are fewer than two flows, when every nonzero flow is dated on one day (RE1) or when
+// the rate lies outside [-99.99%, 100000%].
 // The solver runs in floating point; the result leaves as an integer (investments design AG2).
 func AnnualReturnBP(flows []CashFlow) (bp int, ok bool) {
 	if len(flows) < 2 ||
@@ -33,6 +34,10 @@ func AnnualReturnBP(flows []CashFlow) (bp int, ok bool) {
 		slices.Values(flows),
 		func(a, b CashFlow) int { return a.Date.Compare(b.Date) },
 	)
+	if oneDate(sorted) {
+		return 0, false
+	}
+
 	first := sorted[0].Date
 	value := func(rate float64) float64 {
 		var sum float64
@@ -66,4 +71,23 @@ func AnnualReturnBP(flows []CashFlow) (bp int, ok bool) {
 	}
 
 	return int(math.RoundToEven((lo + hi) / 2 * 10000)), true
+}
+
+// oneDate reports whether every nonzero flow is dated on the same day.
+func oneDate(flows []CashFlow) bool {
+	var date time.Time
+
+	for _, f := range flows {
+		if f.Amount == 0 {
+			continue
+		}
+
+		if !date.IsZero() && !f.Date.Equal(date) {
+			return false
+		}
+
+		date = f.Date
+	}
+
+	return true
 }
