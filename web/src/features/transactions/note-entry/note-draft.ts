@@ -18,6 +18,9 @@ export interface NoteDraft {
   fees: number;
   taxes: number;
   taxesCategoryId: string | null;
+  // One rate for the whole note when the cash is in the quote currency (FC2); null takes the
+  // rate of the day.
+  exchangeRate: string | null;
   description: string;
   orders: NoteOrder[];
 }
@@ -34,6 +37,7 @@ export function emptyNote(
     fees: 0,
     taxes: 0,
     taxesCategoryId: null,
+    exchangeRate: null,
     description: "",
     orders: [emptyOrder()],
   };

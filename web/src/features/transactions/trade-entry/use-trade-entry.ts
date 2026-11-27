@@ -30,6 +30,7 @@ import {
   tradePreset,
 } from "@/features/transactions/trade-entry/trade-draft";
 import type { TradeDraft } from "@/features/transactions/trade-entry/trade-draft";
+import { tradeBaseAmount } from "@/features/transactions/trade-entry/base-amount";
 import { tradeOrder } from "@/features/transactions/trade-entry/trade-order";
 import { unitPriceOfTotal } from "@/features/transactions/trade-entry/unit-price-of-total";
 import { shortfall } from "@/features/transactions/brokerage-account/cash-state";
@@ -68,7 +69,16 @@ export interface TradeView {
   payers: Account[];
   payer: Account | undefined;
   baseCash: boolean;
-  // Minor units of the base currency.
+  // The currency of the cash and the price: the base, or the quote currency of the instrument
+  // for a payer or an opening in it (FC1).
+  cashCurrency: string | undefined;
+  // The cash is not in the base currency, so the order takes an exchange rate (FC2).
+  foreign: boolean;
+  // The typed rate; null takes the rate of the day.
+  exchangeRate: string | null;
+  // Minor units of the base currency: the cash effect at the typed rate (FC3).
+  baseAmount: number | null;
+  // Minor units of the cash currency.
   balance: number | undefined;
   shortfall: number | null;
   price: string;
@@ -136,9 +146,17 @@ export function useTradeEntry(
   const sell = draft.side === "sell";
   const writeOff = draft.side === "write_off";
   const opening = draft.side === "opening";
-  const state = useBrokerages(chosen.brokerageId, instrument);
+  const state = useBrokerages(
+    chosen.brokerageId,
+    instrument,
+    instrument === null ? [] : [instrument],
+  );
   const payer =
     state.payers.find((a) => a.id === draft.cashAccountId) ?? state.payer;
+  // An opening moves no cash and is priced in the quote currency of the instrument.
+  const cashCurrency = (opening ? state.quote : payer?.currency) ?? base;
+  const foreign = cashCurrency !== undefined && cashCurrency !== base;
+  const exchangeRate = foreign ? (draft.exchangeRate ?? null) : null;
   const balanceRead = useQuery({
     ...balanceQuery(api, payer?.id ?? "", draft.date, "booked"),
     enabled: payer !== undefined,
@@ -151,8 +169,14 @@ export function useTradeEntry(
   );
 
   const prices = useQuery({
-    ...pricesQuery(api, instrument ?? "", base ?? "", draft.date, draft.date),
-    enabled: instrument !== null && base !== undefined,
+    ...pricesQuery(
+      api,
+      instrument ?? "",
+      cashCurrency ?? "",
+      draft.date,
+      draft.date,
+    ),
+    enabled: instrument !== null && cashCurrency !== undefined,
   });
   const positions = useQuery(positionsQuery(api, draft.date));
   const storedPrice = prices.data?.[0]?.value;
@@ -178,19 +202,21 @@ export function useTradeEntry(
   const quantityScale =
     scale === null || instrument === null ? null : scale(instrument);
   const baseScale = scale === null || base === undefined ? null : scale(base);
+  const cashScale =
+    scale === null || cashCurrency === undefined ? null : scale(cashCurrency);
   const price = draft.unitPrice ?? storedPrice ?? "";
   const byTotal = draft.priceBasis === "total";
   const rate =
-    byTotal && baseScale !== null && quantityScale !== null
-      ? unitPriceOfTotal(draft.total, baseScale, draft.quantity, quantityScale)
+    byTotal && cashScale !== null && quantityScale !== null
+      ? unitPriceOfTotal(draft.total, cashScale, draft.quantity, quantityScale)
       : parseRate(price);
   const priced =
     rate !== null &&
     draft.quantity > 0 &&
     quantityScale !== null &&
-    baseScale !== null;
+    cashScale !== null;
   const gross = priced
-    ? grossOf(draft.quantity, quantityScale, rate, baseScale)
+    ? grossOf(draft.quantity, quantityScale, rate, cashScale)
     : null;
   const taxes = draft.side === "sell" ? draft.taxes : 0;
   const heldQuantity = held?.quantity.amount ?? 0;
@@ -220,6 +246,7 @@ export function useTradeEntry(
     ),
     enabled:
       correction === undefined &&
+      !foreign &&
       sell &&
       state.held !== undefined &&
       gross !== null &&
@@ -251,6 +278,21 @@ export function useTradeEntry(
     gross === null || draft.side === "write_off" || draft.side === "opening"
       ? null
       : cashEffect(draft.side, gross, draft.fees, taxes);
+  const baseAmount =
+    foreign &&
+    exchangeRate !== null &&
+    gross !== null &&
+    cashScale !== null &&
+    baseScale !== null &&
+    draft.side !== "write_off"
+      ? tradeBaseAmount(
+          draft.side,
+          { gross, fees: draft.fees, taxes },
+          cashScale,
+          exchangeRate,
+          baseScale,
+        )
+      : null;
   const view: TradeView = {
     base,
     brokerages: state.brokerages,
@@ -260,6 +302,10 @@ export function useTradeEntry(
     payers: state.payers,
     payer,
     baseCash: state.baseCash,
+    cashCurrency,
+    foreign,
+    exchangeRate,
+    baseAmount,
     balance,
     shortfall: shortfall(cashEffectValue, balance),
     price: byTotal ? (rate ?? "") : price,
@@ -318,7 +364,8 @@ export function useTradeEntry(
       instrument,
       cashAccountId: opening ? undefined : payer?.id,
       rate,
-      base,
+      currency: cashCurrency ?? base,
+      exchangeRate,
       taxes,
     });
     try {

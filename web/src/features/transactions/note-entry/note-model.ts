@@ -10,19 +10,19 @@ import type { MessageKey } from "@/i18n/catalog.en";
 type BrokerageNoteInput = components["schemas"]["BrokerageNoteInput"];
 type BrokerageNoteOrder = components["schemas"]["BrokerageNoteOrder"];
 
-// The gross of each order in minor units of the base currency; null while the order lacks an
+// The gross of each order in minor units of the cash currency; null while the order lacks an
 // investment, a quantity or a price.
 export function orderGrosses(
   orders: readonly NoteOrder[],
   scale: (code: string) => number,
-  baseScale: number,
+  cashScale: number,
 ): (number | null)[] {
   return orders.map((order) => {
     const rate = parseRate(order.unitPrice);
     if (order.instrument === null || rate === null || order.quantity <= 0) {
       return null;
     }
-    return grossOf(order.quantity, scale(order.instrument), rate, baseScale);
+    return grossOf(order.quantity, scale(order.instrument), rate, cashScale);
   });
 }
 
@@ -55,7 +55,8 @@ export function noteProblems(
 export function noteBody(
   draft: NoteDraft,
   ids: { brokerage: string; payer: string },
-  base: string,
+  // The cash currency and the rate typed for it; null rate for cash in the base currency.
+  cash: { currency: string; exchangeRate: string | null },
 ): BrokerageNoteInput {
   const description = draft.description.trim();
   const taxes = draft.orders.some((o) => o.side === "sell") ? draft.taxes : 0;
@@ -67,8 +68,11 @@ export function noteBody(
     ...(draft.settlementDate === null
       ? {}
       : { settlement_date: draft.settlementDate }),
-    ...(draft.fees > 0 ? { fees: { amount: draft.fees, currency: base } } : {}),
-    ...(taxes > 0 ? { taxes: { amount: taxes, currency: base } } : {}),
+    ...(cash.exchangeRate === null ? {} : { exchange_rate: cash.exchangeRate }),
+    ...(draft.fees > 0
+      ? { fees: { amount: draft.fees, currency: cash.currency } }
+      : {}),
+    ...(taxes > 0 ? { taxes: { amount: taxes, currency: cash.currency } } : {}),
     ...(taxes > 0 && draft.taxesCategoryId !== null
       ? { taxes_category_id: draft.taxesCategoryId }
       : {}),

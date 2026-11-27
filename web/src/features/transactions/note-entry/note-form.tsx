@@ -2,6 +2,7 @@ import { Field, FieldError, FieldLabel } from "@slotted/react/field";
 import { TextField } from "@slotted/react/text-field";
 
 import { BrokerageFields } from "@/features/transactions/brokerage-account/brokerage-fields";
+import { ExchangeRateField } from "@/features/transactions/brokerage-account/exchange-rate-field";
 import { MissingCashNotice } from "@/features/transactions/brokerage-account/missing-cash-notice";
 import type { EntryKind } from "@/features/transactions/entry-model/entry-kind";
 import { EntryKindPicker } from "@/features/transactions/entry-kind-picker/entry-kind-picker";
@@ -33,8 +34,8 @@ export function NoteForm({
   onKind,
 }: NoteFormProps) {
   const t = useT();
-  const { base } = view;
-  const baseScale = base === undefined ? 0 : scale(base);
+  const { base, currency } = view;
+  const currencyScale = currency === undefined ? 0 : scale(currency);
   const sale = draft.orders.some((order) => order.side === "sell");
   const allSales =
     draft.orders.length > 0 && draft.orders.every((o) => o.side === "sell");
@@ -53,7 +54,7 @@ export function NoteForm({
         payers={view.payers}
         payer={view.payer}
         balance={view.balance}
-        base={base}
+        base={currency}
         date={draft.date}
         money={allSales ? "in" : "out"}
         errors={errors}
@@ -76,7 +77,7 @@ export function NoteForm({
         orders={draft.orders}
         grosses={view.grosses}
         shares={view.shares}
-        base={base}
+        base={currency}
         scale={scale}
         errors={errors}
         onChange={(orders) => {
@@ -84,10 +85,20 @@ export function NoteForm({
         }}
       />
 
+      <ExchangeRateField
+        base={base}
+        currency={currency}
+        value={draft.exchangeRate}
+        error={errors.exchange_rate}
+        onChange={(exchangeRate) => {
+          handleChange({ exchangeRate });
+        }}
+      />
+
       <NoteCostFields
         draft={draft}
-        base={base}
-        baseScale={baseScale}
+        currency={currency}
+        currencyScale={currencyScale}
         sale={sale}
         errors={errors}
         onChange={handleChange}

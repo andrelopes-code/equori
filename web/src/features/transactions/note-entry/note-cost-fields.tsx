@@ -9,8 +9,9 @@ import { MoneyInput } from "@/ui/money/money-input";
 
 interface NoteCostFieldsProps {
   draft: NoteDraft;
-  base: string | undefined;
-  baseScale: number;
+  // The cash currency and its scale: the costs are paid in it (FC1).
+  currency: string | undefined;
+  currencyScale: number;
   // The withheld tax is allocated to the sales; a note with none has no field for it.
   sale: boolean;
   errors: Record<string, string>;
@@ -20,8 +21,8 @@ interface NoteCostFieldsProps {
 // The costs of the whole note and, when it holds a sale, the income tax withheld on it.
 export function NoteCostFields({
   draft,
-  base,
-  baseScale,
+  currency,
+  currencyScale,
   sale,
   errors,
   onChange,
@@ -36,8 +37,8 @@ export function NoteCostFields({
           <MoneyInput
             size="field"
             value={draft.fees}
-            currency={base ?? ""}
-            scale={baseScale}
+            currency={currency ?? ""}
+            scale={currencyScale}
             sign="neutral"
             onChange={(fees) => {
               onChange({ fees });
@@ -52,8 +53,8 @@ export function NoteCostFields({
             <MoneyInput
               size="field"
               value={draft.taxes}
-              currency={base ?? ""}
-              scale={baseScale}
+              currency={currency ?? ""}
+              scale={currencyScale}
               sign="neutral"
               onChange={(taxes) => {
                 onChange({ taxes });

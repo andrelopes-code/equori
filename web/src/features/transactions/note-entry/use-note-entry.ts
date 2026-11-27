@@ -40,9 +40,13 @@ export interface NoteView {
   payers: Account[];
   payer: Account | undefined;
   baseCash: boolean;
-  // Minor units of the base currency.
+  // The currency of the cash and of the prices: the base or, for a payer in it, the quote
+  // currency of the instruments (FC1).
+  currency: string | undefined;
+  exchangeRate: string | null;
+  // Minor units of the cash currency.
   balance: number | undefined;
-  // Per order, in minor units of the base currency; null while the order is incomplete.
+  // Per order, in minor units of the cash currency; null while the order is incomplete.
   grosses: (number | null)[];
   // Per order: its share of the costs of the note (A228 IO18).
   shares: number[];
@@ -71,7 +75,11 @@ export function useNoteEntry(brokerageId: string | null) {
     writeDraft(draftKey, draft);
   }, [draft]);
 
-  const state = useBrokerages(draft.brokerageId, null);
+  const state = useBrokerages(
+    draft.brokerageId,
+    null,
+    draft.orders.map((order) => order.instrument),
+  );
   const payer =
     state.payers.find((a) => a.id === draft.cashAccountId) ?? state.payer;
   const balance = useQuery({
@@ -79,11 +87,14 @@ export function useNoteEntry(brokerageId: string | null) {
     enabled: payer !== undefined,
   }).data?.balance.amount;
 
-  const baseScale = scale === null || base === undefined ? null : scale(base);
+  const currency = payer?.currency ?? base;
+  const exchangeRate = currency === base ? null : draft.exchangeRate;
+  const cashScale =
+    scale === null || currency === undefined ? null : scale(currency);
   const grosses =
-    scale === null || baseScale === null
+    scale === null || cashScale === null
       ? []
-      : orderGrosses(draft.orders, scale, baseScale);
+      : orderGrosses(draft.orders, scale, cashScale);
   const view: NoteView = {
     base,
     brokerages: state.brokerages,
@@ -91,6 +102,8 @@ export function useNoteEntry(brokerageId: string | null) {
     payers: state.payers,
     payer,
     baseCash: state.baseCash,
+    currency,
+    exchangeRate,
     balance,
     grosses,
     shares: apportion(
@@ -120,7 +133,12 @@ export function useNoteEntry(brokerageId: string | null) {
     setSummary(null);
     const ids = { brokerage: state.brokerage.id, payer: payer.id };
     try {
-      const created = await record.mutateAsync(noteBody(draft, ids, base));
+      const created = await record.mutateAsync(
+        noteBody(draft, ids, {
+          currency: payer.currency,
+          exchangeRate: payer.currency === base ? null : draft.exchangeRate,
+        }),
+      );
       clearDraft(draftKey);
       return created.transactions[0] ?? null;
     } catch (error) {

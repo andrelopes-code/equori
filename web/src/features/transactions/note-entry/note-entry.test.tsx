@@ -3,8 +3,16 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
+import { catalogPtBR } from "@/i18n/catalog.pt-BR";
 import { problem } from "@/testing/fake-api";
-import { brokerID, cashID, investmentApi } from "@/testing/investment-api";
+import {
+  brokerID,
+  cashID,
+  foreignInstruments,
+  investmentApi,
+  usdCash,
+  usdCashID,
+} from "@/testing/investment-api";
 import { optionalName } from "@/testing/optional-name";
 import { txID } from "@/testing/transaction-api";
 import { renderApp } from "@/testing/render-app";
@@ -211,3 +219,61 @@ async function fillOrder(
     price,
   );
 }
+
+describe("brokerage note entry in another currency", () => {
+  // FC19, S774: one rate for the whole note, the costs in the cash currency.
+  it("sends one exchange rate and the costs in the cash currency", async () => {
+    const sent: unknown[] = [];
+    localStorage.setItem(
+      "equori.locale",
+      JSON.stringify({ language: "pt", region: "BR" }),
+    );
+    sessionStorage.setItem(
+      "equori.draft.note-draft",
+      JSON.stringify({
+        brokerageId: brokerID,
+        cashAccountId: usdCashID,
+        date: "2026-10-17",
+        settlementDate: null,
+        fees: 100,
+        taxes: 0,
+        taxesCategoryId: null,
+        description: "",
+        exchangeRate: null,
+        orders: [
+          {
+            side: "buy",
+            instrument: "VOO",
+            quantity: 10,
+            unitPrice: "500.00",
+          },
+        ],
+      }),
+    );
+    await renderApp(path, {
+      fetch: investmentApi(sent, {
+        extraAccounts: [usdCash],
+        extraInstruments: foreignInstruments,
+      }),
+    });
+
+    await userEvent.type(
+      await screen.findByRole("textbox", {
+        name: optionalName(catalogPtBR["trade.exchangeRate"], "opcional"),
+      }),
+      "5,20",
+    );
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogPtBR["entry.save"] }),
+    );
+
+    await waitFor(() => {
+      expect(sent).toHaveLength(1);
+    });
+    expect(sent[0]).toMatchObject({
+      cash_account_id: usdCashID,
+      exchange_rate: "5.20",
+      fees: { amount: 100, currency: "USD" },
+    });
+  });
+});

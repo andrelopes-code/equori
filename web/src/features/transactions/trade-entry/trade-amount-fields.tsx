@@ -1,3 +1,4 @@
+import { ExchangeRateField } from "@/features/transactions/brokerage-account/exchange-rate-field";
 import { ShortfallNotice } from "@/features/transactions/brokerage-account/shortfall-notice";
 import type { TradeDraft } from "@/features/transactions/trade-entry/trade-draft";
 import { TradeCostFields } from "@/features/transactions/trade-entry/trade-cost-fields";
@@ -23,8 +24,8 @@ export function TradeAmountFields({
 }: TradeAmountFieldsProps) {
   if (draft.side === "write_off") return null;
 
-  const { base } = view;
-  const baseScale = base === undefined ? 0 : scale(base);
+  const { cashCurrency } = view;
+  const cashScale = cashCurrency === undefined ? 0 : scale(cashCurrency);
 
   return (
     <>
@@ -36,10 +37,20 @@ export function TradeAmountFields({
         onChange={onChange}
       />
 
+      <ExchangeRateField
+        base={view.base}
+        currency={cashCurrency}
+        value={draft.exchangeRate ?? null}
+        error={errors.exchange_rate}
+        onChange={(exchangeRate) => {
+          onChange({ exchangeRate });
+        }}
+      />
+
       <TradeCostFields
         draft={draft}
-        base={base}
-        baseScale={baseScale}
+        currency={cashCurrency}
+        currencyScale={cashScale}
         errors={errors}
         onChange={onChange}
       />
@@ -48,7 +59,7 @@ export function TradeAmountFields({
         <ShortfallNotice
           payer={view.payer}
           amount={view.shortfall}
-          scale={baseScale}
+          scale={cashScale}
         />
       )}
     </>

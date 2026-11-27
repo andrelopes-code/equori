@@ -117,7 +117,7 @@ export function TradeForm({
         payers={noCash ? [] : view.payers}
         payer={view.payer}
         balance={view.balance}
-        base={base}
+        base={view.cashCurrency}
         date={draft.date}
         money={sell ? "in" : "out"}
         errors={errors}

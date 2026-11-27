@@ -40,8 +40,8 @@ export function TradeTotalField({
         <MoneyInput
           size="field"
           value={byTotal ? draft.total : 0}
-          currency={view.base ?? ""}
-          scale={view.base === undefined ? 0 : scale(view.base)}
+          currency={view.cashCurrency ?? ""}
+          scale={view.cashCurrency === undefined ? 0 : scale(view.cashCurrency)}
           sign="neutral"
           onChange={(total) => {
             onChange({ total, priceBasis: "total" });

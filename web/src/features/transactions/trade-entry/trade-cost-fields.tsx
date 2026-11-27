@@ -9,8 +9,9 @@ import { MoneyInput } from "@/ui/money/money-input";
 
 interface TradeCostFieldsProps {
   draft: TradeDraft;
-  base: string | undefined;
-  baseScale: number;
+  // The cash currency and its scale: fees and taxes are paid in it (FC1).
+  currency: string | undefined;
+  currencyScale: number;
   errors: Record<string, string>;
   onChange: (patch: Partial<TradeDraft>) => void;
 }
@@ -18,8 +19,8 @@ interface TradeCostFieldsProps {
 // The fees of a trade and, for a sale, its taxes and the category of the taxes.
 export function TradeCostFields({
   draft,
-  base,
-  baseScale,
+  currency,
+  currencyScale,
   errors,
   onChange,
 }: TradeCostFieldsProps) {
@@ -35,8 +36,8 @@ export function TradeCostFields({
           <MoneyInput
             size="field"
             value={draft.fees}
-            currency={base ?? ""}
-            scale={baseScale}
+            currency={currency ?? ""}
+            scale={currencyScale}
             sign="neutral"
             onChange={(fees) => {
               set({ fees });
@@ -50,8 +51,8 @@ export function TradeCostFields({
             <MoneyInput
               size="field"
               value={draft.taxes}
-              currency={base ?? ""}
-              scale={baseScale}
+              currency={currency ?? ""}
+              scale={currencyScale}
               sign="neutral"
               onChange={(taxes) => {
                 set({ taxes });

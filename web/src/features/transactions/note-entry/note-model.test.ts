@@ -19,6 +19,7 @@ const buy = {
 };
 const sell = { ...buy, side: "sell" as const, unitPrice: "30" };
 const ids = { brokerage: "b1", payer: "c1" };
+const cash = { currency: "BRL", exchangeRate: null };
 
 describe("orderGrosses", () => {
   it("prices a complete order and leaves an incomplete one null", () => {
@@ -57,7 +58,7 @@ describe("noteBody", () => {
       orders: [buy, sell],
     };
 
-    expect(noteBody(draft, ids, "BRL")).toEqual({
+    expect(noteBody(draft, ids, cash)).toEqual({
       brokerage_id: "b1",
       cash_account_id: "c1",
       date: "2026-10-17",
@@ -83,6 +84,6 @@ describe("noteBody", () => {
   it("drops the taxes of a note with no sale", () => {
     const draft = { ...emptyNote("2026-10-17"), taxes: 40, orders: [buy] };
 
-    expect(noteBody(draft, ids, "BRL")).not.toHaveProperty("taxes");
+    expect(noteBody(draft, ids, cash)).not.toHaveProperty("taxes");
   });
 });

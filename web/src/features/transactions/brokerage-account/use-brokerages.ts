@@ -22,29 +22,44 @@ export interface BrokerageState {
   held?: Account;
   // False when a brokerage is chosen and has no paying account.
   baseCash: boolean;
+  // The quote currency of the chosen instrument (FC1).
+  quote?: string;
 }
 
-// The brokerages a trade or an income may name, and what the chosen one holds (BC5, BC6).
+// The brokerages a trade or an income may name, and what the chosen one holds (BC5, BC6). The
+// payers also take the quote currency of each instrument in `quoted` (FC1).
 export function useBrokerages(
   brokerageId: string | null,
   instrument: string | null,
+  quoted: readonly (string | null)[] = [],
 ): BrokerageState {
   const api = useApi();
   const accounts = useQuery(accountsQuery(api)).data;
   const instruments = useQuery(instrumentsQuery(api)).data?.items;
   const base = useQuery(settingsQuery(api)).data?.base_currency;
+  const quotedKey = quoted.join(",");
 
-  return useMemo(
-    () =>
-      brokerageState(
+  return useMemo(() => {
+    const quotes = new Map(
+      (instruments ?? []).map((i) => [i.code, i.quote_currency]),
+    );
+    const accepted = quotedKey
+      .split(",")
+      .flatMap((code) => quotes.get(code) ?? []);
+    const quote = instrument === null ? undefined : quotes.get(instrument);
+
+    return {
+      ...brokerageState(
         accounts ?? [],
         new Map((instruments ?? []).map((i) => [i.code, i.type])),
         base,
         brokerageId,
         instrument,
+        accepted,
       ),
-    [accounts, instruments, base, brokerageId, instrument],
-  );
+      ...(quote === undefined ? {} : { quote }),
+    };
+  }, [accounts, instruments, base, brokerageId, instrument, quotedKey]);
 }
 
 export function brokerageState(
@@ -53,6 +68,8 @@ export function brokerageState(
   base: string | undefined,
   brokerageId: string | null,
   instrument: string | null,
+  // Currencies other than the base that a paying account may hold (FC1).
+  accepted: readonly string[] = [],
 ): BrokerageState {
   const kinds = new Map(accounts.map((a) => [a.id, a.kind]));
   const parents = new Set(accounts.map((a) => a.parent_id));
@@ -75,12 +92,14 @@ export function brokerageState(
       a.parent_id === brokerage.id &&
       a.closed_on === undefined,
   );
+  const paying = (currency: string) =>
+    currency === base || accepted.includes(currency);
   const isSecurity = (a: Account) => {
     const type = types.get(a.currency);
     return type !== undefined && type !== "currency";
   };
   const cash = children.filter(
-    (a) => a.class === "asset" && a.currency === base && !isSecurity(a),
+    (a) => a.class === "asset" && paying(a.currency) && !isSecurity(a),
   );
   const institutional = accounts.filter(
     (a) =>
@@ -91,7 +110,7 @@ export function brokerageState(
       a.kind !== "brokerage" &&
       a.class === "asset" &&
       a.closed_on === undefined &&
-      a.currency === base &&
+      paying(a.currency) &&
       !isSecurity(a),
   );
   const payers = [...cash, ...institutional];

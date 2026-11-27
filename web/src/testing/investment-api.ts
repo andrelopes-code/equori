@@ -104,12 +104,27 @@ export const secondCash = {
   parent_id: brokerID,
 };
 
+// A USD cash account of the XP brokerage and the instruments of a position quoted in USD.
+export const usdCashID = "b0000000-0000-4000-8000-00000000000d";
+export const usdCash = {
+  id: usdCashID,
+  name: "XP dollar",
+  class: "asset",
+  currency: "USD",
+  parent_id: brokerID,
+};
+export const foreignInstruments = [
+  { code: "USD", type: "currency", scale: 2, name: "Dollar" },
+  { code: "VOO", type: "etf", scale: 0, name: "VOO", quote_currency: "USD" },
+];
+
 export const brl = (amount: number) => ({ amount, currency: "BRL" });
 
 export interface InvestmentOptions {
   price?: string;
   held?: { quantity: number; cost: number };
   extraAccounts?: unknown[];
+  extraInstruments?: unknown[];
   cashBalance?: number;
   // Open purchase lots of the security account, oldest first: the account then sells by lot
   // (A234). Without it the account sells at the average cost.
@@ -199,6 +214,7 @@ export function investmentRoutes(
           { code: "MXRF11", type: "reit", scale: 0, name: "MXRF11" },
           { code: "PETR4", type: "stock", scale: 0, name: "PETR4" },
           { code: "HGLG11", type: "reit", scale: 0, name: "CSHG Logística" },
+          ...(options.extraInstruments ?? []),
         ],
       }),
     "GET /api/v1/prices": (req: Request) => {

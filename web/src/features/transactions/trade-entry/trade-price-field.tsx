@@ -47,7 +47,7 @@ export function TradePriceField({
       <PriceInput
         name="unit_price"
         value={view.price}
-        currency={view.base ?? ""}
+        currency={view.cashCurrency ?? ""}
         invalid={invalid}
         onChange={(unitPrice) => {
           onChange({ unitPrice, priceBasis: "unit" });

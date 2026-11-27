@@ -31,12 +31,15 @@ export function TradeAside({
   const t = useT();
   const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
-  const { base, instrument } = view;
-  const baseScale = base === undefined ? 0 : scale(base);
+  const { base, cashCurrency, instrument } = view;
   const figure = (amount: number, signed = false): MoneyAmount | undefined =>
-    base === undefined
+    cashCurrency === undefined
       ? undefined
-      : { money: { amount, currency: base }, scale: baseScale, signed };
+      : {
+          money: { amount, currency: cashCurrency },
+          scale: scale(cashCurrency),
+          signed,
+        };
   const average = view.held?.average_cost;
 
   return (
@@ -54,11 +57,26 @@ export function TradeAside({
         />
       ) : (
         <FigureCard
-          label={t("trade.cashEffect")}
+          label={view.foreign ? t("trade.cashMoves") : t("trade.cashEffect")}
           value={
             view.cashEffect === null ? undefined : figure(view.cashEffect, true)
           }
           note={null}
+        />
+      )}
+      {view.foreign && base !== undefined && (
+        <FigureCard
+          label={t("trade.baseAmount", { base })}
+          value={
+            view.baseAmount === null
+              ? undefined
+              : {
+                  money: { amount: view.baseAmount, currency: base },
+                  scale: scale(base),
+                  signed: !opening,
+                }
+          }
+          note={view.exchangeRate === null ? t("trade.rateOfDay") : null}
         />
       )}
       {sell && (

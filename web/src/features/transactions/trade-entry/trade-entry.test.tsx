@@ -15,6 +15,9 @@ import {
   securityID,
   usdBrokerID,
   usdBrokerage,
+  foreignInstruments,
+  usdCash,
+  usdCashID,
 } from "@/testing/investment-api";
 import { moneyValue } from "@/testing/money-value";
 import { optionalName } from "@/testing/optional-name";
@@ -904,3 +907,98 @@ function interCash() {
     parent_id: interID,
   };
 }
+
+// FC19, FC20: cash in the quote currency of the instrument.
+describe("trade entry in another currency", () => {
+  const foreign = {
+    extraAccounts: [usdCash],
+    extraInstruments: foreignInstruments,
+  };
+
+  function storeDraft(patch: Record<string, unknown>) {
+    localStorage.setItem(
+      "equori.locale",
+      JSON.stringify({ language: "pt", region: "BR" }),
+    );
+    sessionStorage.setItem(
+      "equori.draft.new-trade",
+      JSON.stringify({
+        side: "buy",
+        brokerageId: brokerID,
+        instrument: "VOO",
+        cashAccountId: usdCashID,
+        date: "2026-10-17",
+        settlementDate: null,
+        quantity: 10,
+        unitPrice: "500.00",
+        priceBasis: "unit",
+        total: 0,
+        fees: 100,
+        taxes: 0,
+        taxesCategoryId: null,
+        description: "",
+        exchangeRate: null,
+        ...patch,
+      }),
+    );
+  }
+
+  it("shows the base amount of the cash at the typed rate", async () => {
+    storeDraft({});
+    await renderApp(path, { fetch: api([], foreign) });
+
+    expect(
+      await screen.findByText(catalogPtBR["trade.rateOfDay"]),
+    ).toBeInTheDocument();
+    await type(
+      optionalName(catalogPtBR["trade.exchangeRate"], "opcional"),
+      "5,20",
+    );
+
+    expect(
+      await screen.findByText(moneyValue(/5\.001,00/)),
+    ).toBeInTheDocument();
+    expect(screen.getByText(moneyValue(/26\.005,20/))).toBeInTheDocument();
+    expect(
+      screen.queryByText(catalogPtBR["trade.rateOfDay"]),
+    ).not.toBeInTheDocument();
+  });
+
+  it("prices an opening in the quote currency and sends the rate", async () => {
+    const sent: unknown[] = [];
+    storeDraft({ side: "opening", cashAccountId: null });
+    await renderApp(path, { fetch: api(sent, foreign) });
+
+    await type(
+      optionalName(catalogPtBR["trade.exchangeRate"], "opcional"),
+      "5,20",
+    );
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogPtBR["entry.save"] }),
+    );
+
+    await waitFor(() => {
+      expect(sent).toHaveLength(1);
+    });
+    expect(sent[0]).toMatchObject({
+      side: "opening",
+      unit_price: "500.00",
+      exchange_rate: "5.20",
+      fees: { amount: 100, currency: "USD" },
+    });
+  });
+
+  it("shows no exchange rate for cash in the base currency", async () => {
+    storeDraft({ instrument: "MXRF11", cashAccountId: cashID });
+    await renderApp(path, { fetch: api([], foreign) });
+
+    await screen.findByRole("textbox", {
+      name: catalogPtBR["trade.unitPrice"],
+    });
+    expect(
+      screen.queryByRole("textbox", {
+        name: optionalName(catalogPtBR["trade.exchangeRate"], "opcional"),
+      }),
+    ).not.toBeInTheDocument();
+  });
+});

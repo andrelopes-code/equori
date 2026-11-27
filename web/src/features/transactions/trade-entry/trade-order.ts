@@ -9,7 +9,10 @@ export interface TradeOrderParts {
   // The paying or receiving account and the unit price; absent on a write-off.
   cashAccountId: string | undefined;
   rate: string | null;
-  base: string;
+  // The cash currency: the base, or the quote currency of the instrument (FC1).
+  currency: string;
+  // Null for cash in the base currency and when the rate of the day stands in.
+  exchangeRate: string | null;
   taxes: number;
 }
 
@@ -32,7 +35,7 @@ export function tradeOrder(
 
   if (draft.side === "write_off") return { ...target, ...described };
 
-  const { base, taxes } = parts;
+  const { currency, taxes } = parts;
   const opening = draft.side === "opening";
 
   return {
@@ -44,10 +47,11 @@ export function tradeOrder(
       ? {}
       : { settlement_date: draft.settlementDate }),
     ...(parts.rate === null ? {} : { unit_price: parts.rate }),
-    ...(draft.fees > 0 ? { fees: { amount: draft.fees, currency: base } } : {}),
-    ...(taxes > 0 && !opening
-      ? { taxes: { amount: taxes, currency: base } }
-      : {}),
+    ...(parts.exchangeRate === null
+      ? {}
+      : { exchange_rate: parts.exchangeRate }),
+    ...(draft.fees > 0 ? { fees: { amount: draft.fees, currency } } : {}),
+    ...(taxes > 0 && !opening ? { taxes: { amount: taxes, currency } } : {}),
     ...(taxes > 0 && !opening && draft.taxesCategoryId !== null
       ? { taxes_category_id: draft.taxesCategoryId }
       : {}),
