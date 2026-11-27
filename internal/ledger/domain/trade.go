@@ -16,6 +16,9 @@ const (
 	// SideWriteOff removes units at zero proceeds: an option expired, a right not exercised, a
 	// security that became worthless; their cost is a realized loss (listed options design O3).
 	SideWriteOff Side = "write_off"
+	// SideOpening records units held before the book at their cost against the opening balances,
+	// without cash (investment history design OL1).
+	SideOpening Side = "opening"
 )
 
 // TradeOrder is a purchase or sale of a security for cash of the same brokerage (M17).
@@ -112,8 +115,11 @@ func BuildTrade(
 		Taxes:         taxes,
 	}
 
-	if o.Side == SideBuy {
+	switch o.Side {
+	case SideBuy:
 		return buyTrade(o, trade)
+	case SideOpening:
+		return openingTrade(o, trade)
 	}
 
 	return sellTrade(o, h, day, accts, trade)
@@ -121,8 +127,9 @@ func BuildTrade(
 
 func checkTradeOrder(o TradeOrder, cash money.Currency, fees, taxes money.Money) error {
 	switch {
-	case o.Side != SideBuy && o.Side != SideSell && o.Side != SideWriteOff:
-		return invalid("side", "must be buy, sell or write_off")
+	case o.Side != SideBuy && o.Side != SideSell && o.Side != SideWriteOff &&
+		o.Side != SideOpening:
+		return invalid("side", "must be buy, sell, write_off or opening")
 	case o.Side == SideWriteOff && o.UnitPrice.Mantissa() != 0:
 		return invalid("unit_price", "is not taken by a write-off")
 	case o.Side == SideWriteOff && (!fees.IsZero() || !taxes.IsZero()):
@@ -135,6 +142,8 @@ func checkTradeOrder(o TradeOrder, cash money.Currency, fees, taxes money.Money)
 		return invalid("taxes", "must be a non-negative amount in "+string(cash))
 	case o.Side == SideBuy && !taxes.IsZero():
 		return invalid("taxes", "are withheld on sales only")
+	case o.Side == SideOpening && !taxes.IsZero():
+		return invalid("taxes", "an opening has no taxes")
 	}
 
 	return nil
@@ -162,6 +171,31 @@ func buyTrade(o TradeOrder, trade Trade) ([]Posting, Trade, error) {
 			SettledOn: settledOn(o),
 		},
 		{AccountID: o.AccountID, Amount: o.Quantity, Weight: cost},
+	}, trade, nil
+}
+
+// openingTrade posts the cost of the units to the holding against the account o.CashAccountID,
+// which the app sets to the opening balances; the trade names the holding as its cash account
+// because no cash moves (OL1, OL8).
+func openingTrade(o TradeOrder, trade Trade) ([]Posting, Trade, error) {
+	cost, err := trade.Gross.Add(trade.Fees)
+	if err != nil {
+		return nil, Trade{}, err
+	}
+
+	if trade.DayTradeQuantity, err = o.Quantity.Sub(o.Quantity); err != nil {
+		return nil, Trade{}, err
+	}
+
+	if trade.DayTradeCost, err = trade.Fees.Sub(trade.Fees); err != nil {
+		return nil, Trade{}, err
+	}
+
+	trade.CashAccountID = o.AccountID
+
+	return []Posting{
+		{AccountID: o.AccountID, Amount: o.Quantity, Weight: cost},
+		{AccountID: o.CashAccountID, Amount: cost.Neg(), Weight: cost.Neg()},
 	}, trade, nil
 }
 

@@ -103,8 +103,10 @@ func (s *Service) buildTrade(
 		return domain.Transaction{}, err
 	}
 
-	if err := s.settlementOf(ctx, &o, security); err != nil {
-		return domain.Transaction{}, err
+	if o.Side != domain.SideOpening {
+		if err := s.settlementOf(ctx, &o, security); err != nil {
+			return domain.Transaction{}, err
+		}
 	}
 
 	day, err := s.dayOf(ctx, r, booksID, o, security, exclude)
@@ -201,6 +203,10 @@ func (s *Service) resolveTrade(
 ) (security, cash domain.Account, err error) {
 	if o.Side == domain.SideWriteOff {
 		return s.writeOffHolding(ctx, r, booksID, o, base)
+	}
+
+	if o.Side == domain.SideOpening {
+		return s.openingHolding(ctx, r, booksID, o)
 	}
 
 	o.AccountID, o.CashAccountID, err = s.resolveTarget(ctx, r, booksID, base, target{

@@ -125,7 +125,7 @@ FROM
 WHERE
     t.books_id = $1
     AND t.account_id = $2
-    AND t.side = 'buy'
+    AND t.side IN ('buy', 'opening')
     AND x.voided_at IS NULL
 ORDER BY
     x.date,

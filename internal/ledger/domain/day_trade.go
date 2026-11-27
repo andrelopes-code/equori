@@ -23,7 +23,7 @@ func NewDay(trades []DayTrade) Day {
 	var d Day
 
 	for _, tr := range trades {
-		if tr.Side == SideBuy {
+		if tr.Side == SideBuy || tr.Side == SideOpening {
 			d.Buys = append(d.Buys, DayBuy{Quantity: tr.Quantity, Cost: tr.Gross + tr.Fees})
 			continue
 		}

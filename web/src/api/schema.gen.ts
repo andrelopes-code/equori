@@ -7152,10 +7152,10 @@ export interface components {
             items: components["schemas"]["Balance"][];
         };
         /**
-         * @description write_off removes units at zero proceeds (an option expired, a right not exercised, a security that became worthless) and books their cost as a realized loss; it takes account_id, or brokerage_id and instrument, and quantity; no unit_price, fees, taxes or cash account. A brokerage note refuses it.
+         * @description write_off removes units at zero proceeds (an option expired, a right not exercised, a security that became worthless) and books their cost as a realized loss; it takes account_id, or brokerage_id and instrument, and quantity; no unit_price, fees, taxes or cash account. A brokerage note refuses it. opening records units held before the book at their cost (quantity × unit_price + fees) against the opening balances, without cash, on the date the lot was acquired; it takes the holding, date, quantity, unit_price and optional fees; no cash account, taxes or settlement date. A brokerage note refuses it.
          * @enum {string}
          */
-        TradeSide: "buy" | "sell" | "write_off";
+        TradeSide: "buy" | "sell" | "write_off" | "opening";
         /** @description Exactly one of contract (a new contract) and instrument (more money into a contract of the book). */
         FixedIncomeApplicationInput: {
             /**
