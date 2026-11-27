@@ -3,6 +3,7 @@ package toolapi
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -203,7 +204,20 @@ func planSetBillingCycle(
 		ClosingAdjustment: string(in.ClosingAdjustment),
 		Calendar:          in.Calendar,
 	}
+	rules, err := svc.BillingRules(ctx, booksID, a.ID)
+	if err != nil {
+		return pv, nil, err
+	}
+
 	pv.Changes = cycleChanges(in, rule)
+
+	// A version of the same month is replaced: the preview shows what it held.
+	if i := slices.IndexFunc(rules, func(r domain.BillingCycleRule) bool {
+		return r.EffectiveFrom == rule.EffectiveFrom
+	}); i >= 0 {
+		pv.Changes[0].Before = tool.TextValue(closingText(rules[i]))
+		pv.Changes[1].Before = tool.TextValue(strconv.Itoa(rules[i].DueDay))
+	}
 
 	return pv, func() (manageCardOut, error) {
 		_, err := svc.AddBillingRule(ctx, booksID, a.ID, rule)
@@ -326,13 +340,8 @@ func optionalBP(o tool.OptionalInt) *int {
 // cycleChanges lists what a set_billing_cycle call sets. The options the call left out take the
 // defaults of the domain, so only the ones it gave are listed.
 func cycleChanges(in manageCardIn, rule domain.BillingCycleRule) []tool.Change {
-	closing := strconv.Itoa(in.ClosingDay)
-	if in.ClosingMode == "before_due" {
-		closing = fmt.Sprintf("%d days before the due date", in.ClosingDaysBeforeDue)
-	}
-
 	changes := []tool.Change{
-		{Field: "closing_day", After: tool.TextValue(closing)},
+		{Field: "closing_day", After: tool.TextValue(closingText(rule))},
 		{Field: "due_day", After: tool.TextValue(strconv.Itoa(in.DueDay))},
 		{Field: "date", After: tool.DateValue(rule.EffectiveFrom.FirstDay())},
 	}
@@ -356,4 +365,13 @@ func cycleChanges(in manageCardIn, rule domain.BillingCycleRule) []tool.Change {
 	}
 
 	return changes
+}
+
+// closingText is the closing day of r, or its days before the due date.
+func closingText(r domain.BillingCycleRule) string {
+	if r.ClosingMode == domain.ClosingBeforeDue {
+		return fmt.Sprintf("%d days before the due date", r.ClosingDaysBeforeDue)
+	}
+
+	return strconv.Itoa(r.ClosingDay)
 }

@@ -1,4 +1,5 @@
--- name: InsertBillingRule :one
+-- name: SaveBillingRule :one
+-- A version for a month that already has one replaces it (I08).
 INSERT INTO
     ledger_billing_cycle_rule (
         books_id,
@@ -27,6 +28,18 @@ VALUES
         sqlc.narg (closing_days_before_due),
         @closing_adjustment
     )
+ON CONFLICT (account_id, effective_from) DO UPDATE
+SET
+    closing_day = EXCLUDED.closing_day,
+    due_day = EXCLUDED.due_day,
+    closing_day_assignment = EXCLUDED.closing_day_assignment,
+    due_date_adjustment = EXCLUDED.due_date_adjustment,
+    calendar = EXCLUDED.calendar,
+    closing_mode = EXCLUDED.closing_mode,
+    closing_days_before_due = EXCLUDED.closing_days_before_due,
+    closing_adjustment = EXCLUDED.closing_adjustment
+WHERE
+    ledger_billing_cycle_rule.books_id = EXCLUDED.books_id
 RETURNING
     *;
 

@@ -10110,7 +10110,7 @@
   },
   {
     "name": "manage_card",
-    "description": "Proposes a change to a credit card account's setup: add a plastic or virtual card, correct the holder, last four digits or network of one, remove one, activate or deactivate one, set a new credit limit or a new billing cycle. Use it when the user changes card details. Do not use it for purchases or statements: handle_card_purchase and settle_statement do. The user confirms every change.",
+    "description": "Proposes a change to a credit card account's setup: add a plastic or virtual card, correct the holder, last four digits or network of one, remove one, activate or deactivate one, set a new credit limit or billing cycle. Use it when the user changes card details. Do not use it for purchases or statements: handle_card_purchase and settle_statement do. The user confirms every change.",
     "effect": "write",
     "idempotent": false,
     "input_schema": {
@@ -10162,7 +10162,7 @@
         },
         "effective_from": {
           "type": "string",
-          "description": "for set_credit_limit: first date of the limit; for set_billing_cycle: any date of the first statement month it applies to",
+          "description": "for set_credit_limit: first day of the limit; for set_billing_cycle: a date of the first statement month; replaces its version",
           "format": "date"
         },
         "closing_day": {

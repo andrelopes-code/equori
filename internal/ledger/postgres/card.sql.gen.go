@@ -394,85 +394,6 @@ func (q *Queries) GetSystemAccount(ctx context.Context, arg GetSystemAccountPara
 	return i, err
 }
 
-const insertBillingRule = `-- name: InsertBillingRule :one
-INSERT INTO
-    ledger_billing_cycle_rule (
-        books_id,
-        account_id,
-        effective_from,
-        closing_day,
-        due_day,
-        closing_day_assignment,
-        due_date_adjustment,
-        calendar,
-        closing_mode,
-        closing_days_before_due,
-        closing_adjustment
-    )
-VALUES
-    (
-        $1,
-        $2,
-        $3,
-        $4,
-        $5,
-        $6,
-        $7,
-        $8,
-        $9,
-        $10,
-        $11
-    )
-RETURNING
-    books_id, account_id, effective_from, closing_day, due_day, closing_day_assignment, due_date_adjustment, calendar, created_at, closing_mode, closing_days_before_due, closing_adjustment
-`
-
-type InsertBillingRuleParams struct {
-	BooksID              int64
-	AccountID            uuid.UUID
-	EffectiveFrom        time.Time
-	ClosingDay           *int16
-	DueDay               int16
-	ClosingDayAssignment string
-	DueDateAdjustment    string
-	Calendar             string
-	ClosingMode          string
-	ClosingDaysBeforeDue *int16
-	ClosingAdjustment    string
-}
-
-func (q *Queries) InsertBillingRule(ctx context.Context, arg InsertBillingRuleParams) (LedgerBillingCycleRule, error) {
-	row := q.db.QueryRow(ctx, insertBillingRule,
-		arg.BooksID,
-		arg.AccountID,
-		arg.EffectiveFrom,
-		arg.ClosingDay,
-		arg.DueDay,
-		arg.ClosingDayAssignment,
-		arg.DueDateAdjustment,
-		arg.Calendar,
-		arg.ClosingMode,
-		arg.ClosingDaysBeforeDue,
-		arg.ClosingAdjustment,
-	)
-	var i LedgerBillingCycleRule
-	err := row.Scan(
-		&i.BooksID,
-		&i.AccountID,
-		&i.EffectiveFrom,
-		&i.ClosingDay,
-		&i.DueDay,
-		&i.ClosingDayAssignment,
-		&i.DueDateAdjustment,
-		&i.Calendar,
-		&i.CreatedAt,
-		&i.ClosingMode,
-		&i.ClosingDaysBeforeDue,
-		&i.ClosingAdjustment,
-	)
-	return i, err
-}
-
 const insertCard = `-- name: InsertCard :one
 INSERT INTO
     ledger_card (books_id, account_id, holder, last_four, virtual, foreign_charge_bp, network)
@@ -1413,6 +1334,98 @@ func (q *Queries) ResolveDispute(ctx context.Context, arg ResolveDisputeParams) 
 		&i.ResolvedOn,
 		&i.Outcome,
 		&i.RefundTransactionID,
+	)
+	return i, err
+}
+
+const saveBillingRule = `-- name: SaveBillingRule :one
+INSERT INTO
+    ledger_billing_cycle_rule (
+        books_id,
+        account_id,
+        effective_from,
+        closing_day,
+        due_day,
+        closing_day_assignment,
+        due_date_adjustment,
+        calendar,
+        closing_mode,
+        closing_days_before_due,
+        closing_adjustment
+    )
+VALUES
+    (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7,
+        $8,
+        $9,
+        $10,
+        $11
+    )
+ON CONFLICT (account_id, effective_from) DO UPDATE
+SET
+    closing_day = EXCLUDED.closing_day,
+    due_day = EXCLUDED.due_day,
+    closing_day_assignment = EXCLUDED.closing_day_assignment,
+    due_date_adjustment = EXCLUDED.due_date_adjustment,
+    calendar = EXCLUDED.calendar,
+    closing_mode = EXCLUDED.closing_mode,
+    closing_days_before_due = EXCLUDED.closing_days_before_due,
+    closing_adjustment = EXCLUDED.closing_adjustment
+WHERE
+    ledger_billing_cycle_rule.books_id = EXCLUDED.books_id
+RETURNING
+    books_id, account_id, effective_from, closing_day, due_day, closing_day_assignment, due_date_adjustment, calendar, created_at, closing_mode, closing_days_before_due, closing_adjustment
+`
+
+type SaveBillingRuleParams struct {
+	BooksID              int64
+	AccountID            uuid.UUID
+	EffectiveFrom        time.Time
+	ClosingDay           *int16
+	DueDay               int16
+	ClosingDayAssignment string
+	DueDateAdjustment    string
+	Calendar             string
+	ClosingMode          string
+	ClosingDaysBeforeDue *int16
+	ClosingAdjustment    string
+}
+
+// A version for a month that already has one replaces it (I08).
+func (q *Queries) SaveBillingRule(ctx context.Context, arg SaveBillingRuleParams) (LedgerBillingCycleRule, error) {
+	row := q.db.QueryRow(ctx, saveBillingRule,
+		arg.BooksID,
+		arg.AccountID,
+		arg.EffectiveFrom,
+		arg.ClosingDay,
+		arg.DueDay,
+		arg.ClosingDayAssignment,
+		arg.DueDateAdjustment,
+		arg.Calendar,
+		arg.ClosingMode,
+		arg.ClosingDaysBeforeDue,
+		arg.ClosingAdjustment,
+	)
+	var i LedgerBillingCycleRule
+	err := row.Scan(
+		&i.BooksID,
+		&i.AccountID,
+		&i.EffectiveFrom,
+		&i.ClosingDay,
+		&i.DueDay,
+		&i.ClosingDayAssignment,
+		&i.DueDateAdjustment,
+		&i.Calendar,
+		&i.CreatedAt,
+		&i.ClosingMode,
+		&i.ClosingDaysBeforeDue,
+		&i.ClosingAdjustment,
 	)
 	return i, err
 }

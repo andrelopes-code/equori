@@ -46,7 +46,7 @@ type manageCardIn struct {
 	Network       string           `json:"network,omitzero"        jsonschema:"for add_card and edit_card: card network key in lower case, such as visa, mastercard, elo or amex"`
 	Active        bool             `json:"active,omitzero"         jsonschema:"for set_card_active: true activates, false deactivates"`
 	Amount        string           `json:"amount,omitzero"         jsonschema:"for set_credit_limit: positive limit in the card's currency"`
-	EffectiveFrom tool.Date        `json:"effective_from,omitzero" jsonschema:"for set_credit_limit: first date of the limit; for set_billing_cycle: any date of the first statement month it applies to"`
+	EffectiveFrom tool.Date        `json:"effective_from,omitzero" jsonschema:"for set_credit_limit: first day of the limit; for set_billing_cycle: a date of the first statement month; replaces its version"`
 	ClosingDay    int              `json:"closing_day,omitzero"    jsonschema:"for set_billing_cycle: day of the month the statement closes"`
 	DueDay        int              `json:"due_day,omitzero"        jsonschema:"for set_billing_cycle: day of the month the statement is due"`
 
@@ -70,7 +70,7 @@ var lastFourPattern = regexp.MustCompile(`^[0-9]{4}$`)
 func manageCard(svc *app.Service) tool.Tool {
 	return tool.NewWrite(tool.Spec{
 		Name: "manage_card",
-		Description: "Proposes a change to a credit card account's setup: add a plastic or virtual card, correct the holder, last four digits or network of one, remove one, activate or deactivate one, set a new credit limit or a new billing cycle. " +
+		Description: "Proposes a change to a credit card account's setup: add a plastic or virtual card, correct the holder, last four digits or network of one, remove one, activate or deactivate one, set a new credit limit or billing cycle. " +
 			"Use it when the user changes card details. " +
 			"Do not use it for purchases or statements: handle_card_purchase and settle_statement do. " +
 			"The user confirms every change.",

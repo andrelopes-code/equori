@@ -8,13 +8,13 @@ import (
 	"github.com/andrelopes-code/equori/internal/ledger/domain"
 )
 
-func (r *Repository) InsertBillingRule(
+func (r *Repository) SaveBillingRule(
 	ctx context.Context,
 	booksID int64,
 	accountID uuid.UUID,
 	rule domain.BillingCycleRule,
 ) (domain.BillingCycleRule, error) {
-	p := InsertBillingRuleParams{
+	p := SaveBillingRuleParams{
 		BooksID:       booksID,
 		AccountID:     accountID,
 		EffectiveFrom: rule.EffectiveFrom.FirstDay(),
@@ -36,9 +36,9 @@ func (r *Repository) InsertBillingRule(
 		p.ClosingDay = &day
 	}
 
-	row, err := r.q.InsertBillingRule(ctx, p)
+	row, err := r.q.SaveBillingRule(ctx, p)
 	if err != nil {
-		return domain.BillingCycleRule{}, duplicate(err, "effective_from")
+		return domain.BillingCycleRule{}, err
 	}
 
 	return toBillingRule(row), nil

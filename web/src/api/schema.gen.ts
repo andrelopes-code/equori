@@ -2735,7 +2735,7 @@ export interface paths {
         /** Billing cycle rule versions of a card. */
         get: operations["listBillingCycleRules"];
         put?: never;
-        /** Add a billing cycle rule version, effective from a reference month. */
+        /** Add a billing cycle rule version, effective from a reference month; a version of the same month is replaced. */
         post: operations["createBillingCycleRule"];
         delete?: never;
         options?: never;

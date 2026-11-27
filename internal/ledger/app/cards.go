@@ -53,7 +53,7 @@ func (s *Service) AddBillingRule(
 
 	var created domain.BillingCycleRule
 	err = s.repo.InTx(ctx, func(tx Repository) error {
-		if created, err = tx.InsertBillingRule(ctx, booksID, accountID, rule); err != nil {
+		if created, err = tx.SaveBillingRule(ctx, booksID, accountID, rule); err != nil {
 			return err
 		}
 

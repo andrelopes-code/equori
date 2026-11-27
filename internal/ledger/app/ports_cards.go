@@ -11,7 +11,7 @@ import (
 
 // cardStore holds the Repository methods of cards, statements, installment plans, reimbursements and disputes.
 type cardStore interface {
-	InsertBillingRule(
+	SaveBillingRule(
 		ctx context.Context,
 		booksID int64,
 		accountID uuid.UUID,

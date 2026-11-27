@@ -1575,7 +1575,7 @@ paths:
       tags: [ledger]
       operationId: createBillingCycleRule
       x-book-role: write
-      summary: Add a billing cycle rule version, effective from a reference month.
+      summary: Add a billing cycle rule version, effective from a reference month; a version of the same month is replaced.
       parameters:
         - $ref: "#/components/parameters/ID"
       requestBody:

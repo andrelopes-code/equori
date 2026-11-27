@@ -2,6 +2,7 @@ package ledger_test
 
 import (
 	"net/http"
+	"slices"
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
@@ -454,4 +455,27 @@ func TestManageCardForeignCharge(t *testing.T) {
 		"invalid_arguments",
 		"foreign_charge_bp",
 	)
+}
+
+// A cycle for a month that already has a version shows the version it replaces.
+func TestManageCardCyclePreviewReplacedVersion(t *testing.T) {
+	t.Parallel()
+	c := newCardSetup(t, "2026-10-23")
+	cycle := map[string]any{
+		"account_id":     c.card,
+		"action":         "set_billing_cycle",
+		"effective_from": "2026-01-15",
+		"closing_day":    4,
+		"due_day":        11,
+	}
+
+	pv := previewTool(t, c.h, "manage_card", cycle)
+
+	want := []tool.Change{
+		{Field: "closing_day", Before: tool.TextValue("3"), After: tool.TextValue("4")},
+		{Field: "due_day", Before: tool.TextValue("10"), After: tool.TextValue("11")},
+	}
+	if len(pv.Changes) < 2 || !slices.Equal(pv.Changes[:2], want) {
+		t.Fatalf("changes = %+v, want first %+v", pv.Changes, want)
+	}
 }

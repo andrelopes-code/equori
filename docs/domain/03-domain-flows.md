@@ -101,7 +101,7 @@ flowchart LR
 | `BalanceCarriedToNextStatement` | from, to, amount | The unpaid part of a closed statement appears as the opening amount of the next one. No new transaction: the card account balance already holds the debt. |
 | `CardChargeBilled` | transaction, statement, charge type | Interest, IOF, late fee, annual fee, posted by the issuer as an expense on a statement. |
 | `StatementFinanced` | statement, installment plan | The unpaid amount becomes N installments on the next statements, with interest as a separate expense. The financed statement is settled by the plan. |
-| `BillingCycleRuleChanged` | card account, closing day, due day, closing-day assignment, effective statement | Applies from the effective statement on. Postings already billed do not move. |
+| `BillingCycleRuleChanged` | card account, closing day, due day, closing-day assignment, effective statement | Applies from the effective statement on; replaces the version of the same statement month. Re-dates the statements whose closing date has not passed and bills again the postings billed by a date that the new dates move (A86). |
 | `DisputeOpened` / `DisputeResolved` | purchase, outcome | Outcome `won` creates a refund linked `chargeback_of`; outcome `lost` closes the dispute without a transaction. |
 
 ### 3.4.1 Statement lifecycle

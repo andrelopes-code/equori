@@ -59,7 +59,9 @@ func TestBillingCycleRules(t *testing.T) {
 		t.Fatalf("rules = %+v", rules.Items)
 	}
 
-	h.ExpectProblem(h.Do(
+	// A version from a month that already has one replaces it, as a credit limit does
+	// (TestBillingRuleVersionReplaces reads the stored version).
+	h.MustDo(
 		http.MethodPost,
 		"/api/v1/accounts/"+card+"/billing-cycle-rules",
 		map[string]any{
@@ -67,7 +69,9 @@ func TestBillingCycleRules(t *testing.T) {
 			"closing_day":    5,
 			"due_day":        12,
 		},
-	), http.StatusUnprocessableEntity, "validation_failed", "effective_from")
+		http.StatusCreated,
+		nil,
+	)
 	h.ExpectProblem(h.Do(
 		http.MethodPost,
 		"/api/v1/accounts/"+card+"/billing-cycle-rules",
