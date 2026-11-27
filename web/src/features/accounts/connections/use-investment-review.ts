@@ -14,10 +14,17 @@ type ConfirmBody = Parameters<
   ReturnType<typeof useConfirmInvestmentMovement>["mutateAsync"]
 >[0]["body"];
 
+interface ConfirmStep {
+  movement: Movement;
+  body: ConfirmBody;
+}
+
 export interface ReviewDialog {
   kind: "application" | "income";
   movement: Movement;
   currency: string;
+  // MB1: the movements confirmed after this application, with an empty body.
+  rest?: Movement[];
 }
 
 // The actions of the review section: the open dialog and the text of the last failure.
@@ -28,6 +35,7 @@ export function useInvestmentReview() {
   const undo = useUndoInvestmentMovement();
   const [dialog, setDialog] = useState<ReviewDialog | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState<number | null>(null);
 
   const pending = confirm.isPending || dismiss.isPending || undo.isPending;
 
@@ -41,8 +49,27 @@ export function useInvestmentReview() {
   }
 
   function handleSubmit(movement: Movement, body: ConfirmBody) {
+    const rest = dialog?.rest;
     setDialog(null);
-    run(confirm.mutateAsync({ id: movement.id, body }));
+    if (rest === undefined) {
+      run(confirm.mutateAsync({ id: movement.id, body }));
+      return;
+    }
+    run(confirmInOrder([{ movement, body }, ...rest.map(withEmptyBody)]));
+  }
+
+  function handleConfirmAll(movements: Movement[]) {
+    const [first, ...rest] = movements;
+    if (first?.proposal === "application") {
+      setDialog({
+        kind: "application",
+        movement: first,
+        currency: first.amount.currency,
+        rest,
+      });
+      return;
+    }
+    run(confirmInOrder(movements.map(withEmptyBody)));
   }
 
   function handleDismiss(movement: Movement) {
@@ -59,19 +86,34 @@ export function useInvestmentReview() {
 
   function run(action: Promise<unknown>) {
     setError(null);
+    setDone(null);
     action.catch((caught: unknown) => {
       setError(errorText(caught, t));
     });
   }
 
+  // Stops at the first failure; the movements confirmed before it stay confirmed.
+  async function confirmInOrder(steps: ConfirmStep[]) {
+    for (const { movement, body } of steps) {
+      await confirm.mutateAsync({ id: movement.id, body });
+    }
+    setDone(steps.length);
+  }
+
   return {
     dialog,
     error,
+    done,
     pending,
     handleConfirm,
     handleSubmit,
+    handleConfirmAll,
     handleDismiss,
     handleUndo,
     handleCloseDialog,
   };
+}
+
+function withEmptyBody(movement: Movement): ConfirmStep {
+  return { movement, body: {} };
 }

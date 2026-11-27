@@ -735,6 +735,8 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "connection.investments.confirmTitle": "Registrar a aplicação",
   "connection.investments.incomeTitle": "Registrar os juros",
   "connection.investments.category": "Categoria da receita",
+  "connection.investments.confirmAll": "Confirmar pendentes",
+  "connection.investments.confirmAll.done": "{count} movimentos confirmados",
   "problem.investment_movement_resolved": "Este movimento já foi resolvido.",
   "problem.investment_not_applied":
     "Confirme a primeira aplicação deste investimento antes deste movimento.",

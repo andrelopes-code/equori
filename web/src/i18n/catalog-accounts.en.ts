@@ -737,6 +737,8 @@ export const accountsEn = {
   "connection.investments.confirmTitle": "Record the application",
   "connection.investments.incomeTitle": "Record the interest",
   "connection.investments.category": "Income category",
+  "connection.investments.confirmAll": "Confirm pending",
+  "connection.investments.confirmAll.done": "{count} movements confirmed",
   "problem.investment_movement_resolved": "This movement was already resolved.",
   "problem.investment_not_applied":
     "Confirm the first application of this investment before this movement.",

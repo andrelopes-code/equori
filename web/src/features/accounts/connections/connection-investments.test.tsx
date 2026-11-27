@@ -291,4 +291,71 @@ describe("ConnectionInvestments", () => {
       await screen.findByText(catalogEn["problem.investment_not_applied"]),
     ).toBeInTheDocument();
   });
+
+  it("MB1: confirms the application, then the contribution, never the income", async () => {
+    const contribution = movement({
+      id: "m3",
+      proposal: "contribution",
+      date: "2026-11-12",
+    });
+    const sent = show([income, contribution, application]);
+
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: catalogEn["connection.investments.confirmAll"],
+      }),
+    );
+    await chooseAccount(catalogEn["connection.investments.brokerage"], "XP");
+    const dialog = await screen.findByRole("dialog", {
+      name: catalogEn["connection.investments.confirmTitle"],
+    });
+    await userEvent.click(
+      within(dialog).getByRole("button", { name: confirm }),
+    );
+
+    await waitFor(() => {
+      expect(sent).toEqual([
+        {
+          path: "/api/v1/investment-movements/m1/confirm",
+          body: { brokerage_id: brokerID },
+        },
+        { path: "/api/v1/investment-movements/m3/confirm", body: {} },
+      ]);
+    });
+    expect(
+      await screen.findByText("2 movements confirmed"),
+    ).toBeInTheDocument();
+  });
+
+  it("MB2: stops at the first failure and keeps the confirmed one", async () => {
+    const contribution = movement({
+      id: "m3",
+      proposal: "contribution",
+      date: "2026-11-12",
+    });
+    const sent = show([income, contribution, application], {
+      "POST /api/v1/investment-movements/m3/confirm": (() =>
+        problem(409, "investment_not_applied")) as never,
+    });
+
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: catalogEn["connection.investments.confirmAll"],
+      }),
+    );
+    await chooseAccount(catalogEn["connection.investments.brokerage"], "XP");
+    const dialog = await screen.findByRole("dialog", {
+      name: catalogEn["connection.investments.confirmTitle"],
+    });
+    await userEvent.click(
+      within(dialog).getByRole("button", { name: confirm }),
+    );
+
+    expect(
+      await screen.findByText(catalogEn["problem.investment_not_applied"]),
+    ).toBeInTheDocument();
+    expect(sent.map((s) => s.path)).toEqual([
+      "/api/v1/investment-movements/m1/confirm",
+    ]);
+  });
 });

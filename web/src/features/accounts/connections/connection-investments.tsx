@@ -1,3 +1,4 @@
+import { Button } from "@slotted/react/button";
 import {
   Section,
   SectionBody,
@@ -13,6 +14,7 @@ import type { components } from "@/api/schema.gen";
 import { connectionInvestmentsQuery } from "@/features/accounts/api";
 import { ConfirmApplicationDialog } from "@/features/accounts/connections/confirm-application-dialog";
 import { ConfirmIncomeDialog } from "@/features/accounts/connections/confirm-income-dialog";
+import { investmentGroups } from "@/features/accounts/connections/investment-groups";
 import { InvestmentMovementRow } from "@/features/accounts/connections/investment-movement-row";
 import { useInvestmentReview } from "@/features/accounts/connections/use-investment-review";
 import { useT } from "@/i18n/i18n-provider";
@@ -34,15 +36,9 @@ export function ConnectionInvestments({
   const investments = useQuery(connectionInvestmentsQuery(api, connection.id));
   const review = useInvestmentReview();
 
-  const rows = (investments.data?.investments ?? [])
-    .flatMap((i) => i.movements.map((movement) => ({ name: i.name, movement })))
-    .sort(
-      (a, b) =>
-        a.name.localeCompare(b.name) ||
-        a.movement.date.localeCompare(b.movement.date),
-    );
+  const groups = investmentGroups(investments.data?.investments ?? []);
 
-  if (rows.length === 0) {
+  if (groups.length === 0) {
     return null;
   }
 
@@ -59,18 +55,46 @@ export function ConnectionInvestments({
       <SectionBody>
         {review.error !== null && <FormNotice>{review.error}</FormNotice>}
 
-        <ul>
-          {rows.map(({ name, movement }) => (
-            <InvestmentMovementRow
-              key={movement.id}
-              movement={movement}
-              name={name}
+        {review.done !== null && (
+          <FormNotice tone="success">
+            {t("connection.investments.confirmAll.done", {
+              count: review.done,
+            })}
+          </FormNotice>
+        )}
+
+        {groups
+          .filter((g) => g.batch.length >= 2)
+          .map((g) => (
+            <Button
+              key={g.id}
+              size="sm"
+              variant="outline"
               disabled={review.pending}
-              onConfirm={review.handleConfirm}
-              onDismiss={review.handleDismiss}
-              onUndo={review.handleUndo}
-            />
+              onClick={() => {
+                review.handleConfirmAll(g.batch);
+              }}
+            >
+              {t("connection.investments.confirmAll")}
+            </Button>
           ))}
+
+        <ul>
+          {groups
+            .flatMap((g) =>
+              g.movements.map((movement) => ({ name: g.name, movement })),
+            )
+            .map(({ name, movement }) => (
+              <InvestmentMovementRow
+                key={movement.id}
+                movement={movement}
+                name={name}
+                disabled={review.pending}
+                onConfirm={review.handleConfirm}
+                onDismiss={review.handleDismiss}
+                onUndo={review.handleUndo}
+              />
+            ))}
         </ul>
 
         <Presence
