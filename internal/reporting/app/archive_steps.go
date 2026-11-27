@@ -258,18 +258,6 @@ func addAssistantConfiguration(tables []ArchiveTable) ([]ArchiveTable, error) {
 	return tables, nil
 }
 
-// addInstrumentSymbols moves a version 12 archive to version 13, which adds
-// marketdata_instrument_symbol (migration 00095). Version 12 has no rows for it, so every table
-// carries over unchanged.
-func addInstrumentSymbols(tables []ArchiveTable) ([]ArchiveTable, error) {
-	out := make([]ArchiveTable, len(tables))
-	for i, t := range tables {
-		out[i] = ArchiveTable{Name: t.Name, Rows: slices.Clone(t.Rows)}
-	}
-
-	return out, nil
-}
-
 // addContributionPlan moves a version 13 archive to version 14, which adds
 // portfolio_contribution_plan, portfolio_contribution_class and portfolio_contribution_member
 // (migration 00096). Version 13 has no contribution plan rows, so every table carries over
@@ -326,38 +314,10 @@ func addTermsLiquidity(tables []ArchiveTable) ([]ArchiveTable, error) {
 	return withField(tables, table, "redeemable_from", jsontext.Value("null"))
 }
 
-// addInstrumentOwner writes null into books_id, issuer, issuer_scheme and issuer_id of every version
-// 19 row of marketdata_instrument (migration 00104): an instrument saved before is public and has
-// no issuer (fixed income complete A236 FC1, FC3).
-func addInstrumentOwner(tables []ArchiveTable) ([]ArchiveTable, error) {
-	const table = "marketdata_instrument"
-
-	for _, column := range []string{"books_id", "issuer", "issuer_scheme", "issuer_id"} {
-		var err error
-		if tables, err = withField(tables, table, column, jsontext.Value("null")); err != nil {
-			return nil, err
-		}
-	}
-
-	return tables, nil
-}
-
 // addFixedIncomePayments moves a version 20 archive to version 21, which adds
 // marketdata_fixed_income_payment (migration 00106). Version 20 has no payment rows, and terms
 // without payments price as before, so every table carries over unchanged.
 func addFixedIncomePayments(tables []ArchiveTable) ([]ArchiveTable, error) {
-	out := make([]ArchiveTable, len(tables))
-	for i, t := range tables {
-		out[i] = ArchiveTable{Name: t.Name, Rows: slices.Clone(t.Rows)}
-	}
-
-	return out, nil
-}
-
-// addInstrumentHidden moves a version 21 archive to version 22, which adds
-// marketdata_instrument_hidden (migration 00107). Version 21 hides no instrument, so every table
-// carries over unchanged.
-func addInstrumentHidden(tables []ArchiveTable) ([]ArchiveTable, error) {
 	out := make([]ArchiveTable, len(tables))
 	for i, t := range tables {
 		out[i] = ArchiveTable{Name: t.Name, Rows: slices.Clone(t.Rows)}
