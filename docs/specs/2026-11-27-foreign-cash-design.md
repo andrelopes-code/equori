@@ -70,7 +70,7 @@ Code:
   - A posting of a transaction balanced in the base currency that adds units adds them at its weight.
   - A posting of such a transaction that removes units realizes, as an item of its year, its weight (as a positive base amount) minus the units removed at the average base cost of the balance. The same posting lowers the cost by that average cost.
   - A posting of a transaction balanced in another currency moves units at the average cost and realizes nothing.
-- FC15. A balance in another currency with `yield_mode` `none` gives no item (art. 2, § 3).
+- FC15. A balance in another currency with `yield_mode` `none` gives no item (art. 2, § 3). It keeps its average cost in the replay, so a transfer to a remunerated balance carries that cost.
 - FC16. The ledger port of the portfolio gains `ForeignBalancePostings(ctx, booksID, to)`. It returns the postings of such accounts up to `to`: account, date, amount, weight, and whether the transaction balances in the base currency.
 
 ### Assistant

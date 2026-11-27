@@ -78,12 +78,12 @@ func replayTransaction(held map[uuid.UUID]*foreignBalance, group []BalancePostin
 		inflows, outflows   []BalancePosting
 	)
 
+	// Every balance abroad keeps its cost, so a transfer carries it; only a remunerated balance
+	// realizes an item (Lei 14.754/2023, art. 2, § 3).
 	for _, p := range group {
-		switch {
-		case !p.Remunerated:
-		case p.Amount > 0:
+		if p.Amount > 0 {
 			inflows = append(inflows, p)
-		default:
+		} else {
 			outflows = append(outflows, p)
 		}
 	}
@@ -94,12 +94,13 @@ func replayTransaction(held map[uuid.UUID]*foreignBalance, group []BalancePostin
 		b.units += p.Amount
 		b.cost -= cost
 
-		if p.BaseBalanced {
+		switch {
+		case p.BaseBalanced && p.Remunerated:
 			out = append(
 				out,
 				AbroadItem{Year: p.Date.Year(), Amount: max(p.Weight, -p.Weight) - cost},
 			)
-		} else {
+		case !p.BaseBalanced:
 			poolUnits -= p.Amount
 			poolCost += cost
 		}

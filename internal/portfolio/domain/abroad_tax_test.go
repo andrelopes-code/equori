@@ -66,6 +66,24 @@ func TestExchangeItems(t *testing.T) {
 			want: []domain.AbroadItem{{Year: 2026, Amount: 50000}},
 		},
 		{
+			name: "transfer from a balance that earns nothing carries its cost",
+			in: []domain.BalancePosting{
+				post(uuid.New(), b, day(1, 10), 100000, 500000, false, true),
+				post(move, b, day(2, 10), -100000, -100000, false, false),
+				post(move, a, day(2, 10), 100000, 100000, true, false),
+				post(uuid.New(), a, day(4, 10), -100000, -550000, true, true),
+			},
+			want: []domain.AbroadItem{{Year: 2026, Amount: 50000}},
+		},
+		{
+			name: "outflow of a balance that earns nothing gives no item",
+			in: []domain.BalancePosting{
+				post(uuid.New(), b, day(1, 10), 100000, 500000, false, true),
+				post(uuid.New(), b, day(4, 10), -100000, -550000, false, true),
+			},
+			want: nil,
+		},
+		{
 			name: "tie of the cost removed rounds to even",
 			in: []domain.BalancePosting{
 				post(uuid.New(), a, day(1, 10), 2, 5, true, true),
