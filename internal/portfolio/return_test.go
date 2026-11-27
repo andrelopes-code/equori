@@ -310,6 +310,7 @@ func TestReturnEdgeCases(t *testing.T) {
 				tt.from,
 				tt.to,
 			)
+
 			r := f.h.Do(http.MethodGet, url, nil)
 			if r.Status != http.StatusOK {
 				t.Fatalf("status %d: %s", r.Status, r.Body)

@@ -1,4 +1,4 @@
-package domain_test
+package domain
 
 import (
 	"slices"
@@ -6,8 +6,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-
-	"github.com/andrelopes-code/equori/internal/portfolio/domain"
 )
 
 func TestExchangeItems(t *testing.T) {
@@ -22,8 +20,8 @@ func TestExchangeItems(t *testing.T) {
 		date time.Time,
 		amount, weight int64,
 		remunerated, baseBalanced bool,
-	) domain.BalancePosting {
-		return domain.BalancePosting{
+	) BalancePosting {
+		return BalancePosting{
 			TransactionID: tx, AccountID: account, Date: date, Amount: amount, Weight: weight,
 			Remunerated: remunerated, BaseBalanced: baseBalanced,
 		}
@@ -31,53 +29,53 @@ func TestExchangeItems(t *testing.T) {
 
 	tests := []struct {
 		name string
-		in   []domain.BalancePosting
-		want []domain.AbroadItem
+		in   []BalancePosting
+		want []AbroadItem
 	}{
 		{
 			name: "outflow dearer than the inflow",
-			in: []domain.BalancePosting{
+			in: []BalancePosting{
 				post(uuid.New(), a, day(1, 10), 100000, 500000, true, true),
 				post(uuid.New(), a, day(4, 10), -100000, -550000, true, true),
 			},
-			want: []domain.AbroadItem{{Year: 2026, Amount: 50000}},
+			want: []AbroadItem{{Year: 2026, Amount: 50000}},
 		},
 		{
 			name: "average cost of two inflows",
-			in: []domain.BalancePosting{
+			in: []BalancePosting{
 				post(uuid.New(), a, day(1, 10), 100000, 500000, true, true),
 				post(uuid.New(), a, day(2, 10), 100000, 600000, true, true),
 				post(uuid.New(), a, day(4, 10), -100000, -580000, true, true),
 				post(uuid.New(), a, day(5, 10), -100000, -540000, true, true),
 			},
-			want: []domain.AbroadItem{
+			want: []AbroadItem{
 				{Year: 2026, Amount: 30000},
 				{Year: 2026, Amount: -10000},
 			},
 		},
 		{
 			name: "transfer in the foreign currency moves the cost",
-			in: []domain.BalancePosting{
+			in: []BalancePosting{
 				post(uuid.New(), a, day(1, 10), 100000, 500000, true, true),
 				post(move, a, day(2, 10), -100000, -100000, true, false),
 				post(move, b, day(2, 10), 100000, 100000, true, false),
 				post(uuid.New(), b, day(4, 10), -100000, -550000, true, true),
 			},
-			want: []domain.AbroadItem{{Year: 2026, Amount: 50000}},
+			want: []AbroadItem{{Year: 2026, Amount: 50000}},
 		},
 		{
 			name: "transfer from a balance that earns nothing carries its cost",
-			in: []domain.BalancePosting{
+			in: []BalancePosting{
 				post(uuid.New(), b, day(1, 10), 100000, 500000, false, true),
 				post(move, b, day(2, 10), -100000, -100000, false, false),
 				post(move, a, day(2, 10), 100000, 100000, true, false),
 				post(uuid.New(), a, day(4, 10), -100000, -550000, true, true),
 			},
-			want: []domain.AbroadItem{{Year: 2026, Amount: 50000}},
+			want: []AbroadItem{{Year: 2026, Amount: 50000}},
 		},
 		{
 			name: "outflow of a balance that earns nothing gives no item",
-			in: []domain.BalancePosting{
+			in: []BalancePosting{
 				post(uuid.New(), b, day(1, 10), 100000, 500000, false, true),
 				post(uuid.New(), b, day(4, 10), -100000, -550000, false, true),
 			},
@@ -85,15 +83,15 @@ func TestExchangeItems(t *testing.T) {
 		},
 		{
 			name: "tie of the cost removed rounds to even",
-			in: []domain.BalancePosting{
+			in: []BalancePosting{
 				post(uuid.New(), a, day(1, 10), 2, 5, true, true),
 				post(uuid.New(), a, day(2, 10), -1, -4, true, true),
 			},
-			want: []domain.AbroadItem{{Year: 2026, Amount: 2}},
+			want: []AbroadItem{{Year: 2026, Amount: 2}},
 		},
 		{
 			name: "account without yield",
-			in: []domain.BalancePosting{
+			in: []BalancePosting{
 				post(uuid.New(), a, day(1, 10), 100000, 500000, false, true),
 				post(uuid.New(), a, day(4, 10), -100000, -550000, false, true),
 			},
@@ -105,7 +103,7 @@ func TestExchangeItems(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			got := domain.ExchangeItems(tc.in)
+			got := ExchangeItems(tc.in)
 			if !slices.Equal(got, tc.want) {
 				t.Errorf("ExchangeItems = %+v, want %+v", got, tc.want)
 			}
