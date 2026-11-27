@@ -204,6 +204,7 @@ func planSetBillingCycle(
 		ClosingAdjustment: string(in.ClosingAdjustment),
 		Calendar:          in.Calendar,
 	}
+
 	rules, err := svc.BillingRules(ctx, booksID, a.ID)
 	if err != nil {
 		return pv, nil, err

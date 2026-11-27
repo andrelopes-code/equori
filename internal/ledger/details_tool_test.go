@@ -85,6 +85,7 @@ func TestGetAccountDetailsOtherUser(t *testing.T) {
 // and calendar shifts: the version in force this month and every later one.
 func TestGetAccountDetailsBillingCycles(t *testing.T) {
 	t.Parallel()
+
 	c := newCardSetup(t, "2026-11-12")
 	for _, rule := range []map[string]any{
 		{"effective_from": "2026-06", "closing_day": 5, "due_day": 12},
