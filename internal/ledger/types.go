@@ -96,6 +96,7 @@ type (
 	InvestmentFacts = app.InvestmentFacts
 	SecurityFact    = app.SecurityFact
 	HoldingPosting  = app.HoldingPosting
+	BalancePosting  = app.BalancePosting
 	TradeFact       = app.TradeFact
 	IncomeFact      = app.IncomeFact
 )

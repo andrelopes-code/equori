@@ -296,6 +296,21 @@ func (p ledgerPort) Balances(
 	return out, err
 }
 
+func (p ledgerPort) ForeignBalancePostings(
+	ctx context.Context,
+	booksID int64,
+	to time.Time,
+) ([]app.BalancePosting, error) {
+	ps, err := p.l.ForeignBalancePostings(ctx, booksID, to)
+
+	out := make([]app.BalancePosting, len(ps))
+	for i, x := range ps {
+		out[i] = app.BalancePosting(x)
+	}
+
+	return out, err
+}
+
 func (p ledgerPort) ExternalFlows(
 	ctx context.Context,
 	booksID int64,

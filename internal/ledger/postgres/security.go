@@ -8,6 +8,7 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/ledger/app"
 	"github.com/andrelopes-code/equori/internal/ledger/domain"
+	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
 func (r *Repository) SecurityPostings(
@@ -27,6 +28,29 @@ func (r *Repository) SecurityPostings(
 			Date:          row.BookedOn,
 			Quantity:      row.Amount,
 			Weight:        row.Weight,
+		}
+	}), err
+}
+
+func (r *Repository) ForeignBalancePostings(
+	ctx context.Context,
+	booksID int64,
+	accountIDs []uuid.UUID,
+	base money.Currency,
+	before time.Time,
+) ([]app.BalancePosting, error) {
+	rows, err := r.q.ForeignBalancePostings(ctx, ForeignBalancePostingsParams{
+		BooksID: booksID, AccountIds: accountIDs, Base: string(base), Before: before,
+	})
+
+	return mapAll(rows, func(row ForeignBalancePostingsRow) app.BalancePosting {
+		return app.BalancePosting{
+			AccountID:     row.AccountID,
+			TransactionID: row.TransactionID,
+			Date:          row.BookedOn,
+			Amount:        row.Amount,
+			Weight:        row.Weight,
+			BaseBalanced:  row.BaseBalanced,
 		}
 	}), err
 }

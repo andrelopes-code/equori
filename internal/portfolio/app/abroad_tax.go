@@ -44,8 +44,12 @@ func (s *Service) AbroadTax(
 	return domain.AbroadYear{}, base, false, nil
 }
 
+// BalancePosting is a posting of a balance account abroad (FC16).
+type BalancePosting = domain.BalancePosting
+
 // abroadItems are the results and the incomes before to of the instruments quoted in a currency
-// other than base; an income in another currency is converted on its date.
+// other than base, and the exchange results of the remunerated balances abroad (FC14); an income
+// in another currency is converted on its date.
 func (s *Service) abroadItems(
 	ctx context.Context,
 	booksID int64,
@@ -88,7 +92,12 @@ func (s *Service) abroadItems(
 		}
 	}
 
-	return out, nil
+	postings, err := s.ledger.ForeignBalancePostings(ctx, booksID, to)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(out, domain.ExchangeItems(postings)...), nil
 }
 
 // abroadFilter tells, once per instrument, whether it is quoted in a currency other than base.

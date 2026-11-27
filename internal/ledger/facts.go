@@ -101,3 +101,13 @@ func (m *Module) MissingPayees(
 ) ([]uuid.UUID, error) {
 	return m.svc.MissingPayees(ctx, booksID, ids)
 }
+
+// ForeignBalancePostings are the postings before the given date of the asset accounts in a
+// currency other than the base, for the exchange result of a remunerated balance abroad.
+func (m *Module) ForeignBalancePostings(
+	ctx context.Context,
+	booksID int64,
+	before time.Time,
+) ([]BalancePosting, error) {
+	return m.svc.ForeignBalancePostings(ctx, booksID, before)
+}

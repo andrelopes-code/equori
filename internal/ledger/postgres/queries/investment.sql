@@ -173,6 +173,27 @@ ORDER BY
     p.transaction_id,
     p.position;
 
+-- name: ForeignBalancePostings :many
+SELECT
+    p.account_id,
+    p.transaction_id,
+    p.booked_on,
+    p.amount,
+    p.weight,
+    (t.balancing_currency = @base::text)::boolean AS base_balanced
+FROM
+    ledger_posting p
+    JOIN ledger_transaction t ON t.id = p.transaction_id
+WHERE
+    p.books_id = @books_id
+    AND p.account_id = ANY (@account_ids::UUID[])
+    AND NOT p.voided
+    AND p.booked_on < @before
+ORDER BY
+    p.booked_on,
+    p.transaction_id,
+    p.position;
+
 -- name: SecurityTrades :many
 SELECT
     tr.transaction_id,

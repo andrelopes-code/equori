@@ -146,6 +146,76 @@ func (q *Queries) FirstBuyOfAccount(ctx context.Context, arg FirstBuyOfAccountPa
 	return transaction_id, err
 }
 
+const foreignBalancePostings = `-- name: ForeignBalancePostings :many
+SELECT
+    p.account_id,
+    p.transaction_id,
+    p.booked_on,
+    p.amount,
+    p.weight,
+    (t.balancing_currency = $1::text)::boolean AS base_balanced
+FROM
+    ledger_posting p
+    JOIN ledger_transaction t ON t.id = p.transaction_id
+WHERE
+    p.books_id = $2
+    AND p.account_id = ANY ($3::UUID[])
+    AND NOT p.voided
+    AND p.booked_on < $4
+ORDER BY
+    p.booked_on,
+    p.transaction_id,
+    p.position
+`
+
+type ForeignBalancePostingsParams struct {
+	Base       string
+	BooksID    int64
+	AccountIds []uuid.UUID
+	Before     time.Time
+}
+
+type ForeignBalancePostingsRow struct {
+	AccountID     uuid.UUID
+	TransactionID uuid.UUID
+	BookedOn      time.Time
+	Amount        int64
+	Weight        int64
+	BaseBalanced  bool
+}
+
+func (q *Queries) ForeignBalancePostings(ctx context.Context, arg ForeignBalancePostingsParams) ([]ForeignBalancePostingsRow, error) {
+	rows, err := q.db.Query(ctx, foreignBalancePostings,
+		arg.Base,
+		arg.BooksID,
+		arg.AccountIds,
+		arg.Before,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ForeignBalancePostingsRow
+	for rows.Next() {
+		var i ForeignBalancePostingsRow
+		if err := rows.Scan(
+			&i.AccountID,
+			&i.TransactionID,
+			&i.BookedOn,
+			&i.Amount,
+			&i.Weight,
+			&i.BaseBalanced,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const holding = `-- name: Holding :one
 SELECT
     coalesce(sum(amount), 0)::bigint AS quantity,

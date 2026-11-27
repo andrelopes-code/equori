@@ -50,6 +50,13 @@ type Ledger interface {
 	// Balances is the balance of every asset and liability account at the end of date, each in
 	// its own instrument and counting its own postings only.
 	Balances(ctx context.Context, booksID int64, date time.Time) ([]AccountBalance, error)
+	// ForeignBalancePostings are the postings before to of the balance accounts in a currency
+	// other than the base (FC16).
+	ForeignBalancePostings(
+		ctx context.Context,
+		booksID int64,
+		to time.Time,
+	) ([]BalancePosting, error)
 	// UnitTaxDates are the dates of the unit taxes recorded on the account in [from, to].
 	UnitTaxDates(
 		ctx context.Context,

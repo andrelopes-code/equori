@@ -33,6 +33,15 @@ type reportStore interface {
 		booksID int64,
 		accountID uuid.UUID,
 	) ([]money.Currency, error)
+	// ForeignBalancePostings are the postings of the accounts dated before the given date, by
+	// date, transaction and position; BaseBalanced tells whether the transaction balances in base.
+	ForeignBalancePostings(
+		ctx context.Context,
+		booksID int64,
+		accountIDs []uuid.UUID,
+		base money.Currency,
+		before time.Time,
+	) ([]BalancePosting, error)
 	SecurityPostings(
 		ctx context.Context,
 		booksID int64,

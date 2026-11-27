@@ -276,3 +276,54 @@ func (s *Service) ownAccounts(ctx context.Context, booksID int64, accountIDs []u
 
 	return nil
 }
+
+// BalancePosting is a posting of a balance account in a currency other than the base: Amount in
+// that currency, Weight in the base currency of the book (A236 FC16).
+type BalancePosting struct {
+	AccountID, TransactionID  uuid.UUID
+	Date                      time.Time
+	Amount, Weight            int64
+	Remunerated, BaseBalanced bool
+}
+
+// ForeignBalancePostings are the non-voided postings dated before the given date of the asset
+// accounts that hold a currency other than the base, by date, transaction and position;
+// Remunerated is true for an account with yield_mode auto.
+func (s *Service) ForeignBalancePostings(
+	ctx context.Context,
+	booksID int64,
+	before time.Time,
+) ([]BalancePosting, error) {
+	settings, err := s.repo.Settings(ctx, booksID)
+	if err != nil {
+		return nil, err
+	}
+
+	accounts, err := s.repo.AllAccounts(ctx, booksID)
+	if err != nil {
+		return nil, err
+	}
+
+	remunerated := map[uuid.UUID]bool{}
+
+	var ids []uuid.UUID
+
+	for _, a := range accounts {
+		if a.Class == domain.ClassAsset && !a.HoldsSecurity() &&
+			a.Instrument != settings.BaseCurrency {
+			remunerated[a.ID] = a.YieldMode == domain.YieldAuto
+			ids = append(ids, a.ID)
+		}
+	}
+
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	out, err := s.repo.ForeignBalancePostings(ctx, booksID, ids, settings.BaseCurrency, before)
+	for i := range out {
+		out[i].Remunerated = remunerated[out[i].AccountID]
+	}
+
+	return out, err
+}
