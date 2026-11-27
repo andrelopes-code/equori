@@ -47,9 +47,15 @@ type cardView struct {
 }
 
 type billingCycleView struct {
-	ClosingDay    int    `json:"closing_day"`
-	DueDay        int    `json:"due_day"`
-	EffectiveFrom string `json:"effective_from" jsonschema:"YYYY-MM"`
+	EffectiveFrom        string `json:"effective_from"                   jsonschema:"YYYY-MM"`
+	ClosingMode          string `json:"closing_mode"                     jsonschema:"day or before_due"`
+	ClosingDay           int    `json:"closing_day,omitzero"             jsonschema:"with closing_mode day"`
+	ClosingDaysBeforeDue int    `json:"closing_days_before_due,omitzero" jsonschema:"with closing_mode before_due: days before the due day, before its shift"`
+	ClosingAdjustment    string `json:"closing_adjustment"`
+	DueDay               int    `json:"due_day"`
+	DueDateAdjustment    string `json:"due_date_adjustment"`
+	ClosingDayAssignment string `json:"closing_day_assignment"`
+	Calendar             string `json:"calendar"`
 }
 
 type statementRowView struct {
@@ -77,7 +83,7 @@ type cardDetailsView struct {
 	Cards          []cardView         `json:"cards"`
 	CreditLimit    tool.Money         `json:"credit_limit,omitzero"`
 	AvailableLimit tool.Money         `json:"available_limit,omitzero"`
-	BillingCycle   billingCycleView   `json:"billing_cycle,omitzero"`
+	BillingCycles  []billingCycleView `json:"billing_cycles"           jsonschema:"the cycle version in force this month and every later one, oldest first"`
 	Statements     []statementRowView `json:"statements"`
 	Placement      placementView      `json:"placement,omitzero"`
 	Committed      commitmentView     `json:"committed,omitzero"`

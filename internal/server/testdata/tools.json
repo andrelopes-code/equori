@@ -839,26 +839,55 @@
               ],
               "additionalProperties": false
             },
-            "billing_cycle": {
-              "type": "object",
-              "properties": {
-                "closing_day": {
-                  "type": "integer"
+            "billing_cycles": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "effective_from": {
+                    "type": "string",
+                    "description": "YYYY-MM"
+                  },
+                  "closing_mode": {
+                    "type": "string",
+                    "description": "day or before_due"
+                  },
+                  "closing_day": {
+                    "type": "integer",
+                    "description": "with closing_mode day"
+                  },
+                  "closing_days_before_due": {
+                    "type": "integer",
+                    "description": "with closing_mode before_due: days before the due day, before its shift"
+                  },
+                  "closing_adjustment": {
+                    "type": "string"
+                  },
+                  "due_day": {
+                    "type": "integer"
+                  },
+                  "due_date_adjustment": {
+                    "type": "string"
+                  },
+                  "closing_day_assignment": {
+                    "type": "string"
+                  },
+                  "calendar": {
+                    "type": "string"
+                  }
                 },
-                "due_day": {
-                  "type": "integer"
-                },
-                "effective_from": {
-                  "type": "string",
-                  "description": "YYYY-MM"
-                }
+                "required": [
+                  "effective_from",
+                  "closing_mode",
+                  "closing_adjustment",
+                  "due_day",
+                  "due_date_adjustment",
+                  "closing_day_assignment",
+                  "calendar"
+                ],
+                "additionalProperties": false
               },
-              "required": [
-                "closing_day",
-                "due_day",
-                "effective_from"
-              ],
-              "additionalProperties": false
+              "description": "the cycle version in force this month and every later one, oldest first"
             },
             "statements": {
               "type": "array",
@@ -990,6 +1019,7 @@
           },
           "required": [
             "cards",
+            "billing_cycles",
             "statements"
           ],
           "additionalProperties": false

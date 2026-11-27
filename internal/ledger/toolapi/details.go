@@ -2,6 +2,7 @@ package toolapi
 
 import (
 	"context"
+	"slices"
 	"time"
 
 	"github.com/google/uuid"
@@ -261,15 +262,42 @@ func cardBaseOf(
 		return cardDetailsView{}, err
 	}
 
-	if r, err := rules.For(domain.MonthOf(today)); err == nil {
-		out.BillingCycle = billingCycleView{
-			ClosingDay:    r.ClosingDay,
-			DueDay:        r.DueDay,
-			EffectiveFrom: r.EffectiveFrom.String(),
-		}
-	}
+	out.BillingCycles = billingCyclesFrom(rules, domain.MonthOf(today))
 
 	return out, nil
+}
+
+// billingCyclesFrom is the version in force in month m and every later version, oldest first.
+func billingCyclesFrom(rules domain.Rules, m domain.ReferenceMonth) []billingCycleView {
+	from := m
+	if current, err := rules.For(m); err == nil {
+		from = current.EffectiveFrom
+	}
+
+	sorted := slices.SortedFunc(slices.Values(rules), func(a, b domain.BillingCycleRule) int {
+		return a.EffectiveFrom.Compare(b.EffectiveFrom)
+	})
+
+	out := []billingCycleView{}
+	for _, r := range sorted {
+		if r.EffectiveFrom.Compare(from) < 0 {
+			continue
+		}
+
+		out = append(out, billingCycleView{
+			EffectiveFrom:        r.EffectiveFrom.String(),
+			ClosingMode:          r.ClosingMode,
+			ClosingDay:           r.ClosingDay,
+			ClosingDaysBeforeDue: r.ClosingDaysBeforeDue,
+			ClosingAdjustment:    r.ClosingAdjustment,
+			DueDay:               r.DueDay,
+			DueDateAdjustment:    r.Adjustment,
+			ClosingDayAssignment: r.Assignment,
+			Calendar:             r.Calendar,
+		})
+	}
+
+	return out
 }
 
 func loadCardViews(
