@@ -1,6 +1,6 @@
 # Distribution: the per-user Windows form
 
-Status: draft, 2026-11-27. Supersedes `docs/specs/2026-10-27-distribution-windows-design.md` (the 2026-10-27 design) and ADR 023, except the rules this design keeps by ID.
+Status: draft, 2026-11-27; amended the same day after the code was read (plan `2026-11-27-windows-per-user`). Supersedes `docs/specs/2026-10-27-distribution-windows-design.md` (the 2026-10-27 design) and ADR 023, except the rules this design keeps by ID.
 
 ## Intent
 
@@ -66,7 +66,7 @@ The design fails, even when every artifact builds, when any of these holds:
 | ID | Rule |
 |---|---|
 | PW1.1 | The release attaches `equori_X.Y.Z_windows_amd64.zip` and `install.ps1`, and appends the line of the zip to `SHA256SUMS`. No signing step and no condition on secrets: W-R5, W-R6 and `scripts/windows-sign.ps1` are removed. |
-| PW1.2 | The zip holds `equori.exe`, linked with `-H windowsgui`, which runs the tray and the server; `equori-cli.exe`, the same `cmd/equori` linked as a console program, for terminal commands (`backup`, `restore`, `version`, `stop`, `uninstall`); `postgresql\`, the bundle of W-P1 to W-P4, unchanged; `LICENSE`. |
+| PW1.2 | The zip holds `equori.exe`, linked with `-H windowsgui`, which runs the tray and the server; `equori-cli.exe`, the same `cmd/equori` linked as a console program, for terminal commands (`backup`, `restore`, `version`, `stop`); `install.ps1`, pinned to the release; `postgresql\`, the bundle of W-P1 to W-P4, unchanged; `LICENSE`. |
 | PW1.3 | Both executables carry a version resource (product name, version, description). No executable is packed (no UPX). |
 
 ### PW2 Installation script
@@ -75,24 +75,24 @@ The design fails, even when every artifact builds, when any of these holds:
 |---|---|
 | PW2.1 | `scripts/install.ps1` installs the form of this design and no longer runs compose. It keeps the step display and the `en` and `pt-BR` texts of PF5, and runs on Windows PowerShell 5.1. |
 | PW2.2 | Folder: `%LOCALAPPDATA%\equori`, or the value of `EQUORI_DIR` when set before the command. |
-| PW2.3 | Steps: download the zip of the release; check its SHA-256 against `SHA256SUMS`; stop a running instance with the installed `equori-cli.exe stop`; extract the program files over the folder, never touching `data\`, `backups\` and `equori.env`; run `Unblock-File` on every extracted file; write `equori.env` with `EQUORI_HTTP_ADDR=127.0.0.1:8080` when absent. |
-| PW2.4 | The script creates the Start menu shortcut "equori" to `equori.exe`, the Startup folder shortcut to `equori.exe --background` (the "Start with Windows" item of PW3.3, on by default), and the entry "equori" under `HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall`, whose command is `equori-cli.exe uninstall`. |
+| PW2.3 | Steps: download the zip of the release; check its SHA-256 against `SHA256SUMS`; stop a running instance with the installed `equori-cli.exe stop`; extract the program files over the folder, never touching `data\`; run `Unblock-File` on every extracted file. The script writes nothing under `data\`, which only equori creates (W-M3, W-M4 of ADR 023). |
+| PW2.4 | The script creates the Start menu shortcut "equori" to `equori.exe`; the value `equori` under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` with data `"<dir>\equori.exe" tray --background` (the "Start with Windows" item of PW3.3, on by default); a copy of itself as `<dir>\install.ps1`; and the entry "equori" under `HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall`, whose command is `powershell.exe -NoProfile -ExecutionPolicy Bypass -File "<dir>\install.ps1" -Uninstall`. |
 | PW2.5 | The script ends by starting `equori.exe`, which opens the browser (PW3.2), and prints the address. |
-| PW2.6 | `equori-cli.exe uninstall` stops the instance, removes the program files, both shortcuts and the registry entry, and asks whether to delete `data\` and `backups\`, with "No" as default. `--yes` answers yes; `--keep-data` answers no without asking. |
-| PW2.7 | An upgrade keeps the state of "Start with Windows": the script recreates the Startup shortcut only when it existed before or on a first installation. |
+| PW2.6 | `install.ps1 -Uninstall` stops the instance, removes the program files, the shortcut, the Run value and the registry entry, and asks whether to delete `data\`, backups included, with "No" as default. `-Yes` answers yes; `-KeepData` answers no without asking. |
+| PW2.7 | An upgrade keeps the state of "Start with Windows": the script writes the Run value only when it existed before or on a first installation. A first installation is a run on a folder without `equori-cli.exe`. |
 
 ### PW2b Script presentation and order
 
 | ID | Rule |
 |---|---|
-| PW2.8 | The first line names the version and the operation: installation into the folder, upgrade from the installed version, or "already at version X", which ends the script in under 2 s without a download. |
+| PW2.8 | The first line names the version and the operation: installation into the folder, upgrade from the installed version, or "already installed", which ends the script in under 2 s without a download. `-Reinstall` skips that exit, to repair a folder. |
 | PW2.9 | Each step is one line: a mark at column 3 (`[..]` while it runs, `[ok]` green, `[!!]` red), the step name, its detail and its duration, aligned on fixed columns, at most 80 columns, never wrapped. The running line is rewritten in place with the elapsed seconds; the download line also shows megabytes received, the total and the percentage. |
 | PW2.10 | Steps, in order: checks (Windows 10 1803 or later, x64 or Arm, write access to the folder, port of `EQUORI_HTTP_ADDR` free, Smart App Control not in the "On" state); download; SHA-256 check; stop of the running instance; files; shortcuts; start and `/healthz`. The download and its check finish before the running instance stops, so an upgrade keeps equori unavailable only during the files, shortcuts and start steps. |
 | PW2.11 | The download reads the response as a stream and writes its own progress (Windows PowerShell 5.1 slows a download with its own progress bar on). A network failure is retried 3 times, 2 s apart. |
 | PW2.12 | A failure ends the step with `[!!]`, then prints three lines: `Error:` with the cause, `How to fix:` with the action, and the link to the anchor of the failure in `docs/install/windows.md`. A start failure prints the last 20 lines of `data\log\equori.log` before them. Each failure has an anchor code (`w1-…`), kept stable across releases. |
 | PW2.13 | The final block lists, one per line with values aligned on one column: the address (with the token of `setup.url` on a first installation), the folder, how to open equori (Start menu or tray icon), how to upgrade (the same command) and how to uninstall (Settings → Apps → equori). A first installation adds two lines in yellow: keep a copy of `data\secret.key` apart from the backups; without it, the bank connections cannot be read. |
 | PW2.14 | Colors: green for `[ok]` and the success line, red for `[!!]` and `Error:`, cyan for the address, yellow for the `secret.key` lines. Without a console (redirected output) or with `NO_COLOR` set, the script writes the same lines without color and without in-place rewrite. |
-| PW2.15 | `equori-cli.exe stop` and `uninstall` write their steps in the form of PW2.9 and PW2.12. |
+| PW2.15 | `EQUORI_LANG` (`en`, `pt-BR`) overrides the language chosen from `Get-Culture`. `EQUORI_ZIP` and `EQUORI_SUMS` (local paths) replace the download, for the smoke test. |
 
 Output of a first installation, `pt-BR`, as a reference for PW2.8 to PW2.13:
 
@@ -121,9 +121,9 @@ Sem ela, as conexões bancárias não podem ser lidas.
 
 | ID | Rule |
 |---|---|
-| PW3.1 | `equori.exe` without arguments: when an instance of the same folder holds `equori.lock` (W-M6), it opens the browser at the configured address and exits. Otherwise it starts `serve` in the same process and shows the tray icon. |
+| PW3.1 | `equori.exe` without arguments: when an instance of the same folder holds `equori.lock` (W-M6, read by `pgcluster.Held`), it opens the browser at the configured address and exits. Otherwise it starts `serve` in the same process and shows the tray icon. |
 | PW3.2 | After `/healthz` answers, the browser opens at the content of `setup.url` when the file exists (W5 of the 2026-10-27 design), else at the configured address. `--background` opens nothing. |
-| PW3.3 | Tray menu: "Open equori" (also the action of a click on the icon), "Start with Windows" (check item that creates or removes the Startup shortcut of PW2.4), a separator, "Quit". The tooltip names the address. |
+| PW3.3 | Tray menu: "Open equori" (also the action of a click on the icon), "Start with Windows" (check item that writes or deletes the Run value of PW2.4), a separator, "Quit". The tooltip names the address. |
 | PW3.4 | "Quit" and `equori-cli.exe stop` stop PostgreSQL through `pg_ctl stop` and end the process. `stop` waits up to 90 s for the lock of PW3.1 to be released. |
 | PW3.5 | A start failure (port in use, refused data directory, PostgreSQL error) shows a Windows message box with the error and the path of the log, then exits. |
 | PW3.6 | The standard output and error of `equori` and of `postgres.exe` go to `<data>\log\equori.log`, rotated at 10 MiB to `equori.log.1` (the rule of W-S4, moved out of `internal/platform/winsvc`). |
@@ -134,8 +134,8 @@ Sem ela, as conexões bancárias não podem ser lidas.
 
 | ID | Rule |
 |---|---|
-| PW4.1 | On Windows, the default data directory is `data\` beside the executable, and backups go to `backups\` beside it. W-M1 (`%ProgramData%\equori`) is removed. |
-| PW4.2 | W-M2 to W-M9 of ADR 023 hold unchanged: bundled programs, protected DACL created with a missing data directory, socket without a TCP port, restricted token, Job Object. |
+| PW4.1 | On Windows, the default data directory is `data\` beside the executable. `equori.env`, `secret.key` and `backups\` keep their place inside it. W-M1 (`%ProgramData%\equori`) is removed. |
+| PW4.2 | W-M2 to W-M9 of ADR 023 hold unchanged: bundled programs, protected DACL created with a missing data directory, socket without a TCP port, restricted token, Job Object. On Windows, an unset `EQUORI_HTTP_ADDR` is `127.0.0.1:8080` (`:8080` elsewhere), so no start listens beyond loopback without the owner's setting. |
 
 ### PW5 Removed
 
@@ -146,9 +146,9 @@ Sem ela, as conexões bancárias não podem ser lidas.
 | ID | Rule |
 |---|---|
 | PW6.1 | The release job `windows` builds the bundle, runs `scripts/postgres-current.ps1`, builds both executables, assembles the zip, runs PW6.2 and uploads the zip and `install.ps1`. |
-| PW6.2 | `scripts/windows-smoke.ps1 ZIP TAG` runs `install.ps1` against the local zip: no installed file has a `Zone.Identifier` stream; the shortcuts and the registry entry of PW2.4 exist; `/healthz` answers; `equori-cli.exe version` reports the tag; `POST /api/v1/setup` with the token of `setup.url` returns 201; an account and a transaction are recorded; `equori-cli.exe backup` writes a file in `backups\`; `equori-cli.exe stop` ends every `equori.exe` and `postgres.exe` of the folder; a second start keeps the transaction; a second run of `install.ps1` keeps the transaction; Microsoft Defender scans the folder (`MpCmdRun.exe -Scan -ScanType 3 -File`) with no threat; `equori-cli.exe uninstall --keep-data` removes the program, the shortcuts and the entry, and keeps `data\PG_VERSION`. |
+| PW6.2 | `scripts/windows-smoke.ps1 ZIP TAG` runs `install.ps1` against the local zip, in a folder whose path holds a space and a non-ASCII letter: no installed file has a `Zone.Identifier` stream; the shortcuts and the registry entry of PW2.4 exist; `/healthz` answers; `equori-cli.exe version` reports the tag; `POST /api/v1/setup` with the token of `setup.url` returns 201; an account and a transaction are recorded; `equori-cli.exe backup` writes a file in `backups\`; `equori-cli.exe stop` ends every `equori.exe` and `postgres.exe` of the folder; a second start keeps the transaction; a second run of `install.ps1` keeps the transaction; Microsoft Defender scans the folder (`MpCmdRun.exe -Scan -ScanType 3 -File`) with no threat (a runner without a working scanner writes a warning; a threat fails the test); `install.ps1 -Uninstall -KeepData` removes the program, the shortcuts and the entry, and keeps `data\PG_VERSION`. |
 | PW6.3 | From the second release that holds the zip, `scripts/windows-upgrade-test.ps1` installs the previous release, seeds it with `cmd/demoseed`, runs the new `install.ps1` over it and requires the snapshot of `upgrade-test.sh`. |
-| PW6.4 | The CI job `windows` assembles the zip without uploading it and runs PW6.2 on a pull request that changes `cmd/equori`, `internal/platform/pgcluster`, `packaging/windows` or the scripts of PW2 and PW6. |
+| PW6.4 | The CI job `windows` assembles the zip without uploading it and runs PW6.2, on its current trigger. |
 
 ### PW7 Documents
 
@@ -165,7 +165,7 @@ Sem ela, as conexões bancárias não podem ser lidas.
 | Limit | Effect | Stated in |
 |---|---|---|
 | PF2 | With Smart App Control on, Windows blocks `equori.exe`; the person can only turn Smart App Control off. | `docs/install/windows.md` |
-| Logoff and shutdown | Whether `fyne.io/systray` passes the end-of-session message is not measured. Without it, Windows ends the process, the Job Object ends `postgres.exe`, and the next start runs WAL recovery; with `fsync` on, no committed transaction is lost. | ADR 040 |
+| Logoff and shutdown | `fyne.io/systray` v1.12.2 handles `WM_ENDSESSION` by calling the exit callback (`systray_windows.go`); the exit callback cancels `serve` and waits up to 20 s, so PostgreSQL stops cleanly. A session that ends faster leaves the Job Object to end `postgres.exe`; the next start runs WAL recovery, and with `fsync` on no committed transaction is lost. | ADR 040 |
 
 ## Cross-cutting questions
 
@@ -181,7 +181,7 @@ Sem ela, as conexões bancárias não podem ser lidas.
 | T1, T2 | Does not apply: no date. |
 | B1 | Does not apply: no table. |
 | B2 | Does not apply: no operation. |
-| B3 | "Start with Windows" is the presence of a shortcut in the Startup folder, not a stored setting. The address is a host value in `equori.env` (PW2.3). |
+| B3 | "Start with Windows" is the Run value of PW2.4, not a stored setting. The address is a host value of `EQUORI_HTTP_ADDR` (PW4.2). |
 | D1 to D4 | Does not apply: no table, schema or fact changes. |
 | D5 | Does not apply: no field of the diagnostic file. |
 | S1 | Does not apply: no operation in `api/openapi.yaml`. |
@@ -197,16 +197,14 @@ Sem ela, as conexões bancárias não podem ser lidas.
 |---|---|
 | PW1, PW2, PW3.1 to PW3.4, PW4 | PW6.2 on `windows-latest` |
 | PW2.8 to PW2.14 | PW6.2 captures the redirected output of `install.ps1` and compares its lines, durations masked, with a golden file per language |
-| PW3.6 | the rotation test moved with the log code |
+| PW3.6 | the rotation test moved with the log code to `internal/platform/logfile` |
 | PW3.7 | a table test of the language choice |
 | PW3.8 | `go vet` and `golangci-lint` with `GOOS=windows` and on Linux |
 | PW6.3 | from the second release |
 
 ## Calls left to the builder
 
-- The signal between `equori-cli.exe stop` and the running instance (named event, local endpoint or lock wait), within PW3.4.
-- The icon file of the tray, from the existing mark.
-- The source of the Smart App Control state of PW2.10 (the registry value `VerifiedAndReputablePolicyState` under `HKLM\SYSTEM\CurrentControlSet\Control\CI\Policy` is the candidate; the builder confirms it on the runner). Without a reliable source, the check is dropped and the limit stays in the guide.
+- The Smart App Control check of PW2.10 reads `VerifiedAndReputablePolicyState` under `HKLM\SYSTEM\CurrentControlSet\Control\CI\Policy`; value `1` stops the script, any other value or none continues. `windows-latest` has no Smart App Control: the owner confirms the value on a Windows 11 machine.
 - Whether `scripts/windows-postgres.ps1` passes PW6.2 unchanged; a failure is fixed inside it.
 
 ## Sources
