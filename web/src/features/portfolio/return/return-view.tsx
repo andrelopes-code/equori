@@ -61,7 +61,7 @@ export function ReturnView({ report, subject, window, days }: ReturnViewProps) {
   const showBars = comparisons.length > 0 && axis !== undefined;
   const showGrid = showBars || returnMoney(report) !== undefined;
   const personal =
-    subject === "portfolio" && bare
+    subject === "portfolio" && bare && report.annual_bp !== undefined
       ? t("return.verdict.personal", {
           annual: formatBasisPoints(report.annual_bp, tag),
         })

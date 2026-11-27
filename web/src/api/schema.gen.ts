@@ -9228,7 +9228,8 @@ export interface components {
             real_bp?: number;
         };
         ReturnReport: {
-            annual_bp: number;
+            /** @description The money-weighted return a year; absent when every flow is dated on one day or the rate lies outside [-99.99%, 100000%] (RE1, RE2). */
+            annual_bp?: number;
             flows: components["schemas"]["ReturnFlow"][];
             opening: components["schemas"]["Money"];
             closing: components["schemas"]["Money"];

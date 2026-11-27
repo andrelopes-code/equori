@@ -29,15 +29,13 @@ export function ReturnMethodLayer({ report, groups }: ReturnMethodLayerProps) {
   const t = useT();
   const [tag] = useAppLocale();
 
-  const rates: [string, number][] = [
-    ...(report.period_bp === undefined
-      ? []
-      : ([[t("holdings.method.period"), report.period_bp]] as [
-          string,
-          number,
-        ][])),
-    [t("holdings.method.personal"), report.annual_bp],
-  ];
+  // RE4: a rate the report lacks has no row.
+  const rates = (
+    [
+      [t("holdings.method.period"), report.period_bp],
+      [t("holdings.method.personal"), report.annual_bp],
+    ] as const
+  ).flatMap(([term, bp]) => (bp === undefined ? [] : [[term, bp] as const]));
 
   return (
     <Stack gap={4}>

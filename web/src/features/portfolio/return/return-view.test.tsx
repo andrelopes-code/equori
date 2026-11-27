@@ -67,6 +67,14 @@ function renderView(report: ReturnReport, subject: ReturnSubject) {
   );
 }
 
+// RE2: a report whose annual rate has no solution.
+function withoutAnnual(report: ReturnReport): ReturnReport {
+  const copy = { ...report };
+  delete copy.annual_bp;
+
+  return copy;
+}
+
 function method(): HTMLElement {
   return screen.getByRole("button", {
     name: catalogEn["holdings.method.open"],
@@ -152,6 +160,28 @@ describe("ReturnView", () => {
     expect(
       screen.getByText("In the period, your personal rate was 5.00% a year."),
     ).toBeInTheDocument();
+  });
+
+  it("RE4: states no personal rate without annual_bp", () => {
+    renderView(withoutAnnual(plain), "portfolio");
+
+    expect(screen.queryByText(/personal rate/)).not.toBeInTheDocument();
+  });
+
+  it("RE4: omits the annual line and the personal row without annual_bp", async () => {
+    const user = userEvent.setup();
+    renderView(withoutAnnual(market), "account");
+
+    expect(screen.queryByText(/Annual rate/)).not.toBeInTheDocument();
+
+    await user.click(method());
+
+    expect(
+      await screen.findByText(catalogEn["holdings.method.period"]),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(catalogEn["holdings.method.personal"]),
+    ).not.toBeInTheDocument();
   });
 
   it("HR4: explains why each comparison has its own window", async () => {

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"slices"
 	"time"
 
 	"github.com/google/uuid"
@@ -40,9 +41,9 @@ type ReturnFlow struct {
 
 // ReturnReport is the money-weighted return of an account tree over a period, its time-weighted
 // return, its comparison with an index and its return net of inflation (amendment A208).
-// PeriodBP, Benchmark and Inflation are nil when undefined.
+// AnnualBP, PeriodBP, Benchmark and Inflation are nil when undefined (RE2).
 type ReturnReport struct {
-	AnnualBP         int
+	AnnualBP         *int
 	Flows            []ReturnFlow
 	Opening, Closing money.Money
 	Profile          string
@@ -86,6 +87,10 @@ func (s *Service) Return(
 		return ReturnReport{}, err
 	}
 
+	if report.AnnualBP == nil && report.PeriodBP == nil {
+		return ReturnReport{}, ErrReturnUndefined
+	}
+
 	return report, nil
 }
 
@@ -125,6 +130,7 @@ func (s *Service) brokerageRoots(ctx context.Context, booksID int64) ([]uuid.UUI
 }
 
 // returnOf is Return over the accounts taken as one tree: a flow between two of them is internal.
+// It fails when no money was invested; an annual rate without solution leaves AnnualBP nil (RE2).
 func (s *Service) returnOf(
 	ctx context.Context,
 	booksID int64,
@@ -149,12 +155,13 @@ func (s *Service) returnOf(
 		cash = append(cash, domain.CashFlow{Date: f.Date, Amount: -f.Amount.Amount()})
 	}
 
-	bp, ok := domain.AnnualReturnBP(cash)
-	if !ok {
+	if !slices.ContainsFunc(cash, func(c domain.CashFlow) bool { return c.Amount < 0 }) {
 		return ReturnReport{}, ErrReturnUndefined
 	}
 
-	report.AnnualBP = bp
+	if bp, ok := domain.AnnualReturnBP(cash); ok {
+		report.AnnualBP = &bp
+	}
 
 	return report, nil
 }
@@ -274,11 +281,11 @@ func (s *Service) TrailingReturn(
 		return 0, 0, false, nil
 	}
 
-	if err != nil || len(report.Flows) == 0 {
+	if err != nil || len(report.Flows) == 0 || report.AnnualBP == nil {
 		return 0, 0, false, err
 	}
 
 	months = min(maxTrailingMonths, int(math.Round(today.Sub(from).Hours()/24/daysPerMonth)))
 
-	return report.AnnualBP, months, true, nil
+	return *report.AnnualBP, months, true, nil
 }

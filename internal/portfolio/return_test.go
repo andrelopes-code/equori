@@ -233,3 +233,102 @@ func TestReturnValuedInAnotherCurrency(t *testing.T) {
 		t.Fatalf("return in USD = %+v", got)
 	}
 }
+
+// RE1 to RE3 (docs/specs/2026-11-27-return-edge-cases-design.md): a period whose annual rate has
+// no solution keeps its time-weighted return, and an income on an emptied tree has no base.
+func TestReturnEdgeCases(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		record   func(f fixture, checking string)
+		from, to string
+		annual   *int
+		period   int
+	}{
+		{
+			name: "RE1 a deposit measured on its own day",
+			record: func(f fixture, checking string) {
+				f.h.Record(
+					"2026-10-26",
+					apitest.Posting(checking, -100000),
+					apitest.Posting(f.cash, 100000),
+				)
+			},
+			from:   "2026-10-26",
+			to:     "2026-10-26",
+			period: 0,
+		},
+		{
+			// A dividend of 50.00 one day after a deposit of 1,000.00: 5% in a day is above
+			// 100,000% a year.
+			name: "RE2 an annual rate beyond the solver",
+			record: func(f fixture, checking string) {
+				f.h.Record(
+					"2026-10-25",
+					apitest.Posting(checking, -100000),
+					apitest.Posting(f.cash, 100000),
+				)
+				f.income(t, f.mxrf11, "dividend", 5000, f.dividends)
+			},
+			from:   "2026-10-25",
+			to:     "2026-10-26",
+			period: 500,
+		},
+		{
+			// 1,000.00 in, 1,000.00 out on 2026-10-01, a dividend of 50.00 on 2026-10-26.
+			name: "RE3 an income after the tree was emptied",
+			record: func(f fixture, checking string) {
+				f.h.Record(
+					"2025-10-15",
+					apitest.Posting(checking, -100000),
+					apitest.Posting(f.cash, 100000),
+				)
+				f.h.Record(
+					"2026-10-01",
+					apitest.Posting(f.cash, -100000),
+					apitest.Posting(checking, 100000),
+				)
+				f.income(t, f.mxrf11, "dividend", 5000, f.dividends)
+			},
+			from:   "2025-11-01",
+			to:     "2026-10-31",
+			annual: new(544),
+			period: 0,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			f := newFixture(t)
+			tt.record(f, f.h.Account("Checking", "asset", "checking", nil))
+			f.h.Dispatch()
+
+			url := fmt.Sprintf(
+				"/api/v1/reports/return?account_id=%s&from=%s&to=%s&value_in=BRL",
+				f.xp,
+				tt.from,
+				tt.to,
+			)
+			r := f.h.Do(http.MethodGet, url, nil)
+			if r.Status != http.StatusOK {
+				t.Fatalf("status %d: %s", r.Status, r.Body)
+			}
+
+			var got struct {
+				AnnualBP *int `json:"annual_bp"`
+				PeriodBP *int `json:"period_bp"`
+			}
+			r.Decode(t, &got)
+
+			if got.PeriodBP == nil || *got.PeriodBP != tt.period {
+				t.Fatalf("period_bp = %v, want %d", got.PeriodBP, tt.period)
+			}
+
+			if (got.AnnualBP == nil) != (tt.annual == nil) ||
+				(got.AnnualBP != nil && *got.AnnualBP != *tt.annual) {
+				t.Fatalf("annual_bp = %v, want %v", got.AnnualBP, tt.annual)
+			}
+		})
+	}
+}

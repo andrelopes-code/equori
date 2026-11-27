@@ -307,7 +307,7 @@ func returnView(
 	}
 
 	return getPortfolioOut{
-		AnnualBP:  r.AnnualBP,
+		AnnualBP:  valueOf(r.AnnualBP),
 		Opening:   tool.MoneyOf(r.Opening),
 		Closing:   tool.MoneyOf(r.Closing),
 		PeriodBP:  valueOf(r.PeriodBP),

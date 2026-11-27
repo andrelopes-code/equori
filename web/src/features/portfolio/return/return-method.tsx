@@ -19,9 +19,12 @@ export function ReturnMethod({ report, groups }: ReturnMethodProps) {
   const t = useT();
   const [tag] = useAppLocale();
 
-  const summary = t("holdings.method.annual", {
-    annual: formatBasisPoints(report.annual_bp, tag),
-  });
+  const summary =
+    report.annual_bp === undefined
+      ? null
+      : t("holdings.method.annual", {
+          annual: formatBasisPoints(report.annual_bp, tag),
+        });
 
   return (
     <DetailDialog
