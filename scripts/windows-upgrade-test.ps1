@@ -24,9 +24,16 @@ function Install([string]$Zip) {
     $env:EQUORI_LANG = 'en'
     $env:EQUORI_ZIP = $Zip
     $env:EQUORI_SUMS = $sums
-    $p = Start-Process -PassThru -Wait powershell.exe -WindowStyle Hidden `
-        -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$installer`"" `
-        -RedirectStandardOutput "$work\install.out" -RedirectStandardError "$work\install.err"
+    # Unset, Windows PowerShell 5.1 does not inherit the PowerShell 7 modules of pwsh.
+    $modules = $env:PSModulePath
+    $env:PSModulePath = $null
+    try {
+        $p = Start-Process -PassThru -Wait powershell.exe -WindowStyle Hidden `
+            -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$installer`"" `
+            -RedirectStandardOutput "$work\install.out" -RedirectStandardError "$work\install.err"
+    } finally {
+        $env:PSModulePath = $modules
+    }
     Get-Content "$work\install.out", "$work\install.err"
     if ($p.ExitCode -ne 0) { throw "install.ps1 of $(Split-Path -Leaf $Zip) exited with $($p.ExitCode)" }
 }

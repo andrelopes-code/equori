@@ -61,9 +61,17 @@ function Invoke-Installer([string]$Lang, [string[]]$Switches = @(), [string]$Scr
         'if ($null -eq $LASTEXITCODE) { exit 255 }; exit $LASTEXITCODE'
     $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($command))
     $watch = [Diagnostics.Stopwatch]::StartNew()
-    $p = Start-Process powershell.exe -Wait -PassThru -WindowStyle Hidden `
-        -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', $encoded `
-        -RedirectStandardOutput $out -RedirectStandardError "$out.err"
+    # Windows PowerShell 5.1 started from pwsh inherits its PSModulePath and fails to load the
+    # PowerShell 7 modules (Get-FileHash, Unblock-File); unset, it uses its own default.
+    $modules = $env:PSModulePath
+    $env:PSModulePath = $null
+    try {
+        $p = Start-Process powershell.exe -Wait -PassThru -WindowStyle Hidden `
+            -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', $encoded `
+            -RedirectStandardOutput $out -RedirectStandardError "$out.err"
+    } finally {
+        $env:PSModulePath = $modules
+    }
     $watch.Stop()
     $text = [IO.File]::ReadAllText($out, $utf8)
     Write-Host $text
