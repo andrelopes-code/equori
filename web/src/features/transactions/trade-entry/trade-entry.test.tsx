@@ -728,6 +728,55 @@ describe("trade entry", () => {
     expect(sent[0]).not.toHaveProperty("cash_account_id");
   });
 
+  // Investment history OL1: an opening moves no cash.
+  it("records an opening with its cost and no cash account", async () => {
+    const sent: unknown[] = [];
+    await renderApp(path, { fetch: api(sent) });
+    await userEvent.click(
+      await screen.findByRole("radio", {
+        name: catalogEn["trade.side.opening"],
+      }),
+    );
+
+    expect(
+      screen.getByText(catalogEn["trade.opening.note"]),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(catalogEn["trade.cashAccount"]),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("group", {
+        name: new RegExp(catalogEn["trade.settlementDate"]),
+      }),
+    ).not.toBeInTheDocument();
+
+    await type(catalogEn["trade.quantity"], "100");
+    await type(catalogEn["trade.unitPrice"], "20.00");
+    await type(optionalName(catalogEn["trade.fees"]), "500");
+    expect(
+      await screen.findByText(moneyValue(/2,005\.00/)),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(catalogEn["trade.opening.cost"]),
+    ).toBeInTheDocument();
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["entry.save"] }),
+    );
+    await waitFor(() => {
+      expect(sent).toEqual([
+        {
+          brokerage_id: brokerID,
+          instrument: "MXRF11",
+          side: "opening",
+          date: "2026-10-17",
+          quantity: { amount: 100, currency: "MXRF11" },
+          unit_price: "20.00",
+          fees: { amount: 500, currency: "BRL" },
+        },
+      ]);
+    });
+  });
+
   it("refuses a sale above the position of the date", async () => {
     const sent: unknown[] = [];
     await renderApp(path, {

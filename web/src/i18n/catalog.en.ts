@@ -1178,6 +1178,10 @@ export const catalogEn = {
   "trade.side.buy": "Buy",
   "trade.side.sell": "Sell",
   "trade.side.write_off": "Write-off",
+  "trade.side.opening": "Opening",
+  "trade.opening.cost": "Cost of the position",
+  "trade.opening.note":
+    "Position held before equori: no money leaves the account.",
   "trade.cashAccount": "Account that pays or receives",
   "trade.cashAccountHelp":
     "The account the money of a purchase leaves, or the money of a sale enters.",

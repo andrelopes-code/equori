@@ -12,6 +12,9 @@ import type { MoneyAmount } from "@/ui/money/money-value";
 interface TradeAsideProps {
   view: TradeView;
   sell: boolean;
+  // An opening states the cost of the position in place of a cash effect.
+  opening: boolean;
+  fees: number;
   scale: (code: string) => number;
   onUseEstimate: () => void;
 }
@@ -20,6 +23,8 @@ interface TradeAsideProps {
 export function TradeAside({
   view,
   sell,
+  opening,
+  fees,
   scale,
   onUseEstimate,
 }: TradeAsideProps) {
@@ -41,13 +46,21 @@ export function TradeAside({
         value={view.gross === null ? undefined : figure(view.gross)}
         note={null}
       />
-      <FigureCard
-        label={t("trade.cashEffect")}
-        value={
-          view.cashEffect === null ? undefined : figure(view.cashEffect, true)
-        }
-        note={null}
-      />
+      {opening ? (
+        <FigureCard
+          label={t("trade.opening.cost")}
+          value={view.gross === null ? undefined : figure(view.gross + fees)}
+          note={null}
+        />
+      ) : (
+        <FigureCard
+          label={t("trade.cashEffect")}
+          value={
+            view.cashEffect === null ? undefined : figure(view.cashEffect, true)
+          }
+          note={null}
+        />
+      )}
       {sell && (
         <>
           <FigureCard

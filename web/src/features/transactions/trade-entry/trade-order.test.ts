@@ -46,4 +46,26 @@ describe("tradeOrder", () => {
       quantity: { amount: 100, currency: "PETRK300" },
     });
   });
+
+  // Investment history OL1: an opening sends no cash account, settlement or taxes.
+  it("sends an opening without cash, settlement or taxes", () => {
+    const draft = {
+      ...emptyTrade("2021-03-10"),
+      side: "opening" as const,
+      quantity: 100,
+      fees: 500,
+      taxes: 60,
+      settlementDate: "2021-03-12",
+    };
+
+    expect(tradeOrder(draft, { ...parts, rate: "20.00", taxes: 60 })).toEqual({
+      brokerage_id: "b1",
+      instrument: "PETRK300",
+      side: "opening",
+      date: "2021-03-10",
+      quantity: { amount: 100, currency: "PETRK300" },
+      unit_price: "20.00",
+      fees: { amount: 500, currency: "BRL" },
+    });
+  });
 });

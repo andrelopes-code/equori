@@ -135,6 +135,7 @@ export function useTradeEntry(
   const instrument = chosen.instrument;
   const sell = draft.side === "sell";
   const writeOff = draft.side === "write_off";
+  const opening = draft.side === "opening";
   const state = useBrokerages(chosen.brokerageId, instrument);
   const payer =
     state.payers.find((a) => a.id === draft.cashAccountId) ?? state.payer;
@@ -283,7 +284,7 @@ export function useTradeEntry(
       problems.brokerage_id = t("entry.required.account");
     if (instrument === null)
       problems.instrument = t("trade.required.securityAccount");
-    if (payer === undefined && !writeOff)
+    if (payer === undefined && !writeOff && !opening)
       problems.cash_account_id = t("trade.required.cashAccount");
     if (draft.quantity <= 0) problems.quantity = t("trade.required.quantity");
     if (rate === null && !byTotal && !writeOff)
@@ -302,7 +303,8 @@ export function useTradeEntry(
       Object.keys(problems).length > 0 ||
       state.brokerage === undefined ||
       instrument === null ||
-      (!writeOff && (payer === undefined || rate === null)) ||
+      (!writeOff &&
+        (opening ? rate === null : payer === undefined || rate === null)) ||
       base === undefined
     ) {
       setErrors(problems);
@@ -314,7 +316,7 @@ export function useTradeEntry(
     const order = tradeOrder(draft, {
       brokerageId: state.brokerage.id,
       instrument,
-      cashAccountId: payer?.id,
+      cashAccountId: opening ? undefined : payer?.id,
       rate,
       base,
       taxes,

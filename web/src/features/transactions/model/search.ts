@@ -97,7 +97,7 @@ export interface NewTransactionSearch {
   to_account_id?: string;
   brokerage_id?: string;
   instrument?: string;
-  side?: "buy" | "sell";
+  side?: "buy" | "sell" | "opening";
   date?: string;
   // Minor units of the instrument's scale.
   quantity?: number;
@@ -131,7 +131,9 @@ export function validateNewTransactionSearch(
   const action =
     kind !== undefined && incomeTypePattern.test(kind) ? kind : undefined;
   return {
-    ...(raw.side === "buy" || raw.side === "sell" ? { side: raw.side } : {}),
+    ...(raw.side === "buy" || raw.side === "sell" || raw.side === "opening"
+      ? { side: raw.side }
+      : {}),
     ...(date === undefined ? {} : { date }),
     ...(quantity === undefined ? {} : { quantity }),
     ...(unit_price === undefined ? {} : { unit_price }),

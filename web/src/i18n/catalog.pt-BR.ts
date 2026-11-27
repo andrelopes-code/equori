@@ -1186,6 +1186,10 @@ export const catalogPtBR: Catalog = {
   "trade.side.buy": "Compra",
   "trade.side.sell": "Venda",
   "trade.side.write_off": "Baixa",
+  "trade.side.opening": "Abertura",
+  "trade.opening.cost": "Custo da posição",
+  "trade.opening.note":
+    "Posição anterior ao equori: nenhum dinheiro sai da conta.",
   "trade.cashAccount": "Conta que paga ou recebe",
   "trade.cashAccountHelp":
     "A conta de onde sai o dinheiro da compra, ou para onde vai o dinheiro da venda.",

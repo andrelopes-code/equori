@@ -1,4 +1,9 @@
-import { Field, FieldError, FieldLabel } from "@slotted/react/field";
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from "@slotted/react/field";
 import { Inline } from "@slotted/react/inline";
 import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
 import { TextField } from "@slotted/react/text-field";
@@ -51,6 +56,9 @@ export function TradeForm({
   const sell = draft.side === "sell";
   // A write-off moves no money: no cash account, price, total or charges (W1).
   const writeOff = draft.side === "write_off";
+  // An opening moves no cash either: the note takes the place of the cash account (OL1).
+  const noCash = writeOff || draft.side === "opening";
+  const opening = draft.side === "opening";
 
   function handleUseEstimate() {
     if (view.withheld !== null) set({ taxes: view.withheld });
@@ -63,6 +71,8 @@ export function TradeForm({
           <TradeAside
             view={view}
             sell={sell}
+            opening={opening}
+            fees={draft.fees}
             scale={scale}
             onUseEstimate={handleUseEstimate}
           />
@@ -81,13 +91,19 @@ export function TradeForm({
             aria-label={t("trade.side")}
             value={draft.side}
             onValueChange={(side) => {
-              if (side === "buy" || side === "sell" || side === "write_off")
+              if (
+                side === "buy" ||
+                side === "sell" ||
+                side === "write_off" ||
+                side === "opening"
+              )
                 set({ side });
             }}
           >
             <Segment value="buy">{t("trade.side.buy")}</Segment>
             <Segment value="sell">{t("trade.side.sell")}</Segment>
             <Segment value="write_off">{t("trade.side.write_off")}</Segment>
+            <Segment value="opening">{t("trade.side.opening")}</Segment>
           </SegmentedControl>
         </Inline>
       </Field>
@@ -98,7 +114,7 @@ export function TradeForm({
         instrument={view.instrument}
         held={sell || writeOff ? undefined : view.held}
         heldCodes={view.heldCodes}
-        payers={writeOff ? [] : view.payers}
+        payers={noCash ? [] : view.payers}
         payer={view.payer}
         balance={view.balance}
         base={base}
@@ -119,10 +135,16 @@ export function TradeForm({
 
       {view.brokerage !== undefined &&
         !view.baseCash &&
-        !writeOff &&
+        !noCash &&
         base !== undefined && (
           <MissingCashNotice brokerage={view.brokerage} base={base} />
         )}
+
+      {opening && (
+        <Field>
+          <FieldDescription>{t("trade.opening.note")}</FieldDescription>
+        </Field>
+      )}
 
       <TradeDatesFields draft={draft} errors={errors} onChange={set} />
 

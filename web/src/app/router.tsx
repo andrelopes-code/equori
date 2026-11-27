@@ -580,7 +580,7 @@ const newTransactionRoute = createRoute({
     to_account_id?: string;
     brokerage_id?: string;
     instrument?: string;
-    side?: "buy" | "sell";
+    side?: "buy" | "sell" | "opening";
     date?: string;
     quantity?: number;
     unit_price?: string;

@@ -10,7 +10,10 @@ import { useT } from "@/i18n/i18n-provider";
 import { DateInput } from "@/ui/form-fields/date-input";
 import { FormRow } from "@/ui/form-layout/form-row";
 
-type Dates = Pick<TradeDraft, "date" | "settlementDate">;
+// A note has no side: its settlement field always shows.
+type Dates = Pick<TradeDraft, "date" | "settlementDate"> & {
+  side?: TradeDraft["side"];
+};
 
 interface TradeDatesFieldsProps {
   draft: Dates;
@@ -43,23 +46,25 @@ export function TradeDatesFields({
         {errors.date !== undefined && <FieldError>{errors.date}</FieldError>}
       </Field>
 
-      <Field invalid={errors.settlement_date !== undefined}>
-        <FieldLabel>{t("trade.settlementDate")}</FieldLabel>
-        <DateInput
-          name="settlement_date"
-          value={draft.settlementDate ?? ""}
-          min={draft.date}
-          shortcuts={false}
-          clearable
-          onChange={(date) => {
-            onChange({ settlementDate: date === "" ? null : date });
-          }}
-        />
-        <FieldDescription>{t("trade.settlementHelp")}</FieldDescription>
-        {errors.settlement_date !== undefined && (
-          <FieldError>{errors.settlement_date}</FieldError>
-        )}
-      </Field>
+      {draft.side !== "opening" && (
+        <Field invalid={errors.settlement_date !== undefined}>
+          <FieldLabel>{t("trade.settlementDate")}</FieldLabel>
+          <DateInput
+            name="settlement_date"
+            value={draft.settlementDate ?? ""}
+            min={draft.date}
+            shortcuts={false}
+            clearable
+            onChange={(date) => {
+              onChange({ settlementDate: date === "" ? null : date });
+            }}
+          />
+          <FieldDescription>{t("trade.settlementHelp")}</FieldDescription>
+          {errors.settlement_date !== undefined && (
+            <FieldError>{errors.settlement_date}</FieldError>
+          )}
+        </Field>
+      )}
     </FormRow>
   );
 }

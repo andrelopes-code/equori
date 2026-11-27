@@ -14,7 +14,8 @@ export interface TradeOrderParts {
 }
 
 // The request of the trade form. A write-off sends the holding, the date and the quantity, no
-// cash, price or charges (listed options design W1).
+// cash, price or charges (listed options design W1). An opening sends no cash account,
+// settlement date or taxes (investment history OL1).
 export function tradeOrder(
   draft: TradeDraft,
   parts: TradeOrderParts,
@@ -32,19 +33,22 @@ export function tradeOrder(
   if (draft.side === "write_off") return { ...target, ...described };
 
   const { base, taxes } = parts;
+  const opening = draft.side === "opening";
 
   return {
     ...target,
-    ...(parts.cashAccountId === undefined
+    ...(parts.cashAccountId === undefined || opening
       ? {}
       : { cash_account_id: parts.cashAccountId }),
-    ...(draft.settlementDate === null
+    ...(draft.settlementDate === null || opening
       ? {}
       : { settlement_date: draft.settlementDate }),
     ...(parts.rate === null ? {} : { unit_price: parts.rate }),
     ...(draft.fees > 0 ? { fees: { amount: draft.fees, currency: base } } : {}),
-    ...(taxes > 0 ? { taxes: { amount: taxes, currency: base } } : {}),
-    ...(taxes > 0 && draft.taxesCategoryId !== null
+    ...(taxes > 0 && !opening
+      ? { taxes: { amount: taxes, currency: base } }
+      : {}),
+    ...(taxes > 0 && !opening && draft.taxesCategoryId !== null
       ? { taxes_category_id: draft.taxesCategoryId }
       : {}),
     ...described,

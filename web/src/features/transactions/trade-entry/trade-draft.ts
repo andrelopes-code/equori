@@ -75,7 +75,9 @@ export function isTradeDraft(value: unknown): value is TradeDraft {
   if (typeof value !== "object" || value === null) return false;
   const draft = value as Record<string, unknown>;
   return (
-    (draft.side === "buy" || draft.side === "sell") &&
+    (draft.side === "buy" ||
+      draft.side === "sell" ||
+      draft.side === "opening") &&
     typeof draft.date === "string" &&
     typeof draft.quantity === "number" &&
     typeof draft.fees === "number" &&
