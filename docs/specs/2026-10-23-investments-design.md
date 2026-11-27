@@ -112,7 +112,7 @@ The rows reproduce the rules in force at the date of this document; the implemen
 
 ### 4.4 Goals consume the return (G5)
 
-`Goal` gains `trailing_return`: `{ period_months, annual_bp }`, absent unless the goal's accounts have at least three months of history and at least one external flow in the last 12 months (AG4). The service calls the return of 4.3 for the union of the goal's accounts, over the last 12 months or since the earliest opening if shorter, valued in the goal currency.
+`Goal` gains `trailing_return`: `{ period_months, annual_bp }`, absent unless the goal's accounts have at least three months of history and at least one external flow in the last 12 months (AG4). The service calls the return of 4.3 for the union of the goal's accounts, over the last 12 months or since the earliest opening if shorter, valued in the goal currency. For a cash tree, income and expense other than yield are flows (amended 2026-11-27, RE5 of `docs/specs/2026-11-27-return-edge-cases-design.md`).
 
 The goals page shows "Last 12 months: x%" beside the yearly return control and adds a button "Use this return" that sets the control to the nearest half point. The control keeps starting at zero.
 

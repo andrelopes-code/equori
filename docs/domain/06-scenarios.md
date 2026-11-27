@@ -780,7 +780,7 @@ A period in which the opening value and every contribution are zero returns 422 
 
 ### S130 Trailing return of a goal
 
-Amendment A124: a goal reads `trailing_return` (`period_months`, `annual_bp`), the money-weighted return of its accounts taken as one tree over the last 12 months, valued in the goal currency. On 2026-11-12, Emergency fund receives 1,000.00 on 2025-10-15 and on 2026-04-30 and 50.00 of income on 2026-10-26, and moves 30,000 to Reserve B on 2026-06-10: a goal over both accounts has opening 1,000.00 on 2025-11-11, one flow of 1,000.00, closing 2,050.00, `period_months` 12 and `annual_bp` 326; the transfer between its accounts is not a flow. A goal whose accounts have no posting, only two months of postings, or no flow in the window has no `trailing_return`.
+Amendment A124: a goal reads `trailing_return` (`period_months`, `annual_bp`), the money-weighted return of its accounts taken as one tree over the last 12 months, valued in the goal currency. On 2026-11-12, Emergency fund receives 1,000.00 on 2025-10-15 and on 2026-04-30 and 50.00 of yield on 2026-10-26 (amended 2026-11-27, RE5 of `docs/specs/2026-11-27-return-edge-cases-design.md`: income other than yield is a flow), and moves 30,000 to Reserve B on 2026-06-10: a goal over both accounts has opening 1,000.00 on 2025-11-11, one flow of 1,000.00, closing 2,050.00, `period_months` 12 and `annual_bp` 326; the transfer between its accounts is not a flow. A goal whose accounts have no posting, only two months of postings, or no flow in the window has no `trailing_return`.
 
 ### S128 Allocation of the assets
 

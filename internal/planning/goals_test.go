@@ -3,6 +3,7 @@ package planning_test
 import (
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
 )
@@ -374,7 +375,11 @@ func TestS130GoalTrailingReturn(t *testing.T) {
 		apitest.Posting(f.savings, 100000),
 	)
 	f.h.Record("2026-06-10", apitest.Posting(f.savings, -30000), apitest.Posting(reserve, 30000))
-	f.h.Record("2026-10-26", apitest.Posting(f.savings, 5000), apitest.Posting(f.salary, -5000))
+	f.h.Record(
+		"2026-10-26",
+		apitest.Posting(f.savings, 5000),
+		apitest.Posting(f.systemCategory("yield"), -5000),
+	)
 
 	// The window starts on 2025-11-12: the opening is 1,000.00 on 2025-11-11, a contribution of
 	// 1,000.00 on 2026-04-30, the closing 2,050.00 on 2026-11-12; the transfer between the two
@@ -420,4 +425,45 @@ func TestS130GoalTrailingReturn(t *testing.T) {
 	old := f.h.Account("Old", "asset", "savings", nil)
 	f.h.Record("2025-06-01", apitest.Posting(f.checking, -10000), apitest.Posting(old, 10000))
 	absent("No flow in the window", old)
+}
+
+// RE5 (docs/specs/2026-11-27-return-edge-cases-design.md): the salary and the expenses of a cash
+// account are money in and out, not yield, so a checking account without yield earns 0.
+func TestGoalTrailingReturnOfCheckingAccount(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-12")
+	f.h.Record(
+		"2025-06-01",
+		apitest.Posting(f.savings, -100000),
+		apitest.Posting(f.checking, 100000),
+	)
+
+	for month := 1; month <= 12; month++ {
+		first := time.Date(2025, time.November+time.Month(month-1), 1, 0, 0, 0, 0, time.UTC)
+		f.h.Record(
+			first.AddDate(0, 0, 4).Format(time.DateOnly),
+			apitest.Posting(f.checking, 500000),
+			apitest.Posting(f.salary, -500000),
+		)
+		f.h.Record(
+			first.AddDate(0, 0, 9).Format(time.DateOnly),
+			apitest.Posting(f.checking, -450000),
+			apitest.Posting(f.rent, 450000),
+		)
+	}
+
+	f.h.Record(
+		"2026-05-20",
+		apitest.Posting(f.checking, -100000),
+		apitest.Posting(f.savings, 100000),
+	)
+
+	g := f.goal("Checking", 10000000, f.checking)
+	var got goalView
+	f.h.MustDo(http.MethodGet, "/api/v1/goals/"+g.ID, nil, http.StatusOK, &got)
+
+	if got.TrailingReturn == nil || got.TrailingReturn.PeriodMonths != 12 ||
+		got.TrailingReturn.AnnualBP != 0 {
+		t.Fatalf("trailing return = %+v", got.TrailingReturn)
+	}
 }

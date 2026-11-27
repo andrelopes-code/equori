@@ -131,6 +131,7 @@ func (s *Service) brokerageRoots(ctx context.Context, booksID int64) ([]uuid.UUI
 
 // returnOf is Return over the accounts taken as one tree: a flow between two of them is internal.
 // It fails when no money was invested; an annual rate without solution leaves AnnualBP nil (RE2).
+// The rate of a tree whose yield is recorded discounts the flows of R19 (RE5).
 func (s *Service) returnOf(
 	ctx context.Context,
 	booksID int64,
@@ -147,11 +148,16 @@ func (s *Service) returnOf(
 		return ReturnReport{}, err
 	}
 
+	flows, err := s.solverFlows(ctx, booksID, accountIDs, from, to, report)
+	if err != nil {
+		return ReturnReport{}, err
+	}
+
 	cash := []domain.CashFlow{
 		{Date: from.AddDate(0, 0, -1), Amount: -report.Opening.Amount()},
 		{Date: to, Amount: report.Closing.Amount()},
 	}
-	for _, f := range report.Flows {
+	for _, f := range flows {
 		cash = append(cash, domain.CashFlow{Date: f.Date, Amount: -f.Amount.Amount()})
 	}
 

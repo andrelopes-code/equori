@@ -7,6 +7,8 @@ import (
 	"slices"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
@@ -114,6 +116,31 @@ func (s *Service) recordFlows(ctx context.Context, p *period, rates []IndexRate)
 	}
 
 	return nil
+}
+
+// solverFlows are the flows the annual rate discounts: for a tree whose yield is recorded, the
+// flows of R19, so income and expense other than yield are money in and out (RE5); the external
+// flows of report otherwise.
+func (s *Service) solverFlows(
+	ctx context.Context,
+	booksID int64,
+	ids []uuid.UUID,
+	from, to time.Time,
+	report ReturnReport,
+) ([]ReturnFlow, error) {
+	in := report.Opening.Currency()
+
+	_, recorded, err := s.profileOf(ctx, booksID, ids, in)
+	if err != nil || !recorded {
+		return report.Flows, err
+	}
+
+	rec, err := s.ledger.RecordedYield(ctx, booksID, ids, from.AddDate(0, 0, -1), to)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.valuedFlows(ctx, rec.Flows, in, from)
 }
 
 // valuedFlows values the flows dated on or after from in currency in.
