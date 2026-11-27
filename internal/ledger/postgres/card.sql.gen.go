@@ -894,61 +894,6 @@ func (q *Queries) ListDisputes(ctx context.Context, arg ListDisputesParams) ([]L
 	return items, nil
 }
 
-const listOpenStatementsFrom = `-- name: ListOpenStatementsFrom :many
-SELECT
-    id, books_id, account_id, reference_month, closing_date, due_date, financed_by_plan_id, created_at
-FROM
-    ledger_statement
-WHERE
-    books_id = $1
-    AND account_id = $2
-    AND reference_month >= $3
-    AND closing_date > $4
-ORDER BY
-    reference_month
-`
-
-type ListOpenStatementsFromParams struct {
-	BooksID   int64
-	AccountID uuid.UUID
-	FromMonth time.Time
-	Today     time.Time
-}
-
-func (q *Queries) ListOpenStatementsFrom(ctx context.Context, arg ListOpenStatementsFromParams) ([]LedgerStatement, error) {
-	rows, err := q.db.Query(ctx, listOpenStatementsFrom,
-		arg.BooksID,
-		arg.AccountID,
-		arg.FromMonth,
-		arg.Today,
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []LedgerStatement
-	for rows.Next() {
-		var i LedgerStatement
-		if err := rows.Scan(
-			&i.ID,
-			&i.BooksID,
-			&i.AccountID,
-			&i.ReferenceMonth,
-			&i.ClosingDate,
-			&i.DueDate,
-			&i.FinancedByPlanID,
-			&i.CreatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const listPlanInstallments = `-- name: ListPlanInstallments :many
 SELECT
     p.installment_number,

@@ -57,15 +57,15 @@ func (s *Service) AddBillingRule(
 			return err
 		}
 
-		return s.redateOpenStatements(ctx, tx, booksID, accountID, rule.EffectiveFrom)
+		return s.redateFrom(ctx, tx, booksID, accountID, rule.EffectiveFrom)
 	})
 
 	return created, err
 }
 
-// redateOpenStatements applies a new rule version to statements that have not closed
-// yet; their postings stay on the same reference month.
-func (s *Service) redateOpenStatements(
+// redateFrom applies a new rule version to the statements from its effective month whose
+// closing date has not passed, the closing day included, as a change of facts does (A86).
+func (s *Service) redateFrom(
 	ctx context.Context,
 	r Repository,
 	booksID int64,
@@ -77,35 +77,16 @@ func (s *Service) redateOpenStatements(
 		return err
 	}
 
-	open, err := r.OpenStatementsFrom(ctx, booksID, accountID, from, s.clock.Today(ctx))
+	today := s.clock.Today(ctx)
+
+	fd, err := s.redateStatements(ctx, r, booksID, accountID, rules, func(st Statement) bool {
+		return st.Input.Reference.Compare(from) >= 0 && !st.Input.Closing.Before(today)
+	})
 	if err != nil {
 		return err
 	}
 
-	for _, st := range open {
-		rule, err := rules.For(st.Input.Reference)
-		if err != nil {
-			return err
-		}
-
-		dates := domain.DatesFor(st.Input.Reference, rule)
-
-		due, err := s.cal.Adjust(ctx, rule.Calendar, dates.DueUnadjusted, rule.Adjustment)
-		if err != nil {
-			return err
-		}
-
-		if err := r.UpdateStatementDates(
-			ctx,
-			st.ID,
-			s.shiftClosing(ctx, dates.Closing, rule),
-			due,
-		); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return s.moveRedatedPostings(ctx, r, booksID, accountID, rules, fd)
 }
 
 func (s *Service) BillingRules(

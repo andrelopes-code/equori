@@ -19,7 +19,14 @@ func (s *Service) dateByFacts(
 	cardID uuid.UUID,
 	rules domain.Rules,
 ) error {
-	fd, err := s.redateStatements(ctx, r, booksID, cardID, rules)
+	fd, err := s.redateStatements(
+		ctx,
+		r,
+		booksID,
+		cardID,
+		rules,
+		func(Statement) bool { return true },
+	)
 	if err != nil {
 		return err
 	}
@@ -35,13 +42,15 @@ type factDates struct {
 	refOf  map[uuid.UUID]domain.ReferenceMonth
 }
 
-// redateStatements stores the effective dates of every statement of the card.
+// redateStatements stores the effective dates of every statement of the card that redate
+// selects; a statement it leaves out keeps its dates.
 func (s *Service) redateStatements(
 	ctx context.Context,
 	r Repository,
 	booksID int64,
 	cardID uuid.UUID,
 	rules domain.Rules,
+	redate func(Statement) bool,
 ) (factDates, error) {
 	stored, err := r.Statements(ctx, booksID, cardID)
 	if err != nil {
@@ -55,6 +64,12 @@ func (s *Service) redateStatements(
 	for _, st := range stored {
 		ref := st.Input.Reference
 		before[ref], refOf[st.ID] = st.Input.Closing, ref
+
+		if !redate(st) {
+			after[ref] = st.Input.Closing
+
+			continue
+		}
 
 		closing, due, err := s.effectiveDates(ctx, st, rules)
 		if err != nil {

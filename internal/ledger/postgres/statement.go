@@ -243,40 +243,6 @@ func (r *Repository) StatementPostings(
 	return out, nil
 }
 
-func (r *Repository) OpenStatementsFrom(
-	ctx context.Context,
-	booksID int64,
-	accountID uuid.UUID,
-	from domain.ReferenceMonth,
-	today time.Time,
-) ([]app.Statement, error) {
-	rows, err := r.q.ListOpenStatementsFrom(
-		ctx,
-		ListOpenStatementsFromParams{
-			BooksID:   booksID,
-			AccountID: accountID,
-			FromMonth: from.FirstDay(),
-			Today:     today,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	out := make([]app.Statement, len(rows))
-	for i, row := range rows {
-		out[i] = app.Statement{ID: row.ID, AccountID: row.AccountID, Input: domain.StatementInput{
-			Reference: domain.MonthOf(
-				row.ReferenceMonth,
-			),
-			Closing: row.ClosingDate,
-			Due:     row.DueDate,
-		}}
-	}
-
-	return out, nil
-}
-
 func (r *Repository) UpdateStatementDates(
 	ctx context.Context,
 	id uuid.UUID,

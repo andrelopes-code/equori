@@ -242,19 +242,6 @@ WHERE
     books_id = $1
     AND system_role = $2;
 
--- name: ListOpenStatementsFrom :many
-SELECT
-    *
-FROM
-    ledger_statement
-WHERE
-    books_id = @books_id
-    AND account_id = @account_id
-    AND reference_month >= @from_month
-    AND closing_date > @today
-ORDER BY
-    reference_month;
-
 -- name: UpdateStatementDates :exec
 UPDATE ledger_statement
 SET

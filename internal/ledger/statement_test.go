@@ -33,6 +33,7 @@ func (m *brl) UnmarshalJSON(b []byte) error {
 type statementView struct {
 	ID         string `json:"id"`
 	Reference  string `json:"reference"`
+	Closing    string `json:"closing_date"`
 	DueDate    string `json:"due_date"`
 	Opening    brl    `json:"opening"`
 	Charges    brl    `json:"charges"`

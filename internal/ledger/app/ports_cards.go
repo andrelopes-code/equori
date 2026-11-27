@@ -63,13 +63,6 @@ type cardStore interface {
 	) ([]RedatablePosting, error)
 	MovePostingStatement(ctx context.Context, booksID int64, postingID, statementID uuid.UUID) error
 	StatementAccount(ctx context.Context, booksID int64, statementID uuid.UUID) (uuid.UUID, error)
-	OpenStatementsFrom(
-		ctx context.Context,
-		booksID int64,
-		accountID uuid.UUID,
-		from domain.ReferenceMonth,
-		today time.Time,
-	) ([]Statement, error)
 	UpdateStatementDates(ctx context.Context, id uuid.UUID, closing, due time.Time) error
 	InsertPlan(ctx context.Context, p domain.InstallmentPlan) error
 	SetStatementFinanced(ctx context.Context, statementID, planID uuid.UUID) error
