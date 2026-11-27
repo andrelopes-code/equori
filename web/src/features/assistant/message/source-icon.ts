@@ -65,6 +65,7 @@ const actions: Record<string, AssistantIconName> = {
   manage_budget_or_goal: "calendar",
   import_statement_file: "fileDown",
   import_price_file: "chart",
+  import_investment_file: "fileDown",
   attach_file: "paperclip",
   detach_attachment: "paperclip",
   record_fixed_income: "trend",

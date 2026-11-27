@@ -40,6 +40,22 @@ describe("fileOp", () => {
     });
   });
 
+  it("reads an investment file: file name, brokerage and lines", () => {
+    const op = fileOp(
+      preview("import_investment_file", [
+        ["file", { text: "operacoes.csv" }],
+        ["brokerage", { text: "XP" }],
+        ["lines", { text: "4" }],
+        ["created", { text: "4" }],
+        ["skipped", { text: "0" }],
+      ]),
+    );
+
+    expect(op.name).toBe("operacoes.csv");
+    expect(op.target).toBe("XP");
+    expect(op.lines).toEqual({ key: "assistant.body.lines.other", count: 4 });
+  });
+
   it("reads a price import: instruments, prices and period", () => {
     const op = fileOp(
       preview("import_price_file", [

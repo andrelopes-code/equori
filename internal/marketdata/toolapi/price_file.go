@@ -31,10 +31,9 @@ type importPriceFileOut struct {
 func importPriceFile(svc Service, files ConversationFile) tool.Tool {
 	return tool.NewWrite(tool.Spec{
 		Name: "import_price_file",
-		Description: "Proposes recording the prices of a csv file the user attached to the conversation, as the " +
-			"price import of Instruments does: header instrument,quote_instrument,date,value, at most " +
-			"10,000 lines, all or nothing, as source csv. Use it when the user attaches a price file. " +
-			"Do not use it for a few prices typed in the message: record_price_series does. The user confirms first.",
+		Description: "Proposes recording the prices of an attached csv file, all or nothing, as source csv. " +
+			"Use it when the user attaches a price file. " +
+			"Do not use it for a few typed prices: record_price_series does. The user confirms first.",
 		Effect: tool.Write,
 		Role:   auth.RoleWrite,
 	}, func(ctx context.Context, booksID int64, in importPriceFileIn) (tool.Preview, error) {

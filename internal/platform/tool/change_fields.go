@@ -86,4 +86,9 @@ var ChangeFields = []string{
 	"index",
 	"spread",
 	"maturity",
+	"file",
+	"brokerage",
+	"lines",
+	"created",
+	"skipped",
 }

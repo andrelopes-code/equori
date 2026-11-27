@@ -43,6 +43,7 @@ func Tools(svc *app.Service, files ConversationFile) []tool.Tool {
 		tool.WithUndo(transferCustody(svc), undoByVoid),
 		tool.WithUndo(recordCorporateAction(svc), undoByVoid),
 		recordBrokerageNote(svc),
+		importInvestmentFile(svc, files),
 		setBaseCurrency(svc),
 		getHoldingLots(svc),
 		setCardFace(svc),

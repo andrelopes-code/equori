@@ -45,10 +45,9 @@ type importStatementFileOut struct {
 func importStatementFile(svc *app.Service, names AccountNames, files ConversationFile) tool.Tool {
 	return tool.NewWrite(tool.Spec{
 		Name: "import_statement_file",
-		Description: "Proposes importing an ofx or csv statement file the user attached to the conversation into " +
-			"one account, as the Import statement screen does: each line is deduplicated, matched to an existing " +
-			"transaction or created, and a line already imported creates nothing. A csv file needs the CSV " +
-			"profile of the account. Use it when the user attaches a statement and asks to import it. " +
+		Description: "Proposes importing an attached ofx or csv statement into one account, as the Import statement " +
+			"screen does; a line already imported creates nothing. A csv file needs the CSV profile of the account. " +
+			"Use it when the user attaches a statement and asks to import it. " +
 			"Do not use it for a PDF or an image: read it and propose record_transaction. The user confirms first.",
 		Effect: tool.Write,
 		Role:   auth.RoleWrite,

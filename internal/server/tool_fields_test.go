@@ -128,6 +128,10 @@ var uncoveredFields = map[string][]string{
 	"importPrices": {
 		"file",
 	}, // import_price_file reads file_id, a file the member attached to the conversation (F7)
+	"importInvestmentFile": {
+		"dry_run",
+		"file",
+	}, // import_investment_file reads file_id; the preview is a dry run, the run is not (AS3)
 	"createAttachment": {
 		"file",
 	}, // attach_file reads file_id, a file the member attached to the conversation (F7)

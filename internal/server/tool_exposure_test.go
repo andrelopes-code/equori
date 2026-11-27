@@ -186,6 +186,7 @@ var exposure = map[string]string{
 	"listInstrumentQuotes":             "get_market_data",
 	"recordPrice":                      "manage_instrument",
 	"importPrices":                     "import_price_file",
+	"importInvestmentFile":             "import_investment_file",
 	"recordInstrumentPrices":           "record_price_series",
 	"listBillingCycleRules":            "get_account_details",
 	"createBillingCycleRule":           "manage_card",

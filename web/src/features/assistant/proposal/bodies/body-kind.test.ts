@@ -26,6 +26,7 @@ describe("bodyKind", () => {
     ["settle_statement.pay", "payment"],
     ["import_statement_file", "file"],
     ["import_price_file", "file"],
+    ["import_investment_file", "file"],
     ["attach_file", "file"],
     ["manage_card.add_card", "fields"],
   ];

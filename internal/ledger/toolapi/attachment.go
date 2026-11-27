@@ -41,7 +41,7 @@ type detachAttachmentOut struct {
 func attachFile(svc *app.Service, files ConversationFile) tool.Tool {
 	return tool.NewWrite(tool.Spec{
 		Name: "attach_file",
-		Description: "Proposes attaching a file the user attached to the conversation, such as a receipt photo or " +
+		Description: "Proposes attaching an attached file, such as a receipt photo or " +
 			"a PDF, to one transaction, as Transaction detail does. Use it after recording or finding the " +
 			"transaction the file documents. Do not use it to import a statement: import_statement_file does. " +
 			"The user confirms first.",

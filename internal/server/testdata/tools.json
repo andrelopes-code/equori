@@ -1,7 +1,7 @@
 [
   {
     "name": "attach_file",
-    "description": "Proposes attaching a file the user attached to the conversation, such as a receipt photo or a PDF, to one transaction, as Transaction detail does. Use it after recording or finding the transaction the file documents. Do not use it to import a statement: import_statement_file does. The user confirms first.",
+    "description": "Proposes attaching an attached file, such as a receipt photo or a PDF, to one transaction, as Transaction detail does. Use it after recording or finding the transaction the file documents. Do not use it to import a statement: import_statement_file does. The user confirms first.",
     "effect": "write",
     "idempotent": false,
     "input_schema": {
@@ -3050,7 +3050,7 @@
   },
   {
     "name": "get_help",
-    "description": "Returns an article of the equori guide: what a concept means in this app, how a task is done, and the screens where it is done with their paths. Use it for how-to and where-is questions, for concepts such as postings, statements or reconciliation, for the fields and the values a tool takes, before a write whose facts are not all known, and for tasks the assistant cannot do, such as adding bank credentials. Do not use it for the book's own data: the other tools return it. Topics:\ngetting_started: first steps and what each area of the app is for\naccounts_and_categories: accounts, categories, institutions and their tools\ntransactions_and_postings: recording, changing, categorizing and voiding\ncapture: typing several transactions as text\ncredit_cards_and_statements: cards, limits, cycles, statements and payments\ninstallments: purchases in installments\nforeign_purchases_and_exchange: other currencies and exchanges\nrefunds_reimbursements_and_disputes: refunds, reimbursements and disputes\ntransfers: money between own accounts\nimports_and_bank_connections: statement files, bank links and their review\ncategorization_rules_and_payees: rules, payees, aliases and tags\nreconciliation: checking a balance against the institution\nschedules_and_occurrences: recurring bills, income and subscriptions\nbudgets: monthly budgets and the budget plan\nincome_split: income divided into buckets\ngoals: savings goals and shared accounts\ninvestments: brokerages, trades, prices and the portfolio\ninvestment_operations: notes, corporate actions, custody and day trades\nfixed_income: contracts, rates, terms and applications\nfixed_income_payments: coupons, amortization, maturity and redemption\ninvestment_income: dividends and other income of holdings\ninvestments_br: Brazil: index of the product articles, tax year, issuer\nfixed_income_br: Brazil: CDB, LCI, LCA, debentures, CRI, CRA: tax, IOF, FGC\ngovernment_bonds_br: Brazil: Tesouro Direto codes, tax and guarantee\nequities_br: Brazil: stocks, FII, ETF, BDR, their income and sale tax\nfunds_br: Brazil: open funds and come-cotas\ncontribution_plan: target split and where a contribution goes\nreports: cash and accrual views, indicators, net worth\nprivacy_and_the_assistant: privacy mode and what the assistant does not do\nsettings_language_and_region: language, region, base currency, members, export\n",
+    "description": "Returns an article of the equori guide: what a concept means in this app, how a task is done, and the screens where it is done with their paths. Use it for how-to and where-is questions, for concepts such as postings, statements or reconciliation, for the fields and the values a tool takes, before a write whose facts are not all known, and for tasks the assistant cannot do, such as adding bank credentials. Do not use it for the book's own data: the other tools return it. Topics:\ngetting_started: first steps and the areas of the app\naccounts_and_categories: accounts, categories, institutions\ntransactions_and_postings: recording, changing, categorizing, voiding\ncapture: several transactions as text\ncredit_cards_and_statements: cards, limits, cycles, statements, payments\ninstallments: installment purchases\nforeign_purchases_and_exchange: other currencies, exchanges\nrefunds_reimbursements_and_disputes: refunds, reimbursements, disputes\ntransfers: between own accounts\nimports_and_bank_connections: statement files, bank links\ncategorization_rules_and_payees: rules, payees, tags\nreconciliation: checking a balance against the bank\nschedules_and_occurrences: recurring bills, income, subscriptions\nbudgets: monthly budgets, budget plan\nincome_split: income buckets\ngoals: savings goals, shared accounts\ninvestments: brokerages, trades, prices, portfolio\ninvestment_operations: notes, corporate actions, custody\nfixed_income: contracts, rates, terms, applications\nfixed_income_payments: coupons, maturity, redemption\ninvestment_income: dividends and other holding income\ninvestments_br: Brazil: product index, tax year\nfixed_income_br: Brazil: CDB, LCI, LCA: tax, FGC\ngovernment_bonds_br: Brazil: Tesouro Direto, tax\nequities_br: Brazil: stocks, FII, ETF: tax\nfunds_br: Brazil: open funds, come-cotas\ncontribution_plan: target split of a contribution\nreports: views, indicators, net worth\nprivacy_and_the_assistant: privacy mode and assistant limits\nsettings_language_and_region: language, region, currency, members\n",
     "effect": "read_only",
     "idempotent": true,
     "input_schema": {
@@ -8764,8 +8764,60 @@
     }
   },
   {
+    "name": "import_investment_file",
+    "description": "Proposes recording an attached csv of openings, trades and incomes in one brokerage, all or nothing. Use it for such a file. Do not use it for one operation. The user confirms first.",
+    "effect": "write",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "file_id": {
+          "type": "string",
+          "description": "id of the [file ...] line"
+        },
+        "brokerage_id": {
+          "type": "string",
+          "description": "brokerage"
+        },
+        "cash_account_id": {
+          "type": "string",
+          "description": "paying account"
+        },
+        "category_id": {
+          "type": "string",
+          "description": "income category"
+        }
+      },
+      "required": [
+        "file_id",
+        "brokerage_id"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "lines": {
+          "type": "integer"
+        },
+        "created": {
+          "type": "integer"
+        },
+        "skipped": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "lines",
+        "created",
+        "skipped"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "import_price_file",
-    "description": "Proposes recording the prices of a csv file the user attached to the conversation, as the price import of Instruments does: header instrument,quote_instrument,date,value, at most 10,000 lines, all or nothing, as source csv. Use it when the user attaches a price file. Do not use it for a few prices typed in the message: record_price_series does. The user confirms first.",
+    "description": "Proposes recording the prices of an attached csv file, all or nothing, as source csv. Use it when the user attaches a price file. Do not use it for a few typed prices: record_price_series does. The user confirms first.",
     "effect": "write",
     "idempotent": false,
     "input_schema": {
@@ -8796,7 +8848,7 @@
   },
   {
     "name": "import_statement_file",
-    "description": "Proposes importing an ofx or csv statement file the user attached to the conversation into one account, as the Import statement screen does: each line is deduplicated, matched to an existing transaction or created, and a line already imported creates nothing. A csv file needs the CSV profile of the account. Use it when the user attaches a statement and asks to import it. Do not use it for a PDF or an image: read it and propose record_transaction. The user confirms first.",
+    "description": "Proposes importing an attached ofx or csv statement into one account, as the Import statement screen does; a line already imported creates nothing. A csv file needs the CSV profile of the account. Use it when the user attaches a statement and asks to import it. Do not use it for a PDF or an image: read it and propose record_transaction. The user confirms first.",
     "effect": "write",
     "idempotent": false,
     "input_schema": {

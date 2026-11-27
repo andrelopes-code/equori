@@ -29,6 +29,7 @@ const BODY_KINDS = new Map<string, BodyKind>(
     "settle_statement.pay": "payment",
     import_statement_file: "file",
     import_price_file: "file",
+    import_investment_file: "file",
     attach_file: "file",
     "manage_budget_or_goal.create_goal": "goal",
     "manage_budget_or_goal.set_budget_amount": "budget",

@@ -38,7 +38,7 @@ export function fileOp(preview: Preview): FileOp {
   };
 
   const op = {
-    name: text("source") ?? "",
+    name: text("source") ?? text("file") ?? "",
     target: undefined,
     day: undefined,
     lines: undefined,
@@ -53,6 +53,16 @@ export function fileOp(preview: Preview): FileOp {
         target: text("account"),
         lines: counted(
           "count",
+          "assistant.body.lines.one",
+          "assistant.body.lines.other",
+        ),
+      };
+    case "import_investment_file":
+      return {
+        ...op,
+        target: text("brokerage"),
+        lines: counted(
+          "lines",
           "assistant.body.lines.one",
           "assistant.body.lines.other",
         ),
