@@ -1,4 +1,10 @@
-import { Field, FieldError, FieldLabel } from "@slotted/react/field";
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from "@slotted/react/field";
+import { Switch } from "@slotted/react/switch";
 
 import { PaymentsFields } from "@/features/instruments";
 import { BrokerageFields } from "@/features/transactions/brokerage-account/brokerage-fields";
@@ -50,8 +56,8 @@ export function FixedIncomeForm({
       <BrokerageFields
         brokerages={view.brokerages}
         brokerage={view.brokerage}
-        payers={view.payers}
-        payer={view.payer}
+        payers={draft.opening ? [] : view.payers}
+        payer={draft.opening ? undefined : view.payer}
         balance={view.balance}
         base={view.base}
         date={draft.appliedOn}
@@ -65,6 +71,20 @@ export function FixedIncomeForm({
           set({ cashAccountId: id });
         }}
       />
+
+      <Field>
+        <Switch
+          checked={draft.opening}
+          onCheckedChange={(opening) => {
+            set({ opening });
+          }}
+        >
+          {t("fixedIncome.opening")}
+        </Switch>
+        {draft.opening && (
+          <FieldDescription>{t("fixedIncome.opening.note")}</FieldDescription>
+        )}
+      </Field>
 
       <FixedIncomeWhatFields
         draft={draft}

@@ -1033,6 +1033,9 @@ export const catalogPtBR: Catalog = {
   "fixedIncome.save": "Registrar aplicação",
   "fixedIncome.addMoney": "Aplicar mais",
   "fixedIncome.created": "Aplicação registrada",
+  "fixedIncome.opening": "Aplicação anterior ao equori",
+  "fixedIncome.opening.note":
+    "Nenhum dinheiro sai da conta: o custo entra como saldo inicial.",
   "problem.contract_invalid": "O contrato tem campos inválidos.",
   "fixedIncome.newContract": "Novo contrato",
   "fixedIncome.summary.matures": "vence {date}",

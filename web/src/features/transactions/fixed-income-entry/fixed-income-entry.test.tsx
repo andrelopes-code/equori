@@ -108,6 +108,22 @@ describe("fixed income entry", () => {
     ).toBeInTheDocument();
   });
 
+  it("hides the cash account and shows the note when the application predates the book", async () => {
+    await renderApp(path, { fetch: api([]) });
+    expect(await screen.findByText(/^Paid from/)).toBeInTheDocument();
+
+    await userEvent.click(
+      await screen.findByRole("switch", {
+        name: catalogEn["fixedIncome.opening"],
+      }),
+    );
+
+    expect(
+      await screen.findByText(catalogEn["fixedIncome.opening.note"]),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/^Paid from/)).not.toBeInTheDocument();
+  });
+
   // S479
   it("sends the contract and the amount of the form and opens the transaction", async () => {
     const sent: unknown[] = [];

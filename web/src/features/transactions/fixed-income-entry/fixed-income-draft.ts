@@ -21,6 +21,8 @@ export interface FixedIncomeDraft {
   brokerageId: string | null;
   // The cash account the money leaves; null takes the single candidate of the brokerage (BC6).
   cashAccountId: string | null;
+  // The application was held before the book: no cash moves and no cash account is sent (OL7).
+  opening: boolean;
   // An existing contract of the book; null when the draft defines a new one.
   instrument: string | null;
   subtype: string;
@@ -55,6 +57,7 @@ export function emptyFixedIncomeDraft(
     applicationId,
     brokerageId,
     cashAccountId: null,
+    opening: false,
     instrument: null,
     subtype: "",
     issuer: "",
@@ -93,7 +96,8 @@ export function applicationBody(
     brokerage_id: draft.brokerageId ?? "",
     applied_on: draft.appliedOn,
     amount: { amount: draft.amount, currency: draft.currency },
-    ...(draft.cashAccountId === null
+    ...(draft.opening ? { opening: true } : {}),
+    ...(draft.cashAccountId === null || draft.opening
       ? {}
       : { cash_account_id: draft.cashAccountId }),
   };

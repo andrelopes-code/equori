@@ -38,6 +38,19 @@ function draft(patch = {}) {
 }
 
 describe("applicationBody", () => {
+  it("sends opening and no cash account for an application held before the book", () => {
+    const result = applicationBody(
+      draft({
+        opening: true,
+        cashAccountId: "0192f3a4-1111-7d8e-9f00-112233445566",
+      }),
+      t,
+    );
+
+    expect(result).toMatchObject({ body: { opening: true } });
+    expect("body" in result && "cash_account_id" in result.body).toBe(false);
+  });
+
   it("builds the body of S479", () => {
     expect(applicationBody(draft(), t)).toEqual({
       body: {

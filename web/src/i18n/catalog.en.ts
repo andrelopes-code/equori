@@ -1026,6 +1026,9 @@ export const catalogEn = {
   "fixedIncome.save": "Record application",
   "fixedIncome.addMoney": "Add money",
   "fixedIncome.created": "Application recorded",
+  "fixedIncome.opening": "Application before equori",
+  "fixedIncome.opening.note":
+    "No money leaves the account: the cost enters as an opening balance.",
   "problem.contract_invalid": "The contract has invalid fields.",
   "fixedIncome.newContract": "New contract",
   "fixedIncome.summary.matures": "matures {date}",
