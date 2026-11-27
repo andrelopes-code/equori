@@ -30,13 +30,13 @@ func TestParseInvestmentFile(t *testing.T) {
 		{
 			name: "four kinds",
 			content: header +
-				"opening,2021-03-10,PETR4,100,20.00,5.00,,,,\n" +
-				"sell,2026-11-10,PETR4,40,30.00,,0.06,,,\n" +
-				"income,2026-11-14,HGLG11,,,,,11.00,0.50,distribution\n",
+				"opening,2021-03-10,PETR4,100,20.00,5.00,,,,,5.40\n" +
+				"sell,2026-11-10,PETR4,40,30.00,,0.06,,,,\n" +
+				"income,2026-11-14,HGLG11,,,,,11.00,0.50,distribution,\n",
 			want: []FileLine{
 				{
 					Line: 2, Kind: "opening", Date: day("2021-03-10"), Instrument: "PETR4",
-					Quantity: "100", UnitPrice: "20.00", Fees: "5.00",
+					Quantity: "100", UnitPrice: "20.00", Fees: "5.00", ExchangeRate: "5.40",
 				},
 				{
 					Line: 3, Kind: "sell", Date: day("2026-11-10"), Instrument: "PETR4",
@@ -53,26 +53,27 @@ func TestParseInvestmentFile(t *testing.T) {
 			content:   "kind,date\nbuy,2026-01-01\n",
 			wantField: "line 1",
 			wantMsg: "must be the header " +
-				"kind,date,instrument,quantity,unit_price,fees,taxes,gross,withheld,income_type",
+				"kind,date,instrument,quantity,unit_price,fees,taxes,gross,withheld,income_type," +
+				"exchange_rate",
 		},
 		{
-			name:      "nine values",
-			content:   header + "buy,2026-01-02,PETR4,1,2.00,,,,\n",
+			name:      "ten values",
+			content:   header + "buy,2026-01-02,PETR4,1,2.00,,,,,\n",
 			wantField: "line 2",
-			wantMsg:   "must have ten comma-separated values",
+			wantMsg:   "must have eleven comma-separated values",
 		},
 		{
 			name:      "unknown kind",
-			content:   header + "dividend,2026-01-02,PETR4,,,,,1.00,,\n",
+			content:   header + "dividend,2026-01-02,PETR4,,,,,1.00,,,\n",
 			wantField: "line 2",
 			wantMsg:   "kind must be opening, buy, sell or income",
 		},
 		{
 			name: "invalid date",
 			content: header +
-				"buy,2026-01-02,PETR4,1,2.00,,,,,\n" +
-				"buy,2026-01-03,PETR4,1,2.00,,,,,\n" +
-				"buy,2026-13-01,PETR4,1,2.00,,,,,\n",
+				"buy,2026-01-02,PETR4,1,2.00,,,,,,\n" +
+				"buy,2026-01-03,PETR4,1,2.00,,,,,,\n" +
+				"buy,2026-13-01,PETR4,1,2.00,,,,,,\n",
 			wantField: "line 4",
 			wantMsg:   "date must be YYYY-MM-DD",
 		},
@@ -85,7 +86,7 @@ func TestParseInvestmentFile(t *testing.T) {
 		{
 			name: "too many lines",
 			content: header +
-				strings.Repeat("buy,2026-01-02,PETR4,1,2.00,,,,,\n", MaxFileLines+1),
+				strings.Repeat("buy,2026-01-02,PETR4,1,2.00,,,,,,\n", MaxFileLines+1),
 			wantField: "file",
 			wantMsg:   "must have at most 10000 lines",
 		},

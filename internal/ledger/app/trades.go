@@ -206,7 +206,7 @@ func (s *Service) resolveTrade(
 	}
 
 	if o.Side == domain.SideOpening {
-		return s.openingHolding(ctx, r, booksID, o)
+		return s.openingInQuote(ctx, r, booksID, o, base)
 	}
 
 	o.AccountID, o.CashAccountID, err = s.resolveTarget(ctx, r, booksID, base, target{

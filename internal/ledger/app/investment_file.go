@@ -130,15 +130,10 @@ func (s *Service) newFileRun(
 		return nil, err
 	}
 
-	zero, err := money.New(0, base)
-	if err != nil {
-		return nil, err
-	}
-
 	run := &fileRun{
 		orders: domain.FileOrders{
 			BrokerageID: f.BrokerageID, CashAccountID: f.CashAccountID, CategoryID: f.CategoryID,
-			Base: base, Scale: zero.Scale(),
+			Base: base, Cash: base,
 		},
 		holdings: map[money.Currency]uuid.UUID{}, used: map[uuid.UUID]bool{},
 	}
@@ -147,13 +142,34 @@ func (s *Service) newFileRun(
 		return nil, fieldErr("category_id", "is required by the income lines", domain.ErrValidation)
 	}
 
-	if f.CashAccountID == uuid.Nil && slices.ContainsFunc(lines, needsCash) {
-		if run.orders.CashAccountID, err = defaultCash(ctx, r, brokerage, base); err != nil {
+	if slices.ContainsFunc(lines, needsCash) {
+		if err := fileCash(ctx, r, brokerage, run); err != nil {
 			return nil, err
 		}
 	}
 
 	return run, s.readRecorded(ctx, r, brokerage, run)
+}
+
+// fileCash sets the cash account of the import, the default one when the file names none, and the
+// currency of the amounts of the lines that settle in it (foreign cash FC10).
+func fileCash(
+	ctx context.Context,
+	r Repository,
+	brokerage domain.Account,
+	run *fileRun,
+) error {
+	if run.orders.CashAccountID == uuid.Nil {
+		id, err := defaultCash(ctx, r, brokerage, run.orders.Base)
+		run.orders.CashAccountID = id
+
+		return err
+	}
+
+	cash, err := loadAccount(ctx, r, brokerage.BooksID, run.orders.CashAccountID, "cash_account_id")
+	run.orders.Cash = cash.Instrument
+
+	return err
 }
 
 // readRecorded loads the holdings of the brokerage and their recorded trades and incomes.
@@ -198,7 +214,7 @@ func (s *Service) importLine(
 	run *fileRun,
 	l domain.FileLine,
 ) (skipped bool, err error) {
-	code, scale, err := s.fileInstrument(ctx, booksID, l.Instrument)
+	code, scale, quote, err := s.fileInstrument(ctx, booksID, l.Instrument)
 	if err != nil {
 		return false, err
 	}
@@ -207,7 +223,7 @@ func (s *Service) importLine(
 		return s.importIncome(ctx, r, booksID, run, l, code)
 	}
 
-	o, err := run.orders.Trade(l, code, scale)
+	o, err := run.orders.Trade(l, code, scale, quote)
 	if err != nil {
 		return false, err
 	}
@@ -243,19 +259,19 @@ func (s *Service) importIncome(
 	return false, err
 }
 
-// fileInstrument returns the code and the scale of a defined instrument (IF4).
+// fileInstrument returns the code, the scale and the quote currency of a defined instrument (IF4).
 func (s *Service) fileInstrument(
 	ctx context.Context,
 	booksID int64,
 	code money.Currency,
-) (money.Currency, int, error) {
+) (money.Currency, int, money.Currency, error) {
 	if s.ins == nil {
-		return "", 0, undefinedInstrument()
+		return "", 0, "", undefinedInstrument()
 	}
 
 	resolved, err := s.ins.ResolveCode(ctx, code)
 	if err != nil && !errors.Is(err, ErrUnknownInstrument) {
-		return "", 0, err
+		return "", 0, "", err
 	}
 
 	if err == nil {
@@ -264,10 +280,10 @@ func (s *Service) fileInstrument(
 
 	in, err := s.ins.Instrument(ctx, code)
 	if errors.Is(err, ErrUnknownInstrument) || (err == nil && !visibleTo(in, booksID)) {
-		return "", 0, undefinedInstrument()
+		return "", 0, "", undefinedInstrument()
 	}
 
-	return code, in.Scale, err
+	return code, in.Scale, in.QuoteCurrency, err
 }
 
 // matchTrade reports whether a recorded trade equals o and marks it as answered (IF6).
@@ -277,13 +293,10 @@ func (run *fileRun) matchTrade(o domain.TradeOrder) bool {
 		return false
 	}
 
-	var fees int64
-	if o.Fees != nil {
-		fees = o.Fees.Amount()
-	}
-
 	i := slices.IndexFunc(run.trades, func(f TradeFact) bool {
-		return !run.used[f.TransactionID] && f.AccountID == account &&
+		fees, ok := run.inBase(o.Fees, o.ExchangeRate, f.ExchangeRate)
+
+		return ok && !run.used[f.TransactionID] && f.AccountID == account &&
 			f.Side == string(o.Side) && f.Date.Equal(o.Date) &&
 			f.Quantity == o.Quantity.Amount() && f.Fees == fees &&
 			f.UnitPrice.Reduced() == o.UnitPrice.Reduced()
@@ -305,8 +318,10 @@ func (run *fileRun) matchIncome(o domain.IncomeOrder) bool {
 	}
 
 	i := slices.IndexFunc(run.incomes, func(f IncomeFact) bool {
-		return !run.used[f.TransactionID] && f.AccountID == account &&
-			f.Type == string(o.Type) && f.Date.Equal(o.Date) && f.Gross == o.Gross.Amount()
+		gross, ok := run.inBase(&o.Gross, o.ExchangeRate, f.ExchangeRate)
+
+		return ok && !run.used[f.TransactionID] && f.AccountID == account &&
+			f.Type == string(o.Type) && f.Date.Equal(o.Date) && f.Gross == gross
 	})
 	if i < 0 {
 		return false
@@ -315,6 +330,26 @@ func (run *fileRun) matchIncome(o domain.IncomeOrder) bool {
 	run.used[run.incomes[i].TransactionID] = true
 
 	return true
+}
+
+// inBase returns m, an amount of the cash currency of a line, in the base currency at the rate
+// recorded with the transaction the line is matched against (foreign cash FC10). It is not
+// comparable when the line gives a rate other than the recorded one.
+func (run *fileRun) inBase(m *money.Money, given, recorded *money.Rate) (int64, bool) {
+	if given != nil && (recorded == nil || given.Reduced() != recorded.Reduced()) {
+		return 0, false
+	}
+
+	switch {
+	case m == nil:
+		return 0, true
+	case recorded == nil:
+		return m.Amount(), true
+	}
+
+	converted, err := money.Convert(*m, run.orders.Base, money.Leg{Rate: *recorded})
+
+	return converted.Amount(), err == nil
 }
 
 func undefinedInstrument() error {

@@ -24,6 +24,7 @@ type FixedIncomeApplication struct {
 	AppliedOn                                 time.Time
 	Amount                                    money.Money
 	Fees                                      *money.Money
+	ExchangeRate                              *money.Rate // cash in another currency (FC8)
 	Description                               string
 	Opening                                   bool           // held before the book: no cash moves
 	Contract                                  *Contract      // a new contract
@@ -269,6 +270,7 @@ func (s *Service) buy(
 		Quantity:      quantity,
 		UnitPrice:     unit,
 		Fees:          a.Fees,
+		ExchangeRate:  a.ExchangeRate,
 		Description:   a.Description,
 	})
 	if err != nil {

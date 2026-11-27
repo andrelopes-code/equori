@@ -1,12 +1,16 @@
 package ledger_test
 
 import (
+	"fmt"
 	"net/http"
 	"slices"
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
 )
+
+const foreignFileHeader = "kind,date,instrument,quantity,unit_price,fees,taxes,gross,withheld," +
+	"income_type,exchange_rate"
 
 type foreignCashFixture struct {
 	h                                            *apitest.Harness
@@ -206,6 +210,143 @@ func TestS776CorrectionTakesTheRate(t *testing.T) {
 
 	f.expectRows(t, tradeRowSQL, "buy 2650000 530 0 0 0 0 BRL 5.300000000000")
 	f.expectRows(t, f.postingSQL("p.account_id = t.account_id"), "10 2650530")
+}
+
+// S772 (FC7): an opening of an instrument quoted in dollars takes its price in dollars and the
+// rate of its date; its cost is in reais. An instrument quoted in the base currency takes no rate.
+func TestS772OpeningInDollars(t *testing.T) {
+	t.Parallel()
+	f := newForeignCashFixture(t)
+
+	r := f.h.Do(http.MethodPost, "/api/v1/trades", f.opening(f.brokerage, "VOO", "5.40"))
+	if r.Status != http.StatusCreated {
+		t.Fatalf("status %d: %s", r.Status, r.Body)
+	}
+
+	f.expectRows(t, tradeRowSQL, "opening 2052000 0 0 0 0 0 BRL 5.400000000000")
+	f.expectRows(t, f.postingSQL("p.account_id = t.account_id"), "10 2052000")
+
+	f.h.ExpectProblem(
+		f.h.Do(http.MethodPost, "/api/v1/trades", f.opening(f.brl, "PETR4", "5.40")),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"exchange_rate",
+	)
+	f.h.ExpectProblem(
+		f.h.Do(http.MethodPost, "/api/v1/trades", f.opening(f.brokerage, "VOO", "")),
+		http.StatusUnprocessableEntity,
+		"price_missing",
+		"exchange_rate",
+	)
+}
+
+// S773 (FC10): a file with an opening and a sale of VOO, each with its rate, imported with Cash
+// USD; the same file again records nothing.
+func TestS773FileInDollars(t *testing.T) {
+	t.Parallel()
+	f := newForeignCashFixture(t)
+	file := foreignFileHeader + "\n" +
+		"opening,2021-05-03,VOO,10,380.00,,,,,,5.40\n" +
+		"sell,2026-09-01,VOO,4,600.00,1.00,,,,,5.50\n"
+
+	for _, want := range []string{"2 0", "0 2"} {
+		r := f.h.UploadWith(
+			"/api/v1/brokerages/"+f.brokerage+"/investment-file",
+			map[string]string{"cash_account_id": f.cash},
+			"ops.csv",
+			[]byte(file),
+		)
+		if r.Status != http.StatusOK {
+			t.Fatalf("status %d: %s", r.Status, r.Body)
+		}
+
+		var got investmentFileResult
+		r.Decode(t, &got)
+
+		if have := fmt.Sprintf("%d %d", got.Created, got.Skipped); have != want {
+			t.Fatalf("created and skipped = %s, want %s", have, want)
+		}
+	}
+
+	f.expectRows(t, tradeRowSQL,
+		"opening 2052000 0 0 0 0 0 BRL 5.400000000000",
+		"sell 1320000 550 0 820800 0 0 BRL 5.500000000000")
+	f.expectSum(t, f.cash, "1239900")
+}
+
+// S774 (FC9): a note of two purchases in dollars takes one rate; its fees split by gross in
+// dollars, then each amount converts at the rate.
+func TestS774NoteInDollars(t *testing.T) {
+	t.Parallel()
+	f := newForeignCashFixture(t)
+	f.h.MustDo(http.MethodPost, "/api/v1/instruments", map[string]any{
+		"code": "QQQ", "type": "etf", "scale": 0, "name": "QQQ",
+		"quote_currency": "USD", "exchange": "XNAS",
+	}, http.StatusCreated, nil)
+
+	r := f.h.Do(http.MethodPost, "/api/v1/brokerage-notes", map[string]any{
+		"brokerage_id": f.brokerage, "cash_account_id": f.cash, "date": "2026-03-03",
+		"fees": usd(200), "exchange_rate": "5.20",
+		"orders": []map[string]any{
+			{
+				"side": "buy", "instrument": "VOO", "quantity": units(10, "VOO"),
+				"unit_price": "500.00",
+			},
+			{
+				"side": "buy", "instrument": "QQQ", "quantity": units(5, "QQQ"),
+				"unit_price": "400.00",
+			},
+		},
+	})
+	if r.Status != http.StatusCreated {
+		t.Fatalf("status %d: %s", r.Status, r.Body)
+	}
+
+	f.expectRows(t,
+		`SELECT p.amount, p.weight FROM ledger_posting p
+		JOIN ledger_trade t ON t.transaction_id = p.transaction_id
+		WHERE p.account_id = '`+f.cash+`' ORDER BY p.amount`,
+		"-500143 -2600744", "-200057 -1040296")
+	f.expectRows(t,
+		`SELECT gross, fees, currency, exchange_rate::text FROM ledger_trade ORDER BY gross`,
+		"1040000 296 BRL 5.200000000000", "2600000 744 BRL 5.200000000000")
+}
+
+// FC8: a fixed income application from a dollar brokerage takes its amount in dollars and the
+// rate; the cost is in reais.
+func TestFixedIncomeInDollars(t *testing.T) {
+	t.Parallel()
+	f := newForeignCashFixture(t)
+
+	body := map[string]any{
+		"application_id": fixedIncomeApplication, "brokerage_id": f.brokerage,
+		"cash_account_id": f.cash, "applied_on": "2026-03-03", "amount": usd(100000),
+		"exchange_rate": "5.20",
+		"contract": map[string]any{
+			"subtype": "cdb", "issuer": "Bank X", "matures_on": "2028-03-03",
+			"index_id": "cdi", "percent_of_index_bp": 11000,
+		},
+	}
+
+	r := f.h.Do(http.MethodPost, fixedIncomePath, body)
+	if r.Status != http.StatusCreated {
+		t.Fatalf("status %d: %s", r.Status, r.Body)
+	}
+
+	f.expectRows(t, tradeRowSQL, "buy 520000 0 0 0 0 0 BRL 5.200000000000")
+	f.expectRows(t, f.cashPostings(), "-100000 -520000")
+}
+
+func (f foreignCashFixture) opening(brokerage, code, rate string) map[string]any {
+	body := map[string]any{
+		"brokerage_id": brokerage, "instrument": code, "side": "opening",
+		"date": "2021-05-03", "unit_price": "380.00", "quantity": units(10, code),
+	}
+	if rate != "" {
+		body["exchange_rate"] = rate
+	}
+
+	return body
 }
 
 func newForeignCashFixture(t *testing.T) foreignCashFixture {

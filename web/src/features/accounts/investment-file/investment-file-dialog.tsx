@@ -33,7 +33,7 @@ interface InvestmentFileDialogProps {
 const maxBytes = 2 * 1024 * 1024;
 
 const header =
-  "kind,date,instrument,quantity,unit_price,fees,taxes,gross,withheld,income_type";
+  "kind,date,instrument,quantity,unit_price,fees,taxes,gross,withheld,income_type,exchange_rate";
 
 // IF1: checks a CSV file of openings, trades and incomes, then records it all or nothing.
 export function InvestmentFileDialog({

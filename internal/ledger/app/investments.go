@@ -40,6 +40,9 @@ type TradeFact struct {
 	DayTradeQuantity, DayTradeCost     int64
 	// UnitPrice is zero on a write-off.
 	UnitPrice money.Rate
+	// ExchangeRate is the rate of the cash in another currency than the base, which the amounts
+	// are then converted at; nil with cash in the base currency.
+	ExchangeRate *money.Rate
 }
 
 type IncomeFact struct {
@@ -47,6 +50,7 @@ type IncomeFact struct {
 	Date                     time.Time
 	Type                     string
 	Gross, Withheld          int64
+	ExchangeRate             *money.Rate
 }
 
 // InvestmentFacts returns the facts of the children of brokerageID that hold a security.

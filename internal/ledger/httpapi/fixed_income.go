@@ -83,6 +83,10 @@ func fixedIncomeFromInput(in CreateFixedIncomeApplicationJSONRequestBody) (
 		a.Fees = &fees
 	}
 
+	if a.ExchangeRate, err = exchangeRate(in.ExchangeRate); err != nil {
+		return app.FixedIncomeApplication{}, err
+	}
+
 	if in.Contract != nil {
 		c := contractFromInput(*in.Contract)
 		a.Contract = &c

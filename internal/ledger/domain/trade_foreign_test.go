@@ -60,6 +60,19 @@ func TestBuildTradeWithRate(t *testing.T) {
 			gross: 2600000, fees: 520, cost: -1,
 		},
 		{
+			name: "S772 opening",
+			order: TradeOrder{
+				Side: SideOpening, Quantity: voo(10), UnitPrice: price(t, "380.00"),
+				ExchangeRate: rate("5.40"),
+			},
+			holding: empty,
+			want: []line{
+				{security, 10, 2052000, "VOO"},
+				{cash, -2052000, -2052000, "BRL"},
+			},
+			gross: 2052000, fees: 0, cost: -1,
+		},
+		{
 			name: "fees of 0.05 at 5.30 are 26.5 centavos, half to even 26",
 			order: TradeOrder{
 				Side: SideBuy, Quantity: voo(1), UnitPrice: price(t, "1.00"),

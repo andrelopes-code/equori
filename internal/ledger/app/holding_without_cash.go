@@ -1,6 +1,7 @@
 package app
 
 import (
+	"cmp"
 	"context"
 	"time"
 
@@ -108,6 +109,32 @@ func (s *Service) openingHolding(
 	o.AccountID, o.CashAccountID = security.ID, equity.ID
 
 	return security, equity, nil
+}
+
+// openingInQuote resolves the holding of an opening as openingHolding does. The account it returns
+// as the cash side has the quote currency of the instrument, the currency of the prices and fees
+// of the order, and o takes the rate that converts them to base (foreign cash FC7).
+func (s *Service) openingInQuote(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	o *domain.TradeOrder,
+	base money.Currency,
+) (security, equity domain.Account, err error) {
+	security, equity, err = s.openingHolding(ctx, r, booksID, o)
+	if err != nil {
+		return domain.Account{}, domain.Account{}, err
+	}
+
+	if err := s.describeInstrument(ctx, &security); err != nil {
+		return domain.Account{}, domain.Account{}, err
+	}
+
+	equity.Instrument = cmp.Or(security.QuoteCurrency, base)
+
+	o.ExchangeRate, err = s.cashRate(ctx, equity.Instrument, base, o.Date, o.ExchangeRate)
+
+	return security, equity, err
 }
 
 // checkOpening refuses the fields an opening does not take.

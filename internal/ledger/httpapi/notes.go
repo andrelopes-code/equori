@@ -67,6 +67,10 @@ func (s *Server) noteFromInput(
 		return app.BrokerageNote{}, err
 	}
 
+	if n.ExchangeRate, err = exchangeRate(b.ExchangeRate); err != nil {
+		return app.BrokerageNote{}, err
+	}
+
 	return n, nil
 }
 

@@ -62,6 +62,9 @@ func (r *Repository) SecurityTrades(
 		// A stored price is valid by the schema; an unreadable one stays zero and matches no line.
 		f.UnitPrice, _ = tradePrice(row.Side, row.UnitPrice)
 
+		// The stored rate is valid by the schema; an unreadable one stays nil and matches no line.
+		f.ExchangeRate, _ = optionalRate(row.ExchangeRate)
+
 		return f
 	}), err
 }
@@ -77,7 +80,7 @@ func (r *Repository) SecurityIncomes(
 	)
 
 	return mapAll(rows, func(row SecurityIncomesRow) app.IncomeFact {
-		return app.IncomeFact{
+		f := app.IncomeFact{
 			TransactionID: row.TransactionID,
 			AccountID:     row.AccountID,
 			Date:          row.Date,
@@ -85,6 +88,9 @@ func (r *Repository) SecurityIncomes(
 			Gross:         row.Gross,
 			Withheld:      row.Withheld,
 		}
+		f.ExchangeRate, _ = optionalRate(row.ExchangeRate)
+
+		return f
 	}), err
 }
 

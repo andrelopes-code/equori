@@ -15,10 +15,10 @@ func TestS763InvestmentFileThroughAssistant(t *testing.T) {
 	t.Parallel()
 	f := newInvestmentFileFixture(t, apitest.Brazil(), "HGLG11", "reit", 1000000)
 	file := investmentFile(
-		"opening,2021-03-10,PETR4,100,20.00,5.00,,,,",
-		"buy,2026-11-03,HGLG11,10,160.00,1.00,,,,",
-		"sell,2026-11-10,PETR4,40,30.00,,0.06,,,",
-		"income,2026-11-14,HGLG11,,,,,11.00,,distribution",
+		"opening,2021-03-10,PETR4,100,20.00,5.00,,,,,",
+		"buy,2026-11-03,HGLG11,10,160.00,1.00,,,,,",
+		"sell,2026-11-10,PETR4,40,30.00,,0.06,,,,",
+		"income,2026-11-14,HGLG11,,,,,11.00,,distribution,",
 	)
 
 	r := f.h.Upload("/api/v1/assistant/files", "operations.csv", []byte(file))

@@ -20,17 +20,18 @@ const MaxFileLines = 10000
 
 var investmentFileHeader = []string{
 	"kind", "date", "instrument", "quantity", "unit_price", "fees", "taxes", "gross", "withheld",
-	"income_type",
+	"income_type", "exchange_rate",
 }
 
 // FileLine is one record of an investment file; the decimals stay text until the app reads them
-// with the scale of the instrument and the base currency. An empty cell is an empty string.
+// with the scale of the instrument and of the currency of the line. An empty cell is an empty
+// string.
 type FileLine struct {
-	Line                                                          int
-	Kind                                                          string
-	Date                                                          time.Time
-	Instrument                                                    money.Currency
-	Quantity, UnitPrice, Fees, Taxes, Gross, Withheld, IncomeType string
+	Line                                                                        int
+	Kind                                                                        string
+	Date                                                                        time.Time
+	Instrument                                                                  money.Currency
+	Quantity, UnitPrice, Fees, Taxes, Gross, Withheld, IncomeType, ExchangeRate string
 }
 
 // ParseInvestmentFile reads an investment file; errors name the line, the header being line 1
@@ -44,7 +45,7 @@ func ParseInvestmentFile(content []byte) ([]FileLine, error) {
 		return nil, invalid(
 			"line 1",
 			"must be the header kind,date,instrument,quantity,unit_price,fees,taxes,"+
-				"gross,withheld,income_type",
+				"gross,withheld,income_type,exchange_rate",
 		)
 	}
 
@@ -58,7 +59,7 @@ func ParseInvestmentFile(content []byte) ([]FileLine, error) {
 
 		field := fmt.Sprintf("line %d", line)
 		if err != nil {
-			return nil, invalid(field, "must have ten comma-separated values")
+			return nil, invalid(field, "must have eleven comma-separated values")
 		}
 
 		if len(out) == MaxFileLines {
@@ -95,21 +96,28 @@ func fileLine(line int, rec []string) (FileLine, error) {
 	return FileLine{
 		Line: line, Kind: rec[0], Date: date, Instrument: money.Currency(rec[2]),
 		Quantity: rec[3], UnitPrice: rec[4], Fees: rec[5], Taxes: rec[6], Gross: rec[7],
-		Withheld: rec[8], IncomeType: rec[9],
+		Withheld: rec[8], IncomeType: rec[9], ExchangeRate: rec[10],
 	}, nil
 }
 
-// FileOrders turns the lines of one file into orders: the brokerage, the accounts the file takes
-// and the base currency with its scale are shared by every line.
+// FileOrders turns the lines of one file into orders: the brokerage and the accounts the file
+// takes are shared by every line. Base is the base currency; Cash is the currency of the cash
+// account of the import (Base when the file has no cash line), the currency of the amounts of its
+// buy, sell and income lines (foreign cash FC10).
 type FileOrders struct {
 	BrokerageID, CashAccountID, CategoryID uuid.UUID
-	Base                                   money.Currency
-	Scale                                  int
+	Base, Cash                             money.Currency
 }
 
-// Trade reads an opening, buy or sell line; code and scale are those of its instrument. An
-// opening takes no cash account.
-func (o FileOrders) Trade(l FileLine, code money.Currency, scale int) (TradeOrder, error) {
+// Trade reads an opening, buy or sell line; code and scale are those of its instrument and quote
+// is its quote currency. An opening takes no cash account and its amounts are in the quote
+// currency (FC7).
+func (o FileOrders) Trade(
+	l FileLine,
+	code money.Currency,
+	scale int,
+	quote money.Currency,
+) (TradeOrder, error) {
 	quantity, err := fileDecimal("quantity", l.Quantity, code, scale)
 	if err != nil {
 		return TradeOrder{}, err
@@ -123,19 +131,29 @@ func (o FileOrders) Trade(l FileLine, code money.Currency, scale int) (TradeOrde
 		)
 	}
 
-	fees, err := o.optional("fees", l.Fees)
+	currency := o.Cash
+	if l.Kind == "opening" {
+		currency = cmp.Or(quote, o.Base)
+	}
+
+	fees, err := optionalAmount("fees", l.Fees, currency)
 	if err != nil {
 		return TradeOrder{}, err
 	}
 
-	taxes, err := o.optional("taxes", l.Taxes)
+	taxes, err := optionalAmount("taxes", l.Taxes, currency)
+	if err != nil {
+		return TradeOrder{}, err
+	}
+
+	rate, err := fileRate(l.ExchangeRate)
 	if err != nil {
 		return TradeOrder{}, err
 	}
 
 	order := TradeOrder{
 		BrokerageID: o.BrokerageID, Instrument: code, Side: Side(l.Kind), Date: l.Date,
-		Quantity: quantity, UnitPrice: price, Fees: fees, Taxes: taxes,
+		Quantity: quantity, UnitPrice: price, Fees: fees, Taxes: taxes, ExchangeRate: rate,
 	}
 	if l.Kind != "opening" {
 		order.CashAccountID = o.CashAccountID
@@ -146,12 +164,17 @@ func (o FileOrders) Trade(l FileLine, code money.Currency, scale int) (TradeOrde
 
 // Income reads an income line; an empty withheld is zero (IF3).
 func (o FileOrders) Income(l FileLine, code money.Currency) (IncomeOrder, error) {
-	gross, err := fileDecimal("gross", l.Gross, o.Base, o.Scale)
+	gross, err := fileAmount("gross", l.Gross, o.Cash)
 	if err != nil {
 		return IncomeOrder{}, err
 	}
 
-	withheld, err := fileDecimal("withheld", cmp.Or(l.Withheld, "0"), o.Base, o.Scale)
+	withheld, err := fileAmount("withheld", cmp.Or(l.Withheld, "0"), o.Cash)
+	if err != nil {
+		return IncomeOrder{}, err
+	}
+
+	rate, err := fileRate(l.ExchangeRate)
 	if err != nil {
 		return IncomeOrder{}, err
 	}
@@ -159,21 +182,45 @@ func (o FileOrders) Income(l FileLine, code money.Currency) (IncomeOrder, error)
 	return IncomeOrder{
 		BrokerageID: o.BrokerageID, Instrument: code, CategoryID: o.CategoryID,
 		CashAccountID: o.CashAccountID, Type: IncomeType(l.IncomeType), Date: l.Date,
-		Gross: gross, Withheld: &withheld,
+		Gross: gross, Withheld: &withheld, ExchangeRate: rate,
 	}, nil
 }
 
-func (o FileOrders) optional(field, text string) (*money.Money, error) {
+// fileRate reads the optional exchange_rate cell of a line.
+func fileRate(text string) (*money.Rate, error) {
 	if text == "" {
 		return nil, nil
 	}
 
-	m, err := fileDecimal(field, text, o.Base, o.Scale)
+	rate, err := money.ParseRate(text)
+	if err != nil {
+		return nil, invalid("exchange_rate", "must be a positive decimal with at most 12 decimals")
+	}
+
+	return &rate, nil
+}
+
+func optionalAmount(field, text string, currency money.Currency) (*money.Money, error) {
+	if text == "" {
+		return nil, nil
+	}
+
+	m, err := fileAmount(field, text, currency)
 	if err != nil {
 		return nil, err
 	}
 
 	return &m, nil
+}
+
+// fileAmount reads text as an amount of currency, with the decimals of the currency.
+func fileAmount(field, text string, currency money.Currency) (money.Money, error) {
+	zero, err := money.New(0, currency)
+	if err != nil {
+		return money.Money{}, invalid(field, "must be an amount of "+string(currency))
+	}
+
+	return fileDecimal(field, text, currency, zero.Scale())
 }
 
 func fileDecimal(field, text string, code money.Currency, scale int) (money.Money, error) {

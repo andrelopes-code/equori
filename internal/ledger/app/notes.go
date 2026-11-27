@@ -32,6 +32,7 @@ type BrokerageNote struct {
 	Date                                        time.Time
 	SettlementDate                              *time.Time
 	Fees, Taxes                                 *money.Money
+	ExchangeRate                                *money.Rate // one rate for every order (FC9)
 	Description                                 string
 	Orders                                      []NoteOrder
 }
@@ -54,7 +55,12 @@ func (s *Service) RecordBrokerageNote(
 			return err
 		}
 
-		orders, err := noteTrades(n, base)
+		cash, rate, err := s.noteCash(ctx, r, booksID, n, base)
+		if err != nil {
+			return err
+		}
+
+		orders, err := noteTrades(n, cash, rate)
 		if err != nil {
 			return err
 		}
@@ -72,9 +78,40 @@ func (s *Service) RecordBrokerageNote(
 	return created, err
 }
 
+// noteCash returns the currency of the cash account of n and the rate of the note: its amounts are
+// in that currency and every order converts at that rate (foreign cash FC9). A note with no cash
+// account takes the default cash of the brokerage, in the base currency.
+func (s *Service) noteCash(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	n BrokerageNote,
+	base money.Currency,
+) (money.Currency, *money.Rate, error) {
+	cash := base
+
+	if n.CashAccountID != uuid.Nil {
+		account, err := loadAccount(ctx, r, booksID, n.CashAccountID, "cash_account_id")
+		if err != nil {
+			return "", nil, err
+		}
+
+		cash = account.Instrument
+	}
+
+	rate, err := s.cashRate(ctx, cash, base, n.Date, n.ExchangeRate)
+
+	return cash, rate, err
+}
+
 // noteTrades builds the trade order of each order of n: the note's fees are split over every
-// gross and its taxes over the gross of the sales (A228 IO18, IO19).
-func noteTrades(n BrokerageNote, base money.Currency) ([]domain.TradeOrder, error) {
+// gross and its taxes over the gross of the sales, in the currency cash of the note (A228 IO18,
+// IO19); each order takes rate.
+func noteTrades(
+	n BrokerageNote,
+	cash money.Currency,
+	rate *money.Rate,
+) ([]domain.TradeOrder, error) {
 	grosses := make([]int64, len(n.Orders))
 	saleGrosses := make([]int64, len(n.Orders))
 
@@ -83,7 +120,7 @@ func noteTrades(n BrokerageNote, base money.Currency) ([]domain.TradeOrder, erro
 			return nil, inOrder(fieldErr("side", "must be buy or sell", domain.ErrValidation), i)
 		}
 
-		gross, err := money.Convert(o.Quantity, base, money.Leg{Rate: o.UnitPrice})
+		gross, err := money.Convert(o.Quantity, cash, money.Leg{Rate: o.UnitPrice})
 		if err != nil {
 			return nil, inOrder(fieldErr("unit_price", err.Error(), domain.ErrValidation), i)
 		}
@@ -94,12 +131,12 @@ func noteTrades(n BrokerageNote, base money.Currency) ([]domain.TradeOrder, erro
 		}
 	}
 
-	fees, err := noteShares("fees", n.Fees, base, grosses)
+	fees, err := noteShares("fees", n.Fees, cash, grosses)
 	if err != nil {
 		return nil, err
 	}
 
-	taxes, err := noteShares("taxes", n.Taxes, base, saleGrosses)
+	taxes, err := noteShares("taxes", n.Taxes, cash, saleGrosses)
 	if err != nil {
 		return nil, err
 	}
@@ -118,6 +155,7 @@ func noteTrades(n BrokerageNote, base money.Currency) ([]domain.TradeOrder, erro
 			UnitPrice:       o.UnitPrice,
 			Fees:            &fees[i],
 			Taxes:           &taxes[i],
+			ExchangeRate:    rate,
 			Description:     n.Description,
 		}
 	}
@@ -125,19 +163,19 @@ func noteTrades(n BrokerageNote, base money.Currency) ([]domain.TradeOrder, erro
 	return orders, nil
 }
 
-// noteShares splits total over weights in the base currency; a total with no positive weight to
+// noteShares splits total over weights in the currency of the note; a total with no positive weight to
 // carry it is an error of field.
 func noteShares(
 	field string,
 	total *money.Money,
-	base money.Currency,
+	currency money.Currency,
 	weights []int64,
 ) ([]money.Money, error) {
 	var amount int64
 	if total != nil {
-		if total.Currency() != base || total.IsNegative() {
+		if total.Currency() != currency || total.IsNegative() {
 			return nil, fieldErr(
-				field, "must be a non-negative amount in "+string(base), domain.ErrValidation,
+				field, "must be a non-negative amount in "+string(currency), domain.ErrValidation,
 			)
 		}
 
@@ -155,7 +193,7 @@ func noteShares(
 
 	shares := make([]money.Money, len(weights))
 	for i, a := range domain.Apportion(amount, weights) {
-		m, err := money.New(a, base)
+		m, err := money.New(a, currency)
 		if err != nil {
 			return nil, err
 		}

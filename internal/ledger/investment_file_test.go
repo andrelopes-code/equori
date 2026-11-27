@@ -9,7 +9,7 @@ import (
 )
 
 const investmentFileHeader = "kind,date,instrument,quantity,unit_price,fees,taxes," +
-	"gross,withheld,income_type"
+	"gross,withheld,income_type,exchange_rate"
 
 type investmentFileResult struct {
 	Lines   int `json:"lines"`
@@ -29,10 +29,10 @@ func TestS760InvestmentFile(t *testing.T) {
 	t.Parallel()
 	f := newInvestmentFileFixture(t, apitest.Brazil(), "HGLG11", "reit", 1000000)
 	file := investmentFile(
-		"opening,2021-03-10,PETR4,100,20.00,5.00,,,,",
-		"buy,2026-11-03,HGLG11,10,160.00,1.00,,,,",
-		"sell,2026-11-10,PETR4,40,30.00,,0.06,,,",
-		"income,2026-11-14,HGLG11,,,,,11.00,,distribution",
+		"opening,2021-03-10,PETR4,100,20.00,5.00,,,,,",
+		"buy,2026-11-03,HGLG11,10,160.00,1.00,,,,,",
+		"sell,2026-11-10,PETR4,40,30.00,,0.06,,,,",
+		"income,2026-11-14,HGLG11,,,,,11.00,,distribution,",
 	)
 
 	got := f.upload(t, file, map[string]string{"category_id": f.category})
@@ -49,7 +49,7 @@ func TestS760InvestmentFile(t *testing.T) {
 
 	f.expectCash(t, "960994")
 
-	dry := investmentFile("buy,2026-11-12,HGLG11,5,150.00,,,,,")
+	dry := investmentFile("buy,2026-11-12,HGLG11,5,150.00,,,,,,")
 	got = f.upload(t, dry, map[string]string{"dry_run": "true"})
 
 	if want := (investmentFileResult{Lines: 1, Created: 1}); got != want {
@@ -75,8 +75,8 @@ func TestS761RefusedFile(t *testing.T) {
 		{
 			name: "invalid date on line 3",
 			file: investmentFile(
-				"buy,2026-11-03,HGLG11,10,160.00,1.00,,,,",
-				"buy,2026-13-01,HGLG11,10,160.00,1.00,,,,",
+				"buy,2026-11-03,HGLG11,10,160.00,1.00,,,,,",
+				"buy,2026-13-01,HGLG11,10,160.00,1.00,,,,,",
 			),
 			field: "line 3",
 		},
@@ -87,12 +87,12 @@ func TestS761RefusedFile(t *testing.T) {
 		},
 		{
 			name:  "income without category",
-			file:  investmentFile("income,2026-11-14,PETR4,,,,,11.00,,distribution"),
+			file:  investmentFile("income,2026-11-14,PETR4,,,,,11.00,,distribution,"),
 			field: "category_id",
 		},
 		{
 			name:  "unknown instrument",
-			file:  investmentFile("opening,2021-03-10,ZZZZ3,100,20.00,,,,,"),
+			file:  investmentFile("opening,2021-03-10,ZZZZ3,100,20.00,,,,,,"),
 			field: "line 2",
 		},
 	}
@@ -110,7 +110,7 @@ func TestS761RefusedFile(t *testing.T) {
 		})
 	}
 
-	file := []byte(investmentFile("buy,2026-11-03,HGLG11,10,160.00,1.00,,,,"))
+	file := []byte(investmentFile("buy,2026-11-03,HGLG11,10,160.00,1.00,,,,,"))
 
 	t.Run("reader", func(t *testing.T) {
 		reader := f.h.JoinAs("reader@example.com", f.h.OwnerID(), "read")
@@ -165,8 +165,8 @@ func TestS762InvestmentFileNeutral(t *testing.T) {
 	)
 
 	file := investmentFile(
-		"opening,2024-05-02,VOO,10,500.00,,,,,",
-		"sell,2026-11-10,VOO,4,600.00,,,,,",
+		"opening,2024-05-02,VOO,10,500.00,,,,,,1.00",
+		"sell,2026-11-10,VOO,4,600.00,,,,,,",
 	)
 
 	r := h.UploadWith("/api/v1/brokerages/"+ibkr+"/investment-file", nil, "ops.csv", []byte(file))

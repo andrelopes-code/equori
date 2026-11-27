@@ -186,7 +186,8 @@ SELECT
     tr.taxes,
     tr.cost,
     tr.day_trade_quantity,
-    tr.day_trade_cost
+    tr.day_trade_cost,
+    tr.exchange_rate
 FROM
     ledger_trade tr
     JOIN ledger_transaction t ON t.books_id = tr.books_id
@@ -208,7 +209,8 @@ SELECT
     t.date,
     i.income_type,
     i.gross,
-    i.withheld
+    i.withheld,
+    i.exchange_rate
 FROM
     ledger_investment_income i
     JOIN ledger_transaction t ON t.books_id = i.books_id
@@ -224,7 +226,8 @@ SELECT
     t.date,
     'bonus_shares' AS income_type,
     c.value AS gross,
-    0::bigint AS withheld
+    0::bigint AS withheld,
+    NULL::numeric(30, 12) AS exchange_rate
 FROM
     ledger_corporate_action c
     JOIN ledger_transaction t ON t.books_id = c.books_id

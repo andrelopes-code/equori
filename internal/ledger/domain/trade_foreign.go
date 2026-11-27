@@ -2,10 +2,11 @@ package domain
 
 import "github.com/andrelopes-code/equori/internal/platform/money"
 
-// foreignTrade builds a purchase or sale paid in a currency other than the base: the amounts of
-// trade, in the cash currency, convert at the rate of o to the base currency (FC3), every posting
-// but the cash one is built from them, and the cash posting keeps the amount in the cash
-// currency with the base amount as its weight (FC4). A sale separates no day trade (FC6).
+// foreignTrade builds a purchase, a sale or an opening in a currency other than the base: the
+// amounts of trade, in the cash currency (the quote currency on an opening), convert at the rate
+// of o to the base currency (FC3), every posting but the cash one is built from them, and the
+// cash posting keeps the amount in the cash currency with the base amount as its weight (FC4).
+// An opening has no cash posting (FC7). A sale separates no day trade (FC6).
 func foreignTrade(
 	o TradeOrder,
 	h Holding,
@@ -15,15 +16,12 @@ func foreignTrade(
 	cash, base := trade.Gross.Currency(), h.CostBasis.Currency()
 
 	switch {
-	case o.Side != SideBuy && o.Side != SideSell:
-		return nil, Trade{}, invalid("exchange_rate", "is taken by a purchase or a sale only")
+	case o.Side != SideBuy && o.Side != SideSell && o.Side != SideOpening:
+		return nil, Trade{}, invalid(
+			"exchange_rate", "is taken by a purchase, a sale or an opening only",
+		)
 	case base == "" || base == cash:
 		return nil, Trade{}, invalid("exchange_rate", "is taken only with cash in another currency")
-	}
-
-	cashAmount, err := cashAmountOf(o.Side, trade)
-	if err != nil {
-		return nil, Trade{}, err
 	}
 
 	converted, err := tradeInBase(trade, *o.ExchangeRate, base)
@@ -31,13 +29,36 @@ func foreignTrade(
 		return nil, Trade{}, err
 	}
 
-	var postings []Posting
-	if o.Side == SideBuy {
-		postings, converted, err = buyTrade(o, converted)
-	} else {
-		postings, converted, err = sellTrade(o, h, nil, accts, converted)
+	if o.Side == SideOpening {
+		postings, opened, err := openingTrade(o, converted)
+		opened.ExchangeRate = o.ExchangeRate
+
+		return postings, opened, err
 	}
 
+	build := buyTrade
+	if o.Side == SideSell {
+		build = func(o TradeOrder, t Trade) ([]Posting, Trade, error) {
+			return sellTrade(o, h, nil, accts, t)
+		}
+	}
+
+	return foreignCashTrade(o, trade, converted, build)
+}
+
+// foreignCashTrade builds the postings of converted with build and gives the cash posting the
+// amount of trade, in the cash currency.
+func foreignCashTrade(
+	o TradeOrder,
+	trade, converted Trade,
+	build func(TradeOrder, Trade) ([]Posting, Trade, error),
+) ([]Posting, Trade, error) {
+	cashAmount, err := cashAmountOf(o.Side, trade)
+	if err != nil {
+		return nil, Trade{}, err
+	}
+
+	postings, converted, err := build(o, converted)
 	if err != nil {
 		return nil, Trade{}, err
 	}

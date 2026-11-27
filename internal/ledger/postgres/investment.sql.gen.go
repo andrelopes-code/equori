@@ -686,7 +686,8 @@ SELECT
     t.date,
     i.income_type,
     i.gross,
-    i.withheld
+    i.withheld,
+    i.exchange_rate
 FROM
     ledger_investment_income i
     JOIN ledger_transaction t ON t.books_id = i.books_id
@@ -702,7 +703,8 @@ SELECT
     t.date,
     'bonus_shares' AS income_type,
     c.value AS gross,
-    0::bigint AS withheld
+    0::bigint AS withheld,
+    NULL::numeric(30, 12) AS exchange_rate
 FROM
     ledger_corporate_action c
     JOIN ledger_transaction t ON t.books_id = c.books_id
@@ -730,6 +732,7 @@ type SecurityIncomesRow struct {
 	IncomeType    string
 	Gross         int64
 	Withheld      int64
+	ExchangeRate  pgtype.Numeric
 }
 
 // Income events of the accounts: recorded incomes, and bonuses with a value as bonus_shares
@@ -750,6 +753,7 @@ func (q *Queries) SecurityIncomes(ctx context.Context, arg SecurityIncomesParams
 			&i.IncomeType,
 			&i.Gross,
 			&i.Withheld,
+			&i.ExchangeRate,
 		); err != nil {
 			return nil, err
 		}
@@ -832,7 +836,8 @@ SELECT
     tr.taxes,
     tr.cost,
     tr.day_trade_quantity,
-    tr.day_trade_cost
+    tr.day_trade_cost,
+    tr.exchange_rate
 FROM
     ledger_trade tr
     JOIN ledger_transaction t ON t.books_id = tr.books_id
@@ -864,6 +869,7 @@ type SecurityTradesRow struct {
 	Cost             *int64
 	DayTradeQuantity int64
 	DayTradeCost     int64
+	ExchangeRate     pgtype.Numeric
 }
 
 func (q *Queries) SecurityTrades(ctx context.Context, arg SecurityTradesParams) ([]SecurityTradesRow, error) {
@@ -888,6 +894,7 @@ func (q *Queries) SecurityTrades(ctx context.Context, arg SecurityTradesParams) 
 			&i.Cost,
 			&i.DayTradeQuantity,
 			&i.DayTradeCost,
+			&i.ExchangeRate,
 		); err != nil {
 			return nil, err
 		}

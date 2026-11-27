@@ -47,6 +47,14 @@ async function openDialog(fetch: ReturnType<typeof page>) {
 }
 
 describe("Investment file dialog", () => {
+  it("FC21: shows the header with the column exchange_rate", async () => {
+    const { dialog } = await openDialog(page({}));
+
+    expect(
+      within(dialog).getByText(/income_type,exchange_rate$/),
+    ).toBeVisible();
+  });
+
   it("IF1: counts the lines of a dry run, then imports without dry_run", async () => {
     const bodies: string[] = [];
     const fetch = page({
