@@ -210,8 +210,11 @@ func redirectOutput(path string) error {
 	return nil
 }
 
-// showFailure shows the start failure box (PW3.5).
+// showFailure writes the start failure to the log, then shows it in a box (PW3.5): the box waits
+// for a person, and the log keeps the cause after the box is closed.
 func showFailure(texts trayText, err error, logPath string) {
+	fmt.Fprintln(os.Stderr, err)
+
 	body, bodyErr := windows.UTF16PtrFromString(fmt.Sprintf(texts.FailedBody, err, logPath))
 	title, titleErr := windows.UTF16PtrFromString(texts.FailedTitle)
 
