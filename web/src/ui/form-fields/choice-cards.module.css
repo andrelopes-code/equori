@@ -10,7 +10,7 @@
     gap: var(--slotted-space-5) var(--slotted-space-4);
     /* A card's least measure: no token holds it. Three fit a 375 px phone, and the row spreads to
        its container's width on a desktop. */
-    grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(6.5rem, 100%), 1fr));
   }
 
   /* Four and six cards stand in full rows of two where a row holds fewer, so no card is left alone

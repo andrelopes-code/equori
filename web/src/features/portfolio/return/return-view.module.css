@@ -37,7 +37,7 @@
     /* literal: the narrowest column that keeps a comparison window on one line */
     grid-template-columns: repeat(
       auto-fit,
-      minmax(28rem, 1fr)
+      minmax(min(28rem, 100%), 1fr)
     ); /* literal: see above */
     gap: var(--slotted-space-7) var(--slotted-space-9);
     align-items: start;
@@ -48,8 +48,10 @@
     max-inline-size: 40rem; /* literal: the measure of one column at 1440 px */
   }
 
+  /* A narrow column puts the rate and the details under the notes, not beside them. */
   .foot {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: var(--slotted-space-7);
@@ -57,6 +59,7 @@
 
   .footNotes {
     display: grid;
+    flex: 1 1 20rem; /* literal: the measure below which a note line breaks every few words */
     row-gap: var(--slotted-space-1);
   }
 

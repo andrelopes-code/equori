@@ -1,13 +1,13 @@
 @layer app {
   .thumbs {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(112px, 100%), 1fr));
     gap: var(--slotted-space-6) var(--slotted-space-5);
   }
 
   .finish {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr));
     gap: var(--slotted-space-6);
   }
 
