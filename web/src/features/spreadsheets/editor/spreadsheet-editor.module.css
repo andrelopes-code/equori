@@ -11,15 +11,9 @@
     border-block-start: 1px solid var(--slotted-border-subtle);
   }
 
+  /* Univer's layers stack inside the editor, so the placeholder laid over it covers them. */
   .host {
     block-size: 100%;
-  }
-
-  /* The loader stands alone in the middle of the frame while the editor loads. */
-  .loader {
-    position: absolute;
-    inset-block-start: 50%;
-    inset-inline-start: 50%;
-    translate: -50% -50%;
+    isolation: isolate;
   }
 }

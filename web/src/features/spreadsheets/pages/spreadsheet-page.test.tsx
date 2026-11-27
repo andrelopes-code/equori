@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -12,6 +12,7 @@ interface Opened {
   editable: boolean;
   signal: AbortSignal;
   onChange: () => void;
+  onRendered: () => void;
 }
 
 // The editor draws on a canvas and weighs megabytes; the page is tested against its contract.
@@ -140,6 +141,37 @@ describe("SpreadsheetPage", () => {
       screen.getByText(catalogEn["spreadsheets.status.saved"]),
     ).toBeInTheDocument();
     expect(sent).toEqual([]);
+  });
+
+  it("holds the placeholder of the editor until the editor has drawn its grid", async () => {
+    await renderApp(`/spreadsheets/${id}`, { fetch: api([]) });
+    const open = await opened();
+    // A download answers only once the editor is created.
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["spreadsheets.more"] }),
+    );
+    await userEvent.click(
+      screen.getByRole("menuitem", {
+        name: catalogEn["spreadsheets.downloadCsv"],
+      }),
+    );
+    await waitFor(() => {
+      expect(downloads).toHaveLength(1);
+    });
+
+    expect(
+      screen.getByText(catalogEn["spreadsheets.loading"]),
+    ).toBeInTheDocument();
+
+    act(() => {
+      open.onRendered();
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.queryByText(catalogEn["spreadsheets.loading"]),
+      ).not.toBeInTheDocument();
+    });
   });
 
   it("saves the screen after a pause, each save with the version of the last", async () => {

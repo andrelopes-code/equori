@@ -1,0 +1,56 @@
+@layer app {
+  /* The boxes of Univer's own placeholder: a toolbar of 44 px, the grid, the tabs of 40 px. */
+  .placeholder {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--slotted-page-ground, var(--slotted-surface));
+  }
+
+  .toolbar {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: var(--slotted-space-4);
+    box-sizing: border-box;
+    block-size: 2.75rem;
+    padding-inline: var(--slotted-space-6);
+    border-block-end: 1px solid var(--slotted-border-subtle);
+  }
+
+  .tools {
+    margin-inline-start: var(--slotted-space-4);
+  }
+
+  .grid {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--slotted-space-6);
+    min-block-size: 0;
+    padding: var(--slotted-space-6);
+  }
+
+  .cells {
+    flex: 1;
+  }
+
+  .tabs {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: space-between;
+    box-sizing: border-box;
+    block-size: 2.5rem;
+    padding-inline: var(--slotted-space-6);
+    border-block-start: 1px solid var(--slotted-border-subtle);
+  }
+
+  .group {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-4);
+  }
+}

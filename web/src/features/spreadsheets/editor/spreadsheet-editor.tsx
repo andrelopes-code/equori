@@ -1,4 +1,3 @@
-import { Loader } from "@slotted/react/progress-indicator";
 import { useEffect, useRef, useState } from "react";
 
 import type { SpreadsheetContent } from "@/features/spreadsheets/api";
@@ -6,7 +5,8 @@ import { useChartTexts } from "@/features/spreadsheets/charts/use-chart-texts";
 import type { Editor } from "@/features/spreadsheets/editor/create-editor";
 import { loadEditor } from "@/features/spreadsheets/editor/load-editor";
 import styles from "@/features/spreadsheets/editor/spreadsheet-editor.module.css";
-import { useAppLocaleState, useT } from "@/i18n/i18n-provider";
+import { SpreadsheetPlaceholder } from "@/features/spreadsheets/editor/spreadsheet-placeholder";
+import { useAppLocaleState } from "@/i18n/i18n-provider";
 import { useScheme } from "@/theme/scheme";
 import { QueryError } from "@/ui/feedback/query-error";
 import { useStableCallback } from "@/ui/runtime/use-stable-callback";
@@ -30,7 +30,6 @@ export function SpreadsheetEditor({
   onOpen,
   onClose,
 }: SpreadsheetEditorProps) {
-  const t = useT();
   const { language, tag } = useAppLocaleState();
   const [scheme] = useScheme();
   const host = useRef<HTMLDivElement>(null);
@@ -38,6 +37,8 @@ export function SpreadsheetEditor({
   const drawnDark = useRef(false);
   const [state, setState] = useState<"loading" | "ready" | Error>("loading");
   const [attempt, setAttempt] = useState(0);
+  // The grid is on screen; the editor is created before it draws.
+  const [drawn, setDrawn] = useState(false);
   const texts = useChartTexts();
   const change = useStableCallback(onChange);
   const open = useStableCallback(onOpen);
@@ -63,6 +64,9 @@ export function SpreadsheetEditor({
           localeTag: tag,
           chartTexts: texts,
           onChange: change,
+          onRendered: () => {
+            setDrawn(true);
+          },
         }),
       )
       .then((created) => {
@@ -115,17 +119,10 @@ export function SpreadsheetEditor({
     );
 
   return (
-    <div className={styles.frame} aria-busy={state === "loading"}>
+    <div className={styles.frame} aria-busy={!drawn}>
       <div ref={host} className={styles.host} />
 
-      {state === "loading" && (
-        <Loader
-          className={styles.loader}
-          contained
-          label={t("spreadsheets.loading")}
-          hideLabel
-        />
-      )}
+      {!drawn && <SpreadsheetPlaceholder />}
     </div>
   );
 }

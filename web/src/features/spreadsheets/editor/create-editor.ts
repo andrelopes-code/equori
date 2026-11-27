@@ -8,8 +8,13 @@ import { UniverSheetsHyperLinkPreset } from "@univerjs/preset-sheets-hyper-link"
 import { UniverSheetsNotePreset } from "@univerjs/preset-sheets-note";
 import { UniverSheetsSortPreset } from "@univerjs/preset-sheets-sort";
 import { UniverSheetsTablePreset } from "@univerjs/preset-sheets-table";
-import { CommandType, createUniver, LogLevel } from "@univerjs/presets";
-import type { INumfmtLocaleTag } from "@univerjs/presets";
+import {
+  CommandType,
+  createUniver,
+  LifecycleStages,
+  LogLevel,
+} from "@univerjs/presets";
+import type { FUniver, INumfmtLocaleTag } from "@univerjs/presets";
 
 import "@univerjs/preset-sheets-core/lib/index.css";
 import "@univerjs/preset-sheets-conditional-formatting/lib/index.css";
@@ -58,6 +63,8 @@ interface EditorOptions {
   chartTexts: ChartTexts;
   // A command changed the content.
   onChange: () => void;
+  // The grid is on screen and Univer has taken down its own placeholder.
+  onRendered: () => void;
 }
 
 export async function createEditor(options: EditorOptions): Promise<Editor> {
@@ -119,6 +126,8 @@ export async function createEditor(options: EditorOptions): Promise<Editor> {
     },
   );
 
+  const rendered = whenRendered(univerAPI, options.onRendered);
+
   return {
     snapshot: () => workbook.save() as unknown as SpreadsheetContent,
     activeSheet: () => {
@@ -140,9 +149,39 @@ export async function createEditor(options: EditorOptions): Promise<Editor> {
       univerAPI.toggleDarkMode(dark);
     },
     dispose: () => {
+      rendered.dispose();
       subscription.dispose();
       univer.dispose();
       releaseStyles();
+    },
+  };
+}
+
+// Calls back once the grid is drawn. Univer 1.6 takes its own placeholder down two animation
+// frames after the stage Rendered, so the call waits as long.
+function whenRendered(
+  univerAPI: FUniver,
+  onRendered: () => void,
+): { dispose: () => void } {
+  let frame = 0;
+  let called = false;
+
+  const subscription = univerAPI.addEvent(
+    univerAPI.Event.LifeCycleChanged,
+    ({ stage }) => {
+      if (called || stage < LifecycleStages.Rendered) return;
+
+      called = true;
+      frame = requestAnimationFrame(() => {
+        frame = requestAnimationFrame(onRendered);
+      });
+    },
+  );
+
+  return {
+    dispose: () => {
+      cancelAnimationFrame(frame);
+      subscription.dispose();
     },
   };
 }
