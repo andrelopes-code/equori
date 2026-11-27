@@ -1,4 +1,4 @@
-import { LoadingOverlay } from "@slotted/react/loading-overlay";
+import { Loader } from "@slotted/react/progress-indicator";
 import { useEffect, useRef, useState } from "react";
 
 import type { SpreadsheetContent } from "@/features/spreadsheets/api";
@@ -115,13 +115,18 @@ export function SpreadsheetEditor({
     );
 
   return (
-    <LoadingOverlay
-      className={styles.frame}
-      loading={state === "loading"}
-      messages={{ label: t("spreadsheets.loading") }}
-    >
+    <div className={styles.frame} aria-busy={state === "loading"}>
       <div ref={host} className={styles.host} />
-    </LoadingOverlay>
+
+      {state === "loading" && (
+        <Loader
+          className={styles.loader}
+          contained
+          label={t("spreadsheets.loading")}
+          hideLabel
+        />
+      )}
+    </div>
   );
 }
 
