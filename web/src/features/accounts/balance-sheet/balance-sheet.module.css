@@ -40,20 +40,6 @@
     white-space: nowrap;
   }
 
-  /* The date field is as wide as its date and calendar button, so the basis control stands
-     beside it; a fixed measure left an empty run inside the field. */
-  .date {
-    inline-size: fit-content;
-  }
-
-  .bar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--slotted-space-4);
-  }
-
   /* The codes of folded positions: one line, the codes cut, the count of the others whole. */
   .codes {
     display: flex;

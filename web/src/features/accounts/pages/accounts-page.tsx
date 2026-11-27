@@ -1,24 +1,5 @@
-import { parseISODate, toISODate } from "@slotted/core/date";
-import {
-  Alert,
-  AlertActions,
-  AlertContent,
-  AlertDescription,
-} from "@slotted/react/alert";
-import { Button } from "@slotted/react/button";
-import { DatePicker } from "@slotted/react/date-picker";
-import { Inline } from "@slotted/react/inline";
 import { PageBody } from "@slotted/react/page";
-import {
-  ResultState,
-  ResultStateActions,
-  ResultStateContent,
-  ResultStateDescription,
-  ResultStateTitle,
-} from "@slotted/react/result-state";
-import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
 import { Stack } from "@slotted/react/stack";
-import { Switch } from "@slotted/react/switch";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { use, useDeferredValue, useEffect, useMemo } from "react";
@@ -34,7 +15,6 @@ import {
   connectionsListQuery,
 } from "@/features/accounts/api";
 import { sides } from "@/features/accounts/balance-sheet/balance-sheet";
-import styles from "@/features/accounts/balance-sheet/balance-sheet.module.css";
 import { SheetGroups } from "@/features/accounts/balance-sheet/sheet-groups";
 import { BalanceSheetFigures } from "@/features/accounts/balance-sheet/balance-sheet-figures";
 import {
@@ -42,7 +22,9 @@ import {
   type GroupBy,
   type Order,
 } from "@/features/accounts/balance-sheet/sheet-layout";
-import { SheetControls } from "@/features/accounts/balance-sheet/sheet-controls";
+import { SheetBar } from "@/features/accounts/sheet-bar/sheet-bar";
+import { PendingLinksAlert } from "@/features/accounts/sheet-states/pending-links-alert";
+import { SheetEmpty } from "@/features/accounts/sheet-states/sheet-empty";
 import { useDifferingAccounts } from "@/features/accounts/balance-sheet/use-differing-accounts";
 import { useSheetPreference } from "@/features/accounts/balance-sheet/use-sheet-preference";
 import { useValuedGroups } from "@/features/accounts/model/use-valued-groups";
@@ -56,7 +38,6 @@ import { useServed } from "@/ui/navigation/use-served";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
 const newAccount = { to: "/accounts/new" } as const;
-const links = { to: "/accounts/links" } as const;
 
 export function AccountsPage() {
   const t = useT();
@@ -204,47 +185,10 @@ export function AccountsPage() {
             onRetry={() => void failed.refetch()}
           />
         ) : ready && groups.length === 0 ? (
-          <ResultState status="empty" reach="section">
-            <ResultStateContent>
-              <ResultStateTitle>{t("balanceSheet.empty")}</ResultStateTitle>
-              <ResultStateDescription>
-                {t("balanceSheet.emptyHint")}
-              </ResultStateDescription>
-            </ResultStateContent>
-            {served(newAccount) && (
-              <ResultStateActions>
-                <Button
-                  onClick={() => {
-                    void navigate(newAccount);
-                  }}
-                >
-                  {t("balanceSheet.new")}
-                </Button>
-              </ResultStateActions>
-            )}
-          </ResultState>
+          <SheetEmpty />
         ) : (
           <Stack gap={6} aria-busy={busy || undefined}>
-            {pending > 0 && (
-              <Alert tone="accent">
-                <AlertContent>
-                  <AlertDescription>
-                    {t("balanceSheet.pendingLinks", { count: pending })}
-                  </AlertDescription>
-                </AlertContent>
-                {served(links) && (
-                  <AlertActions>
-                    <Button
-                      onClick={() => {
-                        void navigate(links);
-                      }}
-                    >
-                      {t("balanceSheet.reviewLinks")}
-                    </Button>
-                  </AlertActions>
-                )}
-              </Alert>
-            )}
+            <PendingLinksAlert pending={pending} />
             <BalanceSheetFigures
               now={now}
               before={previous}
@@ -253,65 +197,30 @@ export function AccountsPage() {
               scale={base === undefined || scale === null ? 0 : scale(base)}
               loading={!ready}
             />
-            {/* The date and the basis the whole sheet is read at, with the closed accounts. */}
-            <div className={styles.bar}>
-              <SheetControls
-                group={group}
-                order={order}
-                onGroupChange={(value) => {
-                  setSearch({ group: value });
-                  remember({ group: value, order });
-                }}
-                onOrderChange={(value) => {
-                  setSearch({ order: value });
-                  remember({ group, order: value });
-                }}
-              />
-              <Inline gap={6} wrap="wrap" align="center">
-                <Inline gap={3}>
-                  <div className={styles.date}>
-                    <DatePicker
-                      aria-label={t("balanceSheet.date")}
-                      value={parseISODate(date)}
-                      onValueChange={(value) => {
-                        if (
-                          value !== null &&
-                          !Array.isArray(value) &&
-                          "year" in value
-                        ) {
-                          const iso = toISODate(value);
-                          setSearch({ date: iso === today ? undefined : iso });
-                        }
-                      }}
-                    />
-                  </div>
-                  <SegmentedControl
-                    aria-label={t("balanceSheet.basis")}
-                    value={basis}
-                    onValueChange={(value) => {
-                      if (value === "booked" || value === "settled") {
-                        setSearch({
-                          basis: value === "booked" ? undefined : value,
-                        });
-                      }
-                    }}
-                  >
-                    <Segment value="booked">{t("balanceSheet.booked")}</Segment>
-                    <Segment value="settled">
-                      {t("balanceSheet.settled")}
-                    </Segment>
-                  </SegmentedControl>
-                </Inline>
-                <Switch
-                  checked={search.closed === true}
-                  onCheckedChange={(checked) => {
-                    setSearch({ closed: checked ? true : undefined });
-                  }}
-                >
-                  {t("balanceSheet.showClosed")}
-                </Switch>
-              </Inline>
-            </div>
+            <SheetBar
+              date={date}
+              basis={basis}
+              closed={search.closed === true}
+              group={group}
+              order={order}
+              onDateChange={(iso) => {
+                setSearch({ date: iso === today ? undefined : iso });
+              }}
+              onBasisChange={(value) => {
+                setSearch({ basis: value === "booked" ? undefined : value });
+              }}
+              onClosedChange={(checked) => {
+                setSearch({ closed: checked ? true : undefined });
+              }}
+              onGroupChange={(value) => {
+                setSearch({ group: value });
+                remember({ group: value, order });
+              }}
+              onOrderChange={(value) => {
+                setSearch({ order: value });
+                remember({ group, order: value });
+              }}
+            />
             <SheetGroups
               sections={ready ? sections : undefined}
               institutions={byInstitution}

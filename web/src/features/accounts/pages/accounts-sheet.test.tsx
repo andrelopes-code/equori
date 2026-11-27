@@ -312,25 +312,33 @@ describe("AccountsPage list on a phone (AL12)", () => {
     ).toBeInTheDocument();
   });
 
-  it("offers the grouping and the order as selects", async () => {
+  // AL12: the grouping and the order sit in the view sheet, not in selects above the list.
+  it("offers the grouping and the order in the view sheet", async () => {
     await renderApp("/accounts", {
       fetch: fakeApi(accountRoutes()),
       width: 390,
     });
 
-    expect(
-      await screen.findByRole("combobox", {
-        name: catalogEn["balanceSheet.groupBy"],
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: catalogEn["balanceSheet.view"],
       }),
-    ).toBeInTheDocument();
+    );
+    const sheet = await screen.findByRole("dialog", {
+      name: catalogEn["balanceSheet.view"],
+    });
+
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
     expect(
-      screen.getByRole("combobox", { name: catalogEn["balanceSheet.order"] }),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByRole("radio", {
+      within(sheet).getByRole("radio", {
         name: catalogEn["balanceSheet.groupInstitution"],
       }),
-    ).not.toBeInTheDocument();
+    ).toBeInTheDocument();
+    expect(
+      within(sheet).getByRole("radio", {
+        name: catalogEn["balanceSheet.orderAttentionShort"],
+      }),
+    ).toBeInTheDocument();
   });
 });
 

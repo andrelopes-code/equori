@@ -768,4 +768,61 @@ describe("AccountsPage on a phone (ADR 027, S6)", () => {
       screen.queryByRole("tablist", { name: catalogEn["nav.accounts"] }),
     ).toBeNull();
   });
+
+  // Five controls stacked over four wrapped rows on a phone: the date stays in sight and the
+  // rest of the view moves into one sheet.
+  it("keeps the date and one view button above the list, the rest in a sheet", async () => {
+    await renderApp("/accounts", { fetch: api(), width: 390 });
+    const view = await screen.findByRole("button", {
+      name: catalogEn["balanceSheet.view"],
+    });
+
+    expect(
+      view.parentElement?.querySelector('[data-ui="date-picker"]'),
+    ).not.toBeNull();
+    expect(
+      screen.queryByRole("radiogroup", {
+        name: catalogEn["balanceSheet.basis"],
+      }),
+    ).toBeNull();
+    expect(
+      screen.queryByRole("switch", {
+        name: catalogEn["balanceSheet.showClosed"],
+      }),
+    ).toBeNull();
+
+    await userEvent.click(view);
+    const sheet = await screen.findByRole("dialog", {
+      name: catalogEn["balanceSheet.view"],
+    });
+
+    for (const name of [
+      catalogEn["balanceSheet.groupBy"],
+      catalogEn["balanceSheet.order"],
+      catalogEn["balanceSheet.basis"],
+    ]) {
+      expect(within(sheet).getByRole("radiogroup", { name })).toBeVisible();
+    }
+    await userEvent.click(
+      within(sheet).getByRole("switch", {
+        name: catalogEn["balanceSheet.showClosed"],
+      }),
+    );
+    expect(
+      await screen.findByText("Conta antiga", {}, { timeout: 4000 }),
+    ).toBeInTheDocument();
+  });
+
+  it("counts the view choices that hide or narrow the balances", async () => {
+    await renderApp("/accounts?basis=settled&closed=true", {
+      fetch: api(),
+      width: 390,
+    });
+
+    expect(
+      await screen.findByRole("button", {
+        name: catalogEn["balanceSheet.viewCount"].replace("{count}", "2"),
+      }),
+    ).toBeInTheDocument();
+  });
 });

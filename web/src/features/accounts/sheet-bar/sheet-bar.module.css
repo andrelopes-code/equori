@@ -1,0 +1,27 @@
+@layer app {
+  .wide {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--slotted-space-4);
+  }
+
+  /* The date field is as wide as its date and calendar button, so the basis control stands
+     beside it; a fixed measure left an empty run inside the field. */
+  .date {
+    inline-size: fit-content;
+  }
+
+  /* One row: the date takes the room the view button leaves. */
+  .phone {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-4);
+  }
+
+  .phoneDate {
+    flex: 1;
+    min-inline-size: 0;
+  }
+}
