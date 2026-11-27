@@ -27,3 +27,4 @@ What the assistant does not do. Every other action a member takes on a screen ha
 - capture: the reading of typed lines on the Capture screen. The assistant reads the same text in the conversation and proposes the transactions with record_transaction.
 - projection: the projection plan of the portfolio, its ages, returns, withdrawals and planned contributions. The assistant does not read, save or delete it. The Projection tab of the Portfolio screen holds it.
 - series: the dated points of the return chart. The assistant answers the return in figures with get_portfolio. The Results tab of the Portfolio screen draws them.
+- tax-record: the losses carried from before the recorded history into the monthly tax. They come from the person's own tax records: the assistant reads them with get_tax_year and does not save them. The Monthly tax tab holds them.
