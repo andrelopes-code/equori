@@ -138,6 +138,9 @@ export function AccountRecord({ account, search, scale }: AccountRecordProps) {
         onUnlock={() => {
           setDialog("unlock");
         }}
+        onImportFile={() => {
+          setDialog("investmentFile");
+        }}
         refreshing={accountTabs.refreshing}
         scale={scale}
       />

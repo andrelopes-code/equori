@@ -529,6 +529,36 @@ export function useReopenAccount() {
   );
 }
 
+export function useImportInvestmentFile() {
+  return useApiMutation(
+    async (
+      api,
+      v: {
+        brokerageId: string;
+        file: File;
+        categoryId: string | null;
+        cashAccountId: string | null;
+        dryRun: boolean;
+      },
+    ) => {
+      const body = new FormData();
+      body.append("file", v.file);
+      if (v.categoryId !== null) body.append("category_id", v.categoryId);
+      if (v.cashAccountId !== null)
+        body.append("cash_account_id", v.cashAccountId);
+      if (v.dryRun) body.append("dry_run", "true");
+      return unwrap(
+        await api.POST("/brokerages/{id}/investment-file", {
+          params: { path: { id: v.brokerageId } },
+          // openapi-fetch sends FormData as it is, with the boundary the browser writes.
+          body: body as unknown as { file: string },
+          bodySerializer: (value) => value as unknown as FormData,
+        }),
+      );
+    },
+  );
+}
+
 export function useSetParent() {
   return useApiMutation(
     async (api, { id, parentId }: { id: string; parentId: string | null }) =>

@@ -49,6 +49,7 @@ export function AccountHeader({
   onClose,
   onReopen,
   onUnlock,
+  onImportFile,
   refreshing,
   scale,
 }: {
@@ -61,6 +62,7 @@ export function AccountHeader({
   onClose: () => void;
   onReopen: () => void;
   onUnlock: () => void;
+  onImportFile: () => void;
   refreshing: boolean;
   scale: (code: string) => number;
 }) {
@@ -126,6 +128,7 @@ export function AccountHeader({
             onClose={onClose}
             onReopen={onReopen}
             onUnlock={onUnlock}
+            onImportFile={onImportFile}
           />
         </PageHeaderTitleRow>
       </PageHeaderTitleArea>

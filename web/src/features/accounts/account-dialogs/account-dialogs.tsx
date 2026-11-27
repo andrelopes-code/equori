@@ -2,6 +2,7 @@ import { toast } from "@slotted/react/toast";
 
 import type { components } from "@/api/schema.gen";
 import { CloseAccountDialog } from "@/features/accounts/account-dialogs/close-account-dialog";
+import { InvestmentFileDialog } from "@/features/accounts/investment-file/investment-file-dialog";
 import { ReopenAccountDialog } from "@/features/accounts/account-dialogs/reopen-account-dialog";
 import { UnlockDialog } from "@/features/accounts/account-dialogs/unlock-dialog";
 import { useT } from "@/i18n/i18n-provider";
@@ -9,7 +10,7 @@ import { Presence } from "@/ui/dialogs/presence";
 
 type Account = components["schemas"]["Account"];
 
-export type AccountDialog = "close" | "reopen" | "unlock";
+export type AccountDialog = "close" | "reopen" | "unlock" | "investmentFile";
 
 interface AccountDialogsProps {
   dialog: AccountDialog | null;
@@ -21,7 +22,7 @@ interface AccountDialogsProps {
   onDismiss: () => void;
 }
 
-// The dialogs of an account's page: close, reopen and unlock.
+// The dialogs of an account's page: close, reopen, unlock and the import of a file of operations.
 export function AccountDialogs({
   dialog,
   account,
@@ -66,6 +67,16 @@ export function AccountDialogs({
                 title: t("account.reopened", { name: account.name }),
               });
             }}
+          />
+        )}
+      </Presence>
+
+      <Presence value={dialog === "investmentFile" ? dialog : undefined}>
+        {() => (
+          <InvestmentFileDialog
+            brokerage={account}
+            scale={scale}
+            onClose={onDismiss}
           />
         )}
       </Presence>

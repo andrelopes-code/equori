@@ -15,6 +15,7 @@ interface AccountHeaderActionsProps {
   onClose: () => void;
   onReopen: () => void;
   onUnlock: () => void;
+  onImportFile: () => void;
 }
 
 // The actions of an account's page, from the lightest to the primary, then the menu. A property's
@@ -25,6 +26,7 @@ export function AccountHeaderActions({
   onClose,
   onReopen,
   onUnlock,
+  onImportFile,
 }: AccountHeaderActionsProps) {
   const t = useT();
   const actions = useAccountActions(account);
@@ -99,6 +101,7 @@ export function AccountHeaderActions({
         onClose={onClose}
         onReopen={onReopen}
         onUnlock={onUnlock}
+        onImportFile={onImportFile}
       />
     </PageHeaderActions>
   );

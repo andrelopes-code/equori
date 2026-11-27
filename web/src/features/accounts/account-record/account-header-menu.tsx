@@ -22,6 +22,7 @@ interface AccountHeaderMenuProps {
   onClose: () => void;
   onReopen: () => void;
   onUnlock: () => void;
+  onImportFile: () => void;
 }
 
 // The menu of an account's page: the actions a phone has no room for, then the account's own.
@@ -31,6 +32,7 @@ export function AccountHeaderMenu({
   onClose,
   onReopen,
   onUnlock,
+  onImportFile,
 }: AccountHeaderMenuProps) {
   const t = useT();
   const navigate = useNavigate();
@@ -38,6 +40,8 @@ export function AccountHeaderMenu({
   const actions = useAccountActions(account);
 
   const { closed, property, security, foreignCurrency } = actions;
+  const brokerage =
+    account.kind === "brokerage" && account.parent_id === undefined;
   const edit = {
     to: "/accounts/$id/edit",
     params: { id: account.id },
@@ -97,6 +101,11 @@ export function AccountHeaderMenu({
         {compact && !closed && security && (
           <MenuItem onSelect={actions.recordInvestment("investment_income")}>
             {t("income.record")}
+          </MenuItem>
+        )}
+        {!closed && brokerage && (
+          <MenuItem onSelect={onImportFile}>
+            {t("investmentFile.action")}
           </MenuItem>
         )}
         <MenuItem onSelect={onUnlock}>{t("account.unlock")}</MenuItem>
