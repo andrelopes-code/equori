@@ -2653,6 +2653,10 @@ export const catalogPtBR: Catalog = {
   "assistant.action.manage_schedule.create": "Criar agendamento",
   "assistant.action.manage_schedule.change_terms":
     "Alterar condições do agendamento",
+  "assistant.action.manage_schedule.revise_terms":
+    "Corrigir as condições mais recentes do agendamento",
+  "assistant.action.manage_schedule.remove_terms":
+    "Remover as condições mais recentes do agendamento",
   "assistant.action.manage_schedule.pause": "Pausar agendamento",
   "assistant.action.manage_schedule.end": "Encerrar agendamento",
   "assistant.action.manage_schedule.update": "Atualizar agendamento",

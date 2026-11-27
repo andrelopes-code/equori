@@ -2625,6 +2625,10 @@ export const catalogEn = {
     "Units cancelled for tax",
   "assistant.action.manage_schedule.create": "Create schedule",
   "assistant.action.manage_schedule.change_terms": "Change schedule terms",
+  "assistant.action.manage_schedule.revise_terms":
+    "Revise the latest schedule terms",
+  "assistant.action.manage_schedule.remove_terms":
+    "Remove the latest schedule terms",
   "assistant.action.manage_schedule.pause": "Pause schedule",
   "assistant.action.manage_schedule.end": "End schedule",
   "assistant.action.manage_schedule.update": "Update schedule",
