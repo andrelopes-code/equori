@@ -1,6 +1,6 @@
 # ADR 023: The Windows form
 
-- Status: accepted
+- Status: superseded by ADR 040
 - Date: 2026-10-27
 - Design: `docs/specs/2026-10-27-distribution-windows-design.md`
 - Amends: ADR 022 (D1, M1, M2, M3, M5, M6, M8, M9, R1 to R4, R7), ADR 003 (first admin), ADR 001 (PostgreSQL source on Windows)

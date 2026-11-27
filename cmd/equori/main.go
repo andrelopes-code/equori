@@ -19,10 +19,14 @@ func main() {
 	}
 }
 
+// defaultCommand runs when no command is given. The Windows GUI build sets it to tray through
+// -ldflags "-X main.defaultCommand=tray".
+var defaultCommand = "serve"
+
 func run(args []string) error {
-	cmd := "serve"
+	cmd, rest := defaultCommand, []string(nil)
 	if len(args) > 1 {
-		cmd = args[1]
+		cmd, rest = args[1], args[2:]
 	}
 
 	switch cmd {
@@ -44,6 +48,8 @@ func run(args []string) error {
 		return backupCommand(args[2:])
 	case "restore":
 		return restoreCommand(args[2:])
+	case "tray":
+		return runTray(rest)
 	case "stop":
 		return runStop(args[2:])
 	case "healthcheck":
@@ -52,7 +58,7 @@ func run(args []string) error {
 		return printVersion()
 	default:
 		fmt.Fprintf(os.Stderr, "unknown command %q; available: serve, user, reporting, portfolio, "+
-			"instruments, planning, secrets, backup, restore, stop, healthcheck, version\n", cmd)
+			"instruments, planning, secrets, backup, restore, tray, stop, healthcheck, version\n", cmd)
 		os.Exit(2)
 	}
 

@@ -12,9 +12,9 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/config"
 )
 
-// setupURL is the address of the first-user screen (W-U1). The token rides in the fragment,
-// which no request carries to a server or to a proxy log.
-func setupURL(addr, token string) string {
+// localURL is the address of the web interface that a browser on the same computer reaches: an
+// empty or unspecified host becomes 127.0.0.1.
+func localURL(addr string) string {
 	host, port, err := net.SplitHostPort(addr)
 	if err != nil {
 		host, port = "", addr
@@ -24,7 +24,13 @@ func setupURL(addr, token string) string {
 		host = "127.0.0.1"
 	}
 
-	return "http://" + net.JoinHostPort(host, port) + "/setup#token=" + token
+	return "http://" + net.JoinHostPort(host, port) + "/"
+}
+
+// setupURL is the address of the first-user screen (W-U1). The token rides in the fragment,
+// which no request carries to a server or to a proxy log.
+func setupURL(addr, token string) string {
+	return localURL(addr) + "setup#token=" + token
 }
 
 // announceSetup logs the setup URL while no user exists and, in managed mode, keeps it in

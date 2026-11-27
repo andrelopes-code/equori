@@ -62,3 +62,21 @@ func TestAnnounceSetup(t *testing.T) {
 		t.Fatalf("setup.url after the first user: %v; want it removed", err)
 	}
 }
+
+// PW3.1, PW3.2: the local URL names a host a browser on the same computer reaches.
+func TestLocalURL(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct{ addr, want string }{
+		{":8080", "http://127.0.0.1:8080/"},
+		{"127.0.0.1:8080", "http://127.0.0.1:8080/"},
+		{"0.0.0.0:9000", "http://127.0.0.1:9000/"},
+		{"[::]:8081", "http://127.0.0.1:8081/"},
+		{"192.168.1.5:8080", "http://192.168.1.5:8080/"},
+	}
+	for _, tt := range tests {
+		if got := localURL(tt.addr); got != tt.want {
+			t.Errorf("localURL(%q) = %q, want %q", tt.addr, got, tt.want)
+		}
+	}
+}
