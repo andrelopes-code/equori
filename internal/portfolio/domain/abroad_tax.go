@@ -72,11 +72,7 @@ func ExchangeItems(ps []BalancePosting) []AbroadItem {
 // replayTransaction applies the postings of one transaction, outflows first, so that an inflow
 // of a transfer finds the cost its outflow removed.
 func replayTransaction(held map[uuid.UUID]*foreignBalance, group []BalancePosting) []AbroadItem {
-	var (
-		out                 []AbroadItem
-		poolUnits, poolCost int64
-		inflows, outflows   []BalancePosting
-	)
+	var inflows, outflows []BalancePosting
 
 	// Every balance abroad keeps its cost, so a transfer carries it; only a remunerated balance
 	// realizes an item (Lei 14.754/2023, art. 2, § 3).
@@ -87,6 +83,23 @@ func replayTransaction(held map[uuid.UUID]*foreignBalance, group []BalancePostin
 			outflows = append(outflows, p)
 		}
 	}
+
+	out, pool := replayOutflows(held, outflows)
+	replayInflows(held, inflows, pool)
+
+	return out
+}
+
+// replayOutflows removes the units of each outflow at its balance's average cost. One balanced in
+// the base currency realizes an item when its balance is remunerated; one balanced in another
+// currency leaves its units and cost in the pool of the transaction.
+func replayOutflows(
+	held map[uuid.UUID]*foreignBalance,
+	outflows []BalancePosting,
+) ([]AbroadItem, *foreignBalance) {
+	var out []AbroadItem
+
+	pool := &foreignBalance{}
 
 	for _, p := range outflows {
 		b := balanceOf(held, p.AccountID)
@@ -101,30 +114,39 @@ func replayTransaction(held map[uuid.UUID]*foreignBalance, group []BalancePostin
 				AbroadItem{Year: p.Date.Year(), Amount: max(p.Weight, -p.Weight) - cost},
 			)
 		case !p.BaseBalanced:
-			poolUnits -= p.Amount
-			poolCost += cost
+			pool.units -= p.Amount
+			pool.cost += cost
 		}
 	}
 
+	return out, pool
+}
+
+// replayInflows adds the units of each inflow: at its weight when the transaction balances in the
+// base currency, else at the cost of the pool its outflows left, or at its balance's own average
+// cost when the pool is empty.
+func replayInflows(
+	held map[uuid.UUID]*foreignBalance,
+	inflows []BalancePosting,
+	pool *foreignBalance,
+) {
 	for _, p := range inflows {
 		b := balanceOf(held, p.AccountID)
 		cost := p.Weight
 
 		if !p.BaseBalanced {
-			cost = averageCost(&foreignBalance{units: poolUnits, cost: poolCost}, p.Amount)
-			if poolUnits == 0 {
+			cost = averageCost(pool, p.Amount)
+			if pool.units == 0 {
 				cost = averageCost(b, p.Amount)
 			}
 
-			poolUnits -= p.Amount
-			poolCost -= cost
+			pool.units -= p.Amount
+			pool.cost -= cost
 		}
 
 		b.units += p.Amount
 		b.cost += cost
 	}
-
-	return out
 }
 
 func balanceOf(held map[uuid.UUID]*foreignBalance, id uuid.UUID) *foreignBalance {
