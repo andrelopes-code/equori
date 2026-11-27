@@ -64,3 +64,13 @@ func TestPrivateDirRefusesForeignMode(t *testing.T) {
 		t.Fatal("a directory with mode 0777: want an error")
 	}
 }
+
+// On Unix postgres and Go read the same bytes: the socket name is the path as given.
+func TestSocketNameKeepsThePath(t *testing.T) {
+	t.Parallel()
+
+	dir := filepath.Join(t.TempDir(), "Jo\u00e3o")
+	if got, err := socketName(dir); err != nil || got != dir {
+		t.Fatalf("socketName(%q) = %q, %v; want the path unchanged", dir, got, err)
+	}
+}

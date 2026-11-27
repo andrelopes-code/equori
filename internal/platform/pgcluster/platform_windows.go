@@ -71,6 +71,53 @@ func prepareDataDir(dir string, accounts []string) error {
 	return checkDACL(dir)
 }
 
+// socketName is the socket directory in the bytes postgres.exe and Go both use: postgres.exe
+// converts the path to the ANSI code page and Go dials it in UTF-8, so a path outside ASCII takes
+// its short name, which NTFS writes in ASCII (PW4.2).
+func socketName(path string) (string, error) {
+	if isASCII(path) {
+		return path, nil
+	}
+
+	long, err := windows.UTF16PtrFromString(path)
+	if err != nil {
+		return "", fmt.Errorf("encode %s: %w", path, err)
+	}
+
+	var buf [windows.MAX_PATH]uint16
+
+	n, err := windows.GetShortPathName(long, &buf[0], windows.MAX_PATH)
+	if err != nil {
+		return "", fmt.Errorf("read the short name of %s: %w", path, err)
+	}
+
+	// A short name longer than the buffer returns its size instead.
+	if n > windows.MAX_PATH {
+		return "", fmt.Errorf("short name of %s is over %d characters", path, windows.MAX_PATH)
+	}
+
+	short := windows.UTF16ToString(buf[:n])
+	if !isASCII(short) {
+		return "", fmt.Errorf(
+			"socket path %s holds letters outside ASCII and its volume keeps no short names; "+
+				"set EQUORI_DATA_DIR to a directory named in ASCII",
+			path,
+		)
+	}
+
+	return short, nil
+}
+
+func isASCII(s string) bool {
+	for i := range len(s) {
+		if s[i] >= 0x80 {
+			return false
+		}
+	}
+
+	return true
+}
+
 // privateDir creates the socket directory inside the data directory, whose entries it inherits,
 // so every account the data directory grants reaches the socket; then it checks it (W-M4).
 func privateDir(path string) error {

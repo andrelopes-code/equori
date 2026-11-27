@@ -22,6 +22,11 @@ func socketFallback(abs string) (string, error) {
 	return filepath.Join(os.TempDir(), "equori-"+hex.EncodeToString(sum[:])[:12]), nil
 }
 
+// socketName is the socket directory as given: postgres and Go read the same bytes on Unix.
+func socketName(path string) (string, error) {
+	return path, nil
+}
+
 func prepareDataDir(dir string, _ []string) error {
 	return os.MkdirAll(dir, 0o700)
 }

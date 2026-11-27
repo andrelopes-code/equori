@@ -88,6 +88,10 @@ func Attach(ctx context.Context, dir, bin string) (*Cluster, error) {
 			return nil, err
 		}
 
+		if socket, err = socketName(socket); err != nil {
+			return nil, err
+		}
+
 		c := &Cluster{dir: dir, bin: bin, socket: socket}
 
 		conn, err := pgx.Connect(ctx, c.DSN(Database))

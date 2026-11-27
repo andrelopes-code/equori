@@ -52,7 +52,7 @@ func prepareSocket(dir string) (string, error) {
 		return "", err
 	}
 
-	return socket, nil
+	return socketName(socket)
 }
 
 func checkMajor(ctx context.Context, bin string) (int, error) {
