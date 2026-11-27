@@ -27,7 +27,7 @@ try {
     $env:CGO_ENABLED = '0'
 
     # The .syso is linked into both executables; the build ignores it, git ignores it.
-    Invoke-Native go tool -modfile=tools/go.mod go-winres make --in cmd/equori/winres/winres.json `
+    Invoke-Native go tool '-modfile=tools/go.mod' go-winres make --in cmd/equori/winres/winres.json `
         --out cmd/equori/rsrc --arch amd64 --product-version $Version --file-version $Version
     Invoke-Native go build -trimpath -o (Join-Path $stage 'equori.exe') `
         -ldflags "-s -w -H windowsgui -X main.version=v$Version -X main.defaultCommand=tray" ./cmd/equori
