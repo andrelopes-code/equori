@@ -816,6 +816,7 @@ SELECT
     t.date,
     tr.side,
     tr.quantity,
+    tr.unit_price,
     tr.gross,
     tr.fees,
     tr.taxes,
@@ -846,6 +847,7 @@ type SecurityTradesRow struct {
 	Date             time.Time
 	Side             string
 	Quantity         int64
+	UnitPrice        pgtype.Numeric
 	Gross            int64
 	Fees             int64
 	Taxes            int64
@@ -869,6 +871,7 @@ func (q *Queries) SecurityTrades(ctx context.Context, arg SecurityTradesParams) 
 			&i.Date,
 			&i.Side,
 			&i.Quantity,
+			&i.UnitPrice,
 			&i.Gross,
 			&i.Fees,
 			&i.Taxes,

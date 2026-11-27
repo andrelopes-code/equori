@@ -59,6 +59,9 @@ func (r *Repository) SecurityTrades(
 			f.Cost = *row.Cost
 		}
 
+		// A stored price is valid by the schema; an unreadable one stays zero and matches no line.
+		f.UnitPrice, _ = tradePrice(row.Side, row.UnitPrice)
+
 		return f
 	}), err
 }

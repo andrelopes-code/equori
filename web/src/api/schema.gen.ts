@@ -2434,6 +2434,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/brokerages/{id}/investment-file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record the openings, trades and incomes of a CSV file in a brokerage, all or nothing; lines equal to a recorded transaction are skipped (investment history IF1 to IF8).
+         * @description Header `kind,date,instrument,quantity,unit_price,fees,taxes,gross,withheld,income_type`, at most
+         *     10,000 lines. A rejected line returns 422 with field `line N`, N counting the header as line 1.
+         *     A file with an income line needs category_id; a file with a buy, sell or income line takes
+         *     cash_account_id or the single paying account of the brokerage.
+         */
+        post: operations["importInvestmentFile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/trades/{id}": {
         parameters: {
             query?: never;
@@ -7156,6 +7179,11 @@ export interface components {
          * @enum {string}
          */
         TradeSide: "buy" | "sell" | "write_off" | "opening";
+        InvestmentFileResult: {
+            lines: number;
+            created: number;
+            skipped: number;
+        };
         /** @description Exactly one of contract (a new contract) and instrument (more money into a contract of the book). */
         FixedIncomeApplicationInput: {
             /**
@@ -14183,6 +14211,45 @@ export interface operations {
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
             409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    importInvestmentFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                    /** Format: uuid */
+                    cash_account_id?: string;
+                    /** Format: uuid */
+                    category_id?: string;
+                    dry_run?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Counted, and recorded unless dry_run. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvestmentFileResult"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
         };
     };

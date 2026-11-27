@@ -4068,6 +4068,55 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /brokerages/{id}/investment-file:
+    post:
+      tags: [ledger]
+      operationId: importInvestmentFile
+      x-book-role: write
+      summary: Record the openings, trades and incomes of a CSV file in a brokerage, all or nothing; lines equal to a recorded transaction are skipped (investment history IF1 to IF8).
+      description: |
+        Header `kind,date,instrument,quantity,unit_price,fees,taxes,gross,withheld,income_type`, at most
+        10,000 lines. A rejected line returns 422 with field `line N`, N counting the header as line 1.
+        A file with an income line needs category_id; a file with a buy, sell or income line takes
+        cash_account_id or the single paying account of the brokerage.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                cash_account_id:
+                  type: string
+                  format: uuid
+                category_id:
+                  type: string
+                  format: uuid
+                dry_run:
+                  type: boolean
+      responses:
+        "200":
+          description: Counted, and recorded unless dry_run.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvestmentFileResult"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /trades/{id}:
     put:
       tags: [ledger]
@@ -12699,6 +12748,16 @@ components:
       type: string
       enum: [buy, sell, write_off, opening]
       description: write_off removes units at zero proceeds (an option expired, a right not exercised, a security that became worthless) and books their cost as a realized loss; it takes account_id, or brokerage_id and instrument, and quantity; no unit_price, fees, taxes or cash account. A brokerage note refuses it. opening records units held before the book at their cost (quantity × unit_price + fees) against the opening balances, without cash, on the date the lot was acquired; it takes the holding, date, quantity, unit_price and optional fees; no cash account, taxes or settlement date. A brokerage note refuses it.
+    InvestmentFileResult:
+      type: object
+      required: [lines, created, skipped]
+      properties:
+        lines:
+          type: integer
+        created:
+          type: integer
+        skipped:
+          type: integer
     FixedIncomeApplicationInput:
       type: object
       additionalProperties: false

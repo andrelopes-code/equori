@@ -2072,6 +2072,13 @@ type InstitutionList struct {
 	NextCursor *string `json:"next_cursor,omitempty"`
 }
 
+// InvestmentFileResult defines model for InvestmentFileResult.
+type InvestmentFileResult struct {
+	Created int `json:"created"`
+	Lines   int `json:"lines"`
+	Skipped int `json:"skipped"`
+}
+
 // InvestmentIncome defines model for InvestmentIncome.
 type InvestmentIncome struct {
 	AccountId     openapi_types.UUID `json:"account_id"`
@@ -2836,6 +2843,14 @@ type ListBalancesParams struct {
 // ListBalancesParamsBasis defines parameters for ListBalances.
 type ListBalancesParamsBasis string
 
+// ImportInvestmentFileMultipartBody defines parameters for ImportInvestmentFile.
+type ImportInvestmentFileMultipartBody struct {
+	CashAccountId *openapi_types.UUID `json:"cash_account_id,omitempty"`
+	CategoryId    *openapi_types.UUID `json:"category_id,omitempty"`
+	DryRun        *bool               `json:"dry_run,omitempty"`
+	File          openapi_types.File  `json:"file"`
+}
+
 // ListInstitutionsParams defines parameters for ListInstitutions.
 type ListInstitutionsParams struct {
 	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
@@ -2945,6 +2960,9 @@ type ResolveBalanceAssertionJSONRequestBody = AssertionResolutionInput
 
 // RecordBrokerageNoteJSONRequestBody defines body for RecordBrokerageNote for application/json ContentType.
 type RecordBrokerageNoteJSONRequestBody = BrokerageNoteInput
+
+// ImportInvestmentFileMultipartRequestBody defines body for ImportInvestmentFile for multipart/form-data ContentType.
+type ImportInvestmentFileMultipartRequestBody ImportInvestmentFileMultipartBody
 
 // UpdateCardJSONRequestBody defines body for UpdateCard for application/json ContentType.
 type UpdateCardJSONRequestBody = CardUpdate

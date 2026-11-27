@@ -1,2 +1,2 @@
-internal/ledger/app	63	the module's use cases share one Service type, so they stay in one package (ADR 035)
+internal/ledger/app	64	the module's use cases share one Service type, so they stay in one package (ADR 035)
 internal/marketdata	46	the module's use cases are methods of Module, so they stay in one package (its README)

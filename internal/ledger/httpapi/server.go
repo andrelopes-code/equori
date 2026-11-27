@@ -373,6 +373,9 @@ func (s *Server) Register(mux *http.ServeMux) {
 		httpserver.Handle(s.errs, http.StatusOK, s.removeStatementFacts),
 	)
 
+	// Investment file
+	mux.HandleFunc("POST "+BaseURL+"/brokerages/{id}/investment-file", s.importInvestmentFile)
+
 	// Attachments
 	mux.HandleFunc(
 		"GET "+BaseURL+"/transactions/{id}/attachments",

@@ -29,12 +29,9 @@ func (s *Service) RecordIncome(
 ) (domain.Transaction, error) {
 	var created domain.Transaction
 	err := s.repo.InTx(ctx, func(r Repository) error {
-		t, err := s.buildIncome(ctx, r, booksID, o)
-		if err != nil {
-			return err
-		}
+		var err error
 
-		created, err = s.insert(ctx, r, t)
+		created, err = s.recordIncome(ctx, r, booksID, o)
 
 		return err
 	})
@@ -72,6 +69,21 @@ func (s *Service) EstimateIncomeWithholding(
 	}
 
 	return IncomeWithholding{RateBP: rate, Withheld: withheld}, nil
+}
+
+// recordIncome builds and inserts the transaction of o inside the transaction of r.
+func (s *Service) recordIncome(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	o domain.IncomeOrder,
+) (domain.Transaction, error) {
+	t, err := s.buildIncome(ctx, r, booksID, o)
+	if err != nil {
+		return domain.Transaction{}, err
+	}
+
+	return s.insert(ctx, r, t)
 }
 
 // buildIncome resolves o and builds its transaction.

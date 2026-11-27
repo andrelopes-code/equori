@@ -38,6 +38,8 @@ type TradeFact struct {
 	Side                               string
 	Quantity, Gross, Fees, Taxes, Cost int64
 	DayTradeQuantity, DayTradeCost     int64
+	// UnitPrice is zero on a write-off.
+	UnitPrice money.Rate
 }
 
 type IncomeFact struct {

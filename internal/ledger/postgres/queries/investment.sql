@@ -176,6 +176,7 @@ SELECT
     t.date,
     tr.side,
     tr.quantity,
+    tr.unit_price,
     tr.gross,
     tr.fees,
     tr.taxes,
