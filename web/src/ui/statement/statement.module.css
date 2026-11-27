@@ -43,12 +43,6 @@
     padding-inline-start: var(--slotted-space-5);
   }
 
-  .placeholderMark {
-    display: inline-block;
-    inline-size: 32px; /* the md category mark */
-    block-size: 32px;
-  }
-
   /* The amount over the balance it left, both ending on the amount's edge. */
   .endStack {
     display: flex;
