@@ -37,6 +37,10 @@ function Install([string]$Zip) {
         $p.WaitForExit()
     } finally {
         $env:PSModulePath = $modules
+        # The variables of install.ps1 hold for the child alone: equori-cli warns on them.
+        foreach ($name in 'EQUORI_DIR', 'EQUORI_LANG', 'EQUORI_ZIP', 'EQUORI_SUMS') {
+            Remove-Item "Env:$name" -ErrorAction SilentlyContinue
+        }
     }
     Get-Content "$work\install.out", "$work\install.err"
     if ($p.ExitCode -ne 0) { throw "install.ps1 of $(Split-Path -Leaf $Zip) exited with $($p.ExitCode)" }

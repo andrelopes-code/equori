@@ -52,9 +52,6 @@ function Get-Owned([string[]]$Names) {
 # The child sets UTF-8 before it writes, so the captured file holds the non-ASCII text.
 function Invoke-Installer([string]$Lang, [string[]]$Switches = @(), [string]$Script = $installer,
     [bool]$Archive = $true) {
-    $env:EQUORI_LANG = $Lang
-    $env:EQUORI_ZIP = if ($Archive) { $Zip } else { '' }
-    $env:EQUORI_SUMS = if ($Archive) { "$work\SHA256SUMS" } else { '' }
     $out = Join-Path $work "install-$([guid]::NewGuid().ToString('N').Substring(0, 8)).out"
     $command = '[Console]::OutputEncoding = New-Object Text.UTF8Encoding $false; ' +
         "& '$Script' $($Switches -join ' '); " +
@@ -65,6 +62,12 @@ function Invoke-Installer([string]$Lang, [string[]]$Switches = @(), [string]$Scr
     # PowerShell 7 modules (Get-FileHash, Unblock-File); unset, it uses its own default.
     $modules = $env:PSModulePath
     $env:PSModulePath = $null
+    # The variables of install.ps1 hold for the child alone: equori-cli warns on an unknown EQUORI_
+    # variable, and its first line is what the checks read.
+    $env:EQUORI_DIR = $dir
+    $env:EQUORI_LANG = $Lang
+    $env:EQUORI_ZIP = if ($Archive) { $Zip } else { '' }
+    $env:EQUORI_SUMS = if ($Archive) { "$work\SHA256SUMS" } else { '' }
     try {
         # -Wait would also wait for equori.exe, which the installation leaves running.
         $p = Start-Process powershell.exe -PassThru -WindowStyle Hidden `
@@ -75,6 +78,9 @@ function Invoke-Installer([string]$Lang, [string[]]$Switches = @(), [string]$Scr
         $p.WaitForExit()
     } finally {
         $env:PSModulePath = $modules
+        foreach ($name in 'EQUORI_DIR', 'EQUORI_LANG', 'EQUORI_ZIP', 'EQUORI_SUMS') {
+            Remove-Item "Env:$name" -ErrorAction SilentlyContinue
+        }
     }
     $watch.Stop()
     $text = [IO.File]::ReadAllText($out, $utf8)
@@ -126,7 +132,6 @@ try {
     $Zip = (Resolve-Path $Zip).Path
     $hash = (Get-FileHash -Algorithm SHA256 $Zip).Hash.ToLower()
     [IO.File]::WriteAllText("$work\SHA256SUMS", "$hash  $(Split-Path -Leaf $Zip)`n", $utf8)
-    $env:EQUORI_DIR = $dir
     Remove-Item Env:EQUORI_HTTP_ADDR -ErrorAction SilentlyContinue
 
     $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, 8080)
