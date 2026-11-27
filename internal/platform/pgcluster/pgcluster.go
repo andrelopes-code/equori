@@ -113,6 +113,27 @@ func Attach(ctx context.Context, dir, bin string) (*Cluster, error) {
 	return c, nil
 }
 
+// Held reports whether another process holds equori.lock of dir; it is false when dir does not
+// exist.
+func Held(dir string) (bool, error) {
+	if _, err := os.Stat(dir); errors.Is(err, fs.ErrNotExist) {
+		return false, nil
+	} else if err != nil {
+		return false, fmt.Errorf("stat data directory: %w", err)
+	}
+
+	lock, err := lockDir(dir)
+	if errors.Is(err, ErrBusy) {
+		return true, nil
+	}
+
+	if err != nil {
+		return false, err
+	}
+
+	return false, lock.Close()
+}
+
 // PrepareDataDir creates the data directory, or checks an existing one, so that only the process
 // account and the named accounts reach it: mode 0700 on Unix, the DACL of W-M3 on Windows.
 func PrepareDataDir(dir string, accounts ...string) error {
