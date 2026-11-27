@@ -67,6 +67,31 @@ describe("ticketOf", () => {
     expect(ticket.rest).toEqual([]);
   });
 
+  it("draws an opening as a purchase without a net or a settlement", () => {
+    const opening: Preview = {
+      action: "record_investment.opening",
+      target: "XP",
+      changes: [
+        { field: "instrument", after: text("PETR4") },
+        { field: "quantity", after: text("100") },
+        { field: "price", after: text("20.00") },
+        { field: "fees", after: brl("5.00") },
+        { field: "amount", after: brl("2000.00") },
+        { field: "date", after: day("2021-03-10") },
+      ],
+    };
+    const ticket = ticketOf(opening);
+
+    expect(labels(opening)).toEqual([
+      ["assistant.ticket.gross", "2000.00", false],
+      ["assistant.field.fees", "5.00", false],
+    ]);
+    expect(ticket.net).toBeUndefined();
+    expect(ticket.dates.map((d) => [d.label, d.date])).toEqual([
+      ["assistant.ticket.date.opening", "2021-03-10"],
+    ]);
+  });
+
   it("leaves the gross out when it is the net", () => {
     const changes = buy.changes
       .filter((c) => c.field !== "fees")

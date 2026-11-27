@@ -9,6 +9,7 @@ type Proposal = components["schemas"]["AssistantProposal"];
 const KINDS = new Map<string, AssistantIconName>(
   Object.entries({
     buy: "buy",
+    opening: "buy",
     sell: "sell",
     note: "receipt",
     income: "coins",

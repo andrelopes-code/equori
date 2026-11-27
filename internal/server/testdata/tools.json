@@ -11814,9 +11814,13 @@
           "type": "string",
           "description": "Brokerage that holds the contract, from list_accounts"
         },
+        "opening": {
+          "type": "boolean",
+          "description": "true: held before the book, no cash"
+        },
         "cash_account_id": {
           "type": "string",
-          "description": "Cash of the Brokerage or an open account of its institution; the single candidate when absent"
+          "description": "Cash of the Brokerage or an open account of its institution; the single candidate if absent"
         },
         "applied_on": {
           "type": "string",
@@ -11965,7 +11969,7 @@
   },
   {
     "name": "record_investment",
-    "description": "Proposes an investment transaction in a Brokerage: buy or sell an Investment for the Cash of the same Brokerage, or record income paid on an Investment. A first buy creates the Investment line; a sale or income needs an existing one. A Brokerage with no Cash account in the base currency is refused: create one first with manage_accounts_and_payees. Use it when the user reports a trade, a dividend or other investment income. write_off removes units at zero proceeds, their cost a realized loss: an option expired, a right not exercised, a security that became worthless. With transaction_id and reason it corrects that trade or income instead of recording one: change_transaction does not correct them. Do not use it to define a new security: manage_instrument does. The user confirms first.",
+    "description": "Proposes an investment transaction in a Brokerage: buy or sell an Investment for its Cash, or record income paid on an Investment. A first buy creates the Investment line; a sale or income needs one. A Brokerage with no Cash in the base currency is refused: create one with manage_accounts_and_payees. write_off removes units at zero proceeds, their cost a realized loss: an expired option, an unexercised right, a worthless security. opening records units held before the book at their cost on the date acquired, no cash: quantity, unit_price, fees. Use it for a trade, a dividend or other income. With transaction_id and reason it corrects that trade or income instead of recording one; change_transaction does not. Do not use it to define a new security: manage_instrument does. The user confirms first.",
     "effect": "write",
     "idempotent": false,
     "input_schema": {
@@ -11978,6 +11982,7 @@
             "buy",
             "sell",
             "write_off",
+            "opening",
             "income"
           ]
         },
@@ -11995,7 +12000,7 @@
         },
         "cash_account_id": {
           "type": "string",
-          "description": "Cash of the Brokerage or an open account of its institution; the single candidate when absent"
+          "description": "Cash of the Brokerage or an open account of its institution; the single candidate if absent"
         },
         "date": {
           "type": "string",
@@ -12004,56 +12009,56 @@
         },
         "quantity": {
           "type": "string",
-          "description": "for buy and sell: positive quantity"
+          "description": "buy, sell: positive quantity"
         },
         "unit_price": {
           "type": "string",
-          "description": "for buy and sell: price of one unit in the cash currency"
+          "description": "buy, sell: price of one unit in the cash currency"
         },
         "fees": {
           "type": "string",
-          "description": "for buy and sell: positive fees"
+          "description": "buy, sell: fees"
         },
         "taxes": {
           "type": "string",
-          "description": "for buy and sell: positive taxes"
+          "description": "buy, sell: taxes"
         },
         "settlement_date": {
           "type": "string",
-          "description": "for buy and sell: day the cash moves; derived when empty",
+          "description": "buy, sell: day the cash moves; derived if empty",
           "format": "date"
         },
         "gross": {
           "type": "string",
-          "description": "for income: positive gross amount paid"
+          "description": "income: positive gross amount paid"
         },
         "withheld": {
           "type": "string",
-          "description": "for income: tax withheld; region rate when absent"
+          "description": "income: tax withheld; region rate when absent"
         },
         "income_type": {
           "type": "string",
-          "description": "for income: type from get_portfolio with view income_types"
+          "description": "income: type from get_portfolio with view income_types"
         },
         "category_id": {
           "type": "string",
-          "description": "for income: income category from list_accounts"
+          "description": "income: income category from list_accounts"
         },
         "description": {
           "type": "string",
-          "description": "description of the transaction; a title derived from the kind and the investment when empty"
+          "description": "description of the transaction; derived from the kind and the investment if empty"
         },
         "taxes_category_id": {
           "type": "string",
-          "description": "for buy and sell: expense category of the taxes; the taxes account when absent"
+          "description": "buy, sell: expense category of the taxes; the taxes account if absent"
         },
         "withheld_category_id": {
           "type": "string",
-          "description": "for income: expense category of the tax withheld; the taxes account when absent"
+          "description": "income: expense category of the tax withheld; the taxes account if absent"
         },
         "transaction_id": {
           "type": "string",
-          "description": "trade or income to correct, from get_transactions; the proposal replaces the whole order: repeat every field that stays"
+          "description": "trade or income to correct, from get_transactions; the proposal replaces the whole order: repeat the fields that stay"
         },
         "reason": {
           "type": "string",

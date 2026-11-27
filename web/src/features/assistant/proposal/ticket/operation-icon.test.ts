@@ -5,6 +5,7 @@ import { operationIcon } from "@/features/assistant/proposal/ticket/operation-ic
 describe("operationIcon", () => {
   it.each([
     ["record_investment", "record_investment.buy", "buy"],
+    ["record_investment", "record_investment.opening", "buy"],
     ["record_investment", "record_investment.correct", "pencil"],
     ["transfer_custody", "transfer_custody", "swap"],
     ["record_corporate_action", "record_corporate_action.split", "split"],

@@ -18,6 +18,7 @@ const tradeKeys = {
   buy: "transactions.title.buy",
   sell: "transactions.title.sell",
   write_off: "transactions.title.write_off",
+  opening: "transactions.title.opening",
 } satisfies Record<components["schemas"]["TradeSide"], MessageKey>;
 
 // The payee, else the description, else a title from the trade, the income or the postings the

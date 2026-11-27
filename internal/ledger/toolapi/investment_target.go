@@ -40,7 +40,7 @@ func resolveInvestmentTarget(
 		return t, err
 	}
 
-	unit, err := resolveTargetCash(ctx, svc, booksID, ids, &t)
+	unit, err := resolveTargetUnit(ctx, svc, booksID, in, ids, &t)
 	if err != nil {
 		return t, err
 	}
@@ -83,6 +83,25 @@ func resolveTargetHolding(
 	t.name, t.instrument = brokerage.Name, instrument
 
 	return nil
+}
+
+// resolveTargetUnit gives the currency of the amounts: the Cash's, or the base currency for an
+// opening, which moves no cash.
+func resolveTargetUnit(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in recordInvestmentIn,
+	ids investmentIDs,
+	t *investmentTarget,
+) (money.Currency, error) {
+	if in.Kind != "opening" {
+		return resolveTargetCash(ctx, svc, booksID, ids, t)
+	}
+
+	settings, err := svc.Settings(ctx, booksID)
+
+	return settings.BaseCurrency, err
 }
 
 func resolveTargetCash(
@@ -190,6 +209,11 @@ func checkInvestmentFields(in recordInvestmentIn) error {
 	if in.Kind == "income" {
 		return checkFields(action, given, []string{"date", "gross", "income_type", "category_id"},
 			append(target, "withheld", "description", "withheld_category_id")...)
+	}
+
+	if in.Kind == "opening" {
+		return checkFields(action, given, []string{"date", "quantity", "unit_price"},
+			"account_id", "brokerage_id", "instrument", "fees", "description")
 	}
 
 	if in.Kind == "write_off" {

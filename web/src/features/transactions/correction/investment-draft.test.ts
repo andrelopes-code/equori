@@ -29,6 +29,19 @@ describe("tradeDraftOf", () => {
     });
   });
 
+  it("fills the form of an opening without cash or settlement", () => {
+    const opening = trade(
+      { side: "opening", cash_account_id: "sec", settlement_date: undefined },
+      [post("sec", 150), post("equity", -150)],
+    );
+
+    expect(tradeDraftOf(opening, accounts)).toMatchObject({
+      side: "opening",
+      cashAccountId: null,
+      settlementDate: null,
+    });
+  });
+
   it.each([
     {
       name: "a chosen category before the security posting",

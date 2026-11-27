@@ -20,9 +20,10 @@ export function tradeDraftOf(
     side: trade.side,
     brokerageId: parentOf(trade.account_id, accounts),
     instrument: trade.quantity.currency,
-    cashAccountId: trade.cash_account_id,
+    // An opening moves no cash: the stored cash account is the holding itself.
+    cashAccountId: trade.side === "opening" ? null : trade.cash_account_id,
     date: tx.date,
-    settlementDate: trade.settlement_date,
+    settlementDate: trade.side === "opening" ? null : trade.settlement_date,
     quantity: trade.quantity.amount,
     unitPrice: trade.unit_price,
     priceBasis: "unit",

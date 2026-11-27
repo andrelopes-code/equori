@@ -245,9 +245,9 @@ export function useTradeEntry(
           })
       : null;
 
-  // A write-off moves no cash.
+  // A write-off and an opening move no cash.
   const cashEffectValue =
-    gross === null || draft.side === "write_off"
+    gross === null || draft.side === "write_off" || draft.side === "opening"
       ? null
       : cashEffect(draft.side, gross, draft.fees, taxes);
   const view: TradeView = {

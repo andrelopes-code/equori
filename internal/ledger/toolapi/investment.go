@@ -12,7 +12,7 @@ import (
 type recordInvestmentKind string
 
 func (recordInvestmentKind) Values() []string {
-	return []string{"buy", "sell", "write_off", "income"}
+	return []string{"buy", "sell", "write_off", "opening", "income"}
 }
 
 type recordInvestmentIn struct {
@@ -20,23 +20,23 @@ type recordInvestmentIn struct {
 	BrokerageID   string               `json:"brokerage_id,omitzero"    jsonschema:"Brokerage that holds the Investment, from list_accounts; with instrument, instead of account_id"`
 	Instrument    string               `json:"instrument,omitzero"      jsonschema:"code of the Investment, such as PETR4"`
 	AccountID     string               `json:"account_id,omitzero"      jsonschema:"Investment line inside a Brokerage, from list_accounts; instead of brokerage_id and instrument"`
-	CashAccountID string               `json:"cash_account_id,omitzero" jsonschema:"Cash of the Brokerage or an open account of its institution; the single candidate when absent"`
+	CashAccountID string               `json:"cash_account_id,omitzero" jsonschema:"Cash of the Brokerage or an open account of its institution; the single candidate if absent"`
 	Date          tool.Date            `json:"date"                     jsonschema:"trade or payment date"`
-	Quantity      string               `json:"quantity,omitzero"        jsonschema:"for buy and sell: positive quantity"`
-	UnitPrice     string               `json:"unit_price,omitzero"      jsonschema:"for buy and sell: price of one unit in the cash currency"`
-	Fees          string               `json:"fees,omitzero"            jsonschema:"for buy and sell: positive fees"`
-	Taxes         string               `json:"taxes,omitzero"           jsonschema:"for buy and sell: positive taxes"`
-	SettledOn     tool.Date            `json:"settlement_date,omitzero" jsonschema:"for buy and sell: day the cash moves; derived when empty"`
-	Gross         string               `json:"gross,omitzero"           jsonschema:"for income: positive gross amount paid"`
-	Withheld      string               `json:"withheld,omitzero"        jsonschema:"for income: tax withheld; region rate when absent"`
-	IncomeType    string               `json:"income_type,omitzero"     jsonschema:"for income: type from get_portfolio with view income_types"`
-	CategoryID    string               `json:"category_id,omitzero"     jsonschema:"for income: income category from list_accounts"`
+	Quantity      string               `json:"quantity,omitzero"        jsonschema:"buy, sell: positive quantity"`
+	UnitPrice     string               `json:"unit_price,omitzero"      jsonschema:"buy, sell: price of one unit in the cash currency"`
+	Fees          string               `json:"fees,omitzero"            jsonschema:"buy, sell: fees"`
+	Taxes         string               `json:"taxes,omitzero"           jsonschema:"buy, sell: taxes"`
+	SettledOn     tool.Date            `json:"settlement_date,omitzero" jsonschema:"buy, sell: day the cash moves; derived if empty"`
+	Gross         string               `json:"gross,omitzero"           jsonschema:"income: positive gross amount paid"`
+	Withheld      string               `json:"withheld,omitzero"        jsonschema:"income: tax withheld; region rate when absent"`
+	IncomeType    string               `json:"income_type,omitzero"     jsonschema:"income: type from get_portfolio with view income_types"`
+	CategoryID    string               `json:"category_id,omitzero"     jsonschema:"income: income category from list_accounts"`
 
-	Description        string `json:"description,omitzero"          jsonschema:"description of the transaction; a title derived from the kind and the investment when empty"`
-	TaxesCategoryID    string `json:"taxes_category_id,omitzero"    jsonschema:"for buy and sell: expense category of the taxes; the taxes account when absent"`
-	WithheldCategoryID string `json:"withheld_category_id,omitzero" jsonschema:"for income: expense category of the tax withheld; the taxes account when absent"`
+	Description        string `json:"description,omitzero"          jsonschema:"description of the transaction; derived from the kind and the investment if empty"`
+	TaxesCategoryID    string `json:"taxes_category_id,omitzero"    jsonschema:"buy, sell: expense category of the taxes; the taxes account if absent"`
+	WithheldCategoryID string `json:"withheld_category_id,omitzero" jsonschema:"income: expense category of the tax withheld; the taxes account if absent"`
 
-	TransactionID string `json:"transaction_id,omitzero" jsonschema:"trade or income to correct, from get_transactions; the proposal replaces the whole order: repeat every field that stays"`
+	TransactionID string `json:"transaction_id,omitzero" jsonschema:"trade or income to correct, from get_transactions; the proposal replaces the whole order: repeat the fields that stay"`
 	Reason        string `json:"reason,omitzero"         jsonschema:"with transaction_id: why the transaction changes, kept in its history"`
 }
 
@@ -47,12 +47,13 @@ type recordInvestmentOut struct {
 func recordInvestment(svc *app.Service) tool.Tool {
 	return tool.NewWrite(tool.Spec{
 		Name: "record_investment",
-		Description: "Proposes an investment transaction in a Brokerage: buy or sell an Investment for the Cash of the same Brokerage, or record income paid on an Investment. " +
-			"A first buy creates the Investment line; a sale or income needs an existing one. " +
-			"A Brokerage with no Cash account in the base currency is refused: create one first with manage_accounts_and_payees. " +
-			"Use it when the user reports a trade, a dividend or other investment income. " +
-			"write_off removes units at zero proceeds, their cost a realized loss: an option expired, a right not exercised, a security that became worthless. " +
-			"With transaction_id and reason it corrects that trade or income instead of recording one: change_transaction does not correct them. " +
+		Description: "Proposes an investment transaction in a Brokerage: buy or sell an Investment for its Cash, or record income paid on an Investment. " +
+			"A first buy creates the Investment line; a sale or income needs one. " +
+			"A Brokerage with no Cash in the base currency is refused: create one with manage_accounts_and_payees. " +
+			"write_off removes units at zero proceeds, their cost a realized loss: an expired option, an unexercised right, a worthless security. " +
+			"opening records units held before the book at their cost on the date acquired, no cash: quantity, unit_price, fees. " +
+			"Use it for a trade, a dividend or other income. " +
+			"With transaction_id and reason it corrects that trade or income instead of recording one; change_transaction does not. " +
 			"Do not use it to define a new security: manage_instrument does. " +
 			"The user confirms first.",
 		Effect: tool.Write,
@@ -342,7 +343,7 @@ func (s investmentStep) appendSettlement(
 	pv *tool.Preview,
 	o domain.TradeOrder,
 ) error {
-	if o.Side == domain.SideWriteOff {
+	if o.Side == domain.SideWriteOff || o.Side == domain.SideOpening {
 		return nil
 	}
 
@@ -360,7 +361,7 @@ func (s investmentStep) appendSettlement(
 }
 
 // appendTradeMoney adds the gross (quantity × price) as amount and the signed change of the cash as
-// net (investment proposals design, IP1). A write-off has neither.
+// net (investment proposals design, IP1). A write-off has neither; an opening has no net.
 func appendTradeMoney(pv *tool.Preview, o domain.TradeOrder, cash money.Currency) error {
 	if o.Side == domain.SideWriteOff {
 		return nil
@@ -369,6 +370,12 @@ func appendTradeMoney(pv *tool.Preview, o domain.TradeOrder, cash money.Currency
 	gross, err := grossOf(o.Quantity, o.UnitPrice, cash)
 	if err != nil {
 		return err
+	}
+
+	if o.Side == domain.SideOpening {
+		appendMoneyChange(pv, "amount", &gross)
+
+		return nil
 	}
 
 	signed := gross

@@ -77,7 +77,7 @@ function tx(overrides: Partial<Transaction> = {}): Transaction {
   };
 }
 
-function trade(side: "buy" | "sell"): Transaction {
+function trade(side: "buy" | "sell" | "opening"): Transaction {
   const money = { amount: 10, currency: "BRL" };
   return tx({
     trade: {
@@ -177,6 +177,7 @@ function posted(
 describe("transactionTitle", () => {
   it("titles a purchase with an empty description", () => {
     expect(transactionTitle(trade("buy"), t)).toBe("Compra de AUVP11");
+    expect(transactionTitle(trade("opening"), t)).toBe("Abertura de AUVP11");
   });
 
   it("titles a sale with an empty description", () => {

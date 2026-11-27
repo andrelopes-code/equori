@@ -20,6 +20,7 @@ const SINGLE = new Map<string, MessageKey>(
     unit_tax: "assistant.ticket.date.cancelled",
     transfer_custody: "assistant.ticket.date.arrival",
     record_fixed_income: "assistant.ticket.date.application",
+    opening: "assistant.ticket.date.opening",
     buy: "assistant.ticket.date.trade",
     sell: "assistant.ticket.date.trade",
     note: "assistant.ticket.date.trade",

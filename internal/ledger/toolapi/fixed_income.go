@@ -21,7 +21,8 @@ var percentPattern = regexp.MustCompile(`^(-?)(\d{1,4})(?:\.(\d+))?$`)
 
 type recordFixedIncomeIn struct {
 	BrokerageID   string    `json:"brokerage_id"             jsonschema:"Brokerage that holds the contract, from list_accounts"`
-	CashAccountID string    `json:"cash_account_id,omitzero" jsonschema:"Cash of the Brokerage or an open account of its institution; the single candidate when absent"`
+	Opening       bool      `json:"opening,omitzero"         jsonschema:"true: held before the book, no cash"`
+	CashAccountID string    `json:"cash_account_id,omitzero" jsonschema:"Cash of the Brokerage or an open account of its institution; the single candidate if absent"`
 	AppliedOn     tool.Date `json:"applied_on"               jsonschema:"date of the application"`
 	Amount        string    `json:"amount"                   jsonschema:"decimal amount applied, in the currency of the Brokerage"`
 	Fees          string    `json:"fees,omitzero"            jsonschema:"positive fees charged"`
@@ -125,6 +126,13 @@ func planFixedIncome(
 		tool.Change{Field: "institution", After: tool.TextValue(cash.name)},
 	)
 
+	if in.Opening {
+		pv.Changes = append(
+			pv.Changes,
+			tool.Change{Field: "opening", After: tool.TextValue("true")},
+		)
+	}
+
 	if cash.cashName != "" {
 		pv.Changes = append(
 			pv.Changes,
@@ -157,6 +165,7 @@ func checkFixedIncomeFields(in recordFixedIncomeIn) error {
 		"index_id":         in.IndexID != "",
 		"percent_of_index": in.PercentOfIndex != "",
 		"spread":           in.Spread != "",
+		"opening":          in.Opening,
 		"day_count":        in.DayCount != "",
 		"calendar_id":      in.CalendarID != "",
 		"daily_liquidity":  in.DailyLiquidity,
@@ -166,7 +175,7 @@ func checkFixedIncomeFields(in recordFixedIncomeIn) error {
 		"first_payment_on":      !in.FirstPaymentOn.IsZero(),
 		"amortizations":         in.Amortizations != nil,
 	}
-	common := []string{"cash_account_id", "fees", "description"}
+	common := []string{"cash_account_id", "opening", "fees", "description"}
 	required := []string{"brokerage_id", "applied_on", "amount"}
 
 	if in.Instrument != "" {
@@ -206,7 +215,7 @@ func fixedIncomeApplication(
 
 	ids := investmentIDs{cash: cashID, brokerage: brokerageID}
 
-	unit, err := fixedIncomeUnit(ctx, svc, booksID, ids, cash)
+	unit, err := fixedIncomeUnit(ctx, svc, booksID, ids, in.Opening, cash)
 	if err != nil {
 		return app.FixedIncomeApplication{}, err
 	}
@@ -218,6 +227,7 @@ func fixedIncomeApplication(
 		AppliedOn:     in.AppliedOn.Time,
 		Description:   in.Description,
 		Instrument:    money.Currency(in.Instrument),
+		Opening:       in.Opening,
 	}
 
 	if err = parseFixedIncomeAmounts(in, unit, &a); err != nil {
@@ -241,6 +251,7 @@ func fixedIncomeUnit(
 	svc *app.Service,
 	booksID int64,
 	ids investmentIDs,
+	opening bool,
 	cash *investmentTarget,
 ) (money.Money, error) {
 	brokerage, err := svc.Account(ctx, booksID, ids.brokerage)
@@ -250,7 +261,14 @@ func fixedIncomeUnit(
 
 	cash.name = brokerage.Name
 
-	currency, err := resolveTargetCash(ctx, svc, booksID, ids, cash)
+	var currency money.Currency
+	if opening && ids.cash == uuid.Nil {
+		settings, serr := svc.Settings(ctx, booksID)
+		currency, err = settings.BaseCurrency, serr
+	} else {
+		currency, err = resolveTargetCash(ctx, svc, booksID, ids, cash)
+	}
+
 	if err != nil {
 		return money.Money{}, err
 	}
