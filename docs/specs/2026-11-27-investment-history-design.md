@@ -116,7 +116,7 @@ IDs follow S752. Each has a test through `internal/apitest` that carries its ID.
 - S759 Assistant opening. `record_investment` kind `opening` previews quantity, price, fees, cost and date, with no account and no settlement, then records S753.
 - S760 File import. A file of four lines (opening, buy, sell, income) for XP: 200 with `lines` 4, `created` 4, `skipped` 0. The same file again: `created` 0, `skipped` 4. A dry run of a new file writes nothing.
 - S761 Refused file. A file whose line 3 has the date 2026-13-01: 422 on `line 3`, nothing recorded. A wrong header: 422 on `line 1`. An income line without `category_id`: 422 on `category_id`. An unknown instrument: 422 on its line.
-- S762 File outside Brazil. A book of the profile `apitest.Neutral` (region NZ, base NZD): a file with an opening of 10 VOO at 500.00 and a sale of 4 at 600.00 records both; the sale removes cost 2,000.00 and its result is 400.00.
+- S762 File outside Brazil. A book of the profile `apitest.Neutral` (region NZ, base NZD): a file with an opening of 10 VOO at 500.00 with `exchange_rate` 1.00 (foreign cash FC7) and a sale of 4 at 600.00 records both; the sale removes cost 2,000.00 and its result is 400.00.
 - S763 Assistant file. `import_investment_file` previews the file name and the counts of the dry run, then imports.
 - S764 Opening loss. Opening loss `ordinary` 1,000.00 from 2026-01; a sale of stocks in 2026-03 of 30,000.00 with a gain of 600.00: loss used 600.00, carried 400.00, tax 0.00.
 - S765 Opening loss access and pools. Pool `crypto`: 422. A book of the profile `apitest.Neutral`: any pool is a 422. A reader gets 403 on PUT and 200 on GET; another book's losses are not listed.
