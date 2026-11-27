@@ -2,7 +2,6 @@ package toolapi
 
 import (
 	"context"
-	"slices"
 	"time"
 
 	"github.com/google/uuid"
@@ -80,13 +79,6 @@ func runGetAccountDetails(
 	}
 
 	return out, err
-}
-
-func accountSummaryOf(a domain.Account) accountSummaryView {
-	return accountSummaryView{
-		AccountID: a.ID.String(), Name: a.Name, Class: string(a.Class), Kind: string(a.Kind),
-		Currency: string(a.Instrument), Closed: a.ClosedOn != nil,
-	}
 }
 
 func rejectCardArguments(in getAccountDetailsIn) error {
@@ -265,39 +257,6 @@ func cardBaseOf(
 	out.BillingCycles = billingCyclesFrom(rules, domain.MonthOf(today))
 
 	return out, nil
-}
-
-// billingCyclesFrom is the version in force in month m and every later version, oldest first.
-func billingCyclesFrom(rules domain.Rules, m domain.ReferenceMonth) []billingCycleView {
-	from := m
-	if current, err := rules.For(m); err == nil {
-		from = current.EffectiveFrom
-	}
-
-	sorted := slices.SortedFunc(slices.Values(rules), func(a, b domain.BillingCycleRule) int {
-		return a.EffectiveFrom.Compare(b.EffectiveFrom)
-	})
-
-	out := []billingCycleView{}
-	for _, r := range sorted {
-		if r.EffectiveFrom.Compare(from) < 0 {
-			continue
-		}
-
-		out = append(out, billingCycleView{
-			EffectiveFrom:        r.EffectiveFrom.String(),
-			ClosingMode:          r.ClosingMode,
-			ClosingDay:           r.ClosingDay,
-			ClosingDaysBeforeDue: r.ClosingDaysBeforeDue,
-			ClosingAdjustment:    r.ClosingAdjustment,
-			DueDay:               r.DueDay,
-			DueDateAdjustment:    r.Adjustment,
-			ClosingDayAssignment: r.Assignment,
-			Calendar:             r.Calendar,
-		})
-	}
-
-	return out
 }
 
 func loadCardViews(

@@ -1,6 +1,9 @@
 package toolapi
 
 import (
+	"slices"
+
+	"github.com/andrelopes-code/equori/internal/ledger/domain"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
@@ -94,4 +97,44 @@ type getAccountDetailsOut struct {
 	Reconciliation    reconciliationView `json:"reconciliation"`
 	BalanceAssertions []assertionView    `json:"balance_assertions"`
 	Card              cardDetailsView    `json:"card,omitzero"`
+}
+
+func accountSummaryOf(a domain.Account) accountSummaryView {
+	return accountSummaryView{
+		AccountID: a.ID.String(), Name: a.Name, Class: string(a.Class), Kind: string(a.Kind),
+		Currency: string(a.Instrument), Closed: a.ClosedOn != nil,
+	}
+}
+
+// billingCyclesFrom is the version in force in month m and every later version, oldest first.
+func billingCyclesFrom(rules domain.Rules, m domain.ReferenceMonth) []billingCycleView {
+	from := m
+	if current, err := rules.For(m); err == nil {
+		from = current.EffectiveFrom
+	}
+
+	sorted := slices.SortedFunc(slices.Values(rules), func(a, b domain.BillingCycleRule) int {
+		return a.EffectiveFrom.Compare(b.EffectiveFrom)
+	})
+
+	out := []billingCycleView{}
+	for _, r := range sorted {
+		if r.EffectiveFrom.Compare(from) < 0 {
+			continue
+		}
+
+		out = append(out, billingCycleView{
+			EffectiveFrom:        r.EffectiveFrom.String(),
+			ClosingMode:          r.ClosingMode,
+			ClosingDay:           r.ClosingDay,
+			ClosingDaysBeforeDue: r.ClosingDaysBeforeDue,
+			ClosingAdjustment:    r.ClosingAdjustment,
+			DueDay:               r.DueDay,
+			DueDateAdjustment:    r.Adjustment,
+			ClosingDayAssignment: r.Assignment,
+			Calendar:             r.Calendar,
+		})
+	}
+
+	return out
 }
