@@ -721,6 +721,20 @@ function Invoke-EquoriInstall([bool]$Uninstall, [bool]$Yes, [bool]$KeepData, [bo
         Get-ChildItem -LiteralPath $dir -Force -ErrorAction SilentlyContinue |
             Where-Object { $_.FullName -ne $keep } |
             Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+        return @(Get-ChildItem -LiteralPath $dir -Force -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -ne $keep })
+    }
+
+    # Stop-Leftovers ends an uninstall that left files behind: a program still holds them.
+    function Stop-Leftovers($items) {
+        Set-StepFailed
+        Write-Host ''
+        foreach ($item in @($items | Select-Object -First 5)) { Write-Host "  $($item.FullName)" }
+        Write-Color (Pick "These files are still in ${dir}: close the programs that use them," `
+            "Estes arquivos continuam em ${dir}: feche os programas que os usam") Red
+        Write-Color (Pick 'then run the uninstall again.' `
+            "e execute a desinstala${cc}${at}o de novo.") Red
+        $ctx.Failed = $true
     }
 
     function Remove-Shortcuts {
@@ -748,14 +762,22 @@ function Invoke-EquoriInstall([bool]$Uninstall, [bool]$Yes, [bool]$KeepData, [bo
         if ($ctx.Failed) { return }
 
         Start-Step 'Files' 'Arquivos'
-        Remove-ProgramFiles
+        $left = Remove-ProgramFiles
+        if ($left.Count -gt 0) { return (Stop-Leftovers $left) }
+
         Complete-Step
         Start-Step 'Shortcuts' 'Atalhos'
         Remove-Shortcuts
         Complete-Step
         Write-Host ''
         if (Read-DeleteData) {
+            Start-Step 'Files' 'Arquivos'
             Remove-Item -LiteralPath $dir -Recurse -Force -ErrorAction SilentlyContinue
+            if (Test-Path -LiteralPath $dir) {
+                return (Stop-Leftovers @(Get-ChildItem -LiteralPath $dir -Recurse -Force -File))
+            }
+
+            Complete-Step
             Write-Color (Pick 'equori is uninstalled and its data is deleted.' `
                 "O equori foi desinstalado e os dados foram apagados.") Green
             return
