@@ -153,3 +153,36 @@ func changeText(changes []tool.Change, field string) string {
 
 	return ""
 }
+
+// FC3, FC9: the base amount of a note sums each order as recorded, its share of the fees converted
+// on its own: fees 0.03 over two orders of 1.00 split 0.02 and 0.01, which give 0.10 and 0.05 at
+// 5.25, where 0.03 converted at once gives 0.16.
+func TestForeignCashNoteBaseAmountIsThePostingWeights(t *testing.T) {
+	t.Parallel()
+	f := newForeignCashFixture(t)
+	order := map[string]any{
+		"side":       "buy",
+		"instrument": "VOO",
+		"quantity":   "1",
+		"unit_price": "1.00",
+	}
+	args := map[string]any{
+		"brokerage_id": f.brokerage, "cash_account_id": f.cash, "date": "2026-03-03",
+		"fees": "0.03", "exchange_rate": "5.25", "orders": []map[string]any{order, order},
+	}
+
+	p := previewTool(t, f.h, "record_brokerage_note", args)
+
+	if got := changeText(p.Changes, "base_amount"); got != "10.65 BRL" {
+		t.Fatalf("base_amount = %q, want 10.65 BRL", got)
+	}
+
+	var out map[string]any
+	toolOutput(t, f.h, "record_brokerage_note", args, &out)
+
+	f.expectRows(
+		t,
+		`SELECT sum(weight)::text FROM ledger_posting WHERE weight < 0 AND account_id::text = '`+f.cash+`'`,
+		"-1065",
+	)
+}

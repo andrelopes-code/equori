@@ -228,19 +228,23 @@ func appendNoteMoney(
 	cash money.Money,
 ) (plus, minus []*money.Money, err error) {
 	total := cash
-	plus = []*money.Money{n.Fees, n.Taxes}
+	grosses := make([]int64, len(n.Orders))
+	saleGrosses := make([]int64, len(n.Orders))
 
-	for _, o := range n.Orders {
+	for i, o := range n.Orders {
 		gross, err := grossOf(o.Quantity, o.UnitPrice, cash.Currency())
 		if err != nil {
 			return nil, nil, err
 		}
+
+		grosses[i] = gross.Amount()
 
 		signed := gross
 		if o.Side == domain.SideBuy {
 			signed = gross.Neg()
 			plus = append(plus, &gross)
 		} else {
+			saleGrosses[i] = gross.Amount()
 			minus = append(minus, &gross)
 		}
 
@@ -266,7 +270,40 @@ func appendNoteMoney(
 	appendMoneyChange(pv, "taxes", n.Taxes)
 	appendMoneyChange(pv, "net", &net)
 
-	return plus, minus, nil
+	// The record splits the costs over the orders before it converts each one (FC3, FC9).
+	shares, err := noteCostShares(n, cash.Currency(), grosses, saleGrosses)
+
+	return append(plus, shares...), minus, err
+}
+
+// noteCostShares splits the fees over the gross of every order and the taxes over the gross of the
+// sales, as the record of the note does.
+func noteCostShares(
+	n app.BrokerageNote,
+	currency money.Currency,
+	grosses, saleGrosses []int64,
+) ([]*money.Money, error) {
+	var out []*money.Money
+
+	for _, part := range []struct {
+		total   *money.Money
+		weights []int64
+	}{{n.Fees, grosses}, {n.Taxes, saleGrosses}} {
+		if part.total == nil || part.total.IsZero() {
+			continue
+		}
+
+		for _, a := range domain.Apportion(part.total.Amount(), part.weights) {
+			m, err := money.New(a, currency)
+			if err != nil {
+				return nil, err
+			}
+
+			out = append(out, &m)
+		}
+	}
+
+	return out, nil
 }
 
 // appendNoteSettlement states the day every order settles, or the day of each one on its item.
