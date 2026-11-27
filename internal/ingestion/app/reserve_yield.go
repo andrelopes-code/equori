@@ -199,6 +199,7 @@ func (s *Service) reportedYield(
 	}
 
 	missing, err := s.missing(ctx, p.batch.BooksID, *reserve.AccountID, *balance)
+
 	missing += released
 	if err != nil || missing <= 0 {
 		return nil, err

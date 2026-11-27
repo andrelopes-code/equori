@@ -177,6 +177,7 @@ func (f yieldFixture) assertWithdrawal(id string, net, gross, retained int64) {
 	)
 
 	want := map[string]int64{f.checking: net, f.cofrinho: gross, yield: retained}
+
 	postings := 2
 	if retained != 0 {
 		postings = 3

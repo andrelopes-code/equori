@@ -88,6 +88,7 @@ func TestReviseFirstTerms(t *testing.T) {
 	f := newFixture(t, "2026-11-01")
 	id := f.rentSchedule()
 	f.pay("2026-11-05", 210000, f.rent, f.landlord)
+
 	path := "/api/v1/schedules/" + id + "/terms/2026-11-01"
 	f.h.ExpectProblem(
 		f.h.Do(

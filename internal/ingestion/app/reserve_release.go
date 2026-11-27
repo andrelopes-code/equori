@@ -53,6 +53,7 @@ func (p *importPlan) takePairs() {
 
 	for i, j := range domain.PairReleases(releases, withdrawals) {
 		p.releases[i].withdrawal = -1
+
 		if j < 0 {
 			continue
 		}

@@ -129,6 +129,7 @@ func TestBudgetInForce(t *testing.T) {
 		endFrom("2026-12"),
 		amountFrom("2027-02", 30000),
 	}}
+
 	tests := []struct {
 		month string
 		want  bool
