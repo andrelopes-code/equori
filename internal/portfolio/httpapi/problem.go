@@ -12,6 +12,10 @@ import (
 // ToProblem maps the module's errors to the codes declared in api/openapi.yaml (ADR 004);
 // the module returns none of its own.
 func ToProblem(err error) (problem.Details, bool) {
+	if d, ok := openingLossProblem(err); ok {
+		return d, true
+	}
+
 	if d, ok := contributionProblem(err); ok {
 		return d, true
 	}

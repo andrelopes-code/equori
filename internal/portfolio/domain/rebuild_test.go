@@ -37,7 +37,9 @@ func (fixtureJurisdiction) TaxClass(instrumentType, _, exchange string) string {
 
 func (fixtureJurisdiction) DeductibleContributions() []string { return nil }
 
-func (fixtureJurisdiction) GainTax([]TaxSale) []TaxMonth { return nil }
+func (fixtureJurisdiction) GainTax([]TaxSale, []OpeningLoss) []TaxMonth { return nil }
+
+func (fixtureJurisdiction) LossPools() []string { return nil }
 
 func (fixtureJurisdiction) AbroadTax([]AbroadItem) []AbroadYear { return nil }
 

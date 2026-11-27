@@ -32,6 +32,7 @@ var exclusions = map[string]bool{
 	"-erase":      true, // erases a book with all its data; the owner confirms it by typing the name (DB1)
 	"-editor":     true, // a spreadsheet is a snapshot of its editor, read and written by the editor alone (ADR 038)
 	"-projection": true, // the projection plan of a member, computed and read by the projection tab alone (portfolio projection design S1)
+	"-tax-record": true, // an amount from the person's own tax records, typed on the Monthly tax tab (investment history AS4)
 	"-series":     true, // a chart read of dated points beside get_portfolio, which answers a language model in figures (portfolio results PS7)
 }
 

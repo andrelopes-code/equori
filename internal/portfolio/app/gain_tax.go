@@ -37,6 +37,11 @@ func (s *Service) GainTax(
 		return nil, "", err
 	}
 
+	opening, err := s.repo.OpeningLosses(ctx, booksID)
+	if err != nil {
+		return nil, "", err
+	}
+
 	trades, err := s.saleFacts(ctx, booksID)
 	if err != nil {
 		return nil, "", err
@@ -49,7 +54,7 @@ func (s *Service) GainTax(
 
 	var out []domain.TaxMonth
 
-	for _, m := range j.GainTax(sales) {
+	for _, m := range j.GainTax(sales, opening) {
 		if !m.Month.Before(from) && m.Month.Before(to) {
 			out = append(out, m)
 		}

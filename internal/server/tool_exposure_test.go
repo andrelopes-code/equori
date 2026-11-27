@@ -117,6 +117,8 @@ var exposure = map[string]string{
 	"listPositions":                    "get_portfolio",
 	"listRealizedResults":              "get_tax_year",
 	"listGainTax":                      "get_tax_year",
+	"listOpeningLosses":                "get_tax_year",
+	"saveOpeningLosses":                "-tax-record",
 	"listIncomeEvents":                 "get_tax_year",
 	"listInvestmentIncomeTypes":        "get_portfolio",
 	"listInstrumentSubtypes":           "get_portfolio",

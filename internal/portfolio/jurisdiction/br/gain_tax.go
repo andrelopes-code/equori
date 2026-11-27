@@ -41,7 +41,12 @@ var poolRate = map[string]int{
 var variableIncome = []string{"stock", "etf", "bdr", "option", "future"}
 
 // GainTax returns the tax of each month with sales of variable income, in order (GT1 to GT5).
-func (Jurisdiction) GainTax(sales []domain.TaxSale) []domain.TaxMonth {
+// An opening loss replaces the loss carried into its pool at the first month on or after its
+// month with a sale of that pool (investment history LO3).
+func (Jurisdiction) GainTax(
+	sales []domain.TaxSale,
+	opening []domain.OpeningLoss,
+) []domain.TaxMonth {
 	byMonth := map[time.Time][]domain.TaxSale{}
 	for _, s := range sales {
 		if poolOf(s) != "" {
@@ -60,10 +65,37 @@ func (Jurisdiction) GainTax(sales []domain.TaxSale) []domain.TaxMonth {
 	out := make([]domain.TaxMonth, 0, len(months))
 
 	for _, m := range months {
+		opening = c.open(m, byMonth[m], opening)
 		out = append(out, c.month(m, byMonth[m]))
 	}
 
 	return out
+}
+
+// LossPools are the pools whose loss from before the book a person may type; crypto is left out
+// since its loss reduces no gain (Lei 13.259/2016).
+func (Jurisdiction) LossPools() []string {
+	return []string{domain.PoolOrdinary, domain.PoolDayTrade, domain.PoolFII}
+}
+
+// open applies to the carry the opening losses that fall on or before m with a sale of their pool
+// in sales, and returns the ones not yet applied.
+func (c *carry) open(
+	m time.Time,
+	sales []domain.TaxSale,
+	opening []domain.OpeningLoss,
+) []domain.OpeningLoss {
+	return slices.DeleteFunc(slices.Clone(opening), func(o domain.OpeningLoss) bool {
+		if o.Month.After(m) || !slices.ContainsFunc(sales, func(s domain.TaxSale) bool {
+			return poolOf(s) == o.Pool
+		}) {
+			return false
+		}
+
+		c.loss[o.Pool] = o.Amount
+
+		return true
+	})
 }
 
 // carry is what a month leaves to the next: the loss of each pool, the tax withheld beyond the

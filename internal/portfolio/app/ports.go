@@ -173,6 +173,10 @@ type Repository interface {
 	ClaimRebuildVersion(ctx context.Context, version string) (bool, error)
 	// ForgetRebuildVersion clears the stored version, so the next start rebuilds again.
 	ForgetRebuildVersion(ctx context.Context) error
+	OpeningLosses(ctx context.Context, booksID int64) ([]domain.OpeningLoss, error)
+	// ReplaceOpeningLosses deletes the opening losses of the book and inserts losses in one
+	// transaction.
+	ReplaceOpeningLosses(ctx context.Context, booksID int64, losses []domain.OpeningLoss) error
 	ContributionPlan(ctx context.Context, booksID int64) (domain.Plan, bool, error)
 	SaveContributionPlan(ctx context.Context, booksID int64, p domain.Plan) (int64, error)
 	// FactInUse reports whether a question of any book names the fact.

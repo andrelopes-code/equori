@@ -36,6 +36,10 @@ func (s *Server) Register(mux *http.ServeMux) {
 		httpserver.Handle(s.errs, http.StatusOK, s.listIncomeEvents))
 	mux.HandleFunc("GET "+BaseURL+"/gain-tax",
 		httpserver.Handle(s.errs, http.StatusOK, s.listGainTax))
+	mux.HandleFunc("GET "+BaseURL+"/gain-tax/opening-losses",
+		httpserver.Handle(s.errs, http.StatusOK, s.listOpeningLosses))
+	mux.HandleFunc("PUT "+BaseURL+"/gain-tax/opening-losses",
+		httpserver.Handle(s.errs, http.StatusOK, s.saveOpeningLosses))
 	mux.HandleFunc("GET "+BaseURL+"/fixed-income-events",
 		httpserver.Handle(s.errs, http.StatusOK, s.listFixedIncomeEvents))
 	mux.HandleFunc("GET "+BaseURL+"/investment-income-types",

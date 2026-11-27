@@ -53,7 +53,16 @@ type getTaxYearOut struct {
 
 	GainTax []gainTaxMonthView `json:"gain_tax,omitzero"`
 
+	OpeningLosses []openingLossView `json:"opening_losses,omitzero"`
+
 	AbroadTax abroadTaxView `json:"abroad_tax,omitzero"`
+}
+
+// openingLossView is the loss of a pool carried from before the book's history, from its month.
+type openingLossView struct {
+	Pool   string     `json:"pool"`
+	Month  string     `json:"month"`
+	Amount tool.Money `json:"amount"`
 }
 
 // abroadTaxView is the annual tax of the investments quoted in another currency (U-08).
@@ -144,7 +153,11 @@ func taxView(
 ) (getTaxYearOut, error) {
 	var err error
 	if in.View == "gain_tax" {
-		out.GainTax, err = gainTaxMonths(ctx, svc, booksID, in.Year)
+		if out.GainTax, err = gainTaxMonths(ctx, svc, booksID, in.Year); err != nil {
+			return out, err
+		}
+
+		out.OpeningLosses, err = openingLossViews(ctx, svc, booksID)
 	} else {
 		out.AbroadTax, err = abroadTax(ctx, svc, booksID, in.Year)
 	}
@@ -207,6 +220,33 @@ func taxYearIncome(
 	}
 
 	return income, nil
+}
+
+func openingLossViews(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+) ([]openingLossView, error) {
+	_, losses, base, err := svc.OpeningLosses(ctx, booksID)
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]openingLossView, len(losses))
+	for i, l := range losses {
+		amount, err := money.New(l.Amount, base)
+		if err != nil {
+			return nil, err
+		}
+
+		out[i] = openingLossView{
+			Pool:   l.Pool,
+			Month:  l.Month.Format("2006-01"),
+			Amount: tool.MoneyOf(amount),
+		}
+	}
+
+	return out, nil
 }
 
 // gainTaxMonths states the monthly tax in the base currency of the book (monthly gain tax design).

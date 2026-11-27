@@ -59,7 +59,7 @@ func TestGainTax(t *testing.T) {
 		},
 	}
 
-	got := New().GainTax(sales)
+	got := New().GainTax(sales, nil)
 
 	want := map[time.Month]struct {
 		pool                    string
@@ -110,7 +110,7 @@ func TestGainTaxExemptionReadsStocks(t *testing.T) {
 	got := New().GainTax([]domain.TaxSale{
 		{Month: month(time.June), Kind: "swing", TaxClass: "stock", Gross: 2000001, Result: 10000},
 		{Month: month(time.July), Kind: "swing", TaxClass: "etf", Gross: 100000, Result: 10000},
-	})
+	}, nil)
 
 	if len(got) != 2 || got[0].Lines[0].Exempt != 0 || got[0].Lines[0].Tax != 1500 ||
 		got[1].Lines[0].Exempt != 0 || got[1].Lines[0].Tax != 1500 {
@@ -148,7 +148,7 @@ func TestGainTaxWithheldCarriesWithinTheYear(t *testing.T) {
 			Result:   10000,
 			Withheld: 0,
 		},
-	})
+	}, nil)
 
 	// November keeps 5.00 withheld; December's tax of 0.00 (its gain spends the loss) leaves it;
 	// January of the next year owes its 20.00 whole.
@@ -170,7 +170,7 @@ func TestGainTaxLeavesFixedIncomeETF(t *testing.T) {
 			Gross:    5000000,
 			Result:   50000,
 		},
-	})
+	}, nil)
 
 	if len(got) != 0 {
 		t.Errorf("months = %+v, want none", got)
@@ -212,7 +212,7 @@ func TestGainTaxCrypto(t *testing.T) {
 			Gross:    3000000,
 			Result:   100000,
 		},
-	})
+	}, nil)
 
 	if len(got) != 2 {
 		t.Fatalf("months = %+v", got)
@@ -249,5 +249,81 @@ func TestBracketTax(t *testing.T) {
 		if got := bracketTax(gain); got != want {
 			t.Errorf("bracketTax(%d) = %d, want %d", gain, got, want)
 		}
+	}
+}
+
+// Investment history LO3, in cents: an opening loss of a pool is the loss carried into its month,
+// replacing the loss computed from earlier sales at the first month on or after it with a sale of
+// that pool.
+func TestGainTaxOpeningLoss(t *testing.T) {
+	t.Parallel()
+
+	stock := func(m time.Time, result int64) domain.TaxSale {
+		return domain.TaxSale{
+			Month: m, Kind: "swing", TaxClass: "stock", Gross: 3000000, Result: result,
+		}
+	}
+	november := time.Date(2025, time.November, 1, 0, 0, 0, 0, time.UTC)
+
+	tests := map[string]struct {
+		sales                      []domain.TaxSale
+		opening                    domain.OpeningLoss
+		lossUsed, lossCarried, tax int64
+		month                      time.Time
+	}{
+		"opening before the sale": {
+			sales: []domain.TaxSale{stock(month(time.March), 60000)},
+			opening: domain.OpeningLoss{
+				Pool:   domain.PoolOrdinary,
+				Month:  month(time.January),
+				Amount: 100000,
+			},
+			month:       month(time.March),
+			lossUsed:    60000,
+			lossCarried: 40000,
+		},
+		"opening after the sale": {
+			sales: []domain.TaxSale{stock(month(time.March), 60000)},
+			opening: domain.OpeningLoss{
+				Pool:   domain.PoolOrdinary,
+				Month:  month(time.May),
+				Amount: 100000,
+			},
+			month: month(time.March),
+			tax:   9000,
+		},
+		"opening replaces the computed carry": {
+			sales: []domain.TaxSale{
+				stock(november, -50000),
+				stock(month(time.March), 60000),
+			},
+			opening: domain.OpeningLoss{
+				Pool:   domain.PoolOrdinary,
+				Month:  month(time.January),
+				Amount: 100000,
+			},
+			month:       month(time.March),
+			lossUsed:    60000,
+			lossCarried: 40000,
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			var line domain.TaxLine
+
+			for _, m := range New().GainTax(tc.sales, []domain.OpeningLoss{tc.opening}) {
+				if m.Month.Equal(tc.month) {
+					line = m.Lines[0]
+				}
+			}
+
+			if line.LossUsed != tc.lossUsed || line.LossCarried != tc.lossCarried ||
+				line.Tax != tc.tax {
+				t.Errorf("line = %+v, want used %d carried %d tax %d",
+					line, tc.lossUsed, tc.lossCarried, tc.tax)
+			}
+		})
 	}
 }

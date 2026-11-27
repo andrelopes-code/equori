@@ -20,6 +20,14 @@ type TaxSale struct {
 	Gross, Result, Withheld int64
 }
 
+// OpeningLoss is the loss of a pool carried into Month from before the book's history, in minor
+// units of the base currency (investment history LO1).
+type OpeningLoss struct {
+	Pool   string
+	Month  time.Time
+	Amount int64
+}
+
 // TaxLine is the tax of one pool in one month. Exempt is the gain the exemption removed; LossUsed
 // the carried loss spent; LossCarried the loss left after the month; Due the tax less the tax
 // withheld, never below zero.

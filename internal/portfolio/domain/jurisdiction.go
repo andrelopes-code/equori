@@ -31,8 +31,12 @@ type Jurisdiction interface {
 	// from taxable income: a pension plan of the jurisdiction; empty when none.
 	DeductibleContributions() []string
 	// GainTax returns the monthly tax on the gains of the sales of variable income, in month
-	// order; none in a region without such a tax (monthly gain tax design GT7).
-	GainTax(sales []TaxSale) []TaxMonth
+	// order; none in a region without such a tax (monthly gain tax design GT7). An opening loss
+	// replaces the loss carried into its pool from its month (investment history LO3).
+	GainTax(sales []TaxSale, opening []OpeningLoss) []TaxMonth
+	// LossPools lists the pools whose loss carried from before the book a person may type; none
+	// in a region without a monthly tax (investment history LO2).
+	LossPools() []string
 	// AbroadTax returns the annual tax of the financial investments held abroad, in year order;
 	// none in a region without such a tax (coverage row U-08).
 	AbroadTax(items []AbroadItem) []AbroadYear

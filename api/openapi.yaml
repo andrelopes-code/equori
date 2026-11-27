@@ -7553,6 +7553,47 @@ paths:
           $ref: "#/components/responses/Problem"
         "401":
           $ref: "#/components/responses/Problem"
+  /gain-tax/opening-losses:
+    get:
+      tags: [portfolio]
+      operationId: listOpeningLosses
+      x-book-role: read
+      summary: The losses of each pool of the monthly tax carried from before the book's history (investment history LO4).
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OpeningLossSet"
+        "401":
+          $ref: "#/components/responses/Problem"
+    put:
+      tags: [portfolio]
+      operationId: saveOpeningLosses
+      x-book-role: write
+      summary: Replace the losses carried from before the book's history; an empty list clears them (LO4).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OpeningLossList"
+      responses:
+        "200":
+          description: Saved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OpeningLossSet"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /fixed-income-events:
     get:
       tags: [portfolio]
@@ -16723,6 +16764,44 @@ components:
           type: string
           nullable: true
           pattern: "^[a-z0-9_]{2,40}$"
+    OpeningLossList:
+      type: object
+      additionalProperties: false
+      required: [losses]
+      properties:
+        losses:
+          type: array
+          maxItems: 20
+          items:
+            $ref: "#/components/schemas/OpeningLoss"
+    OpeningLossSet:
+      type: object
+      additionalProperties: false
+      required: [pools, losses]
+      properties:
+        pools:
+          type: array
+          description: The pools of the jurisdiction that accept an opening loss (LossPools); empty in a region without one.
+          items:
+            type: string
+            pattern: "^[a-z0-9_]{2,40}$"
+        losses:
+          type: array
+          items:
+            $ref: "#/components/schemas/OpeningLoss"
+    OpeningLoss:
+      type: object
+      additionalProperties: false
+      required: [pool, month, amount]
+      properties:
+        pool:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
+        month:
+          type: string
+          pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$"
+        amount:
+          $ref: "#/components/schemas/Money"
     GainTaxMonthList:
       type: object
       required: [from, to, items]

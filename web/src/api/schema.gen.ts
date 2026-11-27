@@ -4401,6 +4401,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/gain-tax/opening-losses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The losses of each pool of the monthly tax carried from before the book's history (investment history LO4). */
+        get: operations["listOpeningLosses"];
+        /** Replace the losses carried from before the book's history; an empty list clears them (LO4). */
+        put: operations["saveOpeningLosses"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/fixed-income-events": {
         parameters: {
             query?: never;
@@ -9362,6 +9380,19 @@ export interface components {
             proceeds: components["schemas"]["Money"];
             result: components["schemas"]["Money"];
             tax_class: string | null;
+        };
+        OpeningLossList: {
+            losses: components["schemas"]["OpeningLoss"][];
+        };
+        OpeningLossSet: {
+            /** @description The pools of the jurisdiction that accept an opening loss (LossPools); empty in a region without one. */
+            pools: string[];
+            losses: components["schemas"]["OpeningLoss"][];
+        };
+        OpeningLoss: {
+            pool: string;
+            month: string;
+            amount: components["schemas"]["Money"];
         };
         GainTaxMonthList: {
             /**
@@ -17736,6 +17767,55 @@ export interface operations {
             };
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
+        };
+    };
+    listOpeningLosses: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpeningLossSet"];
+                };
+            };
+            401: components["responses"]["Problem"];
+        };
+    };
+    saveOpeningLosses: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpeningLossList"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpeningLossSet"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
         };
     };
     listFixedIncomeEvents: {

@@ -8111,6 +8111,44 @@
             "additionalProperties": false
           }
         },
+        "opening_losses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "pool": {
+                "type": "string"
+              },
+              "month": {
+                "type": "string"
+              },
+              "amount": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "pool",
+              "month",
+              "amount"
+            ],
+            "additionalProperties": false
+          }
+        },
         "abroad_tax": {
           "type": "object",
           "properties": {

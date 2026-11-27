@@ -55,6 +55,35 @@ func TestSchemaRejectsInvalidRows(t *testing.T) {
 	}
 }
 
+// Investment history LO1: an opening loss is a positive amount at the first day of a month, of a
+// book that exists.
+func TestSchemaRejectsInvalidOpeningLosses(t *testing.T) {
+	t.Parallel()
+	pool := pgtest.New(t)
+	ctx := t.Context()
+	user := pgtest.CreateBooks(t, pool)
+
+	tests := map[string]string{
+		"amount zero":      `INSERT INTO portfolio_opening_loss (books_id, pool, month, amount) VALUES ($1, 'ordinary', '2026-01-01', 0)`,
+		"month not first":  `INSERT INTO portfolio_opening_loss (books_id, pool, month, amount) VALUES ($1, 'ordinary', '2026-01-15', 100)`,
+		"malformed pool":   `INSERT INTO portfolio_opening_loss (books_id, pool, month, amount) VALUES ($1, 'Bad!', '2026-01-01', 100)`,
+		"without book":     `INSERT INTO portfolio_opening_loss (books_id, pool, month, amount) SELECT NULL, 'ordinary', '2026-01-01', 100 WHERE $1::bigint IS NOT NULL`,
+		"book that is not": `INSERT INTO portfolio_opening_loss (books_id, pool, month, amount) SELECT $1 + 1000000, 'ordinary', '2026-01-01', 100`,
+		"pool twice": `INSERT INTO portfolio_opening_loss (books_id, pool, month, amount)
+			VALUES ($1, 'fii', '2026-01-01', 100), ($1, 'fii', '2026-02-01', 100)`,
+	}
+	for name, sql := range tests {
+		t.Run(name, func(t *testing.T) {
+			_, err := pool.Exec(ctx, sql, user)
+
+			var pgErr *pgconn.PgError
+			if !errors.As(err, &pgErr) || !strings.HasPrefix(pgErr.Code, "23") {
+				t.Fatalf("want an integrity constraint violation, got %v", err)
+			}
+		})
+	}
+}
+
 func TestSchemaRejectsInvalidContributionRows(t *testing.T) {
 	t.Parallel()
 	pool := pgtest.New(t)

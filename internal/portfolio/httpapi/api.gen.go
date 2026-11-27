@@ -928,6 +928,26 @@ type NetWorthDays struct {
 	Items []NetWorthDay `json:"items"`
 }
 
+// OpeningLoss defines model for OpeningLoss.
+type OpeningLoss struct {
+	Amount Money  `json:"amount"`
+	Month  string `json:"month"`
+	Pool   string `json:"pool"`
+}
+
+// OpeningLossList defines model for OpeningLossList.
+type OpeningLossList struct {
+	Losses []OpeningLoss `json:"losses"`
+}
+
+// OpeningLossSet defines model for OpeningLossSet.
+type OpeningLossSet struct {
+	Losses []OpeningLoss `json:"losses"`
+
+	// Pools The pools of the jurisdiction that accept an opening loss (LossPools); empty in a region without one.
+	Pools []string `json:"pools"`
+}
+
 // Position defines model for Position.
 type Position struct {
 	AccountId openapi_types.UUID `json:"account_id"`
@@ -1428,6 +1448,9 @@ type SaveContributionPlanJSONRequestBody = ContributionPlanInput
 
 // PreviewContributionPlanJSONRequestBody defines body for PreviewContributionPlan for application/json ContentType.
 type PreviewContributionPlanJSONRequestBody = ContributionPreviewInput
+
+// SaveOpeningLossesJSONRequestBody defines body for SaveOpeningLosses for application/json ContentType.
+type SaveOpeningLossesJSONRequestBody = OpeningLossList
 
 // SavePortfolioProjectionJSONRequestBody defines body for SavePortfolioProjection for application/json ContentType.
 type SavePortfolioProjectionJSONRequestBody = ProjectionPlanInput
