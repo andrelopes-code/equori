@@ -181,6 +181,10 @@ var uncoveredFields = map[string][]string{
 		"effective_from",
 		"recurrence",
 	}, // effective_from is read as from; recurrence beyond frequency, interval and day_of_month is not offered
+	"reviseScheduleTerms": {
+		"effective_from",
+		"recurrence",
+	}, // revise_terms shares the inputs of change_terms: see changeScheduleTerms
 	"closeAccount": {
 		"closed_on",
 	}, // read as date
