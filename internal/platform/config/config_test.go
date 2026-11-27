@@ -4,12 +4,16 @@ import (
 	"log/slog"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 )
 
 func TestLoad(t *testing.T) {
 	t.Parallel()
+
+	// An unset EQUORI_HTTP_ADDR differs by platform (PW4.2): TestDefaultHTTPAddr pins each value.
+	addr := defaultHTTPAddr(runtime.GOOS)
 
 	tests := []struct {
 		name    string
@@ -21,7 +25,7 @@ func TestLoad(t *testing.T) {
 			name: "defaults",
 			env:  map[string]string{"EQUORI_DATABASE_URL": "postgres://x"},
 			want: Config{
-				DatabaseURL: "postgres://x", HTTPAddr: ":8080", LogLevel: slog.LevelInfo,
+				DatabaseURL: "postgres://x", HTTPAddr: addr, LogLevel: slog.LevelInfo,
 			},
 		},
 		{
@@ -32,7 +36,7 @@ func TestLoad(t *testing.T) {
 			},
 			want: Config{
 				DatabaseURL: "postgres://x",
-				HTTPAddr:    ":8080",
+				HTTPAddr:    addr,
 				LogLevel:    slog.LevelInfo,
 				LogFormat:   "text",
 			},
@@ -45,7 +49,7 @@ func TestLoad(t *testing.T) {
 			},
 			want: Config{
 				DatabaseURL: "postgres://x",
-				HTTPAddr:    ":8080",
+				HTTPAddr:    addr,
 				LogLevel:    slog.LevelInfo,
 				LogFormat:   "pretty",
 			},
@@ -89,7 +93,6 @@ func TestLoad(t *testing.T) {
 			},
 			wantErr: true,
 		},
-		{name: "missing database url and data directory", env: map[string]string{}, wantErr: true},
 		{
 			name: "managed with explicit directories",
 			env: map[string]string{
@@ -100,7 +103,7 @@ func TestLoad(t *testing.T) {
 				DataDir:     "/srv/equori",
 				BackupDir:   filepath.Join("/srv/equori", "backups"),
 				PostgresBin: "/usr/lib/postgresql/18/bin",
-				HTTPAddr:    ":8080",
+				HTTPAddr:    addr,
 				LogLevel:    slog.LevelInfo,
 			},
 		},
@@ -112,7 +115,7 @@ func TestLoad(t *testing.T) {
 			},
 			want: Config{
 				DataDir: "/srv/equori", BackupDir: "/mnt/backups",
-				HTTPAddr: ":8080", LogLevel: slog.LevelInfo,
+				HTTPAddr: addr, LogLevel: slog.LevelInfo,
 			},
 		},
 		{
@@ -123,7 +126,7 @@ func TestLoad(t *testing.T) {
 			},
 			want: Config{
 				DatabaseURL: "postgres://x", CopyDir: "/copies",
-				HTTPAddr: ":8080", LogLevel: slog.LevelInfo,
+				HTTPAddr: addr, LogLevel: slog.LevelInfo,
 			},
 		},
 		{
@@ -151,6 +154,17 @@ func TestLoad(t *testing.T) {
 			wantErr: true,
 		},
 	}
+	// On Windows the data directory always exists beside the executable (PW4.1):
+	// TestLoadKeepsDataBesideTheExecutable covers that case there.
+	if runtime.GOOS != "windows" {
+		tests = append(tests, struct {
+			name    string
+			env     map[string]string
+			want    Config
+			wantErr bool
+		}{name: "missing database url and data directory", env: map[string]string{}, wantErr: true})
+	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := Load(func(k string) string { return tt.env[k] }, Families{})
