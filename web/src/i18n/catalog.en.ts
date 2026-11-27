@@ -2748,6 +2748,8 @@ export const catalogEn = {
   "assistant.field.accent": "Accent",
   "assistant.field.network": "Card network",
   "assistant.field.net": "Net",
+  "assistant.field.exchange_rate": "Exchange rate",
+  "assistant.field.base_amount": "Amount in the base currency",
   "assistant.field.settlement": "Settlement",
   "assistant.field.income_type": "Income type",
   "assistant.field.index": "Index",

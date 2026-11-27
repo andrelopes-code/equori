@@ -58,6 +58,8 @@ var ChangeFields = []string{
 	"carried",
 	"instruments",
 	"exchange",
+	"exchange_rate",
+	"base_amount",
 	"subtype",
 	"symbols",
 	"time_zone",

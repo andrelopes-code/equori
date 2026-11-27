@@ -2782,6 +2782,8 @@ export const catalogPtBR: Catalog = {
   "assistant.field.accent": "Cor de destaque",
   "assistant.field.network": "Bandeira",
   "assistant.field.net": "Líquido",
+  "assistant.field.exchange_rate": "Câmbio",
+  "assistant.field.base_amount": "Valor na moeda base",
   "assistant.field.settlement": "Liquidação",
   "assistant.field.income_type": "Tipo de provento",
   "assistant.field.index": "Índice",

@@ -109,7 +109,10 @@ function grossRow(preview: Preview, kind: string): TicketRow[] {
 
 // What an operation without money changes or keeps.
 function factRows(preview: Preview, kind: string): TicketRow[] {
-  const rows: (TicketRow | undefined)[] = [];
+  const rows: (TicketRow | undefined)[] = [
+    changeRow(preview, "exchange_rate", "assistant.field.exchange_rate"),
+    changeRow(preview, "base_amount", "assistant.field.base_amount"),
+  ];
 
   if (kind === "bonus")
     rows.push(changeRow(preview, "price", "assistant.ticket.unit_cost"));

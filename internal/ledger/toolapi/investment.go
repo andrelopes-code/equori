@@ -20,7 +20,7 @@ type recordInvestmentIn struct {
 	BrokerageID   string               `json:"brokerage_id,omitzero"    jsonschema:"Brokerage that holds the Investment, from list_accounts; with instrument, instead of account_id"`
 	Instrument    string               `json:"instrument,omitzero"      jsonschema:"code of the Investment, such as PETR4"`
 	AccountID     string               `json:"account_id,omitzero"      jsonschema:"Investment line inside a Brokerage, from list_accounts; instead of brokerage_id and instrument"`
-	CashAccountID string               `json:"cash_account_id,omitzero" jsonschema:"Cash of the Brokerage or an open account of its institution; the single candidate if absent"`
+	CashAccountID string               `json:"cash_account_id,omitzero" jsonschema:"cash account of the Brokerage or its institution; the single candidate if absent"`
 	Date          tool.Date            `json:"date"                     jsonschema:"trade or payment date"`
 	Quantity      string               `json:"quantity,omitzero"        jsonschema:"buy, sell: positive quantity"`
 	UnitPrice     string               `json:"unit_price,omitzero"      jsonschema:"buy, sell: price of one unit in the cash currency"`
@@ -31,13 +31,14 @@ type recordInvestmentIn struct {
 	Withheld      string               `json:"withheld,omitzero"        jsonschema:"income: tax withheld; region rate when absent"`
 	IncomeType    string               `json:"income_type,omitzero"     jsonschema:"income: type from get_portfolio with view income_types"`
 	CategoryID    string               `json:"category_id,omitzero"     jsonschema:"income: income category from list_accounts"`
+	ExchangeRate  string               `json:"exchange_rate,omitzero"   jsonschema:"base currency per cash unit; day rate if empty"`
 
-	Description        string `json:"description,omitzero"          jsonschema:"description of the transaction; derived from the kind and the investment if empty"`
+	Description        string `json:"description,omitzero"          jsonschema:"description of the transaction; derived if empty"`
 	TaxesCategoryID    string `json:"taxes_category_id,omitzero"    jsonschema:"buy, sell: expense category of the taxes; the taxes account if absent"`
 	WithheldCategoryID string `json:"withheld_category_id,omitzero" jsonschema:"income: expense category of the tax withheld; the taxes account if absent"`
 
 	TransactionID string `json:"transaction_id,omitzero" jsonschema:"trade or income to correct, from get_transactions; the proposal replaces the whole order: repeat the fields that stay"`
-	Reason        string `json:"reason,omitzero"         jsonschema:"with transaction_id: why the transaction changes, kept in its history"`
+	Reason        string `json:"reason,omitzero"         jsonschema:"with transaction_id: why it changes, kept in its history"`
 }
 
 type recordInvestmentOut struct {
@@ -52,7 +53,7 @@ func recordInvestment(svc *app.Service) tool.Tool {
 			"A Brokerage with no Cash in the base currency is refused: create one with manage_accounts_and_payees. " +
 			"write_off removes units at zero proceeds, their cost a realized loss: an expired option, an unexercised right, a worthless security. " +
 			"opening records units held before the book at their cost on the date acquired, no cash: quantity, unit_price, fees. " +
-			"Use it for a trade, a dividend or other income. " +
+			"Use it for a trade or income. " +
 			"With transaction_id and reason it corrects that trade or income instead of recording one; change_transaction does not. " +
 			"Do not use it to define a new security: manage_instrument does. " +
 			"The user confirms first.",
@@ -156,6 +157,10 @@ func (s investmentStep) income(
 		return pv, nil, err
 	}
 
+	if o.ExchangeRate, err = parseExchangeRate(in.ExchangeRate); err != nil {
+		return pv, nil, err
+	}
+
 	appendMoneyChange(&pv, "amount", &gross)
 	appendMoneyChange(&pv, "withheld", withheld)
 	appendMoneyChange(&pv, "net", &net)
@@ -163,6 +168,11 @@ func (s investmentStep) income(
 		pv.Changes,
 		tool.Change{Field: "income_type", After: tool.TextValue(in.IncomeType)},
 	)
+
+	err = appendRateChanges(ctx, s.svc, s.booksID, &pv, in.ExchangeRate, o.ExchangeRate, net)
+	if err != nil {
+		return pv, nil, err
+	}
 
 	s.appendCashAndDate(&pv)
 	s.fix.compareIncome(&pv)
@@ -228,7 +238,13 @@ func (s investmentStep) trade(
 	appendMoneyChange(&pv, "fees", o.Fees)
 	appendMoneyChange(&pv, "taxes", o.Taxes)
 
-	if err = appendTradeMoney(&pv, o, s.target.cashUnit.Currency()); err != nil {
+	net, err := appendTradeMoney(&pv, o, s.target.cashUnit.Currency())
+	if err != nil {
+		return pv, nil, err
+	}
+
+	err = appendRateChanges(ctx, s.svc, s.booksID, &pv, s.in.ExchangeRate, o.ExchangeRate, net)
+	if err != nil {
 		return pv, nil, err
 	}
 
@@ -274,7 +290,13 @@ func (s investmentStep) tradeOrder(ctx context.Context) (domain.TradeOrder, erro
 		return domain.TradeOrder{}, err
 	}
 
+	rate, err := parseExchangeRate(in.ExchangeRate)
+	if err != nil {
+		return domain.TradeOrder{}, err
+	}
+
 	o := domain.TradeOrder{
+		ExchangeRate:    rate,
 		AccountID:       s.ids.account,
 		CashAccountID:   s.ids.cash,
 		BrokerageID:     s.ids.brokerage,
@@ -362,20 +384,24 @@ func (s investmentStep) appendSettlement(
 
 // appendTradeMoney adds the gross (quantity × price) as amount and the signed change of the cash as
 // net (investment proposals design, IP1). A write-off has neither; an opening has no net.
-func appendTradeMoney(pv *tool.Preview, o domain.TradeOrder, cash money.Currency) error {
+func appendTradeMoney(
+	pv *tool.Preview,
+	o domain.TradeOrder,
+	cash money.Currency,
+) (money.Money, error) {
 	if o.Side == domain.SideWriteOff {
-		return nil
+		return money.Money{}, nil
 	}
 
 	gross, err := grossOf(o.Quantity, o.UnitPrice, cash)
 	if err != nil {
-		return err
+		return gross, err
 	}
 
 	if o.Side == domain.SideOpening {
 		appendMoneyChange(pv, "amount", &gross)
 
-		return nil
+		return gross, nil
 	}
 
 	signed := gross
@@ -385,11 +411,11 @@ func appendTradeMoney(pv *tool.Preview, o domain.TradeOrder, cash money.Currency
 
 	net, err := subtract(signed, o.Fees, o.Taxes)
 	if err != nil {
-		return err
+		return net, err
 	}
 
 	appendMoneyChange(pv, "amount", &gross)
 	appendMoneyChange(pv, "net", &net)
 
-	return nil
+	return net, nil
 }

@@ -13,26 +13,27 @@ import (
 type recordFixedIncomeIn struct {
 	BrokerageID   string    `json:"brokerage_id"             jsonschema:"Brokerage that holds the contract, from list_accounts"`
 	Opening       bool      `json:"opening,omitzero"         jsonschema:"true: held before the book, no cash"`
-	CashAccountID string    `json:"cash_account_id,omitzero" jsonschema:"Cash of the Brokerage or an open account of its institution; the single candidate if absent"`
+	CashAccountID string    `json:"cash_account_id,omitzero" jsonschema:"cash account of the Brokerage or its institution; the single candidate if absent"`
 	AppliedOn     tool.Date `json:"applied_on"               jsonschema:"date of the application"`
 	Amount        string    `json:"amount"                   jsonschema:"decimal amount applied, in the currency of the Brokerage"`
 	Fees          string    `json:"fees,omitzero"            jsonschema:"positive fees charged"`
+	ExchangeRate  string    `json:"exchange_rate,omitzero"   jsonschema:"base currency per cash unit; day rate if empty"`
 	Description   string    `json:"description,omitzero"     jsonschema:"description of the transaction"`
 
 	Instrument string `json:"instrument,omitzero" jsonschema:"code of a contract the book holds, to put more money into it; instead of the contract fields"`
 
 	Subtype        string    `json:"subtype,omitzero"          jsonschema:"new contract: kind, such as cdb, lci, lca or debenture"`
 	Issuer         string    `json:"issuer,omitzero"           jsonschema:"new contract: name of the issuer"`
-	IssuerScheme   string    `json:"issuer_scheme,omitzero"    jsonschema:"new contract: scheme of the issuer identifier, such as br_cnpj"`
-	IssuerID       string    `json:"issuer_id,omitzero"        jsonschema:"new contract: identifier of the issuer under the scheme"`
+	IssuerScheme   string    `json:"issuer_scheme,omitzero"    jsonschema:"new contract: issuer identifier scheme, such as br_cnpj"`
+	IssuerID       string    `json:"issuer_id,omitzero"        jsonschema:"new contract: issuer identifier"`
 	Name           string    `json:"name,omitzero"             jsonschema:"new contract: name; SUBTYPE issuer maturity when empty"`
 	IssuedOn       tool.Date `json:"issued_on,omitzero"        jsonschema:"new contract: issue date; the application date when empty"`
 	MaturesOn      tool.Date `json:"matures_on,omitzero"       jsonschema:"new contract: maturity date"`
 	IndexID        string    `json:"index_id,omitzero"         jsonschema:"new contract: index, such as cdi or ipca; empty for a pre-fixed rate"`
-	PercentOfIndex string    `json:"percent_of_index,omitzero" jsonschema:"new contract: percent of the index as text with at most 2 decimals, such as 110; 100 when empty"`
-	Spread         string    `json:"spread,omitzero"           jsonschema:"new contract: spread over the index, or the pre-fixed rate without index, as percent text with at most 2 decimals, such as 6.5"`
-	DayCount       string    `json:"day_count,omitzero"        jsonschema:"new contract: bus252 or act365; derived from the index and the region when empty"`
-	CalendarID     string    `json:"calendar_id,omitzero"      jsonschema:"new contract: business day calendar of bus252; the region calendar when empty"`
+	PercentOfIndex string    `json:"percent_of_index,omitzero" jsonschema:"new contract: percent of the index as text, such as 110; 100 when empty"`
+	Spread         string    `json:"spread,omitzero"           jsonschema:"new contract: spread over the index, or the pre-fixed rate; percent text, such as 6.5"`
+	DayCount       string    `json:"day_count,omitzero"        jsonschema:"new contract: bus252 or act365; derived when empty"`
+	CalendarID     string    `json:"calendar_id,omitzero"      jsonschema:"new contract: bus252 calendar; the region calendar when empty"`
 	DailyLiquidity bool      `json:"daily_liquidity,omitzero"  jsonschema:"new contract: true when it can be redeemed any day"`
 	RedeemableFrom tool.Date `json:"redeemable_from,omitzero"  jsonschema:"new contract: first date it can be redeemed"`
 
@@ -112,6 +113,12 @@ func planFixedIncome(
 	appendMoneyChange(&pv, "amount", &a.Amount)
 	appendMoneyChange(&pv, "fees", a.Fees)
 	appendMoneyChange(&pv, "net", &net)
+
+	err = appendRateChanges(ctx, svc, booksID, &pv, in.ExchangeRate, a.ExchangeRate, net)
+	if err != nil {
+		return pv, a, err
+	}
+
 	pv.Changes = append(
 		pv.Changes,
 		tool.Change{Field: "institution", After: tool.TextValue(cash.name)},
@@ -222,6 +229,10 @@ func fixedIncomeApplication(
 	}
 
 	if err = parseFixedIncomeAmounts(in, unit, &a); err != nil {
+		return a, err
+	}
+
+	if a.ExchangeRate, err = parseExchangeRate(in.ExchangeRate); err != nil {
 		return a, err
 	}
 

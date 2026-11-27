@@ -11722,7 +11722,7 @@
   },
   {
     "name": "record_brokerage_note",
-    "description": "Proposes one brokerage note: the several orders of one day at one Brokerage, with the costs and the withheld tax of the whole note. Each order becomes a trade of its own, in the order given; the costs are split by gross value. Use it when the user reports a note or more than one trade of the same day at the same Brokerage. Each security must exist: manage_instrument defines a new one. Do not use it for one trade whose own costs are known: record_investment does. The user confirms first.",
+    "description": "Proposes one brokerage note: the several orders of one day at one Brokerage, with the costs and the withheld tax of the whole note. Each order becomes a trade of its own; the costs are split by gross value. Use it when the user reports a note or more than one trade of the same day at the same Brokerage. Each security must exist: manage_instrument defines a new one. Do not use it for one trade whose own costs are known: record_investment does. The user confirms first.",
     "effect": "write",
     "idempotent": false,
     "input_schema": {
@@ -11734,7 +11734,7 @@
         },
         "cash_account_id": {
           "type": "string",
-          "description": "Cash of the Brokerage or an open account of its institution; the single candidate when absent"
+          "description": "cash account of the Brokerage or its institution; the single candidate if absent"
         },
         "date": {
           "type": "string",
@@ -11743,8 +11743,12 @@
         },
         "settlement_date": {
           "type": "string",
-          "description": "day the cash moves; derived when empty",
+          "description": "cash settlement day; derived when empty",
           "format": "date"
+        },
+        "exchange_rate": {
+          "type": "string",
+          "description": "one rate for the note: base currency per cash unit; day rate if empty"
         },
         "fees": {
           "type": "string",
@@ -11752,7 +11756,7 @@
         },
         "taxes": {
           "type": "string",
-          "description": "income tax withheld on the whole note, positive; split among the sales"
+          "description": "tax withheld on the whole note, positive; split among the sales"
         },
         "taxes_category_id": {
           "type": "string",
@@ -11760,7 +11764,7 @@
         },
         "description": {
           "type": "string",
-          "description": "description of each transaction; a title derived from the order when empty"
+          "description": "description of each transaction; derived when empty"
         },
         "orders": {
           "type": "array",
@@ -11777,7 +11781,7 @@
               },
               "instrument": {
                 "type": "string",
-                "description": "code of the security, such as PETR4; an odd-lot code such as PETR4F is the same security"
+                "description": "code of the security, such as PETR4; odd-lot PETR4F is PETR4"
               },
               "quantity": {
                 "type": "string",
@@ -11785,7 +11789,7 @@
               },
               "unit_price": {
                 "type": "string",
-                "description": "decimal price of one unit, without costs"
+                "description": "price of one unit, without costs"
               }
             },
             "required": [
@@ -11940,7 +11944,7 @@
         },
         "cash_account_id": {
           "type": "string",
-          "description": "Cash of the Brokerage or an open account of its institution; the single candidate if absent"
+          "description": "cash account of the Brokerage or its institution; the single candidate if absent"
         },
         "applied_on": {
           "type": "string",
@@ -11954,6 +11958,10 @@
         "fees": {
           "type": "string",
           "description": "positive fees charged"
+        },
+        "exchange_rate": {
+          "type": "string",
+          "description": "base currency per cash unit; day rate if empty"
         },
         "description": {
           "type": "string",
@@ -11973,11 +11981,11 @@
         },
         "issuer_scheme": {
           "type": "string",
-          "description": "new contract: scheme of the issuer identifier, such as br_cnpj"
+          "description": "new contract: issuer identifier scheme, such as br_cnpj"
         },
         "issuer_id": {
           "type": "string",
-          "description": "new contract: identifier of the issuer under the scheme"
+          "description": "new contract: issuer identifier"
         },
         "name": {
           "type": "string",
@@ -11999,19 +12007,19 @@
         },
         "percent_of_index": {
           "type": "string",
-          "description": "new contract: percent of the index as text with at most 2 decimals, such as 110; 100 when empty"
+          "description": "new contract: percent of the index as text, such as 110; 100 when empty"
         },
         "spread": {
           "type": "string",
-          "description": "new contract: spread over the index, or the pre-fixed rate without index, as percent text with at most 2 decimals, such as 6.5"
+          "description": "new contract: spread over the index, or the pre-fixed rate; percent text, such as 6.5"
         },
         "day_count": {
           "type": "string",
-          "description": "new contract: bus252 or act365; derived from the index and the region when empty"
+          "description": "new contract: bus252 or act365; derived when empty"
         },
         "calendar_id": {
           "type": "string",
-          "description": "new contract: business day calendar of bus252; the region calendar when empty"
+          "description": "new contract: bus252 calendar; the region calendar when empty"
         },
         "daily_liquidity": {
           "type": "boolean",
@@ -12089,7 +12097,7 @@
   },
   {
     "name": "record_investment",
-    "description": "Proposes an investment transaction in a Brokerage: buy or sell an Investment for its Cash, or record income paid on an Investment. A first buy creates the Investment line; a sale or income needs one. A Brokerage with no Cash in the base currency is refused: create one with manage_accounts_and_payees. write_off removes units at zero proceeds, their cost a realized loss: an expired option, an unexercised right, a worthless security. opening records units held before the book at their cost on the date acquired, no cash: quantity, unit_price, fees. Use it for a trade, a dividend or other income. With transaction_id and reason it corrects that trade or income instead of recording one; change_transaction does not. Do not use it to define a new security: manage_instrument does. The user confirms first.",
+    "description": "Proposes an investment transaction in a Brokerage: buy or sell an Investment for its Cash, or record income paid on an Investment. A first buy creates the Investment line; a sale or income needs one. A Brokerage with no Cash in the base currency is refused: create one with manage_accounts_and_payees. write_off removes units at zero proceeds, their cost a realized loss: an expired option, an unexercised right, a worthless security. opening records units held before the book at their cost on the date acquired, no cash: quantity, unit_price, fees. Use it for a trade or income. With transaction_id and reason it corrects that trade or income instead of recording one; change_transaction does not. Do not use it to define a new security: manage_instrument does. The user confirms first.",
     "effect": "write",
     "idempotent": false,
     "input_schema": {
@@ -12120,7 +12128,7 @@
         },
         "cash_account_id": {
           "type": "string",
-          "description": "Cash of the Brokerage or an open account of its institution; the single candidate if absent"
+          "description": "cash account of the Brokerage or its institution; the single candidate if absent"
         },
         "date": {
           "type": "string",
@@ -12164,9 +12172,13 @@
           "type": "string",
           "description": "income: income category from list_accounts"
         },
+        "exchange_rate": {
+          "type": "string",
+          "description": "base currency per cash unit; day rate if empty"
+        },
         "description": {
           "type": "string",
-          "description": "description of the transaction; derived from the kind and the investment if empty"
+          "description": "description of the transaction; derived if empty"
         },
         "taxes_category_id": {
           "type": "string",
@@ -12182,7 +12194,7 @@
         },
         "reason": {
           "type": "string",
-          "description": "with transaction_id: why the transaction changes, kept in its history"
+          "description": "with transaction_id: why it changes, kept in its history"
         }
       },
       "required": [
