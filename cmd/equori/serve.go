@@ -13,7 +13,6 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/config"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/postgres"
-	"github.com/andrelopes-code/equori/internal/platform/winsvc"
 	"github.com/andrelopes-code/equori/internal/server"
 )
 
@@ -29,23 +28,6 @@ type background struct {
 }
 
 func runServe() error {
-	if winsvc.IsService() {
-		// The service has no console: serve's error goes to the log opened before the
-		// configuration.
-		if err := openServiceLog(); err != nil {
-			return err
-		}
-
-		return winsvc.Run(serviceName, func(ctx context.Context) error {
-			err := serve(ctx)
-			if err != nil {
-				fmt.Fprintln(os.Stderr, err)
-			}
-
-			return err
-		})
-	}
-
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	err := serve(ctx)
 

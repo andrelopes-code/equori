@@ -411,3 +411,21 @@ func TestEnvFilePath(t *testing.T) {
 		})
 	}
 }
+
+func TestDefaultHTTPAddr(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		goos string
+		want string
+	}{
+		{"windows", "127.0.0.1:8080"},
+		{"linux", ":8080"},
+		{"darwin", ":8080"},
+	}
+	for _, tt := range tests {
+		if got := defaultHTTPAddr(tt.goos); got != tt.want {
+			t.Errorf("defaultHTTPAddr(%q) = %q, want %q", tt.goos, got, tt.want)
+		}
+	}
+}

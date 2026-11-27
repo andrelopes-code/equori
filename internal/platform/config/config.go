@@ -6,6 +6,7 @@ import (
 	"errors"
 	"log/slog"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 )
@@ -56,7 +57,7 @@ func Load(getenv func(string) string, families Families) (Config, error) {
 	cfg, lines := loadVariables(getenv, families)
 
 	if cfg.HTTPAddr == "" {
-		cfg.HTTPAddr = ":8080"
+		cfg.HTTPAddr = defaultHTTPAddr(runtime.GOOS)
 	}
 
 	lines = append(lines, checkSecretKeys(cfg, getenv)...)
@@ -174,4 +175,14 @@ func setURL(urls map[string]string, id, value string) map[string]string {
 	urls[id] = value
 
 	return urls
+}
+
+// defaultHTTPAddr keeps the first start on Windows on loopback, where no script writes equori.env
+// (A10).
+func defaultHTTPAddr(goos string) string {
+	if goos == "windows" {
+		return "127.0.0.1:8080"
+	}
+
+	return ":8080"
 }

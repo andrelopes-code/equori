@@ -1,4 +1,5 @@
-package winsvc
+// Package logfile opens a log that keeps at most two generations.
+package logfile
 
 import (
 	"errors"
@@ -8,9 +9,9 @@ import (
 	"path/filepath"
 )
 
-// OpenLog opens the log of service mode for appending (W-S4); a file over limit first moves to
+// Open opens the log for appending (W-S4); a file over limit first moves to
 // path.1, which it replaces, so the log keeps at most two generations.
-func OpenLog(path string, limit int64) (*os.File, error) {
+func Open(path string, limit int64) (*os.File, error) {
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return nil, fmt.Errorf("create log directory: %w", err)
 	}

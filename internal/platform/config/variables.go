@@ -240,8 +240,8 @@ func Variables() []Variable {
 			Expected:      "host:port with a port from 1 to 65535",
 			Example:       "127.0.0.1:8081",
 			Audience:      Advanced,
-			Description:   "Address on which equori listens. compose.yaml keeps the container on :8080 and publishes it through EQUORI_HOST_IP and EQUORI_PORT.",
-			DescriptionPT: "Endereço em que o equori escuta. O compose.yaml mantém o contêiner em :8080 e o publica por EQUORI_HOST_IP e EQUORI_PORT.",
+			Description:   "Address on which equori listens. compose.yaml keeps the container on :8080 and publishes it through EQUORI_HOST_IP and EQUORI_PORT. Unset: 127.0.0.1:8080 on Windows, :8080 elsewhere.",
+			DescriptionPT: "Endereço em que o equori escuta. O compose.yaml mantém o contêiner em :8080 e o publica por EQUORI_HOST_IP e EQUORI_PORT. Sem ela: 127.0.0.1:8080 no Windows, :8080 nos demais.",
 		},
 		{
 			Name:          "EQUORI_DATA_DIR",
@@ -250,8 +250,8 @@ func Variables() []Variable {
 			Expected:      "a directory path",
 			Example:       "/var/lib/equori",
 			Audience:      Advanced,
-			Description:   "Data directory of managed mode. Unset: %ProgramData%\\equori on Windows, ~/Library/Application Support/equori on macOS, $XDG_DATA_HOME/equori or ~/.local/share/equori on Linux.",
-			DescriptionPT: "Diretório de dados do modo gerenciado. Sem ela: %ProgramData%\\equori no Windows, ~/Library/Application Support/equori no macOS, $XDG_DATA_HOME/equori ou ~/.local/share/equori no Linux.",
+			Description:   "Data directory of managed mode. Unset: data beside the executable on Windows, ~/Library/Application Support/equori on macOS, $XDG_DATA_HOME/equori or ~/.local/share/equori on Linux.",
+			DescriptionPT: "Diretório de dados do modo gerenciado. Sem ela: data ao lado do executável no Windows, ~/Library/Application Support/equori no macOS, $XDG_DATA_HOME/equori ou ~/.local/share/equori no Linux.",
 		},
 		{
 			Name:          "EQUORI_POSTGRES_BIN",

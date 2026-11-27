@@ -22,8 +22,6 @@ func run(args []string) error {
 	switch cmd {
 	case "serve":
 		return runServe()
-	case "service":
-		return runService(args[2:])
 	case "user":
 		return userCommand(args[2:])
 	case "reporting":
@@ -46,7 +44,7 @@ func run(args []string) error {
 		return printVersion()
 	default:
 		fmt.Fprintf(os.Stderr, "unknown command %q; available: serve, user, reporting, portfolio, "+
-			"instruments, planning, secrets, backup, restore, service, healthcheck, version\n", cmd)
+			"instruments, planning, secrets, backup, restore, healthcheck, version\n", cmd)
 		os.Exit(2)
 	}
 

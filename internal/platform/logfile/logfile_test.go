@@ -1,4 +1,4 @@
-package winsvc
+package logfile
 
 import (
 	"bytes"
@@ -8,7 +8,7 @@ import (
 )
 
 // W-S4: a log over the limit moves to .1 at start; a smaller one is appended to.
-func TestOpenLogRotates(t *testing.T) {
+func TestOpenRotates(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()
 
@@ -22,7 +22,7 @@ func TestOpenLogRotates(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	f, err := OpenLog(path, 10<<20)
+	f, err := Open(path, 10<<20)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,7 +41,7 @@ func TestOpenLogRotates(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	f, err = OpenLog(path, 10<<20)
+	f, err = Open(path, 10<<20)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,11 +58,11 @@ func TestOpenLogRotates(t *testing.T) {
 }
 
 // W-S4: the log directory is created on the first start.
-func TestOpenLogCreatesTheDirectory(t *testing.T) {
+func TestOpenCreatesTheDirectory(t *testing.T) {
 	t.Parallel()
 	path := filepath.Join(t.TempDir(), "log", "equori.log")
 
-	f, err := OpenLog(path, 10<<20)
+	f, err := Open(path, 10<<20)
 	if err != nil {
 		t.Fatal(err)
 	}
