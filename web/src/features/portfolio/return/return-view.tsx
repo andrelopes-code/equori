@@ -105,7 +105,11 @@ export function ReturnView({ report, subject, window, days }: ReturnViewProps) {
         </div>
 
         <div className={styles.footEnd}>
-          <ReturnMethod report={report} groups={groups} />
+          <ReturnMethod
+            report={report}
+            groups={groups}
+            days={window?.days ?? days}
+          />
         </div>
       </div>
     </div>

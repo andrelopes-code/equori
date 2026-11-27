@@ -64,7 +64,11 @@ export function ReturnBlock({ series, report, whole }: ReturnBlockProps) {
         </SectionTitle>
 
         <SectionActions>
-          <ReturnMethodAction report={report} />
+          <ReturnMethodAction
+            report={report}
+            from={series.from}
+            to={series.to}
+          />
         </SectionActions>
       </SectionHeader>
 

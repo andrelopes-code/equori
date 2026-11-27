@@ -11,6 +11,7 @@ Corrections to the return report after the audit of 2026-11-27. Amends sections 
 | F3 | A brokerage emptied by a withdrawal on 2026-10-01 that receives a dividend of 50.00 on 2026-10-26: no `period_bp` for 2025-11-01 to 2026-10-31; the months and windows of the results tab stop at 2026-10. | R1 leaves `period_bp` absent for a subperiod that starts at 0 with a nonzero gain. |
 | F4 | With `annual_bp` absent, the screens that state the personal rate have no figure to state. The verdict of HR3 on the portfolio has no caller since the results tab (`docs/specs/2026-11-24-portfolio-results-design.md`) draws the return; the account page and the method layer state the personal rate. | RE2 makes `annual_bp` optional. |
 | F5 | A goal over a checking account with a salary of 5,000.00 and expenses of 4,500.00 each month and one transfer of 1,000.00 to savings in the last 12 months: `trailing_return.annual_bp` 44897. | The annual rate discounts the external flows of section 4.3 only: the salary counts as yield. |
+| F6 | A period of 30 days with a gain of 1.5%: the method layer of the results tab lists "Sua taxa pessoal ao ano" 19.86%, while the evolution block of the same tab writes "under 12 months" (PR9). | The layer states `annual_bp` for any period. |
 
 ## Rules
 
@@ -24,6 +25,8 @@ Corrections to the return report after the audit of 2026-11-27. Amends sections 
 
 **RE5 Flows of a cash tree.** Amends section 4.3 and A124: the annual rate of a tree under R19 discounts the flows of R19, so income and expense other than yield are money in and out, as in its time-weighted return. A goal over a checking account without yield reads 0. S130 records its 50.00 against the Yield account.
 
+**RE6 Annual rate from a year.** Amends PR9 and the method layer of L3: the method layer and the line "Taxa anual" of the account foot state `annual_bp` only for a period of 365 days or more, the span in which the evolution block of PR9 states it. A shorter period lists the period return alone. The span is `minAnnualDays` in `web/src/features/portfolio/model/annual-rate-days.ts`, shared with the evolution block.
+
 ## Cross-cutting questions
 
 - R1: Does not apply: no regional value.
@@ -36,7 +39,7 @@ Corrections to the return report after the audit of 2026-11-27. Amends sections 
 - C2: Does not apply: no sum across currencies.
 - C3: Does not apply: the report keeps `value_in`.
 - C4: Does not apply: no amount is formatted.
-- T1: Does not apply: no date rule changes.
+- T1: The days of RE6 are the calendar span of the request, both ends included, as in HR3.
 - T2: Does not apply: no business-day count.
 - B1: Does not apply: no table.
 - B2: Does not apply: `getReturn` keeps its role.
@@ -50,5 +53,5 @@ Corrections to the return report after the audit of 2026-11-27. Amends sections 
 - S2: Does not apply: no layout changes; RE4 removes a row and a line when absent.
 - S3: Does not apply: `investments.md` states no figure these rules change.
 - S4: The tool view omits `annual_bp` when absent, as it omits zero.
-- X1: Does not apply: no scenario added; S130 changes its posting by RE5; RE1 to RE3 and RE5 are tested through `internal/apitest` and the domain tests, RE4 by `return-view.test.tsx`.
+- X1: Does not apply: no scenario added; S130 changes its posting by RE5; RE1 to RE3 and RE5 are tested through `internal/apitest` and the domain tests, RE4 and RE6 by `return-view.test.tsx` and `return-method-action.test.tsx`.
 - X2: Does not apply.

@@ -8,6 +8,7 @@ import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
+import { minAnnualDays } from "@/features/portfolio/model/annual-rate-days";
 import type { YieldGroup } from "@/features/portfolio/model/yield-figures";
 import { FlowsByMonthTable } from "@/features/portfolio/return/flows-by-month-table";
 import { ReconciliationStrip } from "@/features/portfolio/return/reconciliation-strip";
@@ -21,19 +22,28 @@ type ReturnReport = components["schemas"]["ReturnReport"];
 interface ReturnMethodLayerProps {
   report: ReturnReport;
   groups: YieldGroup[];
+  // The calendar span of the period, both ends included; under 365 days the personal rate a year
+  // is not listed; absent, it is (RE6).
+  days?: number | undefined;
 }
 
 // The body of the return method layer (L3): the reconciliation, the groups of the yield and the
 // flows by month, with the two rates and what sets them apart beside them.
-export function ReturnMethodLayer({ report, groups }: ReturnMethodLayerProps) {
+export function ReturnMethodLayer({
+  report,
+  groups,
+  days,
+}: ReturnMethodLayerProps) {
   const t = useT();
   const [tag] = useAppLocale();
 
-  // RE4: a rate the report lacks has no row.
+  const personal =
+    days !== undefined && days < minAnnualDays ? undefined : report.annual_bp;
+  // RE4, RE6: a rate the report lacks or does not state has no row.
   const rates = (
     [
       [t("holdings.method.period"), report.period_bp],
-      [t("holdings.method.personal"), report.annual_bp],
+      [t("holdings.method.personal"), personal],
     ] as const
   ).flatMap(([term, bp]) => (bp === undefined ? [] : [[term, bp] as const]));
 

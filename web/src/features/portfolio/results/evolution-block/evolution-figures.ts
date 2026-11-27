@@ -1,7 +1,7 @@
+import { minAnnualDays } from "@/features/portfolio/model/annual-rate-days";
 import type { HistoryCut } from "@/features/portfolio/results/evolution-block/evolution-cut";
 
-// The span of days in which the money-weighted annual rate is stated (PR9).
-const shortDays = 365;
+// The last day of the span in which the money-weighted annual rate is stated (PR9).
 const longDays = 3660;
 
 // All in minor units of the series currency.
@@ -33,7 +33,7 @@ export function irrRow(
   days: number,
   annualBp: number | undefined,
 ): IrrRow | null {
-  if (days < shortDays) return { kind: "short" };
+  if (days < minAnnualDays) return { kind: "short" };
   if (days > longDays || annualBp === undefined) return null;
 
   return { kind: "rate", bp: annualBp };

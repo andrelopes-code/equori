@@ -184,6 +184,29 @@ describe("ReturnView", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("RE6: states no annual rate for a window under 365 days", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <ReturnView
+        report={market}
+        subject="account"
+        window={{ from: "2026-01-02", to: "2026-01-31", days: 30 }}
+      />,
+      { fetch: fakeApi({}) },
+    );
+
+    expect(screen.queryByText(/Annual rate/)).not.toBeInTheDocument();
+
+    await user.click(method());
+
+    expect(
+      await screen.findByText(catalogEn["holdings.method.period"]),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(catalogEn["holdings.method.personal"]),
+    ).not.toBeInTheDocument();
+  });
+
   it("HR4: explains why each comparison has its own window", async () => {
     const user = userEvent.setup();
     renderView(market, "portfolio");
