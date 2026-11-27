@@ -22,7 +22,7 @@ Corrections to the section "How it performed" of `/portfolio` after the owner re
 
 **HR2 Longest period.** A return covers at most 3,660 days (`MaxReturnDays`), ten years with their leap days. The return section offers the presets "Last 12 months", "Last 3 years", "Last 5 years" and "Last 10 years", each ending at the valuation date.
 
-**HR3 Verdict.** The verdict states the period return alone: "No período, {subject} rendeu {return}". A period above 366 days adds ", {annual} ao ano": `(1 + return)^(365 / days) − 1`, `days` counted from `from` to `to` inclusive. Without a period return, the portfolio states the personal rate as a sentence of the same size ("No período, a sua taxa pessoal foi de {annual} ao ano"); the figure card of PC11 is removed.
+**HR3 Verdict.** The verdict states the period return alone: "No período, {subject} rendeu {return}". A period above 366 days adds ", {annual} ao ano": `(1 + return)^(365 / days) − 1`, `days` counted from `from` to `to` inclusive. Without a period return, the portfolio states the personal rate as a sentence of the same size ("No período, a sua taxa pessoal foi de {annual} ao ano"); the figure card of PC11 is removed. Without `annual_bp` no personal rate is stated (amended 2026-11-27, RE4 of `docs/specs/2026-11-27-return-edge-cases-design.md`).
 
 **HR4 Comparison windows.** Each comparison block names its window as the window of both bars: "Carteira e {index} de {from} a {until} · {days} dias" and "Carteira e {inflation} de {from} a {until}". A help button beside the heading explains why the window differs from the period.
 
