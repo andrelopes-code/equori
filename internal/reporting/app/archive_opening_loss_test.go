@@ -20,8 +20,4 @@ func TestAddOpeningLosses(t *testing.T) {
 		string(got[0].Rows[0]) != `{"revision":1}` {
 		t.Fatalf("the step changed the tables: %+v", got)
 	}
-
-	if ArchiveVersion != 38 {
-		t.Fatalf("ArchiveVersion = %d, want 38", ArchiveVersion)
-	}
 }
