@@ -1513,6 +1513,9 @@ type BrokerageNoteInput struct {
 	Date          openapi_types.Date  `json:"date"`
 	Description   *string             `json:"description,omitempty"`
 
+	// ExchangeRate Units of the base currency for one unit of the cash currency, when the cash is in the instrument's quote currency; absent takes the stored rate of the date (foreign cash FC2).
+	ExchangeRate *Rate `json:"exchange_rate,omitempty"`
+
 	// Fees Every cost of the note, allocated to the orders in proportion to their gross (A228 IO18).
 	Fees           *Money               `json:"fees,omitempty"`
 	Orders         []BrokerageNoteOrder `json:"orders"`
@@ -1895,8 +1898,11 @@ type FixedIncomeApplicationInput struct {
 	CashAccountId *openapi_types.UUID       `json:"cash_account_id,omitempty"`
 	Contract      *FixedIncomeContractInput `json:"contract,omitempty"`
 	Description   *string                   `json:"description,omitempty"`
-	Fees          *Money                    `json:"fees,omitempty"`
-	Instrument    *string                   `json:"instrument,omitempty"`
+
+	// ExchangeRate Units of the base currency for one unit of the cash currency, when the cash is in the instrument's quote currency; absent takes the stored rate of the date (foreign cash FC2).
+	ExchangeRate *Rate   `json:"exchange_rate,omitempty"`
+	Fees         *Money  `json:"fees,omitempty"`
+	Instrument   *string `json:"instrument,omitempty"`
 
 	// Opening True for an application held before the book (OL7); the amount enters at its cost against the opening balances on applied_on, with no cash.
 	Opening *bool `json:"opening,omitempty"`
@@ -2083,9 +2089,12 @@ type InvestmentFileResult struct {
 type InvestmentIncome struct {
 	AccountId     openapi_types.UUID `json:"account_id"`
 	CashAccountId openapi_types.UUID `json:"cash_account_id"`
-	Gross         Money              `json:"gross"`
-	IncomeType    IncomeType         `json:"income_type"`
-	Withheld      Money              `json:"withheld"`
+
+	// ExchangeRate Units of the base currency for one unit of the cash currency; absent when the cash is in the base currency (foreign cash FC5).
+	ExchangeRate *Rate      `json:"exchange_rate,omitempty"`
+	Gross        Money      `json:"gross"`
+	IncomeType   IncomeType `json:"income_type"`
+	Withheld     Money      `json:"withheld"`
 }
 
 // InvestmentIncomeCorrectionInput defines model for InvestmentIncomeCorrectionInput.
@@ -2110,8 +2119,11 @@ type InvestmentIncomeInput struct {
 	CategoryId  openapi_types.UUID `json:"category_id"`
 	Date        openapi_types.Date `json:"date"`
 	Description *string            `json:"description,omitempty"`
-	Gross       Money              `json:"gross"`
-	IncomeType  IncomeType         `json:"income_type"`
+
+	// ExchangeRate Units of the base currency for one unit of the cash currency, when the cash is in the instrument's quote currency; absent takes the stored rate of the date (foreign cash FC2).
+	ExchangeRate *Rate      `json:"exchange_rate,omitempty"`
+	Gross        Money      `json:"gross"`
+	IncomeType   IncomeType `json:"income_type"`
 
 	// Instrument The investment's code; its holding account is created on the first purchase.
 	Instrument *string `json:"instrument,omitempty"`
@@ -2583,9 +2595,12 @@ type Trade struct {
 
 	// DayTradeQuantity Units of a sale that close purchases of its date at the same brokerage (A228 IO12); zero on a purchase.
 	DayTradeQuantity Money `json:"day_trade_quantity"`
-	Fees             Money `json:"fees"`
-	Gross            Money `json:"gross"`
-	Quantity         Money `json:"quantity"`
+
+	// ExchangeRate Units of the base currency for one unit of the cash currency; absent when the cash is in the base currency (foreign cash FC5).
+	ExchangeRate *Rate `json:"exchange_rate,omitempty"`
+	Fees         Money `json:"fees"`
+	Gross        Money `json:"gross"`
+	Quantity     Money `json:"quantity"`
 
 	// SettlementDate The day the cash settles; the transaction date when it settles that day (A228 IO9).
 	SettlementDate openapi_types.Date `json:"settlement_date"`
@@ -2619,7 +2634,10 @@ type TradeInput struct {
 	CashAccountId *openapi_types.UUID `json:"cash_account_id,omitempty"`
 	Date          openapi_types.Date  `json:"date"`
 	Description   *string             `json:"description,omitempty"`
-	Fees          *Money              `json:"fees,omitempty"`
+
+	// ExchangeRate Units of the base currency for one unit of the cash currency, when the cash is in the instrument's quote currency; absent takes the stored rate of the date (foreign cash FC2).
+	ExchangeRate *Rate  `json:"exchange_rate,omitempty"`
+	Fees         *Money `json:"fees,omitempty"`
 
 	// Instrument The investment's code; its holding account is created on the first purchase.
 	Instrument *string `json:"instrument,omitempty"`

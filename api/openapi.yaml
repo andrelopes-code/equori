@@ -12826,6 +12826,10 @@ components:
           $ref: "#/components/schemas/Money"
         fees:
           $ref: "#/components/schemas/Money"
+        exchange_rate:
+          description: Units of the base currency for one unit of the cash currency, when the cash is in the instrument's quote currency; absent takes the stored rate of the date (foreign cash FC2).
+          allOf:
+            - $ref: "#/components/schemas/Rate"
         description:
           type: string
           maxLength: 200
@@ -12964,6 +12968,10 @@ components:
           $ref: "#/components/schemas/Money"
         taxes:
           $ref: "#/components/schemas/Money"
+        exchange_rate:
+          description: Units of the base currency for one unit of the cash currency, when the cash is in the instrument's quote currency; absent takes the stored rate of the date (foreign cash FC2).
+          allOf:
+            - $ref: "#/components/schemas/Rate"
         taxes_category_id:
           type: string
           format: uuid
@@ -13011,6 +13019,10 @@ components:
           description: Income tax withheld on the note, allocated to the sales in proportion to their gross.
           allOf:
             - $ref: "#/components/schemas/Money"
+        exchange_rate:
+          description: Units of the base currency for one unit of the cash currency, when the cash is in the instrument's quote currency; absent takes the stored rate of the date (foreign cash FC2).
+          allOf:
+            - $ref: "#/components/schemas/Rate"
         taxes_category_id:
           type: string
           format: uuid
@@ -13228,6 +13240,10 @@ components:
           $ref: "#/components/schemas/Money"
         taxes:
           $ref: "#/components/schemas/Money"
+        exchange_rate:
+          description: Units of the base currency for one unit of the cash currency; absent when the cash is in the base currency (foreign cash FC5).
+          allOf:
+            - $ref: "#/components/schemas/Rate"
         cost:
           description: Cost basis removed by a sale at average cost.
           allOf:
@@ -13264,6 +13280,10 @@ components:
           description: Default the rate of the book's region for the income type on the date, 0 without one; the figure of getIncomeWithholding.
           allOf:
             - $ref: "#/components/schemas/Money"
+        exchange_rate:
+          description: Units of the base currency for one unit of the cash currency, when the cash is in the instrument's quote currency; absent takes the stored rate of the date (foreign cash FC2).
+          allOf:
+            - $ref: "#/components/schemas/Rate"
         category_id:
           type: string
           format: uuid
@@ -13301,6 +13321,10 @@ components:
           $ref: "#/components/schemas/Money"
         withheld:
           $ref: "#/components/schemas/Money"
+        exchange_rate:
+          description: Units of the base currency for one unit of the cash currency; absent when the cash is in the base currency (foreign cash FC5).
+          allOf:
+            - $ref: "#/components/schemas/Rate"
     ForeignPurchaseInput:
       type: object
       additionalProperties: false

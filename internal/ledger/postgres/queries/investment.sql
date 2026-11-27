@@ -14,7 +14,8 @@ INSERT INTO
         cost,
         day_trade_quantity,
         day_trade_cost,
-        currency
+        currency,
+        exchange_rate
     )
 VALUES
     (
@@ -31,7 +32,8 @@ VALUES
         sqlc.narg (cost),
         @day_trade_quantity,
         @day_trade_cost,
-        @currency
+        @currency,
+        sqlc.narg (exchange_rate)
     );
 
 -- name: ListTrades :many
@@ -128,7 +130,8 @@ INSERT INTO
         income_type,
         gross,
         withheld,
-        currency
+        currency,
+        exchange_rate
     )
 VALUES
     (
@@ -139,7 +142,8 @@ VALUES
         @income_type,
         @gross,
         @withheld,
-        @currency
+        @currency,
+        sqlc.narg (exchange_rate)
     );
 
 -- name: ListInvestmentIncome :many

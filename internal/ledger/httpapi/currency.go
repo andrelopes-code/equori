@@ -174,7 +174,29 @@ func (s *Server) tradeOrderFromInput(
 		return domain.TradeOrder{}, err
 	}
 
+	if o.ExchangeRate, err = exchangeRate(b.ExchangeRate); err != nil {
+		return domain.TradeOrder{}, err
+	}
+
 	return o, nil
+}
+
+// exchangeRate reads the optional exchange_rate of an order (foreign cash FC2).
+func exchangeRate(in *string) (*money.Rate, error) {
+	if in == nil {
+		return nil, nil
+	}
+
+	rate, err := money.ParseRate(*in)
+	if err != nil {
+		return nil, &domain.FieldError{
+			Field:   "exchange_rate",
+			Message: "must be a positive decimal with at most 12 decimals",
+			Err:     domain.ErrValidation,
+		}
+	}
+
+	return &rate, nil
 }
 
 // tradePrice reads the unit price a purchase and a sale require; a write-off takes none.
@@ -292,6 +314,10 @@ func (s *Server) incomeOrderFromInput(
 		}
 
 		o.Withheld = &withheld
+	}
+
+	if o.ExchangeRate, err = exchangeRate(b.ExchangeRate); err != nil {
+		return domain.IncomeOrder{}, err
 	}
 
 	return o, nil

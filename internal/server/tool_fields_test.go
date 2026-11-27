@@ -160,7 +160,9 @@ var uncoveredFields = map[string][]string{
 	"createFixedIncomeApplication": {
 		"application_id",
 		"contract",
-	}, // application_id is generated; the contract fields are flat tool inputs
+		"exchange_rate",
+	}, // application_id is generated; the contract fields are flat tool inputs; exchange_rate is
+	// read by the assistant tools from task 16 of the foreign cash plan (FC17)
 	"addBudgetAmount": {
 		"effective_from",
 	}, // read as month
@@ -283,8 +285,15 @@ var uncoveredFields = map[string][]string{
 		"value",
 	}, // read as code and price
 	"recordTrade": {
+		"exchange_rate",
 		"side",
-	}, // side is read as kind
+	}, // side is read as kind; exchange_rate: FC17
+	"recordInvestmentIncome": {
+		"exchange_rate",
+	}, // FC17
+	"recordBrokerageNote": {
+		"exchange_rate",
+	}, // FC17
 	"reimburseTransaction": {
 		"expected_version",
 	}, // expected_version is the version the preview read

@@ -145,13 +145,18 @@ func (s *Service) resolveIncome(
 		return err
 	}
 
-	if _, _, err := s.brokerageAccounts(
+	_, cash, err := s.brokerageAccounts(ctx, r, booksID, o.AccountID, o.CashAccountID, base)
+	if err != nil {
+		return err
+	}
+
+	o.Base = base
+	if o.ExchangeRate, err = s.cashRate(
 		ctx,
-		r,
-		booksID,
-		o.AccountID,
-		o.CashAccountID,
+		cash.Instrument,
 		base,
+		o.Date,
+		o.ExchangeRate,
 	); err != nil {
 		return err
 	}

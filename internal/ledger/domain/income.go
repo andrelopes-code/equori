@@ -27,6 +27,10 @@ type IncomeOrder struct {
 	Date        time.Time
 	Gross       money.Money
 	Withheld    *money.Money
+	// ExchangeRate and Base are set when the cash is in another currency than the base: the amounts
+	// are in the currency of the cash and the income is booked in Base (foreign cash FC3).
+	ExchangeRate *money.Rate
+	Base         money.Currency
 	// DefaultWithholdingBP is the withholding, in basis points of Gross, applied when Withheld is nil.
 	DefaultWithholdingBP int
 	Description          string
@@ -37,6 +41,9 @@ type Income struct {
 	AccountID, CashAccountID uuid.UUID
 	Type                     IncomeType
 	Gross, Withheld          money.Money
+	// ExchangeRate is the rate of the cash in another currency than the base; Gross and Withheld
+	// are then in the base currency (foreign cash FC5).
+	ExchangeRate *money.Rate
 }
 
 // BuildIncome returns the postings cash, withheld tax and income category (P8 amendment A70).
@@ -60,6 +67,10 @@ func BuildIncome(o IncomeOrder) ([]Posting, Income, error) {
 			"withheld",
 			"must be at least zero and less than gross, in "+string(o.Gross.Currency()),
 		)
+	}
+
+	if o.ExchangeRate != nil {
+		return foreignIncome(o, withheld, net)
 	}
 
 	postings := []Posting{{AccountID: o.CashAccountID, Amount: net, Weight: net}}

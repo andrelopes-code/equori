@@ -151,6 +151,7 @@ type LedgerInvestmentIncome struct {
 	Gross         int64
 	Withheld      int64
 	Currency      string
+	ExchangeRate  pgtype.Numeric
 }
 
 type LedgerLink struct {
@@ -211,6 +212,7 @@ type LedgerTrade struct {
 	Currency         string
 	DayTradeQuantity int64
 	DayTradeCost     int64
+	ExchangeRate     pgtype.Numeric
 }
 
 type LedgerTransaction struct {

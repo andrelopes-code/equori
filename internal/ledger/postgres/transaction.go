@@ -106,6 +106,7 @@ func (r *Repository) insertIncome(ctx context.Context, t domain.Transaction) err
 		Gross:         in.Gross.Amount(),
 		Withheld:      in.Withheld.Amount(),
 		Currency:      string(in.Gross.Currency()),
+		ExchangeRate:  rateColumn(in.ExchangeRate),
 	})
 }
 
@@ -133,6 +134,7 @@ func (r *Repository) insertTrade(ctx context.Context, t domain.Transaction) erro
 		DayTradeQuantity: tr.DayTradeQuantity.Amount(),
 		DayTradeCost:     tr.DayTradeCost.Amount(),
 		Currency:         string(tr.Gross.Currency()),
+		ExchangeRate:     rateColumn(tr.ExchangeRate),
 	})
 }
 

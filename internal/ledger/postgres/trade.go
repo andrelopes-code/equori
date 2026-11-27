@@ -33,7 +33,6 @@ func (r *Repository) toTrade(
 	}
 
 	cur := money.Currency(row.Currency)
-
 	amounts, err := tradeAmounts(row, cur)
 	if err != nil {
 		return domain.Trade{}, err
@@ -68,7 +67,9 @@ func (r *Repository) toTrade(
 		Taxes:            amounts[2],
 	}
 
-	return trade, nil
+	trade.ExchangeRate, err = optionalRate(row.ExchangeRate)
+
+	return trade, err
 }
 
 // tradePrice reads the unit price of a trade row; a write-off has none and stores zero (listed
@@ -119,6 +120,29 @@ func optionalMoney(v *int64, cur money.Currency) (*money.Money, error) {
 	}
 
 	return &m, nil
+}
+
+// rateColumn returns the numeric of a nullable exchange rate.
+func rateColumn(r *money.Rate) pgtype.Numeric {
+	if r == nil {
+		return pgtype.Numeric{}
+	}
+
+	return platformpg.NumericOf(*r)
+}
+
+// optionalRate returns nil for a null numeric, else its rate.
+func optionalRate(n pgtype.Numeric) (*money.Rate, error) {
+	if !n.Valid {
+		return nil, nil
+	}
+
+	rate, err := platformpg.RateOf(n)
+	if err != nil {
+		return nil, err
+	}
+
+	return &rate, nil
 }
 
 func (r *Repository) FirstBuy(

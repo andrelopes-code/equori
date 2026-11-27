@@ -7222,6 +7222,8 @@ export interface components {
             applied_on: string;
             amount: components["schemas"]["Money"];
             fees?: components["schemas"]["Money"];
+            /** @description Units of the base currency for one unit of the cash currency, when the cash is in the instrument's quote currency; absent takes the stored rate of the date (foreign cash FC2). */
+            exchange_rate?: components["schemas"]["Rate"];
             description?: string;
             instrument?: string;
             contract?: components["schemas"]["FixedIncomeContractInput"];
@@ -7301,6 +7303,8 @@ export interface components {
             unit_price?: components["schemas"]["Rate"];
             fees?: components["schemas"]["Money"];
             taxes?: components["schemas"]["Money"];
+            /** @description Units of the base currency for one unit of the cash currency, when the cash is in the instrument's quote currency; absent takes the stored rate of the date (foreign cash FC2). */
+            exchange_rate?: components["schemas"]["Rate"];
             /**
              * Format: uuid
              * @description Default the system account taxes.
@@ -7330,6 +7334,8 @@ export interface components {
             fees?: components["schemas"]["Money"];
             /** @description Income tax withheld on the note, allocated to the sales in proportion to their gross. */
             taxes?: components["schemas"]["Money"];
+            /** @description Units of the base currency for one unit of the cash currency, when the cash is in the instrument's quote currency; absent takes the stored rate of the date (foreign cash FC2). */
+            exchange_rate?: components["schemas"]["Rate"];
             /** Format: uuid */
             taxes_category_id?: string;
             description?: string;
@@ -7459,6 +7465,8 @@ export interface components {
             gross: components["schemas"]["Money"];
             fees: components["schemas"]["Money"];
             taxes: components["schemas"]["Money"];
+            /** @description Units of the base currency for one unit of the cash currency; absent when the cash is in the base currency (foreign cash FC5). */
+            exchange_rate?: components["schemas"]["Rate"];
             /** @description Cost basis removed by a sale at average cost. */
             cost?: components["schemas"]["Money"];
         };
@@ -7486,6 +7494,8 @@ export interface components {
             gross: components["schemas"]["Money"];
             /** @description Default the rate of the book's region for the income type on the date, 0 without one; the figure of getIncomeWithholding. */
             withheld?: components["schemas"]["Money"];
+            /** @description Units of the base currency for one unit of the cash currency, when the cash is in the instrument's quote currency; absent takes the stored rate of the date (foreign cash FC2). */
+            exchange_rate?: components["schemas"]["Rate"];
             /**
              * Format: uuid
              * @description Income category of the gross amount.
@@ -7511,6 +7521,8 @@ export interface components {
             income_type: components["schemas"]["IncomeType"];
             gross: components["schemas"]["Money"];
             withheld: components["schemas"]["Money"];
+            /** @description Units of the base currency for one unit of the cash currency; absent when the cash is in the base currency (foreign cash FC5). */
+            exchange_rate?: components["schemas"]["Rate"];
         };
         ForeignPurchaseInput: {
             /** Format: uuid */

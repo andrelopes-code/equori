@@ -266,7 +266,8 @@ INSERT INTO
         income_type,
         gross,
         withheld,
-        currency
+        currency,
+        exchange_rate
     )
 VALUES
     (
@@ -277,7 +278,8 @@ VALUES
         $5,
         $6,
         $7,
-        $8
+        $8,
+        $9
     )
 `
 
@@ -290,6 +292,7 @@ type InsertInvestmentIncomeParams struct {
 	Gross         int64
 	Withheld      int64
 	Currency      string
+	ExchangeRate  pgtype.Numeric
 }
 
 func (q *Queries) InsertInvestmentIncome(ctx context.Context, arg InsertInvestmentIncomeParams) error {
@@ -302,6 +305,7 @@ func (q *Queries) InsertInvestmentIncome(ctx context.Context, arg InsertInvestme
 		arg.Gross,
 		arg.Withheld,
 		arg.Currency,
+		arg.ExchangeRate,
 	)
 	return err
 }
@@ -322,7 +326,8 @@ INSERT INTO
         cost,
         day_trade_quantity,
         day_trade_cost,
-        currency
+        currency,
+        exchange_rate
     )
 VALUES
     (
@@ -339,7 +344,8 @@ VALUES
         $11,
         $12,
         $13,
-        $14
+        $14,
+        $15
     )
 `
 
@@ -358,6 +364,7 @@ type InsertTradeParams struct {
 	DayTradeQuantity int64
 	DayTradeCost     int64
 	Currency         string
+	ExchangeRate     pgtype.Numeric
 }
 
 func (q *Queries) InsertTrade(ctx context.Context, arg InsertTradeParams) error {
@@ -376,6 +383,7 @@ func (q *Queries) InsertTrade(ctx context.Context, arg InsertTradeParams) error 
 		arg.DayTradeQuantity,
 		arg.DayTradeCost,
 		arg.Currency,
+		arg.ExchangeRate,
 	)
 	return err
 }
@@ -479,7 +487,7 @@ func (q *Queries) ListCorporateActions(ctx context.Context, arg ListCorporateAct
 
 const listInvestmentIncome = `-- name: ListInvestmentIncome :many
 SELECT
-    transaction_id, books_id, account_id, cash_account_id, income_type, gross, withheld, currency
+    transaction_id, books_id, account_id, cash_account_id, income_type, gross, withheld, currency, exchange_rate
 FROM
     ledger_investment_income
 WHERE
@@ -510,6 +518,7 @@ func (q *Queries) ListInvestmentIncome(ctx context.Context, arg ListInvestmentIn
 			&i.Gross,
 			&i.Withheld,
 			&i.Currency,
+			&i.ExchangeRate,
 		); err != nil {
 			return nil, err
 		}
@@ -523,7 +532,7 @@ func (q *Queries) ListInvestmentIncome(ctx context.Context, arg ListInvestmentIn
 
 const listTrades = `-- name: ListTrades :many
 SELECT
-    transaction_id, books_id, account_id, cash_account_id, side, quantity, unit_price, gross, fees, taxes, cost, currency, day_trade_quantity, day_trade_cost
+    transaction_id, books_id, account_id, cash_account_id, side, quantity, unit_price, gross, fees, taxes, cost, currency, day_trade_quantity, day_trade_cost, exchange_rate
 FROM
     ledger_trade
 WHERE
@@ -560,6 +569,7 @@ func (q *Queries) ListTrades(ctx context.Context, arg ListTradesParams) ([]Ledge
 			&i.Currency,
 			&i.DayTradeQuantity,
 			&i.DayTradeCost,
+			&i.ExchangeRate,
 		); err != nil {
 			return nil, err
 		}

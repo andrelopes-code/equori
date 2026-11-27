@@ -171,6 +171,7 @@ func setInvestment(out *Transaction, t domain.Transaction) {
 			IncomeType:    IncomeType(in.Type),
 			Gross:         toMoneyAPI(in.Gross),
 			Withheld:      toMoneyAPI(in.Withheld),
+			ExchangeRate:  rateAPI(in.ExchangeRate),
 		}
 	}
 
@@ -184,6 +185,7 @@ func setInvestment(out *Transaction, t domain.Transaction) {
 			Gross:         toMoneyAPI(tr.Gross),
 			Fees:          toMoneyAPI(tr.Fees),
 			Taxes:         toMoneyAPI(tr.Taxes),
+			ExchangeRate:  rateAPI(tr.ExchangeRate),
 
 			DayTradeQuantity: toMoneyAPI(tr.DayTradeQuantity),
 			DayTradeCost:     toMoneyAPI(tr.DayTradeCost),
@@ -195,6 +197,16 @@ func setInvestment(out *Transaction, t domain.Transaction) {
 			out.Trade.Cost = &cost
 		}
 	}
+}
+
+func rateAPI(r *money.Rate) *Rate {
+	if r == nil {
+		return nil
+	}
+
+	s := r.String()
+
+	return &s
 }
 
 func toPostingAPI(p domain.Posting) Posting {

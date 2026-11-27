@@ -34,7 +34,10 @@ type TradeOrder struct {
 	Quantity       money.Money
 	UnitPrice      money.Rate
 	Fees, Taxes    *money.Money
-	Description    string
+	// ExchangeRate is the units of the base currency for one unit of the cash currency, set only
+	// when the cash is in another currency than the base (foreign cash FC2).
+	ExchangeRate *money.Rate
+	Description  string
 }
 
 // Trade is the D1 detail stored with a trade transaction (P8 amendment A68). Cost is
@@ -46,6 +49,9 @@ type Trade struct {
 	UnitPrice                money.Rate
 	Gross, Fees, Taxes       money.Money
 	Cost                     *money.Money
+	// ExchangeRate is the rate of the cash in another currency than the base; its amounts are in
+	// the base currency, UnitPrice in the currency of the cash (foreign cash FC5).
+	ExchangeRate *money.Rate
 	// DayTradeQuantity and DayTradeCost are the part of a sale that closes the purchases of its
 	// date (A228 IO12); zero on a purchase. The cost is in the cash currency.
 	DayTradeQuantity, DayTradeCost money.Money
@@ -115,6 +121,10 @@ func BuildTrade(
 		Taxes:         taxes,
 	}
 
+	if o.ExchangeRate != nil {
+		return foreignTrade(o, h, accts, trade)
+	}
+
 	switch o.Side {
 	case SideBuy:
 		return buyTrade(o, trade)
@@ -132,6 +142,8 @@ func checkTradeOrder(o TradeOrder, cash money.Currency, fees, taxes money.Money)
 		return invalid("side", "must be buy, sell, write_off or opening")
 	case o.Side == SideWriteOff && o.UnitPrice.Mantissa() != 0:
 		return invalid("unit_price", "is not taken by a write-off")
+	case o.Side == SideWriteOff && o.ExchangeRate != nil:
+		return invalid("exchange_rate", "is not taken by a write-off")
 	case o.Side == SideWriteOff && (!fees.IsZero() || !taxes.IsZero()):
 		return invalid("fees", "a write-off has no fees and no taxes")
 	case o.Quantity.IsZero() || o.Quantity.IsNegative():
@@ -313,78 +325,6 @@ func sellPostings(
 	}
 
 	return postings
-}
-
-// soldCost is the cost basis of the quantity a sale gives up and its day-trade part; a nil day
-// takes the average cost of the whole holding.
-func soldCost(o TradeOrder, h Holding, day *Day) (lot soldLot, err error) {
-	if h.Quantity.Amount() < o.Quantity.Amount() {
-		return soldLot{}, invalid(
-			"quantity",
-			"must not exceed the "+h.Quantity.String()+" held on the trade date",
-		)
-	}
-
-	switch {
-	case h.Method == CostFIFO:
-		lot, err = fifoLot(o.Quantity, h)
-	case day != nil:
-		lot, err = dayLot(o.Quantity, h, *day)
-	default:
-		lot, err = averageLot(o.Quantity, h)
-	}
-
-	if err != nil {
-		return soldLot{}, err
-	}
-
-	// A holding of rights received at no cost sells at zero cost (coverage row E-06).
-	if lot.Cost.IsNegative() || (lot.Cost.IsZero() && !h.CostBasis.IsZero()) {
-		return soldLot{}, invalid("quantity", "the held quantity has no cost basis")
-	}
-
-	return lot, nil
-}
-
-// averageLot removes the average cost of the holding, and the whole cost basis when the sale
-// sells the whole quantity (A68).
-func averageLot(q money.Money, h Holding) (soldLot, error) {
-	cost, err := stockShare(h.CostBasis, q.Amount(), h.Quantity.Amount())
-	if err != nil {
-		return soldLot{}, err
-	}
-
-	zeroQuantity, err := q.Sub(q)
-	if err != nil {
-		return soldLot{}, err
-	}
-
-	zeroCost, err := cost.Sub(cost)
-
-	return soldLot{Cost: cost, DayQuantity: zeroQuantity, DayCost: zeroCost}, err
-}
-
-// fifoLot removes the cost of the oldest lots of the holding; a sale never separates day trades
-// of a holding with lots.
-func fifoLot(q money.Money, h Holding) (soldLot, error) {
-	amount, err := FIFOCost(h.Lots, q.Amount())
-	if err != nil {
-		return soldLot{}, err
-	}
-
-	cost, err := money.New(amount, h.CostBasis.Currency())
-	if err != nil {
-		return soldLot{}, err
-	}
-
-	zeroQuantity, err := q.Sub(q)
-	if err != nil {
-		return soldLot{}, err
-	}
-
-	zeroCost, err := cost.Sub(cost)
-
-	return soldLot{Cost: cost, DayQuantity: zeroQuantity, DayCost: zeroCost}, err
 }
 
 // settledOn is the settlement date of the cash posting: set only when it is after the date.

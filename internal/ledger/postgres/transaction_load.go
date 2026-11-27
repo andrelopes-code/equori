@@ -190,7 +190,13 @@ func (r *Repository) attachIncomes(
 			return err
 		}
 
+		rate, err := optionalRate(row.ExchangeRate)
+		if err != nil {
+			return err
+		}
+
 		byID[row.TransactionID].Income = &domain.Income{
+			ExchangeRate:  rate,
 			AccountID:     row.AccountID,
 			CashAccountID: row.CashAccountID,
 			Type:          domain.IncomeType(row.IncomeType),

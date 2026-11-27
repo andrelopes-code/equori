@@ -139,7 +139,7 @@ func (s *Service) dayOf(
 	security domain.Account,
 	exclude uuid.UUID,
 ) (*domain.Day, error) {
-	if o.Side != domain.SideSell {
+	if o.Side != domain.SideSell || o.ExchangeRate != nil {
 		return nil, nil
 	}
 
@@ -237,11 +237,13 @@ func (s *Service) resolveTrade(
 		)
 	}
 
-	return security, cash, nil
+	o.ExchangeRate, err = s.cashRate(ctx, cash.Instrument, base, o.Date, o.ExchangeRate)
+
+	return security, cash, err
 }
 
-// brokerageAccounts checks a security account and a cash account of the same brokerage
-// in the base currency.
+// brokerageAccounts checks a security account and a cash account of the same brokerage, the cash
+// in the base currency or in the quote currency of the security (foreign cash FC1).
 func (s *Service) brokerageAccounts(
 	ctx context.Context,
 	r Repository,
@@ -280,10 +282,14 @@ func (s *Service) brokerageAccounts(
 		)
 	}
 
-	if cash.Instrument != base {
+	if err := s.describeInstrument(ctx, &security); err != nil {
+		return domain.Account{}, domain.Account{}, err
+	}
+
+	if cash.Instrument != base && cash.Instrument != security.QuoteCurrency {
 		return domain.Account{}, domain.Account{}, fieldErr(
 			"cash_account_id",
-			"must be in the base currency "+string(base),
+			cashCurrencyMessage(base, security.QuoteCurrency),
 			domain.ErrCurrencyUnsupported,
 		)
 	}
