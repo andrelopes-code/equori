@@ -1,0 +1,18 @@
+equori <version> · instalação em <dir>
+
+  [ok] Verificações        <os>, porta 8080 livre
+  [ok] Download            <n> MB
+  [ok] SHA-256             confere
+  [ok] Arquivos            <n> arquivos
+  [ok] Atalhos             Menu Iniciar, Iniciar com o Windows
+  [ok] Início              resposta em /healthz
+
+O equori está instalado.
+  Endereço     <address>
+  Pasta        <dir>
+  Abrir        Menu Iniciar → equori, ou o ícone na bandeja
+  Atualizar    execute de novo o mesmo comando
+  Desinstalar  Configurações → Apps → equori
+
+Guarde uma cópia de data\secret.key longe dos backups.
+Sem ela, as conexões bancárias não podem ser lidas.

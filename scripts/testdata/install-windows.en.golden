@@ -1,0 +1,18 @@
+equori <version> · installation into <dir>
+
+  [ok] Checks              <os>, port 8080 free
+  [ok] Download            <n> MB
+  [ok] SHA-256             matches
+  [ok] Files               <n> files
+  [ok] Shortcuts           Start menu, Start with Windows
+  [ok] Start               answer on /healthz
+
+equori is installed.
+  Address      <address>
+  Folder       <dir>
+  Open         Start menu → equori, or the tray icon
+  Upgrade      run the same command again
+  Uninstall    Settings → Apps → equori
+
+Keep a copy of data\secret.key apart from the backups.
+Without it, the bank connections cannot be read.

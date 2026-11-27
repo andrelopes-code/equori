@@ -1,5 +1,5 @@
-# R7 on Windows (W-R7 of docs/specs/2026-10-27-distribution-windows-design.md): the
-# database of the previous release keeps every fact when the new installer upgrades it.
+# R7 on Windows (PW6 of docs/specs/2026-11-27-windows-per-user-design.md): the database of the
+# previous release keeps every fact when install.ps1 upgrades it with the new zip.
 param(
     [Parameter(Mandatory)][string]$Previous,
     [Parameter(Mandatory)][string]$New,
@@ -7,17 +7,28 @@ param(
     [Parameter(Mandatory)][string]$Psql
 )
 $ErrorActionPreference = 'Stop'
-$data = "$env:ProgramData\equori"
+$installer = Join-Path $PSScriptRoot 'install.ps1'
+$dir = "$env:LOCALAPPDATA\equori upgrade"
+$data = "$dir\data"
 $base = 'http://127.0.0.1:8080'
+$work = Join-Path ([IO.Path]::GetTempPath()) "equori-upgrade-$PID"
 
-function Install([string]$Installer) {
-    $p = Start-Process -PassThru -Wait $Installer -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART'
-    if ($p.ExitCode -ne 0) { throw "$Installer exited with $($p.ExitCode)" }
-    for ($i = 0; $i -lt 120; $i++) {
-        try { if ((Invoke-WebRequest -UseBasicParsing -TimeoutSec 2 "$base/healthz").StatusCode -eq 200) { return } } catch { }
-        Start-Sleep -Seconds 1
-    }
-    throw "$Installer: equori did not answer /healthz"
+# Install runs install.ps1 on a zip, as a person runs the pasted command. The script checks the
+# health of equori itself and exits with 1 when it does not answer.
+function Install([string]$Zip) {
+    $Zip = (Resolve-Path $Zip).Path
+    $hash = (Get-FileHash -Algorithm SHA256 $Zip).Hash.ToLower()
+    $sums = Join-Path $work 'SHA256SUMS'
+    [IO.File]::WriteAllText($sums, "$hash  $(Split-Path -Leaf $Zip)`n", (New-Object Text.UTF8Encoding $false))
+    $env:EQUORI_DIR = $dir
+    $env:EQUORI_LANG = 'en'
+    $env:EQUORI_ZIP = $Zip
+    $env:EQUORI_SUMS = $sums
+    $p = Start-Process -PassThru -Wait powershell.exe -WindowStyle Hidden `
+        -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$installer`"" `
+        -RedirectStandardOutput "$work\install.out" -RedirectStandardError "$work\install.err"
+    Get-Content "$work\install.out", "$work\install.err"
+    if ($p.ExitCode -ne 0) { throw "install.ps1 of $(Split-Path -Leaf $Zip) exited with $($p.ExitCode)" }
 }
 
 # The query of scripts/upgrade-test.sh: balances and row counts of every table a user owns.
@@ -43,22 +54,27 @@ function Settled {
     throw 'facts still changing after 600 seconds'
 }
 
-Install $Previous
-$url = (Get-Content "$data\setup.url" -Raw).Trim()
-$token = ([uri]$url).Fragment -replace '^#token=', ''
-$body = @{ token = $token; email = 'upgrade@equori.test'; password = 'equori-upgrade-test'; language = 'pt'; region = 'BR' } | ConvertTo-Json
-Invoke-WebRequest -UseBasicParsing -Method Post -ContentType 'application/json' -Body $body "$base/api/v1/setup" | Out-Null
-$src = Join-Path $env:RUNNER_TEMP 'upgrade-src'
-git worktree add --detach $src $PreviousRef | Out-Null
-Push-Location $src
+New-Item -ItemType Directory -Force $work | Out-Null
 try {
-    go run ./cmd/demoseed -url $base -email upgrade@equori.test -password equori-upgrade-test
-    if ($LASTEXITCODE -ne 0) { throw 'demoseed failed' }
-} finally { Pop-Location }
-$before = Settled
+    Install $Previous
+    $url = (Get-Content "$data\setup.url" -Raw).Trim()
+    $token = ([uri]$url).Fragment -replace '^#token=', ''
+    $body = @{ token = $token; email = 'upgrade@equori.test'; password = 'equori-upgrade-test'; language = 'pt'; region = 'BR' } | ConvertTo-Json
+    Invoke-WebRequest -UseBasicParsing -Method Post -ContentType 'application/json' -Body $body "$base/api/v1/setup" | Out-Null
+    $src = Join-Path $env:RUNNER_TEMP 'upgrade-src'
+    git worktree add --detach $src $PreviousRef | Out-Null
+    Push-Location $src
+    try {
+        go run ./cmd/demoseed -url $base -email upgrade@equori.test -password equori-upgrade-test
+        if ($LASTEXITCODE -ne 0) { throw 'demoseed failed' }
+    } finally { Pop-Location }
+    $before = Settled
 
-Install $New
-$after = Settled
-$lost = Compare-Object $before $after | Where-Object { $_.SideIndicator -eq '<=' }
-if ($lost) { $lost | ForEach-Object { $_.InputObject }; throw 'lost or changed after the upgrade' }
-"upgrade from $PreviousRef kept $($before.Count) facts"
+    Install $New
+    $after = Settled
+    $lost = Compare-Object $before $after | Where-Object { $_.SideIndicator -eq '<=' }
+    if ($lost) { $lost | ForEach-Object { $_.InputObject }; throw 'lost or changed after the upgrade' }
+    "upgrade from $PreviousRef kept $($before.Count) facts"
+} finally {
+    Remove-Item -Recurse -Force $work -ErrorAction SilentlyContinue
+}
