@@ -31,3 +31,6 @@ Thumbs.db
 
 # docs/specs holds Markdown only; approved design mocks stay local in docs/superpowers/mocks/.
 /docs/specs/*/
+
+# Windows version resource written by scripts/windows-zip.ps1.
+/cmd/equori/*.syso

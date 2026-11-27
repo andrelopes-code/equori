@@ -1,0 +1,36 @@
+{
+  "RT_GROUP_ICON": {
+    "APP": {
+      "0000": [
+        "../../../web/public/icon-192.png"
+      ]
+    }
+  },
+  "RT_MANIFEST": {
+    "#1": {
+      "0409": {
+        "execution-level": "as invoker",
+        "dpi-awareness": "system",
+        "minimum-os": "win10"
+      }
+    }
+  },
+  "RT_VERSION": {
+    "#1": {
+      "0000": {
+        "fixed": {
+          "file_version": "0.0.0.0",
+          "product_version": "0.0.0.0"
+        },
+        "info": {
+          "0409": {
+            "CompanyName": "equori",
+            "FileDescription": "equori",
+            "LegalCopyright": "MIT License",
+            "ProductName": "equori"
+          }
+        }
+      }
+    }
+  }
+}
