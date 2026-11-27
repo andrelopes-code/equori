@@ -103,7 +103,11 @@
   /* The deck: the real faces stacked in depth, the chosen one in front. The choice is a radio
      group and the layout answers it through :has(); an animation bound to the chosen state
      starts again on every choice, so the choreography replays with no script. */
+  /* The deck stands in the middle of the widget's height: on top, the lift of a hovered card
+     behind the front one crossed the edge of the body and was cut. */
   .deck {
+    display: grid;
+    align-content: center;
     container-type: inline-size;
   }
 
