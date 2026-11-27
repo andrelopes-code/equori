@@ -335,6 +335,13 @@ describe("overview page", () => {
     expect(block("Month result")).toHaveTextContent(
       "Income minus outflow of the Available group",
     );
+    // Income and outflow have no note: a help control there opens an empty popover.
+    expect(
+      within(income).queryByRole("button", { name: "About Income" }),
+    ).toBeNull();
+    expect(
+      within(block("Outflow")).queryByRole("button", { name: "About Outflow" }),
+    ).toBeNull();
 
     await userEvent.setup().click(
       within(block("Month result")).getByRole("button", {

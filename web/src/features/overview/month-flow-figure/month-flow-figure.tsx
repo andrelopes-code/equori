@@ -52,14 +52,16 @@ export function MonthFlowFigure({
           search: { from: `${month}-01`, to: end },
         },
       }}
+      // Workaround for Slotted issue #222: a help of false still draws an empty help control,
+      // so the income and the outflow pass undefined.
       help={
-        kind === "result" && (
+        kind === "result" ? (
           <FigureHelp
             help={t("overview.figures.resultHelp")}
             formula={t("overview.figures.resultFormula")}
             example={t("overview.figures.resultExample")}
           />
-        )
+        ) : undefined
       }
       error={failed}
       onRetry={retry}
