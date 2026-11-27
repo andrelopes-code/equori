@@ -107,7 +107,7 @@ Data lives in the `pgdata` Docker volume. Back it up with:
 docker compose exec db pg_dump -U equori equori > equori.sql
 ```
 
-Commands: `serve` (the default), `user create`, `backup`, `restore`, `secrets key`, `secrets rotate`, `reporting rebuild`, `portfolio rebuild`, `planning backfill`, `service install|stop|uninstall` (Windows), `healthcheck`, `version`.
+Commands: `serve` (the default), `user create`, `backup`, `restore`, `secrets key`, `secrets rotate`, `reporting rebuild`, `portfolio rebuild`, `planning backfill`, `tray` and `stop` (Windows), `healthcheck`, `version`.
 
 Backup and restore: [docs/operations/backup.md](docs/operations/backup.md). Export, import and archive compatibility between versions: [docs/operations/export.md](docs/operations/export.md). Bank sync through Pluggy and Meu Pluggy: [docs/operations/pluggy.md](docs/operations/pluggy.md).
 
@@ -135,10 +135,10 @@ The supported form on Windows is the command of [docs/install/windows.md](docs/i
 
 When it finishes, the browser opens on the screen that creates the first user. To use equori in a window of its own, open it in Edge or Chrome and choose "Install this site as an app". The Start menu entry `equori` opens it later.
 
-- Data, backups, `secret.key`, `equori.env` and the log (`log\equori.log`) live in `%ProgramData%\equori`.
-- Another port: set `EQUORI_HTTP_ADDR=127.0.0.1:<port>` in `%ProgramData%\equori\equori.env`, then restart the service (`Restart-Service equori` in an administrator terminal).
-- Before `equori restore`, stop the service: `equori service stop` in an administrator terminal.
-- Uninstalling from Settings > Apps asks whether to delete `%ProgramData%\equori`; the answer No keeps it for a later installation.
+- Data, backups, `secret.key`, `equori.env` and the log (`log\equori.log`) live in `%LOCALAPPDATA%\equori\data`.
+- Another port: set `EQUORI_HTTP_ADDR=127.0.0.1:<port>` in `%LOCALAPPDATA%\equori\data\equori.env`, then choose Quit in the tray menu and open equori again.
+- Before `equori-cli.exe restore`, stop equori: `equori-cli.exe stop`.
+- Uninstalling from Settings > Apps asks whether to delete `%LOCALAPPDATA%\equori\data`; the answer No keeps it for a later installation.
 
 ### Homebrew (macOS, Linux)
 
