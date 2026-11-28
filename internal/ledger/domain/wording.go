@@ -14,4 +14,5 @@ type Wording struct {
 	Anticipation       string // the purchase's description
 	Chargeback         string // the purchase's description
 	CustodyTransfer    string // the instrument code
+	NoteSettlement     string // the note date
 }

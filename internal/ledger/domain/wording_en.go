@@ -14,5 +14,6 @@ func English() Wording {
 		Anticipation:       "Anticipation: %s",
 		Chargeback:         "Chargeback: %s",
 		CustodyTransfer:    "Custody transfer of %s",
+		NoteSettlement:     "Settlement of the note of %s",
 	}
 }

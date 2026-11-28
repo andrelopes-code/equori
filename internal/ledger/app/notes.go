@@ -3,6 +3,8 @@ package app
 import (
 	"context"
 	"errors"
+	"fmt"
+	"slices"
 	"strconv"
 	"time"
 
@@ -48,34 +50,63 @@ func (s *Service) RecordBrokerageNote(
 		return nil, fieldErr("orders", "add at least one order", domain.ErrValidation)
 	}
 
-	created := make([]domain.Transaction, len(n.Orders))
+	var created []domain.Transaction
 	err := s.repo.InTx(ctx, func(r Repository) error {
-		base, err := baseCurrency(ctx, r, booksID)
-		if err != nil {
-			return err
-		}
+		var err error
+		created, err = s.recordNote(ctx, r, booksID, n)
 
-		cash, rate, err := s.noteCash(ctx, r, booksID, n, base)
-		if err != nil {
-			return err
-		}
-
-		orders, err := noteTrades(n, cash, rate)
-		if err != nil {
-			return err
-		}
-
-		for _, i := range buysFirst(n.Orders) {
-			created[i], err = s.recordTrade(ctx, r, booksID, orders[i], base)
-			if err != nil {
-				return inOrder(err, i)
-			}
-		}
-
-		return nil
+		return err
 	})
 
 	return created, err
+}
+
+// recordNote records the trades of n and, when their cash moves inside the brokerage, the
+// settlements of the cash account (A272 NS1 to NS3).
+func (s *Service) recordNote(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	n BrokerageNote,
+) ([]domain.Transaction, error) {
+	base, err := baseCurrency(ctx, r, booksID)
+	if err != nil {
+		return nil, err
+	}
+
+	cash, rate, err := s.noteCash(ctx, r, booksID, n, base)
+	if err != nil {
+		return nil, err
+	}
+
+	inner, err := innerCash(ctx, r, booksID, n, cash)
+	if err != nil {
+		return nil, err
+	}
+
+	traded := n
+	if inner != uuid.Nil {
+		traded.CashAccountID = inner
+	}
+
+	orders, err := noteTrades(traded, cash, rate)
+	if err != nil {
+		return nil, err
+	}
+
+	created := make([]domain.Transaction, len(n.Orders))
+	for _, i := range buysFirst(n.Orders) {
+		created[i], err = s.recordTrade(ctx, r, booksID, orders[i], base)
+		if err != nil {
+			return nil, inOrder(err, i)
+		}
+	}
+
+	if inner == uuid.Nil {
+		return created, nil
+	}
+
+	return created, s.recordSettlements(ctx, r, booksID, n, inner, base, created)
 }
 
 // noteCash returns the currency of the cash account of n and the rate of the note: its amounts are
@@ -102,6 +133,145 @@ func (s *Service) noteCash(
 	rate, err := s.cashRate(ctx, cash, base, n.Date, n.ExchangeRate)
 
 	return cash, rate, err
+}
+
+// innerCash returns the cash account of the brokerage that takes the orders of n when the cash
+// account of n lies outside it: its one open child in the currency cash; uuid.Nil otherwise
+// (A272 NS1, NS4).
+func innerCash(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	n BrokerageNote,
+	cash money.Currency,
+) (uuid.UUID, error) {
+	if n.CashAccountID == uuid.Nil || n.CashAccountID == n.BrokerageID {
+		return uuid.Nil, nil
+	}
+
+	account, err := loadAccount(ctx, r, booksID, n.CashAccountID, "cash_account_id")
+	if err != nil || account.ParentID == n.BrokerageID {
+		return uuid.Nil, err
+	}
+
+	children, err := r.ChildAccounts(ctx, booksID, n.BrokerageID)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	found := slices.DeleteFunc(children, func(c domain.Account) bool {
+		return c.Instrument != cash || c.ClosedOn != nil
+	})
+	if len(found) != 1 {
+		return uuid.Nil, nil
+	}
+
+	return found[0].ID, nil
+}
+
+// recordSettlements records, per settlement date of the trades, one transaction that moves the
+// sum of their cash postings on inner from the cash account of n (A272 NS2).
+func (s *Service) recordSettlements(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	n BrokerageNote,
+	inner uuid.UUID,
+	base money.Currency,
+	trades []domain.Transaction,
+) error {
+	w, err := s.writerFor(ctx, booksID)
+	if err != nil {
+		return err
+	}
+
+	sets, err := settlementsOf(trades, inner)
+	if err != nil {
+		return err
+	}
+
+	for _, set := range sets {
+		if set.amount.IsZero() {
+			continue
+		}
+
+		t := domain.Transaction{
+			BooksID:           booksID,
+			Date:              n.Date,
+			Description:       fmt.Sprintf(w.NoteSettlement, n.Date.Format(w.layout)),
+			BalancingCurrency: base,
+			Origin:            domain.OriginManual,
+			Postings: []domain.Posting{
+				{
+					AccountID: n.CashAccountID,
+					Amount:    set.amount,
+					Weight:    set.weight,
+					SettledOn: set.on,
+				},
+				{
+					AccountID: inner,
+					Amount:    set.amount.Neg(),
+					Weight:    set.weight.Neg(),
+					SettledOn: set.on,
+				},
+			},
+		}
+
+		if _, err := s.insert(ctx, r, t); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// settlement is the cash of the trades of a note that settle on one date; on is nil for the
+// note date.
+type settlement struct {
+	on             *time.Time
+	amount, weight money.Money
+}
+
+// settlementsOf sums the cash postings on inner of trades by settlement date, in the order of
+// first appearance.
+func settlementsOf(trades []domain.Transaction, inner uuid.UUID) ([]settlement, error) {
+	var out []settlement
+
+	for _, t := range trades {
+		for _, p := range t.Postings {
+			if p.AccountID != inner {
+				continue
+			}
+
+			i := slices.IndexFunc(
+				out,
+				func(s settlement) bool { return sameDay(s.on, p.SettledOn) },
+			)
+			if i == -1 {
+				out = append(out, settlement{on: p.SettledOn, amount: p.Amount, weight: p.Weight})
+
+				continue
+			}
+
+			amount, err := out[i].amount.Add(p.Amount)
+			if err != nil {
+				return nil, err
+			}
+
+			weight, err := out[i].weight.Add(p.Weight)
+			if err != nil {
+				return nil, err
+			}
+
+			out[i].amount, out[i].weight = amount, weight
+		}
+	}
+
+	return out, nil
+}
+
+func sameDay(a, b *time.Time) bool {
+	return (a == nil && b == nil) || (a != nil && b != nil && a.Equal(*b))
 }
 
 // noteTrades builds the trade order of each order of n: the note's fees are split over every
