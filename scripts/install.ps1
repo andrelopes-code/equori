@@ -552,17 +552,27 @@ function Invoke-EquoriInstall([bool]$Uninstall, [bool]$Yes, [bool]$KeepData, [bo
         $link.Save()
     }
 
+    # Set-RunValue writes "Start with Windows"; a failed write stops the script instead of passing.
     function Set-RunValue {
         $command = "`"$dir\equori.exe`" tray --background"
+        New-RegistryKey $runKey
         $null = New-ItemProperty -Path $runKey -Name 'equori' -Value $command `
-            -PropertyType String -Force
+            -PropertyType String -Force -ErrorAction Stop
+    }
+
+    # New-RegistryKey creates each missing key of path: a new account can lack the Run and the
+    # Uninstall keys, and New-ItemProperty creates no key.
+    function New-RegistryKey([string]$path) {
+        $parent = Split-Path -Path $path -Parent
+        if ($parent -and -not (Test-Path -Path $parent)) { New-RegistryKey $parent }
+        if (-not (Test-Path -Path $path)) { $null = New-Item -Path $path -ErrorAction Stop }
     }
 
     # Set-UninstallEntry writes the entry of Settings -> Apps; its command is the one of A3.
     function Set-UninstallEntry {
         $command = 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File ' +
             "`"$dir\install.ps1`" -Uninstall"
-        $null = New-Item -Path $uninstallKey -Force
+        New-RegistryKey $uninstallKey
         $strings = @{
             DisplayName = 'equori'; DisplayVersion = $ctx.Version; Publisher = 'equori'
             InstallLocation = $dir; DisplayIcon = "$dir\equori.exe"; UninstallString = $command
