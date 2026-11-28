@@ -11,6 +11,7 @@ import (
 // settlement and creates nothing.
 func TestS702BankLineConfirmsTheNoteSettlement(t *testing.T) {
 	t.Parallel()
+
 	h := apitest.New(t, apitest.Today("2026-11-05"))
 	for _, code := range []string{"PETR4", "VALE3"} {
 		h.MustDo(http.MethodPost, "/api/v1/instruments", map[string]any{
