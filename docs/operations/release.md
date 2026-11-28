@@ -2,9 +2,9 @@
 
 A release is a pushed tag `vX.Y.Z`; `.github/workflows/release.yml` builds the image and creates the GitHub release with generated notes.
 
-## Beta
+## Versions
 
-Versions stay `0.x` until the owner declares 1.0 (ADR 022, V1). A beta is the tag `v0.MINOR.0-beta.N`, pushed after step 1 of the checklist. A tag in `0.x` moves the Homebrew formula (job `homebrew`) and is published as a pre-release. The steps 4 to 6 apply to the release that declares 1.0, not to a beta. `v1.0.0-rc.1` stays published and is not a stable release.
+Versions stay `0.x` until the owner declares 1.0 (ADR 022, V1). From `v0.1.0` (owner, 2026-11-28), a release is the tag `vX.Y.Z` without a suffix, pushed after step 1 of the checklist. GitHub publishes it as a normal release, so `releases/latest/download`, the address of the installation commands of `docs/install`, serves its assets. A tag with a suffix (`-rc.N`, `-beta.N`) is a pre-release, which `latest` never serves: it carries a candidate that the owner checks before its release. A tag in `0.x` moves the Homebrew formula (job `homebrew`). The steps 4 to 6 apply to the release that declares 1.0. `v1.0.0-rc.1` stays published and is not a stable release.
 
 ## Checklist
 
