@@ -718,11 +718,23 @@ function Invoke-EquoriInstall([bool]$Uninstall, [bool]$Yes, [bool]$KeepData, [bo
         # The folder is the working directory of nothing that is deleted below.
         Set-Location $env:TEMP
         $keep = Join-Path $dir 'data'
-        Get-ChildItem -LiteralPath $dir -Force -ErrorAction SilentlyContinue |
-            Where-Object { $_.FullName -ne $keep } |
-            Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
-        return @(Get-ChildItem -LiteralPath $dir -Force -ErrorAction SilentlyContinue |
-            Where-Object { $_.FullName -ne $keep })
+        $items = { @(Get-ChildItem -LiteralPath $dir -Force -ErrorAction SilentlyContinue |
+                Where-Object { $_.FullName -ne $keep }) }
+        return (Remove-Retrying $items)
+    }
+
+    # Remove-Retrying deletes what $items lists and returns what stays. A file that another program
+    # reads for a moment (an antivirus scan, the shell) refuses the delete, so it is tried for 5 s.
+    function Remove-Retrying([scriptblock]$items) {
+        for ($i = 0; $i -lt 10; $i++) {
+            $left = & $items
+            if ($left.Count -eq 0) { return @() }
+
+            $left | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+            if ((& $items).Count -gt 0) { Start-Sleep -Milliseconds 500 }
+        }
+
+        return (& $items)
     }
 
     # Stop-Leftovers ends an uninstall that left files behind: a program still holds them.
@@ -730,17 +742,18 @@ function Invoke-EquoriInstall([bool]$Uninstall, [bool]$Yes, [bool]$KeepData, [bo
         Set-StepFailed
         Write-Host ''
         foreach ($item in @($items | Select-Object -First 5)) { Write-Host "  $($item.FullName)" }
-        Write-Color (Pick "These files are still in ${dir}: close the programs that use them," `
-            "Estes arquivos continuam em ${dir}: feche os programas que os usam") Red
+        Write-Color (Pick 'These files are still there: close the programs that use them,' `
+            "Estes arquivos continuam l${aa}: feche os programas que os usam") Red
         Write-Color (Pick 'then run the uninstall again.' `
             "e execute a desinstala${cc}${at}o de novo.") Red
         $ctx.Failed = $true
     }
 
     function Remove-Shortcuts {
-        Remove-Item -LiteralPath $lnk -Force -ErrorAction SilentlyContinue
         Remove-ItemProperty -Path $runKey -Name 'equori' -ErrorAction SilentlyContinue
         Remove-Item -Path $uninstallKey -Recurse -Force -ErrorAction SilentlyContinue
+        $shortcut = { @(Get-Item -LiteralPath $lnk -Force -ErrorAction SilentlyContinue) }
+        return (Remove-Retrying $shortcut)
     }
 
     function Read-DeleteData {
@@ -767,13 +780,15 @@ function Invoke-EquoriInstall([bool]$Uninstall, [bool]$Yes, [bool]$KeepData, [bo
 
         Complete-Step
         Start-Step 'Shortcuts' 'Atalhos'
-        Remove-Shortcuts
+        $left = Remove-Shortcuts
+        if ($left.Count -gt 0) { return (Stop-Leftovers $left) }
+
         Complete-Step
         Write-Host ''
         if (Read-DeleteData) {
             Start-Step 'Files' 'Arquivos'
-            Remove-Item -LiteralPath $dir -Recurse -Force -ErrorAction SilentlyContinue
-            if (Test-Path -LiteralPath $dir) {
+            $folder = { @(Get-Item -LiteralPath $dir -Force -ErrorAction SilentlyContinue) }
+            if ((Remove-Retrying $folder).Count -gt 0) {
                 return (Stop-Leftovers @(Get-ChildItem -LiteralPath $dir -Recurse -Force -File))
             }
 
