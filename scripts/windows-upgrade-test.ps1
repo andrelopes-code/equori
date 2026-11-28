@@ -74,7 +74,7 @@ try {
     Install $Previous
     $url = (Get-Content "$data\setup.url" -Raw).Trim()
     $token = ([uri]$url).Fragment -replace '^#token=', ''
-    $body = @{ token = $token; email = 'upgrade@equori.test'; password = 'equori-upgrade-test'; language = 'pt'; region = 'BR' } | ConvertTo-Json
+    $body = @{ token = $token; email = 'upgrade@equori.test'; password = 'equori-upgrade-test'; language = 'pt'; region = 'BR'; update_check = $false } | ConvertTo-Json
     Invoke-WebRequest -UseBasicParsing -Method Post -ContentType 'application/json' -Body $body "$base/api/v1/setup" | Out-Null
     $src = Join-Path $env:RUNNER_TEMP 'upgrade-src'
     git worktree add --detach $src $PreviousRef | Out-Null
