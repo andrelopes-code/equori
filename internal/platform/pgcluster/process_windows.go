@@ -20,7 +20,9 @@ var procCreateRestrictedToken = windows.NewLazySystemDLL("advapi32.dll").
 	NewProc("CreateRestrictedToken")
 
 // newProc starts postgres as pg_ctl does: without the Administrators and Power Users groups, which
-// postgres refuses (W-M7), in its own process group, so a terminal's Ctrl-C reaches equori only.
+// postgres refuses (W-M7), in its own process group, so a terminal's Ctrl-C reaches equori only,
+// and without a console: started by the tray build, which has none, postgres would open a window
+// whose closing ends it.
 func newProc(cmd *exec.Cmd) (*proc, error) {
 	tok, err := restrictedToken()
 	if err != nil {
@@ -49,7 +51,7 @@ func newProc(cmd *exec.Cmd) (*proc, error) {
 
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Token:         syscall.Token(tok),
-		CreationFlags: windows.CREATE_NEW_PROCESS_GROUP,
+		CreationFlags: windows.CREATE_NEW_PROCESS_GROUP | windows.CREATE_NO_WINDOW,
 	}
 
 	return &proc{token: tok, job: job}, nil
