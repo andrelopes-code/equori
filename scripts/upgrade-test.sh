@@ -37,9 +37,13 @@ wait_healthy() {
 	return 1
 }
 
+# The index feeds the seeding enables point at a closed local port: a fetch of real rates would
+# revise the stored ones and the facts derived from them between the two snapshots.
 start_app() {
 	docker run -d --name "$name-app" --network "$name" -p "127.0.0.1:$port:8080" \
-		-e EQUORI_DATABASE_URL="$url" -e EQUORI_INSECURE_COOKIES=true "$1" >/dev/null
+		-e EQUORI_DATABASE_URL="$url" -e EQUORI_INSECURE_COOKIES=true \
+		-e EQUORI_FEED_BR_CDI_URL=http://127.0.0.1:9 -e EQUORI_FEED_BR_IPCA_URL=http://127.0.0.1:9 \
+		"$1" >/dev/null
 	wait_healthy
 }
 
@@ -87,6 +91,23 @@ until docker exec "$name-db" pg_isready -h 127.0.0.1 -U equori -d equori >/dev/n
 start_app "$prev_image"
 printf '%s\n' equori-upgrade-test | docker exec -i "$name-app" /equori user create \
 	--email upgrade@equori.test --language pt --region BR
+# The seeder of v0.1.0-beta.6 prices fixed income on the cdi and the ipca, and a new instance
+# enables no feed. Rates are stored directly: the test compares facts, not market data, and asks
+# no provider.
+docker exec -i "$name-db" psql -U equori -d equori -q -v ON_ERROR_STOP=1 <<'SQL'
+INSERT INTO marketdata_feed (id, enabled) VALUES ('br_cdi', true), ('br_ipca', true)
+ON CONFLICT (id) DO UPDATE SET enabled = true;
+INSERT INTO marketdata_index_rate (index_id, date, rate, source)
+SELECT 'cdi', d::date, 0.0004, 'br_cdi'
+FROM generate_series(current_date - interval '12 years', current_date, interval '1 day') d
+WHERE extract(isodow FROM d) < 6
+ON CONFLICT DO NOTHING;
+INSERT INTO marketdata_index_rate (index_id, date, rate, source)
+SELECT 'ipca', d::date, 0.004, 'br_ipca'
+FROM generate_series(date_trunc('month', current_date - interval '12 years'), current_date,
+	interval '1 month') d
+ON CONFLICT DO NOTHING;
+SQL
 git worktree add --detach "$work/src" "$prev_ref" >/dev/null
 # The seeder of the previous ref drives the API of the release it seeds; the seeder of this tree
 # asks for account kinds that v0.1.0-beta.5 rejects.
@@ -97,11 +118,20 @@ docker rm -f "$name-app" >/dev/null
 
 start_app "$new_image"
 settled >"$work/after"
-# A table the new release adds appears only in after; a line of before that changed or vanished is a lost fact.
-lost=$(comm -23 <(sort "$work/before") <(sort "$work/after"))
+# A balance of before that differs or vanishes, or a table whose rows vanish or decrease, is a
+# lost fact. A count that grows is not: each start finishes derived work the previous one left,
+# about 56 categorizations and 2 account days of the seeded book (owner, 2026-11-28).
+lost=$(awk '
+	NR == FNR { after[$1] = $2; next }
+	!($1 in after) { print; next }
+	$1 ~ /^[0-9a-f-]{36}$/ && after[$1] != $2 { print; next }
+	$1 !~ /^[0-9a-f-]{36}$/ && after[$1] + 0 < $2 + 0 { print }
+' "$work/after" "$work/before")
 if [[ -n $lost ]]; then
 	echo "lost or changed after the upgrade:" >&2
 	echo "$lost" >&2
+	echo "the same lines after the upgrade:" >&2
+	grep -F -f <(cut -d' ' -f1 <<<"$lost" | sed 's/$/ /') "$work/after" >&2 || true
 	exit 1
 fi
 echo "upgrade from $prev_image to $new_image kept $(wc -l <"$work/before") facts"
