@@ -129,6 +129,12 @@ export default defineConfig({
     ],
   },
   build: {
+    // The browsers that support every selector of the stylesheets: :has from Firefox 121, :dir
+    // from Chrome 120. A list holding a selector the target lacks is wrapped in :is() by the
+    // minifier, which gives the whole list its highest specificity: in the build a rule of the
+    // list then beats a rule it loses to in the dev server (src/testing/css-target.test.ts).
+    // Workaround for Slotted issue #227: a tree row of a table reserves 24 px for a 36 px mark.
+    cssTarget: ["chrome120", "edge120", "firefox121", "safari16.4", "ios16.4"],
     // web/dist/.gitkeep must survive the build; make web-build cleans the rest.
     emptyOutDir: false,
     // ADR 028 serves the page under default-src 'self', which refuses data: images; an
