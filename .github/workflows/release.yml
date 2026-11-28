@@ -102,8 +102,15 @@ jobs:
           build-args: VERSION=${{ github.ref_name }}
       - run: test "$(docker run --rm equori:smoke version | head -1)" = "equori ${{ github.ref_name }}"
       # R7: the database of the previous tag migrates under this image with every fact, before any push.
+      # The last published release: a tag whose release failed has no image to start from.
       - id: prev
-        run: echo "tag=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || true)" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          tag=$(gh release list --exclude-drafts --limit 50 --json tagName \
+            -q ".[].tagName | select(. != \"$GITHUB_REF_NAME\")" | head -1)
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
       - if: steps.prev.outputs.tag == ''
         run: echo "no previous tag; the first release has nothing to upgrade from"
       - if: steps.prev.outputs.tag != ''
@@ -196,11 +203,17 @@ jobs:
       # R4: the zip installs, works and reports the tag before anything is published.
       - run: scripts/windows-smoke.ps1 -Zip (Get-Item "$env:RUNNER_TEMP\zip\*.zip").FullName -Tag $env:GITHUB_REF_NAME -Region US -Currency USD
       # W-R7: from the second tag whose release holds a Windows zip.
+      # The last published release that holds a zip; a tag without a release holds none.
       - env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
-          $prev = git describe --tags --abbrev=0 --match 'v*.*.*' HEAD^ 2>$null
-          $zip = if ($prev) { gh release view $prev --json assets -q '.assets[].name' | Where-Object { $_ -like '*_windows_amd64.zip' } }
+          $prev = $null; $zip = $null
+          foreach ($tag in (gh release list --exclude-drafts --limit 50 --json tagName -q '.[].tagName')) {
+            if ($tag -eq $env:GITHUB_REF_NAME) { continue }
+            $zip = gh release view $tag --json assets -q '.assets[].name' | Where-Object { $_ -like '*_windows_amd64.zip' }
+            if ($zip) { $prev = $tag; break }
+          }
           if (-not $zip) { "no earlier release holds a Windows zip; nothing to upgrade from"; exit 0 }
           gh release download $prev -p $zip -D "$env:RUNNER_TEMP\prev"
           $version = (Get-Content packaging\windows\postgresql.env | Where-Object { $_ -match '^PG_VERSION=' }) -replace '^PG_VERSION=', ''
