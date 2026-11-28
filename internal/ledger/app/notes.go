@@ -225,8 +225,7 @@ func (s *Service) recordSettlements(
 	return nil
 }
 
-// settlement is the cash of the trades of a note that settle on one date; on is nil for the
-// note date.
+// settlement is the cash of the trades of a note that settle on one date, nil for the note date.
 type settlement struct {
 	on             *time.Time
 	amount, weight money.Money
@@ -243,10 +242,7 @@ func settlementsOf(trades []domain.Transaction, inner uuid.UUID) ([]settlement, 
 				continue
 			}
 
-			i := slices.IndexFunc(
-				out,
-				func(s settlement) bool { return sameDay(s.on, p.SettledOn) },
-			)
+			i := slices.IndexFunc(out, func(x settlement) bool { return same(x.on, p.SettledOn) })
 			if i == -1 {
 				out = append(out, settlement{on: p.SettledOn, amount: p.Amount, weight: p.Weight})
 
@@ -270,7 +266,7 @@ func settlementsOf(trades []domain.Transaction, inner uuid.UUID) ([]settlement, 
 	return out, nil
 }
 
-func sameDay(a, b *time.Time) bool {
+func same(a, b *time.Time) bool {
 	return (a == nil && b == nil) || (a != nil && b != nil && a.Equal(*b))
 }
 
